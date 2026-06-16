@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Environments
+.venv/
+venv/
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data and model artifacts
+*.pth
+*.pt
+*.ckpt
+*.h5
+*.root
+*.parquet
+*.npz
+*.pkl
+*.pickle
+
+# Logs and local outputs
+*.log
+slurm_log.*
+CompLog/
+outputs/
+artifacts/

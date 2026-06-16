@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hypertagging-unified"
+version = "0.0.0"
+description = "Unified HyperTagging migration skeleton"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy",
+  "pandas",
+  "awkward",
+  "torch",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
