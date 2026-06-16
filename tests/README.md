@@ -45,4 +45,10 @@ level-mask construction, flattened collate behavior, GPT reconstructor and
 embedding-linker legacy parity, combined `MultiGPT` forward/loss smoke tests,
 and the `run_gpt_like.py` dry-run CLI.
 
+Phase 12 adds CPU-only tests that run every minimal example as a subprocess and
+verify the JSON summary plus documented local data roots.
+
+Phase 13 documentation cleanup was verified by the full CPU smoke suite. No new
+scientific behavior was added.
+
 Future phases must add equivalence tests before migrating scientific behavior.

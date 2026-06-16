@@ -1,7 +1,4 @@
-"""Unified HyperTagging package skeleton.
-
-No scientific implementation is migrated in Phase 1.
-"""
+"""Unified HyperTagging migration package."""
 
 __all__ = ["__version__"]
 

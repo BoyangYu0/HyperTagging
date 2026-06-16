@@ -117,6 +117,20 @@ This file will track behavior-preservation decisions during Goal B.
 - Did not migrate full epoch link training, file loaders, early stopping,
   checkpoint save timing, or notebook-only workflows.
 
+## Phase 10
+
+- Migrated the event-level GraFEI full-reconstruction evaluation behavior from
+  `graFEI/whole_eva.py`.
+- Preserved argmax PDG recovery, link max-value signal scoring, empty-mother
+  link remapping, daughter feature aggregation, iterative predicted-LCA
+  construction, root stopping on PDG token `13`, and failure-row behavior.
+- Added CPU-only tests for predicted LCA, PDG accuracy, feature error, stopping,
+  signal probability, and the evaluation dry-run CLI on tiny events.
+- Preserved a historical padded-accuracy convention that can produce
+  `pdgAcc > 1` on synthetic padded fixtures.
+- Did not migrate full-data parquet evaluation jobs, plotting notebooks, or HPC
+  batch execution.
+
 ## Phase 11
 
 - Added GPT-like/autoregressive data helpers preserving the historical
@@ -133,6 +147,32 @@ This file will track behavior-preservation decisions during Goal B.
 - Added `scripts/run_gpt_like.py` for a combined GPT-like CPU dry run.
 - Did not migrate full epoch GPT training, file loaders, early stopping,
   checkpoint save timing, or HPC logging/checkpoint behavior.
+
+## Phase 12
+
+- Added runnable CPU-only examples for Toy-MC, GraFEI, and GPT-like workflows
+  under `examples/`.
+- Examples use tiny synthetic fixtures, migrated contract validators, migrated
+  losses or dry-run training paths, and preprocessing dry-run command builders.
+- Documented full-data roots as `/home/boyang/data/MC` for Toy-MC after BASF2
+  generation and before preprocessing, and `/home/boyang/data/graFEI` for
+  original GraFEI before preprocessing.
+- Added CPU tests that execute all examples as subprocesses and parse their JSON
+  summaries.
+- Did not add runnable full-data examples, GPU training examples, performance
+  reproduction scripts, or new scientific behavior.
+
+## Phase 13
+
+- Replaced stale Phase 1 placeholder documentation with current migration
+  status through Phase 12.
+- Synchronized the internal repository map with the migrated package surface
+  while leaving the full Phase 0 inventory in `../REPOSITORY_MAP.md`.
+- Updated notebook and legacy documentation to clarify that notebooks and frozen
+  legacy copies are not migrated implementation sources.
+- Documented CPU smoke commands, local data roots, known limitations, and
+  equivalence-test status.
+- Did not migrate new scientific code.
 
 ## Future Notes
 
