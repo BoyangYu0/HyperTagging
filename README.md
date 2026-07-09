@@ -88,6 +88,30 @@ uv --cache-dir /tmp/uv-cache run python scripts/evaluate_reconstruction.py --dry
 uv --cache-dir /tmp/uv-cache run python scripts/run_gpt_like.py --dry-run --device cpu
 ```
 
+## Direct mDST Preprocessing
+
+The unified repo now includes a direct-mDST preprocessing path under
+`src/hypertagging/preprocessing`. Run the producer inside a basf2 environment:
+
+```bash
+basf2 scripts/preprocess_mdst.py -- \
+  --input /project/agkuhr/users/boyang/data/MC15/mdst001.root \
+  --output processed.parquet \
+  --max-events 100
+```
+
+Validate or inspect output with normal Python:
+
+```bash
+uv --cache-dir /tmp/uv-cache run python scripts/verify_preprocessing.py \
+  --input processed.parquet \
+  --event 0 \
+  --all
+```
+
+See `docs/preprocessing_design.md` for the schema, legacy compatibility notes,
+and the reco-kinematics/truth-topology separation.
+
 Run minimal examples:
 
 ```bash

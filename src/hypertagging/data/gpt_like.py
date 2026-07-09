@@ -5,7 +5,7 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 import subprocess
-from typing import Iterable
+from typing import Iterable, Literal
 
 import numpy as np
 import torch
@@ -14,9 +14,11 @@ from hypertagging.data.contracts import validate_batch
 from hypertagging.data.preprocessing import (
     DEFAULT_GRAFEI_INPUT_ROOT,
     DryRunResult,
-    build_gpt_like_plan,
-    run_legacy_preprocessing,
+    prepare_legacy_dataset,
 )
+
+
+GptBatchTask = Literal["reconstruction", "link"]
 
 
 @lru_cache(maxsize=256)
@@ -80,18 +82,31 @@ def collate_gpt_link(batch: Iterable[dict[str, np.ndarray]]) -> dict[str, torch.
     return {key: torch.from_numpy(value) for key, value in out.items()}
 
 
+def validate_gpt_batch(
+    batch: dict[str, torch.Tensor],
+    *,
+    task: GptBatchTask,
+) -> dict[str, torch.Tensor]:
+    """Validate a GPT-like batch by task."""
+
+    contracts = {
+        "reconstruction": "gpt_reconstruction_flattened",
+        "link": "gpt_link_flattened",
+    }
+    validate_batch(contracts[task], batch)
+    return batch
+
+
 def validate_gpt_reconstruction_batch(batch: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
     """Validate a GPT reconstruction batch against the Phase 3 contract."""
 
-    validate_batch("gpt_reconstruction_flattened", batch)
-    return batch
+    return validate_gpt_batch(batch, task="reconstruction")
 
 
 def validate_gpt_link_batch(batch: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
     """Validate a GPT link batch against the Phase 3 contract."""
 
-    validate_batch("gpt_link_flattened", batch)
-    return batch
+    return validate_gpt_batch(batch, task="link")
 
 
 def prepare_gpt_like(
@@ -103,13 +118,13 @@ def prepare_gpt_like(
 ) -> DryRunResult | subprocess.CompletedProcess[str]:
     """Prepare or run the legacy GPT-like GraFEI preprocessing script."""
 
-    plan = build_gpt_like_plan(
+    return prepare_legacy_dataset(
+        "gpt_like",
         chunk_index,
         input_root=input_root,
         output_root=output_root,
+        dry_run=dry_run,
     )
-    result = run_legacy_preprocessing(plan, dry_run=dry_run)
-    return result
 
 
 __all__ = [
@@ -117,6 +132,7 @@ __all__ = [
     "collate_gpt_reconstruction",
     "get_level_mask",
     "prepare_gpt_like",
+    "validate_gpt_batch",
     "validate_gpt_link_batch",
     "validate_gpt_reconstruction_batch",
 ]

@@ -22,6 +22,7 @@ from hypertagging.training.dry_run import (
 
 
 TrainingStage = Literal["embedding", "link", "reconstruction", "gpt"]
+GptDryRunVariant = Literal["single", "multi"]
 
 
 @dataclass(frozen=True)
@@ -169,25 +170,7 @@ def run_gpt_dry_run(
 ) -> DryRunSummary:
     """Build and dry-run the GPT-like reconstruction stage."""
 
-    device = torch.device(device)
-    model = GPTReconstructor(
-        tr_width=8,
-        tr_n_head=1,
-        tr_n=1,
-        tr_hidden_size=16,
-        dim_hyper=4,
-        device=device,
-    )
-    batch = gpt_batch(device)
-    output = model(batch)
-    level_mask = batch["lvl_code"].bool()
-    rec_loss = gpt_distance(output, batch["target"], level_mask)
-    link_mask = batch["links"] >= 0
-    r_loss = gpt_radius_loss(output, batch["mass"], link_mask)
-    loss = rec_loss + r_loss
-    optimizer = build_optimizer(model, stage="gpt")
-    detached = run_one_batch(model, batch, loss, optimizer, backward=backward)
-    return _summary("gpt", device, model, optimizer, detached, (tuple(output.shape),), backward)
+    return run_gpt_variant_dry_run(variant="single", device=device, backward=backward)
 
 
 def run_multi_gpt_dry_run(
@@ -197,30 +180,61 @@ def run_multi_gpt_dry_run(
 ) -> DryRunSummary:
     """Build and dry-run the combined GPT-like reconstruction/link stage."""
 
+    return run_gpt_variant_dry_run(variant="multi", device=device, backward=backward)
+
+
+def run_gpt_variant_dry_run(
+    *,
+    variant: GptDryRunVariant = "single",
+    device: str | torch.device = "cpu",
+    backward: bool = True,
+) -> DryRunSummary:
+    """Build and dry-run a GPT-like stage variant."""
+
     device = torch.device(device)
-    model = MultiGPT(
-        rec_width=8,
-        rec_n_head=1,
-        rec_n=1,
-        rec_hidden_size=16,
-        link_width=8,
-        link_n_head=1,
-        link_n=1,
-        link_hidden_size=16,
-        dim_hyper=4,
-        device=device,
-    )
+    model = _build_gpt_model(variant, device)
     batch = gpt_batch(device)
-    out_rec, out_link = model(batch)
+    outputs = model(batch)
+    out_rec, out_link = outputs if variant == "multi" else (outputs, None)
     level_mask = batch["lvl_code"].bool()
     link_mask = batch["links"] >= 0
     rec_loss = gpt_distance(out_rec, batch["target"], level_mask)
-    link_loss, _acc = link_metrics(out_link, batch["links"], link_mask)
     r_loss = gpt_radius_loss(out_rec, batch["mass"], link_mask)
-    loss = rec_loss + link_loss + r_loss
+    loss = rec_loss + r_loss
+    output_shapes = (tuple(out_rec.shape),)
+    if out_link is not None:
+        link_loss, _acc = link_metrics(out_link, batch["links"], link_mask)
+        loss = loss + link_loss
+        output_shapes = (tuple(out_rec.shape), tuple(out_link.shape))
     optimizer = build_optimizer(model, stage="gpt")
     detached = run_one_batch(model, batch, loss, optimizer, backward=backward)
-    return _summary("gpt", device, model, optimizer, detached, (tuple(out_rec.shape), tuple(out_link.shape)), backward)
+    return _summary("gpt", device, model, optimizer, detached, output_shapes, backward)
+
+
+def _build_gpt_model(variant: GptDryRunVariant, device: torch.device) -> torch.nn.Module:
+    if variant == "single":
+        return GPTReconstructor(
+            tr_width=8,
+            tr_n_head=1,
+            tr_n=1,
+            tr_hidden_size=16,
+            dim_hyper=4,
+            device=device,
+        )
+    if variant == "multi":
+        return MultiGPT(
+            rec_width=8,
+            rec_n_head=1,
+            rec_n=1,
+            rec_hidden_size=16,
+            link_width=8,
+            link_n_head=1,
+            link_n=1,
+            link_hidden_size=16,
+            dim_hyper=4,
+            device=device,
+        )
+    raise ValueError(f"Unknown GPT dry-run variant: {variant}")
 
 
 def run_stage_dry_run(
@@ -238,7 +252,7 @@ def run_stage_dry_run(
     if stage == "reconstruction":
         return run_reconstruction_dry_run(device=device, backward=backward)
     if stage == "gpt":
-        return run_gpt_dry_run(device=device, backward=backward)
+        return run_gpt_variant_dry_run(variant="single", device=device, backward=backward)
     raise ValueError(f"Unknown training stage: {stage}")
 
 

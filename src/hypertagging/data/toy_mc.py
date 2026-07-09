@@ -8,10 +8,7 @@ import subprocess
 from hypertagging.data.preprocessing import (
     DEFAULT_TOY_MC_INPUT_ROOT,
     DryRunResult,
-    PreprocessingPlan,
-    build_toy_mc_dataprod_plan,
-    build_toy_mc_preprocess_plan,
-    run_legacy_preprocessing,
+    prepare_legacy_dataset,
 )
 
 
@@ -25,14 +22,14 @@ def prepare_toy_mc_dataprod(
 ) -> DryRunResult | subprocess.CompletedProcess[str]:
     """Prepare or run the legacy BASF2 Toy-MC DataProd script."""
 
-    plan = build_toy_mc_dataprod_plan(
+    return prepare_legacy_dataset(
+        "toy_mc_dataprod",
         channel_index,
         job_id,
         input_root=input_root,
         output_root=output_root,
+        dry_run=dry_run,
     )
-    result = run_legacy_preprocessing(plan, dry_run=dry_run)
-    return result
 
 
 def prepare_toy_mc(
@@ -45,14 +42,14 @@ def prepare_toy_mc(
 ) -> DryRunResult | subprocess.CompletedProcess[str]:
     """Prepare or run the legacy Toy-MC preprocessing script."""
 
-    plan = build_toy_mc_preprocess_plan(
+    return prepare_legacy_dataset(
+        "toy_mc_preprocess",
         job_id,
         awkward_output=awkward_output,
         input_root=input_root,
         output_root=output_root,
+        dry_run=dry_run,
     )
-    result = run_legacy_preprocessing(plan, dry_run=dry_run)
-    return result
 
 
 __all__ = ["prepare_toy_mc", "prepare_toy_mc_dataprod"]

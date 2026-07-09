@@ -12,6 +12,7 @@ dependencies = [
   "numpy",
   "pandas",
   "awkward",
+  "pyarrow",
   "torch",
 ]
 

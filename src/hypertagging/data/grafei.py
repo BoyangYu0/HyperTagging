@@ -8,8 +8,7 @@ import subprocess
 from hypertagging.data.preprocessing import (
     DEFAULT_GRAFEI_INPUT_ROOT,
     DryRunResult,
-    build_grafei_plan,
-    run_legacy_preprocessing,
+    prepare_legacy_dataset,
 )
 
 
@@ -23,14 +22,14 @@ def prepare_grafei(
 ) -> DryRunResult | subprocess.CompletedProcess[str]:
     """Prepare or run the legacy GraFEI pair-data preprocessing script."""
 
-    plan = build_grafei_plan(
+    return prepare_legacy_dataset(
+        "grafei",
         chunk_index,
         input_root=input_root,
         output_root=output_root,
         reduced=reduced,
+        dry_run=dry_run,
     )
-    result = run_legacy_preprocessing(plan, dry_run=dry_run)
-    return result
 
 
 __all__ = ["prepare_grafei"]
