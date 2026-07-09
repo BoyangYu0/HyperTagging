@@ -88,6 +88,18 @@ uv --cache-dir /tmp/uv-cache run python scripts/evaluate_reconstruction.py --dry
 uv --cache-dir /tmp/uv-cache run python scripts/run_gpt_like.py --dry-run --device cpu
 ```
 
+Run the new level-autoregressive CPU dry-runs:
+
+```bash
+uv --cache-dir /tmp/uv-cache run python scripts/train_hyperbolic_pretrain.py --dry-run --tiny --device cpu --max-steps 2 --batch-size 2
+uv --cache-dir /tmp/uv-cache run python scripts/train_level_reconstruction.py --dry-run --tiny --device cpu --max-steps 2 --batch-size 2
+```
+
+Full CUDA training and full-data preprocessing are SLURM-only.  Local CUDA is
+refused unless it is an explicit tiny smoke test guarded by `squeue` and
+`nvidia-smi` checks.  See `docs/hyperbolic_level_autoregressive_reconstruction.md`,
+`docs/training.md`, and `docs/slurm.md`.
+
 ## Direct mDST Preprocessing
 
 The unified repo now includes a direct-mDST preprocessing path under

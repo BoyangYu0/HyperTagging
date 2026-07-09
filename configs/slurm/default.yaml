@@ -1,0 +1,14 @@
+job_name: hypertagging
+account: "<account>"
+partition: "<partition>"
+qos: ""
+time: "00:30:00"
+nodes: 1
+ntasks: 1
+cpus_per_task: 4
+gres: "gpu:1"
+mem: "16G"
+cache_dir: "/tmp/uv-cache"
+log_dir: "logs/slurm"
+checkpoint_dir: "outputs/checkpoints"
+setup: ""

@@ -5,6 +5,7 @@ import subprocess
 import sys
 
 import numpy as np
+import pytest
 import torch
 import torch.nn.functional as F
 
@@ -25,7 +26,10 @@ ROOT = Path(__file__).resolve().parents[1].parent
 
 
 def _legacy_module(relative_path: str, name: str):
-    spec = importlib.util.spec_from_file_location(name, ROOT / relative_path)
+    path = ROOT / relative_path
+    if not path.exists():
+        pytest.skip(f"legacy source file not present: {path}")
+    spec = importlib.util.spec_from_file_location(name, path)
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(module)

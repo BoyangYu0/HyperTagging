@@ -2,6 +2,8 @@
 
 from hypertagging.preprocessing.export_dataset import SCHEMA_VERSION, export_trees, load_processed
 from hypertagging.preprocessing.levelize_tree import assign_levels, adjacent_level_samples, nodes_by_level
+from hypertagging.preprocessing.reco_kinematics import daughter_sum_p4, enforce_reco_mother_p4
+from hypertagging.preprocessing.schema import SCHEMA_VERSION as LEVEL_SCHEMA_VERSION
 from hypertagging.preprocessing.mdst_tree_builder import (
     EventTree,
     FourVector,
@@ -17,6 +19,7 @@ from hypertagging.preprocessing.pid_filter import PDG_TOKENS, TOKENIZE_DICT, Pid
 
 __all__ = [
     "SCHEMA_VERSION",
+    "LEVEL_SCHEMA_VERSION",
     "PDG_TOKENS",
     "TOKENIZE_DICT",
     "EventTree",
@@ -29,6 +32,8 @@ __all__ = [
     "assign_levels",
     "build_truth_guided_tree",
     "copy_shared_daughters",
+    "daughter_sum_p4",
+    "enforce_reco_mother_p4",
     "export_trees",
     "load_processed",
     "nodes_by_level",
