@@ -17,11 +17,17 @@ from hypertagging.preprocessing.mdst_tree_builder import (
 )
 from hypertagging.preprocessing.pid_filter import PDG_TOKENS, TOKENIZE_DICT, PidFilter
 from hypertagging.preprocessing.schema_v2 import SCHEMA_VERSION_V2, load_payload_v2
+from hypertagging.preprocessing.schema_v3 import (
+    SCHEMA_VERSION_V3,
+    export_trees_v3,
+    load_payload_v3,
+)
 
 __all__ = [
     "SCHEMA_VERSION",
     "LEVEL_SCHEMA_VERSION",
     "SCHEMA_VERSION_V2",
+    "SCHEMA_VERSION_V3",
     "PDG_TOKENS",
     "TOKENIZE_DICT",
     "EventTree",
@@ -38,7 +44,9 @@ __all__ = [
     "enforce_reco_mother_p4",
     "export_trees",
     "export_trees_v2",
+    "export_trees_v3",
     "load_payload_v2",
+    "load_payload_v3",
     "load_processed",
     "nodes_by_level",
     "recompute_mother_p4_from_daughters",

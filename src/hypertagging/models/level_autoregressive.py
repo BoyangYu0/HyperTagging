@@ -13,14 +13,14 @@ from hypertagging.models.mother_pointer import MotherPointerDecoder, MotherPoint
 from hypertagging.models.relation_attention import RelationAwareSetTransformer
 from hypertagging.models.relations import RelationBias
 from hypertagging.models.stair_masks import context_mask_for_level, stair_attention_mask
-from hypertagging.preprocessing.schema_v2 import (
-    CLUSTER_FEATURE_NAMES,
-    COMMON_FEATURE_NAMES,
-    COMPOSITE_FEATURE_NAMES,
-    NODE_KIND_TO_ID,
-    TRACK_FEATURE_NAMES,
+from hypertagging.preprocessing.schema_v2 import NODE_KIND_TO_ID
+from hypertagging.preprocessing.schema_v3 import (
+    V3_CLUSTER_FEATURE_NAMES as CLUSTER_FEATURE_NAMES,
+    V3_COMMON_FEATURE_NAMES as COMMON_FEATURE_NAMES,
+    V3_COMPOSITE_FEATURE_NAMES as COMPOSITE_FEATURE_NAMES,
+    V3_TRACK_FEATURE_NAMES as TRACK_FEATURE_NAMES,
 )
-from hypertagging.preprocessing.pid_filter import PDG_TOKENS
+from hypertagging.preprocessing.pid_filter import PDG_TOKENS, validate_pid_tokens
 
 
 @dataclass(frozen=True)
@@ -35,6 +35,7 @@ class LevelReconstructionOutput:
     tree_projection: torch.Tensor
     reconstruction_projection: torch.Tensor
     channel_projection: torch.Tensor
+    leaf_pid_logits: torch.Tensor | None = None
 
 
 class LevelAutoregressiveReconstructor(nn.Module):
@@ -51,14 +52,20 @@ class LevelAutoregressiveReconstructor(nn.Module):
         n_heads: int = 4,
         n_context_layers: int = 2,
         encoder_mode: str = "heterogeneous",
+        use_contextual_encoder: bool = True,
         use_relation_bias: bool = True,
+        use_hyperbolic_relation_refinement: bool = False,
     ) -> None:
         super().__init__()
         self.encoder_mode = encoder_mode
+        self.use_contextual_encoder = use_contextual_encoder
+        # The public argument is retained for source compatibility, but the
+        # scientific contract has exactly one model vocabulary.
+        n_types = len(PDG_TOKENS)
         if encoder_mode == "flat":
             self.encoder: nn.Module = HyperbolicNodeEncoder(
                 n_features=n_features,
-                n_pid=max(n_types, 4096),
+                n_pid=len(PDG_TOKENS),
                 hidden_dim=hidden_dim,
                 hyper_dim=hyper_dim,
             )
@@ -66,27 +73,50 @@ class LevelAutoregressiveReconstructor(nn.Module):
             self.encoder = HeterogeneousNodeEncoder(
                 d_model=hidden_dim,
                 hyper_dim=hyper_dim,
-                n_pid=max(n_types, 4096),
+                n_pid=len(PDG_TOKENS),
+                n_heads=n_heads,
+                n_context_layers=n_context_layers,
+                use_contextual_encoder=use_contextual_encoder,
+                use_physical_context=use_relation_bias,
+                use_hyperbolic_refinement=use_hyperbolic_relation_refinement,
             )
         else:
             raise ValueError(f"Unknown encoder_mode: {encoder_mode}")
-        self.relation_bias = RelationBias(hidden_dim=hidden_dim, enabled=use_relation_bias)
-        self.contextualizer = RelationAwareSetTransformer(
+        self.flat_relation_bias = RelationBias(hidden_dim=hidden_dim, enabled=use_relation_bias)
+        self.flat_contextualizer = RelationAwareSetTransformer(
             hidden_dim,
             n_heads=n_heads,
             n_layers=n_context_layers,
         )
         self.decoder = MotherPointerDecoder(hidden_dim=hidden_dim, n_types=n_types, n_queries=n_queries)
+        self.leaf_pid_head = nn.Linear(hidden_dim, len(PDG_TOKENS))
+
+    @property
+    def relation_bias(self) -> nn.Module:
+        """Compatibility handle for gradient/ablation inspection."""
+
+        if self.encoder_mode == "heterogeneous":
+            return self.encoder.physical_relation_bias  # type: ignore[attr-defined]
+        return self.flat_relation_bias
 
     def forward(self, batch: dict[str, torch.Tensor], *, target_level: int = 1) -> LevelReconstructionOutput:
         if self.encoder_mode == "heterogeneous":
             batch = _upgrade_flat_batch(batch)
-            encoded = self.encoder(batch)
+            encoded = self.encoder(
+                batch,
+                attention_mask=stair_attention_mask(batch["level_ids"], batch["node_mask"]),
+            )
             h = encoded.node_embeddings
             z = encoded.hyperbolic_embeddings
             tree_projection = encoded.tree_projection
             reconstruction_projection = encoded.reconstruction_projection
             channel_projection = encoded.channel_projection
+            relation_bias = encoded.physical_relation_bias + (
+                encoded.hyperbolic_relation_bias
+                if self.encoder.use_hyperbolic_refinement  # type: ignore[attr-defined]
+                else torch.zeros_like(encoded.physical_relation_bias)
+            )
+            attention_weights = encoded.attention_weights
         else:
             h, z = self.encoder(
                 batch["node_features"],
@@ -97,24 +127,30 @@ class LevelAutoregressiveReconstructor(nn.Module):
             tree_projection = h
             reconstruction_projection = h
             channel_projection = h
+            relation_bias = self.flat_relation_bias(
+                p4=batch["p4"],
+                charge=batch["charge"],
+                level_ids=batch["level_ids"],
+                z_hyperbolic=z,
+                node_mask=batch["node_mask"],
+                node_kind_ids=batch.get("node_kind_ids"),
+                copied=batch.get("copied"),
+                source_node_ids=batch.get("source_node_ids"),
+            )
+            if self.use_contextual_encoder:
+                h, attention_weights = self.flat_contextualizer(
+                    reconstruction_projection,
+                    relation_bias=relation_bias,
+                    attention_mask=stair_attention_mask(batch["level_ids"], batch["node_mask"]),
+                    node_mask=batch["node_mask"],
+                )
+            else:
+                h = reconstruction_projection
+                attention_weights = relation_bias.new_zeros(
+                    (*relation_bias.shape[:1], 1, *relation_bias.shape[-2:])
+                )
         context_mask = context_mask_for_level(batch["level_ids"], batch["node_mask"], target_level)
-        relation_bias = self.relation_bias(
-            p4=batch["p4"],
-            charge=batch["charge"],
-            level_ids=batch["level_ids"],
-            z_hyperbolic=z,
-            node_mask=batch["node_mask"],
-            node_kind_ids=batch.get("node_kind_ids"),
-            copied=batch.get("copied"),
-            source_node_ids=batch.get("source_node_ids"),
-        )
-        h, attention_weights = self.contextualizer(
-            reconstruction_projection,
-            relation_bias=relation_bias,
-            attention_mask=stair_attention_mask(batch["level_ids"], batch["node_mask"]),
-            node_mask=batch["node_mask"],
-        )
-        pointer = self.decoder(h, context_mask)
+        pointer = self.decoder(h, context_mask, target_level=target_level)
         return LevelReconstructionOutput(
             target_level,
             pointer,
@@ -126,6 +162,7 @@ class LevelAutoregressiveReconstructor(nn.Module):
             tree_projection,
             reconstruction_projection,
             channel_projection,
+            self.leaf_pid_head(h),
         )
 
 
@@ -195,15 +232,17 @@ def _upgrade_flat_batch(batch: dict[str, torch.Tensor]) -> dict[str, torch.Tenso
     daughter_tokens = (
         batch["pid_labels"][:, None, :]
         .expand(-1, active.shape[1], -1)
-        .clamp(0, len(PDG_TOKENS) - 1)
     )
+    validate_pid_tokens(batch["pid_labels"][active], name="upgraded batch PID labels")
     histogram.scatter_add_(-1, daughter_tokens, adjacency.float())
     batch["daughter_pid_histogram"] = histogram
     batch["daughter_pid_histogram_available"] = has_daughters
-    kinds = torch.full_like(levels, NODE_KIND_TO_ID["unknown"])
-    kinds[levels > 0] = NODE_KIND_TO_ID["composite"]
-    kinds[(levels == 0) & (charge != 0)] = NODE_KIND_TO_ID["track"]
-    kinds[(levels == 0) & (batch["pid_labels"] == 22)] = NODE_KIND_TO_ID["ecl_cluster"]
+    if "node_kind_ids" in batch:
+        kinds = batch["node_kind_ids"]
+    else:
+        kinds = torch.full_like(levels, NODE_KIND_TO_ID["unknown"])
+        kinds[levels > 0] = NODE_KIND_TO_ID["composite"]
+        kinds[(levels == 0) & (charge != 0)] = NODE_KIND_TO_ID["track"]
     batch["node_kind_ids"] = kinds
     default_ids = torch.arange(
         active.shape[1],

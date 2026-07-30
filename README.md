@@ -164,7 +164,7 @@ The corresponding direct-tree adapter is
 the historical fixed-width level collator must not be applied directly to this
 schema.
 
-Run all revised v1/v2 inspection notebooks on deterministic CPU fixtures:
+Run all revised v1/v2/v3 inspection notebooks on deterministic CPU fixtures:
 
 ```bash
 /data/dust/user/boyangyu/uv_env/bin/python \
@@ -205,3 +205,27 @@ uv --cache-dir /tmp/uv-cache run python examples/gpt_like_minimal/run_example.py
   conventions, and formula preservation, not final scientific results.
 - Components listed in `MIGRATION_PLAN.md` under "must not be refactored" should
   remain unchanged until broader equivalence tests exist.
+
+## Correctness revision: schema-v3 and real CPU pilots
+
+`direct-mdst-tree-v3` is the production schema. Raw generic-mDST tracks use a
+data-independent best-p-value fit (pion closest-mass fallback), reconstructed
+charge, canonical pion energy, all e/mu/pi/K/p energy hypotheses, and available
+PIDLikelihood log-likelihoods. MC PID/charge/p4 occupy separate truth or
+diagnostic fields. V1/v2 remain loadable through conservative adapters.
+
+Real (non-dry-run) CPU pilots now accept parquet data:
+
+```bash
+python scripts/train_hyperbolic_pretrain.py \
+  --data /path/to/tiny.parquet --device cpu --max-steps 2 --batch-size 2 \
+  --output-dir /tmp/hypertagging-pretrain
+python scripts/train_level_reconstruction.py \
+  --data /path/to/tiny.parquet \
+  --pretrained-encoder /tmp/hypertagging-pretrain/checkpoint.pt \
+  --device cpu --max-steps 2 --batch-size 2 \
+  --output-dir /tmp/hypertagging-reconstruction
+```
+
+The same CLIs run full CUDA jobs inside HTCondor. Outside Condor, full CUDA is
+refused. No job is submitted by either trainer.

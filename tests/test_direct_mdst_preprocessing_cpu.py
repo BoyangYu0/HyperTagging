@@ -188,7 +188,7 @@ def test_basf2_runner_passes_one_entry_sequence_per_file(monkeypatch, tmp_path):
     assert calls[0]["entrySequences"] == ["0:9", "20:29"]
 
 
-def test_track_collector_uses_charged_stable_hypothesis(tmp_path):
+def test_track_collector_uses_data_independent_pion_fit_and_energy_hypotheses(tmp_path):
     requested_pdgs = []
 
     class Momentum:
@@ -208,6 +208,9 @@ def test_track_collector_uses_charged_stable_hypothesis(tmp_path):
         def getChargeSign(self):
             return -1
 
+        def getPValue(self):
+            return 0.8
+
     class MC:
         def getPDG(self):
             return -321
@@ -219,11 +222,11 @@ def test_track_collector_uses_charged_stable_hypothesis(tmp_path):
         def getArrayIndex(self):
             return 4
 
-        def getRelatedTo(self, _name):
-            return MC()
+        def getRelatedTo(self, name):
+            return MC() if name in {"MCParticles", "MCParticle"} else None
 
         def getTrackFitResultWithClosestMass(self, hypothesis):
-            assert hypothesis == ("charged", 321)
+            assert hypothesis == ("charged", 211)
             return Fit()
 
     collector = _DirectMdstCollector(Basf2PreprocessConfig(("input.root",), tmp_path / "output.parquet"))
@@ -232,9 +235,15 @@ def test_track_collector_uses_charged_stable_hypothesis(tmp_path):
 
     records = collector._collect_tracks()
 
-    assert requested_pdgs == [321]
+    assert requested_pdgs[0] == 211
     assert len(records) == 1
-    assert records[0].pdg == -321
+    assert records[0].pdg == 0
+    assert records[0].input_pid_token == 0
+    assert records[0].truth_pdg == -321
+    assert records[0].leaf_kinematics_mode == "raw_track_predicted_pid"
+    assert set(records[0].track_energy_hypotheses) == {
+        "electron", "muon", "pion", "kaon", "proton"
+    }
     assert records[0].mc_id == 17
 
 

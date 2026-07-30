@@ -46,18 +46,18 @@ def build_notebook() -> nbf.NotebookNode:
                 REPO_ROOT = Path.cwd()
                 if not (REPO_ROOT / "src").exists(): REPO_ROOT = Path("..").resolve()
                 sys.path.insert(0, str(REPO_ROOT / "src"))
-                from hypertagging.data.notebook_fixtures import write_notebook_fixture
-                from hypertagging.preprocessing.schema_v2 import load_payload_v2
+                from hypertagging.data.notebook_fixtures import write_notebook_fixture_v3
+                from hypertagging.preprocessing.schema_v3 import load_payload_v3
 
                 requested = os.environ.get("HYPERTAGGING_PARQUET", "").strip()
                 FIXTURE_MODE = not bool(requested)
-                INPUT_PATH = Path(requested) if requested else Path("/tmp/hypertagging_notebook_fixture_v2.parquet")
-                if FIXTURE_MODE: write_notebook_fixture(INPUT_PATH)
+                INPUT_PATH = Path(requested) if requested else Path("/tmp/hypertagging_notebook_fixture_v3.parquet")
+                if FIXTURE_MODE: write_notebook_fixture_v3(INPUT_PATH)
                 if not INPUT_PATH.exists(): raise FileNotFoundError(INPUT_PATH)
                 FIGURE_DIR = Path(os.environ.get("HYPERTAGGING_FIGURE_DIR", "/tmp/hypertagging_figures/qa"))
                 FIGURE_DIR.mkdir(parents=True, exist_ok=True)
                 QA_JSON = Path(os.environ.get("HYPERTAGGING_QA_JSON", str(FIGURE_DIR / "preprocessing_qa.json")))
-                payload = load_payload_v2(INPUT_PATH)
+                payload = load_payload_v3(INPUT_PATH)
                 events = payload["events"]
                 print("TINY FIXTURE QA — NOT REAL DATA" if FIXTURE_MODE else "REAL-DATA SAMPLE QA")
                 """
@@ -83,6 +83,31 @@ def build_notebook() -> nbf.NotebookNode:
                 closure = np.asarray(closure_residuals, dtype=float)
                 maximum_closure = float(np.abs(closure).max()) if closure.size else 0.0
                 event_uids = [event["event_uid"] for event in events]
+                all_nodes = [node for event in events for node in event["nodes"]]
+                token_range_pass = all(
+                    0 <= int(node["input_pid_token"]) < 41
+                    and 0 <= int(node["pid_target_token"]) < 41
+                    for node in all_nodes
+                )
+                no_truth_leakage_contract_pass = all(
+                    node["leaf_kinematics_mode"] != "raw_track_predicted_pid"
+                    or (
+                        int(node["input_pid_token"]) == 0
+                        and node["energy_source"].startswith("canonical_")
+                    )
+                    for node in all_nodes
+                )
+                node_kind_pass = all(
+                    node["node_kind"] in {"unknown","track","ecl_cluster","composite","other"}
+                    for node in all_nodes
+                )
+                partial_rate = float(np.mean([node["partial_missing_daughters"] for node in all_nodes]))
+                query_counts = [
+                    sum(node["level"] == level for node in event["nodes"])
+                    for event in events
+                    for level in set(node["level"] for node in event["nodes"] if node["level"] > 0)
+                ]
+                cardinalities = [len(node["daughter_ids"]) for node in all_nodes if node["daughter_ids"]]
                 report = {
                     "mode": "fixture" if FIXTURE_MODE else "real_sample",
                     "schema_version": payload["schema_version"],
@@ -94,6 +119,16 @@ def build_notebook() -> nbf.NotebookNode:
                     "invalid_common_value_nodes": invalid_values,
                     "maximum_absolute_p4_closure_residual": maximum_closure,
                     "p4_closure_pass": maximum_closure < 1e-8,
+                    "no_truth_leakage_pass": no_truth_leakage_contract_pass,
+                    "token_range_pass": token_range_pass,
+                    "node_kind_consistency_pass": node_kind_pass,
+                    "pid_likelihood_availability_explicit": all(
+                        "pid_likelihood_availability" in node for node in all_nodes
+                    ),
+                    "partial_decay_rate": partial_rate,
+                    "query_overflow_rate_at_capacity_8": float(np.mean([value > 8 for value in query_counts])) if query_counts else 0.0,
+                    "cardinality_overflow_rate_at_capacity_6": float(np.mean([value > 6 for value in cardinalities])) if cardinalities else 0.0,
+                    "schema_config_consistency_pass": payload["schema_version"] == "direct-mdst-tree-v3",
                 }
                 QA_JSON.parent.mkdir(parents=True, exist_ok=True)
                 QA_JSON.write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
@@ -106,6 +141,7 @@ def build_notebook() -> nbf.NotebookNode:
                 assert not level_violations
                 assert invalid_values == 0
                 assert maximum_closure < 1e-8
+                assert token_range_pass and no_truth_leakage_contract_pass and node_kind_pass
                 print("Machine-readable summary:", QA_JSON)
                 """
             ),

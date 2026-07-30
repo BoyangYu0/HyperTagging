@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Generate the schema-v1/v2 dataset inspection notebook."""
+"""Generate the schema-v1/v2/v3 dataset inspection notebook."""
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ def build_notebook() -> nbf.NotebookNode:
 
             ## Goal
 
-            Inspect a `direct-mdst-tree-v1` or `direct-mdst-tree-v2` parquet as a
+            Inspect a `direct-mdst-tree-v1`, v2, or corrected v3 parquet as a
             physicist-facing artifact: schema, PIDs, heterogeneous features, levels,
             retained decay trees, reconstructed four-vector closure, and two-B channel
             representations. Fixture output is explicitly labelled and is not a
@@ -51,22 +51,22 @@ def build_notebook() -> nbf.NotebookNode:
                 REPO_ROOT = Path("..").resolve()
             sys.path.insert(0, str(REPO_ROOT / "src"))
 
-            from hypertagging.data.notebook_fixtures import write_notebook_fixture
+            from hypertagging.data.notebook_fixtures import write_notebook_fixture_v3
             from hypertagging.preprocessing.pid_filter import PDG_TOKENS, DETOKENIZE_DICT
-            from hypertagging.preprocessing.schema_v2 import load_payload_v2
+            from hypertagging.preprocessing.schema_v3 import load_payload_v3
 
             SEED = int(os.environ.get("HYPERTAGGING_NOTEBOOK_SEED", "20260730"))
             np.random.seed(SEED)
             requested = os.environ.get("HYPERTAGGING_PARQUET", "").strip()
             FIXTURE_MODE = not bool(requested)
-            INPUT_PATH = Path(requested) if requested else Path("/tmp/hypertagging_notebook_fixture_v2.parquet")
+            INPUT_PATH = Path(requested) if requested else Path("/tmp/hypertagging_notebook_fixture_v3.parquet")
             if FIXTURE_MODE:
-                write_notebook_fixture(INPUT_PATH)
+                write_notebook_fixture_v3(INPUT_PATH)
             if not INPUT_PATH.exists():
                 raise FileNotFoundError(f"Required parquet does not exist: {INPUT_PATH}")
             FIGURE_DIR = Path(os.environ.get("HYPERTAGGING_FIGURE_DIR", "/tmp/hypertagging_figures/dataset"))
             FIGURE_DIR.mkdir(parents=True, exist_ok=True)
-            payload = load_payload_v2(INPUT_PATH)
+            payload = load_payload_v3(INPUT_PATH)
             required_top = {"schema_version", "events", "summary_json", "feature_spec_json"}
             missing_top = required_top - payload.keys()
             if missing_top:
@@ -378,6 +378,55 @@ def build_notebook() -> nbf.NotebookNode:
             plt.tight_layout(); plt.savefig(FIGURE_DIR / "channel_similarity.png"); plt.show()
             print("Charge-conjugate normalization is configurable at export; this file stores:",
                   channels.charge_conjugate_normalized.unique().tolist())
+            """
+        ),
+        _md("## Schema-v3 leaf, partial-decay, duplicate, and capacity diagnostics"),
+        _code(
+            """
+            v3_rows = [{
+                "event_uid": event["event_uid"],
+                "node_id": node["node_id"],
+                "raw_pdg": node["raw_pdg"],
+                "input_pid_token": node["input_pid_token"],
+                "pid_target_token": node["pid_target_token"],
+                "node_kind": node["node_kind"],
+                "leaf_mode": node["leaf_kinematics_mode"],
+                "energy_source": node["energy_source"],
+                "complete_truth_decay": node["complete_truth_decay"],
+                "complete_reconstructable_decay": node["complete_reconstructable_decay"],
+                "partial_missing_daughters": node["partial_missing_daughters"],
+                "valid_target": node["valid_reconstruction_target"],
+                "recursive_leaf_source_ids": node["recursive_leaf_source_ids"],
+                "relation_flags": ",".join(flag for flag in node["flags"] if flag in
+                    {"unique_match","duplicate_track","split_cluster","ambiguous_relation","unmatched_reco"}),
+            } for event in events for node in event["nodes"]]
+            v3 = pd.DataFrame(v3_rows)
+            display(v3)
+            assert v3.input_pid_token.between(0, len(PDG_TOKENS)-1).all()
+            capacity = v3[v3.valid_target].groupby(["event_uid"]).size()
+            cardinality = pd.Series(
+                [len(node["daughter_ids"]) for event in events for node in event["nodes"] if node["daughter_ids"]],
+                name="daughter_cardinality",
+            )
+            print("Maximum target mothers/event:", int(capacity.max()) if len(capacity) else 0)
+            print("Maximum daughter cardinality:", int(cardinality.max()) if len(cardinality) else 0)
+            display(v3.groupby(["node_kind","relation_flags"]).size().rename("count").reset_index())
+            """
+        ),
+        _md("## Full-truth versus reconstructable channel identity"),
+        _code(
+            """
+            dual_channels = pd.DataFrame([{
+                "event_uid": event["event_uid"],
+                "b1_full": event.get("b1_full_truth_channel_signature"),
+                "b1_reconstructable": event.get("b1_reconstructable_channel_signature"),
+                "b2_full": event.get("b2_full_truth_channel_signature"),
+                "b2_reconstructable": event.get("b2_reconstructable_channel_signature"),
+                "y4s_full_id": event.get("y4s_full_truth_channel_id",0),
+                "y4s_reconstructable_id": event.get("y4s_reconstructable_channel_id",0),
+            } for event in events])
+            display(dual_channels)
+            print("Detector inefficiency is not generator channel identity; both concepts are stored.")
             """
         ),
         _md(

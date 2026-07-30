@@ -10,6 +10,7 @@ from hypertagging.data.level_collate import collate_level_events
 from hypertagging.data.tiny_level_fixtures import tiny_level_events
 from hypertagging.losses.level_reconstruction import level_reconstruction_loss
 from hypertagging.models.ablation import build_ablation_model
+from hypertagging.preprocessing.pid_filter import PDG_TOKENS
 from hypertagging.reconstruction.level_rollout import RolloutConfig, level_rollout
 from hypertagging.evaluation.hierarchical_metrics import next_level_metrics
 from hypertagging.training.checkpointing import restore_training_checkpoint
@@ -45,7 +46,7 @@ def run_level_reconstruction_dry_run(
     model = build_ablation_model(
         ablation,
         n_features=batch["node_features"].shape[-1],
-        n_types=4096,
+        n_types=len(PDG_TOKENS),
         hidden_dim=24,
         hyper_dim=8,
         n_queries=4,

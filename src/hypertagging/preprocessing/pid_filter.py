@@ -99,6 +99,7 @@ PDG_TOKENS: tuple[int, ...] = (
     -521,
     -531,
 )
+PID_VOCABULARY_VERSION = "legacy-reduced-pdg-v1"
 
 TOKENIZE_DICT: dict[int, int] = {pdg: index for index, pdg in enumerate(PDG_TOKENS)}
 DETOKENIZE_DICT: dict[int, int] = {index: pdg for pdg, index in TOKENIZE_DICT.items()}
@@ -201,3 +202,37 @@ def detokenize_pdg(token: int, *, unknown: int = 0) -> int:
     """Map a legacy reduced HyperTagging token back to PDG."""
 
     return DETOKENIZE_DICT.get(int(token), unknown)
+
+
+def validate_pid_token(token: int, *, name: str = "PID token") -> int:
+    """Validate and return one model-internal reduced PID token.
+
+    Invalid labels are deliberately not clamped or converted with ``abs``:
+    doing so can turn a raw PDG code into a different valid class.
+    """
+
+    value = int(token)
+    if value < 0 or value >= len(PDG_TOKENS):
+        raise ValueError(
+            f"{name}={value} is outside the reduced PID vocabulary "
+            f"[0, {len(PDG_TOKENS)})"
+        )
+    return value
+
+
+def validate_pid_tokens(tokens: object, *, name: str = "PID tokens") -> None:
+    """Validate an integer tensor/array/iterable without importing PyTorch."""
+
+    if hasattr(tokens, "numel") and hasattr(tokens, "min") and hasattr(tokens, "max"):
+        if int(tokens.numel()) == 0:  # type: ignore[call-arg]
+            return
+        minimum = int(tokens.min().item())  # type: ignore[union-attr]
+        maximum = int(tokens.max().item())  # type: ignore[union-attr]
+        if minimum < 0 or maximum >= len(PDG_TOKENS):
+            raise ValueError(
+                f"{name} contains values [{minimum}, {maximum}] outside the reduced "
+                f"PID vocabulary [0, {len(PDG_TOKENS)})"
+            )
+        return
+    for index, token in enumerate(tokens):  # type: ignore[union-attr]
+        validate_pid_token(int(token), name=f"{name}[{index}]")

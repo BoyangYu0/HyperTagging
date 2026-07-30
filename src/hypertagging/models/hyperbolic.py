@@ -6,6 +6,8 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
+from hypertagging.preprocessing.pid_filter import PDG_TOKENS, validate_pid_tokens
+
 
 def project(x: torch.Tensor, *, curvature: float = 1.0, eps: float = 1e-5) -> torch.Tensor:
     """Project points inside the Poincare ball."""
@@ -63,7 +65,7 @@ class HyperbolicNodeEncoder(nn.Module):
         self,
         *,
         n_features: int,
-        n_pid: int = 4096,
+        n_pid: int = len(PDG_TOKENS),
         hidden_dim: int = 32,
         hyper_dim: int = 16,
         max_level: int = 16,
@@ -71,6 +73,8 @@ class HyperbolicNodeEncoder(nn.Module):
     ) -> None:
         super().__init__()
         self.curvature = curvature
+        if n_pid != len(PDG_TOKENS):
+            n_pid = len(PDG_TOKENS)
         self.pid_embedding = nn.Embedding(n_pid, hidden_dim)
         self.level_embedding = nn.Embedding(max_level + 2, hidden_dim)
         self.feature_projection = nn.Linear(n_features + 1, hidden_dim)
@@ -85,17 +89,23 @@ class HyperbolicNodeEncoder(nn.Module):
         charge: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         level_safe = level_ids.clamp(min=0, max=self.level_embedding.num_embeddings - 1)
-        pid_safe = pid_labels.abs().clamp(max=self.pid_embedding.num_embeddings - 1)
+        validate_pid_tokens(pid_labels, name="flat encoder PID labels")
+        pid_safe = pid_labels
         base = self.feature_projection(torch.cat([node_features, charge.unsqueeze(-1)], dim=-1))
         h = self.mlp(torch.cat([base, self.pid_embedding(pid_safe), self.level_embedding(level_safe)], dim=-1))
         z = expmap0(self.hyper_projection(h), curvature=self.curvature)
         return h, z
 
 
-def hyperbolic_pairwise_distance(z: torch.Tensor, mask: torch.Tensor | None = None) -> torch.Tensor:
+def hyperbolic_pairwise_distance(
+    z: torch.Tensor,
+    mask: torch.Tensor | None = None,
+    *,
+    curvature: float = 1.0,
+) -> torch.Tensor:
     """Return [B, N, N] hyperbolic distances."""
 
-    d = distance(z[:, :, None, :], z[:, None, :, :])
+    d = distance(z[:, :, None, :], z[:, None, :, :], curvature=curvature)
     if mask is not None:
         d = d.masked_fill(~(mask[:, :, None] & mask[:, None, :]), 0.0)
     return d

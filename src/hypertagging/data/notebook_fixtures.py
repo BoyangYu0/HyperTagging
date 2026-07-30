@@ -10,8 +10,11 @@ from hypertagging.preprocessing.mdst_tree_builder import (
     FourVector,
     TreeNode,
     recompute_mother_p4_from_daughters,
+    _annotate_reconstruction_contract,
 )
 from hypertagging.preprocessing.schema_v2 import export_trees_v2
+from hypertagging.preprocessing.schema_v3 import export_trees_v3
+from hypertagging.preprocessing.channels import event_channel_record
 from hypertagging.preprocessing.export_dataset import export_trees
 
 
@@ -33,6 +36,12 @@ def notebook_fixture_trees() -> list[EventTree]:
     clone.flags.add("copied")
     for tree in trees:
         recompute_mother_p4_from_daughters(tree)
+        _annotate_reconstruction_contract(tree, [])
+        tree.full_truth_channel_record = event_channel_record(tree)
+        tree.full_truth_channel_record_cc = event_channel_record(
+            tree,
+            charge_conjugate_normalize=True,
+        )
         assign_levels(tree)
     return trees
 
@@ -69,6 +78,22 @@ def write_notebook_fixture_v1(path: str | Path) -> Path:
             "collection": {"track_records": 7, "ecl_records": 1},
             "entry_sequences": None,
         },
+    )
+
+
+def write_notebook_fixture_v3(path: str | Path) -> Path:
+    """Write the corrected tiny CPU training/notebook fixture."""
+
+    trees = notebook_fixture_trees()
+    return export_trees_v3(
+        trees,
+        path,
+        summary={
+            "fixture": True,
+            "events": len(trees),
+            "leaf_contract": "fixed_hypothesis_candidate",
+        },
+        charge_conjugate_normalize=True,
     )
 
 
@@ -163,4 +188,5 @@ __all__ = [
     "notebook_fixture_trees",
     "write_notebook_fixture",
     "write_notebook_fixture_v1",
+    "write_notebook_fixture_v3",
 ]

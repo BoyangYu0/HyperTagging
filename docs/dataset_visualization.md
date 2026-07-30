@@ -64,3 +64,11 @@ python scripts/execute_notebook_smoke_tests.py --keep-output /tmp/hypertagging-n
 Jupyter kernels use local loopback ports. On a restricted sandbox the execution
 command may need to run in the normal login-node environment. It is CPU-only
 and does not inspect the Condor queue or use a GPU.
+# Schema-v3 correctness notebooks
+
+The deterministic suite also generates leaf PID/input-contract, query-capacity
+and sparse-loss, real training-pipeline, and production-manifest notebooks.
+Their smoke tests require structured CSV/JSON/checkpoint artifacts in addition
+to figures. All default to a generated v3 fixture and accept real data through
+`HYPERTAGGING_PARQUET`; the manifest notebook uses
+`HYPERTAGGING_MANIFEST`.

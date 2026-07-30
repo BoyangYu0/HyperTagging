@@ -16,21 +16,22 @@ history maps onto the migrated package surface through Phase 13.
 
 ## Unified Package Surface
 
-- `hypertagging.data`: contracts, tiny fixtures, v1/v2 heterogeneous parquet
+- `hypertagging.data`: contracts, reduced-token tiny fixtures, v1/v2/v3 heterogeneous parquet
   loading, source-aware splitting, train-only normalization, historical
   preprocessing command builders, and GPT-like adapters.
 - `hypertagging.utils`: padding, checkpoint loading, device, seed, and I/O
   helpers.
-- `hypertagging.preprocessing`: verified direct-mDST v1 behavior plus the
-  separate v2 exporter, channel signatures/count arrays, and compatibility
-  adapter.
+- `hypertagging.preprocessing`: verified legacy exports plus corrected
+  truth-separated v3, full/reconstructable channel signatures, recursive
+  provenance, and v1/v2 compatibility adapters.
 - `hypertagging.losses`: historical losses plus balanced LCA relations, true
   Poincare parent ranking, corrected radius depth, and VICReg variance/covariance.
 - `hypertagging.models`: historical models plus heterogeneous frontends, one
   shared Poincare encoder, relation-aware set attention, task projections, and
   named ablations.
-- `hypertagging.training`: CPU dry-run loops, collapse/level metrics, checkpoint
-  and JSONL helpers, and link-training mode helpers.
+- `hypertagging.training`: real parquet data module, curriculum pretrainer,
+  all-level reconstruction trainer, encoder transfer, atomic checkpoints,
+  CPU dry-runs, and JSONL logging.
 - `hypertagging.reconstruction`: historical reconstruction plus complete
   teacher-forced/scheduled/free level rollout and overlap resolution.
 - `hypertagging.evaluation`: GraFEI metrics plus hierarchical edge/tree,
@@ -50,6 +51,10 @@ history maps onto the migrated package surface through Phase 13.
 - `notebooks/inspect_hyperbolic_pretraining.ipynb`
 - `notebooks/inspect_level_autoregressive_reconstruction.ipynb`
 - `notebooks/preprocessing_qa_report.ipynb`
+- `notebooks/inspect_leaf_input_pid_contract.ipynb`
+- `notebooks/inspect_query_capacity_and_losses.ipynb`
+- `notebooks/inspect_training_pipeline.ipynb`
+- `notebooks/inspect_production_manifest.ipynb`
 
 ## Checkpoints, Logs, And Data
 

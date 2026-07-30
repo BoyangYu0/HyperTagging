@@ -99,6 +99,7 @@ def parent_child_margin_loss(
     *,
     margin: float = 0.2,
     hard_negative: bool = True,
+    curvature: float = 1.0,
 ) -> torch.Tensor:
     """Rank true parents with actual Poincare distance."""
 
@@ -112,10 +113,15 @@ def parent_child_margin_loss(
             negatives = valid[(valid != parent) & (valid != child)]
             if negatives.numel() == 0:
                 continue
-            positive_distance = distance(z[batch_index, child], z[batch_index, parent])
+            positive_distance = distance(
+                z[batch_index, child],
+                z[batch_index, parent],
+                curvature=curvature,
+            )
             negative_distances = distance(
                 z[batch_index, child].expand_as(z[batch_index, negatives]),
                 z[batch_index, negatives],
+                curvature=curvature,
             )
             negative_distance = (
                 negative_distances.min()
@@ -152,12 +158,13 @@ def radius_depth_loss(
     r_min: float = 0.1,
     r_max: float = 1.5,
     scale: float | None = None,
+    curvature: float = 1.0,
 ) -> torch.Tensor:
     # ``scale`` is retained only as an old-call compatibility alias.
     if scale is not None:
         r_max = max(r_min, float(scale) * max(int(level_ids.max().item()) + 1, 1))
     target = radius_targets(level_ids, mask, r_min=r_min, r_max=r_max)
-    prediction = radius(z)
+    prediction = radius(z, curvature=curvature)
     return F.mse_loss(prediction[mask], target[mask]) if mask.any() else z.sum() * 0.0
 
 
@@ -265,6 +272,178 @@ def channel_metric_loss(
     return F.mse_loss(prediction[valid], target[valid]) if valid.any() else branch_embeddings.sum() * 0.0
 
 
+def cross_event_channel_metric_loss(
+    branch_embeddings: torch.Tensor,
+    branch_mask: torch.Tensor,
+    full_truth_channel_ids: torch.Tensor,
+    reconstructable_channel_ids: torch.Tensor | None = None,
+    branch_count_arrays: torch.Tensor | None = None,
+    *,
+    temperature: float = 0.2,
+    structured_positive_threshold: float = 0.75,
+    structured_regression_weight: float = 0.25,
+    memory_embeddings: torch.Tensor | None = None,
+    memory_full_truth_channel_ids: torch.Tensor | None = None,
+    memory_reconstructable_channel_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
+    """Supervised contrastive channel learning over all B branches in a batch.
+
+    Branches from the same event are treated exactly like any other pair:
+    they are positive only when an explicit channel identity agrees.
+    """
+
+    flat_embeddings = branch_embeddings.reshape(-1, branch_embeddings.shape[-1])
+    flat_mask = branch_mask.reshape(-1)
+    full_ids = full_truth_channel_ids.reshape(-1)
+    reco_ids = (
+        reconstructable_channel_ids.reshape(-1)
+        if reconstructable_channel_ids is not None
+        else torch.zeros_like(full_ids)
+    )
+    valid_indices = flat_mask.nonzero(as_tuple=False).flatten()
+    zero = branch_embeddings.sum() * 0.0
+    if valid_indices.numel() < 2:
+        return zero, {
+            "channel_positive_pairs": zero,
+            "channel_negative_pairs": zero,
+        }
+    embedding = F.normalize(flat_embeddings[valid_indices], dim=-1)
+    selected_full = full_ids[valid_indices]
+    selected_reco = reco_ids[valid_indices]
+    candidate_embedding = embedding
+    candidate_full = selected_full
+    candidate_reco = selected_reco
+    if memory_embeddings is not None and memory_embeddings.numel():
+        if memory_full_truth_channel_ids is None:
+            raise ValueError("memory channel embeddings require full-truth channel IDs")
+        candidate_embedding = torch.cat(
+            [embedding, F.normalize(memory_embeddings.to(embedding), dim=-1)],
+            dim=0,
+        )
+        candidate_full = torch.cat(
+            [selected_full, memory_full_truth_channel_ids.to(selected_full)],
+            dim=0,
+        )
+        memory_reco = (
+            memory_reconstructable_channel_ids.to(selected_reco)
+            if memory_reconstructable_channel_ids is not None
+            else torch.zeros_like(memory_full_truth_channel_ids).to(selected_reco)
+        )
+        candidate_reco = torch.cat([selected_reco, memory_reco], dim=0)
+    similarity = embedding @ candidate_embedding.T / temperature
+    identity = torch.zeros_like(similarity, dtype=torch.bool)
+    identity[:, : embedding.shape[0]] = torch.eye(
+        embedding.shape[0], dtype=torch.bool, device=similarity.device
+    )
+    exact_full = (
+        (selected_full[:, None] > 0)
+        & (selected_full[:, None] == candidate_full[None, :])
+    )
+    exact_reco = (
+        (selected_reco[:, None] > 0)
+        & (selected_reco[:, None] == candidate_reco[None, :])
+    )
+    structured_similarity = torch.zeros_like(similarity)
+    structured_pairs = torch.zeros_like(similarity, dtype=torch.bool)
+    if branch_count_arrays is not None:
+        flat_counts = branch_count_arrays.reshape(
+            -1, branch_count_arrays.shape[-1]
+        )[valid_indices].to(similarity)
+        intersection = torch.minimum(
+            flat_counts[:, None, :], flat_counts[None, :, :]
+        ).sum(dim=-1)
+        union = torch.maximum(
+            flat_counts[:, None, :], flat_counts[None, :, :]
+        ).sum(dim=-1)
+        current_similarity = torch.where(
+            union > 0, intersection / union.clamp_min(1e-6), torch.zeros_like(union)
+        )
+        structured_similarity[:, : embedding.shape[0]] = current_similarity
+        structured_pairs[:, : embedding.shape[0]] = (
+            current_similarity >= structured_positive_threshold
+        ) & (union > 0)
+    positives = (exact_full | exact_reco | structured_pairs) & ~identity
+    pairs = ~identity
+    per_anchor: list[torch.Tensor] = []
+    for anchor in range(similarity.shape[0]):
+        if not positives[anchor].any():
+            continue
+        denominator = torch.logsumexp(similarity[anchor][pairs[anchor]], dim=0)
+        per_anchor.append(
+            -(similarity[anchor][positives[anchor]] - denominator).mean()
+        )
+    contrastive = torch.stack(per_anchor).mean() if per_anchor else zero
+    current_pairs = (
+        ~torch.eye(embedding.shape[0], dtype=torch.bool, device=embedding.device)
+        if branch_count_arrays is not None
+        else torch.zeros(
+            (embedding.shape[0], embedding.shape[0]),
+            dtype=torch.bool,
+            device=embedding.device,
+        )
+    )
+    structured_regression = (
+        F.smooth_l1_loss(
+            (embedding @ embedding.T)[current_pairs],
+            (2 * structured_similarity[:, : embedding.shape[0]] - 1)[current_pairs],
+        )
+        if current_pairs.any()
+        else zero
+    )
+    loss = contrastive + structured_regression_weight * structured_regression
+    return loss, {
+        "channel_positive_pairs": positives.sum().to(similarity.dtype) / 2,
+        "channel_negative_pairs": (pairs & ~positives).sum().to(similarity.dtype) / 2,
+        "channel_structured_regression": structured_regression,
+    }
+
+
+def tree_distance_targets(
+    *,
+    lca_depth: torch.Tensor,
+    level_ids: torch.Tensor,
+    pair_mask: torch.Tensor,
+) -> torch.Tensor:
+    """Normalized retained-tree path distance derived from LCA level."""
+
+    left = level_ids[:, :, None].float()
+    right = level_ids[:, None, :].float()
+    raw = (lca_depth.float() - left).clamp_min(0) + (lca_depth.float() - right).clamp_min(0)
+    raw = torch.where(lca_depth >= 0, raw, torch.zeros_like(raw))
+    maximum = torch.where(pair_mask, raw, torch.zeros_like(raw)).flatten(1).max(
+        dim=-1, keepdim=True
+    ).values.clamp_min(1.0)
+    return raw / maximum[:, None]
+
+
+def hyperbolic_tree_distance_loss(
+    z: torch.Tensor,
+    *,
+    lca_depth: torch.Tensor,
+    level_ids: torch.Tensor,
+    pair_mask: torch.Tensor,
+    curvature: float = 1.0,
+) -> torch.Tensor:
+    """Directly regress normalized Poincare distance to retained-tree distance."""
+
+    target = tree_distance_targets(
+        lca_depth=lca_depth,
+        level_ids=level_ids,
+        pair_mask=pair_mask,
+    )
+    prediction = distance(
+        z[:, :, None, :],
+        z[:, None, :, :],
+        curvature=curvature,
+    )
+    scale = torch.where(pair_mask, prediction, torch.zeros_like(prediction)).flatten(1).max(
+        dim=-1, keepdim=True
+    ).values.clamp_min(1e-6)
+    prediction = prediction / scale[:, None]
+    selected = pair_mask & (lca_depth >= 0)
+    return F.smooth_l1_loss(prediction[selected], target[selected]) if selected.any() else z.sum() * 0.0
+
+
 def collapse_diagnostics(
     z: torch.Tensor,
     mask: torch.Tensor,
@@ -272,8 +451,9 @@ def collapse_diagnostics(
     level_ids: torch.Tensor | None = None,
     b_side: torch.Tensor | None = None,
     boundary_threshold: float = 0.95,
+    curvature: float = 1.0,
 ) -> dict[str, torch.Tensor]:
-    tangent = logmap0(z)
+    tangent = logmap0(z, curvature=curvature)
     valid = tangent[mask]
     zero = z.sum() * 0.0
     if valid.shape[0] < 2:
@@ -294,7 +474,7 @@ def collapse_diagnostics(
     probabilities = singular_values / singular_values.sum().clamp_min(1e-8)
     effective_rank = torch.exp(-(probabilities * probabilities.clamp_min(1e-8).log()).sum())
     norm = torch.linalg.norm(z[mask], dim=-1)
-    radius_values = radius(z)[mask]
+    radius_values = radius(z, curvature=curvature)[mask]
     correlation = zero
     if level_ids is not None:
         levels = level_ids[mask].float()
@@ -326,8 +506,13 @@ def relation_distance_diagnostics(
     z: torch.Tensor,
     targets: torch.Tensor,
     pair_mask: torch.Tensor,
+    curvature: float = 1.0,
 ) -> dict[str, torch.Tensor]:
-    distances = distance(z[:, :, None, :], z[:, None, :, :])
+    distances = distance(
+        z[:, :, None, :],
+        z[:, None, :, :],
+        curvature=curvature,
+    )
     positive = pair_mask & (targets <= 3) & (targets > 0)
     negative = pair_mask & (targets >= 4)
     zero = z.sum() * 0.0
@@ -355,11 +540,18 @@ def hyperbolic_pretraining_loss(
     channel_mask: torch.Tensor | None = None,
     channel_ids: torch.Tensor | None = None,
     structured_channel_similarity: torch.Tensor | None = None,
+    full_truth_channel_ids: torch.Tensor | None = None,
+    reconstructable_channel_ids: torch.Tensor | None = None,
+    channel_branch_count_arrays: torch.Tensor | None = None,
+    channel_memory_embeddings: torch.Tensor | None = None,
+    channel_memory_full_truth_ids: torch.Tensor | None = None,
+    channel_memory_reconstructable_ids: torch.Tensor | None = None,
     same_mother_logits: torch.Tensor | None = None,
     same_branch_logits: torch.Tensor | None = None,
     same_mother: torch.Tensor | None = None,
     same_branch: torch.Tensor | None = None,
     weights: dict[str, float] | None = None,
+    curvature: float = 1.0,
 ) -> HyperbolicLossOutput:
     """Principal LCA, parent, depth, channel, variance and covariance objective."""
 
@@ -368,6 +560,7 @@ def hyperbolic_pretraining_loss(
         "parent": 1.0,
         "depth": 0.2,
         "channel": 0.2,
+        "tree_distance": 1.0,
         "var": 0.1,
         "cov": 0.01,
         "same_mother": 0.0,
@@ -395,10 +588,51 @@ def hyperbolic_pretraining_loss(
             if tree_relation_logits is not None and tree_relation_targets is not None
             else zero
         ),
-        "parent": parent_child_margin_loss(z, parent_ids, node_mask),
-        "depth": radius_depth_loss(z, level_ids, node_mask),
+        "parent": parent_child_margin_loss(
+            z,
+            parent_ids,
+            node_mask,
+            curvature=curvature,
+        ),
+        "depth": radius_depth_loss(
+            z,
+            level_ids,
+            node_mask,
+            curvature=curvature,
+        ),
+        "tree_distance": (
+            hyperbolic_tree_distance_loss(
+                z,
+                lca_depth=lca_depth,
+                level_ids=level_ids,
+                pair_mask=(
+                    tree_relation_mask
+                    if tree_relation_mask is not None
+                    else node_mask[:, :, None] & node_mask[:, None, :]
+                ),
+                curvature=curvature,
+            )
+            if lca_depth is not None
+            else zero
+        ),
     }
-    if channel_embeddings is not None and channel_mask is not None and channel_ids is not None:
+    channel_pair_diagnostics: dict[str, torch.Tensor] = {}
+    if (
+        channel_embeddings is not None
+        and channel_mask is not None
+        and full_truth_channel_ids is not None
+    ):
+        components["channel"], channel_pair_diagnostics = cross_event_channel_metric_loss(
+            channel_embeddings,
+            channel_mask,
+            full_truth_channel_ids,
+            reconstructable_channel_ids,
+            channel_branch_count_arrays,
+            memory_embeddings=channel_memory_embeddings,
+            memory_full_truth_channel_ids=channel_memory_full_truth_ids,
+            memory_reconstructable_channel_ids=channel_memory_reconstructable_ids,
+        )
+    elif channel_embeddings is not None and channel_mask is not None and channel_ids is not None:
         components["channel"] = channel_metric_loss(
             channel_embeddings,
             channel_mask,
@@ -408,7 +642,7 @@ def hyperbolic_pretraining_loss(
     else:
         components["channel"] = zero
     tangent, anti_collapse_mask = balanced_tangent_sample(
-        logmap0(z),
+        logmap0(z, curvature=curvature),
         node_mask,
         level_ids=level_ids,
         node_kind_ids=node_kind_ids,
@@ -436,7 +670,9 @@ def hyperbolic_pretraining_loss(
         node_mask,
         level_ids=level_ids,
         b_side=b_side,
+        curvature=curvature,
     )
+    diagnostics.update(channel_pair_diagnostics)
     if tree_relation_targets is not None:
         diagnostics.update(
             relation_distance_diagnostics(
@@ -445,6 +681,7 @@ def hyperbolic_pretraining_loss(
                 tree_relation_mask
                 if tree_relation_mask is not None
                 else node_mask[:, :, None] & node_mask[:, None, :],
+                curvature=curvature,
             )
         )
     return HyperbolicLossOutput(total=total, components=components, diagnostics=diagnostics)
@@ -457,13 +694,16 @@ __all__ = [
     "balanced_tree_relation_loss",
     "build_tree_relation_targets",
     "channel_metric_loss",
+    "cross_event_channel_metric_loss",
     "collapse_diagnostics",
     "covariance_regularization",
     "hyperbolic_pretraining_loss",
     "parent_child_margin_loss",
+    "hyperbolic_tree_distance_loss",
     "pool_b_branch_embeddings",
     "radius_depth_loss",
     "radius_targets",
     "same_pair_bce",
+    "tree_distance_targets",
     "variance_regularization",
 ]

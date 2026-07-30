@@ -1,0 +1,13 @@
+name: plus_leaf_pid
+heterogeneous_adapters: true
+contextual_euclidean: true
+lca_parent: true
+direct_tree_distance: true
+radius_depth: true
+variance_covariance: true
+cross_event_channel: true
+physical_relation_attention: true
+hyperbolic_relation_attention: true
+leaf_pid: true
+scheduled_sampling: false
+pretrained_encoder_transfer: true

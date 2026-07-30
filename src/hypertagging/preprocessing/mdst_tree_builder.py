@@ -73,6 +73,45 @@ class TreeNode:
     candidate_confidence: float | None = None
     track_features: dict[str, float] = field(default_factory=dict)
     cluster_features: dict[str, float] = field(default_factory=dict)
+    raw_pdg: int | None = None
+    input_pid_token: int | None = None
+    pid_target_token: int | None = None
+    truth_pdg: int | None = None
+    truth_pid_token: int | None = None
+    reco_charge: float | None = None
+    truth_charge: float | None = None
+    energy_source: str = "legacy_unspecified"
+    leaf_kinematics_mode: str = "legacy_unspecified"
+    track_energy_hypotheses: dict[str, float] = field(default_factory=dict)
+    track_energy_availability: dict[str, bool] = field(default_factory=dict)
+    pid_likelihoods: dict[str, float] = field(default_factory=dict)
+    pid_likelihood_availability: dict[str, bool] = field(default_factory=dict)
+    reco_object_id: str | None = None
+    recursive_leaf_source_ids: list[str] = field(default_factory=list)
+    full_truth_daughter_count: int = 0
+    retained_daughter_count: int = 0
+    reconstructed_daughter_count: int = 0
+    complete_truth_decay: bool = False
+    complete_reconstructable_decay: bool = False
+    partial_missing_daughters: bool = False
+    contracted_intermediate: bool = False
+    valid_reconstruction_target: bool = False
+
+    def __post_init__(self) -> None:
+        if self.raw_pdg is None:
+            self.raw_pdg = self.pdg
+        if self.input_pid_token is None:
+            self.input_pid_token = tokenize_pdg(self.raw_pdg)
+        if self.pid_target_token is None:
+            self.pid_target_token = tokenize_pdg(self.pdg)
+        if self.truth_pdg is None and self.mc_id is not None:
+            self.truth_pdg = self.pdg
+        if self.truth_pid_token is None and self.truth_pdg is not None:
+            self.truth_pid_token = tokenize_pdg(self.truth_pdg)
+        if self.reco_charge is None:
+            self.reco_charge = self.charge
+        if self.reco_object_id is None:
+            self.reco_object_id = self.reco_id
 
     @property
     def token(self) -> int:
@@ -105,6 +144,8 @@ class EventTree:
     nodes: dict[int, TreeNode] = field(default_factory=dict)
     root_ids: list[int] = field(default_factory=list)
     metadata: dict[str, int | float | str] = field(default_factory=dict)
+    full_truth_channel_record: dict[str, object] = field(default_factory=dict)
+    full_truth_channel_record_cc: dict[str, object] = field(default_factory=dict)
 
     def add_node(self, node: TreeNode) -> None:
         if node.node_id in self.nodes:
@@ -132,6 +173,37 @@ class RecoRecord:
     candidate_confidence: float | None = None
     track_features: dict[str, float] = field(default_factory=dict)
     cluster_features: dict[str, float] = field(default_factory=dict)
+    raw_pdg: int | None = None
+    input_pid_token: int | None = None
+    pid_target_token: int | None = None
+    truth_pdg: int | None = None
+    truth_pid_token: int | None = None
+    reco_charge: float | None = None
+    truth_charge: float | None = None
+    energy_source: str = "legacy_unspecified"
+    leaf_kinematics_mode: str = "legacy_unspecified"
+    track_energy_hypotheses: dict[str, float] = field(default_factory=dict)
+    track_energy_availability: dict[str, bool] = field(default_factory=dict)
+    pid_likelihoods: dict[str, float] = field(default_factory=dict)
+    pid_likelihood_availability: dict[str, bool] = field(default_factory=dict)
+    reco_quality_score: float | None = None
+    relation_class: str = "unclassified"
+    underlying_reco_id: str | None = None
+
+    def __post_init__(self) -> None:
+        raw_pdg = self.pdg if self.raw_pdg is None else self.raw_pdg
+        object.__setattr__(self, "raw_pdg", raw_pdg)
+        if self.input_pid_token is None:
+            object.__setattr__(self, "input_pid_token", tokenize_pdg(raw_pdg))
+        if self.pid_target_token is None:
+            target_pdg = self.truth_pdg if self.truth_pdg is not None else raw_pdg
+            object.__setattr__(self, "pid_target_token", tokenize_pdg(target_pdg))
+        if self.truth_pid_token is None and self.truth_pdg is not None:
+            object.__setattr__(self, "truth_pid_token", tokenize_pdg(self.truth_pdg))
+        if self.reco_charge is None:
+            object.__setattr__(self, "reco_charge", self.charge)
+        if self.underlying_reco_id is None:
+            object.__setattr__(self, "underlying_reco_id", self.reco_id)
 
 
 @dataclass(frozen=True)
@@ -158,6 +230,10 @@ class BuildSummary:
     nodes_after_pruning: int = 0
     copied_nodes: int = 0
     unmatched_reco: int = 0
+    unique_match: int = 0
+    duplicate_track: int = 0
+    split_cluster: int = 0
+    ambiguous_relation: int = 0
     failed_events: int = 0
     timings: Counter[str] = field(default_factory=Counter)
     pid_summary: dict[str, dict[str, int]] = field(default_factory=dict)
@@ -169,6 +245,10 @@ class BuildSummary:
             "nodes_after_pruning": self.nodes_after_pruning,
             "copied_nodes": self.copied_nodes,
             "unmatched_reco": self.unmatched_reco,
+            "unique_match": self.unique_match,
+            "duplicate_track": self.duplicate_track,
+            "split_cluster": self.split_cluster,
+            "ambiguous_relation": self.ambiguous_relation,
             "failed_events": self.failed_events,
             "timings": dict(self.timings),
             "pid_summary": self.pid_summary,
@@ -198,22 +278,26 @@ def build_truth_guided_tree(
     for reco in reco_records:
         if reco.mc_id is not None:
             reco_by_mc[int(reco.mc_id)].append(reco)
+    for candidates in reco_by_mc.values():
+        candidates.sort(key=_reco_primary_key)
 
     for mc in mc_records:
         decision = pid_filter.decide(pdg=mc.pdg, name=mc.name, is_primary=mc.is_primary)
         if not decision.keep:
             continue
-        p4 = reco_by_mc.get(mc.mc_id, [None])[0].p4 if reco_by_mc.get(mc.mc_id) else FourVector(0.0, 0.0, 0.0, 0.0)
+        primary = reco_by_mc.get(mc.mc_id, [None])[0] if reco_by_mc.get(mc.mc_id) else None
+        p4 = primary.p4 if primary is not None else FourVector(0.0, 0.0, 0.0, 0.0)
         flags = set()
         reco_id = None
-        if reco_by_mc.get(mc.mc_id):
-            reco_id = reco_by_mc[mc.mc_id][0].reco_id
+        if primary is not None:
+            reco_id = primary.reco_id
+            flags.add(_match_class(reco_by_mc[mc.mc_id]))
         else:
             flags.add("truth_topology_only")
         node = TreeNode(
             node_id=tree.next_node_id(),
             pdg=mc.pdg,
-            charge=mc.charge,
+            charge=primary.reco_charge if primary is not None else mc.charge,
             p4=p4,
             reco_id=reco_id,
             mc_id=mc.mc_id,
@@ -221,16 +305,38 @@ def build_truth_guided_tree(
             prod_time=mc.prod_time,
             vertex=mc.vertex,
             mc_p4=mc.p4,
-            node_kind=reco_by_mc[mc.mc_id][0].node_kind if reco_by_mc.get(mc.mc_id) else "composite",
+            node_kind=primary.node_kind if primary is not None else "composite",
             candidate_confidence=(
-                reco_by_mc[mc.mc_id][0].candidate_confidence if reco_by_mc.get(mc.mc_id) else None
+                primary.candidate_confidence if primary is not None else None
             ),
             track_features=(
-                dict(reco_by_mc[mc.mc_id][0].track_features) if reco_by_mc.get(mc.mc_id) else {}
+                dict(primary.track_features) if primary is not None else {}
             ),
             cluster_features=(
-                dict(reco_by_mc[mc.mc_id][0].cluster_features) if reco_by_mc.get(mc.mc_id) else {}
+                dict(primary.cluster_features) if primary is not None else {}
             ),
+            raw_pdg=primary.raw_pdg if primary is not None else mc.pdg,
+            input_pid_token=primary.input_pid_token if primary is not None else 0,
+            pid_target_token=tokenize_pdg(mc.pdg),
+            truth_pdg=mc.pdg,
+            truth_pid_token=tokenize_pdg(mc.pdg),
+            reco_charge=primary.reco_charge if primary is not None else None,
+            truth_charge=mc.charge,
+            energy_source=primary.energy_source if primary is not None else "truth_topology_no_reco_p4",
+            leaf_kinematics_mode=(
+                primary.leaf_kinematics_mode if primary is not None else "truth_topology_only"
+            ),
+            track_energy_hypotheses=(
+                dict(primary.track_energy_hypotheses) if primary is not None else {}
+            ),
+            track_energy_availability=(
+                dict(primary.track_energy_availability) if primary is not None else {}
+            ),
+            pid_likelihoods=dict(primary.pid_likelihoods) if primary is not None else {},
+            pid_likelihood_availability=(
+                dict(primary.pid_likelihood_availability) if primary is not None else {}
+            ),
+            reco_object_id=primary.underlying_reco_id if primary is not None else None,
         )
         tree.add_node(node)
         retained_by_mc[mc.mc_id] = node.node_id
@@ -244,6 +350,9 @@ def build_truth_guided_tree(
             tree.root_ids.append(child_id)
             continue
         parent_id = retained_by_mc[retained_mother]
+        if mc.mother_id != retained_mother:
+            tree.nodes[parent_id].contracted_intermediate = True
+            tree.nodes[child_id].flags.add("contracted_intermediate_path")
         tree.nodes[child_id].parent_id = parent_id
         tree.nodes[parent_id].daughter_ids.append(child_id)
 
@@ -255,6 +364,14 @@ def build_truth_guided_tree(
             decision = pid_filter.decide(pdg=reco.pdg, is_primary=True)
             if not decision.keep:
                 continue
+            has_retained_truth_match = (
+                reco.mc_id is not None and int(reco.mc_id) in retained_by_mc
+            )
+            relation_flags = (
+                {_match_class(reco_by_mc[int(reco.mc_id)]), "competing_reco"}
+                if has_retained_truth_match
+                else {"unmatched_reco"}
+            )
             node = TreeNode(
                 node_id=tree.next_node_id(),
                 pdg=reco.pdg,
@@ -262,18 +379,108 @@ def build_truth_guided_tree(
                 p4=reco.p4,
                 reco_id=reco.reco_id,
                 mc_id=reco.mc_id,
-                flags=set(reco.flags) | {"unmatched_reco"},
+                flags=set(reco.flags) | relation_flags,
                 node_kind=reco.node_kind,
                 candidate_confidence=reco.candidate_confidence,
                 track_features=dict(reco.track_features),
                 cluster_features=dict(reco.cluster_features),
+                raw_pdg=reco.raw_pdg,
+                input_pid_token=reco.input_pid_token,
+                pid_target_token=reco.pid_target_token,
+                truth_pdg=reco.truth_pdg,
+                truth_pid_token=reco.truth_pid_token,
+                reco_charge=reco.reco_charge,
+                truth_charge=reco.truth_charge,
+                energy_source=reco.energy_source,
+                leaf_kinematics_mode=reco.leaf_kinematics_mode,
+                track_energy_hypotheses=dict(reco.track_energy_hypotheses),
+                track_energy_availability=dict(reco.track_energy_availability),
+                pid_likelihoods=dict(reco.pid_likelihoods),
+                pid_likelihood_availability=dict(reco.pid_likelihood_availability),
+                reco_object_id=reco.underlying_reco_id,
             )
             tree.add_node(node)
             tree.root_ids.append(node.node_id)
 
+    # This snapshot is computed before reco-efficiency removal.  It contains
+    # topology/PID labels only; channel construction never reads node p4.
+    from hypertagging.preprocessing.channels import event_channel_record
+
+    tree.full_truth_channel_record = event_channel_record(tree)
+    tree.full_truth_channel_record_cc = event_channel_record(
+        tree,
+        charge_conjugate_normalize=True,
+    )
     _drop_empty_truth_leaves(tree)
     recompute_mother_p4_from_daughters(tree)
+    _annotate_reconstruction_contract(tree, mc_records)
     return tree
+
+
+def _reco_primary_key(record: RecoRecord) -> tuple[float, str]:
+    """Reco-only, deterministic primary-candidate policy.
+
+    Larger finite fit/candidate quality is preferred.  Stable underlying
+    provenance breaks ties.  Neither MC PID nor truth kinematics is consulted.
+    """
+
+    quality = record.reco_quality_score
+    if quality is None:
+        quality = record.candidate_confidence
+    finite_quality = float(quality) if quality is not None and math.isfinite(quality) else -math.inf
+    return (-finite_quality, str(record.underlying_reco_id or record.reco_id))
+
+
+def _match_class(records: Sequence[RecoRecord]) -> str:
+    if len(records) == 1:
+        return "unique_match"
+    kinds = {record.node_kind for record in records}
+    if kinds == {"track"}:
+        return "duplicate_track"
+    if kinds == {"ecl_cluster"}:
+        return "split_cluster"
+    return "ambiguous_relation"
+
+
+def _annotate_reconstruction_contract(tree: EventTree, mc_records: Sequence[MCRecord]) -> None:
+    """Attach completeness and recursive reconstructed-source metadata."""
+
+    truth_children = Counter(record.mother_id for record in mc_records if record.mother_id is not None)
+    for node in tree.nodes.values():
+        node.full_truth_daughter_count = int(truth_children[node.mc_id]) if node.mc_id is not None else 0
+        node.retained_daughter_count = len(node.daughter_ids)
+        node.reconstructed_daughter_count = sum(
+            tree.nodes[child_id].reco_id is not None or bool(tree.nodes[child_id].daughter_ids)
+            for child_id in node.daughter_ids
+        )
+        if node.daughter_ids:
+            node.complete_truth_decay = (
+                node.full_truth_daughter_count > 0
+                and node.retained_daughter_count == node.full_truth_daughter_count
+            )
+            node.complete_reconstructable_decay = (
+                node.reconstructed_daughter_count == node.retained_daughter_count
+            )
+            node.partial_missing_daughters = (
+                node.full_truth_daughter_count > node.retained_daughter_count
+                or node.reconstructed_daughter_count < node.retained_daughter_count
+            )
+            node.valid_reconstruction_target = (
+                node.retained_daughter_count >= 2 and node.complete_reconstructable_decay
+            )
+
+    for node_id in _topological_children_first(tree):
+        node = tree.nodes[node_id]
+        if node.daughter_ids:
+            sources = {
+                source
+                for child_id in node.daughter_ids
+                for source in tree.nodes[child_id].recursive_leaf_source_ids
+            }
+        else:
+            source = node.reco_object_id or node.reco_id
+            sources = {source} if source else set()
+        node.recursive_leaf_source_ids = sorted(sources)
 
 
 def _nearest_retained_mother(
@@ -387,6 +594,29 @@ def _clone_subtree(tree: EventTree, node_id: int) -> int:
         candidate_confidence=source.candidate_confidence,
         track_features=dict(source.track_features),
         cluster_features=dict(source.cluster_features),
+        raw_pdg=source.raw_pdg,
+        input_pid_token=source.input_pid_token,
+        pid_target_token=source.pid_target_token,
+        truth_pdg=source.truth_pdg,
+        truth_pid_token=source.truth_pid_token,
+        reco_charge=source.reco_charge,
+        truth_charge=source.truth_charge,
+        energy_source=source.energy_source,
+        leaf_kinematics_mode=source.leaf_kinematics_mode,
+        track_energy_hypotheses=dict(source.track_energy_hypotheses),
+        track_energy_availability=dict(source.track_energy_availability),
+        pid_likelihoods=dict(source.pid_likelihoods),
+        pid_likelihood_availability=dict(source.pid_likelihood_availability),
+        reco_object_id=source.reco_object_id,
+        recursive_leaf_source_ids=list(source.recursive_leaf_source_ids),
+        full_truth_daughter_count=source.full_truth_daughter_count,
+        retained_daughter_count=source.retained_daughter_count,
+        reconstructed_daughter_count=source.reconstructed_daughter_count,
+        complete_truth_decay=source.complete_truth_decay,
+        complete_reconstructable_decay=source.complete_reconstructable_decay,
+        partial_missing_daughters=source.partial_missing_daughters,
+        contracted_intermediate=source.contracted_intermediate,
+        valid_reconstruction_target=source.valid_reconstruction_target,
     )
     tree.add_node(clone)
     for child_id in source.daughter_ids:
@@ -454,6 +684,12 @@ def build_trees(
             recompute_mother_p4_from_daughters(tree)
             summary.nodes_after_pruning += len(tree.nodes)
             summary.unmatched_reco += sum("unmatched_reco" in node.flags for node in tree.nodes.values())
+            summary.unique_match += sum("unique_match" in node.flags for node in tree.nodes.values())
+            summary.duplicate_track += sum("duplicate_track" in node.flags for node in tree.nodes.values())
+            summary.split_cluster += sum("split_cluster" in node.flags for node in tree.nodes.values())
+            summary.ambiguous_relation += sum(
+                "ambiguous_relation" in node.flags for node in tree.nodes.values()
+            )
             trees.append(tree)
         except Exception:
             summary.failed_events += 1

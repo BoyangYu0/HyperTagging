@@ -5,6 +5,8 @@ from __future__ import annotations
 import torch
 
 from hypertagging.data.level_batch import LevelEvent
+from hypertagging.preprocessing.pid_filter import tokenize_pdg, validate_pid_tokens
+from hypertagging.preprocessing.schema_v2 import NODE_KIND_TO_ID
 
 
 def tiny_level_events() -> list[LevelEvent]:
@@ -32,11 +34,13 @@ def _event(
     p4_tensor = torch.tensor(p4, dtype=torch.float32)
     mass2 = p4_tensor[:, 3] ** 2 - (p4_tensor[:, :3] ** 2).sum(dim=-1)
     mass = torch.sqrt(torch.clamp(mass2, min=0.0))
-    pid = torch.tensor(pdg, dtype=torch.long)
+    raw_pdg = torch.tensor(pdg, dtype=torch.long)
+    pid = torch.tensor([tokenize_pdg(value) for value in pdg], dtype=torch.long)
+    validate_pid_tokens(pid, name="tiny fixture PID labels")
     charge_tensor = torch.tensor(charge, dtype=torch.float32)
     node_features = torch.stack(
         [
-            pid.float() / 1000.0,
+            pid.float() / max(1, 40),
             charge_tensor,
             p4_tensor[:, 0],
             p4_tensor[:, 1],
@@ -60,6 +64,20 @@ def _event(
         active=torch.ones(n_nodes, dtype=torch.bool),
         copied=copied_from_tensor >= 0,
         copied_from=copied_from_tensor,
+        raw_pdg=raw_pdg,
+        node_kind_ids=torch.tensor(
+            [
+                NODE_KIND_TO_ID["composite"]
+                if daughters[index]
+                else (
+                    NODE_KIND_TO_ID["ecl_cluster"]
+                    if abs(pdg[index]) == 22
+                    else NODE_KIND_TO_ID["track"]
+                )
+                for index in range(n_nodes)
+            ],
+            dtype=torch.long,
+        ),
     )
 
 

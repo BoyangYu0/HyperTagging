@@ -12,6 +12,7 @@ from hypertagging.losses.level_reconstruction import level_reconstruction_loss
 from hypertagging.losses.set_matching import hungarian_or_greedy
 from hypertagging.models.hyperbolic import distance, expmap0, logmap0
 from hypertagging.models.level_autoregressive import LevelAutoregressiveReconstructor, construct_mother_p4
+from hypertagging.preprocessing.pid_filter import PDG_TOKENS
 from hypertagging.models.stair_masks import context_mask_for_level, stair_attention_mask
 from hypertagging.training.hyperbolic_pretrain import run_hyperbolic_pretrain_dry_run
 from hypertagging.training.level_reconstruction_train import run_level_reconstruction_dry_run
@@ -70,7 +71,7 @@ def test_set_matching_order_invariant_for_tiny_cost():
 
 def test_level_model_loss_and_daughter_sum_p4():
     batch = collate_level_events([tiny_level_events()[0]], max_query_slots=3).to_dict()
-    model = LevelAutoregressiveReconstructor(n_features=batch["node_features"].shape[-1], n_types=4096, hidden_dim=16, hyper_dim=4, n_queries=3)
+    model = LevelAutoregressiveReconstructor(n_features=batch["node_features"].shape[-1], n_types=len(PDG_TOKENS), hidden_dim=16, hyper_dim=4, n_queries=3)
     output = model(batch, target_level=1)
     loss = level_reconstruction_loss(output.pointer, batch, target_level=1)
     loss.total.backward()

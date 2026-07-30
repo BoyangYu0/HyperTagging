@@ -15,6 +15,7 @@ from typing import Sequence
 
 from hypertagging.preprocessing.export_dataset import export_trees
 from hypertagging.preprocessing.schema_v2 import SCHEMA_VERSION_V1, SCHEMA_VERSION_V2, export_trees_v2
+from hypertagging.preprocessing.schema_v3 import SCHEMA_VERSION_V3, export_trees_v3
 from hypertagging.preprocessing.levelize_tree import assign_levels
 from hypertagging.preprocessing.mdst_tree_builder import (
     FourVector,
@@ -23,7 +24,13 @@ from hypertagging.preprocessing.mdst_tree_builder import (
     build_trees,
     validate_tree,
 )
-from hypertagging.preprocessing.pid_filter import PidFilter
+from hypertagging.preprocessing.pid_filter import PidFilter, tokenize_pdg
+from hypertagging.reconstruction.kinematics import (
+    CANONICAL_TRACK_HYPOTHESIS,
+    CHARGED_STABLE_NAMES,
+    CHARGED_STABLE_PDGS,
+    PARTICLE_MASSES_GEV,
+)
 
 
 @dataclass(frozen=True)
@@ -115,16 +122,20 @@ class _DirectMdstCollector:
         experiment = int(self.event_info.getExperiment()) if self.event_info else -1
         run = int(self.event_info.getRun()) if self.event_info else -1
         production = int(self.event_info.getProduction()) if self.event_info else -1
+        source_file = _event_source_file(self.event_info, self.config.input_files)
         self.event_metadata.append(
             {
                 "experiment": experiment,
                 "run": run,
                 "production": production,
                 "event_uid": f"{experiment}:{run}:{event_id}:{production}",
-                "source_file": self.config.input_files[0] if len(self.config.input_files) == 1 else "",
-                "source_category": _source_category(self.config.input_files[0])
-                if len(self.config.input_files) == 1
-                else "",
+                "source_file": source_file,
+                "source_category": _source_category(source_file),
+                "source_file_resolution": (
+                    "event_metadata"
+                    if len(self.config.input_files) > 1 and source_file
+                    else ("single_input" if len(self.config.input_files) == 1 else "unresolved")
+                ),
             }
         )
         self._event_count += 1
@@ -146,6 +157,13 @@ class _DirectMdstCollector:
             return export_trees(trees, self.config.output, summary=summary_record)
         if self.config.schema_version == SCHEMA_VERSION_V2:
             return export_trees_v2(
+                trees,
+                self.config.output,
+                summary=summary_record,
+                charge_conjugate_normalize=self.config.charge_conjugate_normalize,
+            )
+        if self.config.schema_version == SCHEMA_VERSION_V3:
+            return export_trees_v3(
                 trees,
                 self.config.output,
                 summary=summary_record,
@@ -184,7 +202,11 @@ class _DirectMdstCollector:
             records.extend(self._collect_ecl_clusters())
         dedup: dict[str, RecoRecord] = {}
         for record in records:
-            dedup.setdefault(record.reco_id, record)
+            # Particle candidates and raw Tracks can refer to the same
+            # underlying Track.  Prefer the first explicitly configured
+            # candidate and deduplicate by provenance, not display ID.
+            dedup.setdefault(str(record.underlying_reco_id or record.reco_id), record)
+        self.collection_stats["reco_provenance_duplicates"] += len(records) - len(dedup)
         return list(dedup.values())
 
     def _collect_particle_array(self, store_array: object) -> list[RecoRecord]:
@@ -200,6 +222,7 @@ class _DirectMdstCollector:
                 p4 = particle.get4Vector()
                 mc = _related_mc(particle)
                 pdg = int(particle.getPDGCode() if hasattr(particle, "getPDGCode") else particle.getPDG())
+                underlying_reco_id = _particle_underlying_reco_id(particle)
                 records.append(
                     RecoRecord(
                         reco_id=f"Particle:{particle.getArrayIndex()}",
@@ -209,6 +232,15 @@ class _DirectMdstCollector:
                         mc_id=None if mc is None else int(mc.getArrayIndex()),
                         node_kind="unknown",
                         candidate_confidence=_optional_float(particle, ("getPValue",)),
+                        raw_pdg=pdg,
+                        input_pid_token=tokenize_pdg(pdg),
+                        truth_pdg=None if mc is None else int(mc.getPDG()),
+                        truth_pid_token=None if mc is None else tokenize_pdg(int(mc.getPDG())),
+                        truth_charge=None if mc is None else float(mc.getCharge()),
+                        energy_source="basf2_particle_candidate_hypothesis",
+                        leaf_kinematics_mode="fixed_hypothesis_candidate",
+                        reco_quality_score=_optional_float(particle, ("getPValue",)),
+                        underlying_reco_id=underlying_reco_id,
                     )
                 )
             except Exception as exc:
@@ -222,25 +254,33 @@ class _DirectMdstCollector:
         for track in self.tracks:
             try:
                 mc = _related_mc(track)
-                pdg = int(mc.getPDG()) if mc is not None else 211
-                fit = track.getTrackFitResultWithClosestMass(self._charged_stable(abs(pdg)))
+                fit = _data_independent_track_fit(
+                    track,
+                    pion_hypothesis=self._charged_stable(211),
+                )
                 if not fit:
                     self.collection_stats["tracks_without_fit"] += 1
                     continue
                 momentum = fit.getMomentum()
                 charge = float(fit.getChargeSign())
-                mass = _mass_from_pdg(pdg)
                 px, py, pz = float(momentum.X()), float(momentum.Y()), float(momentum.Z())
-                energy = (px * px + py * py + pz * pz + mass * mass) ** 0.5
+                p2 = px * px + py * py + pz * pz
+                energy_hypotheses = {
+                    name: math.sqrt(p2 + PARTICLE_MASSES_GEV[pdg] ** 2)
+                    for name, pdg in zip(CHARGED_STABLE_NAMES, CHARGED_STABLE_PDGS)
+                }
+                likelihoods, likelihood_availability = self._track_pid_likelihoods(track)
+                truth_pdg, truth_charge = _mc_truth_fields(mc)
+                fit_quality = _optional_float(fit, ("getPValue",))
                 records.append(
                     RecoRecord(
                         reco_id=f"Track:{track.getArrayIndex()}",
-                        pdg=pdg,
+                        pdg=0,
                         charge=charge,
-                        p4=FourVector(px, py, pz, energy),
+                        p4=FourVector(px, py, pz, energy_hypotheses[CANONICAL_TRACK_HYPOTHESIS]),
                         mc_id=None if mc is None else int(mc.getArrayIndex()),
                         node_kind="track",
-                        candidate_confidence=_optional_float(fit, ("getPValue",)),
+                        candidate_confidence=fit_quality,
                         track_features=_available_values(
                             {
                                 "fit_p_value": _optional_float(fit, ("getPValue",)),
@@ -251,6 +291,23 @@ class _DirectMdstCollector:
                                 "tan_lambda": _optional_float(fit, ("getTanLambda",)),
                             }
                         ),
+                        raw_pdg=0,
+                        input_pid_token=0,
+                        pid_target_token=0 if truth_pdg is None else tokenize_pdg(truth_pdg),
+                        truth_pdg=truth_pdg,
+                        truth_pid_token=None if truth_pdg is None else tokenize_pdg(truth_pdg),
+                        reco_charge=charge,
+                        truth_charge=truth_charge,
+                        energy_source=f"canonical_{CANONICAL_TRACK_HYPOTHESIS}_mass_hypothesis",
+                        leaf_kinematics_mode="raw_track_predicted_pid",
+                        track_energy_hypotheses=energy_hypotheses,
+                        track_energy_availability={
+                            name: True for name in CHARGED_STABLE_NAMES
+                        },
+                        pid_likelihoods=likelihoods,
+                        pid_likelihood_availability=likelihood_availability,
+                        reco_quality_score=fit_quality,
+                        underlying_reco_id=f"Track:{track.getArrayIndex()}",
                     )
                 )
             except Exception as exc:
@@ -258,6 +315,35 @@ class _DirectMdstCollector:
                 continue
         self.collection_stats["track_records"] += len(records)
         return records
+
+    def _track_pid_likelihoods(self, track: object) -> tuple[dict[str, float], dict[str, bool]]:
+        """Read only verified generic-mDST PIDLikelihood relations/accessors."""
+
+        pid_likelihood = _related_named(track, "PIDLikelihood")
+        values: dict[str, float] = {}
+        availability: dict[str, bool] = {}
+        for name, pdg in zip(CHARGED_STABLE_NAMES, CHARGED_STABLE_PDGS):
+            hypothesis = self._charged_stable(pdg)
+            available = False
+            value: float | None = None
+            if pid_likelihood:
+                try:
+                    available = bool(pid_likelihood.isAvailable(hypothesis))
+                except Exception:
+                    available = False
+                if available:
+                    try:
+                        candidate = float(pid_likelihood.getLogL(hypothesis))
+                    except Exception:
+                        candidate = math.nan
+                    if math.isfinite(candidate):
+                        value = candidate
+                    else:
+                        available = False
+            availability[name] = available
+            if value is not None:
+                values[name] = value
+        return values, availability
 
     def _collect_ecl_clusters(self) -> list[RecoRecord]:
         records: list[RecoRecord] = []
@@ -270,6 +356,7 @@ class _DirectMdstCollector:
                     self.collection_stats["ecl_without_photon_hypothesis"] += 1
                     continue
                 mc = _related_mc(cluster)
+                truth_pdg, truth_charge = _mc_truth_fields(mc)
                 momentum = self._cluster_utils.Get4MomentumFromCluster(cluster, self._photon_hypothesis)
                 records.append(
                     RecoRecord(
@@ -284,6 +371,16 @@ class _DirectMdstCollector:
                         ),
                         mc_id=None if mc is None else int(mc.getArrayIndex()),
                         node_kind="ecl_cluster",
+                        raw_pdg=22,
+                        input_pid_token=tokenize_pdg(22),
+                        pid_target_token=tokenize_pdg(22 if truth_pdg is None else truth_pdg),
+                        truth_pdg=truth_pdg,
+                        truth_pid_token=None if truth_pdg is None else tokenize_pdg(truth_pdg),
+                        reco_charge=0.0,
+                        truth_charge=truth_charge,
+                        energy_source="ecl_cluster_photon_hypothesis",
+                        leaf_kinematics_mode="fixed_hypothesis_candidate",
+                        underlying_reco_id=f"ECLCluster:{cluster.getArrayIndex()}",
                         cluster_features=_available_values(
                             {
                                 "cluster_energy": float(momentum.E()),
@@ -353,6 +450,65 @@ def _related_mc(obj: object) -> object | None:
     return None
 
 
+def _related_named(obj: object, relation_name: str) -> object | None:
+    for method_name in ("getRelatedTo", "getRelated"):
+        method = getattr(obj, method_name, None)
+        if method is None:
+            continue
+        try:
+            related = method(relation_name)
+        except (TypeError, RuntimeError):
+            continue
+        if related:
+            return related
+    return None
+
+
+def _mc_truth_fields(mc: object | None) -> tuple[int | None, float | None]:
+    if mc is None:
+        return None, None
+    try:
+        pdg = int(mc.getPDG())
+    except Exception:
+        pdg = None
+    try:
+        charge = float(mc.getCharge())
+    except Exception:
+        charge = None
+    return pdg, charge
+
+
+def _data_independent_track_fit(track: object, *, pion_hypothesis: object) -> object | None:
+    """Choose a track fit without inspecting MC identity.
+
+    Belle II's best-p-value accessor is preferred.  Older releases fall back
+    deterministically to the pion closest-mass fit.
+    """
+
+    best = getattr(track, "getTrackFitResultWithBestPValue", None)
+    if best is not None:
+        try:
+            result = best()
+        except Exception:
+            result = None
+        if result:
+            return result
+    closest = getattr(track, "getTrackFitResultWithClosestMass", None)
+    if closest is None:
+        return None
+    return closest(pion_hypothesis)
+
+
+def _particle_underlying_reco_id(particle: object) -> str:
+    track = _related_named(particle, "Track")
+    if track is not None and hasattr(track, "getArrayIndex"):
+        return f"Track:{int(track.getArrayIndex())}"
+    cluster = _related_named(particle, "ECLCluster")
+    if cluster is not None and hasattr(cluster, "getArrayIndex"):
+        return f"ECLCluster:{int(cluster.getArrayIndex())}"
+    return f"Particle:{int(particle.getArrayIndex())}"
+
+
 def _mass_from_pdg(pdg: int) -> float:
     masses = {
         11: 0.00051099895,
@@ -395,3 +551,27 @@ def _source_category(path: str) -> str:
     known = ("charged", "mixed", "ccbar", "uubar", "ddbar", "ssbar", "taupair")
     parts = Path(path).parts
     return next((part for part in parts if part in known), "")
+
+
+def _event_source_file(event_info: object, input_files: tuple[str, ...]) -> str:
+    if len(input_files) == 1:
+        return input_files[0]
+    for accessor in ("getParentLfn", "getInputFileName"):
+        method = getattr(event_info, accessor, None)
+        if method is None:
+            continue
+        try:
+            value = str(method())
+        except Exception:
+            continue
+        if value:
+            exact = next(
+                (
+                    candidate
+                    for candidate in input_files
+                    if candidate == value or Path(candidate).name == Path(value).name
+                ),
+                None,
+            )
+            return exact or value
+    return ""

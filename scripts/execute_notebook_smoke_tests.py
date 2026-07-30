@@ -17,6 +17,11 @@ from nbclient import NotebookClient
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 NOTEBOOKS = {
+    "leaf_pid": (
+        REPO_ROOT / "scripts" / "create_leaf_input_pid_notebook.py",
+        REPO_ROOT / "notebooks" / "inspect_leaf_input_pid_contract.ipynb",
+        ("reduced-PID contract", "energy hypotheses", "leakage check"),
+    ),
     "dataset": (
         REPO_ROOT / "scripts" / "create_dataset_inspection_notebook.py",
         REPO_ROOT / "notebooks" / "inspect_preprocessed_dataset.ipynb",
@@ -27,6 +32,16 @@ NOTEBOOKS = {
         REPO_ROOT / "notebooks" / "inspect_hyperbolic_pretraining.ipynb",
         ("Embedding projections", "Radius/depth validation", "Anti-collapse diagnostics", "Channel embeddings"),
     ),
+    "capacity": (
+        REPO_ROOT / "scripts" / "create_query_capacity_notebook.py",
+        REPO_ROOT / "notebooks" / "inspect_query_capacity_and_losses.ipynb",
+        ("query usage", "focal weighting", "Hungarian"),
+    ),
+    "training": (
+        REPO_ROOT / "scripts" / "create_training_pipeline_notebook.py",
+        REPO_ROOT / "notebooks" / "inspect_training_pipeline.ipynb",
+        ("train-only normalizer", "Encoder transfer", "resume"),
+    ),
     "reconstruction": (
         REPO_ROOT / "scripts" / "create_reconstruction_inspection_notebook.py",
         REPO_ROOT / "notebooks" / "inspect_level_autoregressive_reconstruction.ipynb",
@@ -36,6 +51,11 @@ NOTEBOOKS = {
         REPO_ROOT / "scripts" / "create_preprocessing_qa_notebook.py",
         REPO_ROOT / "notebooks" / "preprocessing_qa_report.ipynb",
         ("Preprocessing QA report", "Machine-readable", "daughter-summed"),
+    ),
+    "manifest": (
+        REPO_ROOT / "scripts" / "create_production_manifest_notebook.py",
+        REPO_ROOT / "notebooks" / "inspect_production_manifest.ipynb",
+        ("Production manifest inspection", "memory", "global UID"),
     ),
     "four_vector": (
         REPO_ROOT / "scripts" / "create_preprocessing_visualization_notebook.py",
@@ -103,6 +123,24 @@ def execute_one(
         raise AssertionError(f"{source.name} produced notebook errors: {error_outputs}")
     if not list(figure_dir.glob("*.png")):
         raise AssertionError(f"{source.name} did not produce expected figures")
+    required_artifacts = {
+        "leaf_pid": ("leaf_pid_token_range.csv", "leaf_input_leakage_check.json"),
+        "capacity": ("capacity_report.json", "sparse_loss_table.csv"),
+        "training": ("training_pipeline_pass.json", "reconstruction/checkpoint.pt"),
+        "qa": (),
+        "manifest": ("production_manifest_report.json",),
+    }.get(name, ())
+    for relative in required_artifacts:
+        if not (figure_dir / relative).exists():
+            raise AssertionError(f"{source.name} missed required artifact {relative}")
+    if name == "qa":
+        qa_path = work_root / "preprocessing_qa.json"
+        if not qa_path.exists():
+            raise AssertionError("QA notebook did not write its JSON summary")
+        import json
+        qa = json.loads(qa_path.read_text(encoding="utf-8"))
+        if not qa.get("p4_closure_pass"):
+            raise AssertionError(f"QA JSON did not pass p4 closure: {qa}")
     return executed_path
 
 

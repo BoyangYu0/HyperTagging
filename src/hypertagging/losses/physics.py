@@ -17,8 +17,20 @@ def soft_daughter_sum_p4(pointer_logits: torch.Tensor, daughter_p4: torch.Tensor
     return construct_mother_p4(pointer_logits, daughter_p4, hard=False)
 
 
-def p4_sum_consistency_loss(pointer_logits: torch.Tensor, daughter_p4: torch.Tensor, target_p4: torch.Tensor) -> torch.Tensor:
-    return F.mse_loss(soft_daughter_sum_p4(pointer_logits, daughter_p4), target_p4)
+def p4_sum_consistency_loss(
+    pointer_logits: torch.Tensor,
+    daughter_p4: torch.Tensor,
+    target_p4: torch.Tensor,
+    *,
+    component_scales: tuple[float, float, float, float] = (1.0, 1.0, 1.0, 1.0),
+) -> torch.Tensor:
+    """Scaled reconstructed daughter-sum consistency (never an MC p4 target)."""
+
+    scale = target_p4.new_tensor(component_scales)
+    if torch.any(scale <= 0):
+        raise ValueError("p4 component scales must be positive")
+    residual = (soft_daughter_sum_p4(pointer_logits, daughter_p4) - target_p4) / scale
+    return residual.square().mean()
 
 
 def charge_consistency_loss(pointer_logits: torch.Tensor, daughter_charge: torch.Tensor, target_charge: torch.Tensor) -> torch.Tensor:

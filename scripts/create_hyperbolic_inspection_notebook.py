@@ -48,7 +48,7 @@ def build_notebook() -> nbf.NotebookNode:
             if not (REPO_ROOT / "src").exists(): REPO_ROOT = Path("..").resolve()
             sys.path.insert(0, str(REPO_ROOT / "src"))
             from hypertagging.data.heterogeneous import load_heterogeneous_events, collate_heterogeneous_events
-            from hypertagging.data.notebook_fixtures import write_notebook_fixture
+            from hypertagging.data.notebook_fixtures import write_notebook_fixture_v3
             from hypertagging.losses.hyperbolic_pretraining import (
                 build_tree_relation_targets, collapse_diagnostics, pool_b_branch_embeddings,
             )
@@ -59,8 +59,8 @@ def build_notebook() -> nbf.NotebookNode:
             torch.manual_seed(SEED); np.random.seed(SEED)
             requested = os.environ.get("HYPERTAGGING_PARQUET", "").strip()
             FIXTURE_MODE = not bool(requested)
-            INPUT_PATH = Path(requested) if requested else Path("/tmp/hypertagging_notebook_fixture_v2.parquet")
-            if FIXTURE_MODE: write_notebook_fixture(INPUT_PATH)
+            INPUT_PATH = Path(requested) if requested else Path("/tmp/hypertagging_notebook_fixture_v3.parquet")
+            if FIXTURE_MODE: write_notebook_fixture_v3(INPUT_PATH)
             if not INPUT_PATH.exists(): raise FileNotFoundError(INPUT_PATH)
             FIGURE_DIR = Path(os.environ.get("HYPERTAGGING_FIGURE_DIR", "/tmp/hypertagging_figures/hyperbolic"))
             FIGURE_DIR.mkdir(parents=True, exist_ok=True)
@@ -243,6 +243,47 @@ def build_notebook() -> nbf.NotebookNode:
             for index, event_id in enumerate(batch["event_ids"].tolist()):
                 order = torch.argsort(similarity[index], descending=True).tolist()
                 print(event_id, [batch["event_ids"][neighbor].item() for neighbor in order[:3]])
+            """
+        ),
+        md("## Context order and FSP/multilevel/corrupted curriculum comparison"),
+        code(
+            """
+            from hypertagging.training.pretraining_curriculum import PretrainingStage, build_curriculum_batch
+            representations = {
+                "uncontextualized_adapter": encoded.adapter_embeddings.detach(),
+                "contextual_euclidean": encoded.node_embeddings.detach(),
+                "contextual_hyperbolic_tangent": tangent.detach(),
+            }
+            print({name: tuple(value.shape) for name,value in representations.items()})
+            curriculum_rows=[]
+            for stage in PretrainingStage:
+                view=build_curriculum_batch(batch,stage,seed=SEED,corruption_probability=1.0)
+                with torch.no_grad(): stage_encoded=model(view.batch)
+                curriculum_rows.append({
+                    "stage":stage.value,
+                    "valid_nodes":int(view.batch["node_mask"].sum()),
+                    "corrupted_nodes":int(view.corrupted_node_mask.sum()),
+                    "mean_radius":float(radius(stage_encoded.hyperbolic_embeddings)[view.batch["node_mask"]].mean()),
+                })
+            display(pd.DataFrame(curriculum_rows))
+            """
+        ),
+        md("## Direct tree-distance target versus hyperbolic distance"),
+        code(
+            """
+            from hypertagging.data.level_collate import build_lca_depth
+            from hypertagging.losses.hyperbolic_pretraining import tree_distance_targets
+            lca=torch.full((len(events),batch["node_mask"].shape[1],batch["node_mask"].shape[1]),-1,dtype=torch.long)
+            for index,event in enumerate(events):
+                count=int(batch["node_mask"][index].sum())
+                lca[index,:count,:count]=build_lca_depth(batch["parent_ids"][index,:count],batch["level_ids"][index,:count])
+            pair_mask=mask[:,:,None]&mask[:,None,:]
+            target_distance=tree_distance_targets(lca_depth=lca,level_ids=batch["level_ids"],pair_mask=pair_mask)
+            predicted_distance=distance(z[:,:,None,:],z[:,None,:,:])
+            selected=pair_mask&(lca>=0)
+            plt.scatter(target_distance[selected].numpy(),predicted_distance[selected].numpy(),s=15,alpha=.6)
+            plt.xlabel("Normalized retained-tree distance target"); plt.ylabel("Poincare distance")
+            plt.tight_layout(); plt.savefig(FIGURE_DIR/"tree_distance_supervision.png"); plt.show()
             """
         ),
         md(

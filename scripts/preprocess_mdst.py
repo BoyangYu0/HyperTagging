@@ -52,14 +52,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--overwrite", action="store_true", help="Allow replacing an existing output file.")
     parser.add_argument(
         "--schema-version",
-        choices=("direct-mdst-tree-v1", "direct-mdst-tree-v2"),
+        choices=("direct-mdst-tree-v1", "direct-mdst-tree-v2", "direct-mdst-tree-v3"),
         default="direct-mdst-tree-v1",
-        help="Keep v1 for exact compatibility or opt into heterogeneous v2.",
+        help="V3 is the corrected truth-separated production schema; v1/v2 remain readable.",
     )
     parser.add_argument(
         "--charge-conjugate-normalize-channels",
         action="store_true",
-        help="Canonicalize B channel signatures under global charge conjugation (v2).",
+        help="Canonicalize B channel signatures under global charge conjugation.",
     )
     parser.add_argument(
         "--particle-array",

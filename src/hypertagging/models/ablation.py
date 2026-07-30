@@ -16,17 +16,72 @@ class AblationConfig:
     variance_covariance: bool
     channel_supervision: bool
     relation_attention: bool
+    contextual_euclidean: bool = False
+    hyperbolic_relation_attention: bool = False
+    leaf_pid: bool = False
+    scheduled_sampling: bool = False
+    pretrained_encoder_transfer: bool = False
 
 
 ABLATIONS: dict[str, AblationConfig] = {
     "flat_baseline": AblationConfig("flat_baseline", False, False, False, False, False, False),
     "heterogeneous_only": AblationConfig("heterogeneous_only", True, False, False, False, False, False),
-    "hyperbolic_lca_parent": AblationConfig("hyperbolic_lca_parent", True, True, False, False, False, False),
-    "plus_radius_depth": AblationConfig("plus_radius_depth", True, True, True, False, False, False),
-    "plus_variance_covariance": AblationConfig("plus_variance_covariance", True, True, True, True, False, False),
-    "plus_channel": AblationConfig("plus_channel", True, True, True, True, True, False),
-    "plus_relation_attention": AblationConfig("plus_relation_attention", True, True, True, True, True, True),
-    "full_revised": AblationConfig("full_revised", True, True, True, True, True, True),
+    "contextual_euclidean": AblationConfig(
+        "contextual_euclidean", True, False, False, False, False, False, True
+    ),
+    "contextual_hyperbolic_parent_lca": AblationConfig(
+        "contextual_hyperbolic_parent_lca", True, True, False, False, False, False, True
+    ),
+    "plus_radius_depth": AblationConfig(
+        "plus_radius_depth", True, True, True, False, False, False, True
+    ),
+    "plus_variance_covariance": AblationConfig(
+        "plus_variance_covariance", True, True, True, True, False, False, True
+    ),
+    "plus_cross_event_channel": AblationConfig(
+        "plus_cross_event_channel", True, True, True, True, True, False, True
+    ),
+    "plus_hyperbolic_relation_attention": AblationConfig(
+        "plus_hyperbolic_relation_attention",
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+    ),
+    "plus_leaf_pid": AblationConfig(
+        "plus_leaf_pid", True, True, True, True, True, True, True, True, True
+    ),
+    "plus_scheduled_sampling": AblationConfig(
+        "plus_scheduled_sampling",
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+    ),
+    "full_revised": AblationConfig(
+        "full_revised",
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+    ),
 }
 
 
@@ -47,9 +102,11 @@ def build_ablation_model(
         hyper_dim=hyper_dim,
         n_queries=n_queries,
         n_heads=4,
-        n_context_layers=1,
+        n_context_layers=2,
         encoder_mode="heterogeneous" if config.heterogeneous_adapters else "flat",
+        use_contextual_encoder=config.contextual_euclidean,
         use_relation_bias=config.relation_attention,
+        use_hyperbolic_relation_refinement=config.hyperbolic_relation_attention,
     )
 
 

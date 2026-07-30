@@ -52,3 +52,11 @@ provenance is `unknown`. V1 detector blocks are entirely unavailable.
 Reco-derived composite structure is recovered from existing daughter links and
 stored p4 without inventing detector measurements. All original scalar values,
 IDs, links, flags, and diagnostic MC fields remain unchanged.
+# Correctness revision
+
+Schema-v3 track blocks add verified PIDLikelihood log-likelihoods and
+e/mu/pi/K/p energy hypotheses with per-value availability. These are
+data-compatible measurements/derivations; truth PID is a separate target.
+Adapters now enter one physical relation-aware contextualizer before task and
+hyperbolic projections. Optional hyperbolic relation refinement is downstream,
+avoiding circular dependence.

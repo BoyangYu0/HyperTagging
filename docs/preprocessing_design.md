@@ -209,8 +209,39 @@ To inspect the existing default 10M manifest and submission command:
 scripts/condor/submit_mdst_production_10m.sh --dry-run
 ```
 
-Defaults are 10,000,000 input events, 25,000 events per task, and at most 50
+Defaults are 10,000,000 input events, 5,000 events per task, and at most 50
 concurrent materialized tasks. Override with `TARGET_EVENTS`, `EVENTS_PER_TASK`,
 `MAX_CONCURRENT`, and the resource variables documented in
 `scripts/condor/README.md`. Run a small pilot before the
 full array because the current exporter buffers a shard in memory.
+
+## Corrected v3 leaf contract
+
+V3 never uses related MC PDG to select a TrackFitResult, reconstructed charge,
+or an input energy. The fit policy is best reconstructed p-value with a
+deterministic pion closest-mass fallback. Raw tracks store reconstructed p3,
+charge, e/mu/pi/K/p energy hypotheses, availability, PIDLikelihood logL values
+and availability, canonical pion energy, `input_pid_token=0`, and the separate
+truth-only target. Fixed basf2 Particle candidates are explicitly tagged
+`fixed_hypothesis_candidate`.
+
+The canonical pion value is only the tensor-compatible encoder baseline.
+Reconstruction training substitutes the differentiable, charge-compatible
+PID-energy mixture before daughter-sum physics losses. Teacher-forced,
+scheduled, and free rollout hard-decode a charge-compatible PID and
+recursively rebuild all composite p4 values. Fixed-hypothesis candidates and
+ECL measurements are not rewritten by this raw-track path.
+
+Composites store exact recursive daughter sums and recursive reconstructed leaf
+sources. Partial targets expose truth/retained/reconstructed daughter counts and
+are invalid by default below two daughters. V1/v2 files are adapted without
+inventing missing detector values.
+
+Production planning now defaults to 5,000-event bounded shards and writes
+schema, PID vocabulary, feature hash, charge-conjugation mode, leaf mode, and
+git commit into every manifest row. The worker explicitly passes
+`--schema-version direct-mdst-tree-v3`. Run the cross-shard validator with:
+
+```bash
+python scripts/mdst_batch_production.py validate --manifest /path/to/manifest.jsonl
+```

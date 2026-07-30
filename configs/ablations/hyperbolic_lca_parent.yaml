@@ -1,7 +1,0 @@
-name: hyperbolic_lca_parent
-heterogeneous_adapters: true
-lca_parent: true
-radius_depth: false
-variance_covariance: false
-channel_supervision: false
-relation_attention: false

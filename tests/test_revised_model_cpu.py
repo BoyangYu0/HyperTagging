@@ -23,6 +23,7 @@ from hypertagging.models.hyperbolic import distance, expmap0, logmap0
 from hypertagging.models.relation_attention import RelationAwareSelfAttention
 from hypertagging.models.level_autoregressive import LevelAutoregressiveReconstructor
 from hypertagging.models.ablation import ABLATIONS, build_ablation_model
+from hypertagging.preprocessing.pid_filter import PDG_TOKENS
 
 
 def _heterogeneous_batch():
@@ -218,14 +219,36 @@ def test_ablation_surface_includes_requested_stages_and_is_cpu_forwardable():
     assert list(ABLATIONS) == [
         "flat_baseline",
         "heterogeneous_only",
-        "hyperbolic_lca_parent",
+        "contextual_euclidean",
+        "contextual_hyperbolic_parent_lca",
         "plus_radius_depth",
         "plus_variance_covariance",
-        "plus_channel",
-        "plus_relation_attention",
+        "plus_cross_event_channel",
+        "plus_hyperbolic_relation_attention",
+        "plus_leaf_pid",
+        "plus_scheduled_sampling",
         "full_revised",
     ]
     batch = _heterogeneous_batch()
+    assert ABLATIONS["plus_hyperbolic_relation_attention"] != ABLATIONS["full_revised"]
+    heterogeneous_only = build_ablation_model(
+        "heterogeneous_only",
+        n_features=batch["node_features"].shape[-1],
+        n_types=len(PDG_TOKENS),
+        hidden_dim=16,
+        hyper_dim=4,
+        n_queries=2,
+    )
+    contextual = build_ablation_model(
+        "contextual_euclidean",
+        n_features=batch["node_features"].shape[-1],
+        n_types=len(PDG_TOKENS),
+        hidden_dim=16,
+        hyper_dim=4,
+        n_queries=2,
+    )
+    assert not heterogeneous_only.encoder.use_contextual_encoder
+    assert contextual.encoder.use_contextual_encoder
     for name in ("flat_baseline", "full_revised"):
         model = build_ablation_model(
             name,

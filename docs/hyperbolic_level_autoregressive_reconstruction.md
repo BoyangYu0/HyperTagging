@@ -136,3 +136,27 @@ teacher-forced next-level metrics and free-rollout edge/tree metrics.
 Tiny CPU tests verify formulas, masks, matching, p4 closure, finite gradients,
 and termination. They do not establish scientific improvement. Real-size
 training and evaluation remain HTCondor-only.
+
+## Context-first geometry and curriculum
+
+The corrected order is heterogeneous adapters → Stage-A physical relation
+attention → contextual Euclidean nodes → task projections → shared Poincaré
+projection. Stage A has no hyperbolic inputs. Optional Stage B then uses
+Poincaré distance/radius features and is a separate ablation.
+
+The principal loss is LCA classification, true Poincaré parent ranking, direct
+normalized tree-distance regression, leaves-outside radius-depth regression,
+cross-event B-branch supervised contrastive learning, and tangent-space VICReg
+variance/covariance regularization. One curvature value is propagated through
+maps, distance, radius, relation features, losses, and diagnostics.
+
+The curriculum is explicit: FSP-only, truth-guided reconstructed composites,
+then corrupted/predicted-like composites (missing/wrong daughters, wrong
+types, shared-source conflicts, and physical hard negatives). Stage 1 masks
+every truth composite from contextual input.
+
+Queries receive a target-level embedding. Pointer scores include the expected
+mother-type embedding. Truth query/cardinality overflow raises; sparse
+object/pointer losses use configurable focal/positive weighting. Confidence is
+trained on matched pointer Jaccard multiplied by correct-type probability and
+reports Brier/ECE. Exclusive rollout compares recursive leaf-source sets.

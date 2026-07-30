@@ -1,5 +1,6 @@
 import torch
 
+from hypertagging.preprocessing.pid_filter import PDG_TOKENS
 from hypertagging.data.level_collate import collate_level_events
 from hypertagging.data.tiny_level_fixtures import tiny_level_events
 from hypertagging.models.heterogeneous import composite_token_from_daughters
@@ -17,7 +18,7 @@ from hypertagging.reconstruction.level_rollout import (
 def _model():
     return LevelAutoregressiveReconstructor(
         n_features=8,
-        n_types=4096,
+        n_types=len(PDG_TOKENS),
         hidden_dim=16,
         hyper_dim=4,
         n_queries=4,

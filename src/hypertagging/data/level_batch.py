@@ -22,6 +22,8 @@ class LevelEvent:
     active: torch.Tensor
     copied: torch.Tensor
     copied_from: torch.Tensor
+    raw_pdg: torch.Tensor | None = None
+    node_kind_ids: torch.Tensor | None = None
 
 
 @dataclass(frozen=True)

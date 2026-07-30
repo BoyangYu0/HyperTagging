@@ -15,6 +15,9 @@ from hypertagging.models.level_autoregressive import (
     _upgrade_flat_batch,
 )
 from hypertagging.preprocessing.schema_v2 import NODE_KIND_TO_ID
+from hypertagging.reconstruction.kinematics import (
+    hard_reconstructed_p4_from_leaf_pid,
+)
 
 
 @dataclass(frozen=True)
@@ -23,13 +26,15 @@ class RolloutConfig:
     object_threshold: float = 0.5
     pointer_threshold: float = 0.5
     confidence_threshold: float = 0.0
-    min_daughters: int = 1
+    min_daughters: int = 2
     root_types: tuple[int, ...] = (1,)  # reduced Upsilon(4S) token by default
     use_cardinality: bool = True
     allow_competing: bool = True
     exclusive_final: bool = True
     scheduled_sampling_probability: float = 0.0
     seed: int = 17
+    use_learned_confidence: bool = False
+    confidence_trained: bool = False
 
 
 @dataclass(frozen=True)
@@ -75,15 +80,25 @@ def hard_decode_proposals(
     proposals: list[CompositeProposal] = []
     for query_id in range(output.pointer.object_logits.shape[1]):
         object_score = float(torch.sigmoid(output.pointer.object_logits[0, query_id]).detach())
-        confidence = float(torch.sigmoid(output.pointer.confidence_logits[0, query_id]).detach())
-        if object_score < config.object_threshold or confidence < config.confidence_threshold:
+        if config.use_learned_confidence and not config.confidence_trained:
+            raise RuntimeError(
+                "learned confidence was requested for decoding but the checkpoint "
+                "does not mark the confidence head as trained"
+            )
+        learned_confidence = float(
+            torch.sigmoid(output.pointer.confidence_logits[0, query_id]).detach()
+        )
+        if object_score < config.object_threshold:
             continue
         probabilities = torch.sigmoid(
             output.pointer.pointer_logits[0, query_id, context_positions]
         )
         if config.use_cardinality:
             cardinality = int(output.pointer.cardinality_logits[0, query_id].argmax())
-            cardinality = min(cardinality, context_positions.numel())
+            if cardinality > context_positions.numel():
+                # This is an invalid prediction, not a training-target
+                # overflow. Training truth overflows raise explicitly.
+                continue
             selected_local = (
                 probabilities.topk(cardinality).indices
                 if cardinality > 0
@@ -97,6 +112,21 @@ def hard_decode_proposals(
             sorted(int(context_positions[index]) for index in selected_local.tolist())
         )
         if len(daughter_positions) < config.min_daughters:
+            continue
+        pointer_quality = (
+            float(probabilities[selected_local].mean().detach())
+            if selected_local.numel()
+            else 0.0
+        )
+        type_probability = float(
+            torch.softmax(output.pointer.type_logits[0, query_id], dim=-1).max().detach()
+        )
+        confidence = (
+            learned_confidence
+            if config.use_learned_confidence
+            else object_score * type_probability * pointer_quality
+        )
+        if confidence < config.confidence_threshold:
             continue
         proposals.append(
             CompositeProposal(
@@ -112,9 +142,11 @@ def hard_decode_proposals(
 
 def resolve_exclusive_proposals(
     proposals: list[CompositeProposal],
-    source_node_ids: torch.Tensor,
+    source_node_ids: torch.Tensor | None = None,
+    *,
+    recursive_leaf_source_mask: torch.Tensor | None = None,
 ) -> list[CompositeProposal]:
-    """Greedily resolve source-object reuse after competing proposal generation."""
+    """Resolve reuse using recursive underlying leaf provenance."""
 
     accepted: list[CompositeProposal] = []
     used_sources: set[int] = set()
@@ -129,10 +161,21 @@ def resolve_exclusive_proposals(
         ),
     )
     for proposal in ranked:
-        sources = {
-            int(source_node_ids[position])
-            for position in proposal.daughter_positions
-        }
+        if recursive_leaf_source_mask is not None:
+            sources = set(
+                recursive_leaf_source_mask[list(proposal.daughter_positions)]
+                .any(dim=0)
+                .nonzero(as_tuple=False)
+                .flatten()
+                .tolist()
+            )
+        elif source_node_ids is not None:
+            sources = {
+                int(source_node_ids[position])
+                for position in proposal.daughter_positions
+            }
+        else:
+            raise ValueError("recursive leaf sources or legacy source_node_ids are required")
         if sources & used_sources:
             continue
         accepted.append(proposal)
@@ -181,9 +224,17 @@ def level_rollout(
             stop_reason = "no_context"
             break
         output = model(state, target_level=target_level)
+        if output.leaf_pid_logits is not None:
+            state = _with_hard_predicted_leaf_p4(state, output.leaf_pid_logits)
         predicted = hard_decode_proposals(output, state, config)
         if not config.allow_competing:
-            predicted = resolve_exclusive_proposals(predicted, state["source_node_ids"][0])
+            predicted = resolve_exclusive_proposals(
+                predicted,
+                state["source_node_ids"][0],
+                recursive_leaf_source_mask=state.get("recursive_leaf_source_mask", None)[0]
+                if "recursive_leaf_source_mask" in state
+                else None,
+            )
 
         use_truth = mode == "teacher_forced"
         if mode == "scheduled":
@@ -206,7 +257,13 @@ def level_rollout(
             )
             break
         accepted = (
-            resolve_exclusive_proposals(proposals, state["source_node_ids"][0])
+            resolve_exclusive_proposals(
+                proposals,
+                state["source_node_ids"][0],
+                recursive_leaf_source_mask=state.get("recursive_leaf_source_mask", None)[0]
+                if "recursive_leaf_source_mask" in state
+                else None,
+            )
             if config.exclusive_final
             else proposals
         )
@@ -253,6 +310,30 @@ def level_rollout(
         valid=valid,
         teacher_forced=mode == "teacher_forced",
     )
+
+
+def _with_hard_predicted_leaf_p4(
+    batch: dict[str, torch.Tensor],
+    pid_logits: torch.Tensor,
+) -> dict[str, torch.Tensor]:
+    """Update raw tracks and existing composites without touching fixed leaves."""
+
+    result = dict(batch)
+    result["p4"] = hard_reconstructed_p4_from_leaf_pid(batch, pid_logits)
+    common = batch["common_features"].clone()
+    common[..., :4] = result["p4"]
+    mass2 = result["p4"][..., 3].square() - result["p4"][..., :3].square().sum(dim=-1)
+    common[..., 4] = mass2.clamp_min(0).sqrt()
+    result["common_features"] = common
+    composite = batch["composite_features"].clone()
+    has_daughters = batch["daughter_adjacency"].any(dim=-1)
+    composite[..., :4] = torch.where(
+        has_daughters.unsqueeze(-1),
+        result["p4"],
+        composite[..., :4],
+    )
+    result["composite_features"] = composite
+    return result
 
 
 def append_composite_proposals(
@@ -364,10 +445,24 @@ def append_composite_proposals(
             dtype=torch.bool,
             device=device,
         ),
-        "composite_features": construction["features"].unsqueeze(0),
-        "composite_availability": construction["availability"].unsqueeze(0),
+        "composite_features": batch["composite_features"].new_zeros(
+            (1, proposal_count, batch["composite_features"].shape[-1])
+        ),
+        "composite_availability": torch.zeros(
+            (1, proposal_count, batch["composite_features"].shape[-1]),
+            dtype=torch.bool,
+            device=device,
+        ),
         "daughter_pid_histogram": construction["daughter_pid_histogram"].unsqueeze(0),
     }
+    copied_width = min(
+        construction["features"].shape[-1],
+        additions["composite_features"].shape[-1],
+    )
+    additions["composite_features"][0, :, :copied_width] = construction["features"][:, :copied_width]
+    additions["composite_availability"][0, :, :copied_width] = construction[
+        "availability"
+    ][:, :copied_width]
     for field in tensor_node_fields:
         result[field] = torch.cat([batch[field], additions[field]], dim=1)
     vector_additions = {
@@ -421,6 +516,15 @@ def append_composite_proposals(
             ]
         ).unsqueeze(0),
     }
+    for optional_pid_field in ("pid_target_labels", "truth_pid_labels"):
+        if optional_pid_field in batch:
+            vector_additions[optional_pid_field] = vector_additions["pid_labels"].clone()
+    if "truth_pid_available" in batch:
+        vector_additions["truth_pid_available"] = torch.zeros(
+            (1, proposal_count),
+            dtype=torch.bool,
+            device=device,
+        )
     for field, addition in vector_additions.items():
         result[field] = torch.cat([batch[field], addition], dim=1)
     result["p4"] = torch.cat([batch["p4"], construction["p4"].unsqueeze(0)], dim=1)
@@ -433,6 +537,17 @@ def append_composite_proposals(
     adjacency[:, :old_count, :old_count] = old_adjacency
     adjacency[0, old_count:, :old_count] = daughter_masks
     result["daughter_adjacency"] = adjacency
+    if "recursive_leaf_source_mask" in batch:
+        old_sources = batch["recursive_leaf_source_mask"]
+        new_sources = torch.einsum(
+            "qn,bns->bqs",
+            daughter_masks.float(),
+            old_sources.float(),
+        ).bool()
+        result["recursive_leaf_source_mask"] = torch.cat(
+            [old_sources, new_sources],
+            dim=1,
+        )
     result["node_mask"] = result["active"]
     result["node_features"] = result["common_features"]
     # Record a unique parent only after exclusive resolution.
@@ -453,7 +568,9 @@ def _select_nodes(
     for key, value in batch.items():
         if not isinstance(value, torch.Tensor):
             continue
-        if value.ndim >= 3 and value.shape[1:3] == (n_nodes, n_nodes):
+        if key == "recursive_leaf_source_mask":
+            selected[key] = value[:, indices]
+        elif value.ndim >= 3 and value.shape[1:3] == (n_nodes, n_nodes):
             selected[key] = value[:, indices][:, :, indices]
         elif value.ndim >= 2 and value.shape[1] == n_nodes:
             selected[key] = value[:, indices]
@@ -502,7 +619,9 @@ def _truth_proposals(
         proposals.append(
             CompositeProposal(
                 query_id=query_id,
-                mother_type=int(truth["pid_labels"][0, truth_position]),
+                mother_type=int(
+                    truth.get("pid_target_labels", truth["pid_labels"])[0, truth_position]
+                ),
                 daughter_positions=tuple(sorted(daughters)),
                 object_score=1.0,
                 confidence=1.0,
@@ -533,10 +652,18 @@ def _state_fingerprint(batch: dict[str, torch.Tensor]) -> str:
         daughters = batch["daughter_adjacency"][0, position].nonzero(
             as_tuple=False
         ).flatten()
-        sources = sorted(
-            int(batch["source_node_ids"][0, daughter])
-            for daughter in daughters.tolist()
-        )
+        if "recursive_leaf_source_mask" in batch:
+            sources = (
+                batch["recursive_leaf_source_mask"][0, position]
+                .nonzero(as_tuple=False)
+                .flatten()
+                .tolist()
+            )
+        else:
+            sources = sorted(
+                int(batch["source_node_ids"][0, daughter])
+                for daughter in daughters.tolist()
+            )
         records.append(
             (
                 int(batch["level_ids"][0, position]),

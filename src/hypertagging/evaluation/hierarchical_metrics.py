@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from collections import Counter
 from typing import Any
 
 import torch
@@ -20,6 +21,21 @@ class EdgeMetrics:
     exact_match: bool
 
 
+@dataclass(frozen=True)
+class CanonicalTreeMetrics:
+    subtree_exact_match: float
+    full_tree_exact_match: bool
+    edge_precision: float
+    edge_recall: float
+    edge_f1: float
+    mother_type_accuracy: float
+    leaf_assignment_accuracy: float
+    recursive_source_overlap: float
+    tree_edit_like_distance: float
+    first_divergence_level: int
+    root_reconstruction_success: bool
+
+
 def edge_set(batch: dict[str, torch.Tensor], batch_index: int = 0) -> set[tuple[int, int]]:
     edges: set[tuple[int, int]] = set()
     node_ids = batch["node_ids"][batch_index]
@@ -34,13 +50,204 @@ def edge_metrics(
     predicted: dict[str, torch.Tensor],
     truth: dict[str, torch.Tensor],
 ) -> EdgeMetrics:
-    predicted_edges = edge_set(predicted)
-    truth_edges = edge_set(truth)
-    true_positive = len(predicted_edges & truth_edges)
-    precision = true_positive / len(predicted_edges) if predicted_edges else float(not truth_edges)
-    recall = true_positive / len(truth_edges) if truth_edges else float(not predicted_edges)
+    predicted_signatures = canonical_tree_signatures(predicted)
+    truth_signatures = canonical_tree_signatures(truth)
+    predicted_edges = _canonical_edges(predicted, predicted_signatures)
+    truth_edges = _canonical_edges(truth, truth_signatures)
+    intersection = predicted_edges & truth_edges
+    true_positive = sum(intersection.values())
+    predicted_count = sum(predicted_edges.values())
+    truth_count = sum(truth_edges.values())
+    precision = true_positive / predicted_count if predicted_count else float(not truth_count)
+    recall = true_positive / truth_count if truth_count else float(not predicted_count)
     f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0.0
     return EdgeMetrics(precision, recall, f1, predicted_edges == truth_edges)
+
+
+def canonical_tree_signatures(
+    batch: dict[str, torch.Tensor],
+    batch_index: int = 0,
+) -> dict[int, tuple[Any, ...]]:
+    """Canonical signatures independent of generated composite node IDs."""
+
+    active = batch["node_mask"][batch_index]
+    adjacency = batch["daughter_adjacency"][batch_index]
+    pid = batch.get("pid_target_labels", batch["pid_labels"])[batch_index]
+    memo: dict[int, tuple[Any, ...]] = {}
+    visiting: set[int] = set()
+
+    def signature(node: int) -> tuple[Any, ...]:
+        if node in memo:
+            return memo[node]
+        if node in visiting:
+            raise ValueError(f"cycle detected while canonicalizing node {node}")
+        visiting.add(node)
+        daughters = [
+            int(child)
+            for child in adjacency[node].nonzero(as_tuple=False).flatten().tolist()
+            if bool(active[child])
+        ]
+        if daughters:
+            result: tuple[Any, ...] = (
+                "mother",
+                int(pid[node]),
+                tuple(sorted((signature(child) for child in daughters), key=repr)),
+            )
+        else:
+            if "recursive_leaf_source_mask" in batch:
+                sources = tuple(
+                    int(value)
+                    for value in batch["recursive_leaf_source_mask"][batch_index, node]
+                    .nonzero(as_tuple=False)
+                    .flatten()
+                    .tolist()
+                )
+            elif "reco_ids" in batch and int(batch["reco_ids"][batch_index, node]) >= 0:
+                sources = (int(batch["reco_ids"][batch_index, node]),)
+            else:
+                sources = (int(batch["source_node_ids"][batch_index, node]),)
+            result = ("leaf", sources)
+        visiting.remove(node)
+        memo[node] = result
+        return result
+
+    for node in active.nonzero(as_tuple=False).flatten().tolist():
+        signature(int(node))
+    return memo
+
+
+def canonical_tree_metrics(
+    predicted: dict[str, torch.Tensor],
+    truth: dict[str, torch.Tensor],
+) -> CanonicalTreeMetrics:
+    predicted_signatures = canonical_tree_signatures(predicted)
+    truth_signatures = canonical_tree_signatures(truth)
+    predicted_counter = Counter(predicted_signatures.values())
+    truth_counter = Counter(truth_signatures.values())
+    common = predicted_counter & truth_counter
+    subtree_denominator = max(sum(truth_counter.values()), 1)
+    subtree_exact = sum(common.values()) / subtree_denominator
+    predicted_roots = _root_signature_counter(predicted, predicted_signatures)
+    truth_roots = _root_signature_counter(truth, truth_signatures)
+    edges = edge_metrics(predicted, truth)
+    aligned = _align_by_signature(predicted_signatures, truth_signatures)
+    type_correct = 0
+    type_total = 0
+    source_scores = []
+    leaf_correct = 0
+    leaf_total = 0
+    for predicted_node, truth_node in aligned:
+        pred_sig = predicted_signatures[predicted_node]
+        truth_sig = truth_signatures[truth_node]
+        if pred_sig[0] == "mother" and truth_sig[0] == "mother":
+            type_total += 1
+            type_correct += int(pred_sig[1] == truth_sig[1])
+        if pred_sig[0] == "leaf" and truth_sig[0] == "leaf":
+            leaf_total += 1
+            leaf_correct += int(pred_sig == truth_sig)
+        pred_sources = _signature_leaf_sources(pred_sig)
+        truth_sources = _signature_leaf_sources(truth_sig)
+        union = pred_sources | truth_sources
+        source_scores.append(
+            len(pred_sources & truth_sources) / len(union) if union else 1.0
+        )
+    edit_numerator = (
+        sum((predicted_counter - truth_counter).values())
+        + sum((truth_counter - predicted_counter).values())
+    )
+    edit_denominator = max(sum(predicted_counter.values()) + sum(truth_counter.values()), 1)
+    return CanonicalTreeMetrics(
+        subtree_exact_match=subtree_exact,
+        full_tree_exact_match=predicted_roots == truth_roots,
+        edge_precision=edges.precision,
+        edge_recall=edges.recall,
+        edge_f1=edges.f1,
+        mother_type_accuracy=type_correct / type_total if type_total else 1.0,
+        leaf_assignment_accuracy=leaf_correct / leaf_total if leaf_total else 1.0,
+        recursive_source_overlap=sum(source_scores) / len(source_scores) if source_scores else 0.0,
+        tree_edit_like_distance=edit_numerator / edit_denominator,
+        first_divergence_level=_first_divergence_level(
+            predicted,
+            truth,
+            predicted_signatures,
+            truth_signatures,
+        ),
+        root_reconstruction_success=bool(truth_roots) and bool(predicted_roots & truth_roots),
+    )
+
+
+def _canonical_edges(
+    batch: dict[str, torch.Tensor],
+    signatures: dict[int, tuple[Any, ...]],
+) -> Counter[tuple[tuple[Any, ...], tuple[Any, ...]]]:
+    output: Counter[tuple[tuple[Any, ...], tuple[Any, ...]]] = Counter()
+    for parent, child in batch["daughter_adjacency"][0].nonzero(as_tuple=False).tolist():
+        if parent in signatures and child in signatures:
+            output[(signatures[parent], signatures[child])] += 1
+    return output
+
+
+def _root_signature_counter(
+    batch: dict[str, torch.Tensor],
+    signatures: dict[int, tuple[Any, ...]],
+) -> Counter[tuple[Any, ...]]:
+    adjacency = batch["daughter_adjacency"][0]
+    has_parent = adjacency.any(dim=0)
+    return Counter(
+        signatures[node]
+        for node in signatures
+        if not bool(has_parent[node])
+    )
+
+
+def _align_by_signature(
+    predicted: dict[int, tuple[Any, ...]],
+    truth: dict[int, tuple[Any, ...]],
+) -> list[tuple[int, int]]:
+    truth_by_signature: dict[tuple[Any, ...], list[int]] = {}
+    for node, signature in truth.items():
+        truth_by_signature.setdefault(signature, []).append(node)
+    output = []
+    for node, signature in sorted(predicted.items()):
+        candidates = truth_by_signature.get(signature, [])
+        if candidates:
+            output.append((node, candidates.pop(0)))
+    return output
+
+
+def _signature_leaf_sources(signature: tuple[Any, ...]) -> set[int]:
+    if signature[0] == "leaf":
+        return set(signature[1])
+    output: set[int] = set()
+    for child in signature[2]:
+        output.update(_signature_leaf_sources(child))
+    return output
+
+
+def _first_divergence_level(
+    predicted: dict[str, torch.Tensor],
+    truth: dict[str, torch.Tensor],
+    predicted_signatures: dict[int, tuple[Any, ...]],
+    truth_signatures: dict[int, tuple[Any, ...]],
+) -> int:
+    levels = sorted(
+        set(int(value) for value in truth["level_ids"][truth["node_mask"]].tolist())
+        | set(int(value) for value in predicted["level_ids"][predicted["node_mask"]].tolist())
+    )
+    for level in levels:
+        predicted_at_level = Counter(
+            predicted_signatures[node]
+            for node in predicted_signatures
+            if int(predicted["level_ids"][0, node]) == level
+        )
+        truth_at_level = Counter(
+            truth_signatures[node]
+            for node in truth_signatures
+            if int(truth["level_ids"][0, node]) == level
+        )
+        if predicted_at_level != truth_at_level:
+            return level
+    return -1
 
 
 def p4_closure_rate(batch: dict[str, torch.Tensor], tolerance: float = 1e-6) -> float:
@@ -64,6 +271,24 @@ def tree_validity_rate(batch: dict[str, torch.Tensor]) -> float:
         adjacency = batch["daughter_adjacency"][batch_index, :active_count, :active_count]
         levels = batch["level_ids"][batch_index, :active_count]
         valid = not bool(torch.diagonal(adjacency).any())
+        if valid:
+            visiting: set[int] = set()
+            visited: set[int] = set()
+
+            def visit(node: int) -> bool:
+                if node in visiting:
+                    return False
+                if node in visited:
+                    return True
+                visiting.add(node)
+                for child in adjacency[node].nonzero(as_tuple=False).flatten().tolist():
+                    if not visit(int(child)):
+                        return False
+                visiting.remove(node)
+                visited.add(node)
+                return True
+
+            valid = all(visit(node) for node in range(active_count))
         if valid:
             for mother, child in adjacency.nonzero(as_tuple=False).tolist():
                 if int(levels[mother]) <= int(levels[child]):
@@ -89,12 +314,16 @@ def summarize_rollout(
     predicted: dict[str, torch.Tensor],
     truth: dict[str, torch.Tensor],
 ) -> dict[str, Any]:
-    edges = edge_metrics(predicted, truth)
+    canonical = canonical_tree_metrics(predicted, truth)
     return {
-        "full_tree_exact_match": edges.exact_match,
-        "edge_precision": edges.precision,
-        "edge_recall": edges.recall,
-        "edge_f1": edges.f1,
+        "full_tree_exact_match": canonical.full_tree_exact_match,
+        "canonical_subtree_exact_match": canonical.subtree_exact_match,
+        "edge_precision": canonical.edge_precision,
+        "edge_recall": canonical.edge_recall,
+        "edge_f1": canonical.edge_f1,
+        "tree_edit_like_distance": canonical.tree_edit_like_distance,
+        "first_divergence_level": canonical.first_divergence_level,
+        "root_reconstruction_success": canonical.root_reconstruction_success,
         "tree_validity_rate": tree_validity_rate(predicted),
         "p4_closure_rate": p4_closure_rate(predicted),
         "predicted_nodes": int(predicted["node_mask"].sum()),
@@ -203,6 +432,9 @@ def channel_generalization_slices(
 
 __all__ = [
     "EdgeMetrics",
+    "CanonicalTreeMetrics",
+    "canonical_tree_metrics",
+    "canonical_tree_signatures",
     "edge_metrics",
     "edge_set",
     "p4_closure_rate",

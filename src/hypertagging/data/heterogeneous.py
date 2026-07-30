@@ -11,14 +11,16 @@ import torch
 
 from hypertagging.data.level_batch import LevelEvent
 from hypertagging.preprocessing.schema_v2 import (
-    CLUSTER_FEATURE_NAMES,
-    COMMON_FEATURE_NAMES,
-    COMPOSITE_FEATURE_NAMES,
     NODE_KIND_TO_ID,
-    TRACK_FEATURE_NAMES,
-    load_payload_v2,
 )
-from hypertagging.preprocessing.pid_filter import PDG_TOKENS
+from hypertagging.preprocessing.schema_v3 import (
+    V3_CLUSTER_FEATURE_NAMES as CLUSTER_FEATURE_NAMES,
+    V3_COMMON_FEATURE_NAMES as COMMON_FEATURE_NAMES,
+    V3_COMPOSITE_FEATURE_NAMES as COMPOSITE_FEATURE_NAMES,
+    V3_TRACK_FEATURE_NAMES as TRACK_FEATURE_NAMES,
+    load_payload_v3,
+)
+from hypertagging.preprocessing.pid_filter import PDG_TOKENS, validate_pid_tokens
 
 
 @dataclass(frozen=True)
@@ -37,6 +39,9 @@ class HeterogeneousEvent:
     daughter_pid_histogram_available: torch.Tensor
     node_kind_ids: torch.Tensor
     pid_labels: torch.Tensor
+    pid_target_labels: torch.Tensor
+    truth_pid_labels: torch.Tensor
+    truth_pid_available: torch.Tensor
     level_ids: torch.Tensor
     p4: torch.Tensor
     charge: torch.Tensor
@@ -47,11 +52,20 @@ class HeterogeneousEvent:
     node_ids: torch.Tensor
     reco_ids: torch.Tensor
     source_node_ids: torch.Tensor
+    recursive_leaf_source_mask: torch.Tensor
     copied_from: torch.Tensor
     b_side: torch.Tensor
+    b_channel_count_arrays: torch.Tensor
     b1_channel_id: int = 0
     b2_channel_id: int = 0
+    b1_full_truth_channel_id: int = 0
+    b2_full_truth_channel_id: int = 0
+    b1_reconstructable_channel_id: int = 0
+    b2_reconstructable_channel_id: int = 0
     channel_similarity: float = 0.0
+    source_file: str = ""
+    source_category: str = ""
+    schema_version: str = ""
 
 
 def load_heterogeneous_events(
@@ -59,15 +73,22 @@ def load_heterogeneous_events(
     *,
     limit: int | None = None,
     max_nodes: int | None = None,
+    overflow_strategy: str = "raise",
 ) -> list[HeterogeneousEvent]:
-    """Load either direct-mDST schema into the common v2 model contract."""
+    """Load any direct-mDST schema into the corrected v3 model contract."""
 
-    payload = load_payload_v2(path)
+    payload = load_payload_v3(path)
     records = payload["events"] if limit is None else payload["events"][:limit]
     output: list[HeterogeneousEvent] = []
     for event in records:
         if max_nodes is not None and len(event["nodes"]) > max_nodes:
-            continue
+            if overflow_strategy == "drop":
+                continue
+            raise OverflowError(
+                f"event {event.get('event_uid', event.get('event_id'))} has "
+                f"{len(event['nodes'])} nodes, exceeding max_nodes={max_nodes}; "
+                "use overflow_strategy='drop' only with explicit accounting"
+            )
         output.append(_event_from_record(event))
     return output
 
@@ -84,6 +105,26 @@ def _event_from_record(event: dict[str, Any]) -> HeterogeneousEvent:
             if int(daughter_id) in id_to_position:
                 adjacency[position, id_to_position[int(daughter_id)]] = True
     b_side = _b_side_labels(nodes, id_to_position, event)
+    input_tokens = torch.tensor(
+        [int(node.get("input_pid_token", node.get("token", 0))) for node in nodes],
+        dtype=torch.long,
+    )
+    target_tokens = torch.tensor(
+        [int(node.get("pid_target_token", node.get("token", 0))) for node in nodes],
+        dtype=torch.long,
+    )
+    validate_pid_tokens(input_tokens, name="parquet input PID tokens")
+    validate_pid_tokens(target_tokens, name="parquet target PID tokens")
+    truth_available = torch.tensor(
+        [node.get("truth_pid_token") is not None for node in nodes],
+        dtype=torch.bool,
+    )
+    truth_tokens = torch.tensor(
+        [int(node.get("truth_pid_token") or 0) for node in nodes],
+        dtype=torch.long,
+    )
+    validate_pid_tokens(truth_tokens, name="parquet truth PID tokens")
+    recursive_source_mask = _recursive_source_mask(nodes)
     return HeterogeneousEvent(
         event_id=int(event["event_id"]),
         event_uid=str(event.get("event_uid", event["event_id"])),
@@ -124,13 +165,19 @@ def _event_from_record(event: dict[str, Any]) -> HeterogeneousEvent:
             dtype=torch.bool,
         ),
         node_kind_ids=torch.tensor([int(node["node_kind_id"]) for node in nodes], dtype=torch.long),
-        pid_labels=torch.tensor([int(node["token"]) for node in nodes], dtype=torch.long),
+        pid_labels=input_tokens,
+        pid_target_labels=target_tokens,
+        truth_pid_labels=truth_tokens,
+        truth_pid_available=truth_available,
         level_ids=torch.tensor([int(node["level"]) for node in nodes], dtype=torch.long),
         p4=torch.tensor(
             [[float(node[name]) for name in ("px", "py", "pz", "energy")] for node in nodes],
             dtype=torch.float32,
         ),
-        charge=torch.tensor([float(node["charge"]) for node in nodes], dtype=torch.float32),
+        charge=torch.tensor(
+            [float(node.get("reco_charge", node.get("charge", 0.0)) or 0.0) for node in nodes],
+            dtype=torch.float32,
+        ),
         parent_ids=parent_ids,
         daughter_adjacency=adjacency,
         active=torch.tensor([bool(node["active"]) for node in nodes], dtype=torch.bool),
@@ -153,15 +200,54 @@ def _event_from_record(event: dict[str, Any]) -> HeterogeneousEvent:
             ],
             dtype=torch.long,
         ),
+        recursive_leaf_source_mask=recursive_source_mask,
         copied_from=torch.tensor(
             [int(node.get("copied_from", -1)) for node in nodes],
             dtype=torch.long,
         ),
         b_side=b_side,
+        b_channel_count_arrays=torch.tensor(
+            [
+                event.get("b1_channel_count_array", [0] * len(PDG_TOKENS)),
+                event.get("b2_channel_count_array", [0] * len(PDG_TOKENS)),
+            ],
+            dtype=torch.float32,
+        ),
         b1_channel_id=int(event.get("b1_channel_id", 0)),
         b2_channel_id=int(event.get("b2_channel_id", 0)),
+        b1_full_truth_channel_id=int(event.get("b1_full_truth_channel_id", 0)),
+        b2_full_truth_channel_id=int(event.get("b2_full_truth_channel_id", 0)),
+        b1_reconstructable_channel_id=int(
+            event.get("b1_reconstructable_channel_id", event.get("b1_channel_id", 0))
+        ),
+        b2_reconstructable_channel_id=int(
+            event.get("b2_reconstructable_channel_id", event.get("b2_channel_id", 0))
+        ),
         channel_similarity=float(event.get("structured_channel_similarity", 0.0)),
+        source_file=str(event.get("source_file", "")),
+        source_category=str(event.get("source_category", "")),
+        schema_version=str(event.get("schema_version", "")),
     )
+
+
+def _recursive_source_mask(nodes: list[dict[str, Any]]) -> torch.Tensor:
+    per_node: list[list[str]] = []
+    all_sources: set[str] = set()
+    for node in nodes:
+        sources = [str(value) for value in node.get("recursive_leaf_source_ids", []) if str(value)]
+        if not sources and not node.get("daughter_ids"):
+            fallback = str(node.get("reco_object_id") or node.get("reco_id") or "")
+            sources = [fallback] if fallback else []
+        unique = sorted(set(sources))
+        per_node.append(unique)
+        all_sources.update(unique)
+    ordered = sorted(all_sources)
+    position = {source: index for index, source in enumerate(ordered)}
+    output = torch.zeros((len(nodes), len(ordered)), dtype=torch.bool)
+    for node_index, sources in enumerate(per_node):
+        for source in sources:
+            output[node_index, position[source]] = True
+    return output
 
 
 def _records_tensor(
@@ -224,10 +310,13 @@ def heterogeneous_from_level_event(event: LevelEvent) -> HeterogeneousEvent:
     )
     common_mask = torch.ones_like(common, dtype=torch.bool)
     common_mask[:, -1] = False
-    kinds = torch.full((count,), NODE_KIND_TO_ID["unknown"], dtype=torch.long)
-    kinds[event.level_ids > 0] = NODE_KIND_TO_ID["composite"]
-    kinds[(event.level_ids == 0) & (event.charge != 0)] = NODE_KIND_TO_ID["track"]
-    kinds[(event.level_ids == 0) & (event.pid_labels == 22)] = NODE_KIND_TO_ID["ecl_cluster"]
+    validate_pid_tokens(event.pid_labels, name="LevelEvent.pid_labels")
+    if event.node_kind_ids is not None:
+        kinds = event.node_kind_ids.clone()
+    else:
+        kinds = torch.full((count,), NODE_KIND_TO_ID["unknown"], dtype=torch.long)
+        kinds[event.level_ids > 0] = NODE_KIND_TO_ID["composite"]
+        kinds[(event.level_ids == 0) & (event.charge != 0)] = NODE_KIND_TO_ID["track"]
 
     track = torch.zeros((count, len(TRACK_FEATURE_NAMES)))
     track_mask = torch.zeros_like(track, dtype=torch.bool)
@@ -248,7 +337,7 @@ def heterogeneous_from_level_event(event: LevelEvent) -> HeterogeneousEvent:
         composite_mask[mother, [0, 1, 2, 3, 4, 5, 8]] = True
         pid_hist[mother].scatter_add_(
             0,
-            event.pid_labels[daughters].clamp(0, len(PDG_TOKENS) - 1),
+            event.pid_labels[daughters],
             torch.ones_like(daughters, dtype=torch.float32),
         )
         pid_hist_available[mother] = True
@@ -268,6 +357,9 @@ def heterogeneous_from_level_event(event: LevelEvent) -> HeterogeneousEvent:
         daughter_pid_histogram_available=pid_hist_available,
         node_kind_ids=kinds,
         pid_labels=event.pid_labels,
+        pid_target_labels=event.pid_labels,
+        truth_pid_labels=event.pid_labels,
+        truth_pid_available=torch.ones(count, dtype=torch.bool),
         level_ids=event.level_ids,
         p4=event.p4,
         charge=event.charge,
@@ -278,9 +370,36 @@ def heterogeneous_from_level_event(event: LevelEvent) -> HeterogeneousEvent:
         node_ids=node_ids,
         reco_ids=torch.full((count,), -1, dtype=torch.long),
         source_node_ids=node_ids,
+        recursive_leaf_source_mask=_fixture_recursive_source_mask(event),
         copied_from=event.copied_from,
         b_side=torch.full((count,), -1, dtype=torch.long),
+        b_channel_count_arrays=torch.zeros((2, len(PDG_TOKENS))),
     )
+
+
+def _fixture_recursive_source_mask(event: LevelEvent) -> torch.Tensor:
+    count = event.p4.shape[0]
+    representatives = [
+        int(event.copied_from[index])
+        if int(event.copied_from[index]) >= 0
+        else index
+        for index in range(count)
+    ]
+    leaves = sorted({representatives[index] for index in range(count) if not event.daughter_adjacency[index].any()})
+    leaf_position = {leaf: index for index, leaf in enumerate(leaves)}
+    output = torch.zeros((count, len(leaves)), dtype=torch.bool)
+    for node in range(count):
+        stack = [node]
+        while stack:
+            current = stack.pop()
+            daughters = event.daughter_adjacency[current].nonzero(as_tuple=False).flatten().tolist()
+            if daughters:
+                stack.extend(daughters)
+            else:
+                representative = representatives[current]
+                if representative in leaf_position:
+                    output[node, leaf_position[representative]] = True
+    return output
 
 
 def collate_heterogeneous_events(events: Sequence[HeterogeneousEvent]) -> dict[str, torch.Tensor]:
@@ -314,6 +433,9 @@ def collate_heterogeneous_events(events: Sequence[HeterogeneousEvent]) -> dict[s
     vector_defaults = {
         "node_kind_ids": 0,
         "pid_labels": 0,
+        "pid_target_labels": 0,
+        "truth_pid_labels": 0,
+        "truth_pid_available": 0,
         "level_ids": -1,
         "charge": 0,
         "parent_ids": -1,
@@ -326,7 +448,12 @@ def collate_heterogeneous_events(events: Sequence[HeterogeneousEvent]) -> dict[s
         "b_side": -1,
         "daughter_pid_histogram_available": 0,
     }
-    bool_vectors = {"active", "copied", "daughter_pid_histogram_available"}
+    bool_vectors = {
+        "active",
+        "copied",
+        "daughter_pid_histogram_available",
+        "truth_pid_available",
+    }
     for field, default in vector_defaults.items():
         dtype = torch.bool if field in bool_vectors else (
             torch.float32 if field == "charge" else torch.long
@@ -337,6 +464,11 @@ def collate_heterogeneous_events(events: Sequence[HeterogeneousEvent]) -> dict[s
         (batch_size, max_nodes, max_nodes),
         dtype=torch.bool,
     )
+    max_sources = max(event.recursive_leaf_source_mask.shape[1] for event in events)
+    output["recursive_leaf_source_mask"] = torch.zeros(
+        (batch_size, max_nodes, max_sources),
+        dtype=torch.bool,
+    )
     for batch_index, event in enumerate(events):
         n_nodes = event.common_features.shape[0]
         for field in feature_fields:
@@ -345,14 +477,33 @@ def collate_heterogeneous_events(events: Sequence[HeterogeneousEvent]) -> dict[s
             output[field][batch_index, :n_nodes] = getattr(event, field)
         output["p4"][batch_index, :n_nodes] = event.p4
         output["daughter_adjacency"][batch_index, :n_nodes, :n_nodes] = event.daughter_adjacency
+        n_sources = event.recursive_leaf_source_mask.shape[1]
+        output["recursive_leaf_source_mask"][batch_index, :n_nodes, :n_sources] = (
+            event.recursive_leaf_source_mask
+        )
     output["node_mask"] = output["active"].clone()
     output["node_features"] = output["common_features"]
     output["event_ids"] = torch.tensor([event.event_id for event in events], dtype=torch.long)
     output["b1_channel_ids"] = torch.tensor([event.b1_channel_id for event in events], dtype=torch.long)
     output["b2_channel_ids"] = torch.tensor([event.b2_channel_id for event in events], dtype=torch.long)
+    output["b1_full_truth_channel_ids"] = torch.tensor(
+        [event.b1_full_truth_channel_id for event in events], dtype=torch.long
+    )
+    output["b2_full_truth_channel_ids"] = torch.tensor(
+        [event.b2_full_truth_channel_id for event in events], dtype=torch.long
+    )
+    output["b1_reconstructable_channel_ids"] = torch.tensor(
+        [event.b1_reconstructable_channel_id for event in events], dtype=torch.long
+    )
+    output["b2_reconstructable_channel_ids"] = torch.tensor(
+        [event.b2_reconstructable_channel_id for event in events], dtype=torch.long
+    )
     output["channel_similarity"] = torch.tensor(
         [event.channel_similarity for event in events],
         dtype=torch.float32,
+    )
+    output["b_channel_count_arrays"] = torch.stack(
+        [event.b_channel_count_arrays for event in events]
     )
     return output
 

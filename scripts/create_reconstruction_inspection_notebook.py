@@ -49,7 +49,7 @@ def build_notebook() -> nbf.NotebookNode:
             if not (REPO_ROOT / "src").exists(): REPO_ROOT = Path("..").resolve()
             sys.path.insert(0, str(REPO_ROOT / "src"))
             from hypertagging.data.heterogeneous import load_heterogeneous_events, collate_heterogeneous_events
-            from hypertagging.data.notebook_fixtures import write_notebook_fixture
+            from hypertagging.data.notebook_fixtures import write_notebook_fixture_v3
             from hypertagging.evaluation.hierarchical_metrics import edge_set, summarize_rollout
             from hypertagging.losses.level_reconstruction import level_reconstruction_loss
             from hypertagging.models.level_autoregressive import LevelAutoregressiveReconstructor
@@ -60,8 +60,8 @@ def build_notebook() -> nbf.NotebookNode:
             torch.manual_seed(SEED); np.random.seed(SEED)
             requested = os.environ.get("HYPERTAGGING_PARQUET", "").strip()
             FIXTURE_MODE = not bool(requested)
-            INPUT_PATH = Path(requested) if requested else Path("/tmp/hypertagging_notebook_fixture_v2.parquet")
-            if FIXTURE_MODE: write_notebook_fixture(INPUT_PATH)
+            INPUT_PATH = Path(requested) if requested else Path("/tmp/hypertagging_notebook_fixture_v3.parquet")
+            if FIXTURE_MODE: write_notebook_fixture_v3(INPUT_PATH)
             if not INPUT_PATH.exists(): raise FileNotFoundError(INPUT_PATH)
             FIGURE_DIR = Path(os.environ.get("HYPERTAGGING_FIGURE_DIR", "/tmp/hypertagging_figures/reconstruction"))
             FIGURE_DIR.mkdir(parents=True, exist_ok=True)
@@ -230,6 +230,34 @@ def build_notebook() -> nbf.NotebookNode:
             )
             print("First rollout divergence level:", first_divergence)
             print("Missing/extra edges and wrong types above show error propagation to later levels.")
+            """
+        ),
+        md("## Leaf PID, level conditioning, confidence, and recursive-source audit"),
+        code(
+            """
+            from hypertagging.evaluation.hierarchical_metrics import canonical_tree_metrics
+            with torch.no_grad():
+                level1=model(batch,target_level=1)
+                level2=model(batch,target_level=2)
+            leaf_mask=batch["node_mask"]&(batch["node_kind_ids"]==1)
+            leaf_pid_prediction=level1.leaf_pid_logits.softmax(-1).argmax(-1)
+            display(pd.DataFrame({
+                "position":leaf_mask[0].nonzero().flatten().tolist(),
+                "predicted_leaf_pid_token":leaf_pid_prediction[0,leaf_mask[0]].tolist(),
+                "truth_pid_token":batch["truth_pid_labels"][0,leaf_mask[0]].tolist(),
+            }))
+            print("Target-level query conditioning changes logits:",
+                  not torch.allclose(level1.pointer.pointer_logits,level2.pointer.pointer_logits))
+            scheduled=level_rollout(model,batch,mode="scheduled",config=RolloutConfig(max_level=4,root_types=(),scheduled_sampling_probability=.5))
+            canonical=canonical_tree_metrics(teacher.batch,batch)
+            print({
+                "confidence_scores":torch.sigmoid(level1.pointer.confidence_logits).tolist(),
+                "recursive_leaf_source_shape":tuple(batch["recursive_leaf_source_mask"].shape),
+                "canonical_teacher_exact":canonical.full_tree_exact_match,
+                "scheduled_stop":scheduled.stop_reason,
+                "partial_target_policy":"complete/reconstructable targets with min_daughters=2",
+            })
+            assert canonical.full_tree_exact_match
             """
         ),
         md("## Complete CPU forward/loss/backward/optimizer smoke step"),

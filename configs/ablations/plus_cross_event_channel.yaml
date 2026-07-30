@@ -1,0 +1,13 @@
+name: plus_cross_event_channel
+heterogeneous_adapters: true
+contextual_euclidean: true
+lca_parent: true
+direct_tree_distance: true
+radius_depth: true
+variance_covariance: true
+cross_event_channel: true
+physical_relation_attention: false
+hyperbolic_relation_attention: false
+leaf_pid: false
+scheduled_sampling: false
+pretrained_encoder_transfer: true

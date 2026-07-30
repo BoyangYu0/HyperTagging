@@ -1,0 +1,13 @@
+name: contextual_hyperbolic_parent_lca
+heterogeneous_adapters: true
+contextual_euclidean: true
+lca_parent: true
+direct_tree_distance: true
+radius_depth: false
+variance_covariance: false
+cross_event_channel: false
+physical_relation_attention: false
+hyperbolic_relation_attention: false
+leaf_pid: false
+scheduled_sampling: false
+pretrained_encoder_transfer: false

@@ -15,7 +15,8 @@ from hypertagging.preprocessing.mdst_tree_builder import EventTree
 from hypertagging.preprocessing.pid_filter import tokenize_pdg
 
 
-B_PDGS = frozenset({511, 521, 531})
+Y4S_B_PDGS = frozenset({511, 521})
+SUPPORTED_B_BY_RESONANCE: dict[int, frozenset[int]] = {300553: Y4S_B_PDGS}
 
 
 def conjugate_pdg(pdg: int) -> int:
@@ -66,28 +67,78 @@ def deterministic_channel_id(signature: str | None) -> int:
     return int(hashlib.sha256(signature.encode("utf-8")).hexdigest()[:15], 16)
 
 
-def find_b_branches(tree: EventTree) -> list[int]:
-    """Find the two retained B-side roots deterministically."""
+def find_b_branches(
+    tree: EventTree,
+    *,
+    resonance_pdg: int = 300553,
+    supported_b_pdgs: Iterable[int] | None = None,
+    allow_fallback: bool = True,
+) -> list[int]:
+    """Find B branches with resonance-aware species validation.
 
-    y4s = [node_id for node_id, node in tree.nodes.items() if abs(node.pdg) == 300553]
+    For Upsilon(4S), only B0/B+ species are accepted by default; B_s is not a
+    kinematically compatible direct daughter.  Legacy callers can retain the
+    explicit top-level fallback through ``allow_fallback=True``.
+    """
+
+    allowed = frozenset(
+        abs(int(pdg))
+        for pdg in (
+            supported_b_pdgs
+            if supported_b_pdgs is not None
+            else SUPPORTED_B_BY_RESONANCE.get(abs(resonance_pdg), Y4S_B_PDGS)
+        )
+    )
+    y4s = [node_id for node_id, node in tree.nodes.items() if abs(node.pdg) == abs(resonance_pdg)]
     candidates: list[int] = []
     for root_id in sorted(y4s):
-        candidates.extend(
+        direct = [
             child_id
             for child_id in tree.nodes[root_id].daughter_ids
-            if abs(tree.nodes[child_id].pdg) in B_PDGS
-        )
-    if len(candidates) < 2:
+            if abs(tree.nodes[child_id].pdg) in allowed
+        ]
+        if len(direct) == 2:
+            candidates.extend(direct)
+            break
+    if len(candidates) < 2 and allow_fallback:
         candidates = [
             node_id
             for node_id, node in tree.nodes.items()
-            if abs(node.pdg) in B_PDGS
+            if abs(node.pdg) in allowed
             and (
                 node.parent_id is None
-                or abs(tree.nodes[node.parent_id].pdg) not in B_PDGS
+                or abs(tree.nodes[node.parent_id].pdg) not in allowed
             )
         ]
     return sorted(dict.fromkeys(candidates))[:2]
+
+
+def find_resonance_b_branches(
+    tree: EventTree,
+    *,
+    resonance_pdg: int = 300553,
+    supported_b_pdgs: Iterable[int] | None = None,
+) -> list[int]:
+    """Require exactly two compatible direct B daughters of one resonance."""
+
+    branches = find_b_branches(
+        tree,
+        resonance_pdg=resonance_pdg,
+        supported_b_pdgs=supported_b_pdgs,
+        allow_fallback=False,
+    )
+    if len(branches) != 2:
+        raise ValueError(
+            f"expected exactly two direct compatible B daughters of PDG {resonance_pdg}, "
+            f"found {len(branches)}"
+        )
+    parents = {tree.nodes[node_id].parent_id for node_id in branches}
+    if len(parents) != 1 or None in parents:
+        raise ValueError("B branches do not descend from the same retained resonance")
+    parent_id = next(iter(parents))
+    if abs(tree.nodes[parent_id].pdg) != abs(resonance_pdg):
+        raise ValueError("B branch parent is not the configured resonance")
+    return branches
 
 
 def branch_node_ids(tree: EventTree, root_id: int) -> list[int]:
@@ -206,7 +257,8 @@ def event_channel_record(
 ) -> dict[str, Any]:
     """Build separate B-side and unordered event-level channel fields."""
 
-    b_ids = find_b_branches(tree)
+    strict_b_ids = find_b_branches(tree, allow_fallback=False)
+    b_ids = strict_b_ids or find_b_branches(tree, allow_fallback=True)
     signatures = [
         canonical_decay_signature(
             tree,
@@ -245,9 +297,54 @@ def event_channel_record(
         "exact_channel_equal": bool(signatures[0] and signatures[0] == signatures[1]),
         "structured_channel_similarity": structured_channel_similarity(arrays[0], arrays[1]),
         "same_event": True,
+        "b_root_discovery_valid": len(strict_b_ids) == 2,
+        "b_root_discovery_fallback": len(strict_b_ids) != 2 and len(b_ids) == 2,
         "y4s_channel_signature": pair_signature,
         "y4s_channel_id": deterministic_channel_id(pair_signature),
     }
+
+
+def dual_channel_record(
+    *,
+    full_truth_tree: EventTree | None,
+    reconstructable_tree: EventTree,
+    charge_conjugate_normalize: bool = False,
+) -> dict[str, Any]:
+    """Keep generator identity separate from detector-reconstructable identity."""
+
+    reconstructable = event_channel_record(
+        reconstructable_tree,
+        charge_conjugate_normalize=charge_conjugate_normalize,
+    )
+    full = (
+        event_channel_record(
+            full_truth_tree,
+            charge_conjugate_normalize=charge_conjugate_normalize,
+        )
+        if full_truth_tree is not None
+        else None
+    )
+    output: dict[str, Any] = {}
+    for side in ("b1", "b2"):
+        output[f"{side}_reconstructable_channel_signature"] = reconstructable[
+            f"{side}_channel_signature"
+        ]
+        output[f"{side}_reconstructable_channel_id"] = reconstructable[f"{side}_channel_id"]
+        output[f"{side}_full_truth_channel_signature"] = (
+            None if full is None else full[f"{side}_channel_signature"]
+        )
+        output[f"{side}_full_truth_channel_id"] = (
+            0 if full is None else full[f"{side}_channel_id"]
+        )
+    output["y4s_reconstructable_channel_signature"] = reconstructable["y4s_channel_signature"]
+    output["y4s_reconstructable_channel_id"] = reconstructable["y4s_channel_id"]
+    output["y4s_full_truth_channel_signature"] = (
+        None if full is None else full["y4s_channel_signature"]
+    )
+    output["y4s_full_truth_channel_id"] = 0 if full is None else full["y4s_channel_id"]
+    output["full_truth_channel_available"] = full is not None
+    output["reconstructable_channel_available"] = True
+    return {**reconstructable, **output}
 
 
 def _empty_count_array() -> dict[str, Any]:
@@ -270,6 +367,8 @@ __all__ = [
     "deterministic_channel_id",
     "event_channel_record",
     "find_b_branches",
+    "find_resonance_b_branches",
+    "dual_channel_record",
     "structured_channel_similarity",
     "unordered_b_pair_signature",
 ]

@@ -59,3 +59,16 @@ required to classify the full B decay.
 
 Exact IDs remain useful for diagnostics, rare-channel stratification, and
 seen/unseen evaluation. They are not the only training objective.
+# Correctness revision
+
+Schema-v3 stores full retained generator-decay and reconstructable retained-tree
+signatures separately for both B branches and their unordered Upsilon pair.
+Upsilon(4S) discovery requires exactly two direct B0/B+ daughters of one
+retained resonance; B_s is excluded by default and any fallback is flagged.
+
+Channel training pools B-branch nodes and forms pairs across all branches in
+the minibatch. Exact full/reconstructable equality creates positives;
+structured count/tree similarity can create graded positives. The two B
+mesons in one event are never positive merely because they share an event.
+`--channel-memory-size N` optionally enables a detached, checkpointed FIFO
+bank so rare positives and hard negatives can be compared across minibatches.

@@ -13,9 +13,16 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import hashlib
 
 import awkward as ak
 import uproot
+
+from hypertagging.preprocessing.pid_filter import PID_VOCABULARY_VERSION
+from hypertagging.preprocessing.schema_v3 import (
+    SCHEMA_VERSION_V3,
+    feature_spec_v3,
+)
 
 
 DEFAULT_INPUT_ROOT = Path(
@@ -25,7 +32,7 @@ DEFAULT_INPUT_ROOT = Path(
 DEFAULT_OUTPUT_ROOT = Path("/data/dust/user/boyangyu/hypertagging/production_10m")
 DEFAULT_MANIFEST = DEFAULT_OUTPUT_ROOT / "manifests" / "mdst_10m.jsonl"
 DEFAULT_TARGET_EVENTS = 10_000_000
-DEFAULT_EVENTS_PER_TASK = 25_000
+DEFAULT_EVENTS_PER_TASK = 5_000
 DEFAULT_BASF2_PYTHON_SITE = Path("/data/dust/user/boyangyu/basf2_py38")
 
 
@@ -70,6 +77,10 @@ def build_manifest_records(
     output_root: Path,
     target_events: int,
     events_per_task: int,
+    schema_version: str = SCHEMA_VERSION_V3,
+    charge_conjugate_normalization: bool = False,
+    leaf_kinematics_mode: str = "raw_track_predicted_pid",
+    git_commit: str = "unknown",
 ) -> tuple[list[dict[str, object]], dict[str, int]]:
     """Build exact, non-overlapping entry-range records up to the target."""
 
@@ -82,6 +93,7 @@ def build_manifest_records(
     category_events: Counter[str] = Counter()
     planned_events = 0
     task_id = 0
+    feature_hash = str(feature_spec_v3()["feature_spec_hash"])
     for input_file in input_files:
         if planned_events >= target_events:
             break
@@ -104,6 +116,14 @@ def build_manifest_records(
                     "entry_sequence": f"{entry_start}:{entry_stop - 1}",
                     "planned_events": count,
                     "output_file": str(output_file),
+                    "schema_version": schema_version,
+                    "pid_vocabulary_version": PID_VOCABULARY_VERSION,
+                    "charge_conjugate_normalization": bool(
+                        charge_conjugate_normalization
+                    ),
+                    "leaf_kinematics_mode": leaf_kinematics_mode,
+                    "feature_spec_hash": feature_hash,
+                    "git_commit": git_commit,
                 }
             )
             planned_events += count
@@ -133,6 +153,17 @@ def write_manifest(
 
     if manifest.exists() and not overwrite:
         raise FileExistsError(f"{manifest} exists; pass --overwrite to replace it")
+    defaults = {
+        "schema_version": SCHEMA_VERSION_V3,
+        "pid_vocabulary_version": PID_VOCABULARY_VERSION,
+        "charge_conjugate_normalization": False,
+        "leaf_kinematics_mode": "raw_track_predicted_pid",
+        "feature_spec_hash": feature_spec_v3()["feature_spec_hash"],
+        "git_commit": "unknown",
+    }
+    for record in records:
+        for key, value in defaults.items():
+            record.setdefault(key, value)
     manifest.parent.mkdir(parents=True, exist_ok=True)
     (output_root / "shards").mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(
@@ -156,6 +187,9 @@ def write_manifest(
         "events_per_task": events_per_task,
         "tasks": len(records),
         "category_events": category_events,
+        "schema_version": records[0]["schema_version"] if records else SCHEMA_VERSION_V3,
+        "pid_vocabulary_version": PID_VOCABULARY_VERSION,
+        "feature_spec_hash": feature_spec_v3()["feature_spec_hash"],
     }
     summary_path = manifest.with_suffix(".summary.json")
     summary_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -173,12 +207,29 @@ def read_manifest_record(manifest: Path, task_id: int) -> dict[str, object]:
     raise IndexError(f"task_id {task_id} is not present in {manifest}")
 
 
-def validate_shard(path: Path, *, expected_events: int) -> dict[str, object]:
+def validate_shard(
+    path: Path,
+    *,
+    expected_events: int,
+    expected_schema: str = SCHEMA_VERSION_V3,
+    expected_feature_spec_hash: str | None = None,
+    expected_pid_vocabulary_version: str | None = None,
+) -> dict[str, object]:
     """Validate schema and event count after one production task."""
 
     payload = ak.to_list(ak.from_parquet(path))[0]
-    if payload.get("schema_version") not in {"direct-mdst-tree-v1", "direct-mdst-tree-v2"}:
+    if payload.get("schema_version") != expected_schema:
         raise ValueError(f"Unexpected schema in {path}: {payload.get('schema_version')!r}")
+    if (
+        expected_feature_spec_hash is not None
+        and payload.get("feature_spec_hash") != expected_feature_spec_hash
+    ):
+        raise ValueError(f"Feature-spec mismatch in {path}")
+    if (
+        expected_pid_vocabulary_version is not None
+        and payload.get("pid_vocabulary_version") != expected_pid_vocabulary_version
+    ):
+        raise ValueError(f"PID-vocabulary mismatch in {path}")
     actual_events = len(payload["events"])
     if actual_events != expected_events:
         raise ValueError(
@@ -193,6 +244,9 @@ def validate_shard(path: Path, *, expected_events: int) -> dict[str, object]:
         "output_file": str(path),
         "events": actual_events,
         "unique_event_uids": len(set(event_uids)),
+        "schema_version": payload.get("schema_version"),
+        "feature_spec_hash": payload.get("feature_spec_hash", ""),
+        "pid_vocabulary_version": payload.get("pid_vocabulary_version", ""),
     }
 
 
@@ -211,7 +265,13 @@ def run_task(
     output_file.parent.mkdir(parents=True, exist_ok=True)
 
     if output_file.exists() and not overwrite:
-        result = validate_shard(output_file, expected_events=expected_events)
+        result = validate_shard(
+            output_file,
+            expected_events=expected_events,
+            expected_schema=str(record["schema_version"]),
+            expected_feature_spec_hash=str(record["feature_spec_hash"]),
+            expected_pid_vocabulary_version=str(record["pid_vocabulary_version"]),
+        )
         result["status"] = "already-complete"
         result["task_id"] = task_id
         return result
@@ -236,6 +296,8 @@ def run_task(
         str(temporary_output),
         "--entry-sequence",
         str(record["entry_sequence"]),
+        "--schema-version",
+        str(record["schema_version"]),
         "--overwrite",
     ]
     # ``basf2`` embeds Python 3.8, whereas the project venv uses Python 3.11.
@@ -273,7 +335,13 @@ def run_task(
             check=True,
             env=subprocess_environment,
         )
-        result = validate_shard(temporary_output, expected_events=expected_events)
+        result = validate_shard(
+            temporary_output,
+            expected_events=expected_events,
+            expected_schema=str(record["schema_version"]),
+            expected_feature_spec_hash=str(record["feature_spec_hash"]),
+            expected_pid_vocabulary_version=str(record["pid_vocabulary_version"]),
+        )
         os.replace(temporary_output, output_file)
     finally:
         if temporary_output.exists():
@@ -291,6 +359,84 @@ def run_task(
     return result
 
 
+def validate_production_manifest(manifest: Path) -> dict[str, object]:
+    """Validate ranges, shards, scientific config, and global event UIDs."""
+
+    records = [
+        json.loads(line)
+        for line in manifest.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    if not records:
+        raise ValueError("production manifest is empty")
+    by_file: dict[str, list[tuple[int, int, int]]] = defaultdict(list)
+    seen_task_ids: set[int] = set()
+    all_uids: set[str] = set()
+    categories: Counter[str] = Counter()
+    completed = 0
+    missing: list[int] = []
+    total_events = 0
+    config_fields = (
+        "schema_version",
+        "pid_vocabulary_version",
+        "feature_spec_hash",
+        "charge_conjugate_normalization",
+        "leaf_kinematics_mode",
+    )
+    expected_config = {field: records[0].get(field) for field in config_fields}
+    for record in records:
+        task_id = int(record["task_id"])
+        if task_id in seen_task_ids:
+            raise ValueError(f"duplicate task_id {task_id}")
+        seen_task_ids.add(task_id)
+        for field, expected in expected_config.items():
+            if record.get(field) != expected:
+                raise ValueError(f"manifest scientific config mismatch for {field}")
+        start = int(record["entry_start"])
+        stop = int(record["entry_stop_exclusive"])
+        by_file[str(record["input_file"])].append((start, stop, task_id))
+        categories[str(record["physics_category"])] += int(record["planned_events"])
+        output = Path(str(record["output_file"]))
+        if not output.exists():
+            missing.append(task_id)
+            continue
+        result = validate_shard(
+            output,
+            expected_events=int(record["planned_events"]),
+            expected_schema=str(record["schema_version"]),
+            expected_feature_spec_hash=str(record["feature_spec_hash"]),
+            expected_pid_vocabulary_version=str(record["pid_vocabulary_version"]),
+        )
+        payload = ak.to_list(ak.from_parquet(output))[0]
+        for event in payload["events"]:
+            uid = str(event["event_uid"])
+            if uid in all_uids:
+                raise ValueError(f"duplicate event_uid across shards: {uid}")
+            all_uids.add(uid)
+        completed += 1
+        total_events += int(result["events"])
+    for input_file, ranges in by_file.items():
+        ranges.sort()
+        for left, right in zip(ranges, ranges[1:]):
+            if left[1] > right[0]:
+                raise ValueError(
+                    f"overlapping source entry ranges for {input_file}: {left} and {right}"
+                )
+    planned = sum(int(record["planned_events"]) for record in records)
+    if not missing and total_events != planned:
+        raise ValueError(f"global event count mismatch: planned {planned}, found {total_events}")
+    return {
+        "tasks": len(records),
+        "completed_shards": completed,
+        "missing_shards": missing,
+        "planned_events": planned,
+        "validated_events": total_events,
+        "unique_event_uids": len(all_uids),
+        "category_distribution": dict(sorted(categories.items())),
+        **expected_config,
+    }
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -302,12 +448,17 @@ def build_parser() -> argparse.ArgumentParser:
     plan.add_argument("--target-events", type=int, default=DEFAULT_TARGET_EVENTS)
     plan.add_argument("--events-per-task", type=int, default=DEFAULT_EVENTS_PER_TASK)
     plan.add_argument("--overwrite", action="store_true")
+    plan.add_argument("--schema-version", default=SCHEMA_VERSION_V3)
+    plan.add_argument("--charge-conjugate-normalization", action="store_true")
+    plan.add_argument("--leaf-kinematics-mode", default="raw_track_predicted_pid")
 
     task = subparsers.add_parser("run-task", help="Execute one manifest task")
     task.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     task.add_argument("--task-id", type=int, default=None)
     task.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
     task.add_argument("--overwrite", action="store_true")
+    validate = subparsers.add_parser("validate", help="Validate all produced shards globally")
+    validate.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     return parser
 
 
@@ -315,11 +466,21 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "plan":
         input_files = discover_input_files(args.input_root)
+        git_commit = subprocess.run(
+            ("git", "rev-parse", "HEAD"),
+            capture_output=True,
+            text=True,
+            check=False,
+        ).stdout.strip() or "unknown"
         records, category_events = build_manifest_records(
             input_files,
             output_root=args.output_root,
             target_events=args.target_events,
             events_per_task=args.events_per_task,
+            schema_version=args.schema_version,
+            charge_conjugate_normalization=args.charge_conjugate_normalization,
+            leaf_kinematics_mode=args.leaf_kinematics_mode,
+            git_commit=git_commit,
         )
         summary = write_manifest(
             records,
@@ -332,6 +493,10 @@ def main(argv: list[str] | None = None) -> int:
             overwrite=args.overwrite,
         )
         print(json.dumps(summary, sort_keys=True))
+        return 0
+
+    if args.command == "validate":
+        print(json.dumps(validate_production_manifest(args.manifest), sort_keys=True))
         return 0
 
     task_id = args.task_id

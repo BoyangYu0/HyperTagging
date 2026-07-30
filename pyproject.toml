@@ -17,6 +17,7 @@ dependencies = [
   "uproot",
   "pdg",
   "onnx",
+  "scipy",
 ]
 
 [project.optional-dependencies]

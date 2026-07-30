@@ -8,7 +8,7 @@ Full HyperTagging preprocessing and training should run through HTCondor.
 
 ```bash
 python scripts/condor/render_condor_job.py --config configs/condor/default.yaml \
-  --command 'uv --cache-dir /tmp/uv-cache run python scripts/train_level_reconstruction.py --device cuda --max-steps 1000' \
+  --command 'uv --cache-dir /tmp/uv-cache run python scripts/train_level_reconstruction.py --data /data/volume/manifest.jsonl --pretrained-encoder /data/volume/pretrain/checkpoint.pt --device cuda --max-steps 1000 --output-dir /data/volume/reconstruction' \
   --output outputs/condor/level_reconstruction.sub
 ```
 
@@ -26,13 +26,14 @@ Render one submit description per ablation; do not submit during local
 verification:
 
 ```bash
-for ablation in flat_baseline heterogeneous_only hyperbolic_lca_parent \
-  plus_radius_depth plus_variance_covariance plus_channel \
-  plus_relation_attention full_revised
+for ablation in flat_baseline heterogeneous_only contextual_euclidean \
+  contextual_hyperbolic_parent_lca plus_radius_depth plus_variance_covariance \
+  plus_cross_event_channel plus_hyperbolic_relation_attention plus_leaf_pid \
+  plus_scheduled_sampling full_revised
 do
   python scripts/condor/render_condor_job.py \
     --config configs/condor/default.yaml \
-    --command "python scripts/train_level_reconstruction.py --device cuda --ablation ${ablation} --max-steps 100000" \
+    --command "python scripts/train_level_reconstruction.py --data /data/volume/manifest.jsonl --pretrained-encoder /data/volume/pretrain/${ablation}/checkpoint.pt --device cuda --ablation ${ablation} --max-steps 100000 --output-dir /data/volume/reconstruction/${ablation}" \
     --output "outputs/condor/${ablation}.sub"
 done
 ```
@@ -52,3 +53,8 @@ Review source-aware split manifests, normalization provenance, output/data
 volume paths, GPU/runtime requests, and resume checkpoints before explicit
 `condor_submit`. Compare identical splits and seeds. Record both teacher-forced
 and free-rollout metrics; do not select only on fixture or next-level loss.
+
+Every real training command must include `--data` and a data-volume
+`--output-dir`. Pretraining jobs should publish `checkpoint.pt`; matched
+reconstruction jobs pass it through `--pretrained-encoder`. Rendering is
+read-only. `condor_submit` remains a separate, explicit operator action.
