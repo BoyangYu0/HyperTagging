@@ -17,6 +17,16 @@ from nbclient import NotebookClient
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 NOTEBOOKS = {
+    "leaf_composite": (
+        REPO_ROOT / "scripts" / "create_leaf_pid_composite_notebook.py",
+        REPO_ROOT / "notebooks" / "inspect_leaf_pid_and_composite_inputs.ipynb",
+        ("input versus truth daughter histograms", "pointer response", "gradient"),
+    ),
+    "streaming": (
+        REPO_ROOT / "scripts" / "create_streaming_dataset_notebook.py",
+        REPO_ROOT / "notebooks" / "inspect_streaming_dataset.ipynb",
+        ("event-row parquet", "bounded iteration", "online normalization"),
+    ),
     "leaf_pid": (
         REPO_ROOT / "scripts" / "create_leaf_input_pid_notebook.py",
         REPO_ROOT / "notebooks" / "inspect_leaf_input_pid_contract.ipynb",
@@ -124,6 +134,8 @@ def execute_one(
     if not list(figure_dir.glob("*.png")):
         raise AssertionError(f"{source.name} did not produce expected figures")
     required_artifacts = {
+        "leaf_composite": ("leaf_composite_contract.json",),
+        "streaming": ("streaming_report.json",),
         "leaf_pid": ("leaf_pid_token_range.csv", "leaf_input_leakage_check.json"),
         "capacity": ("capacity_report.json", "sparse_loss_table.csv"),
         "training": ("training_pipeline_pass.json", "reconstruction/checkpoint.pt"),
@@ -133,6 +145,26 @@ def execute_one(
     for relative in required_artifacts:
         if not (figure_dir / relative).exists():
             raise AssertionError(f"{source.name} missed required artifact {relative}")
+    if name == "leaf_composite":
+        import json
+
+        report = json.loads(
+            (figure_dir / "leaf_composite_contract.json").read_text(encoding="utf-8")
+        )
+        if not report.get("truth_clean_composite_input") or not report.get(
+            "raw_track_unknown_input_pass"
+        ):
+            raise AssertionError(f"leaf/composite contract failed: {report}")
+    if name == "streaming":
+        import json
+
+        report = json.loads(
+            (figure_dir / "streaming_report.json").read_text(encoding="utf-8")
+        )
+        if not report.get("manifest_output_file_resolved") or not report.get(
+            "source_leakage_pass"
+        ):
+            raise AssertionError(f"streaming report failed: {report}")
     if name == "qa":
         qa_path = work_root / "preprocessing_qa.json"
         if not qa_path.exists():

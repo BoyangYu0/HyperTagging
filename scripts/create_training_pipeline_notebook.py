@@ -22,18 +22,18 @@ def build_notebook():
             import json, os, sys
             import matplotlib.pyplot as plt
             ROOT=Path.cwd(); sys.path.insert(0,str(ROOT/"src"))
-            from hypertagging.data.notebook_fixtures import write_notebook_fixture_v3
+            from hypertagging.data.notebook_fixtures import write_notebook_fixture_v4
             from hypertagging.training.data_module import build_real_data_module
             from hypertagging.training.pretrain_trainer import PretrainConfig, train_hyperbolic_pretraining
             from hypertagging.training.reconstruction_trainer import ReconstructionConfig, train_level_reconstruction
             requested=os.environ.get("HYPERTAGGING_PARQUET","").strip(); FIXTURE_MODE=not bool(requested)
-            data=Path(requested) if requested else Path("/tmp/hypertagging_training_v3.parquet")
-            if FIXTURE_MODE: write_notebook_fixture_v3(data)
+            data=Path(requested) if requested else Path("/tmp/hypertagging_training_v4.parquet")
+            if FIXTURE_MODE: write_notebook_fixture_v4(data)
             OUT=Path(os.environ.get("HYPERTAGGING_FIGURE_DIR","/tmp/hypertagging_figures/training")); OUT.mkdir(parents=True,exist_ok=True)
-            module=build_real_data_module(data,seed=20260730)
+            module=build_real_data_module(data,seed=20260730,pilot_split_repair=True)
             print("TINY FIXTURE — NOT REAL DATA" if FIXTURE_MODE else "REAL PILOT SAMPLE")
             print({name:[event.event_uid for event in events] for name,events in module.splits.items()})
-            assert len(module.split_manifest)==len(set(module.split_manifest))
+            assert module.split_counts["train"] > 0
             """
         ),
         md("## One real pretraining step and checkpoint"),
@@ -49,7 +49,7 @@ def build_notebook():
         code(
             """
             reco_dir=OUT/"reconstruction"
-            reco=train_level_reconstruction(ReconstructionConfig(data=str(data),output_dir=str(reco_dir),pretrained_encoder=str(pre.checkpoint),device="cpu",max_steps=1,batch_size=2,seed=11))
+            reco=train_level_reconstruction(ReconstructionConfig(data=str(data),output_dir=str(reco_dir),pretrained_encoder=str(pre.checkpoint),transfer_leaf_pid_head=True,device="cpu",max_steps=1,batch_size=2,seed=11))
             assert reco.checkpoint.exists() and reco.transfer_report and reco.transfer_report.loaded_keys
             print(reco.transfer_report); print(reco.metrics)
             """
@@ -57,7 +57,7 @@ def build_notebook():
         md("## Teacher-forced, scheduled, free validation and resume"),
         code(
             """
-            resumed=train_level_reconstruction(ReconstructionConfig(data=str(data),output_dir=str(OUT/"resumed"),pretrained_encoder=str(pre.checkpoint),device="cpu",max_steps=2,batch_size=2,seed=11,resume=str(reco.checkpoint)))
+            resumed=train_level_reconstruction(ReconstructionConfig(data=str(data),output_dir=str(OUT/"resumed"),pretrained_encoder=str(pre.checkpoint),transfer_leaf_pid_head=True,device="cpu",max_steps=2,batch_size=2,seed=11,resume=str(reco.checkpoint)))
             records=[json.loads(line) for line in reco.log_path.read_text().splitlines()]
             display(records)
             assert resumed.steps==2

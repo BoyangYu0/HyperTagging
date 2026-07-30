@@ -81,3 +81,25 @@ Do not refactor these before stronger equivalence tests exist:
 - Loss weights, masking logic, and model constructor defaults.
 - Full-reconstruction stopping, signal probability, and link index remapping.
 - GPT-like level masks, collate layout, and autoregressive masking.
+
+## Final correctness and scalability revision
+
+- `preprocessing/schema_v4.py`: one-event-per-row schema, bounded atomic
+  Parquet writer, metadata sidecar, explicit input/truth daughter PID
+  histograms, and legacy adapters.
+- `reconstruction/pid_state.py`: authoritative runtime PID probabilities,
+  charge-compatible raw-track PID, differentiable p4, and daughter histogram
+  rebuilding shared by teacher forcing and rollout.
+- `data/streaming.py`: worker-partitioned event iteration, bounded deterministic
+  shuffle, and mergeable masked Welford normalization.
+- `training/data_module.py`: production-manifest resolution (`output_file`
+  included), source-safe splits, legacy safety gate, and lazy batches.
+- `training/scheduled_sampling.py`: scheduled context selection and
+  recursive-source alignment.
+- `models/level_autoregressive.py`: detector-context PID pass followed by
+  PID-refined reconstruction context and hyperbolic projection.
+- `evaluation/hierarchical_metrics.py`: source/topology alignment independent
+  of mother type before type scoring.
+- `notebooks/inspect_leaf_pid_and_composite_inputs.ipynb` and
+  `notebooks/inspect_streaming_dataset.ipynb`: deterministic fixture/real-data
+  inspection for the new contracts.

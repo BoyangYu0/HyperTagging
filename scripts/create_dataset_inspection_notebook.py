@@ -51,9 +51,9 @@ def build_notebook() -> nbf.NotebookNode:
                 REPO_ROOT = Path("..").resolve()
             sys.path.insert(0, str(REPO_ROOT / "src"))
 
-            from hypertagging.data.notebook_fixtures import write_notebook_fixture_v3
+            from hypertagging.data.notebook_fixtures import write_notebook_fixture_v4
             from hypertagging.preprocessing.pid_filter import PDG_TOKENS, DETOKENIZE_DICT
-            from hypertagging.preprocessing.schema_v3 import load_payload_v3
+            from hypertagging.preprocessing.schema_v4 import load_payload_v4
 
             SEED = int(os.environ.get("HYPERTAGGING_NOTEBOOK_SEED", "20260730"))
             np.random.seed(SEED)
@@ -61,12 +61,12 @@ def build_notebook() -> nbf.NotebookNode:
             FIXTURE_MODE = not bool(requested)
             INPUT_PATH = Path(requested) if requested else Path("/tmp/hypertagging_notebook_fixture_v3.parquet")
             if FIXTURE_MODE:
-                write_notebook_fixture_v3(INPUT_PATH)
+                write_notebook_fixture_v4(INPUT_PATH)
             if not INPUT_PATH.exists():
                 raise FileNotFoundError(f"Required parquet does not exist: {INPUT_PATH}")
             FIGURE_DIR = Path(os.environ.get("HYPERTAGGING_FIGURE_DIR", "/tmp/hypertagging_figures/dataset"))
             FIGURE_DIR.mkdir(parents=True, exist_ok=True)
-            payload = load_payload_v3(INPUT_PATH)
+            payload = load_payload_v4(INPUT_PATH)
             required_top = {"schema_version", "events", "summary_json", "feature_spec_json"}
             missing_top = required_top - payload.keys()
             if missing_top:
@@ -380,7 +380,7 @@ def build_notebook() -> nbf.NotebookNode:
                   channels.charge_conjugate_normalized.unique().tolist())
             """
         ),
-        _md("## Schema-v3 leaf, partial-decay, duplicate, and capacity diagnostics"),
+        _md("## Schema-v4 leaf, partial-decay, duplicate, and capacity diagnostics"),
         _code(
             """
             v3_rows = [{
@@ -397,6 +397,10 @@ def build_notebook() -> nbf.NotebookNode:
                 "partial_missing_daughters": node["partial_missing_daughters"],
                 "valid_target": node["valid_reconstruction_target"],
                 "recursive_leaf_source_ids": node["recursive_leaf_source_ids"],
+                "recursive_complete": node["recursive_reconstructable_complete"],
+                "leaf_mode_id": node["leaf_kinematics_mode_id"],
+                "input_histogram_sum": sum(node["daughter_input_pid_histogram"]),
+                "truth_histogram_sum": sum(node["daughter_truth_pid_histogram"]),
                 "relation_flags": ",".join(flag for flag in node["flags"] if flag in
                     {"unique_match","duplicate_track","split_cluster","ambiguous_relation","unmatched_reco"}),
             } for event in events for node in event["nodes"]]
@@ -411,6 +415,9 @@ def build_notebook() -> nbf.NotebookNode:
             print("Maximum target mothers/event:", int(capacity.max()) if len(capacity) else 0)
             print("Maximum daughter cardinality:", int(cardinality.max()) if len(cardinality) else 0)
             display(v3.groupby(["node_kind","relation_flags"]).size().rename("count").reset_index())
+            display(v3.groupby(["node_kind","recursive_complete"]).size().rename("count").reset_index())
+            print("Capacity under complete-only:", int(v3.valid_target.mul(v3.recursive_complete).sum()))
+            print("Capacity under reconstructable-partial:", int(v3.valid_target.sum()))
             """
         ),
         _md("## Full-truth versus reconstructable channel identity"),

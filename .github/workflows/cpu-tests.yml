@@ -30,6 +30,8 @@ jobs:
           python scripts/execute_notebook_smoke_tests.py
           --only dataset
           --only leaf_pid
+          --only leaf_composite
+          --only streaming
           --only hyperbolic
           --only training
           --only reconstruction

@@ -23,6 +23,11 @@ from hypertagging.preprocessing.schema_v3 import (
     SCHEMA_VERSION_V3,
     feature_spec_v3,
 )
+from hypertagging.preprocessing.schema_v4 import (
+    SCHEMA_VERSION_V4,
+    feature_spec_v4,
+    iter_event_records_v4,
+)
 
 
 DEFAULT_INPUT_ROOT = Path(
@@ -77,10 +82,12 @@ def build_manifest_records(
     output_root: Path,
     target_events: int,
     events_per_task: int,
-    schema_version: str = SCHEMA_VERSION_V3,
+    schema_version: str = SCHEMA_VERSION_V4,
     charge_conjugate_normalization: bool = False,
     leaf_kinematics_mode: str = "raw_track_predicted_pid",
     git_commit: str = "unknown",
+    event_buffer_size: int = 128,
+    row_group_size: int = 128,
 ) -> tuple[list[dict[str, object]], dict[str, int]]:
     """Build exact, non-overlapping entry-range records up to the target."""
 
@@ -93,7 +100,13 @@ def build_manifest_records(
     category_events: Counter[str] = Counter()
     planned_events = 0
     task_id = 0
-    feature_hash = str(feature_spec_v3()["feature_spec_hash"])
+    feature_hash = str(
+        (
+            feature_spec_v4()
+            if schema_version == SCHEMA_VERSION_V4
+            else feature_spec_v3()
+        )["feature_spec_hash"]
+    )
     for input_file in input_files:
         if planned_events >= target_events:
             break
@@ -124,6 +137,8 @@ def build_manifest_records(
                     "leaf_kinematics_mode": leaf_kinematics_mode,
                     "feature_spec_hash": feature_hash,
                     "git_commit": git_commit,
+                    "event_buffer_size": int(event_buffer_size),
+                    "row_group_size": int(row_group_size),
                 }
             )
             planned_events += count
@@ -154,11 +169,11 @@ def write_manifest(
     if manifest.exists() and not overwrite:
         raise FileExistsError(f"{manifest} exists; pass --overwrite to replace it")
     defaults = {
-        "schema_version": SCHEMA_VERSION_V3,
+        "schema_version": SCHEMA_VERSION_V4,
         "pid_vocabulary_version": PID_VOCABULARY_VERSION,
         "charge_conjugate_normalization": False,
         "leaf_kinematics_mode": "raw_track_predicted_pid",
-        "feature_spec_hash": feature_spec_v3()["feature_spec_hash"],
+        "feature_spec_hash": feature_spec_v4()["feature_spec_hash"],
         "git_commit": "unknown",
     }
     for record in records:
@@ -187,9 +202,13 @@ def write_manifest(
         "events_per_task": events_per_task,
         "tasks": len(records),
         "category_events": category_events,
-        "schema_version": records[0]["schema_version"] if records else SCHEMA_VERSION_V3,
+        "schema_version": records[0]["schema_version"] if records else SCHEMA_VERSION_V4,
         "pid_vocabulary_version": PID_VOCABULARY_VERSION,
-        "feature_spec_hash": feature_spec_v3()["feature_spec_hash"],
+        "feature_spec_hash": (
+            records[0]["feature_spec_hash"]
+            if records
+            else feature_spec_v4()["feature_spec_hash"]
+        ),
     }
     summary_path = manifest.with_suffix(".summary.json")
     summary_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -211,13 +230,27 @@ def validate_shard(
     path: Path,
     *,
     expected_events: int,
-    expected_schema: str = SCHEMA_VERSION_V3,
+    expected_schema: str = SCHEMA_VERSION_V4,
     expected_feature_spec_hash: str | None = None,
     expected_pid_vocabulary_version: str | None = None,
+    expected_leaf_kinematics_mode: str | None = None,
+    expected_charge_conjugate_normalization: bool | None = None,
 ) -> dict[str, object]:
     """Validate schema and event count after one production task."""
 
-    payload = ak.to_list(ak.from_parquet(path))[0]
+    if expected_schema == SCHEMA_VERSION_V4:
+        sidecar = path.with_suffix(path.suffix + ".metadata.json")
+        if not sidecar.exists():
+            raise ValueError(f"Missing schema-v4 metadata sidecar for {path}")
+        metadata = json.loads(sidecar.read_text(encoding="utf-8"))
+        events = list(iter_event_records_v4(path))
+        payload = {
+            **metadata,
+            "schema_version": metadata.get("schema_version"),
+            "events": events,
+        }
+    else:
+        payload = ak.to_list(ak.from_parquet(path))[0]
     if payload.get("schema_version") != expected_schema:
         raise ValueError(f"Unexpected schema in {path}: {payload.get('schema_version')!r}")
     if (
@@ -230,6 +263,19 @@ def validate_shard(
         and payload.get("pid_vocabulary_version") != expected_pid_vocabulary_version
     ):
         raise ValueError(f"PID-vocabulary mismatch in {path}")
+    if (
+        expected_leaf_kinematics_mode is not None
+        and payload.get("leaf_kinematics_mode") is not None
+        and payload.get("leaf_kinematics_mode") != expected_leaf_kinematics_mode
+    ):
+        raise ValueError(f"Leaf-kinematics-mode mismatch in {path}")
+    if (
+        expected_charge_conjugate_normalization is not None
+        and payload.get("charge_conjugate_normalization") is not None
+        and bool(payload.get("charge_conjugate_normalization"))
+        != bool(expected_charge_conjugate_normalization)
+    ):
+        raise ValueError(f"Charge-conjugate-normalization mismatch in {path}")
     actual_events = len(payload["events"])
     if actual_events != expected_events:
         raise ValueError(
@@ -271,6 +317,10 @@ def run_task(
             expected_schema=str(record["schema_version"]),
             expected_feature_spec_hash=str(record["feature_spec_hash"]),
             expected_pid_vocabulary_version=str(record["pid_vocabulary_version"]),
+            expected_leaf_kinematics_mode=str(record["leaf_kinematics_mode"]),
+            expected_charge_conjugate_normalization=bool(
+                record["charge_conjugate_normalization"]
+            ),
         )
         result["status"] = "already-complete"
         result["task_id"] = task_id
@@ -300,6 +350,18 @@ def run_task(
         str(record["schema_version"]),
         "--overwrite",
     ]
+    if bool(record.get("charge_conjugate_normalization", False)):
+        command.append("--charge-conjugate-normalize-channels")
+    command.extend(
+        [
+            "--leaf-kinematics-mode",
+            str(record["leaf_kinematics_mode"]),
+            "--event-buffer-size",
+            str(record.get("event_buffer_size", 128)),
+            "--row-group-size",
+            str(record.get("row_group_size", 128)),
+        ]
+    )
     # ``basf2`` embeds Python 3.8, whereas the project venv uses Python 3.11.
     # Compiled wheels cannot be shared between them, so production has a small
     # Python-3.8 dependency target containing awkward/pyarrow/numpy.
@@ -341,11 +403,28 @@ def run_task(
             expected_schema=str(record["schema_version"]),
             expected_feature_spec_hash=str(record["feature_spec_hash"]),
             expected_pid_vocabulary_version=str(record["pid_vocabulary_version"]),
+            expected_leaf_kinematics_mode=str(record["leaf_kinematics_mode"]),
+            expected_charge_conjugate_normalization=bool(
+                record["charge_conjugate_normalization"]
+            ),
         )
         os.replace(temporary_output, output_file)
+        temporary_sidecar = temporary_output.with_suffix(
+            temporary_output.suffix + ".metadata.json"
+        )
+        if temporary_sidecar.exists():
+            os.replace(
+                temporary_sidecar,
+                output_file.with_suffix(output_file.suffix + ".metadata.json"),
+            )
     finally:
         if temporary_output.exists():
             temporary_output.unlink()
+        temporary_sidecar = temporary_output.with_suffix(
+            temporary_output.suffix + ".metadata.json"
+        )
+        if temporary_sidecar.exists():
+            temporary_sidecar.unlink()
 
     result.update(
         {
@@ -406,9 +485,17 @@ def validate_production_manifest(manifest: Path) -> dict[str, object]:
             expected_schema=str(record["schema_version"]),
             expected_feature_spec_hash=str(record["feature_spec_hash"]),
             expected_pid_vocabulary_version=str(record["pid_vocabulary_version"]),
+            expected_leaf_kinematics_mode=str(record["leaf_kinematics_mode"]),
+            expected_charge_conjugate_normalization=bool(
+                record["charge_conjugate_normalization"]
+            ),
         )
-        payload = ak.to_list(ak.from_parquet(output))[0]
-        for event in payload["events"]:
+        events = (
+            list(iter_event_records_v4(output))
+            if str(record["schema_version"]) == SCHEMA_VERSION_V4
+            else ak.to_list(ak.from_parquet(output))[0]["events"]
+        )
+        for event in events:
             uid = str(event["event_uid"])
             if uid in all_uids:
                 raise ValueError(f"duplicate event_uid across shards: {uid}")
@@ -448,9 +535,11 @@ def build_parser() -> argparse.ArgumentParser:
     plan.add_argument("--target-events", type=int, default=DEFAULT_TARGET_EVENTS)
     plan.add_argument("--events-per-task", type=int, default=DEFAULT_EVENTS_PER_TASK)
     plan.add_argument("--overwrite", action="store_true")
-    plan.add_argument("--schema-version", default=SCHEMA_VERSION_V3)
+    plan.add_argument("--schema-version", default=SCHEMA_VERSION_V4)
     plan.add_argument("--charge-conjugate-normalization", action="store_true")
     plan.add_argument("--leaf-kinematics-mode", default="raw_track_predicted_pid")
+    plan.add_argument("--event-buffer-size", type=int, default=128)
+    plan.add_argument("--row-group-size", type=int, default=128)
 
     task = subparsers.add_parser("run-task", help="Execute one manifest task")
     task.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
@@ -481,6 +570,8 @@ def main(argv: list[str] | None = None) -> int:
             charge_conjugate_normalization=args.charge_conjugate_normalization,
             leaf_kinematics_mode=args.leaf_kinematics_mode,
             git_commit=git_commit,
+            event_buffer_size=args.event_buffer_size,
+            row_group_size=args.row_group_size,
         )
         summary = write_manifest(
             records,

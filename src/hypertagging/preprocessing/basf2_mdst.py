@@ -16,6 +16,10 @@ from typing import Sequence
 from hypertagging.preprocessing.export_dataset import export_trees
 from hypertagging.preprocessing.schema_v2 import SCHEMA_VERSION_V1, SCHEMA_VERSION_V2, export_trees_v2
 from hypertagging.preprocessing.schema_v3 import SCHEMA_VERSION_V3, export_trees_v3
+from hypertagging.preprocessing.schema_v4 import (
+    SCHEMA_VERSION_V4,
+    ParquetEventWriter,
+)
 from hypertagging.preprocessing.levelize_tree import assign_levels
 from hypertagging.preprocessing.mdst_tree_builder import (
     FourVector,
@@ -46,8 +50,11 @@ class Basf2PreprocessConfig:
     include_tracks: bool = True
     include_ecl_clusters: bool = True
     allow_mc_leaf_kinematics_for_debug: bool = False
-    schema_version: str = SCHEMA_VERSION_V1
+    schema_version: str = SCHEMA_VERSION_V4
     charge_conjugate_normalize: bool = False
+    event_buffer_size: int = 128
+    row_group_size: int = 128
+    leaf_kinematics_mode: str = "raw_track_predicted_pid"
 
 
 def run_basf2_preprocessing(config: Basf2PreprocessConfig) -> Path:
@@ -90,6 +97,8 @@ class _DirectMdstCollector:
         self.event_metadata: list[dict[str, int | str]] = []
         self._event_count = 0
         self.collection_stats: Counter[str] = Counter()
+        self._v4_writer: ParquetEventWriter | None = None
+        self._v4_pid_filter: PidFilter | None = None
 
     def initialize(self) -> None:
         from ROOT import Belle2  # type: ignore[import-not-found]
@@ -102,6 +111,26 @@ class _DirectMdstCollector:
         self._charged_stable = Belle2.Const.ChargedStable
         self._cluster_utils = Belle2.ClusterUtils()
         self._photon_hypothesis = Belle2.ECLCluster.EHypothesisBit.c_nPhotons
+        if self.config.schema_version == SCHEMA_VERSION_V4:
+            self._v4_pid_filter = PidFilter()
+            self._v4_writer = ParquetEventWriter(
+                self.config.output,
+                event_buffer_size=self.config.event_buffer_size,
+                row_group_size=self.config.row_group_size,
+                metadata={
+                    "source_file": (
+                        self.config.input_files[0]
+                        if len(self.config.input_files) == 1
+                        else list(self.config.input_files)
+                    ),
+                    "entry_start": None,
+                    "entry_stop_exclusive": None,
+                    "leaf_kinematics_mode": self.config.leaf_kinematics_mode,
+                    "charge_conjugate_normalization": (
+                        self.config.charge_conjugate_normalize
+                    ),
+                },
+            )
 
     def event(self) -> None:
         event_id = int(self.event_info.getEvent()) if self.event_info else self._event_count
@@ -118,13 +147,11 @@ class _DirectMdstCollector:
                 "Use an mDST containing reconstruction relations or pass "
                 "--allow-mc-leaf-kinematics-for-debug only for synthetic debugging."
             )
-        self.events.append((event_id, mc_records, reco_records))
         experiment = int(self.event_info.getExperiment()) if self.event_info else -1
         run = int(self.event_info.getRun()) if self.event_info else -1
         production = int(self.event_info.getProduction()) if self.event_info else -1
         source_file = _event_source_file(self.event_info, self.config.input_files)
-        self.event_metadata.append(
-            {
+        metadata = {
                 "experiment": experiment,
                 "run": run,
                 "production": production,
@@ -137,10 +164,41 @@ class _DirectMdstCollector:
                     else ("single_input" if len(self.config.input_files) == 1 else "unresolved")
                 ),
             }
-        )
+        if self._v4_writer is not None:
+            assert self._v4_pid_filter is not None
+            trees, _summary = build_trees(
+                [(event_id, mc_records, reco_records)],
+                pid_filter=self._v4_pid_filter,
+            )
+            tree = trees[0]
+            tree.metadata.update(metadata)
+            assign_levels(tree)
+            validate_tree(tree)
+            self._v4_writer.write_tree(
+                tree,
+                charge_conjugate_normalize=self.config.charge_conjugate_normalize,
+            )
+        else:
+            self.events.append((event_id, mc_records, reco_records))
+            self.event_metadata.append(metadata)
         self._event_count += 1
 
     def write_output(self) -> Path:
+        if self._v4_writer is not None:
+            assert self._v4_pid_filter is not None
+            self._v4_writer.metadata["preprocessing_configuration"] = {
+                "collection": dict(sorted(self.collection_stats.items())),
+                "pid_filter": self._v4_pid_filter.summary.as_dict(),
+                "input_files": list(self.config.input_files),
+                "entry_sequences": (
+                    None
+                    if self.config.entry_sequences is None
+                    else list(self.config.entry_sequences)
+                ),
+                "event_buffer_size": self.config.event_buffer_size,
+                "row_group_size": self.config.row_group_size,
+            }
+            return self._v4_writer.close()
         pid_filter = PidFilter()
         trees, summary = build_trees(self.events, pid_filter=pid_filter)
         for tree, metadata in zip(trees, self.event_metadata):

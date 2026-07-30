@@ -93,3 +93,68 @@ class MotherPointerDecoder(nn.Module):
             confidence_logits=self.confidence_head(attended).squeeze(-1),
             expected_type_embedding=expected_type,
         )
+
+
+def source_conflict_penalty(
+    pointer_logits: torch.Tensor,
+    source_conflict: torch.Tensor,
+) -> torch.Tensor:
+    """Differentiable probability of selecting overlapping recursive sources."""
+
+    if source_conflict.shape != (
+        pointer_logits.shape[0],
+        pointer_logits.shape[-1],
+        pointer_logits.shape[-1],
+    ):
+        raise ValueError("source_conflict must have shape [B, N, N]")
+    probability = torch.sigmoid(pointer_logits)
+    pair = probability.unsqueeze(-1) * probability.unsqueeze(-2)
+    upper = torch.triu(source_conflict, diagonal=1).to(pair.dtype)
+    return (pair * upper[:, None]).sum() / upper.sum().clamp_min(1)
+
+
+def constrained_daughter_decode(
+    probabilities: torch.Tensor,
+    *,
+    cardinality: int,
+    pointer_mask: torch.Tensor,
+    source_conflict: torch.Tensor,
+    min_probability: float = 0.5,
+    insufficient_policy: str = "invalid",
+) -> tuple[torch.Tensor, bool]:
+    """Greedy constrained top-k with explicit low-score behavior."""
+
+    if probabilities.ndim != 1:
+        raise ValueError("constrained_daughter_decode expects one proposal")
+    if pointer_mask.shape != probabilities.shape:
+        raise ValueError("pointer_mask shape differs from pointer probabilities")
+    if source_conflict.shape != (probabilities.numel(), probabilities.numel()):
+        raise ValueError("source_conflict has an invalid shape")
+    if insufficient_policy not in {"invalid", "reduce"}:
+        raise ValueError("insufficient_policy must be 'invalid' or 'reduce'")
+    selected = torch.zeros_like(pointer_mask)
+    candidates = (
+        pointer_mask
+        & torch.isfinite(probabilities)
+        & (probabilities >= float(min_probability))
+    ).nonzero(as_tuple=False).flatten()
+    order = candidates[
+        torch.argsort(probabilities[candidates], descending=True, stable=True)
+    ]
+    for index in order.tolist():
+        chosen = selected.nonzero(as_tuple=False).flatten()
+        if chosen.numel() and source_conflict[index, chosen].any():
+            continue
+        selected[index] = True
+        if int(selected.sum()) >= cardinality:
+            break
+    enough = int(selected.sum()) == cardinality
+    return selected, bool(enough or insufficient_policy == "reduce")
+
+
+__all__ = [
+    "MotherPointerDecoder",
+    "MotherPointerOutput",
+    "constrained_daughter_decode",
+    "source_conflict_penalty",
+]

@@ -122,3 +122,33 @@ loaded, missing, unexpected, and shape-mismatched keys. Use
 SciPy is a declared production dependency for Hungarian matching. Brute-force
 matching is available only to explicitly bounded tiny CPU pilots; there is no
 production greedy fallback.
+
+## Streaming, scheduling, and exact state
+
+Training accepts one Parquet file, a directory, JSON, or production JSONL
+manifest (`output_file`, `output`, `path`, and `parquet` are recognized).
+Event-row v4 shards are iterated lazily with deterministic shard order,
+worker partitioning, bounded shuffle, and configurable prefetch. Masked,
+mergeable Welford statistics are fit in a first pass over training only.
+`--allow-legacy-conflated` is required for v1-v3 diagnostic runs.
+
+Scheduled sampling participates in optimization. At each level a deterministic
+truth/predicted context choice follows the configured constant, linear, cosine,
+or inverse-sigmoid schedule. Predicted contexts are aligned to targets by
+recursive leaf-source overlap; unrepresentable targets are counted and logged.
+The implementation uses per-event micro-rollouts for predicted contexts, which
+keeps alignment explicit at the cost of lower throughput than a fully padded
+variable-state rollout.
+
+The default target policy is `complete_only`; `reconstructable_partial` and
+`diagnostic_all` are explicit alternatives. Allowed mother tokens are derived
+per level from eligible training targets. Pointer decoding applies target-level
+and node masks, recursive-source conflicts, charge/type compatibility where
+configured, and a minimum pointer probability in addition to cardinality.
+
+Resume restores model/encoder/leaf-PID head, optimizer, scheduler, AMP scaler,
+Python/NumPy/Torch/CUDA RNG, step/epoch, scheduling state, channel memory bank,
+normalization, and split hash. Schema, PID vocabulary, feature specification,
+and split mismatches are rejected unless an explicit supported override is
+used. YAML precedence is defaults, then YAML, then explicitly supplied CLI
+arguments.

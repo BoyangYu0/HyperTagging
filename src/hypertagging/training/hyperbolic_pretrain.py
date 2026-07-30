@@ -19,7 +19,7 @@ from hypertagging.losses.hyperbolic_pretraining import (
     pool_b_branch_embeddings,
 )
 from hypertagging.models.heterogeneous import HeterogeneousNodeEncoder
-from hypertagging.models.ablation import ABLATIONS
+from hypertagging.models.ablation import ALL_ABLATIONS
 from hypertagging.training.checkpointing import restore_training_checkpoint
 from hypertagging.evaluation.hierarchical_metrics import (
     parent_ranking_accuracy,
@@ -94,7 +94,7 @@ def run_hyperbolic_pretrain_dry_run(
             optimizer=optimizer,
             map_location=device,
         )
-    ablation_config = ABLATIONS[ablation]
+    ablation_config = ALL_ABLATIONS[ablation]
     weights = {
         "lca": float(ablation_config.lca_parent),
         "parent": float(ablation_config.lca_parent),

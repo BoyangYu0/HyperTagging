@@ -21,6 +21,7 @@ from hypertagging.preprocessing.schema_v3 import (
     V3_TRACK_FEATURE_NAMES as TRACK_FEATURE_NAMES,
 )
 from hypertagging.preprocessing.pid_filter import PDG_TOKENS, validate_pid_tokens
+from hypertagging.reconstruction.pid_state import rebuild_runtime_pid_state
 
 
 @dataclass(frozen=True)
@@ -36,6 +37,9 @@ class LevelReconstructionOutput:
     reconstruction_projection: torch.Tensor
     channel_projection: torch.Tensor
     leaf_pid_logits: torch.Tensor | None = None
+    current_pid_probabilities: torch.Tensor | None = None
+    current_pid_tokens: torch.Tensor | None = None
+    current_p4: torch.Tensor | None = None
 
 
 class LevelAutoregressiveReconstructor(nn.Module):
@@ -55,10 +59,12 @@ class LevelAutoregressiveReconstructor(nn.Module):
         use_contextual_encoder: bool = True,
         use_relation_bias: bool = True,
         use_hyperbolic_relation_refinement: bool = False,
+        canonical_pion_first_level: bool = False,
     ) -> None:
         super().__init__()
         self.encoder_mode = encoder_mode
         self.use_contextual_encoder = use_contextual_encoder
+        self.canonical_pion_first_level = bool(canonical_pion_first_level)
         # The public argument is retained for source compatibility, but the
         # scientific contract has exactly one model vocabulary.
         n_types = len(PDG_TOKENS)
@@ -102,9 +108,30 @@ class LevelAutoregressiveReconstructor(nn.Module):
     def forward(self, batch: dict[str, torch.Tensor], *, target_level: int = 1) -> LevelReconstructionOutput:
         if self.encoder_mode == "heterogeneous":
             batch = _upgrade_flat_batch(batch)
-            encoded = self.encoder(
+            _assert_truth_free_model_inputs(batch)
+            first_pass = self.encoder(
                 batch,
                 attention_mask=stair_attention_mask(batch["level_ids"], batch["node_mask"]),
+            )
+            leaf_pid_logits = self.leaf_pid_head(first_pass.node_embeddings)
+            runtime = rebuild_runtime_pid_state(
+                batch,
+                leaf_pid_logits,
+                hard=False,
+            )
+            reconstruction_batch = _runtime_reconstruction_batch(
+                batch,
+                runtime,
+                use_canonical=(
+                    self.canonical_pion_first_level and target_level == 1
+                ),
+            )
+            encoded = self.encoder(
+                reconstruction_batch,
+                attention_mask=stair_attention_mask(
+                    reconstruction_batch["level_ids"],
+                    reconstruction_batch["node_mask"],
+                ),
             )
             h = encoded.node_embeddings
             z = encoded.hyperbolic_embeddings
@@ -117,6 +144,9 @@ class LevelAutoregressiveReconstructor(nn.Module):
                 else torch.zeros_like(encoded.physical_relation_bias)
             )
             attention_weights = encoded.attention_weights
+            current_probabilities = runtime.probabilities
+            current_tokens = runtime.current_tokens
+            current_p4 = runtime.p4
         else:
             h, z = self.encoder(
                 batch["node_features"],
@@ -149,8 +179,23 @@ class LevelAutoregressiveReconstructor(nn.Module):
                 attention_weights = relation_bias.new_zeros(
                     (*relation_bias.shape[:1], 1, *relation_bias.shape[-2:])
                 )
+            leaf_pid_logits = self.leaf_pid_head(h)
+            current_probabilities = None
+            current_tokens = batch["pid_labels"]
+            current_p4 = batch["p4"]
         context_mask = context_mask_for_level(batch["level_ids"], batch["node_mask"], target_level)
-        pointer = self.decoder(h, context_mask, target_level=target_level)
+        pointer_validity = batch.get("pointer_validity_mask")
+        if pointer_validity is not None and pointer_validity.ndim == 2:
+            pointer_validity = pointer_validity[:, None, :].expand(
+                -1, self.decoder.n_queries, -1
+            )
+        pointer = self.decoder(
+            h,
+            context_mask,
+            target_level=target_level,
+            allowed_type_mask=batch.get("allowed_type_mask"),
+            pointer_validity_mask=pointer_validity,
+        )
         return LevelReconstructionOutput(
             target_level,
             pointer,
@@ -162,8 +207,69 @@ class LevelAutoregressiveReconstructor(nn.Module):
             tree_projection,
             reconstruction_projection,
             channel_projection,
-            self.leaf_pid_head(h),
+            leaf_pid_logits,
+            current_probabilities,
+            current_tokens,
+            current_p4,
         )
+
+
+def _runtime_reconstruction_batch(
+    batch: dict[str, torch.Tensor],
+    runtime,
+    *,
+    use_canonical: bool,
+) -> dict[str, torch.Tensor]:
+    if use_canonical:
+        return batch
+    output = dict(batch)
+    output["current_pid_probabilities"] = runtime.probabilities
+    output["current_pid_tokens"] = runtime.current_tokens
+    output["current_pid_available"] = runtime.available
+    output["p4"] = runtime.p4
+    output["daughter_input_pid_histogram"] = runtime.daughter_input_histograms
+    output["daughter_input_pid_histogram_available"] = (
+        runtime.daughter_histogram_available
+    )
+    output["daughter_pid_histogram"] = runtime.daughter_input_histograms
+    output["daughter_pid_histogram_available"] = runtime.daughter_histogram_available
+    common = output["common_features"].clone()
+    common[..., :4] = runtime.p4
+    mass2 = runtime.p4[..., 3].square() - runtime.p4[..., :3].square().sum(dim=-1)
+    common[..., 4] = mass2.clamp_min(0).sqrt()
+    output["common_features"] = common
+    composite = output["composite_features"].clone()
+    if composite.shape[-1] >= 4:
+        composite[..., :4] = torch.einsum(
+            "bmn,bnf->bmf",
+            output["daughter_adjacency"].to(runtime.p4.dtype),
+            runtime.p4,
+        )
+    output["composite_features"] = composite
+    return output
+
+
+def _assert_truth_free_model_inputs(batch: dict[str, torch.Tensor]) -> None:
+    """Fail fast if the explicit raw-track input contract is violated."""
+
+    from hypertagging.preprocessing.schema_v4 import LEAF_MODE_TO_ID
+
+    raw = batch["node_mask"] & (
+        batch["leaf_kinematics_mode_ids"]
+        == LEAF_MODE_TO_ID["raw_track_predicted_pid"]
+    )
+    if raw.any() and (batch["pid_labels"][raw] != 0).any():
+        raise ValueError(
+            "raw_track_predicted_pid nodes must enter the model with unknown input token 0"
+        )
+    if "daughter_input_pid_histogram" not in batch:
+        raise ValueError("explicit daughter_input_pid_histogram is required")
+    if (
+        "daughter_truth_pid_histogram" in batch
+        and batch["daughter_input_pid_histogram"].data_ptr()
+        == batch["daughter_truth_pid_histogram"].data_ptr()
+    ):
+        raise ValueError("input and truth daughter PID histograms must be distinct tensors")
 
 
 def construct_mother_p4(pointer_logits: torch.Tensor, p4: torch.Tensor, *, hard: bool = False) -> torch.Tensor:
@@ -235,6 +341,10 @@ def _upgrade_flat_batch(batch: dict[str, torch.Tensor]) -> dict[str, torch.Tenso
     )
     validate_pid_tokens(batch["pid_labels"][active], name="upgraded batch PID labels")
     histogram.scatter_add_(-1, daughter_tokens, adjacency.float())
+    batch["daughter_input_pid_histogram"] = histogram
+    batch["daughter_input_pid_histogram_available"] = has_daughters
+    batch["daughter_truth_pid_histogram"] = histogram.clone()
+    batch["daughter_truth_pid_histogram_available"] = has_daughters.clone()
     batch["daughter_pid_histogram"] = histogram
     batch["daughter_pid_histogram_available"] = has_daughters
     if "node_kind_ids" in batch:
@@ -255,4 +365,34 @@ def _upgrade_flat_batch(batch: dict[str, torch.Tensor]) -> dict[str, torch.Tenso
     batch.setdefault("copied_from", torch.full_like(levels, -1))
     batch.setdefault("active", active)
     batch.setdefault("b_side", torch.full_like(levels, -1))
+    if "leaf_kinematics_mode_ids" not in batch:
+        from hypertagging.preprocessing.schema_v4 import LEAF_MODE_TO_ID
+
+        modes = torch.full_like(levels, LEAF_MODE_TO_ID["truth_topology_only"])
+        modes[levels > 0] = LEAF_MODE_TO_ID["composite"]
+        modes[(levels == 0) & (kinds == NODE_KIND_TO_ID["track"])] = (
+            LEAF_MODE_TO_ID["fixed_hypothesis_candidate"]
+        )
+        modes[(levels == 0) & (kinds == NODE_KIND_TO_ID["ecl_cluster"])] = (
+            LEAF_MODE_TO_ID["ecl_cluster"]
+        )
+        batch["leaf_kinematics_mode_ids"] = modes
+    daughter_count = adjacency.sum(dim=-1).long()
+    batch.setdefault("full_truth_daughter_count", daughter_count.clone())
+    batch.setdefault(
+        "retained_truth_daughter_count_expected", daughter_count.clone()
+    )
+    batch.setdefault("retained_daughter_count", daughter_count.clone())
+    batch.setdefault("reconstructed_daughter_count", daughter_count.clone())
+    batch.setdefault("complete_truth_decay", active.clone())
+    batch.setdefault("complete_reconstructable_decay", active.clone())
+    batch.setdefault("recursive_reconstructable_complete", active.clone())
+    batch.setdefault("partial_missing_daughters", torch.zeros_like(active))
+    batch.setdefault("contracted_intermediate", torch.zeros_like(active))
+    batch.setdefault("valid_reconstruction_target", daughter_count >= 2)
+    maximum_level = torch.where(active, levels, torch.zeros_like(levels)).max(
+        dim=-1, keepdim=True
+    ).values
+    batch.setdefault("truth_root_distance", maximum_level - levels.clamp_min(0))
+    batch.setdefault("full_event_max_level", maximum_level.expand_as(levels))
     return batch

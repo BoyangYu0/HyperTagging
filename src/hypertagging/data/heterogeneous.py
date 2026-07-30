@@ -18,9 +18,12 @@ from hypertagging.preprocessing.schema_v3 import (
     V3_COMMON_FEATURE_NAMES as COMMON_FEATURE_NAMES,
     V3_COMPOSITE_FEATURE_NAMES as COMPOSITE_FEATURE_NAMES,
     V3_TRACK_FEATURE_NAMES as TRACK_FEATURE_NAMES,
-    load_payload_v3,
 )
 from hypertagging.preprocessing.pid_filter import PDG_TOKENS, validate_pid_tokens
+from hypertagging.preprocessing.schema_v4 import (
+    LEAF_MODE_TO_ID,
+    iter_event_records_v4,
+)
 
 
 @dataclass(frozen=True)
@@ -35,9 +38,12 @@ class HeterogeneousEvent:
     cluster_availability: torch.Tensor
     composite_features: torch.Tensor
     composite_availability: torch.Tensor
-    daughter_pid_histogram: torch.Tensor
-    daughter_pid_histogram_available: torch.Tensor
+    daughter_input_pid_histogram: torch.Tensor
+    daughter_input_pid_histogram_available: torch.Tensor
+    daughter_truth_pid_histogram: torch.Tensor
+    daughter_truth_pid_histogram_available: torch.Tensor
     node_kind_ids: torch.Tensor
+    leaf_kinematics_mode_ids: torch.Tensor
     pid_labels: torch.Tensor
     pid_target_labels: torch.Tensor
     truth_pid_labels: torch.Tensor
@@ -56,6 +62,18 @@ class HeterogeneousEvent:
     copied_from: torch.Tensor
     b_side: torch.Tensor
     b_channel_count_arrays: torch.Tensor
+    full_truth_daughter_count: torch.Tensor
+    retained_truth_daughter_count_expected: torch.Tensor
+    retained_daughter_count: torch.Tensor
+    reconstructed_daughter_count: torch.Tensor
+    complete_truth_decay: torch.Tensor
+    complete_reconstructable_decay: torch.Tensor
+    recursive_reconstructable_complete: torch.Tensor
+    partial_missing_daughters: torch.Tensor
+    contracted_intermediate: torch.Tensor
+    valid_reconstruction_target: torch.Tensor
+    truth_root_distance: torch.Tensor
+    full_event_max_level: torch.Tensor
     b1_channel_id: int = 0
     b2_channel_id: int = 0
     b1_full_truth_channel_id: int = 0
@@ -66,6 +84,20 @@ class HeterogeneousEvent:
     source_file: str = ""
     source_category: str = ""
     schema_version: str = ""
+    source_schema_version: str = ""
+    legacy_conflated_fraction: float = 0.0
+    b_root_discovery_valid: bool = False
+    b_root_discovery_fallback: bool = False
+
+    @property
+    def daughter_pid_histogram(self) -> torch.Tensor:
+        """Deprecated compatibility alias; always the model-input histogram."""
+
+        return self.daughter_input_pid_histogram
+
+    @property
+    def daughter_pid_histogram_available(self) -> torch.Tensor:
+        return self.daughter_input_pid_histogram_available
 
 
 def load_heterogeneous_events(
@@ -77,10 +109,10 @@ def load_heterogeneous_events(
 ) -> list[HeterogeneousEvent]:
     """Load any direct-mDST schema into the corrected v3 model contract."""
 
-    payload = load_payload_v3(path)
-    records = payload["events"] if limit is None else payload["events"][:limit]
     output: list[HeterogeneousEvent] = []
-    for event in records:
+    for event_index, event in enumerate(iter_event_records_v4(path)):
+        if limit is not None and event_index >= limit:
+            break
         if max_nodes is not None and len(event["nodes"]) > max_nodes:
             if overflow_strategy == "drop":
                 continue
@@ -156,15 +188,63 @@ def _event_from_record(event: dict[str, Any]) -> HeterogeneousEvent:
             COMPOSITE_FEATURE_NAMES,
             dtype=torch.bool,
         ),
-        daughter_pid_histogram=torch.tensor(
-            [node["daughter_pid_histogram"] for node in nodes],
+        daughter_input_pid_histogram=torch.tensor(
+            [
+                node.get(
+                    "daughter_input_pid_histogram",
+                    node.get("daughter_pid_histogram", [0] * len(PDG_TOKENS)),
+                )
+                for node in nodes
+            ],
             dtype=torch.float32,
         ),
-        daughter_pid_histogram_available=torch.tensor(
-            [bool(node["daughter_pid_histogram_available"]) for node in nodes],
+        daughter_input_pid_histogram_available=torch.tensor(
+            [
+                bool(
+                    node.get(
+                        "daughter_input_pid_histogram_available",
+                        node.get("daughter_pid_histogram_available", False),
+                    )
+                )
+                for node in nodes
+            ],
+            dtype=torch.bool,
+        ),
+        daughter_truth_pid_histogram=torch.tensor(
+            [
+                node.get(
+                    "daughter_truth_pid_histogram",
+                    node.get("daughter_pid_histogram", [0] * len(PDG_TOKENS)),
+                )
+                for node in nodes
+            ],
+            dtype=torch.float32,
+        ),
+        daughter_truth_pid_histogram_available=torch.tensor(
+            [
+                bool(
+                    node.get(
+                        "daughter_truth_pid_histogram_available",
+                        node.get("daughter_pid_histogram_available", False),
+                    )
+                )
+                for node in nodes
+            ],
             dtype=torch.bool,
         ),
         node_kind_ids=torch.tensor([int(node["node_kind_id"]) for node in nodes], dtype=torch.long),
+        leaf_kinematics_mode_ids=torch.tensor(
+            [
+                int(
+                    node.get(
+                        "leaf_kinematics_mode_id",
+                        LEAF_MODE_TO_ID["legacy_conflated"],
+                    )
+                )
+                for node in nodes
+            ],
+            dtype=torch.long,
+        ),
         pid_labels=input_tokens,
         pid_target_labels=target_tokens,
         truth_pid_labels=truth_tokens,
@@ -213,6 +293,51 @@ def _event_from_record(event: dict[str, Any]) -> HeterogeneousEvent:
             ],
             dtype=torch.float32,
         ),
+        full_truth_daughter_count=_node_int_tensor(nodes, "full_truth_daughter_count"),
+        retained_truth_daughter_count_expected=_node_int_tensor(
+            nodes, "retained_truth_daughter_count_expected"
+        ),
+        retained_daughter_count=_node_int_tensor(nodes, "retained_daughter_count"),
+        reconstructed_daughter_count=_node_int_tensor(
+            nodes, "reconstructed_daughter_count"
+        ),
+        complete_truth_decay=_node_bool_tensor(nodes, "complete_truth_decay"),
+        complete_reconstructable_decay=_node_bool_tensor(
+            nodes, "complete_reconstructable_decay"
+        ),
+        recursive_reconstructable_complete=_node_bool_tensor(
+            nodes, "recursive_reconstructable_complete"
+        ),
+        partial_missing_daughters=_node_bool_tensor(nodes, "partial_missing_daughters"),
+        contracted_intermediate=_node_bool_tensor(nodes, "contracted_intermediate"),
+        valid_reconstruction_target=_node_bool_tensor(
+            nodes, "valid_reconstruction_target"
+        ),
+        truth_root_distance=torch.tensor(
+            [
+                int(
+                    node.get(
+                        "truth_root_distance",
+                        max(int(candidate["level"]) for candidate in nodes)
+                        - int(node["level"]),
+                    )
+                )
+                for node in nodes
+            ],
+            dtype=torch.long,
+        ),
+        full_event_max_level=torch.tensor(
+            [
+                int(
+                    node.get(
+                        "full_event_max_level",
+                        max(int(candidate["level"]) for candidate in nodes),
+                    )
+                )
+                for node in nodes
+            ],
+            dtype=torch.long,
+        ),
         b1_channel_id=int(event.get("b1_channel_id", 0)),
         b2_channel_id=int(event.get("b2_channel_id", 0)),
         b1_full_truth_channel_id=int(event.get("b1_full_truth_channel_id", 0)),
@@ -227,7 +352,27 @@ def _event_from_record(event: dict[str, Any]) -> HeterogeneousEvent:
         source_file=str(event.get("source_file", "")),
         source_category=str(event.get("source_category", "")),
         schema_version=str(event.get("schema_version", "")),
+        source_schema_version=str(
+            event.get("source_schema_version", event.get("schema_version", ""))
+        ),
+        legacy_conflated_fraction=float(event.get("legacy_conflated_fraction", 0.0)),
+        b_root_discovery_valid=bool(event.get("b_root_discovery_valid", False)),
+        b_root_discovery_fallback=bool(event.get("b_root_discovery_fallback", False)),
     )
+
+
+def heterogeneous_event_from_record(event: dict[str, Any]) -> HeterogeneousEvent:
+    """Public single-record conversion used by streaming datasets."""
+
+    return _event_from_record(event)
+
+
+def _node_int_tensor(nodes: list[dict[str, Any]], name: str) -> torch.Tensor:
+    return torch.tensor([int(node.get(name, 0) or 0) for node in nodes], dtype=torch.long)
+
+
+def _node_bool_tensor(nodes: list[dict[str, Any]], name: str) -> torch.Tensor:
+    return torch.tensor([bool(node.get(name, False)) for node in nodes], dtype=torch.bool)
 
 
 def _recursive_source_mask(nodes: list[dict[str, Any]]) -> torch.Tensor:
@@ -353,9 +498,24 @@ def heterogeneous_from_level_event(event: LevelEvent) -> HeterogeneousEvent:
         cluster_availability=cluster_mask,
         composite_features=composite,
         composite_availability=composite_mask,
-        daughter_pid_histogram=pid_hist,
-        daughter_pid_histogram_available=pid_hist_available,
+        daughter_input_pid_histogram=pid_hist,
+        daughter_input_pid_histogram_available=pid_hist_available,
+        daughter_truth_pid_histogram=pid_hist.clone(),
+        daughter_truth_pid_histogram_available=pid_hist_available.clone(),
         node_kind_ids=kinds,
+        leaf_kinematics_mode_ids=torch.where(
+            event.level_ids > 0,
+            torch.full((count,), LEAF_MODE_TO_ID["composite"], dtype=torch.long),
+            torch.where(
+                kinds == NODE_KIND_TO_ID["ecl_cluster"],
+                torch.full((count,), LEAF_MODE_TO_ID["ecl_cluster"], dtype=torch.long),
+                torch.full(
+                    (count,),
+                    LEAF_MODE_TO_ID["fixed_hypothesis_candidate"],
+                    dtype=torch.long,
+                ),
+            ),
+        ),
         pid_labels=event.pid_labels,
         pid_target_labels=event.pid_labels,
         truth_pid_labels=event.pid_labels,
@@ -374,6 +534,18 @@ def heterogeneous_from_level_event(event: LevelEvent) -> HeterogeneousEvent:
         copied_from=event.copied_from,
         b_side=torch.full((count,), -1, dtype=torch.long),
         b_channel_count_arrays=torch.zeros((2, len(PDG_TOKENS))),
+        full_truth_daughter_count=event.daughter_adjacency.sum(dim=-1).long(),
+        retained_truth_daughter_count_expected=event.daughter_adjacency.sum(dim=-1).long(),
+        retained_daughter_count=event.daughter_adjacency.sum(dim=-1).long(),
+        reconstructed_daughter_count=event.daughter_adjacency.sum(dim=-1).long(),
+        complete_truth_decay=torch.ones(count, dtype=torch.bool),
+        complete_reconstructable_decay=torch.ones(count, dtype=torch.bool),
+        recursive_reconstructable_complete=torch.ones(count, dtype=torch.bool),
+        partial_missing_daughters=torch.zeros(count, dtype=torch.bool),
+        contracted_intermediate=torch.zeros(count, dtype=torch.bool),
+        valid_reconstruction_target=event.daughter_adjacency.sum(dim=-1) >= 2,
+        truth_root_distance=event.level_ids.max() - event.level_ids,
+        full_event_max_level=torch.full_like(event.level_ids, int(event.level_ids.max())),
     )
 
 
@@ -419,7 +591,8 @@ def collate_heterogeneous_events(events: Sequence[HeterogeneousEvent]) -> dict[s
         "cluster_availability": events[0].cluster_availability.shape[-1],
         "composite_features": events[0].composite_features.shape[-1],
         "composite_availability": events[0].composite_availability.shape[-1],
-        "daughter_pid_histogram": events[0].daughter_pid_histogram.shape[-1],
+        "daughter_input_pid_histogram": events[0].daughter_input_pid_histogram.shape[-1],
+        "daughter_truth_pid_histogram": events[0].daughter_truth_pid_histogram.shape[-1],
     }
     bool_fields = {
         "common_availability",
@@ -432,6 +605,7 @@ def collate_heterogeneous_events(events: Sequence[HeterogeneousEvent]) -> dict[s
         output[field] = torch.zeros((batch_size, max_nodes, width), dtype=dtype)
     vector_defaults = {
         "node_kind_ids": 0,
+        "leaf_kinematics_mode_ids": LEAF_MODE_TO_ID["legacy_conflated"],
         "pid_labels": 0,
         "pid_target_labels": 0,
         "truth_pid_labels": 0,
@@ -446,13 +620,33 @@ def collate_heterogeneous_events(events: Sequence[HeterogeneousEvent]) -> dict[s
         "source_node_ids": -1,
         "copied_from": -1,
         "b_side": -1,
-        "daughter_pid_histogram_available": 0,
+        "daughter_input_pid_histogram_available": 0,
+        "daughter_truth_pid_histogram_available": 0,
+        "full_truth_daughter_count": 0,
+        "retained_truth_daughter_count_expected": 0,
+        "retained_daughter_count": 0,
+        "reconstructed_daughter_count": 0,
+        "complete_truth_decay": 0,
+        "complete_reconstructable_decay": 0,
+        "recursive_reconstructable_complete": 0,
+        "partial_missing_daughters": 0,
+        "contracted_intermediate": 0,
+        "valid_reconstruction_target": 0,
+        "truth_root_distance": 0,
+        "full_event_max_level": 0,
     }
     bool_vectors = {
         "active",
         "copied",
-        "daughter_pid_histogram_available",
+        "daughter_input_pid_histogram_available",
+        "daughter_truth_pid_histogram_available",
         "truth_pid_available",
+        "complete_truth_decay",
+        "complete_reconstructable_decay",
+        "recursive_reconstructable_complete",
+        "partial_missing_daughters",
+        "contracted_intermediate",
+        "valid_reconstruction_target",
     }
     for field, default in vector_defaults.items():
         dtype = torch.bool if field in bool_vectors else (
@@ -483,6 +677,19 @@ def collate_heterogeneous_events(events: Sequence[HeterogeneousEvent]) -> dict[s
         )
     output["node_mask"] = output["active"].clone()
     output["node_features"] = output["common_features"]
+    # The deprecated name is a compatibility alias only; models consume the
+    # explicit input name below.
+    output["daughter_pid_histogram"] = output["daughter_input_pid_histogram"]
+    output["daughter_pid_histogram_available"] = output[
+        "daughter_input_pid_histogram_available"
+    ]
+    source_overlap = torch.einsum(
+        "bns,bms->bnm",
+        output["recursive_leaf_source_mask"].to(torch.int32),
+        output["recursive_leaf_source_mask"].to(torch.int32),
+    ) > 0
+    diagonal = torch.eye(max_nodes, dtype=torch.bool).unsqueeze(0)
+    output["source_conflict_matrix"] = source_overlap & ~diagonal
     output["event_ids"] = torch.tensor([event.event_id for event in events], dtype=torch.long)
     output["b1_channel_ids"] = torch.tensor([event.b1_channel_id for event in events], dtype=torch.long)
     output["b2_channel_ids"] = torch.tensor([event.b2_channel_id for event in events], dtype=torch.long)
@@ -505,6 +712,15 @@ def collate_heterogeneous_events(events: Sequence[HeterogeneousEvent]) -> dict[s
     output["b_channel_count_arrays"] = torch.stack(
         [event.b_channel_count_arrays for event in events]
     )
+    output["legacy_conflated_fraction"] = torch.tensor(
+        [event.legacy_conflated_fraction for event in events], dtype=torch.float32
+    )
+    output["b_root_discovery_valid"] = torch.tensor(
+        [event.b_root_discovery_valid for event in events], dtype=torch.bool
+    )
+    output["b_root_discovery_fallback"] = torch.tensor(
+        [event.b_root_discovery_fallback for event in events], dtype=torch.bool
+    )
     return output
 
 
@@ -518,5 +734,6 @@ __all__ = [
     "HeterogeneousEvent",
     "collate_heterogeneous_events",
     "heterogeneous_from_level_event",
+    "heterogeneous_event_from_record",
     "load_heterogeneous_events",
 ]

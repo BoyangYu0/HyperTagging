@@ -48,7 +48,7 @@ def build_notebook() -> nbf.NotebookNode:
             if not (REPO_ROOT / "src").exists(): REPO_ROOT = Path("..").resolve()
             sys.path.insert(0, str(REPO_ROOT / "src"))
             from hypertagging.data.heterogeneous import load_heterogeneous_events, collate_heterogeneous_events
-            from hypertagging.data.notebook_fixtures import write_notebook_fixture_v3
+            from hypertagging.data.notebook_fixtures import write_notebook_fixture_v4
             from hypertagging.losses.hyperbolic_pretraining import (
                 build_tree_relation_targets, collapse_diagnostics, pool_b_branch_embeddings,
             )
@@ -60,7 +60,7 @@ def build_notebook() -> nbf.NotebookNode:
             requested = os.environ.get("HYPERTAGGING_PARQUET", "").strip()
             FIXTURE_MODE = not bool(requested)
             INPUT_PATH = Path(requested) if requested else Path("/tmp/hypertagging_notebook_fixture_v3.parquet")
-            if FIXTURE_MODE: write_notebook_fixture_v3(INPUT_PATH)
+            if FIXTURE_MODE: write_notebook_fixture_v4(INPUT_PATH)
             if not INPUT_PATH.exists(): raise FileNotFoundError(INPUT_PATH)
             FIGURE_DIR = Path(os.environ.get("HYPERTAGGING_FIGURE_DIR", "/tmp/hypertagging_figures/hyperbolic"))
             FIGURE_DIR.mkdir(parents=True, exist_ok=True)
@@ -258,14 +258,22 @@ def build_notebook() -> nbf.NotebookNode:
             curriculum_rows=[]
             for stage in PretrainingStage:
                 view=build_curriculum_batch(batch,stage,seed=SEED,corruption_probability=1.0)
-                with torch.no_grad(): stage_encoded=model(view.batch)
+                with torch.no_grad(): stage_encoded=model(view.batch,attention_mask=view.batch["curriculum_attention_mask"])
                 curriculum_rows.append({
                     "stage":stage.value,
                     "valid_nodes":int(view.batch["node_mask"].sum()),
                     "corrupted_nodes":int(view.corrupted_node_mask.sum()),
                     "mean_radius":float(radius(stage_encoded.hyperbolic_embeddings)[view.batch["node_mask"]].mean()),
+                    "original_max_level":int(view.batch["full_event_max_level"].max()),
+                    "hard_negative_pairs":int(view.hard_negative_pairs.shape[0]),
+                    "causal_future_links":int((
+                        view.batch["curriculum_attention_mask"]
+                        & (view.batch["level_ids"][:,None,:] > view.batch["level_ids"][:,:,None])
+                    ).sum()),
                 })
             display(pd.DataFrame(curriculum_rows))
+            assert all(row["causal_future_links"]==0 for row in curriculum_rows)
+            print("Corrupted Stage 3 rebuilds p4, charge, input PID histograms, source masks, and structural features.")
             """
         ),
         md("## Direct tree-distance target versus hyperbolic distance"),

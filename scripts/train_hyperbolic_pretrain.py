@@ -14,15 +14,16 @@ if str(SRC_ROOT) not in sys.path:
 
 from hypertagging.training.hyperbolic_pretrain import run_hyperbolic_pretrain_dry_run
 from hypertagging.training.pretrain_trainer import PretrainConfig, train_hyperbolic_pretraining
-from hypertagging.models.ablation import ABLATIONS
+from hypertagging.models.ablation import ALL_ABLATIONS
 from hypertagging.utils.gpu_safety import assert_full_training_requires_condor
+from hypertagging.training.config import resolve_argparse_namespace
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", default=None)
     parser.add_argument("--data", default=None)
-    parser.add_argument("--ablation", choices=sorted(ABLATIONS), default="full_revised")
+    parser.add_argument("--ablation", choices=sorted(ALL_ABLATIONS), default="full_revised")
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--tiny", action="store_true")
@@ -38,7 +39,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--validate-every", type=int, default=100)
     parser.add_argument("--channel-memory-size", type=int, default=0)
     parser.add_argument("--allow-local-tiny-gpu-test", action="store_true")
-    return parser.parse_args(argv)
+    parser.add_argument("--prefetch-factor", type=int, default=2)
+    parser.add_argument("--shuffle-buffer-size", type=int, default=1024)
+    parser.add_argument("--persistent-workers", action="store_true")
+    parser.add_argument("--pilot-split-repair", action="store_true")
+    parser.add_argument("--allow-legacy-conflated", action="store_true")
+    return resolve_argparse_namespace(parser, argv)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -59,6 +65,13 @@ def main(argv: list[str] | None = None) -> int:
                 resume=args.resume,
                 ablation=args.ablation,
                 channel_memory_size=args.channel_memory_size,
+                num_workers=args.num_workers,
+                prefetch_factor=args.prefetch_factor,
+                shuffle_buffer_size=args.shuffle_buffer_size,
+                persistent_workers=args.persistent_workers,
+                pilot_split_repair=args.pilot_split_repair,
+                allow_legacy_conflated=args.allow_legacy_conflated,
+                log_every=args.log_every,
             )
         )
         print(

@@ -22,12 +22,21 @@ from hypertagging.preprocessing.schema_v3 import (
     export_trees_v3,
     load_payload_v3,
 )
+from hypertagging.preprocessing.schema_v4 import (
+    SCHEMA_VERSION_V4,
+    ParquetEventWriter,
+    export_trees_v4,
+    feature_spec_v4,
+    load_payload_v4,
+)
 
 __all__ = [
     "SCHEMA_VERSION",
     "LEVEL_SCHEMA_VERSION",
     "SCHEMA_VERSION_V2",
     "SCHEMA_VERSION_V3",
+    "SCHEMA_VERSION_V4",
+    "ParquetEventWriter",
     "PDG_TOKENS",
     "TOKENIZE_DICT",
     "EventTree",
@@ -45,6 +54,9 @@ __all__ = [
     "export_trees",
     "export_trees_v2",
     "export_trees_v3",
+    "export_trees_v4",
+    "feature_spec_v4",
+    "load_payload_v4",
     "load_payload_v2",
     "load_payload_v3",
     "load_processed",

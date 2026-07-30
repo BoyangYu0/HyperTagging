@@ -15,6 +15,7 @@ def test_real_parquet_train_transfer_validate_and_resume(tmp_path):
             output_dir=str(tmp_path / "pretrain"),
             max_steps=1,
             batch_size=2,
+            allow_legacy_conflated=True,
         )
     )
     checkpoint = load_training_checkpoint(pretrain.checkpoint)
@@ -27,6 +28,7 @@ def test_real_parquet_train_transfer_validate_and_resume(tmp_path):
             pretrained_encoder=str(pretrain.checkpoint),
             max_steps=1,
             batch_size=2,
+            allow_legacy_conflated=True,
         )
     )
     assert reconstruction.transfer_report
@@ -40,6 +42,7 @@ def test_real_parquet_train_transfer_validate_and_resume(tmp_path):
             resume=str(reconstruction.checkpoint),
             max_steps=2,
             batch_size=2,
+            allow_legacy_conflated=True,
         )
     )
     assert resumed.steps == 2

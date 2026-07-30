@@ -35,3 +35,24 @@ def test_recursive_exclusivity_ranking_is_deterministic():
     second = resolve_exclusive_proposals(list(reversed(proposals)), recursive_leaf_source_mask=sources)
     assert first == second and first[0].query_id == 0
     assert RolloutConfig().use_learned_confidence is False
+
+
+def test_confidence_target_is_independent_of_type_probability_magnitude():
+    batch = collate_heterogeneous_events(
+        [heterogeneous_from_level_event(tiny_level_events()[0])]
+    )
+    model = LevelAutoregressiveReconstructor(
+        n_features=12, n_types=41, hidden_dim=16, n_queries=3
+    )
+    output = model(batch, target_level=1).pointer
+    first = level_reconstruction_loss(output, batch, target_level=1)
+    adjusted = type(output)(
+        object_logits=output.object_logits,
+        type_logits=output.type_logits * 10,
+        pointer_logits=output.pointer_logits,
+        cardinality_logits=output.cardinality_logits,
+        confidence_logits=output.confidence_logits,
+        expected_type_embedding=output.expected_type_embedding,
+    )
+    second = level_reconstruction_loss(adjusted, batch, target_level=1)
+    torch.testing.assert_close(first.confidence_targets, second.confidence_targets)

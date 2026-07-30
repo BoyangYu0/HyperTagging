@@ -42,18 +42,18 @@ def build_notebook():
             import torch
             ROOT = Path.cwd()
             sys.path.insert(0, str(ROOT / "src"))
-            from hypertagging.data.notebook_fixtures import write_notebook_fixture_v3
-            from hypertagging.preprocessing.schema_v3 import load_payload_v3, SCHEMA_VERSION_V3
+            from hypertagging.data.notebook_fixtures import write_notebook_fixture_v4
+            from hypertagging.preprocessing.schema_v4 import load_payload_v4, SCHEMA_VERSION_V4
             from hypertagging.preprocessing.pid_filter import PDG_TOKENS
             from hypertagging.reconstruction.kinematics import track_energy_hypotheses
             SEED = int(os.environ.get("HYPERTAGGING_NOTEBOOK_SEED", "20260730"))
             torch.manual_seed(SEED); np.random.seed(SEED)
             requested = os.environ.get("HYPERTAGGING_PARQUET", "").strip()
             FIXTURE_MODE = not bool(requested)
-            INPUT = Path(requested) if requested else Path("/tmp/hypertagging_leaf_pid_v3.parquet")
-            if FIXTURE_MODE: write_notebook_fixture_v3(INPUT)
-            payload = load_payload_v3(INPUT)
-            if payload["schema_version"] != SCHEMA_VERSION_V3: raise ValueError("schema-v3 adaptation failed")
+            INPUT = Path(requested) if requested else Path("/tmp/hypertagging_leaf_pid_v4.parquet")
+            if FIXTURE_MODE: write_notebook_fixture_v4(INPUT)
+            payload = load_payload_v4(INPUT)
+            if payload["schema_version"] != SCHEMA_VERSION_V4: raise ValueError("schema-v4 adaptation failed")
             OUT = Path(os.environ.get("HYPERTAGGING_FIGURE_DIR", "/tmp/hypertagging_figures/leaf_pid"))
             OUT.mkdir(parents=True, exist_ok=True)
             print("TINY FIXTURE — NOT REAL DATA" if FIXTURE_MODE else "REAL PREPROCESSED SAMPLE")

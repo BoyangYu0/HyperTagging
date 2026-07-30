@@ -10,6 +10,7 @@ from hypertagging.data.notebook_fixtures import (
     write_notebook_fixture_v3,
 )
 from hypertagging.preprocessing.schema_v3 import SCHEMA_VERSION_V3, load_payload_v3
+from hypertagging.preprocessing.schema_v4 import SCHEMA_VERSION_V4
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -51,7 +52,7 @@ def test_worker_command_and_manifest_scientific_configuration(tmp_path, monkeypa
         events_per_task=5,
     )
     record = records[0]
-    assert record["schema_version"] == SCHEMA_VERSION_V3
+    assert record["schema_version"] == SCHEMA_VERSION_V4
     assert record["pid_vocabulary_version"]
     assert record["feature_spec_hash"]
     assert record["leaf_kinematics_mode"] == "raw_track_predicted_pid"
@@ -74,7 +75,9 @@ def test_global_validator_catches_duplicate_uids_and_schema_mismatch(tmp_path):
         "pid_vocabulary_version": payload["pid_vocabulary_version"],
         "feature_spec_hash": payload["feature_spec_hash"],
         "charge_conjugate_normalization": False,
-        "leaf_kinematics_mode": "raw_track_predicted_pid",
+        "leaf_kinematics_mode": payload.get(
+            "leaf_kinematics_mode", "mixed_explicit_per_node"
+        ),
     }
     manifest.write_text(json.dumps(record) + "\n", encoding="utf-8")
     summary = production.validate_production_manifest(manifest)

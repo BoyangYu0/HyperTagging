@@ -1,0 +1,13 @@
+name: canonical_pion_first_level
+heterogeneous_adapters: true
+contextual_euclidean: true
+lca_parent: true
+radius_depth: true
+variance_covariance: true
+channel_supervision: true
+relation_attention: true
+hyperbolic_relation_attention: true
+leaf_pid: true
+canonical_pion_first_level: true
+scheduled_sampling: false
+pretrained_encoder_transfer: true

@@ -153,10 +153,27 @@ maps, distance, radius, relation features, losses, and diagnostics.
 The curriculum is explicit: FSP-only, truth-guided reconstructed composites,
 then corrupted/predicted-like composites (missing/wrong daughters, wrong
 types, shared-source conflicts, and physical hard negatives). Stage 1 masks
-every truth composite from contextual input.
+every truth composite from contextual input. Multilevel attention is
+level-causal: level `l` can inspect only levels `<= l`. Radius targets retain
+the original full-event depth even when only leaves are visible.
 
 Queries receive a target-level embedding. Pointer scores include the expected
 mother-type embedding. Truth query/cardinality overflow raises; sparse
 object/pointer losses use configurable focal/positive weighting. Confidence is
-trained on matched pointer Jaccard multiplied by correct-type probability and
-reports Brier/ECE. Exclusive rollout compares recursive leaf-source sets.
+trained on matched pointer Jaccard times a hard correct-type and structural
+validity indicator; it never depends on the model's own type-confidence
+magnitude. It reports Brier/ECE. Exclusive rollout compares recursive
+leaf-source sets.
+
+The production reconstructor uses two contextual passes. Pass A uses only
+detector-compatible inputs and predicts charge-compatible leaf PID. Its soft
+PID distribution rebuilds the PID embedding, track energy, p4, pair relations,
+and composite input histograms. Pass B then contextualizes those refined
+quantities before the principal hyperbolic projection and pointer decoder.
+Thus leaf-PID gradients can originate in Level-1 reconstruction loss.
+`canonical_pion_first_level` remains an explicit disabled-by-default ablation.
+
+Corruption training rebuilds all derived p4, charge, source, histogram, level,
+and conflict features. Candidate-correctness, corruption-class, and explicit
+hard-negative losses consume these outputs; corrupted branches are never
+queued as positive channel examples.

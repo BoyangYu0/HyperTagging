@@ -27,14 +27,14 @@ def build_notebook():
             import pandas as pd
             import torch
             ROOT=Path.cwd(); sys.path.insert(0,str(ROOT/"src"))
-            from hypertagging.data.notebook_fixtures import write_notebook_fixture_v3
+            from hypertagging.data.notebook_fixtures import write_notebook_fixture_v4
             from hypertagging.data.heterogeneous import load_heterogeneous_events, collate_heterogeneous_events
             from hypertagging.data.capacity import dataset_capacity_statistics
             from hypertagging.losses.level_reconstruction import focal_binary_cross_entropy_with_logits
             from hypertagging.losses.set_matching import matching_cost, hungarian_assignment
             requested=os.environ.get("HYPERTAGGING_PARQUET","").strip(); FIXTURE_MODE=not bool(requested)
             path=Path(requested) if requested else Path("/tmp/hypertagging_capacity_v3.parquet")
-            if FIXTURE_MODE: write_notebook_fixture_v3(path)
+            if FIXTURE_MODE: write_notebook_fixture_v4(path)
             events=load_heterogeneous_events(path)
             OUT=Path(os.environ.get("HYPERTAGGING_FIGURE_DIR","/tmp/hypertagging_figures/capacity")); OUT.mkdir(parents=True,exist_ok=True)
             print("TINY FIXTURE — NOT REAL DATA" if FIXTURE_MODE else "REAL SAMPLE")

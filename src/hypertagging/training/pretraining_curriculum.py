@@ -8,6 +8,7 @@ from enum import Enum
 import torch
 
 from hypertagging.preprocessing.pid_filter import PDG_TOKENS
+from hypertagging.reconstruction.pid_state import hard_daughter_pid_histograms
 
 
 class PretrainingStage(str, Enum):
@@ -55,6 +56,8 @@ def build_curriculum_batch(
         indices = torch.nonzero(corrupted, as_tuple=False)
         for ordinal, (batch_index, node_index) in enumerate(indices.tolist()):
             corruption_code[batch_index, node_index] = ordinal % 4 + 1
+        _rebuild_corrupted_derived_fields(output)
+    output["curriculum_attention_mask"] = curriculum_attention_mask(output, stage)
     hard_negatives = relation_aware_hard_negative_pairs(output)
     return CurriculumBatch(
         batch=output,
@@ -62,6 +65,25 @@ def build_curriculum_batch(
         corrupted_node_mask=corrupted,
         corruption_code=corruption_code,
         hard_negative_pairs=hard_negatives,
+    )
+
+
+def curriculum_attention_mask(
+    batch: dict[str, torch.Tensor],
+    stage: PretrainingStage | str,
+) -> torch.Tensor:
+    """FSP-full or level-causal mask; lower nodes never see future parents."""
+
+    stage = PretrainingStage(stage)
+    valid = batch["node_mask"].bool()
+    if stage is PretrainingStage.FSP_ONLY:
+        leaves = valid & (batch["level_ids"] == 0)
+        return leaves[:, :, None] & leaves[:, None, :]
+    levels = batch["level_ids"]
+    return (
+        valid[:, :, None]
+        & valid[:, None, :]
+        & (levels[:, None, :] <= levels[:, :, None])
     )
 
 
@@ -107,6 +129,60 @@ def _apply_composite_corruptions(
                     break
 
 
+def _rebuild_corrupted_derived_fields(batch: dict[str, torch.Tensor]) -> None:
+    """Recompute every model-input field derived from corrupted adjacency/type."""
+
+    adjacency = batch["daughter_adjacency"].bool()
+    node_mask = batch["node_mask"].bool()
+    p4 = batch["p4"].clone()
+    charge = batch["charge"].clone()
+    source_mask = batch["recursive_leaf_source_mask"].clone()
+    for level in sorted(
+        {
+            int(value)
+            for value in batch["level_ids"][node_mask].detach().cpu().tolist()
+            if int(value) > 0
+        }
+    ):
+        mothers = node_mask & (batch["level_ids"] == level)
+        summed_p4 = torch.einsum("bmn,bnf->bmf", adjacency.float(), p4)
+        summed_charge = torch.einsum("bmn,bn->bm", adjacency.float(), charge)
+        p4 = torch.where(mothers.unsqueeze(-1), summed_p4, p4)
+        charge = torch.where(mothers, summed_charge, charge)
+        union = torch.einsum(
+            "bmn,bns->bms", adjacency.to(torch.int32), source_mask.to(torch.int32)
+        ) > 0
+        source_mask = torch.where(mothers.unsqueeze(-1), union, source_mask)
+    batch["p4"] = p4
+    batch["charge"] = charge
+    batch["recursive_leaf_source_mask"] = source_mask
+    input_tokens = batch["pid_labels"]
+    histogram = hard_daughter_pid_histograms(input_tokens, adjacency)
+    batch["daughter_input_pid_histogram"] = histogram
+    batch["daughter_pid_histogram"] = histogram
+    available = adjacency.any(dim=-1) & node_mask
+    batch["daughter_input_pid_histogram_available"] = available
+    batch["daughter_pid_histogram_available"] = available
+    composite = batch["composite_features"].clone()
+    composite[..., :4] = torch.einsum("bmn,bnf->bmf", adjacency.float(), p4)
+    if composite.shape[-1] > 4:
+        composite[..., 4] = torch.einsum("bmn,bn->bm", adjacency.float(), charge)
+    if composite.shape[-1] > 5:
+        composite[..., 5] = adjacency.sum(dim=-1)
+    batch["composite_features"] = composite
+    common = batch["common_features"].clone()
+    common[..., :4] = p4
+    mass2 = p4[..., 3].square() - p4[..., :3].square().sum(dim=-1)
+    common[..., 4] = mass2.clamp_min(0).sqrt()
+    common[..., 5] = charge
+    batch["common_features"] = common
+    overlap = torch.einsum(
+        "bns,bms->bnm", source_mask.to(torch.int32), source_mask.to(torch.int32)
+    ) > 0
+    diagonal = torch.eye(overlap.shape[-1], dtype=torch.bool, device=overlap.device)
+    batch["source_conflict_matrix"] = overlap & ~diagonal.unsqueeze(0)
+
+
 def relation_aware_hard_negative_pairs(batch: dict[str, torch.Tensor]) -> torch.Tensor:
     """Select nearest-p4 non-sibling pairs among valid contextual nodes."""
 
@@ -139,5 +215,6 @@ __all__ = [
     "CurriculumBatch",
     "PretrainingStage",
     "build_curriculum_batch",
+    "curriculum_attention_mask",
     "relation_aware_hard_negative_pairs",
 ]

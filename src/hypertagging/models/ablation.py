@@ -21,6 +21,7 @@ class AblationConfig:
     leaf_pid: bool = False
     scheduled_sampling: bool = False
     pretrained_encoder_transfer: bool = False
+    canonical_pion_first_level: bool = False
 
 
 ABLATIONS: dict[str, AblationConfig] = {
@@ -84,6 +85,27 @@ ABLATIONS: dict[str, AblationConfig] = {
     ),
 }
 
+# Orthogonal diagnostic switches are kept outside the monotonic scientific
+# ablation ladder so adding one does not change the ladder's stable ordering.
+EXPERIMENT_VARIANTS: dict[str, AblationConfig] = {
+    "canonical_pion_first_level": AblationConfig(
+        "canonical_pion_first_level",
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        False,
+        True,
+        True,
+    ),
+}
+ALL_ABLATIONS: dict[str, AblationConfig] = ABLATIONS | EXPERIMENT_VARIANTS
+
 
 def build_ablation_model(
     name: str,
@@ -94,7 +116,7 @@ def build_ablation_model(
     hyper_dim: int = 16,
     n_queries: int = 8,
 ) -> LevelAutoregressiveReconstructor:
-    config = ABLATIONS[name]
+    config = ALL_ABLATIONS[name]
     return LevelAutoregressiveReconstructor(
         n_features=n_features,
         n_types=n_types,
@@ -107,7 +129,14 @@ def build_ablation_model(
         use_contextual_encoder=config.contextual_euclidean,
         use_relation_bias=config.relation_attention,
         use_hyperbolic_relation_refinement=config.hyperbolic_relation_attention,
+        canonical_pion_first_level=config.canonical_pion_first_level,
     )
 
 
-__all__ = ["ABLATIONS", "AblationConfig", "build_ablation_model"]
+__all__ = [
+    "ABLATIONS",
+    "EXPERIMENT_VARIANTS",
+    "ALL_ABLATIONS",
+    "AblationConfig",
+    "build_ablation_model",
+]

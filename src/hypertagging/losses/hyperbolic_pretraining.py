@@ -140,12 +140,22 @@ def radius_targets(
     *,
     r_min: float = 0.1,
     r_max: float = 1.5,
+    full_event_max_level: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Leaves are farthest out; roots at each event's maximum level are inward."""
 
     safe_levels = level_ids.float().clamp_min(0)
-    masked_levels = torch.where(mask, safe_levels, torch.zeros_like(safe_levels))
-    max_level = masked_levels.max(dim=-1, keepdim=True).values
+    if full_event_max_level is None:
+        masked_levels = torch.where(mask, safe_levels, torch.zeros_like(safe_levels))
+        max_level = masked_levels.max(dim=-1, keepdim=True).values
+    else:
+        max_level = full_event_max_level.float()
+        if max_level.ndim == level_ids.ndim:
+            max_level = max_level.max(dim=-1, keepdim=True).values
+        elif max_level.ndim == level_ids.ndim - 1:
+            max_level = max_level.unsqueeze(-1)
+        else:
+            raise ValueError("full_event_max_level has an invalid shape")
     fraction = (max_level - safe_levels) / max_level.clamp_min(1.0)
     return r_min + (r_max - r_min) * fraction
 
@@ -159,11 +169,18 @@ def radius_depth_loss(
     r_max: float = 1.5,
     scale: float | None = None,
     curvature: float = 1.0,
+    full_event_max_level: torch.Tensor | None = None,
 ) -> torch.Tensor:
     # ``scale`` is retained only as an old-call compatibility alias.
     if scale is not None:
         r_max = max(r_min, float(scale) * max(int(level_ids.max().item()) + 1, 1))
-    target = radius_targets(level_ids, mask, r_min=r_min, r_max=r_max)
+    target = radius_targets(
+        level_ids,
+        mask,
+        r_min=r_min,
+        r_max=r_max,
+        full_event_max_level=full_event_max_level,
+    )
     prediction = radius(z, curvature=curvature)
     return F.mse_loss(prediction[mask], target[mask]) if mask.any() else z.sum() * 0.0
 
@@ -552,6 +569,7 @@ def hyperbolic_pretraining_loss(
     same_branch: torch.Tensor | None = None,
     weights: dict[str, float] | None = None,
     curvature: float = 1.0,
+    full_event_max_level: torch.Tensor | None = None,
 ) -> HyperbolicLossOutput:
     """Principal LCA, parent, depth, channel, variance and covariance objective."""
 
@@ -599,6 +617,7 @@ def hyperbolic_pretraining_loss(
             level_ids,
             node_mask,
             curvature=curvature,
+            full_event_max_level=full_event_max_level,
         ),
         "tree_distance": (
             hyperbolic_tree_distance_loss(

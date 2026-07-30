@@ -133,7 +133,8 @@ source /cvmfs/belle.cern.ch/tools/b2setup release-08-03-00
 basf2 scripts/preprocess_mdst.py -- \
   --input /path/to/generic_mdst.root \
   --output /data/dust/user/boyangyu/hypertagging/processed.parquet \
-  --max-events 100
+  --schema-version direct-mdst-tree-v4 \
+  --max-events 50
 ```
 
 Validate or inspect output with normal Python:
@@ -147,10 +148,9 @@ Validate or inspect output with normal Python:
 See `docs/preprocessing_design.md` for the schema, legacy compatibility notes,
 and the reco-kinematics/truth-topology separation.
 
-Generate a v2 parquet without changing the v1 exporter with
-`hypertagging.preprocessing.export_trees_v2`. Both schema versions load through
-`hypertagging.preprocessing.load_payload_v2` and
-`hypertagging.data.load_heterogeneous_events`.
+New files default to the truth-clean, streamable v4 schema. V1/v2/v3 remain
+loadable through the versioned compatibility adapters; trainers require
+explicit diagnostic opt-in for their legacy-conflated PID summaries.
 
 Inspect the real parquet schema, variable event/tree structure, GPT attention
 contract, and a complete CPU forward/loss/backward/optimizer step in:
@@ -229,3 +229,31 @@ python scripts/train_level_reconstruction.py \
 
 The same CLIs run full CUDA jobs inside HTCondor. Outside Condor, full CUDA is
 refused. No job is submitted by either trainer.
+
+## Truth-clean schema-v4 and streaming training
+
+New preprocessing defaults to `direct-mdst-tree-v4`. V4 writes one event per
+Parquet row with bounded row-group buffering and a metadata sidecar. It keeps
+`daughter_input_pid_histogram` separate from the diagnostic
+`daughter_truth_pid_histogram`; only the former is a model input. V1/v2/v3
+remain readable, but real trainers reject their legacy-conflated PID contract
+unless `--allow-legacy-conflated` is supplied. Such runs are recorded as
+diagnostic and are not data-compatible performance measurements.
+
+Raw tracks enter with unknown input PID. A detector-context pass predicts a
+charge-compatible leaf PID distribution, rebuilds the differentiable track
+energy and physical relations, and a second reconstruction-context pass
+predicts Level-1 mothers and pointers. Composite p4 remains an exact recursive
+daughter sum. Production JSONL manifests may use `output_file`; the trainers
+iterate event rows lazily, fit masked Welford normalization on training only,
+and never materialize every batch.
+
+For a schema-v4 pilot:
+
+```bash
+source /cvmfs/belle.cern.ch/tools/b2setup release-08-03-00
+basf2 scripts/preprocess_mdst.py -- \
+  --input /path/to/input.root --output /data/path/pilot-v4.parquet \
+  --schema-version direct-mdst-tree-v4 --max-events 50 \
+  --event-buffer-size 32 --row-group-size 16
+```

@@ -14,6 +14,12 @@ from hypertagging.preprocessing.mdst_tree_builder import (
 )
 from hypertagging.preprocessing.schema_v2 import export_trees_v2
 from hypertagging.preprocessing.schema_v3 import export_trees_v3
+from hypertagging.preprocessing.schema_v4 import export_trees_v4
+from hypertagging.reconstruction.kinematics import (
+    CHARGED_STABLE_NAMES,
+    track_energy_hypotheses,
+)
+import torch
 from hypertagging.preprocessing.channels import event_channel_record
 from hypertagging.preprocessing.export_dataset import export_trees
 
@@ -94,6 +100,43 @@ def write_notebook_fixture_v3(path: str | Path) -> Path:
             "leaf_contract": "fixed_hypothesis_candidate",
         },
         charge_conjugate_normalize=True,
+    )
+
+
+def write_notebook_fixture_v4(
+    path: str | Path,
+    *,
+    event_buffer_size: int = 1,
+    row_group_size: int = 1,
+) -> Path:
+    """Write the truth-clean event-row fixture used by real trainers."""
+
+    trees = notebook_fixture_trees()
+    for tree in trees:
+        for node in tree.nodes.values():
+            if not node.daughter_ids and node.node_kind == "track":
+                node.leaf_kinematics_mode = "raw_track_predicted_pid"
+                node.input_pid_token = 0
+                p3 = torch.tensor([node.p4.px, node.p4.py, node.p4.pz])
+                energies = track_energy_hypotheses(p3).tolist()
+                node.p4 = FourVector(
+                    node.p4.px, node.p4.py, node.p4.pz, float(energies[2])
+                )
+                node.energy_source = "canonical_pion_hypothesis"
+                node.track_energy_hypotheses = dict(
+                    zip(CHARGED_STABLE_NAMES, energies)
+                )
+                node.track_energy_availability = {
+                    name: True for name in CHARGED_STABLE_NAMES
+                }
+        recompute_mother_p4_from_daughters(tree)
+    return export_trees_v4(
+        trees,
+        path,
+        summary={"fixture": True, "events": len(trees)},
+        charge_conjugate_normalize=True,
+        event_buffer_size=event_buffer_size,
+        row_group_size=row_group_size,
     )
 
 
@@ -189,4 +232,5 @@ __all__ = [
     "write_notebook_fixture",
     "write_notebook_fixture_v1",
     "write_notebook_fixture_v3",
+    "write_notebook_fixture_v4",
 ]

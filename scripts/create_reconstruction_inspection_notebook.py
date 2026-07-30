@@ -49,7 +49,7 @@ def build_notebook() -> nbf.NotebookNode:
             if not (REPO_ROOT / "src").exists(): REPO_ROOT = Path("..").resolve()
             sys.path.insert(0, str(REPO_ROOT / "src"))
             from hypertagging.data.heterogeneous import load_heterogeneous_events, collate_heterogeneous_events
-            from hypertagging.data.notebook_fixtures import write_notebook_fixture_v3
+            from hypertagging.data.notebook_fixtures import write_notebook_fixture_v4
             from hypertagging.evaluation.hierarchical_metrics import edge_set, summarize_rollout
             from hypertagging.losses.level_reconstruction import level_reconstruction_loss
             from hypertagging.models.level_autoregressive import LevelAutoregressiveReconstructor
@@ -61,7 +61,7 @@ def build_notebook() -> nbf.NotebookNode:
             requested = os.environ.get("HYPERTAGGING_PARQUET", "").strip()
             FIXTURE_MODE = not bool(requested)
             INPUT_PATH = Path(requested) if requested else Path("/tmp/hypertagging_notebook_fixture_v3.parquet")
-            if FIXTURE_MODE: write_notebook_fixture_v3(INPUT_PATH)
+            if FIXTURE_MODE: write_notebook_fixture_v4(INPUT_PATH)
             if not INPUT_PATH.exists(): raise FileNotFoundError(INPUT_PATH)
             FIGURE_DIR = Path(os.environ.get("HYPERTAGGING_FIGURE_DIR", "/tmp/hypertagging_figures/reconstruction"))
             FIGURE_DIR.mkdir(parents=True, exist_ok=True)
@@ -236,6 +236,7 @@ def build_notebook() -> nbf.NotebookNode:
         code(
             """
             from hypertagging.evaluation.hierarchical_metrics import canonical_tree_metrics
+            from hypertagging.training.scheduled_sampling import TeacherForcingSchedule, aligned_level_targets
             with torch.no_grad():
                 level1=model(batch,target_level=1)
                 level2=model(batch,target_level=2)
@@ -250,12 +251,18 @@ def build_notebook() -> nbf.NotebookNode:
                   not torch.allclose(level1.pointer.pointer_logits,level2.pointer.pointer_logits))
             scheduled=level_rollout(model,batch,mode="scheduled",config=RolloutConfig(max_level=4,root_types=(),scheduled_sampling_probability=.5))
             canonical=canonical_tree_metrics(teacher.batch,batch)
+            schedule=TeacherForcingSchedule(kind="linear",start_probability=1.0,end_probability=.2,duration_steps=100)
+            aligned=aligned_level_targets(batch, predicted.batch, target_level=1)
             print({
                 "confidence_scores":torch.sigmoid(level1.pointer.confidence_logits).tolist(),
                 "recursive_leaf_source_shape":tuple(batch["recursive_leaf_source_mask"].shape),
                 "canonical_teacher_exact":canonical.full_tree_exact_match,
                 "scheduled_stop":scheduled.stop_reason,
                 "partial_target_policy":"complete/reconstructable targets with min_daughters=2",
+                "scheduled_teacher_probability":schedule.probability(50),
+                "representable_targets":aligned.representable_count,
+                "unrepresentable_targets":aligned.truth_target_count-aligned.representable_count,
+                "first_context_divergence_level":canonical.first_divergence_level,
             })
             assert canonical.full_tree_exact_match
             """

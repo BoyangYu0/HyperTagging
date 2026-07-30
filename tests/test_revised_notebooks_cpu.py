@@ -30,9 +30,11 @@ def test_revised_notebooks_generate_and_execute_on_cpu_fixtures(tmp_path):
             "IPYTHONDIR": str(tmp_path / "ipython"),
         },
     )
-    assert "Executed 10 notebooks on CPU fixtures" in completed.stdout
+    assert "Executed 12 notebooks on CPU fixtures" in completed.stdout
     for name in (
         "inspect_leaf_input_pid_contract.ipynb",
+        "inspect_leaf_pid_and_composite_inputs.ipynb",
+        "inspect_streaming_dataset.ipynb",
         "inspect_preprocessed_dataset.ipynb",
         "inspect_hyperbolic_pretraining.ipynb",
         "inspect_query_capacity_and_losses.ipynb",

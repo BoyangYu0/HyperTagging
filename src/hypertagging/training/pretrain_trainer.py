@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+import json
 from pathlib import Path
 from typing import Any
 
@@ -17,9 +18,10 @@ from hypertagging.losses.hyperbolic_pretraining import (
     pool_b_branch_embeddings,
 )
 from hypertagging.models.heterogeneous import HeterogeneousNodeEncoder
-from hypertagging.models.ablation import ABLATIONS
+from hypertagging.models.ablation import ALL_ABLATIONS
 from hypertagging.preprocessing.pid_filter import PDG_TOKENS
 from hypertagging.training.checkpointing import (
+    load_training_checkpoint,
     restore_training_checkpoint,
     save_training_checkpoint,
 )
@@ -58,6 +60,13 @@ class PretrainConfig:
     mixed_precision: bool = True
     ablation: str = "full_revised"
     channel_memory_size: int = 0
+    num_workers: int = 0
+    prefetch_factor: int = 2
+    shuffle_buffer_size: int = 1024
+    persistent_workers: bool = False
+    pilot_split_repair: bool = False
+    allow_legacy_conflated: bool = False
+    log_every: int = 10
 
 
 @dataclass(frozen=True)
@@ -93,6 +102,8 @@ class ContextualPretrainingModel(torch.nn.Module):
         )
         self.relation_head = TreeRelationHead(d_model)
         self.leaf_pid_head = torch.nn.Linear(d_model, len(PDG_TOKENS))
+        self.candidate_correctness_head = torch.nn.Linear(d_model, 1)
+        self.corruption_type_head = torch.nn.Linear(d_model, 5)
         self.channel_memory = ChannelMemoryBank(channel_memory_size, d_model)
 
 
@@ -150,17 +161,33 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
         raise ValueError("max_steps must be positive")
     seed_everything(config.seed)
     device = torch.device(config.device)
+    resume_payload = (
+        load_training_checkpoint(config.resume, map_location="cpu")
+        if config.resume
+        else None
+    )
     data_module = build_real_data_module(
         config.data,
         max_events=config.max_events,
         seed=config.seed,
+        pilot_split_repair=config.pilot_split_repair,
+        allow_legacy_conflated=config.allow_legacy_conflated,
+        shuffle_buffer_size=config.shuffle_buffer_size,
+        num_workers=config.num_workers,
+        prefetch_factor=config.prefetch_factor,
+        persistent_workers=config.persistent_workers,
+        normalization_state=(
+            resume_payload.get("normalizer_state")
+            if resume_payload is not None
+            else None
+        ),
     )
     output_dir = Path(config.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     logger = JsonlLogger(output_dir / "metrics.jsonl")
-    if config.ablation not in ABLATIONS:
+    if config.ablation not in ALL_ABLATIONS:
         raise ValueError(f"unknown ablation: {config.ablation}")
-    ablation = ABLATIONS[config.ablation]
+    ablation = ALL_ABLATIONS[config.ablation]
     model = ContextualPretrainingModel(
         curvature=config.curvature,
         use_contextual_encoder=ablation.contextual_euclidean,
@@ -185,18 +212,39 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
             model=model,
             optimizer=optimizer,
             scheduler=scheduler,
+            scaler=scaler,
             map_location=device,
+            expected_schema_version=(
+                data_module.source_schema_versions[0]
+                if len(data_module.source_schema_versions) == 1
+                else None
+            ),
+            expected_split_manifest_hash=data_module.split_manifest_hash,
         )
         start_step = int(payload.get("step", 0))
-    batches = list(
-        data_module.batches("train", batch_size=config.batch_size, shuffle=True)
+    (output_dir / "split_manifest.json").write_text(
+        json.dumps(data_module.split_manifest, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
     )
-    if not batches:
-        raise ValueError("training split produced no batches")
+    batch_iterator = data_module.batches(
+        "train", batch_size=config.batch_size, shuffle=True, epoch=0
+    )
+    epoch = 0
     final_loss = 0.0
     final_metrics: dict[str, float] = {}
     for step in range(start_step, config.max_steps):
-        batch = _to_device(batches[step % len(batches)], device)
+        try:
+            next_batch = next(batch_iterator)
+        except StopIteration:
+            epoch += 1
+            batch_iterator = data_module.batches(
+                "train", batch_size=config.batch_size, shuffle=True, epoch=epoch
+            )
+            try:
+                next_batch = next(batch_iterator)
+            except StopIteration as error:
+                raise ValueError("training split produced no batches") from error
+        batch = _to_device(next_batch, device)
         _add_topology_labels(batch)
         stage = PretrainingStage(config.curriculum[step % len(config.curriculum)])
         curriculum = build_curriculum_batch(batch, stage, seed=config.seed + step)
@@ -206,7 +254,10 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
             device_type=device.type,
             enabled=device.type == "cuda" and config.mixed_precision,
         ):
-            encoded = model.encoder(train_batch)
+            encoded = model.encoder(
+                train_batch,
+                attention_mask=train_batch["curriculum_attention_mask"],
+            )
             relation_logits = model.relation_head(encoded.tree_projection)
             targets, relation_mask = build_tree_relation_targets(
                 parent_ids=train_batch["parent_ids"],
@@ -257,16 +308,59 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 channel_memory_reconstructable_ids=memory_reco_ids,
                 weights=_pretraining_weights(config.ablation),
                 curvature=config.curvature,
+                full_event_max_level=train_batch.get("full_event_max_level"),
             )
             leaf_pid_loss = (
                 _leaf_pid_loss(model, encoded.node_embeddings, train_batch)
                 if ablation.leaf_pid
                 else encoded.node_embeddings.sum() * 0.0
             )
-            loss = loss_output.total + leaf_pid_loss
+            corruption_logits = model.corruption_type_head(encoded.node_embeddings)
+            correctness_logits = model.candidate_correctness_head(
+                encoded.node_embeddings
+            ).squeeze(-1)
+            corruption_nodes = (
+                train_batch["node_mask"] & (train_batch["level_ids"] > 0)
+            )
+            corruption_loss = (
+                F.cross_entropy(
+                    corruption_logits[corruption_nodes],
+                    curriculum.corruption_code[corruption_nodes],
+                )
+                if corruption_nodes.any()
+                else encoded.node_embeddings.sum() * 0.0
+            )
+            correctness_target = (~curriculum.corrupted_node_mask).float()
+            correctness_loss = (
+                F.binary_cross_entropy_with_logits(
+                    correctness_logits[corruption_nodes],
+                    correctness_target[corruption_nodes],
+                )
+                if corruption_nodes.any()
+                else encoded.node_embeddings.sum() * 0.0
+            )
+            hard_negative_loss = _hard_negative_tree_loss(
+                encoded.hyperbolic_embeddings,
+                curriculum.hard_negative_pairs,
+            )
+            loss = (
+                loss_output.total
+                + leaf_pid_loss
+                + 0.1 * corruption_loss
+                + 0.1 * correctness_loss
+                + 0.1 * hard_negative_loss
+            )
+        enqueue_mask = (
+            branch_mask
+            & train_batch.get(
+                "b_root_discovery_valid", torch.ones_like(branch_mask[:, 0])
+            )[:, None]
+        )
+        if stage is PretrainingStage.CORRUPTED_COMPOSITES:
+            enqueue_mask = torch.zeros_like(enqueue_mask)
         model.channel_memory.enqueue(
             branch_embeddings,
-            branch_mask,
+            enqueue_mask,
             torch.stack(
                 [
                     train_batch["b1_full_truth_channel_ids"],
@@ -292,6 +386,9 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
         final_metrics = {
             "loss": final_loss,
             "leaf_pid_loss": float(leaf_pid_loss.detach().cpu()),
+            "corruption_loss": float(corruption_loss.detach().cpu()),
+            "candidate_correctness_loss": float(correctness_loss.detach().cpu()),
+            "hard_negative_loss": float(hard_negative_loss.detach().cpu()),
             **{
                 f"loss_{name}": float(value.detach().cpu())
                 for name, value in loss_output.components.items()
@@ -314,11 +411,18 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 step=step + 1,
                 metrics=final_metrics,
             )
-    validation_events = data_module.splits["validation"] or data_module.splits["train"][:1]
-    if validation_events:
-        validation_batch = data_module.normalize_batch(
-            collate_heterogeneous_events(validation_events[: config.batch_size])
+    validation_iterator = data_module.batches(
+        "validation", batch_size=config.batch_size, shuffle=False
+    )
+    validation_batch = next(validation_iterator, None)
+    if validation_batch is None:
+        validation_batch = next(
+            data_module.batches(
+                "train", batch_size=config.batch_size, shuffle=False
+            ),
+            None,
         )
+    if validation_batch is not None:
         validation_metrics = validate_contextual_geometry(
             model.encoder,
             validation_batch,
@@ -349,7 +453,7 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
 
 
 def _pretraining_weights(ablation_name: str) -> dict[str, float]:
-    config = ABLATIONS[ablation_name]
+    config = ALL_ABLATIONS[ablation_name]
     return {
         "lca": float(config.lca_parent),
         "parent": float(config.lca_parent),
@@ -426,7 +530,30 @@ def _save_pretrain_checkpoint(
         metrics=metrics,
         normalizer_state=data_module.normalization_state(),
         split_manifest_hash=data_module.split_manifest_hash,
+        legacy_conflated_fraction=data_module.legacy_conflated_fraction,
+        schema_version=(
+            data_module.source_schema_versions[0]
+            if len(data_module.source_schema_versions) == 1
+            else "mixed"
+        ),
     )
+
+
+def _hard_negative_tree_loss(
+    z: torch.Tensor,
+    pairs: torch.Tensor,
+    *,
+    margin: float = 1.0,
+) -> torch.Tensor:
+    if not pairs.numel():
+        return z.sum() * 0.0
+    from hypertagging.models.hyperbolic import distance
+
+    values = []
+    for batch_index, left, right in pairs.tolist():
+        values.append(distance(z[batch_index, left], z[batch_index, right]))
+    distances = torch.stack(values)
+    return torch.relu(margin - distances).mean()
 
 
 __all__ = [

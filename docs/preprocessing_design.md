@@ -94,13 +94,16 @@ source /cvmfs/belle.cern.ch/tools/b2setup release-08-03-00
 basf2 scripts/preprocess_mdst.py -- \
   --input /path/to/generic_mdst.root \
   --output /data/dust/user/boyangyu/hypertagging/processed.parquet \
-  --schema-version direct-mdst-tree-v2 \
-  --entry-sequence 0:99 \
-  --max-events 100
+  --schema-version direct-mdst-tree-v4 \
+  --entry-sequence 0:49 \
+  --max-events 50 \
+  --event-buffer-size 32 \
+  --row-group-size 16
 ```
 
-Omit `--schema-version` to preserve the exact v1 production default. Existing
-parquets are never migrated or overwritten in place.
+Omitting `--schema-version` selects the new v4 production default. Explicit
+v1/v2/v3 options remain available for compatibility. Existing parquets are
+never migrated or overwritten in place.
 
 `--entry-sequence` is repeatable and uses basf2's inclusive entry-range
 notation. Supply one sequence per input file. Production events carry
@@ -240,8 +243,29 @@ inventing missing detector values.
 Production planning now defaults to 5,000-event bounded shards and writes
 schema, PID vocabulary, feature hash, charge-conjugation mode, leaf mode, and
 git commit into every manifest row. The worker explicitly passes
-`--schema-version direct-mdst-tree-v3`. Run the cross-shard validator with:
+`--schema-version direct-mdst-tree-v4`. Run the cross-shard validator with:
 
 ```bash
 python scripts/mdst_batch_production.py validate --manifest /path/to/manifest.jsonl
 ```
+
+## Schema-v4 production contract
+
+V4 does not alter v3 semantics in place. It publishes one event per Parquet row
+and uses `ParquetEventWriter` with a bounded event buffer, periodic row groups,
+an atomic `.partial` file, and a metadata JSON sidecar. A failed writer removes
+its unpublished partial file. The sidecar records the schema/PID/feature
+contracts, source range, category, preprocessing configuration, event count,
+and aggregate capacity, PID, leaf-mode, and completeness statistics.
+
+Composite PID summaries are now unambiguous:
+`daughter_input_pid_histogram` contains current data-available PID knowledge;
+`daughter_truth_pid_histogram` is target/diagnostic only. Raw tracks are stored
+as unknown input PID with explicit `leaf_kinematics_mode_id`; no node mode is
+inferred from PID zero. Legacy v1-v3 records are adapted as
+`legacy_conflated`, and production training requires explicit diagnostic opt-in.
+
+Recursive completeness is stored independently from local daughter counts.
+The default `complete_only` target policy admits only valid, recursively
+reconstructable-complete mothers. Capacity scans and training use the same
+policy.

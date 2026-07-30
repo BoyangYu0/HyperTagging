@@ -220,13 +220,17 @@ class HeterogeneousNodeEncoder(nn.Module):
                 f"got {self.pid_embedding.num_embeddings}, expected {len(PDG_TOKENS)}"
             )
         levels = batch["level_ids"].clamp(0, self.level_embedding.num_embeddings - 1)
+        histogram_available = batch.get(
+            "daughter_input_pid_histogram_available",
+            batch["daughter_pid_histogram_available"],
+        )
         availability = torch.cat(
             [
                 batch["common_availability"],
                 batch["track_availability"],
                 batch["cluster_availability"],
                 batch["composite_availability"],
-                batch["daughter_pid_histogram_available"].unsqueeze(-1),
+                histogram_available.unsqueeze(-1),
             ],
             dim=-1,
         ).to(common.dtype)
@@ -234,10 +238,17 @@ class HeterogeneousNodeEncoder(nn.Module):
         specific = self.other_encoder.view(1, 1, -1).expand_as(common).clone()
         specific = torch.where((kinds == 1).unsqueeze(-1), track, specific)
         specific = torch.where((kinds == 2).unsqueeze(-1), cluster, specific)
+        if "current_pid_probabilities" in batch:
+            probabilities = batch["current_pid_probabilities"]
+            if probabilities.shape != (*pid.shape, len(PDG_TOKENS)):
+                raise ValueError("current_pid_probabilities has an invalid shape")
+            pid_h = probabilities.to(self.pid_embedding.weight.dtype) @ self.pid_embedding.weight
+        else:
+            pid_h = self.pid_embedding(pid)
         pre_composite = self.shared_norm(
             common
             + specific
-            + self.pid_embedding(pid)
+            + pid_h
             + self.node_kind_embedding(kinds)
             + self.level_embedding(levels)
             + self.availability_encoder(availability)
@@ -247,14 +258,17 @@ class HeterogeneousNodeEncoder(nn.Module):
             batch["composite_features"],
             batch["composite_availability"],
             daughter_summary,
-            batch["daughter_pid_histogram"],
-            batch["daughter_pid_histogram_available"],
+            batch.get(
+                "daughter_input_pid_histogram",
+                batch["daughter_pid_histogram"],
+            ),
+            histogram_available,
         )
         specific = torch.where((kinds == 3).unsqueeze(-1), composite, specific)
         h0 = self.shared_norm(
             common
             + specific
-            + self.pid_embedding(pid)
+            + pid_h
             + self.node_kind_embedding(kinds)
             + self.level_embedding(levels)
             + self.availability_encoder(availability)
@@ -325,6 +339,7 @@ def composite_token_from_daughters(
     p4: torch.Tensor,
     charge: torch.Tensor,
     pid_labels: torch.Tensor,
+    pid_probabilities: torch.Tensor | None = None,
     daughter_embeddings: torch.Tensor,
     pointer_confidence: torch.Tensor | None = None,
     copied: torch.Tensor | None = None,
@@ -371,17 +386,20 @@ def composite_token_from_daughters(
     availability = torch.ones_like(features, dtype=torch.bool)
     if pointer_confidence is None:
         availability[:, 6:8] = False
-    histogram = torch.zeros(
-        (*pid_labels.shape[:-1], len(PDG_TOKENS)),
-        dtype=p4.dtype,
-        device=p4.device,
-    )
-    validate_pid_tokens(pid_labels, name="composite daughter PID labels")
-    histogram.scatter_add_(
-        -1,
-        pid_labels,
-        weights,
-    )
+    if pid_probabilities is not None:
+        if pid_probabilities.shape != (*pid_labels.shape, len(PDG_TOKENS)):
+            raise ValueError("daughter PID probabilities have an invalid shape")
+        histogram = torch.einsum(
+            "bn,bnc->bc", weights, pid_probabilities.to(weights.dtype)
+        )
+    else:
+        histogram = torch.zeros(
+            (*pid_labels.shape[:-1], len(PDG_TOKENS)),
+            dtype=p4.dtype,
+            device=p4.device,
+        )
+        validate_pid_tokens(pid_labels, name="composite daughter PID labels")
+        histogram.scatter_add_(-1, pid_labels, weights)
     return {
         "p4": summed_p4,
         "charge": summed_charge,

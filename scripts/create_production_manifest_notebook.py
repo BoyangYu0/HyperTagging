@@ -24,7 +24,7 @@ def build_notebook():
             import pandas as pd
             ROOT=Path.cwd(); sys.path.insert(0,str(ROOT/"src"))
             from hypertagging.preprocessing.pid_filter import PID_VOCABULARY_VERSION
-            from hypertagging.preprocessing.schema_v3 import SCHEMA_VERSION_V3,feature_spec_v3
+            from hypertagging.preprocessing.schema_v4 import SCHEMA_VERSION_V4,feature_spec_v4
             OUT=Path(os.environ.get("HYPERTAGGING_FIGURE_DIR","/tmp/hypertagging_figures/manifest")); OUT.mkdir(parents=True,exist_ok=True)
             requested=os.environ.get("HYPERTAGGING_MANIFEST","").strip()
             if requested:
@@ -35,7 +35,7 @@ def build_notebook():
                     {"task_id":0,"input_file":"fixture-a.root","physics_category":"charged","entry_start":0,"entry_stop_exclusive":10,"planned_events":10,"output_file":"/tmp/missing-0.parquet"},
                     {"task_id":1,"input_file":"fixture-a.root","physics_category":"charged","entry_start":10,"entry_stop_exclusive":20,"planned_events":10,"output_file":"/tmp/missing-1.parquet"},
                 ]
-                for row in records: row.update(schema_version=SCHEMA_VERSION_V3,pid_vocabulary_version=PID_VOCABULARY_VERSION,feature_spec_hash=feature_spec_v3()["feature_spec_hash"],leaf_kinematics_mode="raw_track_predicted_pid",charge_conjugate_normalization=False,git_commit="fixture")
+                for row in records: row.update(schema_version=SCHEMA_VERSION_V4,pid_vocabulary_version=PID_VOCABULARY_VERSION,feature_spec_hash=feature_spec_v4()["feature_spec_hash"],leaf_kinematics_mode="raw_track_predicted_pid",charge_conjugate_normalization=False,git_commit="fixture")
                 MODE="TINY MANIFEST FIXTURE — NOT REAL PRODUCTION"
             print(MODE)
             frame=pd.DataFrame(records); display(frame)
@@ -53,7 +53,7 @@ def build_notebook():
                     previous=row.entry_stop_exclusive
             frame["estimated_memory_gb"]=frame.planned_events*0.00005
             summary={"planned_events":int(frame.planned_events.sum()),"tasks":len(frame),"overlaps":overlaps,"schema_versions":sorted(frame.schema_version.unique()),"feature_hashes":sorted(frame.feature_spec_hash.unique()),"pid_versions":sorted(frame.pid_vocabulary_version.unique()),"completed":int(frame.output_file.map(lambda x:Path(x).exists()).sum()),"missing":int((~frame.output_file.map(lambda x:Path(x).exists())).sum())}
-            print(json.dumps(summary,indent=2)); assert not overlaps and summary["schema_versions"]==[SCHEMA_VERSION_V3]
+            print(json.dumps(summary,indent=2)); assert not overlaps and summary["schema_versions"]==[SCHEMA_VERSION_V4]
             frame.groupby("physics_category").planned_events.sum().plot.bar(title="Planned category distribution")
             plt.tight_layout(); plt.savefig(OUT/"manifest_categories.png"); plt.show()
             """

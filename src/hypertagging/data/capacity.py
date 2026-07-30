@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass
-from typing import Mapping, Sequence
+from typing import Iterable, Mapping
 
 import numpy as np
 
@@ -24,12 +24,13 @@ class CapacityStatistics:
 
 
 def dataset_capacity_statistics(
-    events: Sequence[HeterogeneousEvent],
+    events: Iterable[HeterogeneousEvent],
     *,
     n_queries_by_level: Mapping[int, int] | None = None,
     max_cardinality_by_level: Mapping[int, int] | None = None,
     global_n_queries: int | None = None,
     global_max_cardinality: int | None = None,
+    target_policy: str = "complete_only",
 ) -> CapacityStatistics:
     per_level: dict[int, list[int]] = {}
     cardinality_counts: Counter[int] = Counter()
@@ -46,9 +47,14 @@ def dataset_capacity_statistics(
             }
         )
         for level in levels:
-            mothers = (
-                event.active & (event.level_ids == level)
-            ).nonzero(as_tuple=False).flatten()
+            eligible = event.active & (event.level_ids == level)
+            if target_policy != "diagnostic_all":
+                eligible &= event.valid_reconstruction_target
+            if target_policy == "complete_only":
+                eligible &= event.recursive_reconstructable_complete
+            elif target_policy != "reconstructable_partial":
+                raise ValueError(f"unknown reconstruction target policy: {target_policy}")
+            mothers = eligible.nonzero(as_tuple=False).flatten()
             count = int(mothers.numel())
             per_level.setdefault(level, []).append(count)
             total_level_events += 1

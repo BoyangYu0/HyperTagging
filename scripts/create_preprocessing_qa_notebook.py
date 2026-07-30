@@ -46,18 +46,18 @@ def build_notebook() -> nbf.NotebookNode:
                 REPO_ROOT = Path.cwd()
                 if not (REPO_ROOT / "src").exists(): REPO_ROOT = Path("..").resolve()
                 sys.path.insert(0, str(REPO_ROOT / "src"))
-                from hypertagging.data.notebook_fixtures import write_notebook_fixture_v3
-                from hypertagging.preprocessing.schema_v3 import load_payload_v3
+                from hypertagging.data.notebook_fixtures import write_notebook_fixture_v4
+                from hypertagging.preprocessing.schema_v4 import load_payload_v4
 
                 requested = os.environ.get("HYPERTAGGING_PARQUET", "").strip()
                 FIXTURE_MODE = not bool(requested)
                 INPUT_PATH = Path(requested) if requested else Path("/tmp/hypertagging_notebook_fixture_v3.parquet")
-                if FIXTURE_MODE: write_notebook_fixture_v3(INPUT_PATH)
+                if FIXTURE_MODE: write_notebook_fixture_v4(INPUT_PATH)
                 if not INPUT_PATH.exists(): raise FileNotFoundError(INPUT_PATH)
                 FIGURE_DIR = Path(os.environ.get("HYPERTAGGING_FIGURE_DIR", "/tmp/hypertagging_figures/qa"))
                 FIGURE_DIR.mkdir(parents=True, exist_ok=True)
                 QA_JSON = Path(os.environ.get("HYPERTAGGING_QA_JSON", str(FIGURE_DIR / "preprocessing_qa.json")))
-                payload = load_payload_v3(INPUT_PATH)
+                payload = load_payload_v4(INPUT_PATH)
                 events = payload["events"]
                 print("TINY FIXTURE QA — NOT REAL DATA" if FIXTURE_MODE else "REAL-DATA SAMPLE QA")
                 """
@@ -128,7 +128,17 @@ def build_notebook() -> nbf.NotebookNode:
                     "partial_decay_rate": partial_rate,
                     "query_overflow_rate_at_capacity_8": float(np.mean([value > 8 for value in query_counts])) if query_counts else 0.0,
                     "cardinality_overflow_rate_at_capacity_6": float(np.mean([value > 6 for value in cardinalities])) if cardinalities else 0.0,
-                    "schema_config_consistency_pass": payload["schema_version"] == "direct-mdst-tree-v3",
+                    "schema_config_consistency_pass": payload["schema_version"] == "direct-mdst-tree-v4",
+                    "composite_pid_input_truth_separated_pass": all(
+                        "daughter_input_pid_histogram" in node
+                        and "daughter_truth_pid_histogram" in node
+                        and "daughter_pid_histogram" not in node
+                        for node in all_nodes
+                    ),
+                    "recursive_completeness_available": all(
+                        "recursive_reconstructable_complete" in node
+                        for node in all_nodes
+                    ),
                 }
                 QA_JSON.parent.mkdir(parents=True, exist_ok=True)
                 QA_JSON.write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")

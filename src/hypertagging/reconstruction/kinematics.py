@@ -123,6 +123,8 @@ def soft_track_p4_from_pid_logits(
     if not checked:
         raise ValueError("allowed track PID token set is empty")
     selected_logits = pid_logits[..., checked]
+    if not torch.isfinite(selected_logits).any(dim=-1).all():
+        raise ValueError("every track must have at least one finite allowed PID logit")
     probabilities = torch.softmax(selected_logits, dim=-1)
     masses = _mass_by_reduced_token(device=p3.device, dtype=p3.dtype)[checked]
     energies = torch.sqrt(p3.square().sum(dim=-1, keepdim=True) + masses.square())

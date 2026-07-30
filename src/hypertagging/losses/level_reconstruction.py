@@ -10,6 +10,7 @@ import torch.nn.functional as F
 from hypertagging.losses.physics import charge_consistency_loss, p4_sum_consistency_loss
 from hypertagging.losses.set_matching import hungarian_assignment, matching_cost
 from hypertagging.models.mother_pointer import MotherPointerOutput
+from hypertagging.models.mother_pointer import source_conflict_penalty
 from hypertagging.preprocessing.pid_filter import validate_pid_tokens
 
 
@@ -26,13 +27,30 @@ def targets_for_level(
     target_level: int,
     *,
     min_daughters: int = 2,
+    target_policy: str = "complete_only",
 ) -> tuple[list[torch.Tensor], list[torch.Tensor], list[torch.Tensor], list[torch.Tensor]]:
     target_types = []
     target_masks = []
     target_p4 = []
     target_charge = []
     for batch_index in range(batch["node_features"].shape[0]):
-        nodes = (batch["node_mask"][batch_index] & (batch["level_ids"][batch_index] == target_level)).nonzero(as_tuple=False).flatten()
+        if target_policy not in {
+            "complete_only",
+            "reconstructable_partial",
+            "diagnostic_all",
+        }:
+            raise ValueError(f"unknown reconstruction target policy: {target_policy}")
+        eligible = batch["node_mask"][batch_index] & (
+            batch["level_ids"][batch_index] == target_level
+        )
+        if target_policy != "diagnostic_all" and "valid_reconstruction_target" in batch:
+            eligible &= batch["valid_reconstruction_target"][batch_index]
+        if target_policy == "complete_only":
+            if "recursive_reconstructable_complete" in batch:
+                eligible &= batch["recursive_reconstructable_complete"][batch_index]
+            elif "complete_reconstructable_decay" in batch:
+                eligible &= batch["complete_reconstructable_decay"][batch_index]
+        nodes = eligible.nonzero(as_tuple=False).flatten()
         context = batch["node_mask"][batch_index] & (batch["level_ids"][batch_index] < target_level)
         context_ids = context.nonzero(as_tuple=False).flatten()
         masks = torch.zeros((nodes.numel(), context_ids.numel()), dtype=torch.bool, device=batch["node_features"].device)
@@ -63,8 +81,16 @@ def level_reconstruction_loss(
     object_positive_weight: float = 2.0,
     object_focal_gamma: float = 1.0,
     min_daughters: int = 2,
+    target_policy: str = "complete_only",
     matching_production: bool = False,
     physics_component_scales: tuple[float, float, float, float] = (1.0, 1.0, 1.0, 1.0),
+    target_override: tuple[
+        list[torch.Tensor],
+        list[torch.Tensor],
+        list[torch.Tensor],
+        list[torch.Tensor],
+    ]
+    | None = None,
 ) -> LevelLossOutput:
     weights = {
         "object": 1.0,
@@ -73,13 +99,18 @@ def level_reconstruction_loss(
         "cardinality": 0.2,
         "confidence": 0.2,
         "physics": 0.1,
+        "source_conflict": 0.1,
         **(weights or {}),
     }
-    target_types, target_masks, target_p4, target_charge = targets_for_level(
-        batch,
-        target_level,
-        min_daughters=min_daughters,
-    )
+    if target_override is None:
+        target_types, target_masks, target_p4, target_charge = targets_for_level(
+            batch,
+            target_level,
+            min_daughters=min_daughters,
+            target_policy=target_policy,
+        )
+    else:
+        target_types, target_masks, target_p4, target_charge = target_override
     for event_index, types in enumerate(target_types):
         if types.numel() > output.object_logits.shape[1]:
             raise OverflowError(
@@ -130,14 +161,27 @@ def level_reconstruction_loss(
                 output.pointer_logits[batch_index, query_id, context]
             )
             truth_pointer = target_masks[batch_index][target_id].float()
-            intersection = torch.minimum(predicted_pointer, truth_pointer).sum()
-            union = torch.maximum(predicted_pointer, truth_pointer).sum().clamp_min(1e-6)
-            type_probability = torch.softmax(
-                output.type_logits[batch_index, query_id],
-                dim=-1,
-            )[types[target_id]]
+            hard_pointer = predicted_pointer >= 0.5
+            truth_bool = truth_pointer.bool()
+            intersection = (hard_pointer & truth_bool).sum().to(predicted_pointer.dtype)
+            union = (hard_pointer | truth_bool).sum().clamp_min(1).to(
+                predicted_pointer.dtype
+            )
+            type_correct = (
+                output.type_logits[batch_index, query_id].argmax() == types[target_id]
+            ).to(predicted_pointer.dtype)
+            structurally_valid = predicted_pointer.new_tensor(1.0)
+            conflict = batch.get("source_conflict_matrix")
+            if conflict is not None and hard_pointer.any():
+                selected_context = context.nonzero(as_tuple=False).flatten()[hard_pointer]
+                selected_conflict = conflict[batch_index][
+                    selected_context[:, None], selected_context[None, :]
+                ]
+                structurally_valid = (~torch.triu(selected_conflict, diagonal=1).any()).to(
+                    predicted_pointer.dtype
+                )
             confidence_targets[batch_index, query_id] = (
-                intersection / union * type_probability.detach()
+                intersection / union * type_correct * structurally_valid
             ).detach()
             cardinality = int(target_masks[batch_index][target_id].sum())
             if cardinality >= output.cardinality_logits.shape[-1]:
@@ -182,6 +226,14 @@ def level_reconstruction_loss(
             confidence_targets,
         ),
         "physics": (torch.stack(p4_losses).mean() + torch.stack(charge_losses).mean()) if p4_losses else zero,
+        "source_conflict": (
+            source_conflict_penalty(
+                output.pointer_logits,
+                batch["source_conflict_matrix"],
+            )
+            if "source_conflict_matrix" in batch
+            else zero
+        ),
     }
     total = sum(components[name] * weights[name] for name in components)
     return LevelLossOutput(

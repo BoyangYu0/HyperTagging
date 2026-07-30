@@ -52,14 +52,26 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--overwrite", action="store_true", help="Allow replacing an existing output file.")
     parser.add_argument(
         "--schema-version",
-        choices=("direct-mdst-tree-v1", "direct-mdst-tree-v2", "direct-mdst-tree-v3"),
-        default="direct-mdst-tree-v1",
-        help="V3 is the corrected truth-separated production schema; v1/v2 remain readable.",
+        choices=(
+            "direct-mdst-tree-v1",
+            "direct-mdst-tree-v2",
+            "direct-mdst-tree-v3",
+            "direct-mdst-tree-v4",
+        ),
+        default="direct-mdst-tree-v4",
+        help="V4 is the truth-clean streamable production schema; v1-v3 remain readable.",
     )
     parser.add_argument(
         "--charge-conjugate-normalize-channels",
         action="store_true",
         help="Canonicalize B channel signatures under global charge conjugation.",
+    )
+    parser.add_argument("--event-buffer-size", type=int, default=128)
+    parser.add_argument("--row-group-size", type=int, default=128)
+    parser.add_argument(
+        "--leaf-kinematics-mode",
+        default="raw_track_predicted_pid",
+        choices=("raw_track_predicted_pid", "fixed_hypothesis_candidate"),
     )
     parser.add_argument(
         "--particle-array",
@@ -116,6 +128,9 @@ def main(argv: list[str] | None = None) -> int:
         allow_mc_leaf_kinematics_for_debug=args.allow_mc_leaf_kinematics_for_debug,
         schema_version=args.schema_version,
         charge_conjugate_normalize=args.charge_conjugate_normalize_channels,
+        event_buffer_size=args.event_buffer_size,
+        row_group_size=args.row_group_size,
+        leaf_kinematics_mode=args.leaf_kinematics_mode,
     )
     output = run_basf2_preprocessing(config)
     print(f"Wrote {output}")

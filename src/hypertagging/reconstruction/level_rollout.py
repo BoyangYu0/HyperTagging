@@ -18,6 +18,9 @@ from hypertagging.preprocessing.schema_v2 import NODE_KIND_TO_ID
 from hypertagging.reconstruction.kinematics import (
     hard_reconstructed_p4_from_leaf_pid,
 )
+from hypertagging.reconstruction.pid_state import rebuild_runtime_pid_state
+from hypertagging.models.mother_pointer import constrained_daughter_decode
+from hypertagging.preprocessing.schema_v4 import LEAF_MODE_TO_ID
 
 
 @dataclass(frozen=True)
@@ -35,6 +38,7 @@ class RolloutConfig:
     seed: int = 17
     use_learned_confidence: bool = False
     confidence_trained: bool = False
+    cardinality_insufficient_policy: str = "invalid"
 
 
 @dataclass(frozen=True)
@@ -99,11 +103,30 @@ def hard_decode_proposals(
                 # This is an invalid prediction, not a training-target
                 # overflow. Training truth overflows raise explicitly.
                 continue
-            selected_local = (
-                probabilities.topk(cardinality).indices
-                if cardinality > 0
-                else torch.empty(0, dtype=torch.long, device=probabilities.device)
+            conflict = batch.get("source_conflict_matrix")
+            context_conflict = (
+                conflict[0][
+                    context_positions[:, None],
+                    context_positions[None, :],
+                ]
+                if conflict is not None
+                else torch.zeros(
+                    (context_positions.numel(), context_positions.numel()),
+                    dtype=torch.bool,
+                    device=probabilities.device,
+                )
             )
+            selected_bool, valid_selection = constrained_daughter_decode(
+                probabilities,
+                cardinality=cardinality,
+                pointer_mask=torch.ones_like(probabilities, dtype=torch.bool),
+                source_conflict=context_conflict,
+                min_probability=config.pointer_threshold,
+                insufficient_policy=config.cardinality_insufficient_policy,
+            )
+            if not valid_selection:
+                continue
+            selected_local = selected_bool.nonzero(as_tuple=False).flatten()
         else:
             selected_local = (probabilities >= config.pointer_threshold).nonzero(
                 as_tuple=False
@@ -319,7 +342,19 @@ def _with_hard_predicted_leaf_p4(
     """Update raw tracks and existing composites without touching fixed leaves."""
 
     result = dict(batch)
-    result["p4"] = hard_reconstructed_p4_from_leaf_pid(batch, pid_logits)
+    runtime = rebuild_runtime_pid_state(batch, pid_logits, hard=True)
+    result["p4"] = runtime.p4
+    result["current_pid_probabilities"] = torch.nn.functional.one_hot(
+        runtime.current_tokens, num_classes=runtime.probabilities.shape[-1]
+    ).to(runtime.probabilities.dtype)
+    result["current_pid_tokens"] = runtime.current_tokens
+    result["current_pid_available"] = runtime.available
+    result["daughter_input_pid_histogram"] = runtime.daughter_input_histograms
+    result["daughter_pid_histogram"] = runtime.daughter_input_histograms
+    result["daughter_input_pid_histogram_available"] = (
+        runtime.daughter_histogram_available
+    )
+    result["daughter_pid_histogram_available"] = runtime.daughter_histogram_available
     common = batch["common_features"].clone()
     common[..., :4] = result["p4"]
     mass2 = result["p4"][..., 3].square() - result["p4"][..., :3].square().sum(dim=-1)
@@ -368,6 +403,11 @@ def append_composite_proposals(
         p4=batch["p4"].expand(proposal_count, -1, -1),
         charge=batch["charge"].expand(proposal_count, -1),
         pid_labels=batch["pid_labels"].expand(proposal_count, -1),
+        pid_probabilities=(
+            batch["current_pid_probabilities"].expand(proposal_count, -1, -1)
+            if "current_pid_probabilities" in batch
+            else None
+        ),
         daughter_embeddings=batch.get(
             "_last_node_embeddings",
             torch.zeros(
@@ -406,6 +446,8 @@ def append_composite_proposals(
         "composite_features",
         "composite_availability",
         "daughter_pid_histogram",
+        "daughter_input_pid_histogram",
+        "daughter_truth_pid_histogram",
     ]
     common = batch["common_features"].new_zeros(
         (1, proposal_count, batch["common_features"].shape[-1])
@@ -454,6 +496,12 @@ def append_composite_proposals(
             device=device,
         ),
         "daughter_pid_histogram": construction["daughter_pid_histogram"].unsqueeze(0),
+        "daughter_input_pid_histogram": construction[
+            "daughter_pid_histogram"
+        ].unsqueeze(0),
+        "daughter_truth_pid_histogram": torch.zeros_like(
+            construction["daughter_pid_histogram"]
+        ).unsqueeze(0),
     }
     copied_width = min(
         construction["features"].shape[-1],
@@ -469,9 +517,21 @@ def append_composite_proposals(
         "daughter_pid_histogram_available": construction[
             "daughter_pid_histogram_available"
         ].unsqueeze(0),
+        "daughter_input_pid_histogram_available": construction[
+            "daughter_pid_histogram_available"
+        ].unsqueeze(0),
+        "daughter_truth_pid_histogram_available": torch.zeros(
+            (1, proposal_count), dtype=torch.bool, device=device
+        ),
         "node_kind_ids": torch.full(
             (1, proposal_count),
             NODE_KIND_TO_ID["composite"],
+            dtype=torch.long,
+            device=device,
+        ),
+        "leaf_kinematics_mode_ids": torch.full(
+            (1, proposal_count),
+            LEAF_MODE_TO_ID["composite"],
             dtype=torch.long,
             device=device,
         ),
@@ -515,6 +575,34 @@ def append_composite_proposals(
                 for proposal in proposals
             ]
         ).unsqueeze(0),
+        "full_truth_daughter_count": daughter_masks.sum(dim=-1).unsqueeze(0),
+        "retained_truth_daughter_count_expected": daughter_masks.sum(
+            dim=-1
+        ).unsqueeze(0),
+        "retained_daughter_count": daughter_masks.sum(dim=-1).unsqueeze(0),
+        "reconstructed_daughter_count": daughter_masks.sum(dim=-1).unsqueeze(0),
+        "complete_truth_decay": torch.zeros(
+            (1, proposal_count), dtype=torch.bool, device=device
+        ),
+        "complete_reconstructable_decay": torch.ones(
+            (1, proposal_count), dtype=torch.bool, device=device
+        ),
+        "recursive_reconstructable_complete": torch.ones(
+            (1, proposal_count), dtype=torch.bool, device=device
+        ),
+        "partial_missing_daughters": torch.zeros(
+            (1, proposal_count), dtype=torch.bool, device=device
+        ),
+        "contracted_intermediate": torch.zeros(
+            (1, proposal_count), dtype=torch.bool, device=device
+        ),
+        "valid_reconstruction_target": daughter_masks.sum(dim=-1).ge(2).unsqueeze(0),
+        "truth_root_distance": torch.zeros(
+            (1, proposal_count), dtype=torch.long, device=device
+        ),
+        "full_event_max_level": torch.full(
+            (1, proposal_count), target_level, dtype=torch.long, device=device
+        ),
     }
     for optional_pid_field in ("pid_target_labels", "truth_pid_labels"):
         if optional_pid_field in batch:
@@ -548,8 +636,37 @@ def append_composite_proposals(
             [old_sources, new_sources],
             dim=1,
         )
+        overlap = torch.einsum(
+            "bns,bms->bnm",
+            result["recursive_leaf_source_mask"].to(torch.int32),
+            result["recursive_leaf_source_mask"].to(torch.int32),
+        ) > 0
+        diagonal = torch.eye(
+            overlap.shape[-1], dtype=torch.bool, device=device
+        ).unsqueeze(0)
+        result["source_conflict_matrix"] = overlap & ~diagonal
+    if "current_pid_probabilities" in batch:
+        mother_probabilities = torch.nn.functional.one_hot(
+            vector_additions["pid_labels"],
+            num_classes=batch["current_pid_probabilities"].shape[-1],
+        ).to(batch["current_pid_probabilities"].dtype)
+        result["current_pid_probabilities"] = torch.cat(
+            [batch["current_pid_probabilities"], mother_probabilities], dim=1
+        )
+        result["current_pid_tokens"] = torch.cat(
+            [batch["current_pid_tokens"], vector_additions["pid_labels"]], dim=1
+        )
+        result["current_pid_available"] = torch.cat(
+            [
+                batch["current_pid_available"],
+                torch.ones((1, proposal_count), dtype=torch.bool, device=device),
+            ],
+            dim=1,
+        )
     result["node_mask"] = result["active"]
     result["node_features"] = result["common_features"]
+    result.pop("allowed_type_mask", None)
+    result.pop("pointer_validity_mask", None)
     # Record a unique parent only after exclusive resolution.
     for row, proposal in enumerate(proposals):
         for daughter in proposal.daughter_positions:

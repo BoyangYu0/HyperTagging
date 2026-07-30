@@ -13,7 +13,7 @@ import numpy as np
 import torch
 
 from hypertagging.preprocessing.pid_filter import PID_VOCABULARY_VERSION
-from hypertagging.preprocessing.schema_v3 import SCHEMA_VERSION_V3, feature_spec_v3
+from hypertagging.preprocessing.schema_v4 import SCHEMA_VERSION_V4, feature_spec_v4
 
 
 def save_training_checkpoint(
@@ -27,11 +27,13 @@ def save_training_checkpoint(
     config: dict[str, Any] | None = None,
     metrics: dict[str, Any] | None = None,
     normalizer_state: dict[str, Any] | None = None,
-    schema_version: str = SCHEMA_VERSION_V3,
+    schema_version: str = SCHEMA_VERSION_V4,
     encoder: torch.nn.Module | None = None,
     scaler: Any | None = None,
     split_manifest_hash: str = "",
     confidence_head_trained: bool = False,
+    schedule_state: dict[str, Any] | None = None,
+    legacy_conflated_fraction: float = 0.0,
 ) -> Path:
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -56,10 +58,13 @@ def save_training_checkpoint(
         "normalizer_state": normalizer_state or {},
         "preprocessing_schema_version": schema_version,
         "pid_vocabulary_version": PID_VOCABULARY_VERSION,
-        "feature_specification": feature_spec_v3(),
+        "feature_specification": feature_spec_v4(),
         "split_manifest_hash": split_manifest_hash,
         "git_commit": _git_commit(),
         "confidence_head_trained": bool(confidence_head_trained),
+        "schedule_state": schedule_state or {},
+        "legacy_conflated_fraction": float(legacy_conflated_fraction),
+        "data_compatible_performance": not bool(legacy_conflated_fraction),
         "random_states": {
             "python": random.getstate(),
             "numpy": np.random.get_state(),
@@ -95,17 +100,50 @@ def restore_training_checkpoint(
     model: torch.nn.Module,
     optimizer: torch.optim.Optimizer | None = None,
     scheduler: Any | None = None,
+    scaler: Any | None = None,
     map_location: str | torch.device = "cpu",
     strict: bool = True,
+    restore_random_states: bool = True,
+    expected_schema_version: str | None = None,
+    expected_feature_spec_hash: str | None = None,
+    expected_split_manifest_hash: str | None = None,
+    allow_contract_mismatch: bool = False,
 ) -> dict[str, Any]:
     """Restore model/training state and return the complete checkpoint metadata."""
 
     payload = load_training_checkpoint(path, map_location=map_location)
+    mismatches = []
+    if (
+        expected_schema_version is not None
+        and payload.get("preprocessing_schema_version") != expected_schema_version
+    ):
+        mismatches.append("schema version")
+    stored_hash = payload.get("feature_specification", {}).get("feature_spec_hash")
+    if expected_feature_spec_hash is not None and stored_hash != expected_feature_spec_hash:
+        mismatches.append("feature specification")
+    if (
+        expected_split_manifest_hash is not None
+        and payload.get("split_manifest_hash") != expected_split_manifest_hash
+    ):
+        mismatches.append("split manifest")
+    if payload.get("pid_vocabulary_version") != PID_VOCABULARY_VERSION:
+        mismatches.append("PID vocabulary")
+    if mismatches and not allow_contract_mismatch:
+        raise ValueError(f"checkpoint contract mismatch: {', '.join(mismatches)}")
     model.load_state_dict(payload["model_state_dict"], strict=strict)
     if optimizer is not None and payload.get("optimizer_state_dict") is not None:
         optimizer.load_state_dict(payload["optimizer_state_dict"])
     if scheduler is not None and payload.get("scheduler_state_dict") is not None:
         scheduler.load_state_dict(payload["scheduler_state_dict"])
+    if scaler is not None and payload.get("scaler_state_dict") is not None:
+        scaler.load_state_dict(payload["scaler_state_dict"])
+    if restore_random_states and payload.get("random_states"):
+        states = payload["random_states"]
+        random.setstate(states["python"])
+        np.random.set_state(states["numpy"])
+        torch.set_rng_state(states["torch"])
+        if torch.cuda.is_available() and states.get("cuda"):
+            torch.cuda.set_rng_state_all(states["cuda"])
     return payload
 
 

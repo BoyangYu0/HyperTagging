@@ -17,8 +17,9 @@ from hypertagging.training.reconstruction_trainer import (
     ReconstructionConfig,
     train_level_reconstruction,
 )
-from hypertagging.models.ablation import ABLATIONS
+from hypertagging.models.ablation import ALL_ABLATIONS
 from hypertagging.utils.gpu_safety import assert_full_training_requires_condor
+from hypertagging.training.config import resolve_argparse_namespace
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -31,7 +32,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--n-queries", type=int, default=8)
     parser.add_argument("--max-cardinality", type=int, default=6)
     parser.add_argument("--scheduled-sampling-probability", type=float, default=None)
-    parser.add_argument("--ablation", choices=sorted(ABLATIONS), default="full_revised")
+    parser.add_argument("--ablation", choices=sorted(ALL_ABLATIONS), default="full_revised")
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--tiny", action="store_true")
@@ -45,8 +46,30 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--checkpoint-every", type=int, default=100)
     parser.add_argument("--log-every", type=int, default=10)
     parser.add_argument("--validate-every", type=int, default=100)
+    parser.add_argument("--prefetch-factor", type=int, default=2)
+    parser.add_argument("--shuffle-buffer-size", type=int, default=1024)
+    parser.add_argument("--persistent-workers", action="store_true")
+    parser.add_argument("--pilot-split-repair", action="store_true")
+    parser.add_argument("--allow-legacy-conflated", action="store_true")
+    parser.add_argument("--transfer-leaf-pid-head", action="store_true")
+    parser.add_argument("--freeze-leaf-pid-head-steps", type=int, default=0)
+    parser.add_argument("--leaf-pid-lr-multiplier", type=float, default=1.0)
+    parser.add_argument(
+        "--target-policy",
+        choices=("complete_only", "reconstructable_partial", "diagnostic_all"),
+        default="complete_only",
+    )
+    parser.add_argument(
+        "--scheduled-sampling-schedule",
+        choices=("constant", "linear", "cosine", "inverse_sigmoid"),
+        default="linear",
+    )
+    parser.add_argument("--scheduled-sampling-duration-steps", type=int, default=1000)
+    parser.add_argument("--max-validation-events", type=int, default=32)
+    parser.add_argument("--rollout-validation-events", type=int, default=8)
+    parser.add_argument("--validation-batch-size", type=int, default=4)
     parser.add_argument("--allow-local-tiny-gpu-test", action="store_true")
-    return parser.parse_args(argv)
+    return resolve_argparse_namespace(parser, argv)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -72,7 +95,7 @@ def main(argv: list[str] | None = None) -> int:
                     if args.scheduled_sampling_probability is not None
                     else (
                         0.25
-                        if ABLATIONS[args.ablation].scheduled_sampling
+                        if ALL_ABLATIONS[args.ablation].scheduled_sampling
                         else 0.0
                     )
                 ),
@@ -82,6 +105,22 @@ def main(argv: list[str] | None = None) -> int:
                 allow_tiny_bruteforce_matching=(
                     args.device == "cpu" and args.max_steps <= 10 and args.batch_size <= 4
                 ),
+                num_workers=args.num_workers,
+                prefetch_factor=args.prefetch_factor,
+                shuffle_buffer_size=args.shuffle_buffer_size,
+                persistent_workers=args.persistent_workers,
+                pilot_split_repair=args.pilot_split_repair,
+                allow_legacy_conflated=args.allow_legacy_conflated,
+                transfer_leaf_pid_head=args.transfer_leaf_pid_head,
+                freeze_leaf_pid_head_steps=args.freeze_leaf_pid_head_steps,
+                leaf_pid_lr_multiplier=args.leaf_pid_lr_multiplier,
+                target_policy=args.target_policy,
+                scheduled_sampling_schedule=args.scheduled_sampling_schedule,
+                scheduled_sampling_duration_steps=args.scheduled_sampling_duration_steps,
+                max_validation_events=args.max_validation_events,
+                rollout_validation_events=args.rollout_validation_events,
+                validation_batch_size=args.validation_batch_size,
+                log_every=args.log_every,
             )
         )
         print(
@@ -97,6 +136,14 @@ def main(argv: list[str] | None = None) -> int:
                     "missing": list(result.transfer_report.missing_keys),
                     "unexpected": list(result.transfer_report.unexpected_keys),
                     "shape_mismatches": list(result.transfer_report.shape_mismatches),
+                    "leaf_pid_head": {
+                        "loaded": len(result.transfer_report.leaf_pid_loaded_keys),
+                        "missing": list(result.transfer_report.leaf_pid_missing_keys),
+                        "shape_mismatches": list(
+                            result.transfer_report.leaf_pid_shape_mismatches
+                        ),
+                        "frozen": result.transfer_report.leaf_pid_frozen,
+                    },
                 },
             }
         )

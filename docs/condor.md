@@ -58,3 +58,15 @@ Every real training command must include `--data` and a data-volume
 `--output-dir`. Pretraining jobs should publish `checkpoint.pt`; matched
 reconstruction jobs pass it through `--pretrained-encoder`. Rendering is
 read-only. `condor_submit` remains a separate, explicit operator action.
+
+Schema-v4 production manifests are authoritative. The rendered preprocessing
+worker passes schema version, leaf kinematics mode, charge-conjugate channel
+normalization, buffer size, and row-group size explicitly, then compares the
+published sidecar metadata with the manifest. Training consumes the exact
+`output_file` JSONL format emitted by `mdst_batch_production.py`.
+
+Recommended first matched-split ablations are
+`canonical_pion_first_level`, `contextual_euclidean`,
+`plus_leaf_pid`, `plus_scheduled_sampling`, and `full_revised`. Render each
+command first and inspect it; no repository command automatically submits a
+job.

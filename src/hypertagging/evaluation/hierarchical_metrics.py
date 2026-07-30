@@ -36,6 +36,13 @@ class CanonicalTreeMetrics:
     root_reconstruction_success: bool
 
 
+@dataclass(frozen=True)
+class SourceAlignmentResult:
+    matches: tuple[tuple[int, int], ...]
+    mother_type_accuracy: float
+    mean_source_jaccard: float
+
+
 def edge_set(batch: dict[str, torch.Tensor], batch_index: int = 0) -> set[tuple[int, int]]:
     edges: set[tuple[int, int]] = set()
     node_ids = batch["node_ids"][batch_index]
@@ -130,7 +137,8 @@ def canonical_tree_metrics(
     predicted_roots = _root_signature_counter(predicted, predicted_signatures)
     truth_roots = _root_signature_counter(truth, truth_signatures)
     edges = edge_metrics(predicted, truth)
-    aligned = _align_by_signature(predicted_signatures, truth_signatures)
+    aligned_result = _align_batch_nodes_by_source(predicted, truth)
+    aligned = list(aligned_result.matches)
     type_correct = 0
     type_total = 0
     source_scores = []
@@ -213,6 +221,87 @@ def _align_by_signature(
         if candidates:
             output.append((node, candidates.pop(0)))
     return output
+
+
+def align_subtrees_by_source(
+    predicted: list[dict[str, Any]],
+    truth: list[dict[str, Any]],
+) -> SourceAlignmentResult:
+    """Hungarian source/topology alignment that deliberately excludes type."""
+
+    if not predicted or not truth:
+        return SourceAlignmentResult((), float(not predicted and not truth), 0.0)
+    cost = torch.zeros((len(predicted), len(truth)), dtype=torch.float64)
+    jaccard = torch.zeros_like(cost)
+    for left, pred in enumerate(predicted):
+        pred_sources = set(pred["sources"])
+        for right, target in enumerate(truth):
+            truth_sources = set(target["sources"])
+            union = pred_sources | truth_sources
+            score = (
+                len(pred_sources & truth_sources) / len(union) if union else 1.0
+            )
+            jaccard[left, right] = score
+            depth_delta = abs(int(pred.get("depth", 0)) - int(target.get("depth", 0)))
+            count_delta = abs(
+                int(pred.get("daughter_count", 0))
+                - int(target.get("daughter_count", 0))
+            )
+            cost[left, right] = 1 - score + 0.05 * depth_delta + 0.05 * count_delta
+    from hypertagging.losses.set_matching import hungarian_assignment
+
+    matches = tuple(
+        hungarian_assignment(cost, production=False, allow_bruteforce=True)
+    )
+    type_accuracy = sum(
+        int(predicted[left].get("type") == truth[right].get("type"))
+        for left, right in matches
+    ) / max(len(matches), 1)
+    mean_jaccard = sum(float(jaccard[left, right]) for left, right in matches) / max(
+        len(matches), 1
+    )
+    return SourceAlignmentResult(matches, type_accuracy, mean_jaccard)
+
+
+def _align_batch_nodes_by_source(
+    predicted: dict[str, torch.Tensor],
+    truth: dict[str, torch.Tensor],
+) -> SourceAlignmentResult:
+    def records(batch: dict[str, torch.Tensor]) -> tuple[list[int], list[dict[str, Any]]]:
+        active = batch["node_mask"][0].nonzero(as_tuple=False).flatten().tolist()
+        output = []
+        for node in active:
+            sources = set(
+                batch["recursive_leaf_source_mask"][0, node]
+                .nonzero(as_tuple=False)
+                .flatten()
+                .tolist()
+            )
+            output.append(
+                {
+                    "type": int(
+                        batch.get("pid_target_labels", batch["pid_labels"])[0, node]
+                    ),
+                    "sources": sources,
+                    "depth": int(batch["level_ids"][0, node]),
+                    "daughter_count": int(
+                        batch["daughter_adjacency"][0, node].sum()
+                    ),
+                }
+            )
+        return [int(value) for value in active], output
+
+    predicted_nodes, predicted_records = records(predicted)
+    truth_nodes, truth_records = records(truth)
+    result = align_subtrees_by_source(predicted_records, truth_records)
+    return SourceAlignmentResult(
+        tuple(
+            (predicted_nodes[left], truth_nodes[right])
+            for left, right in result.matches
+        ),
+        result.mother_type_accuracy,
+        result.mean_source_jaccard,
+    )
 
 
 def _signature_leaf_sources(signature: tuple[Any, ...]) -> set[int]:
@@ -433,6 +522,8 @@ def channel_generalization_slices(
 __all__ = [
     "EdgeMetrics",
     "CanonicalTreeMetrics",
+    "SourceAlignmentResult",
+    "align_subtrees_by_source",
     "canonical_tree_metrics",
     "canonical_tree_signatures",
     "edge_metrics",
