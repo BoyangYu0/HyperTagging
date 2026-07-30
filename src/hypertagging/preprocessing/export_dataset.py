@@ -55,6 +55,10 @@ def _event_record(tree: EventTree) -> dict[str, object]:
     node_ids = sorted(tree.nodes)
     return {
         "event_id": tree.event_id,
+        "event_uid": str(tree.metadata.get("event_uid", tree.event_id)),
+        "experiment": int(tree.metadata.get("experiment", -1)),
+        "run": int(tree.metadata.get("run", -1)),
+        "production": int(tree.metadata.get("production", -1)),
         "root_ids": tree.root_ids,
         "levels": [{"level": level, "node_ids": ids} for level, ids in grouped.items()],
         "nodes": [_node_record(tree.nodes[node_id]) for node_id in node_ids],

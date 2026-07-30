@@ -87,20 +87,24 @@ def test_cpu_training_dry_runs():
 
 
 def test_gpu_safety_refuses_local_full_cuda(monkeypatch):
-    monkeypatch.delenv("SLURM_JOB_ID", raising=False)
+    monkeypatch.delenv("_CONDOR_SCRATCH_DIR", raising=False)
+    monkeypatch.delenv("CONDOR_CLUSTER_ID", raising=False)
+    monkeypatch.delenv("CONDOR_PROCESS_ID", raising=False)
     args = Namespace(device="cuda", tiny=False, max_steps=100, batch_size=16, allow_local_tiny_gpu_test=False)
-    with pytest.raises(RuntimeError, match="SLURM"):
-        gpu_safety.assert_full_training_requires_slurm(args)
+    with pytest.raises(RuntimeError, match="HTCondor"):
+        gpu_safety.assert_full_training_requires_condor(args)
 
 
-def test_gpu_safety_inside_slurm_allows_cuda(monkeypatch):
-    monkeypatch.setenv("SLURM_JOB_ID", "123")
+def test_gpu_safety_inside_condor_allows_cuda(monkeypatch):
+    monkeypatch.setenv("CONDOR_CLUSTER_ID", "123")
     args = Namespace(device="cuda", tiny=False, max_steps=100, batch_size=16, allow_local_tiny_gpu_test=False)
-    gpu_safety.assert_full_training_requires_slurm(args)
+    gpu_safety.assert_full_training_requires_condor(args)
 
 
 def test_gpu_safety_tiny_requires_explicit_flag(monkeypatch):
-    monkeypatch.delenv("SLURM_JOB_ID", raising=False)
+    monkeypatch.delenv("_CONDOR_SCRATCH_DIR", raising=False)
+    monkeypatch.delenv("CONDOR_CLUSTER_ID", raising=False)
+    monkeypatch.delenv("CONDOR_PROCESS_ID", raising=False)
     args = Namespace(device="cuda", tiny=True, max_steps=2, batch_size=1, allow_local_tiny_gpu_test=False)
     with pytest.raises(RuntimeError, match="allow-local"):
         gpu_safety.assert_local_gpu_tiny_test_allowed(args)

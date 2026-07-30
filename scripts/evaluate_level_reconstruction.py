@@ -23,7 +23,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-events", type=int, default=2)
     args = parser.parse_args(argv)
     if args.device.split(":")[0] != "cpu":
-        raise RuntimeError("Evaluation script supports CPU dry-run locally; use SLURM for CUDA.")
+        raise RuntimeError("Evaluation script supports CPU dry-run locally; use HTCondor for CUDA.")
     print(run_level_reconstruction_dry_run(device=args.device, max_steps=1, batch_size=min(args.max_events, 2)))
     return 0
 

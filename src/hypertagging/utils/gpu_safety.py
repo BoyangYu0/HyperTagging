@@ -1,4 +1,4 @@
-"""GPU and SLURM safety checks for HyperTagging training scripts."""
+"""GPU and HTCondor safety checks for HyperTagging training scripts."""
 
 from __future__ import annotations
 
@@ -16,8 +16,12 @@ class CommandSnapshot:
     stderr: str
 
 
-def is_inside_slurm() -> bool:
-    return bool(os.environ.get("SLURM_JOB_ID") or os.environ.get("SLURM_JOBID"))
+def is_inside_condor() -> bool:
+    return bool(
+        os.environ.get("_CONDOR_SCRATCH_DIR")
+        or os.environ.get("CONDOR_CLUSTER_ID")
+        or os.environ.get("CONDOR_PROCESS_ID")
+    )
 
 
 def _run(command: tuple[str, ...], timeout: int = 10) -> CommandSnapshot:
@@ -28,8 +32,8 @@ def _run(command: tuple[str, ...], timeout: int = 10) -> CommandSnapshot:
         return CommandSnapshot(command, 127, "", str(exc))
 
 
-def get_squeue_snapshot() -> dict[str, CommandSnapshot]:
-    return {"squeue_me": _run(("squeue", "--me")), "squeue": _run(("squeue",))}
+def get_condor_q_snapshot() -> dict[str, CommandSnapshot]:
+    return {"condor_q": _run(("condor_q", "-autoformat", "ClusterId", "ProcId"))}
 
 
 def get_nvidia_smi_snapshot() -> dict[str, CommandSnapshot]:
@@ -57,26 +61,25 @@ def assert_local_gpu_tiny_test_allowed(args: Any, *, max_steps: int = 10, max_ba
         raise RuntimeError(f"Local CUDA tiny tests require --batch-size <= {max_batch_size}.")
     if not _arg(args, "allow_local_tiny_gpu_test", False):
         raise RuntimeError("Local CUDA tiny tests require --allow-local-tiny-gpu-test.")
-    snapshots = {**get_squeue_snapshot(), **get_nvidia_smi_snapshot()}
+    snapshots = {**get_condor_q_snapshot(), **get_nvidia_smi_snapshot()}
     failed = [name for name, snap in snapshots.items() if snap.returncode != 0]
     if failed:
         raise RuntimeError(f"Cannot verify local GPU safety; failed commands: {failed}")
     compute_apps = snapshots["compute_apps"].stdout.strip()
     if compute_apps:
         raise RuntimeError("Local GPU appears busy: nvidia-smi compute apps are present.")
-    squeue = snapshots["squeue"].stdout.strip().splitlines()
-    if len(squeue) > 1:
-        raise RuntimeError("SLURM queue is non-empty; refusing ambiguous local GPU test.")
+    if snapshots["condor_q"].stdout.strip():
+        raise RuntimeError("HTCondor queue is non-empty; refusing ambiguous local GPU test.")
 
 
-def assert_full_training_requires_slurm(args: Any) -> None:
-    """Refuse non-tiny CUDA training outside SLURM."""
+def assert_full_training_requires_condor(args: Any) -> None:
+    """Refuse non-tiny CUDA training outside HTCondor."""
 
     if str(_arg(args, "device", "cpu")).split(":")[0] != "cuda":
         return
-    if is_inside_slurm():
+    if is_inside_condor():
         return
     if _arg(args, "tiny", False) and _arg(args, "allow_local_tiny_gpu_test", False):
         assert_local_gpu_tiny_test_allowed(args)
         return
-    raise RuntimeError("Full CUDA training must run inside SLURM via sbatch.")
+    raise RuntimeError("Full CUDA training must run inside HTCondor via condor_submit.")

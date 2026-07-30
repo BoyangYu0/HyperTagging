@@ -118,7 +118,10 @@ class GPTReconstructor(nn.Module):
         emb = dataset['emb'].to(self.device)
         src_mask = dataset['src_mask']
         if src_mask is not None:
-            src_mask = src_mask.to(self.device).repeat_interleave(self.tr_n_head, dim=0)
+            src_mask = src_mask.to(self.device)
+            if src_mask.dtype is not torch.bool:
+                src_mask = torch.isneginf(src_mask)
+            src_mask = src_mask.repeat_interleave(self.tr_n_head, dim=0)
         lvl_code = dataset['lvl_code'].to(self.device)
         
         encoder_input = self.projector(torch.cat([emb, lvl_code.unsqueeze(-1)], axis=-1))
@@ -189,7 +192,10 @@ class MultiGPT(nn.Module):
         src_mask = dataset.get("src_mask")
         rec_mask = None
         if src_mask is not None:
-            rec_mask = src_mask.to(self.device).repeat_interleave(self.rec_n_head, dim=0)
+            rec_mask = src_mask.to(self.device)
+            if rec_mask.dtype is not torch.bool:
+                rec_mask = torch.isneginf(rec_mask)
+            rec_mask = rec_mask.repeat_interleave(self.rec_n_head, dim=0)
 
         rec_input = torch.cat([emb, lvl_code.unsqueeze(-1)], axis=-1)
         rec_transformed = self.rec_encoder(

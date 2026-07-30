@@ -14,12 +14,30 @@ dependencies = [
   "awkward",
   "pyarrow",
   "torch",
+  "uproot",
+  "pdg",
+  "onnx",
 ]
 
 [project.optional-dependencies]
 dev = [
   "pytest",
 ]
+notebook = [
+  "ipykernel",
+  "jupyterlab",
+  "matplotlib",
+  "nbclient",
+  "nbformat",
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
 
 [tool.setuptools.packages.find]
 where = ["src"]

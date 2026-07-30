@@ -1,0 +1,10 @@
+job_name: hypertagging
+universe: vanilla
+request_cpus: 4
+request_memory: "16GB"
+request_gpus: 1
+request_runtime: 1800
+cache_dir: "/tmp/uv-cache"
+log_dir: "logs/condor"
+checkpoint_dir: "outputs/checkpoints"
+setup: ""

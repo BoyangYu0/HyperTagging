@@ -57,28 +57,123 @@ Reco kinematics are kept separate:
 Run inside a basf2 environment:
 
 ```bash
+source /cvmfs/belle.cern.ch/tools/b2setup release-08-03-00
 basf2 scripts/preprocess_mdst.py -- \
-  --input /project/agkuhr/users/boyang/data/MC15/mdst001.root \
-  --output /project/agkuhr/users/boyang/data/MC15/HyperTagging_uni/processed.parquet \
+  --input /path/to/generic_mdst.root \
+  --output /data/dust/user/boyangyu/hypertagging/processed.parquet \
+  --entry-sequence 0:99 \
   --max-events 100
 ```
+
+`--entry-sequence` is repeatable and uses basf2's inclusive entry-range
+notation. Supply one sequence per input file. Production events carry
+`experiment`, `run`, `production`, and a stable `event_uid` so shards can be
+checked for duplicates and split by source without event leakage.
 
 Inspect and validate:
 
 ```bash
-uv run python scripts/verify_preprocessing.py \
-  --input processed.parquet \
-  --event 0 \
-  --all
+/data/dust/user/boyangyu/uv_env/bin/python scripts/verify_preprocessing.py \
+  --input /data/dust/user/boyangyu/hypertagging/processed.parquet \
+  --all-events --check-tree --check-p4 --check-pid
 ```
 
 The documented real mDST glob is in `file_paths.md`:
-`/project/agkuhr/users/boyang/data/MC15/mdst*.root`.
+`/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/**/*.root`.
 
 ## Current Basf2 Adapter Notes
 
-The direct reader tries reconstructed `Particle` arrays first and then mDST
-`Tracks`/`ECLClusters` with MC relations when present. If an input file contains
-only MCParticles and no usable reconstructed objects, preprocessing fails loudly.
+Generic mDST input uses `Tracks` and neutral `ECLClusters` by default. Optional
+uDST `Particle` arrays are read only when explicitly passed with
+`--particle-array`. Track fits use the Belle II charged-stable hypothesis API;
+neutral ECL four-vectors use `ClusterUtils` with the photon hypothesis, and
+track-matched ECL clusters are excluded to avoid double counting.
+
+If an input file contains only MCParticles and no usable reconstructed objects,
+preprocessing fails loudly.
 The debug flag `--allow-mc-leaf-kinematics-for-debug` can synthesize reco leaves
 from MC leaves for software tests only; it must not be used for training.
+
+## Visualization Notebook
+
+Generate and execute the real-data four-momentum comparison notebook:
+
+```bash
+/data/dust/user/boyangyu/uv_env/bin/python \
+  scripts/create_preprocessing_visualization_notebook.py
+JUPYTER_CONFIG_DIR=/tmp/hypertagging-jupyter-config \
+  /data/dust/user/boyangyu/uv_env/bin/python -m jupyter nbconvert \
+  --execute --to notebook --inplace \
+  notebooks/preprocessing_four_momentum_validation.ipynb
+```
+
+The notebook compares computed/reconstructed and MC `E`, `px`, `py`, `pz`, and
+invariant mass distributions, plus event-by-event and particle-by-particle
+differences. Unmatched reconstructed objects remain in production output but
+are excluded from truth residuals.
+
+The executed
+`notebooks/inspect_preprocessed_parquet_and_gpt_like.ipynb` complements this
+with the parquet schema, representative event/node tables, multiplicity and
+depth distributions, tree checks, the direct-tree GPT batch, its attention
+mask, and a real-data CPU forward/loss/backward/optimizer smoke test. Regenerate
+it with:
+
+```bash
+/data/dust/user/boyangyu/uv_env/bin/python \
+  scripts/create_parquet_gpt_inspection_notebook.py
+JUPYTER_CONFIG_DIR=/tmp/hypertagging-jupyter-config \
+  /data/dust/user/boyangyu/uv_env/bin/python -m jupyter nbconvert \
+  --execute --to notebook --inplace \
+  notebooks/inspect_preprocessed_parquet_and_gpt_like.ipynb
+```
+
+## GPT-Like Direct-Tree Contract
+
+Real direct-mDST events have variable numbers of nodes and variable tree
+depths, so the old fixed-particles-per-level collator is not valid for this
+parquet. `hypertagging.data.direct_gpt` instead orders visible leaves first,
+then truth-guided higher-level query slots. Leaf queries may attend leaves;
+each higher-level query may attend nodes at strictly lower levels. Targets are
+node embeddings and link labels map each child position to its parent position.
+
+This adapter makes the current `MultiGPT` implementation executable and
+testable on real parquet, but it is teacher-forced integration scaffolding, not
+a claim of final training quality. Production training should add feature
+normalization, source-aware train/validation/test splits, checkpointing, and
+physics performance metrics.
+
+## Ten-Million-Event Production
+
+The planner reads ROOT tree metadata only, interleaves physics categories,
+creates exact non-overlapping inclusive entry ranges, and writes an atomic
+JSONL manifest. Each array task writes a temporary parquet, validates its
+schema, event count, and `event_uid` uniqueness, then publishes atomically.
+Completed valid shards are resumable.
+
+The project venv is Python 3.11, while release-08-03-00 embeds Python 3.8.
+Compiled packages cannot be shared. A small basf2-compatible dependency target
+is therefore required once:
+
+```bash
+source /cvmfs/belle.cern.ch/tools/b2setup release-08-03-00
+unset PYTHONPATH
+/cvmfs/belle.cern.ch/el9/externals/v02-00-02b/Linux_x86_64/common/bin/python3 \
+  -m pip install --target /data/dust/user/boyangyu/basf2_py38 \
+  'numpy==1.24.4' 'awkward==2.6.10' 'pyarrow==16.1.0'
+```
+
+The submitted worker still activates
+`/data/dust/user/boyangyu/uv_env`; it isolates the embedded basf2 subprocess
+from that Python-3.11 interpreter and injects the compatible dependency target.
+To inspect the existing default 10M manifest and submission command:
+
+```bash
+scripts/condor/submit_mdst_production_10m.sh --dry-run
+```
+
+Defaults are 10,000,000 input events, 25,000 events per task, and at most 50
+concurrent materialized tasks. Override with `TARGET_EVENTS`, `EVENTS_PER_TASK`,
+`MAX_CONCURRENT`, and the resource variables documented in
+`scripts/condor/README.md`. Run a small pilot before the
+full array because the current exporter buffers a shard in memory.

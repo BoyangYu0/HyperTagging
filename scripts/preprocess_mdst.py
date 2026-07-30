@@ -7,7 +7,24 @@ import argparse
 from pathlib import Path
 import sys
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+
+def _find_repo_root(script_path: str | None, *, cwd: Path | None = None) -> Path:
+    """Locate the checkout when basf2 executes without defining ``__file__``."""
+
+    candidates: list[Path] = []
+    if script_path:
+        candidates.append(Path(script_path).resolve().parents[1])
+    candidates.append((cwd or Path.cwd()).resolve())
+    for candidate in candidates:
+        if (candidate / "src" / "hypertagging").is_dir():
+            return candidate
+    raise RuntimeError(
+        "Could not locate the HyperTagging checkout. Run this steering file from "
+        "the repository root or execute it as a normal Python script."
+    )
+
+
+REPO_ROOT = _find_repo_root(globals().get("__file__"))
 SRC_ROOT = REPO_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
@@ -18,6 +35,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--input", nargs="+", required=True, help="Input generic mDST ROOT file(s).")
     parser.add_argument("--output", required=True, help="Output parquet file.")
     parser.add_argument("--max-events", type=int, default=None, help="Maximum number of events.")
+    parser.add_argument(
+        "--entry-sequence",
+        action="append",
+        default=None,
+        help=(
+            "Optional basf2 entry range for each input file, for example 0:24999. "
+            "Repeat once per --input file when sharding production."
+        ),
+    )
     parser.add_argument("--event-index", type=int, default=None, help="Alias for --debug-event.")
     parser.add_argument("--debug-event", type=int, default=None, help="Only process one EventMetaData event number.")
     parser.add_argument("--config", default=None, help="Optional config file path recorded for reproducibility.")
@@ -28,7 +54,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--particle-array",
         action="append",
         default=None,
-        help="DataStore Particle array to read directly. Can be repeated. Default: Particles.",
+        help=(
+            "Optional uDST DataStore Particle array to read directly. Can be repeated. "
+            "Generic mDST input normally uses Tracks and ECLClusters instead."
+        ),
     )
     parser.add_argument("--no-tracks", action="store_true", help="Do not read Tracks StoreArray.")
     parser.add_argument("--no-ecl-clusters", action="store_true", help="Do not read ECLClusters StoreArray.")
@@ -51,6 +80,7 @@ def main(argv: list[str] | None = None) -> int:
                 "input": args.input,
                 "output": str(output_path),
                 "max_events": args.max_events,
+                "entry_sequences": args.entry_sequence,
                 "event_index": args.event_index,
                 "config": args.config,
             }
@@ -58,14 +88,17 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if output_path.exists() and not args.overwrite:
         raise FileExistsError(f"{output_path} exists; pass --overwrite to replace it.")
+    if args.entry_sequence is not None and len(args.entry_sequence) != len(args.input):
+        raise ValueError("--entry-sequence must be repeated exactly once per --input file")
     from hypertagging.preprocessing.basf2_mdst import Basf2PreprocessConfig, run_basf2_preprocessing
 
     config = Basf2PreprocessConfig(
         input_files=tuple(args.input),
         output=output_path,
         max_events=args.max_events,
+        entry_sequences=None if args.entry_sequence is None else tuple(args.entry_sequence),
         debug_event=args.debug_event if args.debug_event is not None else args.event_index,
-        particle_arrays=tuple(args.particle_array or ["Particles"]),
+        particle_arrays=tuple(args.particle_array or ()),
         include_tracks=not args.no_tracks,
         include_ecl_clusters=not args.no_ecl_clusters,
         allow_mc_leaf_kinematics_for_debug=args.allow_mc_leaf_kinematics_for_debug,

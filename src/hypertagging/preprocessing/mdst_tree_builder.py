@@ -7,7 +7,7 @@ daughter four-vectors.
 
 from __future__ import annotations
 
-from collections import Counter, defaultdict, deque
+from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 import math
 import time
@@ -185,15 +185,11 @@ def build_truth_guided_tree(
     pid_filter = pid_filter or PidFilter()
     tree = EventTree(event_id=event_id)
     retained_by_mc: dict[int, int] = {}
-    children_by_mc: dict[int | None, list[MCRecord]] = defaultdict(list)
     reco_by_mc: dict[int, list[RecoRecord]] = defaultdict(list)
 
     for reco in reco_records:
         if reco.mc_id is not None:
             reco_by_mc[int(reco.mc_id)].append(reco)
-
-    for mc in mc_records:
-        children_by_mc[mc.mother_id].append(mc)
 
     for mc in mc_records:
         decision = pid_filter.decide(pdg=mc.pdg, name=mc.name, is_primary=mc.is_primary)
@@ -393,7 +389,7 @@ def validate_tree(tree: EventTree, *, p4_tolerance: float = 1e-8) -> dict[str, f
             raise ValueError(f"copied node {node.node_id} has missing source {node.copied_from}")
         if node.daughter_ids:
             summed = FourVector.sum(tree.nodes[child_id].p4 for child_id in node.daughter_ids)
-            for stored, expected in zip(node.p4.as_tuple(), summed.as_tuple(), strict=True):
+            for stored, expected in zip(node.p4.as_tuple(), summed.as_tuple()):
                 diff = abs(stored - expected)
                 rel = diff / max(abs(expected), p4_tolerance)
                 max_abs_diff = max(max_abs_diff, diff)
@@ -431,6 +427,7 @@ def build_trees(
             summary.copied_nodes += copy_shared_daughters(tree)
             recompute_mother_p4_from_daughters(tree)
             summary.nodes_after_pruning += len(tree.nodes)
+            summary.unmatched_reco += sum("unmatched_reco" in node.flags for node in tree.nodes.values())
             trees.append(tree)
         except Exception:
             summary.failed_events += 1

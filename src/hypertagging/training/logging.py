@@ -1,4 +1,4 @@
-"""JSONL logging helpers for CPU dry-runs and SLURM jobs."""
+"""JSONL logging helpers for CPU dry-runs and HTCondor jobs."""
 
 from __future__ import annotations
 

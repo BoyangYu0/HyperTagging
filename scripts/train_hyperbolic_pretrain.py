@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Run hyperbolic pretraining dry-runs or SLURM-guarded training."""
+"""Run hyperbolic pretraining dry-runs or HTCondor-guarded training."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
 from hypertagging.training.hyperbolic_pretrain import run_hyperbolic_pretrain_dry_run
-from hypertagging.utils.gpu_safety import assert_full_training_requires_slurm
+from hypertagging.utils.gpu_safety import assert_full_training_requires_condor
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -38,9 +38,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
-    assert_full_training_requires_slurm(args)
+    assert_full_training_requires_condor(args)
     if not args.dry_run and not args.tiny:
-        raise RuntimeError("Full hyperbolic pretraining must be submitted through SLURM templates.")
+        raise RuntimeError("Full hyperbolic pretraining must be submitted through HTCondor templates.")
     summary = run_hyperbolic_pretrain_dry_run(
         device=args.device,
         max_steps=args.max_steps,

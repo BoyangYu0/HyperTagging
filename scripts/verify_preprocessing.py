@@ -20,6 +20,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", required=True, help="Processed parquet file.")
     parser.add_argument("--event", type=int, default=0, help="Event index inside the processed file.")
+    parser.add_argument(
+        "--all-events",
+        action="store_true",
+        help="Run structural and four-vector checks on every event instead of only --event.",
+    )
     parser.add_argument("--dump-tree", action="store_true", help="Print nodes grouped by level.")
     parser.add_argument("--check-p4", action="store_true", help="Check mother p4 equals daughter p4 sum.")
     parser.add_argument("--check-tree", action="store_true", help="Check links, DAG, levels, and copy references.")
@@ -40,12 +45,17 @@ def main(argv: list[str] | None = None) -> int:
     run_all = args.all or not any([args.dump_tree, args.check_p4, args.check_tree, args.check_pid])
     if args.dump_tree or run_all:
         dump_tree(event)
+    checked_events = events if args.all_events else [event]
     if args.check_tree or run_all:
-        check_tree(event)
+        for checked_event in checked_events:
+            check_tree(checked_event, verbose=not args.all_events)
     if args.check_p4 or run_all:
-        check_p4(event, tolerance=args.tolerance)
+        for checked_event in checked_events:
+            check_p4(checked_event, tolerance=args.tolerance, verbose=not args.all_events)
     if args.check_pid or run_all:
         print_pid_summary(payload)
+    if args.all_events and (args.check_tree or args.check_p4 or run_all):
+        print(f"validated events={len(checked_events)}")
     return 0
 
 
@@ -65,7 +75,7 @@ def dump_tree(event: dict[str, object]) -> None:
             )
 
 
-def check_tree(event: dict[str, object]) -> None:
+def check_tree(event: dict[str, object], *, verbose: bool = True) -> None:
     nodes = _nodes_by_id(event)
     visiting: set[int] = set()
     visited: set[int] = set()
@@ -97,10 +107,11 @@ def check_tree(event: dict[str, object]) -> None:
 
     for node_id in nodes:
         visit(node_id)
-    print(f"tree ok: nodes={len(nodes)}")
+    if verbose:
+        print(f"tree ok: nodes={len(nodes)}")
 
 
-def check_p4(event: dict[str, object], *, tolerance: float) -> None:
+def check_p4(event: dict[str, object], *, tolerance: float, verbose: bool = True) -> None:
     nodes = _nodes_by_id(event)
     max_abs = 0.0
     max_rel = 0.0
@@ -113,7 +124,7 @@ def check_p4(event: dict[str, object], *, tolerance: float) -> None:
             for field in ("px", "py", "pz", "energy")
         ]
         stored = [float(node[field]) for field in ("px", "py", "pz", "energy")]
-        for actual, expected in zip(stored, summed, strict=True):
+        for actual, expected in zip(stored, summed):
             diff = abs(actual - expected)
             rel = diff / max(abs(expected), tolerance)
             max_abs = max(max_abs, diff)
@@ -122,9 +133,10 @@ def check_p4(event: dict[str, object], *, tolerance: float) -> None:
                 raise ValueError(f"p4 mismatch at node {node_id}: stored={stored} summed={summed}")
         mc_values = [node.get(field) for field in ("mc_px", "mc_py", "mc_pz", "mc_energy")]
         if all(value is not None for value in mc_values):
-            if all(math.isclose(float(a), float(b), rel_tol=tolerance, abs_tol=tolerance) for a, b in zip(stored, mc_values, strict=True)):
+            if all(math.isclose(float(a), float(b), rel_tol=tolerance, abs_tol=tolerance) for a, b in zip(stored, mc_values)):
                 print(f"warning: node {node_id} reco p4 numerically equals diagnostic MC p4")
-    print(f"p4 ok: max_abs={max_abs:.3g} max_rel={max_rel:.3g}")
+    if verbose:
+        print(f"p4 ok: max_abs={max_abs:.3g} max_rel={max_rel:.3g}")
 
 
 def print_pid_summary(payload: dict[str, object]) -> None:

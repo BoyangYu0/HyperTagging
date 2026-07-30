@@ -50,6 +50,6 @@ the schedule is configured by start, end, and warmup steps.
 ## What Runs Locally
 
 CPU unit tests, tiny synthetic fixtures, and CPU dry-runs are local-safe.
-Full data, full training, and normal CUDA training are SLURM-only.  A local CUDA
-smoke test is allowed only for tiny runs after explicit `squeue` and
+Full data, full training, and normal CUDA training are HTCondor-only. A local CUDA
+smoke test is allowed only for tiny runs after explicit `condor_q` and
 `nvidia-smi` safety checks.

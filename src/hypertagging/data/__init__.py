@@ -20,6 +20,14 @@ from hypertagging.data.fixtures import (
     tiny_grafei_pair_batch,
     tiny_toy_mc_batch,
 )
+from hypertagging.data.direct_gpt import (
+    DIRECT_FEATURE_NAMES,
+    DirectGptEvent,
+    build_direct_multi_gpt_batch,
+    collate_direct_gpt_events,
+    load_direct_gpt_events,
+    validate_direct_multi_gpt_batch,
+)
 from hypertagging.data.gpt_like import (
     collate_gpt_link,
     collate_gpt_reconstruction,
@@ -92,4 +100,10 @@ __all__ = [
     "validate_gpt_batch",
     "validate_gpt_link_batch",
     "validate_gpt_reconstruction_batch",
+    "DIRECT_FEATURE_NAMES",
+    "DirectGptEvent",
+    "build_direct_multi_gpt_batch",
+    "collate_direct_gpt_events",
+    "load_direct_gpt_events",
+    "validate_direct_multi_gpt_batch",
 ]

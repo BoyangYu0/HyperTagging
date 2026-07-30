@@ -1,7 +1,15 @@
 import math
+from pathlib import Path
+import sys
+import types
 
 from hypertagging.preprocessing.export_dataset import export_trees, load_processed
 from hypertagging.preprocessing.levelize_tree import adjacent_level_samples, assign_levels, nodes_by_level
+from hypertagging.preprocessing.basf2_mdst import (
+    Basf2PreprocessConfig,
+    _DirectMdstCollector,
+    run_basf2_preprocessing,
+)
 from hypertagging.preprocessing.mdst_tree_builder import (
     EventTree,
     FourVector,
@@ -14,6 +22,7 @@ from hypertagging.preprocessing.mdst_tree_builder import (
     validate_tree,
 )
 from hypertagging.preprocessing.pid_filter import PidFilter, tokenize_pdg
+from scripts.preprocess_mdst import _find_repo_root
 
 
 def _toy_records():
@@ -93,8 +102,193 @@ def test_export_contains_canonical_and_legacy_views(tmp_path):
     payload = load_processed(output).to_list()[0]
     assert payload["schema_version"] == "direct-mdst-tree-v1"
     assert payload["events"][0]["event_id"] == 12
+    assert payload["events"][0]["event_uid"] == "12"
     assert payload["legacy_levels"]
     first_level = payload["legacy_levels"][0]
     assert "feature" in first_level
     assert "motherIndex" in first_level
     assert first_level["feature"][0][0] in {tokenize_pdg(node["pdg"]) for node in payload["events"][0]["nodes"]}
+
+
+def test_preprocess_script_finds_repo_without_dunder_file():
+    repo_root = Path(__file__).resolve().parents[1]
+
+    assert _find_repo_root(None, cwd=repo_root) == repo_root
+
+
+def test_generic_mdst_config_does_not_request_udst_particle_array(tmp_path):
+    config = Basf2PreprocessConfig(("input.root",), tmp_path / "output.parquet")
+
+    assert config.particle_arrays == ()
+    assert config.include_tracks
+    assert config.include_ecl_clusters
+
+
+def test_basf2_runner_passes_multiple_files_to_input_mdst_list(monkeypatch, tmp_path):
+    calls = []
+
+    class StopAfterInput(Exception):
+        pass
+
+    def input_mdst_list(**kwargs):
+        calls.append(kwargs)
+        raise StopAfterInput
+
+    fake_basf2 = types.SimpleNamespace(create_path=lambda: object())
+    fake_modular_analysis = types.SimpleNamespace(inputMdstList=input_mdst_list)
+    monkeypatch.setitem(sys.modules, "basf2", fake_basf2)
+    monkeypatch.setitem(sys.modules, "modularAnalysis", fake_modular_analysis)
+    config = Basf2PreprocessConfig(("first.root", "second.root"), tmp_path / "output.parquet")
+
+    try:
+        run_basf2_preprocessing(config)
+    except StopAfterInput:
+        pass
+    else:
+        raise AssertionError("inputMdstList test sentinel was not raised")
+
+    assert calls == [
+        {
+            "filelist": ["first.root", "second.root"],
+            "environmentType": "default",
+            "path": calls[0]["path"],
+        }
+    ]
+
+
+def test_basf2_runner_passes_one_entry_sequence_per_file(monkeypatch, tmp_path):
+    calls = []
+
+    class StopAfterInput(Exception):
+        pass
+
+    def input_mdst_list(**kwargs):
+        calls.append(kwargs)
+        raise StopAfterInput
+
+    monkeypatch.setitem(sys.modules, "basf2", types.SimpleNamespace(create_path=lambda: object()))
+    monkeypatch.setitem(
+        sys.modules,
+        "modularAnalysis",
+        types.SimpleNamespace(inputMdstList=input_mdst_list),
+    )
+    config = Basf2PreprocessConfig(
+        ("first.root", "second.root"),
+        tmp_path / "output.parquet",
+        entry_sequences=("0:9", "20:29"),
+    )
+
+    try:
+        run_basf2_preprocessing(config)
+    except StopAfterInput:
+        pass
+    else:
+        raise AssertionError("inputMdstList test sentinel was not raised")
+
+    assert calls[0]["entrySequences"] == ["0:9", "20:29"]
+
+
+def test_track_collector_uses_charged_stable_hypothesis(tmp_path):
+    requested_pdgs = []
+
+    class Momentum:
+        def X(self):
+            return 0.3
+
+        def Y(self):
+            return -0.2
+
+        def Z(self):
+            return 0.4
+
+    class Fit:
+        def getMomentum(self):
+            return Momentum()
+
+        def getChargeSign(self):
+            return -1
+
+    class MC:
+        def getPDG(self):
+            return -321
+
+        def getArrayIndex(self):
+            return 17
+
+    class Track:
+        def getArrayIndex(self):
+            return 4
+
+        def getRelatedTo(self, _name):
+            return MC()
+
+        def getTrackFitResultWithClosestMass(self, hypothesis):
+            assert hypothesis == ("charged", 321)
+            return Fit()
+
+    collector = _DirectMdstCollector(Basf2PreprocessConfig(("input.root",), tmp_path / "output.parquet"))
+    collector.tracks = [Track()]
+    collector._charged_stable = lambda pdg: requested_pdgs.append(pdg) or ("charged", pdg)
+
+    records = collector._collect_tracks()
+
+    assert requested_pdgs == [321]
+    assert len(records) == 1
+    assert records[0].pdg == -321
+    assert records[0].mc_id == 17
+
+
+def test_ecl_collector_uses_cluster_utils_and_skips_track_matches(tmp_path):
+    photon_hypothesis = object()
+
+    class Momentum:
+        def Px(self):
+            return 0.1
+
+        def Py(self):
+            return 0.2
+
+        def Pz(self):
+            return 0.3
+
+        def E(self):
+            return 0.5
+
+    class ClusterUtils:
+        def Get4MomentumFromCluster(self, cluster, hypothesis):
+            assert cluster.getArrayIndex() == 8
+            assert hypothesis is photon_hypothesis
+            return Momentum()
+
+    class MC:
+        def getArrayIndex(self):
+            return 23
+
+    class Cluster:
+        def __init__(self, *, matched_to_track):
+            self.matched_to_track = matched_to_track
+
+        def getArrayIndex(self):
+            return 8 if not self.matched_to_track else 9
+
+        def isTrack(self):
+            return self.matched_to_track
+
+        def hasHypothesis(self, hypothesis):
+            return hypothesis is photon_hypothesis
+
+        def getRelatedTo(self, _name):
+            return MC()
+
+    collector = _DirectMdstCollector(Basf2PreprocessConfig(("input.root",), tmp_path / "output.parquet"))
+    collector.ecl_clusters = [Cluster(matched_to_track=False), Cluster(matched_to_track=True)]
+    collector._cluster_utils = ClusterUtils()
+    collector._photon_hypothesis = photon_hypothesis
+
+    records = collector._collect_ecl_clusters()
+
+    assert len(records) == 1
+    assert records[0].pdg == 22
+    assert records[0].mc_id == 23
+    assert records[0].p4.as_tuple() == (0.1, 0.2, 0.3, 0.5)
+    assert collector.collection_stats["ecl_track_matched_skipped"] == 1

@@ -7,6 +7,7 @@ of the preprocessing package remains importable and testable in a normal
 
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
@@ -30,8 +31,9 @@ class Basf2PreprocessConfig:
     input_files: tuple[str, ...]
     output: Path
     max_events: int | None = None
+    entry_sequences: tuple[str, ...] | None = None
     debug_event: int | None = None
-    particle_arrays: tuple[str, ...] = ("Particles",)
+    particle_arrays: tuple[str, ...] = ()
     include_tracks: bool = True
     include_ecl_clusters: bool = True
     allow_mc_leaf_kinematics_for_debug: bool = False
@@ -44,7 +46,16 @@ def run_basf2_preprocessing(config: Basf2PreprocessConfig) -> Path:
     import modularAnalysis as ma  # type: ignore[import-not-found]
 
     main = b2.create_path()
-    ma.inputMdst(environmentType="default", filename=list(config.input_files), path=main)
+    input_kwargs: dict[str, object] = {
+        "filelist": list(config.input_files),
+        "environmentType": "default",
+        "path": main,
+    }
+    if config.entry_sequences is not None:
+        if len(config.entry_sequences) != len(config.input_files):
+            raise ValueError("entry_sequences must have one value per input file")
+        input_kwargs["entrySequences"] = list(config.entry_sequences)
+    ma.inputMdstList(**input_kwargs)
     class DirectMdstCollector(_DirectMdstCollector, b2.Module):  # type: ignore[misc, valid-type]
         pass
 
@@ -65,7 +76,9 @@ class _DirectMdstCollector:
         super().__init__()  # type: ignore[misc]
         self.config = config
         self.events: list[tuple[int, Sequence[MCRecord], Sequence[RecoRecord]]] = []
+        self.event_metadata: list[dict[str, int | str]] = []
         self._event_count = 0
+        self.collection_stats: Counter[str] = Counter()
 
     def initialize(self) -> None:
         from ROOT import Belle2  # type: ignore[import-not-found]
@@ -75,6 +88,9 @@ class _DirectMdstCollector:
         self.particle_arrays = [Belle2.PyStoreArray(name) for name in self.config.particle_arrays]
         self.tracks = Belle2.PyStoreArray("Tracks")
         self.ecl_clusters = Belle2.PyStoreArray("ECLClusters")
+        self._charged_stable = Belle2.Const.ChargedStable
+        self._cluster_utils = Belle2.ClusterUtils()
+        self._photon_hypothesis = Belle2.ECLCluster.EHypothesisBit.c_nPhotons
 
     def event(self) -> None:
         event_id = int(self.event_info.getEvent()) if self.event_info else self._event_count
@@ -92,15 +108,33 @@ class _DirectMdstCollector:
                 "--allow-mc-leaf-kinematics-for-debug only for synthetic debugging."
             )
         self.events.append((event_id, mc_records, reco_records))
+        experiment = int(self.event_info.getExperiment()) if self.event_info else -1
+        run = int(self.event_info.getRun()) if self.event_info else -1
+        production = int(self.event_info.getProduction()) if self.event_info else -1
+        self.event_metadata.append(
+            {
+                "experiment": experiment,
+                "run": run,
+                "production": production,
+                "event_uid": f"{experiment}:{run}:{event_id}:{production}",
+            }
+        )
         self._event_count += 1
 
     def write_output(self) -> Path:
         pid_filter = PidFilter()
         trees, summary = build_trees(self.events, pid_filter=pid_filter)
-        for tree in trees:
+        for tree, metadata in zip(trees, self.event_metadata):
+            tree.metadata.update(metadata)
             assign_levels(tree)
             validate_tree(tree)
-        return export_trees(trees, self.config.output, summary=summary.as_dict())
+        summary_record = summary.as_dict()
+        summary_record["collection"] = dict(sorted(self.collection_stats.items()))
+        summary_record["input_files"] = list(self.config.input_files)
+        summary_record["entry_sequences"] = (
+            None if self.config.entry_sequences is None else list(self.config.entry_sequences)
+        )
+        return export_trees(trees, self.config.output, summary=summary_record)
 
     def _collect_mc_records(self) -> list[MCRecord]:
         records: list[MCRecord] = []
@@ -158,8 +192,10 @@ class _DirectMdstCollector:
                         mc_id=None if mc is None else int(mc.getArrayIndex()),
                     )
                 )
-            except Exception:
+            except Exception as exc:
+                self.collection_stats[f"particle_errors:{type(exc).__name__}"] += 1
                 continue
+        self.collection_stats["particle_records"] += len(records)
         return records
 
     def _collect_tracks(self) -> list[RecoRecord]:
@@ -168,7 +204,10 @@ class _DirectMdstCollector:
             try:
                 mc = _related_mc(track)
                 pdg = int(mc.getPDG()) if mc is not None else 211
-                fit = track.getTrackFitResultWithClosestMass(abs(pdg))
+                fit = track.getTrackFitResultWithClosestMass(self._charged_stable(abs(pdg)))
+                if not fit:
+                    self.collection_stats["tracks_without_fit"] += 1
+                    continue
                 momentum = fit.getMomentum()
                 charge = float(fit.getChargeSign())
                 mass = _mass_from_pdg(pdg)
@@ -183,29 +222,42 @@ class _DirectMdstCollector:
                         mc_id=None if mc is None else int(mc.getArrayIndex()),
                     )
                 )
-            except Exception:
+            except Exception as exc:
+                self.collection_stats[f"track_errors:{type(exc).__name__}"] += 1
                 continue
+        self.collection_stats["track_records"] += len(records)
         return records
 
     def _collect_ecl_clusters(self) -> list[RecoRecord]:
         records: list[RecoRecord] = []
         for cluster in self.ecl_clusters:
             try:
+                if cluster.isTrack():
+                    self.collection_stats["ecl_track_matched_skipped"] += 1
+                    continue
+                if not cluster.hasHypothesis(self._photon_hypothesis):
+                    self.collection_stats["ecl_without_photon_hypothesis"] += 1
+                    continue
                 mc = _related_mc(cluster)
-                pdg = int(mc.getPDG()) if mc is not None else 22
-                energy = float(cluster.getEnergy())
-                momentum = cluster.getMomentum()
+                momentum = self._cluster_utils.Get4MomentumFromCluster(cluster, self._photon_hypothesis)
                 records.append(
                     RecoRecord(
                         reco_id=f"ECLCluster:{cluster.getArrayIndex()}",
-                        pdg=pdg,
+                        pdg=22,
                         charge=0.0,
-                        p4=FourVector(float(momentum.X()), float(momentum.Y()), float(momentum.Z()), energy),
+                        p4=FourVector(
+                            float(momentum.Px()),
+                            float(momentum.Py()),
+                            float(momentum.Pz()),
+                            float(momentum.E()),
+                        ),
                         mc_id=None if mc is None else int(mc.getArrayIndex()),
                     )
                 )
-            except Exception:
+            except Exception as exc:
+                self.collection_stats[f"ecl_errors:{type(exc).__name__}"] += 1
                 continue
+        self.collection_stats["ecl_records"] += len(records)
         return records
 
     def _debug_reco_from_truth_leaves(self, mc_records: Sequence[MCRecord]) -> list[RecoRecord]:
