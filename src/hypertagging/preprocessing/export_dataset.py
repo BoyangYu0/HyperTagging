@@ -50,6 +50,14 @@ def load_processed(path: str | Path) -> ak.Array:
     return ak.from_parquet(path)
 
 
+def export_trees_v2(*args: object, **kwargs: object) -> Path:
+    """Lazy compatibility import for the heterogeneous v2 exporter."""
+
+    from hypertagging.preprocessing.schema_v2 import export_trees_v2 as _export_trees_v2
+
+    return _export_trees_v2(*args, **kwargs)  # type: ignore[arg-type]
+
+
 def _event_record(tree: EventTree) -> dict[str, object]:
     grouped = nodes_by_level(tree)
     node_ids = sorted(tree.nodes)

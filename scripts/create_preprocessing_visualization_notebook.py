@@ -30,25 +30,17 @@ def build_notebook(default_input: Path) -> nbf.NotebookNode:
 
             ## tl;dr
 
-            The default executed sample contains **100 real MC16ri_run2 events**, **2,169
-            truth-comparable retained nodes**, and **1,390 matched final-state particles**.
-            All 100 event trees pass parent/daughter and four-vector closure checks.
-
-            For matched final-state particles, the default sample has mean
-            $\Delta E = E_{computed}-E_{MC} = -0.078$ GeV with RMSE $0.340$ GeV.
-            At event level, summing the same matched final-state population gives mean
-            $\Delta E=-1.089$ GeV and mean $\Delta m=-1.121$ GeV/$c^2$.
-
-            Unmatched reconstructed objects are intentionally excluded from MC residuals:
-            they are valid production records, but they do not have a defensible
-            particle-by-particle truth comparator.
+            This notebook checks deterministic daughter-summed reconstructed four-vectors
+            and keeps optional reco-versus-MC comparisons explicitly diagnostic. If no
+            parquet path is configured it creates a tiny labelled software fixture; no
+            fixture number is a physics-performance result.
             """
         ),
         markdown(
             """
             ## Context & Methods
 
-            This notebook validates the `direct-mdst-tree-v1` output produced by
+            This notebook validates `direct-mdst-tree-v1` or `direct-mdst-tree-v2` output produced by
             `scripts/preprocess_mdst.py`. Reconstructed/computed four-vectors and diagnostic
             MC four-vectors remain separate throughout.
 
@@ -76,24 +68,44 @@ def build_notebook(default_input: Path) -> nbf.NotebookNode:
             from pathlib import Path
             import json
             import os
+            import sys
 
-            import awkward as ak
             import matplotlib.pyplot as plt
             import numpy as np
             import pandas as pd
 
-            INPUT_PATH = Path(
-                os.environ.get(
-                    "HYPERTAGGING_PREPROCESS_OUTPUT",
-                    {str(default_input)!r},
-                )
-            )
-            assert INPUT_PATH.exists(), f"Missing preprocessing output: {{INPUT_PATH}}"
+            REPO_ROOT = Path.cwd()
+            if not (REPO_ROOT / "src").exists():
+                REPO_ROOT = Path("..").resolve()
+            sys.path.insert(0, str(REPO_ROOT / "src"))
+            from hypertagging.data.notebook_fixtures import write_notebook_fixture
+            from hypertagging.preprocessing.schema_v2 import load_payload_v2
 
-            payload = ak.to_list(ak.from_parquet(INPUT_PATH))[0]
-            assert payload["schema_version"] == "direct-mdst-tree-v1"
+            configured_path = (
+                os.environ.get("HYPERTAGGING_PARQUET")
+                or os.environ.get("HYPERTAGGING_PREPROCESS_OUTPUT")
+            )
+            if configured_path:
+                INPUT_PATH = Path(configured_path)
+                if not INPUT_PATH.exists():
+                    raise FileNotFoundError(f"Configured parquet does not exist: {{INPUT_PATH}}")
+                FIXTURE_MODE = False
+            else:
+                INPUT_PATH = Path("/tmp/hypertagging-four-vector-fixture.parquet")
+                write_notebook_fixture(INPUT_PATH)
+                FIXTURE_MODE = True
+            FIGURE_DIR = Path(os.environ.get("HYPERTAGGING_FIGURE_DIR", "/tmp/hypertagging-four-vector-figures"))
+            FIGURE_DIR.mkdir(parents=True, exist_ok=True)
+            np.random.seed(int(os.environ.get("HYPERTAGGING_NOTEBOOK_SEED", "20260730")))
+
+            payload = load_payload_v2(INPUT_PATH)
+            required = {{"schema_version", "events", "summary_json", "feature_spec_json"}}
+            missing = sorted(required - set(payload))
+            if missing:
+                raise KeyError(f"Missing required parquet fields: {{missing}}")
             events = payload["events"]
             production_summary = json.loads(payload["summary_json"])
+            feature_spec = json.loads(payload["feature_spec_json"])
 
             plt.rcParams.update({{
                 "figure.figsize": (12, 8),
@@ -113,7 +125,10 @@ def build_notebook(default_input: Path) -> nbf.NotebookNode:
             }}
 
             print(f"Input: {{INPUT_PATH}}")
+            print("Mode:", "SOFTWARE FIXTURE — NOT PHYSICS PERFORMANCE" if FIXTURE_MODE else "REAL PREPROCESSED DATA")
             print(f"Schema: {{payload['schema_version']}}")
+            print(f"Source schema: {{payload.get('source_schema_version', payload['schema_version'])}}")
+            print("Feature groups:", list(feature_spec))
             print(f"Events: {{len(events)}}")
             """
         ),
@@ -278,6 +293,7 @@ def build_notebook(default_input: Path) -> nbf.NotebookNode:
                 color="#4B5563",
             )
             fig.tight_layout(rect=(0, 0.04, 1, 1))
+            fig.savefig(FIGURE_DIR / "computed_vs_mc_components.png")
             plt.show()
             """
         ),
@@ -336,6 +352,7 @@ def build_notebook(default_input: Path) -> nbf.NotebookNode:
                 color="#4B5563",
             )
             fig.tight_layout(rect=(0, 0.04, 1, 1))
+            fig.savefig(FIGURE_DIR / "particle_mc_diagnostic_residuals.png")
             plt.show()
             """
         ),
@@ -376,6 +393,7 @@ def build_notebook(default_input: Path) -> nbf.NotebookNode:
                 color="#4B5563",
             )
             fig.tight_layout(rect=(0, 0.04, 1, 1))
+            fig.savefig(FIGURE_DIR / "event_mc_diagnostic_residuals.png")
             plt.show()
             """
         ),

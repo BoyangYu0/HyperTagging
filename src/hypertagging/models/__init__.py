@@ -16,14 +16,27 @@ from hypertagging.models.common import (
     particleCombiner,
     pretrain_HTR,
 )
+from hypertagging.models.ablation import ABLATIONS, AblationConfig, build_ablation_model
 from hypertagging.models.gpt_like import EmbLinker, GPTReconstructor, MultiGPT, ParticleEmbedder
 from hypertagging.models.hyperbolic import HyperbolicNodeEncoder, distance, expmap0, logmap0, project, radius
+from hypertagging.models.heterogeneous import (
+    ClusterNodeEncoder,
+    CommonNodeEncoder,
+    CompositeNodeEncoder,
+    HeterogeneousNodeEncoder,
+    TrackNodeEncoder,
+    composite_token_from_daughters,
+    masked_mean_pool,
+)
 from hypertagging.models.level_autoregressive import LevelAutoregressiveReconstructor, construct_mother_p4
 from hypertagging.models.link_prediction import CorrectedLinker, StandardLinker
 from hypertagging.models.mother_pointer import MotherPointerDecoder
 
 __all__ = [
     "DNNReconstructor",
+    "ABLATIONS",
+    "AblationConfig",
+    "build_ablation_model",
     "DoubleEmbedder",
     "CorrectedLinker",
     "EmbLinker",
@@ -31,6 +44,13 @@ __all__ = [
     "Generator",
     "HyperEmbedder",
     "HyperbolicNodeEncoder",
+    "HeterogeneousNodeEncoder",
+    "CommonNodeEncoder",
+    "TrackNodeEncoder",
+    "ClusterNodeEncoder",
+    "CompositeNodeEncoder",
+    "composite_token_from_daughters",
+    "masked_mean_pool",
     "HypDecoder",
     "InteractingLayer",
     "Linker",

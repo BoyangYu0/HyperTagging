@@ -17,7 +17,15 @@ from hypertagging.losses.embedding_losses import (
 )
 from hypertagging.losses.gpt_losses import distance as gpt_distance
 from hypertagging.losses.gpt_losses import radius_loss as gpt_radius_loss
-from hypertagging.losses.hyperbolic_pretraining import hyperbolic_pretraining_loss, radius_depth_loss
+from hypertagging.losses.hyperbolic_pretraining import (
+    build_tree_relation_targets,
+    covariance_regularization,
+    hyperbolic_pretraining_loss,
+    parent_child_margin_loss,
+    radius_depth_loss,
+    radius_targets,
+    variance_regularization,
+)
 from hypertagging.losses.level_reconstruction import level_reconstruction_loss
 from hypertagging.losses.link_losses import link_cross_entropy, link_metrics, transfer_link_metrics
 from hypertagging.losses.physics import invariant_mass, p4_sum_consistency_loss, soft_daughter_sum_p4
@@ -47,6 +55,9 @@ __all__ = [
     "gpt_radius_loss",
     "hungarian_or_greedy",
     "hyperbolic_pretraining_loss",
+    "build_tree_relation_targets",
+    "covariance_regularization",
+    "parent_child_margin_loss",
     "invariant_mass",
     "level_reconstruction_loss",
     "grafei_inter_loss",
@@ -60,6 +71,8 @@ __all__ = [
     "pdg_metrics",
     "plain_momentum_metrics",
     "radius_depth_loss",
+    "radius_targets",
+    "variance_regularization",
     "recover_pdg",
     "soft_daughter_sum_p4",
     "toy_mc_inter_loss",

@@ -38,6 +38,12 @@ from hypertagging.data.gpt_like import (
     validate_gpt_reconstruction_batch,
 )
 from hypertagging.data.grafei import prepare_grafei
+from hypertagging.data.heterogeneous import (
+    HeterogeneousEvent,
+    collate_heterogeneous_events,
+    heterogeneous_from_level_event,
+    load_heterogeneous_events,
+)
 from hypertagging.data.level_batch import LevelBatch, LevelEvent
 from hypertagging.data.level_collate import collate_level_events
 from hypertagging.data.level_dataset import LevelReconstructionDataset
@@ -56,6 +62,12 @@ from hypertagging.data.preprocessing import (
     run_legacy_preprocessing,
 )
 from hypertagging.data.toy_mc import prepare_toy_mc, prepare_toy_mc_dataprod
+from hypertagging.data.splitting import (
+    MaskedFeatureNormalizer,
+    SourceAwareSplitConfig,
+    split_records,
+    stable_split_name,
+)
 
 __all__ = [
     "BatchContract",
@@ -70,6 +82,7 @@ __all__ = [
     "GPT_RECONSTRUCTION_FLATTENED_BATCH",
     "LevelBatch",
     "LevelEvent",
+    "HeterogeneousEvent",
     "LevelReconstructionDataset",
     "PreprocessingPlan",
     "TOY_MC_BATCH",
@@ -83,6 +96,13 @@ __all__ = [
     "collate_gpt_link",
     "collate_gpt_reconstruction",
     "collate_level_events",
+    "collate_heterogeneous_events",
+    "heterogeneous_from_level_event",
+    "load_heterogeneous_events",
+    "MaskedFeatureNormalizer",
+    "SourceAwareSplitConfig",
+    "split_records",
+    "stable_split_name",
     "get_level_mask",
     "get_contract",
     "prepare_gpt_like",

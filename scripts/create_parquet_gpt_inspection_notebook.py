@@ -77,6 +77,7 @@ def build_notebook(default_input: Path, manifest_summary: Path) -> nbf.NotebookN
             import pandas as pd
             import torch
 
+            from hypertagging.data.notebook_fixtures import write_notebook_fixture_v1
             from hypertagging.data.direct_gpt import (
                 DIRECT_FEATURE_NAMES,
                 build_direct_multi_gpt_batch,
@@ -87,17 +88,30 @@ def build_notebook(default_input: Path, manifest_summary: Path) -> nbf.NotebookN
             from hypertagging.losses.link_losses import link_metrics
             from hypertagging.models.gpt_like import MultiGPT, ParticleEmbedder
 
-            INPUT_PATH = Path(
-                os.environ.get("HYPERTAGGING_PREPROCESS_OUTPUT", {str(default_input)!r})
+            configured_path = (
+                os.environ.get("HYPERTAGGING_PARQUET")
+                or os.environ.get("HYPERTAGGING_PREPROCESS_OUTPUT")
             )
+            if configured_path:
+                INPUT_PATH = Path(configured_path)
+                if not INPUT_PATH.exists():
+                    raise FileNotFoundError(f"Configured parquet does not exist: {{INPUT_PATH}}")
+                FIXTURE_MODE = False
+            else:
+                INPUT_PATH = Path("/tmp/hypertagging-direct-gpt-fixture.parquet")
+                write_notebook_fixture_v1(INPUT_PATH)
+                FIXTURE_MODE = True
             MANIFEST_SUMMARY_PATH = Path({str(manifest_summary)!r})
+            FIGURE_DIR = Path(os.environ.get("HYPERTAGGING_FIGURE_DIR", "/tmp/hypertagging-direct-gpt-figures"))
+            FIGURE_DIR.mkdir(parents=True, exist_ok=True)
             MODEL_EVENT_LIMIT = 4
             DEVICE = torch.device("cpu")
-            torch.manual_seed(7)
-            np.random.seed(7)
+            SEED = int(os.environ.get("HYPERTAGGING_NOTEBOOK_SEED", "20260730"))
+            torch.manual_seed(SEED)
+            np.random.seed(SEED)
 
-            assert INPUT_PATH.exists(), f"Missing parquet: {{INPUT_PATH}}"
             print(f"Input: {{INPUT_PATH}}")
+            print("Mode:", "SOFTWARE FIXTURE — NOT PHYSICS PERFORMANCE" if FIXTURE_MODE else "REAL PREPROCESSED DATA")
             print(f"PyTorch: {{torch.__version__}}; device: {{DEVICE}}; CUDA available: {{torch.cuda.is_available()}}")
             """
         ),
@@ -107,6 +121,10 @@ def build_notebook(default_input: Path, manifest_summary: Path) -> nbf.NotebookN
             """
             awkward_payload = ak.from_parquet(INPUT_PATH)
             payload = ak.to_list(awkward_payload)[0]
+            required = {"schema_version", "events", "legacy_levels", "summary_json"}
+            missing = sorted(required - set(payload))
+            if missing:
+                raise KeyError(f"Missing required parquet fields: {missing}")
             production_summary = json.loads(payload["summary_json"])
 
             print("Awkward type:")
@@ -321,6 +339,7 @@ def build_notebook(default_input: Path, manifest_summary: Path) -> nbf.NotebookN
             axis.set_ylabel("Query node position")
             fig.colorbar(image, ax=axis, label="Allowed (1) / blocked (0)")
             fig.tight_layout()
+            fig.savefig(FIGURE_DIR / "direct_gpt_attention_mask.png")
             plt.show()
             """
         ),

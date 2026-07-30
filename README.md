@@ -1,8 +1,26 @@
-/# hypertagging-unified
+# hypertagging-unified
 
 Unified migration workspace for the historical HyperTagging repositories. This
 repository now contains migrated, CPU-testable components through Goal B Phase
 12. It is still a migration artifact, not a polished reproduction package.
+
+The current revision adds a production-oriented, CPU-verified implementation
+of hyperbolic-pretrained level-autoregressive set reconstruction while leaving
+the verified v1 preprocessing contract intact:
+
+- `direct-mdst-tree-v2` heterogeneous node blocks and explicit availability;
+- v1-to-v2 in-memory adaptation without fabricated detector fields;
+- canonical structured two-B channels and unordered Upsilon pair identity;
+- track, ECL, and composite adapters in one shared latent/Poincare space;
+- LCA, true-Poincare parent, radius-depth, channel, variance, and covariance
+  pretraining objectives;
+- relation bias applied to actual stair-causal attention logits;
+- teacher-forced, scheduled, and free full-tree rollout with daughter-summed
+  composite p4;
+- fixture-executable dataset, geometry, rollout, and QA notebooks.
+
+These additions are software-validated on tiny CPU fixtures. Full-training
+physics performance remains unverified and HTCondor-only.
 
 Scientific behavior is preserved by keeping historical variants separate and by
 adding equivalence or smoke tests before each migrated component is treated as
@@ -53,8 +71,9 @@ Derived/preprocessed folders such as `emb/`, `comb/`, `gpt/`, `ConstEmb/`, and
 - Historical preprocessing scripts still contain hard-coded legacy paths. The
   migrated adapters construct dry-run commands and document intended input
   roots; they do not rewrite scientific preprocessing semantics.
-- Full epoch training loops, scheduler behavior, checkpoint save timing, HPC
-  wrappers, and full-data loaders are not fully migrated.
+- Full epoch training loops and full-data loader orchestration remain
+  production integration work; revised checkpoint, split, normalization, and
+  evaluation surfaces are implemented and CPU-tested.
 - `graFEI_gpt.models.MultiGPT` was not executable as written. The migrated
   `MultiGPT` preserves the verified autoregressive embedding reconstruction and
   embedding-link branches; the historical PDG/feature branch remains ambiguous.
@@ -128,6 +147,11 @@ Validate or inspect output with normal Python:
 See `docs/preprocessing_design.md` for the schema, legacy compatibility notes,
 and the reco-kinematics/truth-topology separation.
 
+Generate a v2 parquet without changing the v1 exporter with
+`hypertagging.preprocessing.export_trees_v2`. Both schema versions load through
+`hypertagging.preprocessing.load_payload_v2` and
+`hypertagging.data.load_heterogeneous_events`.
+
 Inspect the real parquet schema, variable event/tree structure, GPT attention
 contract, and a complete CPU forward/loss/backward/optimizer step in:
 
@@ -139,6 +163,17 @@ The corresponding direct-tree adapter is
 `hypertagging.data.direct_gpt`. It handles variable node counts and tree depths;
 the historical fixed-width level collator must not be applied directly to this
 schema.
+
+Run all revised v1/v2 inspection notebooks on deterministic CPU fixtures:
+
+```bash
+/data/dust/user/boyangyu/uv_env/bin/python \
+  scripts/execute_notebook_smoke_tests.py \
+  --keep-output /tmp/hypertagging-notebook-smoke
+```
+
+For real data, set `HYPERTAGGING_PARQUET` and a data-volume
+`HYPERTAGGING_FIGURE_DIR`; see `docs/dataset_visualization.md`.
 
 Plan a balanced, exactly sharded 10-million-input-event production and print the
 HTCondor submit description without submitting:

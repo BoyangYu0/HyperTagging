@@ -39,12 +39,15 @@ def distance(x: torch.Tensor, y: torch.Tensor, *, curvature: float = 1.0, eps: f
     x = project(x, curvature=curvature)
     y = project(y, curvature=curvature)
     sqrt_c = curvature**0.5
-    diff2 = ((x - y) ** 2).sum(dim=-1)
+    diff_norm = torch.linalg.vector_norm(x - y, dim=-1)
     x2 = (x**2).sum(dim=-1).clamp(max=(1 - eps) / curvature)
     y2 = (y**2).sum(dim=-1).clamp(max=(1 - eps) / curvature)
     denom = ((1 - curvature * x2) * (1 - curvature * y2)).clamp_min(eps)
-    z = 1 + 2 * curvature * diff2 / denom
-    return torch.acosh(z.clamp_min(1 + eps)) / sqrt_c
+    # The equivalent asinh form has finite derivatives at coincident points;
+    # acosh(1 + delta) has an infinite derivative at delta=0 and can inject
+    # NaNs through diagonal relation-bias entries.
+    argument = sqrt_c * diff_norm / torch.sqrt(denom)
+    return 2.0 * torch.asinh(argument) / sqrt_c
 
 
 def radius(x: torch.Tensor, *, curvature: float = 1.0) -> torch.Tensor:

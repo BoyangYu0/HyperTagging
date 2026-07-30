@@ -13,12 +13,14 @@ if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
 from hypertagging.training.level_reconstruction_train import run_level_reconstruction_dry_run
+from hypertagging.models.ablation import ABLATIONS
 from hypertagging.utils.gpu_safety import assert_full_training_requires_condor
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", default=None)
+    parser.add_argument("--ablation", choices=sorted(ABLATIONS), default="full_revised")
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--tiny", action="store_true")
@@ -46,6 +48,8 @@ def main(argv: list[str] | None = None) -> int:
         max_steps=args.max_steps,
         batch_size=args.batch_size,
         seed=args.seed,
+        ablation=args.ablation,
+        resume=args.resume,
     )
     print(summary)
     return 0

@@ -69,6 +69,10 @@ class TreeNode:
     vertex: tuple[float, float, float] = (0.0, 0.0, 0.0)
     n_daughters: int = 0
     mc_p4: FourVector | None = None
+    node_kind: str = "unknown"
+    candidate_confidence: float | None = None
+    track_features: dict[str, float] = field(default_factory=dict)
+    cluster_features: dict[str, float] = field(default_factory=dict)
 
     @property
     def token(self) -> int:
@@ -124,6 +128,10 @@ class RecoRecord:
     p4: FourVector
     mc_id: int | None = None
     flags: frozenset[str] = frozenset()
+    node_kind: str = "unknown"
+    candidate_confidence: float | None = None
+    track_features: dict[str, float] = field(default_factory=dict)
+    cluster_features: dict[str, float] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -213,6 +221,16 @@ def build_truth_guided_tree(
             prod_time=mc.prod_time,
             vertex=mc.vertex,
             mc_p4=mc.p4,
+            node_kind=reco_by_mc[mc.mc_id][0].node_kind if reco_by_mc.get(mc.mc_id) else "composite",
+            candidate_confidence=(
+                reco_by_mc[mc.mc_id][0].candidate_confidence if reco_by_mc.get(mc.mc_id) else None
+            ),
+            track_features=(
+                dict(reco_by_mc[mc.mc_id][0].track_features) if reco_by_mc.get(mc.mc_id) else {}
+            ),
+            cluster_features=(
+                dict(reco_by_mc[mc.mc_id][0].cluster_features) if reco_by_mc.get(mc.mc_id) else {}
+            ),
         )
         tree.add_node(node)
         retained_by_mc[mc.mc_id] = node.node_id
@@ -245,6 +263,10 @@ def build_truth_guided_tree(
                 reco_id=reco.reco_id,
                 mc_id=reco.mc_id,
                 flags=set(reco.flags) | {"unmatched_reco"},
+                node_kind=reco.node_kind,
+                candidate_confidence=reco.candidate_confidence,
+                track_features=dict(reco.track_features),
+                cluster_features=dict(reco.cluster_features),
             )
             tree.add_node(node)
             tree.root_ids.append(node.node_id)
@@ -361,6 +383,10 @@ def _clone_subtree(tree: EventTree, node_id: int) -> int:
         vertex=source.vertex,
         n_daughters=source.n_daughters,
         mc_p4=source.mc_p4,
+        node_kind=source.node_kind,
+        candidate_confidence=source.candidate_confidence,
+        track_features=dict(source.track_features),
+        cluster_features=dict(source.cluster_features),
     )
     tree.add_node(clone)
     for child_id in source.daughter_ids:

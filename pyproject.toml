@@ -29,6 +29,7 @@ notebook = [
   "matplotlib",
   "nbclient",
   "nbformat",
+  "networkx",
 ]
 
 [[tool.uv.index]]

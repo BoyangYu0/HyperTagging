@@ -16,19 +16,40 @@ history maps onto the migrated package surface through Phase 13.
 
 ## Unified Package Surface
 
-- `hypertagging.data`: contracts, tiny fixtures, preprocessing command builders,
-  Toy-MC/GraFEI/GPT-like adapters, and GPT-like collate helpers.
+- `hypertagging.data`: contracts, tiny fixtures, v1/v2 heterogeneous parquet
+  loading, source-aware splitting, train-only normalization, historical
+  preprocessing command builders, and GPT-like adapters.
 - `hypertagging.utils`: padding, checkpoint loading, device, seed, and I/O
   helpers.
-- `hypertagging.losses`: embedding, reconstruction, link, and GPT-like tensor
-  losses.
-- `hypertagging.models`: migrated historical model classes and grouped aliases.
-- `hypertagging.training`: CPU dry-run loops and link-training mode helpers.
-- `hypertagging.reconstruction`: single-level reconstruction and full GraFEI
-  reconstruction evaluation on tiny events.
-- `hypertagging.evaluation`: GraFEI event-level full-reconstruction metrics.
-- `scripts/`: CPU dry-run CLIs and preprocessing dry-run wrappers.
+- `hypertagging.preprocessing`: verified direct-mDST v1 behavior plus the
+  separate v2 exporter, channel signatures/count arrays, and compatibility
+  adapter.
+- `hypertagging.losses`: historical losses plus balanced LCA relations, true
+  Poincare parent ranking, corrected radius depth, and VICReg variance/covariance.
+- `hypertagging.models`: historical models plus heterogeneous frontends, one
+  shared Poincare encoder, relation-aware set attention, task projections, and
+  named ablations.
+- `hypertagging.training`: CPU dry-run loops, collapse/level metrics, checkpoint
+  and JSONL helpers, and link-training mode helpers.
+- `hypertagging.reconstruction`: historical reconstruction plus complete
+  teacher-forced/scheduled/free level rollout and overlap resolution.
+- `hypertagging.evaluation`: GraFEI metrics plus hierarchical edge/tree,
+  closure, parent, pointer, channel, and rare/unseen helpers.
+- `scripts/`: CPU dry-run CLIs, preprocessing wrappers, deterministic notebook
+  generators/execution, and HTCondor renderers.
 - `examples/`: runnable fixture-based CPU examples.
+- `configs/ablations/`: flat through full revised experiment controls.
+
+## Revised inspection artifacts
+
+- `docs/model_revision_audit.md`: pre-edit schema/model/history audit.
+- `docs/channel_representation.md`: exact and structured two-B semantics.
+- `docs/heterogeneous_node_encoding.md`: feature blocks and shared encoder.
+- `docs/dataset_visualization.md`: fixture and real-data notebook execution.
+- `notebooks/inspect_preprocessed_dataset.ipynb`
+- `notebooks/inspect_hyperbolic_pretraining.ipynb`
+- `notebooks/inspect_level_autoregressive_reconstruction.ipynb`
+- `notebooks/preprocessing_qa_report.ipynb`
 
 ## Checkpoints, Logs, And Data
 

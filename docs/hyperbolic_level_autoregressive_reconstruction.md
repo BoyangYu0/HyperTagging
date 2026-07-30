@@ -1,55 +1,138 @@
-# Hyperbolic Level-Autoregressive Reconstruction
+# Hyperbolic-pretrained level-autoregressive set reconstruction
 
-HyperTagging reconstruction is a hierarchy of unordered sets, not a language
-sequence.  The factorization used here is:
+The event is an unordered hierarchy and is factorized as:
 
 ```text
 p(tree | S0) = product_t p(S_{t+1} | S_{<=t})
 ```
 
-`S0` contains reconstructed final-state particles.  Each later level contains
-symbolic mother nodes predicted from lower levels.
+Level 0 contains reconstructed final-state objects. Levels increase toward the
+retained root and obey `L(mother) = 1 + max L(daughter)`.
 
-## Truth Topology And Reco Kinematics
+## Kinematics and topology
 
-MC truth and MC matching may supervise topology labels, same-mother labels,
-same-branch labels, LCA depth, B-side labels, and daughter links.  Model inputs
-use reconstructed quantities.  A reconstructed mother four-vector is always
-computed from selected reconstructed daughter four-vectors:
+MC truth may supervise retained topology, B-side membership, LCA relations,
+mother type, and daughter links. It never supplies reconstructed mother
+kinematics. At teacher forcing and inference:
 
 ```text
-px = sum(px_daughter)
-py = sum(py_daughter)
-pz = sum(pz_daughter)
-E  = sum(E_daughter)
+p4(mother) = sum p4(selected reconstructed daughters)
 ```
 
-MCParticle mother p4 may only appear in diagnostic `mc_*` fields.
+No head regresses an arbitrary mother p4. Composite p4, charge, daughter
+histogram, confidence summaries, and pooled daughter embedding are all created
+by the common composite-construction path.
 
-## Hyperbolic Pretraining
+## Shared encoder and task projections
 
-The encoder produces Euclidean node embeddings and Poincare-ball embeddings.
-Dense pairwise losses provide O(N^2) supervision: same-mother BCE,
-same-branch BCE, parent-child margin, and radius-depth regularization.
+Type-specific track, ECL, and composite adapters feed one `d_model` space and
+one shared contextual set transformer. Small tree, reconstruction, and channel
+projections specialize the shared representation. One shared tree projection
+maps to the Poincare ball.
 
-## Level Reconstruction
+## Principal hyperbolic objective
 
-For target level `t+1`, learned query slots attend to nodes in `S_{<=t}` and
-predict object/no-object logits, mother type logits, daughter pointer logits,
-cardinality logits, and confidence logits.  Next-level truth nodes are matched
-to query slots with Hungarian matching when SciPy is available and a
-deterministic fallback for tiny tests.
+The configurable base loss is:
 
-## Teacher Forcing, Rollout, And Scheduled Sampling
+```text
+L = lambda_LCA L_LCA
+  + lambda_parent L_parent
+  + lambda_depth L_depth
+  + lambda_channel L_channel
+  + lambda_var L_var
+  + lambda_cov L_cov
+```
 
-Teacher forcing uses truth-guided previous levels as context.  Rollout appends
-hard-decoded predicted mother nodes and constructs their p4 from daughters.
-Scheduled sampling gradually mixes predicted previous levels into the context;
-the schedule is configured by start, end, and warmup steps.
+The exact LCA relation classes are:
 
-## What Runs Locally
+1. same node;
+2. same immediate retained mother;
+3. same local branch (a retained common ancestor no more than two levels above
+   the deeper node);
+4. same explicit B branch;
+5. different B branches in the same event;
+6. unrelated or unavailable truth relation.
 
-CPU unit tests, tiny synthetic fixtures, and CPU dry-runs are local-safe.
-Full data, full training, and normal CUDA training are HTCondor-only. A local CUDA
-smoke test is allowed only for tiny runs after explicit `condor_q` and
-`nvidia-smi` safety checks.
+`balanced_tree_relation_loss` averages present class losses so unrelated pairs
+cannot dominate. Hard parent negatives are the hyperbolically nearest valid
+non-parent nodes.
+
+Parent ranking uses the actual Poincare distance:
+
+```text
+relu(d_H(child,parent) - d_H(child,negative) + margin)
+```
+
+The stable distance implementation uses the mathematically equivalent `asinh`
+form, avoiding the infinite derivative of `acosh` at coincident points.
+
+## Radius convention
+
+Leaves are farther from the origin and high-level composites are nearer:
+
+```text
+r_target = r_min + (r_max-r_min) * (L_max-L_i) / max(L_max,1)
+```
+
+`L_max` is event-specific. Tests explicitly protect the direction.
+
+## Anti-collapse behavior
+
+VICReg-style variance and off-diagonal covariance penalties act on
+`logmap0(z)`. Sampling can be deterministically balanced/capped by level and
+node kind across the batch. These losses are not pairwise sibling-repulsion
+terms.
+
+Logged diagnostics include per-dimension mean/minimum standard deviation,
+off-diagonal covariance norm, singular-value effective rank, positive/negative
+relation distance, radius-level correlation, angular B-branch separation, and
+Poincare-boundary fraction.
+
+## Channel objective
+
+Shared channel projections are pooled over truth-guided B branches. Cosine
+similarity is trained toward exact equality and the structured channel
+similarity described in `docs/channel_representation.md`. The unordered event
+embedding pools the two B embeddings. Full-channel classification is not
+applied independently to every final-state token.
+
+## Relation-aware contextual attention
+
+Each contextual layer adds a learned pair bias to QK logits before softmax. Its
+inputs include Poincare distance, both radii, level difference, same-level
+state, pair mass/energy, summed charge, node-kind compatibility, and copied
+source conflicts. Stair-causal and padding masks are applied in the same
+softmax. Tests verify that changing only this bias changes outputs and that its
+parameters receive finite gradients. `use_relation_bias=False` is the ablation.
+
+## Decoder and full rollout
+
+Learned query slots predict object/no-object, mother token, daughter pointers,
+cardinality, and confidence. Hungarian matching makes target-mother ordering
+irrelevant.
+
+Each rollout step:
+
+1. encodes all current nodes;
+2. contextualizes them with stair-causal relation attention;
+3. hard-decodes valid mother proposals;
+4. optionally retains competing hypotheses;
+5. resolves source-object overlap for an exclusive result;
+6. sums selected daughter p4/charge;
+7. appends composite tokens with distinct node/reco/source/copy provenance;
+8. re-encodes all nodes.
+
+Stopping conditions cover all-no-object, no valid mother, configured root
+token, maximum level, repeated state, and invalid/cyclic links. Cycles are
+prevented structurally because a new mother may point only to pre-existing
+nodes.
+
+Teacher forcing uses truth links but the same reco-derived construction.
+Scheduled sampling is seeded and reproducible. Evaluation reports both
+teacher-forced next-level metrics and free-rollout edge/tree metrics.
+
+## Verification boundary
+
+Tiny CPU tests verify formulas, masks, matching, p4 closure, finite gradients,
+and termination. They do not establish scientific improvement. Real-size
+training and evaluation remain HTCondor-only.

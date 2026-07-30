@@ -15,6 +15,11 @@ from hypertagging.training.loops import (
 )
 from hypertagging.training.hyperbolic_pretrain import run_hyperbolic_pretrain_dry_run
 from hypertagging.training.level_reconstruction_train import run_level_reconstruction_dry_run
+from hypertagging.training.checkpointing import (
+    load_training_checkpoint,
+    restore_training_checkpoint,
+    save_training_checkpoint,
+)
 from hypertagging.training.train_link import (
     LinkDryRunSummary,
     LinkStepResult,
@@ -35,6 +40,9 @@ __all__ = [
     "run_gpt_variant_dry_run",
     "run_hyperbolic_pretrain_dry_run",
     "run_level_reconstruction_dry_run",
+    "load_training_checkpoint",
+    "restore_training_checkpoint",
+    "save_training_checkpoint",
     "run_link_dry_run",
     "run_multi_gpt_dry_run",
     "link_prediction_step",

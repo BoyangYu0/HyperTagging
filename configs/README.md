@@ -1,6 +1,7 @@
 # Configs
 
-Configuration files will be added in later migration phases.
+`condor/` contains HTCondor resource defaults. `ablations/` contains the
+ordered flat-to-full revised-model controls selected with `--ablation`.
 
 Expected data roots:
 

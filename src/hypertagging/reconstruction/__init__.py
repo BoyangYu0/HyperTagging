@@ -21,9 +21,23 @@ from hypertagging.reconstruction.single_level import (
     single_level_reconstruction_step,
     sort_energy,
 )
+from hypertagging.reconstruction.level_rollout import (
+    CompositeProposal,
+    LevelRolloutResult,
+    RolloutConfig,
+    append_composite_proposals,
+    level_rollout,
+    resolve_exclusive_proposals,
+)
 
 __all__ = [
     "FullReconstructionResult",
+    "LevelRolloutResult",
+    "RolloutConfig",
+    "CompositeProposal",
+    "append_composite_proposals",
+    "level_rollout",
+    "resolve_exclusive_proposals",
     "PredictionStep",
     "ReconstructionVariant",
     "SingleLevelReconstruction",

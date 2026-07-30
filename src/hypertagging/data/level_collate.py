@@ -99,7 +99,9 @@ def build_lca_depth(parent_ids: torch.Tensor, level_ids: torch.Tensor) -> torch.
         for j in range(n_nodes):
             common = set(ancestor_paths[i]) & set(ancestor_paths[j])
             if common:
-                out[i, j] = int(max(level_ids[list(common)]).item())
+                # Levels increase toward the root, so the nearest/lowest common
+                # ancestor has the minimum reconstruction level.
+                out[i, j] = int(min(level_ids[list(common)]).item())
             elif i == j:
                 out[i, j] = int(level_ids[i].item())
     return out

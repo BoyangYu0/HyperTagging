@@ -1,0 +1,7 @@
+name: full_revised
+heterogeneous_adapters: true
+lca_parent: true
+radius_depth: true
+variance_covariance: true
+channel_supervision: true
+relation_attention: true

@@ -9,10 +9,12 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass
+import math
 from pathlib import Path
 from typing import Sequence
 
 from hypertagging.preprocessing.export_dataset import export_trees
+from hypertagging.preprocessing.schema_v2 import SCHEMA_VERSION_V1, SCHEMA_VERSION_V2, export_trees_v2
 from hypertagging.preprocessing.levelize_tree import assign_levels
 from hypertagging.preprocessing.mdst_tree_builder import (
     FourVector,
@@ -37,6 +39,8 @@ class Basf2PreprocessConfig:
     include_tracks: bool = True
     include_ecl_clusters: bool = True
     allow_mc_leaf_kinematics_for_debug: bool = False
+    schema_version: str = SCHEMA_VERSION_V1
+    charge_conjugate_normalize: bool = False
 
 
 def run_basf2_preprocessing(config: Basf2PreprocessConfig) -> Path:
@@ -117,6 +121,10 @@ class _DirectMdstCollector:
                 "run": run,
                 "production": production,
                 "event_uid": f"{experiment}:{run}:{event_id}:{production}",
+                "source_file": self.config.input_files[0] if len(self.config.input_files) == 1 else "",
+                "source_category": _source_category(self.config.input_files[0])
+                if len(self.config.input_files) == 1
+                else "",
             }
         )
         self._event_count += 1
@@ -134,7 +142,16 @@ class _DirectMdstCollector:
         summary_record["entry_sequences"] = (
             None if self.config.entry_sequences is None else list(self.config.entry_sequences)
         )
-        return export_trees(trees, self.config.output, summary=summary_record)
+        if self.config.schema_version == SCHEMA_VERSION_V1:
+            return export_trees(trees, self.config.output, summary=summary_record)
+        if self.config.schema_version == SCHEMA_VERSION_V2:
+            return export_trees_v2(
+                trees,
+                self.config.output,
+                summary=summary_record,
+                charge_conjugate_normalize=self.config.charge_conjugate_normalize,
+            )
+        raise ValueError(f"Unsupported output schema: {self.config.schema_version}")
 
     def _collect_mc_records(self) -> list[MCRecord]:
         records: list[MCRecord] = []
@@ -190,6 +207,8 @@ class _DirectMdstCollector:
                         charge=float(particle.getCharge()),
                         p4=FourVector(float(p4.Px()), float(p4.Py()), float(p4.Pz()), float(p4.E())),
                         mc_id=None if mc is None else int(mc.getArrayIndex()),
+                        node_kind="unknown",
+                        candidate_confidence=_optional_float(particle, ("getPValue",)),
                     )
                 )
             except Exception as exc:
@@ -220,6 +239,18 @@ class _DirectMdstCollector:
                         charge=charge,
                         p4=FourVector(px, py, pz, energy),
                         mc_id=None if mc is None else int(mc.getArrayIndex()),
+                        node_kind="track",
+                        candidate_confidence=_optional_float(fit, ("getPValue",)),
+                        track_features=_available_values(
+                            {
+                                "fit_p_value": _optional_float(fit, ("getPValue",)),
+                                "d0": _optional_float(fit, ("getD0",)),
+                                "z0": _optional_float(fit, ("getZ0",)),
+                                "phi0": _optional_float(fit, ("getPhi0",)),
+                                "omega": _optional_float(fit, ("getOmega",)),
+                                "tan_lambda": _optional_float(fit, ("getTanLambda",)),
+                            }
+                        ),
                     )
                 )
             except Exception as exc:
@@ -252,6 +283,33 @@ class _DirectMdstCollector:
                             float(momentum.E()),
                         ),
                         mc_id=None if mc is None else int(mc.getArrayIndex()),
+                        node_kind="ecl_cluster",
+                        cluster_features=_available_values(
+                            {
+                                "cluster_energy": float(momentum.E()),
+                                "theta": _theta_from_xyz(
+                                    float(momentum.Px()),
+                                    float(momentum.Py()),
+                                    float(momentum.Pz()),
+                                ),
+                                "phi": math.atan2(float(momentum.Py()), float(momentum.Px())),
+                                "time": _optional_float(cluster, ("getTime",)),
+                                "e9_over_e21": _optional_float(
+                                    cluster,
+                                    ("getE9oE21", "getE9OverE21"),
+                                ),
+                                "n_crystals": _optional_float(
+                                    cluster,
+                                    ("getNumberOfCrystals", "getNumberOfConnectedCrystals"),
+                                ),
+                                "min_track_distance": _optional_float(
+                                    cluster,
+                                    ("getMinTrackDistance",),
+                                ),
+                                "photon_hypothesis": 1.0,
+                                "track_matched": 0.0,
+                            }
+                        ),
                     )
                 )
             except Exception as exc:
@@ -274,6 +332,7 @@ class _DirectMdstCollector:
                     p4=mc.p4,
                     mc_id=mc.mc_id,
                     flags=frozenset({"debug_mc_leaf_kinematics"}),
+                    node_kind="unknown",
                 )
             )
         return records
@@ -303,3 +362,36 @@ def _mass_from_pdg(pdg: int) -> float:
         2212: 0.93827208816,
     }
     return masses.get(abs(int(pdg)), masses[211])
+
+
+def _optional_float(obj: object, method_names: tuple[str, ...]) -> float | None:
+    """Read a genuinely available scalar without assigning a missing sentinel."""
+
+    for method_name in method_names:
+        method = getattr(obj, method_name, None)
+        if method is None:
+            continue
+        try:
+            value = float(method())
+        except Exception:
+            continue
+        if math.isfinite(value):
+            return value
+    return None
+
+
+def _available_values(values: dict[str, float | None]) -> dict[str, float]:
+    return {name: float(value) for name, value in values.items() if value is not None and math.isfinite(value)}
+
+
+def _theta_from_xyz(px: float, py: float, pz: float) -> float | None:
+    norm = (px * px + py * py + pz * pz) ** 0.5
+    if norm == 0.0:
+        return None
+    return math.acos(max(-1.0, min(1.0, pz / norm)))
+
+
+def _source_category(path: str) -> str:
+    known = ("charged", "mixed", "ccbar", "uubar", "ddbar", "ssbar", "taupair")
+    parts = Path(path).parts
+    return next((part for part in parts if part in known), "")

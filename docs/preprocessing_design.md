@@ -14,7 +14,7 @@
   copied nodes carry a unique `node_id`, the same reco-level features, and a
   `copied_from` source.
 
-## What Changed
+## Verified v1 behavior
 
 - The new path avoids scanning many prebuilt basf2 `ParticleList`s. The basf2
   steering script reads DataStore arrays from generic mDST input using
@@ -28,6 +28,39 @@
   to it for existing training code.
 - Validation is now first-class: scripts check acyclicity, valid parent/daughter
   ids, level ordering, copy references, PID counters, and four-vector closure.
+
+`export_trees()` remains the `direct-mdst-tree-v1` compatibility exporter. Its
+fields and legacy-level semantics are unchanged.
+
+## Versioned heterogeneous v2
+
+`export_trees_v2()` writes `direct-mdst-tree-v2`. It retains every flat v1 node
+field and adds:
+
+- explicit `node_kind`;
+- shared common features with value-level availability;
+- separate track, ECL-cluster, and composite feature blocks and masks;
+- daughter PID histograms;
+- deterministic two-B signatures, IDs, count arrays, and event-pair identity;
+- optional source file/category metadata.
+
+The complete feature specification is stored in `feature_spec_json`. Numeric
+zeroes in unavailable positions are tensor-safe storage only; masks are
+authoritative.
+
+The current basf2 adapter conditionally preserves track fit p-value, d0, z0,
+phi0, omega, and tan-lambda when their accessors exist. ECL records preserve
+energy/direction and conditionally timing, E9/E21, crystal count, and minimum
+track distance. The photon hypothesis and track-match decision are explicit.
+Unsupported values are absent and masked, not inferred.
+
+`load_payload_v2()` and `load_heterogeneous_events()` accept both v1 and v2.
+For v1, node kind is inferred only from explicit topology and `reco_id`
+prefixes. Detector blocks remain unavailable; composite structure is safely
+recovered from existing reco-derived daughter p4 and links.
+
+See `docs/heterogeneous_node_encoding.md` and
+`docs/channel_representation.md`.
 
 ## Truth Topology vs Reco Kinematics
 
@@ -61,9 +94,13 @@ source /cvmfs/belle.cern.ch/tools/b2setup release-08-03-00
 basf2 scripts/preprocess_mdst.py -- \
   --input /path/to/generic_mdst.root \
   --output /data/dust/user/boyangyu/hypertagging/processed.parquet \
+  --schema-version direct-mdst-tree-v2 \
   --entry-sequence 0:99 \
   --max-events 100
 ```
+
+Omit `--schema-version` to preserve the exact v1 production default. Existing
+parquets are never migrated or overwritten in place.
 
 `--entry-sequence` is repeatable and uses basf2's inclusive entry-range
 notation. Supply one sequence per input file. Production events carry

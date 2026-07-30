@@ -1,12 +1,22 @@
 # Notebooks
 
-No notebooks have been migrated into the unified repository.
+Deterministically generated, CPU-executable inspection artifacts:
 
-Historical notebooks remain in the source repositories as reference material.
-They are not executable specifications for the unified package. Behavior should
-be migrated from scripts/modules and verified with tests before notebook-only
-logic is trusted.
+- `inspect_preprocessed_dataset.ipynb`
+- `inspect_hyperbolic_pretraining.ipynb`
+- `inspect_level_autoregressive_reconstruction.ipynb`
+- `preprocessing_qa_report.ipynb`
+- `preprocessing_four_momentum_validation.ipynb`
+- the retained historical/direct-GPT integration notebook.
 
-Runnable replacements currently live under `examples/` and use tiny CPU
-fixtures only. Full notebook cleanup or archival is not verified from repository
-contents.
+Run the revised fixture suite with:
+
+```bash
+python scripts/execute_notebook_smoke_tests.py \
+  --keep-output /tmp/hypertagging-notebook-smoke
+```
+
+All six notebooks above execute in clearly labelled fixture mode without basf2
+or real mDST. Set
+`HYPERTAGGING_PARQUET` for a real schema-v1/v2 shard and place figures on the
+configured data volume. See `docs/dataset_visualization.md`.

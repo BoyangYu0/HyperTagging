@@ -1,0 +1,7 @@
+name: heterogeneous_only
+heterogeneous_adapters: true
+lca_parent: false
+radius_depth: false
+variance_covariance: false
+channel_supervision: false
+relation_attention: false

@@ -51,6 +51,17 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--dry-run", action="store_true", help="Print planned preprocessing inputs and exit.")
     parser.add_argument("--overwrite", action="store_true", help="Allow replacing an existing output file.")
     parser.add_argument(
+        "--schema-version",
+        choices=("direct-mdst-tree-v1", "direct-mdst-tree-v2"),
+        default="direct-mdst-tree-v1",
+        help="Keep v1 for exact compatibility or opt into heterogeneous v2.",
+    )
+    parser.add_argument(
+        "--charge-conjugate-normalize-channels",
+        action="store_true",
+        help="Canonicalize B channel signatures under global charge conjugation (v2).",
+    )
+    parser.add_argument(
         "--particle-array",
         action="append",
         default=None,
@@ -83,6 +94,7 @@ def main(argv: list[str] | None = None) -> int:
                 "entry_sequences": args.entry_sequence,
                 "event_index": args.event_index,
                 "config": args.config,
+                "schema_version": args.schema_version,
             }
         )
         return 0
@@ -102,6 +114,8 @@ def main(argv: list[str] | None = None) -> int:
         include_tracks=not args.no_tracks,
         include_ecl_clusters=not args.no_ecl_clusters,
         allow_mc_leaf_kinematics_for_debug=args.allow_mc_leaf_kinematics_for_debug,
+        schema_version=args.schema_version,
+        charge_conjugate_normalize=args.charge_conjugate_normalize_channels,
     )
     output = run_basf2_preprocessing(config)
     print(f"Wrote {output}")

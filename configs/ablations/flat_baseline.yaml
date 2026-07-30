@@ -1,0 +1,7 @@
+name: flat_baseline
+heterogeneous_adapters: false
+lca_parent: false
+radius_depth: false
+variance_covariance: false
+channel_supervision: false
+relation_attention: false

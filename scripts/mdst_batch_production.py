@@ -177,7 +177,7 @@ def validate_shard(path: Path, *, expected_events: int) -> dict[str, object]:
     """Validate schema and event count after one production task."""
 
     payload = ak.to_list(ak.from_parquet(path))[0]
-    if payload.get("schema_version") != "direct-mdst-tree-v1":
+    if payload.get("schema_version") not in {"direct-mdst-tree-v1", "direct-mdst-tree-v2"}:
         raise ValueError(f"Unexpected schema in {path}: {payload.get('schema_version')!r}")
     actual_events = len(payload["events"])
     if actual_events != expected_events:
