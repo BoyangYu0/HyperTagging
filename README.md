@@ -1,12 +1,13 @@
 # hypertagging-unified
 
 Unified migration workspace for the historical HyperTagging repositories. This
-repository now contains migrated, CPU-testable components through Goal B Phase
-12. It is still a migration artifact, not a polished reproduction package.
+repository now contains migrated, CPU-testable components through the current
+level-autoregressive baseline. It is still a migration artifact, not a polished
+reproduction package.
 
 The current revision adds a production-oriented, CPU-verified implementation
-of hyperbolic-pretrained level-autoregressive set reconstruction while leaving
-the verified v1 preprocessing contract intact:
+of hyperbolic-pretrained level-autoregressive set reconstruction while
+preserving versioned compatibility with historical preprocessing:
 
 - `direct-mdst-tree-v2` heterogeneous node blocks and explicit availability;
 - v1-to-v2 in-memory adaptation without fabricated detector fields;
@@ -166,7 +167,8 @@ The corresponding direct-tree adapter is
 the historical fixed-width level collator must not be applied directly to this
 schema.
 
-Run all revised v1/v2/v3 inspection notebooks on deterministic CPU fixtures:
+Run all current deterministic CPU fixture notebooks (the runner reports the
+authoritative group count with `--list`):
 
 ```bash
 /data/dust/user/boyangyu/uv_env/bin/python \
@@ -208,9 +210,10 @@ uv --cache-dir /tmp/uv-cache run python examples/gpt_like_minimal/run_example.py
 - Components listed in `MIGRATION_PLAN.md` under "must not be refactored" should
   remain unchanged until broader equivalence tests exist.
 
-## Correctness revision: schema-v3 and real CPU pilots
+## Historical correctness revision: schema-v3
 
-`direct-mdst-tree-v3` is the production schema. Raw generic-mDST tracks use a
+Schema v3 was the production target of an earlier revision. It remains
+readable, but new production preprocessing uses v4. Raw generic-mDST tracks use a
 data-independent best-p-value fit (pion closest-mass fallback), reconstructed
 charge, canonical pion energy, all e/mu/pi/K/p energy hypotheses, and available
 PIDLikelihood log-likelihoods. MC PID/charge/p4 occupy separate truth or

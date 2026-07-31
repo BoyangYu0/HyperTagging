@@ -1,9 +1,10 @@
 # Notebooks
 
 The deterministic notebook suite uses CPU fixtures and schema-v4 by default.
-It is software validation, not a physics-performance measurement. The 12
-historical groups remain intact and three post-audit fixture groups extend the
-runner to 15:
+It is software validation, not a physics-performance measurement. Ask the
+runner for the authoritative count with
+`scripts/execute_notebook_smoke_tests.py --list`; the current suite has 15
+groups:
 
 | Group | Notebook |
 |---|---|
@@ -42,10 +43,15 @@ PID/level distributions, and bounded failure examples. See the first cell for
 the exact basf2 and execution commands.
 
 `inspect_trained_physics_validation.ipynb` is also outside the fixture runner.
-It requires both `HYPERTAGGING_REAL_PARQUET` and
-`HYPERTAGGING_TRAINED_CHECKPOINT` and fails with `REAL INPUT REQUIRED` when
-either is missing. It never substitutes a fixture for efficiency, purity,
-calibration, mass, Mbc/DeltaE, missing-mass, rare-channel, or rollout claims.
+It requires `HYPERTAGGING_REAL_PARQUET`, `HYPERTAGGING_DATASET_INDEX`, and
+`HYPERTAGGING_TRAINED_CHECKPOINT`, restores checkpoint normalization and
+feature/model contracts, and fails with `REAL INPUT REQUIRED` when they are
+missing. It never substitutes a fixture for efficiency, purity, calibration,
+mass, Mbc/DeltaE, missing-mass, rare-channel, or rollout claims.
+
+`inspect_first_level_ambiguity.ipynb` is a separate diagnostic notebook. Its
+bounded fixture output diagnoses Level-0-to-1 factorization behavior; it is not
+part of the stable 15-group CI contract and makes no trained-performance claim.
 
 Set `HYPERTAGGING_PARQUET` for supported real-data inspection notebooks and
 write figures/executed copies to `/tmp` or the configured data volume. Checked-

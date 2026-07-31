@@ -113,6 +113,62 @@ def build_notebook():
             assert not failures
             """
         ),
+        md("## Retained-tree plots and structural invariants"),
+        code(
+            """
+            import matplotlib.pyplot as plt
+            cycle_failures=[];missing_links=[];level_failures=[];closure_by_level_multiplicity=[]
+            selected_tree_events=events[:min(6,len(events))]
+            fig,axes=plt.subplots(len(selected_tree_events),1,figsize=(12,max(3,3*len(selected_tree_events))),squeeze=False)
+            for axis,event in zip(axes[:,0],selected_tree_events):
+                by_id={int(node['node_id']):node for node in event['nodes']};colors=[]
+                for node in event['nodes']:
+                    node_id=int(node['node_id']);level=int(node.get('level',-1));axis.scatter(node_id,level);axis.text(node_id,level,str(node.get('pdg',node.get('pid_target_token',0))),fontsize=7)
+                    daughters=[int(value) for value in node.get('daughter_ids',[])]
+                    for daughter in daughters:
+                        if daughter not in by_id:missing_links.append({'event_uid':event['event_uid'],'mother':node_id,'missing_daughter':daughter});continue
+                        axis.plot([node_id,daughter],[level,int(by_id[daughter].get('level',-1))],color='gray',alpha=.5)
+                        if int(by_id[daughter].get('level',-1))>=level:level_failures.append({'event_uid':event['event_uid'],'mother':node_id,'daughter':daughter})
+                    expected_level=0 if not daughters else 1+max(int(by_id[d]['level']) for d in daughters if d in by_id)
+                    if level!=expected_level:level_failures.append({'event_uid':event['event_uid'],'node':node_id,'stored':level,'expected':expected_level})
+                parent={int(node['node_id']):node.get('parent_id') for node in event['nodes']}
+                for start in parent:
+                    seen=set();current=start
+                    while current is not None and int(current)>=0:
+                        current=int(current)
+                        if current in seen:cycle_failures.append({'event_uid':event['event_uid'],'start':start,'cycle_at':current});break
+                        seen.add(current);current=parent.get(current)
+                axis.set(title=event['event_uid'],xlabel='node id',ylabel='retained level')
+            fig.tight_layout();tree_plot_path=Path(os.environ.get('HYPERTAGGING_REAL_PILOT_TREE_PLOT','/tmp/hypertagging-real-pilot-trees.png'));fig.savefig(tree_plot_path);plt.show()
+            if cycle_failures or missing_links or level_failures:raise AssertionError({'cycles':cycle_failures,'missing_links':missing_links,'level_invariants':level_failures})
+            """
+        ),
+        md("## Detector availability, topology categories, and local denominators"),
+        code(
+            """
+            track_availability=Counter();ecl_availability=Counter();pid_by_fit_hypothesis=Counter();fit_choices=Counter();unmatched_examples=[];truth_only_examples=[];contracted=Counter();denominators=Counter();p4_by_level_mult=[]
+            for event in events:
+                by_id={int(node['node_id']):node for node in event['nodes']}
+                for node in event['nodes']:
+                    if node.get('node_kind')=='track':
+                        for name,available in node.get('track_availability',{}).items():track_availability[(name,bool(available))]+=1
+                        fit=str(node.get('fit_selection_mode',node.get('selected_track_fit','missing')));fit_choices[fit]+=1
+                        for hypothesis in ('electron','muon','pion','kaon','proton'):
+                            available=bool(node.get('track_availability',{}).get(f'pid_log_likelihood_{hypothesis}',False));pid_by_fit_hypothesis[(fit,hypothesis,available)]+=1
+                    if node.get('node_kind')=='ecl_cluster':
+                        for name,available in node.get('cluster_availability',{}).items():ecl_availability[(name,bool(available))]+=1
+                    flags=set(node.get('flags',[]))
+                    if 'unmatched_reco' in flags or node.get('leaf_kinematics_mode')=='unmatched_reco':unmatched_examples.append({'event_uid':event['event_uid'],'node_id':node['node_id'],'pdg':node.get('pdg')})
+                    if 'truth_topology_only' in flags or node.get('leaf_kinematics_mode')=='truth_topology_only':truth_only_examples.append({'event_uid':event['event_uid'],'node_id':node['node_id'],'pdg':node.get('pdg')})
+                    contracted[bool(node.get('contracted_intermediate',False) or 'contracted_intermediate_path' in flags)]+=1
+                    daughters=[by_id[int(value)] for value in node.get('daughter_ids',[]) if int(value) in by_id]
+                    if daughters:
+                        denominators['reconstructable_partial']+=int(bool(node.get('valid_reconstruction_target',False)))
+                        denominators['complete_only']+=int(bool(node.get('valid_reconstruction_target',False) and node.get('recursive_reconstructable_complete',False)))
+                        expected=np.sum([[d['px'],d['py'],d['pz'],d['energy']] for d in daughters],axis=0);actual=np.array([node['px'],node['py'],node['pz'],node['energy']]);p4_by_level_mult.append({'level':int(node['level']),'daughter_multiplicity':len(daughters),'max_abs_residual':float(np.max(np.abs(actual-expected)))})
+            display(pd.DataFrame([{'feature':k[0],'available':k[1],'count':v} for k,v in track_availability.items()]));display(pd.DataFrame([{'feature':k[0],'available':k[1],'count':v} for k,v in ecl_availability.items()]));display(pd.DataFrame([{'fit':k[0],'hypothesis':k[1],'available':k[2],'count':v} for k,v in pid_by_fit_hypothesis.items()]));display(pd.DataFrame(p4_by_level_mult).groupby(['level','daughter_multiplicity']).agg(count=('max_abs_residual','size'),max_abs_residual=('max_abs_residual','max')));display(pd.DataFrame(unmatched_examples[:20]));display(pd.DataFrame(truth_only_examples[:20]));print({'fit_choices':dict(fit_choices),'energy_sources':dict(energy_sources),'denominators':dict(denominators),'contracted_intermediate':dict(contracted),'strict_b_roots':sum(row['valid'] and not row['fallback'] for row in b_root),'fallback_b_roots':sum(row['fallback'] for row in b_root)})
+            """
+        ),
         md("## PID and level distributions plus bounded failure examples"),
         code(
             """
@@ -124,7 +180,7 @@ def build_notebook():
             display(pd.DataFrame({"pid_token":pid_counts.keys(),"count":pid_counts.values()}))
             display(pd.DataFrame({"level":level_counts.keys(),"count":level_counts.values()}))
             display(pd.DataFrame(failure_examples))
-            report={"real_data":True,"events":len(events),"leaf_provenance":dict(provenance),"pidlikelihood_available":pid_available,"track_energy_sources":dict(energy_sources),"ecl_energy_sources":dict(ecl_energy_sources),"charge_distribution":dict(charge_values),"truth_derived_detector_inputs":len(truth_detector_inputs),"maximum_p4_residual":max(closure,default=0.0),"valid_b_root_events":sum(row["valid"] for row in b_root),"fallback_b_root_events":sum(row["fallback"] for row in b_root),"pid_distribution":dict(pid_counts),"level_distribution":dict(level_counts),"k_l_leaf_count":len(kl_nodes),"k_l_klm_provenance_fields":dict(klm_fields),"klm_collection_contract":"report only; current direct collector declares Tracks and ECLClusters, not KLMClusters","failure_examples":failure_examples}
+            report={"real_data":True,"events":len(events),"leaf_provenance":dict(provenance),"track_feature_availability":{str(k):v for k,v in track_availability.items()},"ecl_feature_availability":{str(k):v for k,v in ecl_availability.items()},"pidlikelihood_available":pid_available,"pidlikelihood_by_fit_and_hypothesis":{str(k):v for k,v in pid_by_fit_hypothesis.items()},"fit_choice_distribution":dict(fit_choices),"track_energy_sources":dict(energy_sources),"ecl_energy_sources":dict(ecl_energy_sources),"charge_distribution":dict(charge_values),"truth_derived_detector_inputs":len(truth_detector_inputs),"cycles":cycle_failures,"missing_links":missing_links,"level_invariant_failures":level_failures,"maximum_p4_residual":max(closure,default=0.0),"p4_closure_by_level_and_daughter_multiplicity":p4_by_level_mult,"valid_b_root_events":sum(row["valid"] for row in b_root),"strict_b_root_events":sum(row["valid"] and not row["fallback"] for row in b_root),"fallback_b_root_events":sum(row["fallback"] for row in b_root),"complete_only_and_reconstructable_partial_denominators":dict(denominators),"unmatched_reco_examples":unmatched_examples[:20],"truth_topology_only_examples":truth_only_examples[:20],"contracted_intermediate_frequency":dict(contracted),"pid_distribution":dict(pid_counts),"level_distribution":dict(level_counts),"k_l_leaf_count":len(kl_nodes),"k_l_klm_provenance_fields":dict(klm_fields),"klm_collection_contract":"report only; current direct collector declares Tracks and ECLClusters, not KLMClusters","selected_tree_plot":str(tree_plot_path),"failure_examples":failure_examples}
             report_path=Path(os.environ.get("HYPERTAGGING_REAL_PILOT_REPORT","/tmp/hypertagging-real-pilot-report.json"))
             report_path.write_text(json.dumps(report,indent=2,sort_keys=True),encoding="utf-8")
             print(report_path)

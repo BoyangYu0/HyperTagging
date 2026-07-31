@@ -1,0 +1,3 @@
+name: radius_weak_or_learned
+radius_target_mode: weak_or_learned_radius
+default_baseline: false

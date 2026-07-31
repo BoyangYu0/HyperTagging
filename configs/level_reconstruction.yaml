@@ -6,4 +6,9 @@ scheduled_sampling_duration_steps: 1000
 level_sampling_mode: all_levels
 empirical_type_prior_mode: soft
 validation_batch_size: 4
-
+validate_every: 100
+rollout_validate_every: 500
+best_metric: validation_loss_total
+best_mode: min
+pilot_allow_train_validation_fallback: false
+initial_state_policy: upsilon4s

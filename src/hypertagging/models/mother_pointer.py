@@ -125,8 +125,19 @@ class MotherPointerDecoder(nn.Module):
 def source_conflict_penalty(
     pointer_logits: torch.Tensor,
     source_conflict: torch.Tensor,
+    *,
+    object_logits: torch.Tensor | None = None,
+    active_query_mask: torch.Tensor | None = None,
+    query_mask: torch.Tensor | None = None,
 ) -> torch.Tensor:
-    """Differentiable probability of selecting overlapping recursive sources."""
+    """Mean conflict probability over valid active-query opportunities.
+
+    Object probabilities prevent no-object slots from contributing arbitrary
+    pointer conflicts. A supplied ``active_query_mask`` is authoritative and
+    may be boolean (matched/active) or a continuous query weight. ``query_mask``
+    excludes padded slots. Both numerator and denominator use the same weights,
+    so decoder capacity alone cannot rescale the objective.
+    """
 
     if source_conflict.shape != (
         pointer_logits.shape[0],
@@ -134,10 +145,29 @@ def source_conflict_penalty(
         pointer_logits.shape[-1],
     ):
         raise ValueError("source_conflict must have shape [B, N, N]")
+    if object_logits is not None and object_logits.shape != pointer_logits.shape[:2]:
+        raise ValueError("object_logits must have shape [B, Q]")
+    if active_query_mask is not None and active_query_mask.shape != pointer_logits.shape[:2]:
+        raise ValueError("active_query_mask must have shape [B, Q]")
+    if query_mask is not None and query_mask.shape != pointer_logits.shape[:2]:
+        raise ValueError("query_mask must have shape [B, Q]")
     probability = torch.sigmoid(pointer_logits)
     pair = probability.unsqueeze(-1) * probability.unsqueeze(-2)
     upper = torch.triu(source_conflict, diagonal=1).to(pair.dtype)
-    return (pair * upper[:, None]).sum() / upper.sum().clamp_min(1)
+    if active_query_mask is not None:
+        query_weight = active_query_mask.to(pair.dtype)
+    elif object_logits is not None:
+        query_weight = torch.sigmoid(object_logits).to(pair.dtype)
+    else:
+        # Backward-compatible standalone behavior: every query is active.
+        query_weight = pair.new_ones(pointer_logits.shape[:2])
+    if query_mask is not None:
+        query_weight = query_weight * query_mask.to(pair.dtype)
+    opportunities = query_weight[:, :, None, None] * upper[:, None]
+    denominator = opportunities.sum()
+    return (pair * opportunities).sum() / denominator.clamp_min(
+        torch.finfo(pair.dtype).eps
+    )
 
 
 def constrained_daughter_decode(

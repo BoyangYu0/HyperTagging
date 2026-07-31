@@ -14,6 +14,7 @@ from hypertagging.data.heterogeneous import (
 from hypertagging.data.tiny_level_fixtures import tiny_level_events
 from hypertagging.losses.hyperbolic_pretraining import (
     N_TREE_RELATIONS,
+    build_topology_safe_parent_negative_mask,
     build_tree_relation_targets,
     hyperbolic_pretraining_loss,
     pool_b_branch_embeddings,
@@ -90,6 +91,7 @@ def run_hyperbolic_pretrain_dry_run(
         "exact_tree_path_distance",
         "depth_from_retained_root",
         "distance_to_nearest_retained_root",
+        "ancestor_descendant_relation",
     ):
         batch[name] = topology_batch[name]
     batch = {key: value.to(device) for key, value in batch.items()}
@@ -127,6 +129,13 @@ def run_hyperbolic_pretrain_dry_run(
             level_ids=batch["level_ids"],
             node_mask=batch["node_mask"],
             b_side=batch["b_side"],
+            lca_node_id=batch["lca_node_id"],
+            edges_to_lca_from_i=batch["edges_to_lca_from_i"],
+            edges_to_lca_from_j=batch["edges_to_lca_from_j"],
+        )
+        parent_negative_mask = build_topology_safe_parent_negative_mask(
+            relation_targets, batch["node_mask"],
+            batch["ancestor_descendant_relation"],
         )
         branch_embeddings, branch_mask = pool_b_branch_embeddings(
             encoded.channel_projection,
@@ -140,6 +149,7 @@ def run_hyperbolic_pretrain_dry_run(
             tree_relation_mask=relation_mask,
             lca_depth=batch["lca_depth"],
             exact_tree_path_distance=batch["exact_tree_path_distance"],
+            parent_negative_mask=parent_negative_mask,
             parent_ids=batch["parent_ids"],
             level_ids=batch["level_ids"],
             node_mask=batch["node_mask"],

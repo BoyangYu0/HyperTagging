@@ -39,7 +39,7 @@ RUNTIME_MODEL_CONTRACTS_V4 = {
     "tree_geometry": "retained-tree-exact-edges-v2",
     "tree_distance": "exact-edge-log-fixed-scale-v2",
     "hyperbolic_scale": "dimension-aware-tangent-radius-v2",
-    "physical_relation_features": "physical-relations-overlap-aware-v2",
+    "physical_relation_features": "physical-relations-overlap-aware-v3",
 }
 
 # These positions retain their stored compatibility values, but are never

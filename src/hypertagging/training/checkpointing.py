@@ -42,6 +42,8 @@ def save_training_checkpoint(
     feature_contract: dict[str, Any] | None = None,
     data_order_contract: dict[str, Any] | None = None,
     architecture: dict[str, Any] | None = None,
+    training_state: dict[str, Any] | None = None,
+    validation_selection: dict[str, Any] | None = None,
 ) -> Path:
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -77,6 +79,8 @@ def save_training_checkpoint(
         "feature_contract": feature_contract or {},
         "data_order_contract": data_order_contract or {},
         "architecture": architecture or {},
+        "training_state": training_state or {},
+        "validation_selection": validation_selection or {},
         "data_compatible_performance": not bool(legacy_conflated_fraction),
         "random_states": {
             "python": random.getstate(),

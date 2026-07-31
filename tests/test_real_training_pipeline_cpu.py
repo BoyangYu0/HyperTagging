@@ -38,11 +38,35 @@ def test_real_parquet_train_transfer_validate_and_resume(tmp_path):
             max_steps=1,
             batch_size=2,
             allow_legacy_conflated=True,
+            validate_every=1,
+            checkpoint_every=1,
         )
     )
     assert reconstruction.transfer_report
     assert reconstruction.transfer_report.loaded_keys
     assert reconstruction.metrics["levels_trained"] >= 1
+    reconstruction_payload = load_training_checkpoint(reconstruction.checkpoint)
+    assert reconstruction_payload["training_state"]["best_metric"] == "validation_loss_total"
+    assert reconstruction_payload["training_state"]["last_validation_step"] == 1
+    assert (tmp_path / "reconstruction" / "best.pt").exists()
+    assert (tmp_path / "reconstruction" / "latest.pt").exists()
+    assert (tmp_path / "reconstruction" / "checkpoint-step-1.pt").exists()
+    resumed_without_new_steps = train_level_reconstruction(
+        ReconstructionConfig(
+            data=str(data),
+            output_dir=str(tmp_path / "resumed_without_new_steps"),
+            pretrained_encoder=str(pretrain.checkpoint),
+            resume=str(reconstruction.checkpoint),
+            max_steps=1,
+            batch_size=2,
+            allow_legacy_conflated=True,
+            validate_every=1,
+            checkpoint_every=1,
+        )
+    )
+    resumed_payload = load_training_checkpoint(resumed_without_new_steps.checkpoint)
+    assert resumed_payload["training_state"] == reconstruction_payload["training_state"]
+    assert resumed_payload["validation_selection"] == reconstruction_payload["validation_selection"]
     resumed = train_level_reconstruction(
         ReconstructionConfig(
             data=str(data),
@@ -52,6 +76,8 @@ def test_real_parquet_train_transfer_validate_and_resume(tmp_path):
             max_steps=2,
             batch_size=2,
             allow_legacy_conflated=True,
+            validate_every=1,
+            checkpoint_every=1,
         )
     )
     assert resumed.steps == 2

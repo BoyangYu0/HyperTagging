@@ -30,9 +30,11 @@ def build_notebook():
       import torch
       ROOT=Path.cwd();ROOT=ROOT if (ROOT/'src').exists() else Path('..').resolve();sys.path.insert(0,str(ROOT/'src'))
       from hypertagging.data.heterogeneous import collate_heterogeneous_events,heterogeneous_from_level_event
+      from hypertagging.data.tree_geometry import build_exact_tree_geometry
       from hypertagging.data.tiny_level_fixtures import tiny_level_events
       from hypertagging.losses.level_reconstruction import level_reconstruction_loss
       from hypertagging.models.level_autoregressive import LevelAutoregressiveReconstructor
+      import hypertagging.models.level_autoregressive as level_model_module
       from hypertagging.reconstruction.constraints import ReconstructionConstraintPolicy
       from hypertagging.reconstruction.level_rollout import RolloutConfig,level_rollout
       from hypertagging.training.model_config import MODEL_PRESETS
@@ -42,23 +44,41 @@ def build_notebook():
       """),
       md("## Data\n\nThe fixture has explicit node, level, query, and attention-size accounting."),
       code("""
-      rows=[];nodes=int(batch['node_mask'].sum());levels=int(batch['level_ids'][batch['node_mask']].max())+1
-      for name,preset in MODEL_PRESETS.items():
-          gc.collect();torch.manual_seed(100+preset.hyper_dim)
-          model=LevelAutoregressiveReconstructor(n_features=12,n_types=41,hidden_dim=preset.d_model,hyper_dim=preset.hyper_dim,n_queries=preset.n_queries,n_heads=preset.n_heads,n_context_layers=preset.n_context_layers,curvature=preset.curvature,ffn_dim=preset.ffn_dim,dropout=0.0,max_cardinality=preset.max_cardinality,n_queries_by_level=preset.n_queries_by_level,max_cardinality_by_level=preset.max_cardinality_by_level,hyper_projection_init_scale=preset.hyper_projection_init_scale,tangent_scale_mode=preset.tangent_scale_mode).eval()
-          start=time.perf_counter();output=model(batch,target_level=1,pid_kinematics_mode_override='hard');forward=time.perf_counter()-start
-          loss=(output.pointer.object_logits.square().mean()+output.pointer.type_logits.square().mean()+output.pointer.pointer_logits.square().mean()+output.hyperbolic_embeddings.square().mean())
-          model.zero_grad(set_to_none=True);start=time.perf_counter();loss.backward();backward=time.perf_counter()-start
-          start=time.perf_counter();rollout=level_rollout(model,batch,mode='teacher_forced',config=RolloutConfig(max_level=3,root_types=(),constraint_policy=policy,rollout_pid_kinematics_mode='hard'));rollout_time=time.perf_counter()-start
-          queries={str(level):dict(preset.n_queries_by_level).get(level,preset.n_queries) for level in range(1,levels)}
-          attention_bytes=preset.n_context_layers*preset.n_heads*nodes*nodes*4
-          rows.append({'preset':name,'nodes_per_event':nodes,'levels_per_event':levels,'queries_by_level':queries,'attention_memory_bytes_estimate':attention_bytes,'forward_seconds':forward,'backward_seconds':backward,'full_rollout_seconds':rollout_time,'rollout_steps':len(rollout.steps),'peak_cpu_rss_mb':resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1024,'peak_gpu_memory_mb':None,'batch_size':1,'rollout_scope':'evaluation_only_batch_size_one'})
-      frame=pd.DataFrame(rows);display(frame.drop(columns=['queries_by_level']))
+      def expanded_leaf_batch(template,n):
+          old=template['node_mask'].shape[1];result={}
+          pair_names={'daughter_adjacency','source_conflict_matrix','lca_depth','lca_node_id','edges_to_lca_from_i','edges_to_lca_from_j','exact_tree_path_distance','ancestor_descendant_relation'}
+          for key,value in template.items():
+              if not isinstance(value,torch.Tensor):continue
+              if key=='recursive_leaf_source_mask':result[key]=torch.eye(n,dtype=torch.bool).unsqueeze(0)
+              elif key in pair_names:result[key]=torch.zeros((1,n,n),dtype=value.dtype)
+              elif value.ndim>=2 and value.shape[0]==1 and value.shape[1]==old:result[key]=value[:,0:1].expand(1,n,*value.shape[2:]).clone()
+              else:result[key]=value.clone()
+          result['node_mask']=result['active']=torch.ones((1,n),dtype=torch.bool);result['level_ids'].zero_();result['parent_ids'].fill_(-1);result['node_ids']=torch.arange(n).unsqueeze(0);result['source_node_ids']=torch.arange(n).unsqueeze(0);result['p4'][...,0]=torch.linspace(-.2,.2,n);result['p4'][...,3]=.5
+          return result
+      rows=[];preset=MODEL_PRESETS['tiny_cpu'];torch.manual_seed(101)
+      model=LevelAutoregressiveReconstructor(n_features=12,n_types=41,hidden_dim=preset.d_model,hyper_dim=preset.hyper_dim,n_queries=preset.n_queries,n_heads=preset.n_heads,n_context_layers=preset.n_context_layers,curvature=preset.curvature,ffn_dim=preset.ffn_dim,dropout=0.0,max_cardinality=preset.max_cardinality,hyper_projection_init_scale=preset.hyper_projection_init_scale,tangent_scale_mode=preset.tangent_scale_mode).eval()
+      for nodes in (32,64,100,160):
+          gc.collect();parent=torch.full((nodes,),-1,dtype=torch.long);start=time.perf_counter();geometry=build_exact_tree_geometry(parent);sized=expanded_leaf_batch(batch,nodes);collation_geometry=time.perf_counter()-start
+          contextual=[];relations=[];pid_times=[];pointer=[]
+          encoder_starts=[];relation_starts=[];decoder_starts=[]
+          hooks=[model.encoder.register_forward_pre_hook(lambda *args:encoder_starts.append(time.perf_counter())),model.encoder.register_forward_hook(lambda *args:contextual.append(time.perf_counter()-encoder_starts.pop(0))),model.encoder.physical_relation_bias.register_forward_pre_hook(lambda *args:relation_starts.append(time.perf_counter())),model.encoder.physical_relation_bias.register_forward_hook(lambda *args:relations.append(time.perf_counter()-relation_starts.pop(0))),model.decoder.register_forward_pre_hook(lambda *args:decoder_starts.append(time.perf_counter())),model.decoder.register_forward_hook(lambda *args:pointer.append(time.perf_counter()-decoder_starts.pop(0)))]
+          original_rebuild=level_model_module.rebuild_runtime_pid_state
+          def timed_rebuild(*args,**kwargs):
+              started=time.perf_counter();out=original_rebuild(*args,**kwargs);pid_times.append(time.perf_counter()-started);return out
+          level_model_module.rebuild_runtime_pid_state=timed_rebuild
+          try:
+              with torch.no_grad():output=model(sized,target_level=1,pid_kinematics_mode_override='hard')
+          finally:
+              level_model_module.rebuild_runtime_pid_state=original_rebuild
+              for hook in hooks:hook.remove()
+          rollout_batch=expanded_leaf_batch(batch,nodes);start=time.perf_counter();rollout=level_rollout(model,rollout_batch,mode='predicted',config=RolloutConfig(max_level=1,root_types=(),constraint_policy=policy,rollout_pid_kinematics_mode='hard'));one_rollout_level=time.perf_counter()-start
+          rows.append({'preset':'tiny_cpu','nodes_per_event':nodes,'collation_geometry_seconds':collation_geometry,'first_contextual_pass_seconds':contextual[0],'pid_rebuild_seconds':sum(pid_times),'second_contextual_pass_seconds':contextual[1],'relation_bias_seconds':sum(relations),'pointer_decoder_seconds':sum(pointer),'one_rollout_level_seconds':one_rollout_level,'attention_memory_bytes_estimate':preset.n_context_layers*preset.n_heads*nodes*nodes*4,'peak_cpu_rss_mb':resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1024,'batch_size':1,'fixture_timing_only':True})
+      frame=pd.DataFrame(rows);display(frame)
       """),
       md("## Results"),
       code("""
-      fig,axes=plt.subplots(1,2,figsize=(10,4));frame.plot.bar(x='preset',y=['forward_seconds','backward_seconds','full_rollout_seconds'],ax=axes[0],title='Bounded fixture latency');frame.plot.bar(x='preset',y='attention_memory_bytes_estimate',ax=axes[1],legend=False,title='Attention-logit byte estimate');fig.tight_layout();fig.savefig(OUT/'runtime_scaling.png');plt.show()
-      summary={'device':'cpu','torch_threads':torch.get_num_threads(),'measurements':rows,'gpu_available_in_guarded_environment':bool(torch.cuda.is_available()),'throughput_claim':False,'batched_rollout_design':'ragged event/beam states -> padded node/query blocks -> masked batched forward -> segmented append and compaction between levels'}
+      timing_columns=['collation_geometry_seconds','first_contextual_pass_seconds','pid_rebuild_seconds','second_contextual_pass_seconds','relation_bias_seconds','pointer_decoder_seconds','one_rollout_level_seconds'];fig,axes=plt.subplots(1,2,figsize=(12,4));frame.plot(x='nodes_per_event',y=timing_columns,marker='o',ax=axes[0],title='Bounded stage latency by N');frame.plot(x='nodes_per_event',y='attention_memory_bytes_estimate',marker='o',ax=axes[1],legend=False,title='Attention-logit byte estimate');fig.tight_layout();fig.savefig(OUT/'runtime_scaling.png');plt.show()
+      summary={'device':'cpu','torch_threads':torch.get_num_threads(),'node_counts':[32,64,100,160],'separate_stage_timings':timing_columns,'measurements':rows,'gpu_available_in_guarded_environment':bool(torch.cuda.is_available()),'throughput_claim':False,'fixture_timing_only':True,'batched_rollout_design':'ragged event/beam states -> padded node/query blocks -> masked batched forward -> segmented append and compaction between levels'}
       (OUT/'runtime_scaling_summary.json').write_text(json.dumps(summary,indent=2))
       """),
       md("## Takeaways\n\nThe free rollout implementation is explicitly evaluation-only at batch size one. A production batched design requires padded/ragged event and beam axes with segmented append/compaction. Representative scale benchmarking remains deferred."),

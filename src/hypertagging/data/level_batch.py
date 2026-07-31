@@ -50,6 +50,7 @@ class LevelBatch:
     exact_tree_path_distance: torch.Tensor
     depth_from_retained_root: torch.Tensor
     distance_to_nearest_retained_root: torch.Tensor
+    ancestor_descendant_relation: torch.Tensor
     query_mask: torch.Tensor
     event_ids: torch.Tensor
 
@@ -77,6 +78,7 @@ class LevelBatch:
             "exact_tree_path_distance": self.exact_tree_path_distance,
             "depth_from_retained_root": self.depth_from_retained_root,
             "distance_to_nearest_retained_root": self.distance_to_nearest_retained_root,
+            "ancestor_descendant_relation": self.ancestor_descendant_relation,
             "query_mask": self.query_mask,
             "event_ids": self.event_ids,
         }

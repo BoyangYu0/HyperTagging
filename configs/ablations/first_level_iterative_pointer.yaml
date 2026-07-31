@@ -1,0 +1,5 @@
+name: first_level_iterative_pointer
+whole_set_compatibility_scorer: false
+iterative_within_mother_pointer: true
+max_iterative_daughters: 12
+enabled_by_default: false

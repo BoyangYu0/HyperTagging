@@ -33,7 +33,7 @@ REDUCED_TOKEN_CHARGE: tuple[float, ...] = tuple(
 class ReconstructionConstraintPolicy:
     """One policy object for teacher contexts, rollout, validation and export."""
 
-    version: str = "reconstruction-constraints-v2"
+    version: str = "reconstruction-constraints-v3"
     mother_ontology_version: str = MOTHER_ONTOLOGY_VERSION
     static_allowed_mother_tokens: tuple[int, ...] = STATIC_MOTHER_TOKENS
     allowed_mother_types_by_level: tuple[tuple[int, tuple[int, ...]], ...] = ()
@@ -56,6 +56,7 @@ class ReconstructionConstraintPolicy:
     mother_charge_soft_weight: float = 0.1
     allow_fixed_hypothesis_unknown_kind: bool = True
     loose_physical_constraints: tuple[tuple[str, float], ...] = ()
+    initial_state_policy: str = "unknown"  # unknown | upsilon4s
 
     def __post_init__(self) -> None:
         if self.mother_ontology_version != MOTHER_ONTOLOGY_VERSION:
@@ -78,6 +79,8 @@ class ReconstructionConstraintPolicy:
             "off", "soft", "hard", "soft_train_hard_rollout"
         }:
             raise ValueError("invalid mother_charge_compatibility")
+        if self.initial_state_policy not in {"unknown", "upsilon4s"}:
+            raise ValueError("initial_state_policy must be unknown or upsilon4s")
         supported_physical = {
             "minimum_mother_energy", "minimum_mother_mass",
             "maximum_mother_mass", "maximum_mother_momentum",
@@ -122,6 +125,11 @@ class ReconstructionConstraintPolicy:
         observed = self.observed_types(level)
         allowed = torch.zeros(len(PDG_TOKENS), dtype=torch.bool, device=device)
         allowed[list(self.static_allowed_mother_tokens)] = True
+        if self.initial_state_policy == "upsilon4s":
+            # B_s0/anti-B_s0 cannot be a Upsilon(4S) branch. The broad static
+            # ontology remains unchanged for unknown initial states.
+            allowed[23] = False
+            allowed[40] = False
         bias = torch.zeros(len(PDG_TOKENS), dtype=torch.float32, device=device)
         if observed and self.empirical_type_prior_mode == "hard":
             observed_mask = torch.zeros_like(allowed)

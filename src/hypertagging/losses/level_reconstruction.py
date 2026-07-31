@@ -265,6 +265,8 @@ def level_reconstruction_loss(
             source_conflict_penalty(
                 output.pointer_logits,
                 batch["source_conflict_matrix"],
+                object_logits=output.object_logits,
+                query_mask=object_loss_mask,
             )
             if "source_conflict_matrix" in batch
             and (

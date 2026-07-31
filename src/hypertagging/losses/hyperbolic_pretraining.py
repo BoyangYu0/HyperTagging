@@ -89,6 +89,11 @@ def build_tree_relation_targets(
     )
     targets[valid & same_parent] = 1
     if lca_node_id is None or edges_to_lca_from_i is None or edges_to_lca_from_j is None:
+        if parent_ids.is_cuda:
+            raise RuntimeError(
+                "exact tree geometry must be precomputed on CPU before CUDA training; "
+                "the fallback builder is only for tiny CPU/legacy callers"
+            )
         lca_node_id = torch.full_like(lca_depth, -1)
         edges_to_lca_from_i = torch.full_like(lca_depth, -1)
         edges_to_lca_from_j = torch.full_like(lca_depth, -1)
@@ -111,6 +116,29 @@ def build_tree_relation_targets(
         targets[valid & valid_side & same_side & ~local & ~same_parent & ~identity] = 3
         targets[valid & valid_side & ~same_side] = 4
     return targets, valid
+
+
+def build_topology_safe_parent_negative_mask(
+    tree_relation_targets: torch.Tensor,
+    node_mask: torch.Tensor,
+    ancestor_descendant_relation: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Vectorized [B, child, candidate] mask for the directed parent loss.
+
+    Explicit relation class 4 (the other B branch) is preferred per child;
+    class 5 is used only when class 4 is unavailable. Classes 0--3 contain the
+    child/family/near-positive relations and are never negatives.
+    """
+
+    valid_pairs = node_mask[:, :, None] & node_mask[:, None, :]
+    if ancestor_descendant_relation is not None:
+        if ancestor_descendant_relation.shape != valid_pairs.shape:
+            raise ValueError("ancestor_descendant_relation must have shape [B, N, N]")
+        valid_pairs &= ~ancestor_descendant_relation
+    different_b = valid_pairs & (tree_relation_targets == 4)
+    unrelated = valid_pairs & (tree_relation_targets == 5)
+    has_different_b = different_b.any(dim=-1, keepdim=True)
+    return torch.where(has_different_b, different_b, unrelated)
 
 
 def balanced_tree_relation_loss(
@@ -139,6 +167,7 @@ def parent_child_margin_loss(
     lca_depth: torch.Tensor | None = None,
     tree_relation_targets: torch.Tensor | None = None,
     b_side: torch.Tensor | None = None,
+    parent_negative_mask: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Directed parent ranking against explicitly topology-safe negatives.
 
@@ -149,6 +178,36 @@ def parent_child_margin_loss(
     retained roots / explicit negative LCA classes.
     """
 
+    if parent_negative_mask is not None:
+        if parent_negative_mask.shape != (*parent_ids.shape, parent_ids.shape[1]):
+            raise ValueError("parent_negative_mask must have shape [B, N, N]")
+        safe_parent = parent_ids.clamp_min(0)
+        parent_valid = (parent_ids >= 0) & mask
+        parent_valid &= mask.gather(1, safe_parent)
+        eligible = parent_negative_mask & mask[:, :, None] & mask[:, None, :]
+        active = parent_valid & eligible.any(dim=-1)
+        parent_z = z.gather(
+            1, safe_parent.unsqueeze(-1).expand(-1, -1, z.shape[-1])
+        )
+        positive = distance(z, parent_z, curvature=curvature)
+        all_negative = distance(
+            z[:, :, None, :], z[:, None, :, :], curvature=curvature
+        )
+        if hard_negative:
+            negative = all_negative.masked_fill(~eligible, float("inf")).amin(dim=-1)
+        else:
+            # A deterministic vectorized fallback: the first eligible candidate.
+            first = eligible.to(torch.int64).argmax(dim=-1)
+            negative = all_negative.gather(2, first.unsqueeze(-1)).squeeze(-1)
+        ranked = F.relu(positive - negative + margin)
+        weights = active.to(ranked.dtype)
+        return (ranked * weights).sum() / weights.sum().clamp_min(1.0)
+
+    if parent_ids.is_cuda:
+        raise RuntimeError(
+            "parent_negative_mask is required on CUDA; Python topology traversal "
+            "is restricted to tiny CPU/legacy callers"
+        )
     losses: list[torch.Tensor] = []
     for batch_index in range(z.shape[0]):
         valid = torch.nonzero(mask[batch_index], as_tuple=False).flatten()
@@ -206,6 +265,12 @@ def topology_safe_parent_negative_mask(
     classes 4--5 are negative.  In particular, a class-4 pair is not removed
     merely because both B branches meet at the retained Upsilon root.
     """
+
+    if parent_ids.is_cuda:
+        raise RuntimeError(
+            "topology_safe_parent_negative_mask fallback is CPU-only; pass the "
+            "precomputed vectorized parent_negative_mask on CUDA"
+        )
 
     valid = node_mask.bool().clone()
     parent = int(parent_ids[child])
@@ -281,9 +346,31 @@ def parent_negative_coverage_statistics(
     lca_depth: torch.Tensor | None = None,
     tree_relation_targets: torch.Tensor | None = None,
     b_side: torch.Tensor | None = None,
+    parent_negative_mask: torch.Tensor | None = None,
 ) -> dict[str, torch.Tensor]:
     """Count the exact denominator of the directed parent objective."""
 
+    if parent_negative_mask is not None:
+        safe_parent = parent_ids.clamp_min(0)
+        children = (parent_ids >= 0) & node_mask
+        children &= node_mask.gather(1, safe_parent)
+        eligible_children = children & parent_negative_mask.any(dim=-1)
+        different_b_children = eligible_children & (
+            parent_negative_mask & (tree_relation_targets == 4)
+        ).any(dim=-1) if tree_relation_targets is not None else torch.zeros_like(children)
+        reference = node_mask.sum().to(torch.float32) * 0.0
+        total = children.sum().to(torch.float32) + reference
+        eligible = eligible_children.sum().to(torch.float32) + reference
+        different_b = different_b_children.sum().to(torch.float32) + reference
+        return {
+            "parent_children_with_eligible_negative": eligible,
+            "parent_children_with_different_b_negative": different_b,
+            "parent_children_with_no_negative": total - eligible,
+            "parent_loss_active_fraction": eligible / total.clamp_min(1.0),
+            "parent_ranking_accuracy_denominator": eligible,
+        }
+    if parent_ids.is_cuda:
+        raise RuntimeError("parent_negative_mask is required for CUDA diagnostics")
     eligible_children = different_b_children = total_children = 0
     for batch_index in range(parent_ids.shape[0]):
         for child in torch.nonzero(node_mask[batch_index], as_tuple=False).flatten().tolist():
@@ -338,9 +425,26 @@ def parent_child_ranking_accuracy(
     lca_depth: torch.Tensor | None = None,
     tree_relation_targets: torch.Tensor | None = None,
     b_side: torch.Tensor | None = None,
+    parent_negative_mask: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Fraction of directed parents closer than every eligible safe negative."""
 
+    if parent_negative_mask is not None:
+        safe_parent = parent_ids.clamp_min(0)
+        children = (parent_ids >= 0) & node_mask
+        children &= node_mask.gather(1, safe_parent)
+        eligible = parent_negative_mask & node_mask[:, :, None] & node_mask[:, None, :]
+        active = children & eligible.any(dim=-1)
+        parent_z = z.gather(1, safe_parent.unsqueeze(-1).expand_as(z))
+        positive = distance(z, parent_z, curvature=curvature)
+        negative = distance(
+            z[:, :, None, :], z[:, None, :, :], curvature=curvature
+        ).masked_fill(~eligible, float("inf")).amin(dim=-1)
+        correct = (positive < negative).to(z.dtype)
+        weights = active.to(z.dtype)
+        return (correct * weights).sum() / weights.sum().clamp_min(1.0)
+    if parent_ids.is_cuda:
+        raise RuntimeError("parent_negative_mask is required for CUDA diagnostics")
     outcomes: list[torch.Tensor] = []
     for batch_index in range(z.shape[0]):
         for child in torch.nonzero(node_mask[batch_index], as_tuple=False).flatten().tolist():
@@ -404,19 +508,40 @@ def radius_depth_loss(
     scale: float | None = None,
     curvature: float = 1.0,
     full_event_max_level: torch.Tensor | None = None,
+    target_mode: str = "generation_height_radius",
+    depth_from_retained_root: torch.Tensor | None = None,
+    distance_to_nearest_retained_root: torch.Tensor | None = None,
 ) -> torch.Tensor:
     # ``scale`` is retained only as an old-call compatibility alias.
     if scale is not None:
         r_max = max(r_min, float(scale) * max(int(level_ids.max().item()) + 1, 1))
-    target = radius_targets(
-        level_ids,
-        mask,
-        r_min=r_min,
-        r_max=r_max,
-        full_event_max_level=full_event_max_level,
-    )
     prediction = radius(z, curvature=curvature)
-    return F.mse_loss(prediction[mask], target[mask]) if mask.any() else z.sum() * 0.0
+    if target_mode == "generation_height_radius":
+        target = radius_targets(
+            level_ids, mask, r_min=r_min, r_max=r_max,
+            full_event_max_level=full_event_max_level,
+        )
+    elif target_mode == "exact_root_depth_radius":
+        exact_depth = (
+            depth_from_retained_root
+            if depth_from_retained_root is not None
+            else distance_to_nearest_retained_root
+        )
+        if exact_depth is None:
+            raise ValueError("exact_root_depth_radius requires precomputed root depth")
+        safe_depth = exact_depth.float().clamp_min(0)
+        maximum = torch.where(mask, safe_depth, torch.zeros_like(safe_depth)).max(
+            dim=-1, keepdim=True
+        ).values
+        target = r_min + (r_max - r_min) * safe_depth / maximum.clamp_min(1.0)
+    elif target_mode == "weak_or_learned_radius":
+        penalty = F.relu(r_min - prediction) + F.relu(prediction - r_max)
+        weights = mask.to(penalty.dtype)
+        return (penalty * weights).sum() / weights.sum().clamp_min(1.0)
+    else:
+        raise ValueError(f"unknown radius target mode: {target_mode}")
+    weights = mask.to(prediction.dtype)
+    return ((prediction - target).square() * weights).sum() / weights.sum().clamp_min(1.0)
 
 
 def variance_regularization(
@@ -501,7 +626,7 @@ def pool_b_branch_embeddings(
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Pool two unordered branch sets with an explicit ablation contract."""
 
-    if mode not in {"mean_all", "b_root", "learned_attention", "level_weighted"}:
+    if mode not in {"mean_all", "fsp_only", "b_root", "learned_attention", "level_weighted"}:
         raise ValueError(f"unknown channel pooling mode: {mode}")
     if mode in {"b_root", "level_weighted"} and level_ids is None:
         raise ValueError(f"{mode} channel pooling requires level_ids")
@@ -514,6 +639,10 @@ def pool_b_branch_embeddings(
         membership = node_mask & (b_side == side)
         if mode == "mean_all":
             weights = membership.to(node_embeddings.dtype)
+        elif mode == "fsp_only":
+            if level_ids is None:
+                raise ValueError("fsp_only channel pooling requires level_ids")
+            weights = (membership & (level_ids == 0)).to(node_embeddings.dtype)
         elif mode == "b_root":
             branch_levels = torch.where(
                 membership, level_ids, torch.full_like(level_ids, -1)
@@ -533,7 +662,7 @@ def pool_b_branch_embeddings(
             torch.einsum("bn,bnd->bd", weights, node_embeddings)
             / weights.sum(dim=-1, keepdim=True).clamp_min(1)
         )
-        available.append(membership.any(dim=-1))
+        available.append(weights.sum(dim=-1) > 0)
     return torch.stack(pooled, dim=1), torch.stack(available, dim=1)
 
 
@@ -848,6 +977,7 @@ def hyperbolic_pretraining_loss(
     tree_relation_mask: torch.Tensor | None = None,
     lca_depth: torch.Tensor | None = None,
     exact_tree_path_distance: torch.Tensor | None = None,
+    parent_negative_mask: torch.Tensor | None = None,
     b_side: torch.Tensor | None = None,
     node_kind_ids: torch.Tensor | None = None,
     event_ids: torch.Tensor | None = None,
@@ -870,6 +1000,9 @@ def hyperbolic_pretraining_loss(
     curvature: float = 1.0,
     full_event_max_level: torch.Tensor | None = None,
     tangent_variance_target: float | None = None,
+    radius_target_mode: str = "generation_height_radius",
+    depth_from_retained_root: torch.Tensor | None = None,
+    distance_to_nearest_retained_root: torch.Tensor | None = None,
 ) -> HyperbolicLossOutput:
     """Principal LCA, parent, depth, channel, variance and covariance objective."""
 
@@ -914,6 +1047,7 @@ def hyperbolic_pretraining_loss(
             lca_depth=lca_depth,
             tree_relation_targets=tree_relation_targets,
             b_side=b_side,
+            parent_negative_mask=parent_negative_mask,
         ),
         "depth": radius_depth_loss(
             z,
@@ -921,6 +1055,9 @@ def hyperbolic_pretraining_loss(
             node_mask,
             curvature=curvature,
             full_event_max_level=full_event_max_level,
+            target_mode=radius_target_mode,
+            depth_from_retained_root=depth_from_retained_root,
+            distance_to_nearest_retained_root=distance_to_nearest_retained_root,
         ),
         "tree_distance": (
             hyperbolic_tree_distance_loss(
@@ -1004,6 +1141,7 @@ def hyperbolic_pretraining_loss(
             lca_depth=lca_depth,
             tree_relation_targets=tree_relation_targets,
             b_side=b_side,
+            parent_negative_mask=parent_negative_mask,
         )
     )
     diagnostics.update(channel_pair_diagnostics)
@@ -1030,6 +1168,7 @@ __all__ = [
     "TREE_RELATION_NAMES",
     "balanced_tree_relation_loss",
     "build_tree_relation_targets",
+    "build_topology_safe_parent_negative_mask",
     "channel_metric_loss",
     "cross_event_channel_metric_loss",
     "collapse_diagnostics",

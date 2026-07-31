@@ -69,6 +69,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--checkpoint-every", type=int, default=100)
     parser.add_argument("--log-every", type=int, default=10)
     parser.add_argument("--validate-every", type=int, default=100)
+    parser.add_argument("--rollout-validate-every", type=int, default=500)
     parser.add_argument("--prefetch-factor", type=int, default=2)
     parser.add_argument("--shuffle-buffer-size", type=int, default=1024)
     parser.add_argument("--persistent-workers", action="store_true")
@@ -110,6 +111,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--max-validation-events", type=int, default=32)
     parser.add_argument("--rollout-validation-events", type=int, default=8)
     parser.add_argument("--validation-batch-size", type=int, default=4)
+    parser.add_argument("--best-metric", default="validation_loss_total")
+    parser.add_argument("--best-mode", choices=("min", "max"), default="min")
+    parser.add_argument("--early-stopping-patience", type=int, default=None)
+    parser.add_argument("--pilot-allow-train-validation-fallback", action="store_true")
+    parser.add_argument("--initial-state-policy", choices=("unknown", "upsilon4s"), default="unknown")
+    parser.add_argument("--hyperbolic-level-encoding", choices=("learned_euclidean", "hyperbolic_tangent", "none"), default="learned_euclidean")
     parser.add_argument("--pid-temperature-start", type=float, default=1.0)
     parser.add_argument("--pid-temperature-end", type=float, default=0.2)
     parser.add_argument("--pid-temperature-duration-steps", type=int, default=1000)
@@ -135,6 +142,8 @@ def main(argv: list[str] | None = None) -> int:
                 max_events=args.max_events,
                 seed=args.seed,
                 checkpoint_every=args.checkpoint_every,
+                validate_every=args.validate_every,
+                rollout_validate_every=args.rollout_validate_every,
                 resume=args.resume,
                 n_queries=args.n_queries,
                 max_cardinality=args.max_cardinality,
@@ -190,6 +199,12 @@ def main(argv: list[str] | None = None) -> int:
                 max_validation_events=args.max_validation_events,
                 rollout_validation_events=args.rollout_validation_events,
                 validation_batch_size=args.validation_batch_size,
+                best_metric=args.best_metric,
+                best_mode=args.best_mode,
+                early_stopping_patience=args.early_stopping_patience,
+                pilot_allow_train_validation_fallback=args.pilot_allow_train_validation_fallback,
+                initial_state_policy=args.initial_state_policy,
+                hyperbolic_level_encoding=args.hyperbolic_level_encoding,
                 pid_temperature_start=args.pid_temperature_start,
                 pid_temperature_end=args.pid_temperature_end,
                 pid_temperature_duration_steps=args.pid_temperature_duration_steps,

@@ -8,7 +8,6 @@ from typing import Literal
 
 import torch
 
-from hypertagging.data.level_collate import build_lca_depth
 from hypertagging.data.tree_geometry import build_exact_tree_geometry
 from hypertagging.models.heterogeneous import composite_token_from_daughters
 from hypertagging.models.level_autoregressive import (
@@ -35,6 +34,7 @@ class RolloutConfig:
     object_threshold: float = 0.5
     pointer_threshold: float = 0.5
     confidence_threshold: float = 0.0
+    type_probability_threshold: float | None = None
     min_daughters: int = 2
     root_types: tuple[int, ...] = (1,)  # reduced Upsilon(4S) token by default
     use_cardinality: bool = True
@@ -163,14 +163,14 @@ def hard_decode_proposals(
                 cardinality=cardinality,
                 pointer_mask=torch.ones_like(probabilities, dtype=torch.bool),
                 source_conflict=context_conflict,
-                min_probability=policy.minimum_pointer_probability,
+                min_probability=config.pointer_threshold,
                 insufficient_policy=policy.cardinality_insufficient_policy,
             )
             if not valid_selection:
                 continue
             selected_local = selected_bool.nonzero(as_tuple=False).flatten()
         else:
-            selected_local = (probabilities >= policy.minimum_pointer_probability).nonzero(
+            selected_local = (probabilities >= config.pointer_threshold).nonzero(
                 as_tuple=False
             ).flatten()
         daughter_positions = tuple(
@@ -207,6 +207,11 @@ def hard_decode_proposals(
         type_probability = float(
             torch.softmax(output.pointer.type_logits[0, query_id], dim=-1).max().detach()
         )
+        if (
+            config.type_probability_threshold is not None
+            and type_probability < config.type_probability_threshold
+        ):
+            continue
         confidence = (
             learned_confidence
             if config.use_learned_confidence
@@ -1084,18 +1089,29 @@ def append_composite_proposals(
         for daughter in proposal.daughter_positions:
             if result["parent_ids"][0, daughter] < 0:
                 result["parent_ids"][0, daughter] = old_count + row
-    geometry = build_exact_tree_geometry(result["parent_ids"][0])
-    result["lca_node_id"] = geometry.lca_node_id.unsqueeze(0)
-    result["edges_to_lca_from_i"] = geometry.edges_to_lca_from_i.unsqueeze(0)
-    result["edges_to_lca_from_j"] = geometry.edges_to_lca_from_j.unsqueeze(0)
-    result["exact_tree_path_distance"] = geometry.exact_tree_path_distance.unsqueeze(0)
-    result["depth_from_retained_root"] = geometry.depth_from_retained_root.unsqueeze(0)
+    # Dynamic rollout topology is a bounded legacy/evaluation path. Rebuild it
+    # explicitly on CPU, then transfer complete tensors; never traverse CUDA
+    # parents through Python scalar indexing.
+    geometry = build_exact_tree_geometry(result["parent_ids"][0].detach().cpu())
+    result["lca_node_id"] = geometry.lca_node_id.to(device).unsqueeze(0)
+    result["edges_to_lca_from_i"] = geometry.edges_to_lca_from_i.to(device).unsqueeze(0)
+    result["edges_to_lca_from_j"] = geometry.edges_to_lca_from_j.to(device).unsqueeze(0)
+    result["exact_tree_path_distance"] = geometry.exact_tree_path_distance.to(device).unsqueeze(0)
+    result["depth_from_retained_root"] = geometry.depth_from_retained_root.to(device).unsqueeze(0)
     result["distance_to_nearest_retained_root"] = (
-        geometry.distance_to_nearest_retained_root.unsqueeze(0)
+        geometry.distance_to_nearest_retained_root.to(device).unsqueeze(0)
     )
-    result["lca_depth"] = build_lca_depth(
-        result["parent_ids"][0], result["level_ids"][0]
-    ).unsqueeze(0)
+    lca_depth = torch.full_like(geometry.lca_node_id, -1)
+    valid_lca = geometry.lca_node_id >= 0
+    level_cpu = result["level_ids"][0].detach().cpu()
+    lca_depth[valid_lca] = level_cpu[geometry.lca_node_id[valid_lca]]
+    result["lca_depth"] = lca_depth.to(device).unsqueeze(0)
+    positions = torch.arange(geometry.lca_node_id.shape[0])
+    result["ancestor_descendant_relation"] = (
+        ((geometry.lca_node_id == positions[:, None])
+         | (geometry.lca_node_id == positions[None, :]))
+        & ~torch.eye(positions.numel(), dtype=torch.bool)
+    ).to(device).unsqueeze(0)
     return result, [int(value) for value in new_ids.tolist()]
 
 

@@ -75,6 +75,8 @@ class ReconstructionConfig:
     freeze_pretrained_encoder_steps: int = 0
     gradient_clip: float = 1.0
     checkpoint_every: int = 100
+    validate_every: int = 100
+    rollout_validate_every: int = 500
     resume: str | None = None
     n_queries: int | None = None
     max_cardinality: int | None = None
@@ -128,6 +130,12 @@ class ReconstructionConfig:
     query_repulsion_weight: float = 0.0
     rollout_pid_kinematics_mode: str = "soft_decision_hard_construction"
     rollout_pid_temperature: float = 0.5
+    best_metric: str = "validation_loss_total"
+    best_mode: str = "min"
+    early_stopping_patience: int | None = None
+    pilot_allow_train_validation_fallback: bool = False
+    initial_state_policy: str = "unknown"
+    hyperbolic_level_encoding: str = "learned_euclidean"
 
 
 @dataclass(frozen=True)
@@ -146,6 +154,12 @@ def train_level_reconstruction(
 ) -> ReconstructionTrainingResult:
     if config.max_steps <= 0:
         raise ValueError("max_steps must be positive")
+    if config.validate_every <= 0 or config.rollout_validate_every <= 0:
+        raise ValueError("validation cadences must be positive")
+    if config.best_mode not in {"min", "max"}:
+        raise ValueError("best_mode must be 'min' or 'max'")
+    if config.early_stopping_patience is not None and config.early_stopping_patience < 1:
+        raise ValueError("early_stopping_patience must be positive when supplied")
     if not 0.0 <= config.scheduled_sampling_probability <= 1.0:
         raise ValueError("scheduled_sampling_probability must lie in [0, 1]")
     if config.unrepresentable_target_policy not in {
@@ -209,6 +223,7 @@ def train_level_reconstruction(
         tangent_variance_target=config.tangent_variance_target,
         hyper_projection_init_scale=config.hyper_projection_init_scale,
         tangent_scale_mode=config.tangent_scale_mode,
+        hyperbolic_level_encoding=config.hyperbolic_level_encoding,
     )
     capacity = (
         capacity_statistics_from_index(
@@ -249,6 +264,7 @@ def train_level_reconstruction(
         max_cardinality_by_level=architecture.max_cardinality_by_level,
         hyper_projection_init_scale=architecture.hyper_projection_init_scale,
         tangent_scale_mode=architecture.tangent_scale_mode,
+        hyperbolic_level_encoding=architecture.hyperbolic_level_encoding,
     ).to(device)
     model.set_runtime_feature_normalizer(
         RuntimeFeatureNormalizer(
@@ -335,9 +351,31 @@ def train_level_reconstruction(
             sorted((int(level), tuple(tokens)) for level, tokens in data_module.allowed_types_by_level.items())
         ),
         empirical_type_prior_mode=config.empirical_type_prior_mode,
+        initial_state_policy=config.initial_state_policy,
     )
-    final_loss = 0.0
-    final_metrics: dict[str, float] = {}
+    final_metrics: dict[str, float] = dict((resume_payload or {}).get("metrics", {}))
+    final_loss = float(final_metrics.get("loss", 0.0))
+    restored_state = (resume_payload or {}).get("training_state", {})
+    if restored_state and (
+        restored_state.get("best_metric") != config.best_metric
+        or restored_state.get("best_mode") != config.best_mode
+    ):
+        raise ValueError("resume best-metric selection differs from the checkpoint")
+    best_metric_value = float(
+        restored_state.get(
+            "best_metric_value",
+            float("inf") if config.best_mode == "min" else float("-inf"),
+        )
+    )
+    patience_count = int(restored_state.get("early_stopping_patience_count", 0))
+    completed_steps = start_step
+    last_validation_step = int(restored_state.get("last_validation_step", 0))
+    restored_validation_selection = (resume_payload or {}).get(
+        "validation_selection", {}
+    )
+    validation_uids: list[str] = list(
+        restored_validation_selection.get("event_uids", [])
+    )
     for step in range(start_step, config.max_steps):
         if model.pid_kinematics_mode == "temperature_softmax":
             progress = min(step / max(config.pid_temperature_duration_steps, 1), 1.0)
@@ -456,6 +494,78 @@ def train_level_reconstruction(
                     )
                 )
         logger.log(step=step + 1, target_levels=valid_levels, **final_metrics)
+        completed_steps = step + 1
+        if (step + 1) % config.validate_every == 0:
+            validation_uids = []
+            validation_metrics = validate_reconstruction(
+                model,
+                data_module,
+                device=device,
+                scheduled_sampling_probability=(
+                    config.scheduled_sampling_probability
+                    if ablation.scheduled_sampling else 0.0
+                ),
+                seed=config.seed,
+                max_validation_events=config.max_validation_events,
+                rollout_validation_events=(
+                    config.rollout_validation_events
+                    if (step + 1) % config.rollout_validate_every == 0 else 0
+                ),
+                validation_batch_size=config.validation_batch_size,
+                target_policy=config.target_policy,
+                constraint_policy=constraint_policy,
+                rollout_pid_kinematics_mode=config.rollout_pid_kinematics_mode,
+                rollout_pid_temperature=config.rollout_pid_temperature,
+                pilot_allow_train_validation_fallback=(
+                    config.pilot_allow_train_validation_fallback
+                    or config.allow_legacy_conflated
+                    or config.pilot_split_repair
+                ),
+                selected_event_uids=validation_uids,
+            )
+            final_metrics.update(validation_metrics)
+            logger.log(step=step + 1, split="validation", **validation_metrics)
+            last_validation_step = step + 1
+            if config.best_metric not in validation_metrics:
+                raise ValueError(
+                    f"best_metric {config.best_metric!r} is absent from validation metrics"
+                )
+            current_metric = float(validation_metrics[config.best_metric])
+            improved = (
+                current_metric < best_metric_value
+                if config.best_mode == "min"
+                else current_metric > best_metric_value
+            )
+            if improved:
+                best_metric_value = current_metric
+                patience_count = 0
+                _save_reconstruction_checkpoint(
+                    output_dir / "best.pt", model=model, optimizer=optimizer,
+                    scheduler=scheduler, scaler=scaler, config=config,
+                    data_module=data_module, step=step + 1, metrics=final_metrics,
+                    streaming_cursor=cursor.state_dict(),
+                    best_metric_value=best_metric_value,
+                    patience_count=patience_count,
+                    last_validation_step=last_validation_step,
+                    validation_uids=validation_uids,
+                )
+            else:
+                patience_count += 1
+            _save_reconstruction_checkpoint(
+                output_dir / "latest.pt", model=model, optimizer=optimizer,
+                scheduler=scheduler, scaler=scaler, config=config,
+                data_module=data_module, step=step + 1, metrics=final_metrics,
+                streaming_cursor=cursor.state_dict(),
+                best_metric_value=best_metric_value,
+                patience_count=patience_count,
+                last_validation_step=last_validation_step,
+                validation_uids=validation_uids,
+            )
+            if (
+                config.early_stopping_patience is not None
+                and patience_count >= config.early_stopping_patience
+            ):
+                break
         if (step + 1) % config.checkpoint_every == 0:
             _save_reconstruction_checkpoint(
                 output_dir / f"checkpoint-step-{step + 1}.pt",
@@ -468,8 +578,14 @@ def train_level_reconstruction(
                 step=step + 1,
                 metrics=final_metrics,
                 streaming_cursor=cursor.state_dict(),
+                best_metric_value=best_metric_value,
+                patience_count=patience_count,
+                last_validation_step=last_validation_step,
+                validation_uids=validation_uids,
             )
-    validation_metrics = validate_reconstruction(
+    if last_validation_step != completed_steps:
+        validation_uids = []
+        validation_metrics = validate_reconstruction(
         model,
         data_module,
         device=device,
@@ -484,8 +600,44 @@ def train_level_reconstruction(
         constraint_policy=constraint_policy,
         rollout_pid_kinematics_mode=config.rollout_pid_kinematics_mode,
         rollout_pid_temperature=config.rollout_pid_temperature,
+        pilot_allow_train_validation_fallback=(
+            config.pilot_allow_train_validation_fallback
+            or config.allow_legacy_conflated
+            or config.pilot_split_repair
+        ),
+        selected_event_uids=validation_uids,
+        )
+        final_metrics.update(validation_metrics)
+        logger.log(step=completed_steps, split="validation", **validation_metrics)
+        last_validation_step = completed_steps
+        current_metric = float(validation_metrics[config.best_metric])
+        improved = (
+            current_metric < best_metric_value
+            if config.best_mode == "min" else current_metric > best_metric_value
+        )
+        if improved:
+            best_metric_value = current_metric
+            patience_count = 0
+            _save_reconstruction_checkpoint(
+                output_dir / "best.pt", model=model, optimizer=optimizer,
+                scheduler=scheduler, scaler=scaler, config=config,
+                data_module=data_module, step=completed_steps,
+                metrics=final_metrics, streaming_cursor=cursor.state_dict(),
+                best_metric_value=best_metric_value,
+                patience_count=patience_count,
+                last_validation_step=last_validation_step,
+                validation_uids=validation_uids,
+            )
+        else:
+            patience_count += 1
+    _save_reconstruction_checkpoint(
+        output_dir / "latest.pt", model=model, optimizer=optimizer,
+        scheduler=scheduler, scaler=scaler, config=config,
+        data_module=data_module, step=completed_steps, metrics=final_metrics,
+        streaming_cursor=cursor.state_dict(), best_metric_value=best_metric_value,
+        patience_count=patience_count, last_validation_step=last_validation_step,
+        validation_uids=validation_uids,
     )
-    final_metrics.update(validation_metrics)
     checkpoint = _save_reconstruction_checkpoint(
         output_dir / "checkpoint.pt",
         model=model,
@@ -494,14 +646,18 @@ def train_level_reconstruction(
         scaler=scaler,
         config=config,
         data_module=data_module,
-        step=config.max_steps,
+        step=completed_steps,
         metrics=final_metrics,
         streaming_cursor=cursor.state_dict(),
+        best_metric_value=best_metric_value,
+        patience_count=patience_count,
+        last_validation_step=last_validation_step,
+        validation_uids=validation_uids,
     )
     return ReconstructionTrainingResult(
         checkpoint=checkpoint,
         log_path=logger.path,
-        steps=config.max_steps,
+        steps=completed_steps,
         final_loss=final_loss,
         metrics=final_metrics,
         transfer_report=transfer_report,
@@ -919,7 +1075,11 @@ _NODE_BATCH_FIELDS = {
     "full_event_max_level", "current_pid_probabilities", "current_pid_tokens",
     "current_pid_available",
 }
-_PAIR_BATCH_FIELDS = {"daughter_adjacency", "source_conflict_matrix"}
+_PAIR_BATCH_FIELDS = {
+    "daughter_adjacency", "source_conflict_matrix", "lca_depth",
+    "lca_node_id", "edges_to_lca_from_i", "edges_to_lca_from_j",
+    "exact_tree_path_distance", "ancestor_descendant_relation",
+}
 
 
 def _collate_context_batches(
@@ -1023,11 +1183,21 @@ def validate_reconstruction(
     constraint_policy: ReconstructionConstraintPolicy | None = None,
     rollout_pid_kinematics_mode: str = "soft_decision_hard_construction",
     rollout_pid_temperature: float = 0.5,
+    pilot_allow_train_validation_fallback: bool = False,
+    selected_event_uids: list[str] | None = None,
 ) -> dict[str, float]:
     model.eval()
     source = data_module.iter_events("validation", shuffle=False)
+    used_train_fallback = False
     if data_module.split_counts.get("validation", 0) == 0:
+        if not pilot_allow_train_validation_fallback:
+            raise ValueError(
+                "validation split is empty; production validation cannot fall back "
+                "to training data. Set pilot_allow_train_validation_fallback=True "
+                "only for an explicitly diagnostic pilot."
+            )
         source = data_module.iter_events("train", shuffle=False)
+        used_train_fallback = True
     if validation_batch_size <= 0:
         raise ValueError("validation_batch_size must be positive")
     events = []
@@ -1035,6 +1205,10 @@ def validate_reconstruction(
         if len(events) >= max_validation_events:
             break
         events.append(event)
+    if not events:
+        raise ValueError("bounded validation selection contains no events")
+    if selected_event_uids is not None:
+        selected_event_uids.extend(event.event_uid for event in events)
     accumulated: dict[str, list[float]] = {}
 
     # Dynamic full-tree rollouts remain per-event, while fixed next-level
@@ -1065,6 +1239,13 @@ def validate_reconstruction(
                 target_policy=target_policy,
                 constraint_policy=constraint_policy,
             )
+            accumulated.setdefault("validation_loss_total", []).append(
+                float(loss_output.total.detach().cpu())
+            )
+            for component_name, component_value in loss_output.components.items():
+                accumulated.setdefault(
+                    f"validation_loss_{component_name}", []
+                ).append(float(component_value.detach().cpu()))
             for event_index in range(batch["node_mask"].shape[0]):
                 event_pointer = _slice_pointer_output(output.pointer, event_index)
                 event_batch = _slice_batch_dict(loss_batch, event_index)
@@ -1254,6 +1435,7 @@ def validate_reconstruction(
             "validation_events": float(len(events)),
             "rollout_validation_events": float(rollout_count),
             "validation_batch_size": float(validation_batch_size),
+            "validation_used_train_fallback": float(used_train_fallback),
         }
     )
     return output_metrics
@@ -1295,6 +1477,10 @@ def _save_reconstruction_checkpoint(
     step: int,
     metrics: dict[str, float],
     streaming_cursor: dict[str, int],
+    best_metric_value: float = float("inf"),
+    patience_count: int = 0,
+    last_validation_step: int = 0,
+    validation_uids: list[str] | None = None,
 ) -> Path:
     return save_training_checkpoint(
         path,
@@ -1328,6 +1514,7 @@ def _save_reconstruction_checkpoint(
                     sorted((int(level), tuple(tokens)) for level, tokens in data_module.allowed_types_by_level.items())
                 ),
                 empirical_type_prior_mode=config.empirical_type_prior_mode,
+                initial_state_policy=config.initial_state_policy,
             ).to_dict(),
         },
         legacy_conflated_fraction=data_module.legacy_conflated_fraction,
@@ -1344,6 +1531,24 @@ def _save_reconstruction_checkpoint(
             "batch_index": int(streaming_cursor.get("batch_index", 0)),
         },
         architecture=_architecture_contract(config),
+        training_state={
+            "best_metric": config.best_metric,
+            "best_mode": config.best_mode,
+            "best_metric_value": float(best_metric_value),
+            "early_stopping_patience_count": int(patience_count),
+            "last_validation_step": int(last_validation_step),
+        },
+        validation_selection={
+            "split": (
+                "train_diagnostic_fallback"
+                if metrics.get("validation_used_train_fallback", 0.0)
+                else "validation"
+            ),
+            "event_uids": list(validation_uids or []),
+            "deterministic": True,
+            "max_validation_events": int(config.max_validation_events),
+            "rollout_validation_events": int(config.rollout_validation_events),
+        },
     )
 
 
@@ -1368,6 +1573,7 @@ def _data_order_contract(
             "end_probability": 1.0 - config.scheduled_sampling_probability,
         },
         "level_sampling_mode": config.level_sampling_mode,
+        "initial_state_policy": config.initial_state_policy,
         "gradient_accumulation": config.gradient_accumulation,
         "num_workers": config.num_workers,
     }
@@ -1390,6 +1596,7 @@ def _architecture_contract(config: ReconstructionConfig) -> dict[str, Any]:
         tangent_variance_target=config.tangent_variance_target,
         hyper_projection_init_scale=config.hyper_projection_init_scale,
         tangent_scale_mode=config.tangent_scale_mode,
+        hyperbolic_level_encoding=config.hyperbolic_level_encoding,
     ).to_dict()
 
 

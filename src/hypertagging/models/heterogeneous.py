@@ -10,6 +10,7 @@ from torch import nn
 from hypertagging.models.hyperbolic import (
     BoundedTangentScale,
     expmap0,
+    logmap0,
     initialize_hyper_projection,
 )
 from hypertagging.models.relation_attention import RelationAwareSetTransformer
@@ -155,6 +156,7 @@ class HeterogeneousNodeEncoder(nn.Module):
         dropout: float = 0.0,
         hyper_projection_init_scale: float = 0.05,
         tangent_scale_mode: str = "fixed",
+        hyperbolic_level_encoding: str = "learned_euclidean",
     ) -> None:
         super().__init__()
         self.d_model = d_model
@@ -164,6 +166,11 @@ class HeterogeneousNodeEncoder(nn.Module):
         self.ffn_dim = ffn_dim or 2 * d_model
         self.dropout = float(dropout)
         self.curvature = curvature
+        if hyperbolic_level_encoding not in {
+            "learned_euclidean", "hyperbolic_tangent", "none"
+        }:
+            raise ValueError("unknown hyperbolic_level_encoding")
+        self.hyperbolic_level_encoding = hyperbolic_level_encoding
         self.use_contextual_encoder = use_contextual_encoder
         self.use_physical_context = use_physical_context
         self.use_hyperbolic_refinement = use_hyperbolic_refinement
@@ -177,6 +184,12 @@ class HeterogeneousNodeEncoder(nn.Module):
         self.pid_embedding = nn.Embedding(n_pid, d_model)
         self.node_kind_embedding = nn.Embedding(len(NODE_KINDS), d_model)
         self.level_embedding = nn.Embedding(max_level + 2, d_model)
+        if hyperbolic_level_encoding == "hyperbolic_tangent":
+            self.hyperbolic_level_points = nn.Parameter(
+                torch.randn(max_level + 2, d_model) * 0.02
+            )
+        else:
+            self.register_parameter("hyperbolic_level_points", None)
         self.active_embedding = nn.Embedding(2, d_model)
         self.copied_embedding = nn.Embedding(2, d_model)
         availability_width = (
@@ -252,6 +265,18 @@ class HeterogeneousNodeEncoder(nn.Module):
                 f"got {self.pid_embedding.num_embeddings}, expected {len(PDG_TOKENS)}"
             )
         levels = batch["level_ids"].clamp(0, self.level_embedding.num_embeddings - 1)
+        if self.hyperbolic_level_encoding == "learned_euclidean":
+            level_features = self.level_embedding(levels)
+        elif self.hyperbolic_level_encoding == "hyperbolic_tangent":
+            assert self.hyperbolic_level_points is not None
+            level_points = expmap0(
+                self.hyperbolic_level_points, curvature=self.curvature
+            )
+            level_features = logmap0(
+                level_points, curvature=self.curvature
+            )[levels]
+        else:
+            level_features = self.level_embedding(levels) * 0.0
         histogram_available = batch.get(
             "daughter_input_pid_histogram_available",
             batch["daughter_pid_histogram_available"],
@@ -285,7 +310,7 @@ class HeterogeneousNodeEncoder(nn.Module):
             + specific
             + pid_h
             + self.node_kind_embedding(kinds)
-            + self.level_embedding(levels)
+            + level_features
             + self.active_embedding(batch["active"].long())
             + self.copied_embedding(batch["copied"].long())
             + self.availability_encoder(availability)
@@ -307,7 +332,7 @@ class HeterogeneousNodeEncoder(nn.Module):
             + specific
             + pid_h
             + self.node_kind_embedding(kinds)
-            + self.level_embedding(levels)
+            + level_features
             + self.active_embedding(batch["active"].long())
             + self.copied_embedding(batch["copied"].long())
             + self.availability_encoder(availability)
@@ -326,6 +351,7 @@ class HeterogeneousNodeEncoder(nn.Module):
             source_node_ids=batch.get("source_node_ids"),
             recursive_leaf_source_mask=batch.get("recursive_leaf_source_mask"),
             parent_ids=batch.get("parent_ids"),
+            ancestor_descendant_relation=batch.get("ancestor_descendant_relation"),
             reco_ids=batch.get("reco_ids"),
         )
         if self.use_contextual_encoder:

@@ -50,10 +50,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--validation-batches", type=int, default=4)
     parser.add_argument(
         "--channel-pooling",
-        choices=("mean_all", "b_root", "learned_attention", "level_weighted"),
+        choices=("mean_all", "fsp_only", "b_root", "learned_attention", "level_weighted"),
         default="mean_all",
     )
     parser.add_argument("--channel-memory-size", type=int, default=0)
+    parser.add_argument("--radius-target-mode", choices=("generation_height_radius", "exact_root_depth_radius", "weak_or_learned_radius"), default="generation_height_radius")
+    parser.add_argument("--best-metric", default="validation_loss_total")
+    parser.add_argument("--best-mode", choices=("min", "max"), default="min")
+    parser.add_argument("--channel-zero-positive-validation-window", type=int, default=3)
+    parser.add_argument("--channel-zero-positive-action", choices=("warn", "fail", "ignore"), default="warn")
+    parser.add_argument("--hyperbolic-level-encoding", choices=("learned_euclidean", "hyperbolic_tangent", "none"), default="learned_euclidean")
     parser.add_argument("--model-preset", choices=sorted(MODEL_PRESETS), default="tiny_cpu")
     parser.add_argument("--d-model", type=int, default=None)
     parser.add_argument("--hyper-dim", type=int, default=None)
@@ -100,6 +106,12 @@ def main(argv: list[str] | None = None) -> int:
                 resume=args.resume,
                 ablation=args.ablation,
                 channel_memory_size=args.channel_memory_size,
+                radius_target_mode=args.radius_target_mode,
+                best_metric=args.best_metric,
+                best_mode=args.best_mode,
+                channel_zero_positive_validation_window=args.channel_zero_positive_validation_window,
+                channel_zero_positive_action=args.channel_zero_positive_action,
+                hyperbolic_level_encoding=args.hyperbolic_level_encoding,
                 num_workers=args.num_workers,
                 prefetch_factor=args.prefetch_factor,
                 shuffle_buffer_size=args.shuffle_buffer_size,

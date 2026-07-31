@@ -13,6 +13,10 @@ from hypertagging.evaluation.hierarchical_metrics import (
     summarize_rollout,
     tree_validity_rate,
 )
+from hypertagging.evaluation.trained_context import (
+    TrainedEvaluationContext,
+    load_trained_evaluation_context,
+)
 
 __all__ = [
     "ReconstructionEvaluationRow",
@@ -24,4 +28,6 @@ __all__ = [
     "radius_level_correlation",
     "summarize_rollout",
     "tree_validity_rate",
+    "TrainedEvaluationContext",
+    "load_trained_evaluation_context",
 ]

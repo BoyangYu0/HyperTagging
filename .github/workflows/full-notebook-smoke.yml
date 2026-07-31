@@ -15,5 +15,14 @@ jobs:
           python-version: "3.11"
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -e ".[dev,notebook]"
-      - name: Execute all 12 deterministic CPU notebook groups
-        run: python scripts/execute_notebook_smoke_tests.py
+      - name: Report runner-derived notebook count
+        run: python scripts/execute_notebook_smoke_tests.py --list
+      - name: Execute every deterministic CPU notebook group
+        run: >-
+          python scripts/execute_notebook_smoke_tests.py
+          --keep-output /tmp/hypertagging-all-notebooks
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: all-notebook-summary
+          path: /tmp/hypertagging-all-notebooks/notebook_execution_summary.json

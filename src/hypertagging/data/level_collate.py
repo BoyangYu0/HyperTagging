@@ -40,6 +40,9 @@ def collate_level_events(events: Sequence[LevelEvent], *, max_query_slots: int |
     exact_tree_path_distance = torch.full_like(lca_depth, -1)
     depth_from_retained_root = torch.full((batch_size, max_nodes), -1, dtype=torch.long)
     distance_to_nearest_retained_root = torch.full_like(depth_from_retained_root, -1)
+    ancestor_descendant_relation = torch.zeros(
+        (batch_size, max_nodes, max_nodes), dtype=torch.bool
+    )
     query_mask = torch.zeros((batch_size, max_level + 1, query_slots), dtype=torch.bool)
     event_ids = torch.tensor([event.event_id for event in events], dtype=torch.long)
 
@@ -58,13 +61,22 @@ def collate_level_events(events: Sequence[LevelEvent], *, max_query_slots: int |
         same_mother[batch_index, :n_nodes, :n_nodes] = build_same_mother(event.parent_ids)
         same_branch[batch_index, :n_nodes, :n_nodes] = build_same_branch(event.parent_ids)
         geometry = build_exact_tree_geometry(event.parent_ids)
-        lca_depth[batch_index, :n_nodes, :n_nodes] = build_lca_depth(event.parent_ids, event.level_ids)
+        valid_lca = geometry.lca_node_id >= 0
+        event_lca_depth = torch.full_like(geometry.lca_node_id, -1)
+        event_lca_depth[valid_lca] = event.level_ids[geometry.lca_node_id[valid_lca]]
+        lca_depth[batch_index, :n_nodes, :n_nodes] = event_lca_depth
         lca_node_id[batch_index, :n_nodes, :n_nodes] = geometry.lca_node_id
         edges_to_lca_from_i[batch_index, :n_nodes, :n_nodes] = geometry.edges_to_lca_from_i
         edges_to_lca_from_j[batch_index, :n_nodes, :n_nodes] = geometry.edges_to_lca_from_j
         exact_tree_path_distance[batch_index, :n_nodes, :n_nodes] = geometry.exact_tree_path_distance
         depth_from_retained_root[batch_index, :n_nodes] = geometry.depth_from_retained_root
         distance_to_nearest_retained_root[batch_index, :n_nodes] = geometry.distance_to_nearest_retained_root
+        positions = torch.arange(n_nodes)
+        ancestor_descendant_relation[batch_index, :n_nodes, :n_nodes] = (
+            ((geometry.lca_node_id == positions[:, None])
+             | (geometry.lca_node_id == positions[None, :]))
+            & ~torch.eye(n_nodes, dtype=torch.bool)
+        )
         for level in range(max_level + 1):
             count = int((event.level_ids == level).sum().item())
             query_mask[batch_index, level, : min(query_slots, max(1, count))] = True
@@ -90,6 +102,7 @@ def collate_level_events(events: Sequence[LevelEvent], *, max_query_slots: int |
         exact_tree_path_distance=exact_tree_path_distance,
         depth_from_retained_root=depth_from_retained_root,
         distance_to_nearest_retained_root=distance_to_nearest_retained_root,
+        ancestor_descendant_relation=ancestor_descendant_relation,
         query_mask=query_mask,
         event_ids=event_ids,
     )

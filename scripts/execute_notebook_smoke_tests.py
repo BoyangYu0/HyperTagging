@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 from pathlib import Path
 import shutil
@@ -94,6 +95,12 @@ NOTEBOOKS = {
     ),
 }
 
+FIRST_LEVEL_AMBIGUITY = (
+    REPO_ROOT / "scripts" / "create_first_level_ambiguity_notebook.py",
+    REPO_ROOT / "notebooks" / "inspect_first_level_ambiguity.ipynb",
+    ("First-level set ambiguity", "pointer entropy", "disabled by default"),
+)
+
 
 def execute_one(
     name: str,
@@ -170,8 +177,6 @@ def execute_one(
         if not (figure_dir / relative).exists():
             raise AssertionError(f"{source.name} missed required artifact {relative}")
     if name == "leaf_composite":
-        import json
-
         report = json.loads(
             (figure_dir / "leaf_composite_contract.json").read_text(encoding="utf-8")
         )
@@ -191,8 +196,6 @@ def execute_one(
         if not required_pid_diagnostics <= report.keys():
             raise AssertionError(f"leaf/composite PID diagnostics missing: {report}")
     if name == "streaming":
-        import json
-
         report = json.loads(
             (figure_dir / "streaming_report.json").read_text(encoding="utf-8")
         )
@@ -203,8 +206,6 @@ def execute_one(
         ) or not report.get("dataset_index_pass"):
             raise AssertionError(f"streaming report failed: {report}")
     if name == "hyperbolic":
-        import json
-
         report = json.loads(
             (figure_dir / "curriculum_runtime_report.json").read_text(encoding="utf-8")
         )
@@ -215,8 +216,6 @@ def execute_one(
         ) or not report.get("invalid_corruptions_excluded_from_positive_structure"):
             raise AssertionError(f"curriculum runtime report failed: {report}")
     if name == "reconstruction":
-        import json
-
         report = json.loads(
             (figure_dir / "scheduled_context_report.json").read_text(encoding="utf-8")
         )
@@ -233,25 +232,20 @@ def execute_one(
         ) or not report.get("evaluation_slices"):
             raise AssertionError(f"rollout ambiguity diagnostics missing: {report}")
     if name == "exact_geometry":
-        import json
         report = json.loads((figure_dir / "exact_geometry_scale_summary.json").read_text())
         if report.get("direct_leaf_root_edges") != 1 or not report.get(
             "eligible_different_b_positions"
         ) or not all(row.get("finite_z") and row.get("finite_gradients") for row in report.get("presets", [])):
             raise AssertionError(f"exact geometry/scale contract failed: {report}")
     if name == "rollout_search":
-        import json
         report = json.loads((figure_dir / "rollout_search_calibration_summary.json").read_text())
         if not report.get("pid_modes") or not report.get("resolver", {}).get("beam") or not report.get("reliability"):
             raise AssertionError(f"rollout search/calibration contract failed: {report}")
     if name == "runtime_scaling":
-        import json
         report = json.loads((figure_dir / "runtime_scaling_summary.json").read_text())
-        if report.get("throughput_claim") or len(report.get("measurements", [])) != 3:
+        if report.get("throughput_claim") or len(report.get("measurements", [])) != 4:
             raise AssertionError(f"runtime scaling contract failed: {report}")
     if name == "capacity":
-        import json
-
         report = json.loads(
             (figure_dir / "capacity_report.json").read_text(encoding="utf-8")
         )
@@ -264,7 +258,6 @@ def execute_one(
         qa_path = work_root / "preprocessing_qa.json"
         if not qa_path.exists():
             raise AssertionError("QA notebook did not write its JSON summary")
-        import json
         qa = json.loads(qa_path.read_text(encoding="utf-8"))
         if not qa.get("p4_closure_pass"):
             raise AssertionError(f"QA JSON did not pass p4 closure: {qa}")
@@ -276,12 +269,34 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--timeout", type=int, default=180)
     parser.add_argument("--keep-output", type=Path, default=None)
     parser.add_argument(
+        "--list",
+        action="store_true",
+        help="Print the runner-derived group count and names without executing them.",
+    )
+    parser.add_argument(
         "--only",
         action="append",
         choices=tuple(NOTEBOOKS),
         help="Execute only the named notebook group; repeat to select several.",
     )
+    parser.add_argument(
+        "--diagnostic-first-level-ambiguity",
+        action="store_true",
+        help="Also execute the separate, non-CI first-level ambiguity diagnostic.",
+    )
+    parser.add_argument(
+        "--diagnostic-only",
+        action="store_true",
+        help="Skip the stable suite; requires a diagnostic flag.",
+    )
     args = parser.parse_args(argv)
+    if args.diagnostic_only and not args.diagnostic_first_level_ambiguity:
+        parser.error("--diagnostic-only requires a diagnostic notebook flag")
+    if args.list:
+        print(f"{len(NOTEBOOKS)} deterministic CPU notebook groups")
+        for name in NOTEBOOKS:
+            print(name)
+        return 0
     if args.keep_output:
         work_root = args.keep_output.resolve()
         work_root.mkdir(parents=True, exist_ok=True)
@@ -290,7 +305,7 @@ def main(argv: list[str] | None = None) -> int:
         temporary = tempfile.TemporaryDirectory(prefix="hypertagging-notebooks-")
         work_root = Path(temporary.name)
     executed = []
-    selected = set(args.only or NOTEBOOKS)
+    selected = set() if args.diagnostic_only else set(args.only or NOTEBOOKS)
     for name, (generator, source, sections) in NOTEBOOKS.items():
         if name not in selected:
             continue
@@ -304,9 +319,38 @@ def main(argv: list[str] | None = None) -> int:
                 timeout=args.timeout,
             )
         )
+    if args.diagnostic_first_level_ambiguity:
+        generator, source, sections = FIRST_LEVEL_AMBIGUITY
+        executed.append(
+            execute_one(
+                "first_level_ambiguity",
+                generator,
+                source,
+                sections,
+                work_root=work_root,
+                timeout=args.timeout,
+            )
+        )
     print(f"Executed {len(executed)} notebooks on CPU fixtures")
     for path in executed:
         print(path)
+    (work_root / "notebook_execution_summary.json").write_text(
+        json.dumps(
+            {
+                "configured_group_count": len(NOTEBOOKS),
+                "executed_group_count": len(executed),
+                "executed_groups": [name for name in NOTEBOOKS if name in selected]
+                + (
+                    ["first_level_ambiguity"]
+                    if args.diagnostic_first_level_ambiguity
+                    else []
+                ),
+                "fixture_only": True,
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
     if temporary is not None:
         temporary.cleanup()
     return 0

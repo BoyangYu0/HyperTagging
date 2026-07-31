@@ -1,0 +1,5 @@
+name: channel_memory_bounded
+channel_memory_size: 4096
+channel_zero_positive_action: fail
+channel_zero_positive_validation_window: 3
+default_baseline: false

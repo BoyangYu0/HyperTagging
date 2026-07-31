@@ -139,6 +139,7 @@ def build_ablation_model(
     max_cardinality_by_level: tuple[tuple[int, int], ...] = (),
     hyper_projection_init_scale: float = 0.05,
     tangent_scale_mode: str = "fixed",
+    hyperbolic_level_encoding: str = "learned_euclidean",
 ) -> LevelAutoregressiveReconstructor:
     config = ALL_ABLATIONS[name]
     return LevelAutoregressiveReconstructor(
@@ -164,6 +165,7 @@ def build_ablation_model(
         pid_temperature=config.pid_temperature,
         hyper_projection_init_scale=hyper_projection_init_scale,
         tangent_scale_mode=tangent_scale_mode,
+        hyperbolic_level_encoding=hyperbolic_level_encoding,
     )
 
 

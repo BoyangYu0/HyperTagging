@@ -6,14 +6,15 @@ from dataclasses import asdict, dataclass
 import json
 from pathlib import Path
 from typing import Any
+import warnings
 
 import torch
 import torch.nn.functional as F
 
 from hypertagging.data.heterogeneous import collate_heterogeneous_events
-from hypertagging.data.level_collate import build_lca_depth
 from hypertagging.data.tree_geometry import build_exact_tree_geometry
 from hypertagging.losses.hyperbolic_pretraining import (
+    build_topology_safe_parent_negative_mask,
     build_tree_relation_targets,
     hyperbolic_pretraining_loss,
     parent_child_ranking_accuracy,
@@ -93,6 +94,12 @@ class PretrainConfig:
     tangent_variance_target: float | None = None
     hyper_projection_init_scale: float | None = None
     tangent_scale_mode: str | None = None
+    radius_target_mode: str = "generation_height_radius"
+    best_metric: str = "validation_loss_total"
+    best_mode: str = "min"
+    channel_zero_positive_validation_window: int = 3
+    channel_zero_positive_action: str = "warn"
+    hyperbolic_level_encoding: str = "learned_euclidean"
 
 
 @dataclass(frozen=True)
@@ -123,6 +130,7 @@ class ContextualPretrainingModel(torch.nn.Module):
         channel_pooling: str = "mean_all",
         hyper_projection_init_scale: float = 0.05,
         tangent_scale_mode: str = "fixed",
+        hyperbolic_level_encoding: str = "learned_euclidean",
     ) -> None:
         super().__init__()
         self.encoder = HeterogeneousNodeEncoder(
@@ -138,6 +146,7 @@ class ContextualPretrainingModel(torch.nn.Module):
             use_hyperbolic_refinement=use_hyperbolic_relations,
             hyper_projection_init_scale=hyper_projection_init_scale,
             tangent_scale_mode=tangent_scale_mode,
+            hyperbolic_level_encoding=hyperbolic_level_encoding,
         )
         self.relation_head = TreeRelationHead(d_model)
         self.leaf_pid_head = torch.nn.Linear(d_model, len(PDG_TOKENS))
@@ -145,7 +154,7 @@ class ContextualPretrainingModel(torch.nn.Module):
         self.corruption_type_head = torch.nn.Linear(d_model, 5)
         self.channel_memory = ChannelMemoryBank(channel_memory_size, d_model)
         if channel_pooling not in {
-            "mean_all", "b_root", "learned_attention", "level_weighted"
+            "mean_all", "fsp_only", "b_root", "learned_attention", "level_weighted"
         }:
             raise ValueError(f"unknown channel pooling mode: {channel_pooling}")
         self.channel_pooling = channel_pooling
@@ -259,6 +268,17 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
         raise ValueError("validate_every and validation_batches must be positive")
     if config.log_every <= 0:
         raise ValueError("log_every must be positive")
+    if config.best_mode not in {"min", "max"}:
+        raise ValueError("best_mode must be 'min' or 'max'")
+    if config.radius_target_mode not in {
+        "generation_height_radius", "exact_root_depth_radius",
+        "weak_or_learned_radius",
+    }:
+        raise ValueError("unknown radius_target_mode")
+    if config.channel_zero_positive_action not in {"warn", "fail", "ignore"}:
+        raise ValueError("channel_zero_positive_action must be warn, fail, or ignore")
+    if config.channel_zero_positive_validation_window <= 0:
+        raise ValueError("channel zero-positive validation window must be positive")
     seed_everything(config.seed)
     if config.resume and config.num_workers > 0:
         raise ValueError("exact streaming resume currently requires num_workers=0")
@@ -324,6 +344,7 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
         channel_pooling=config.channel_pooling,
         hyper_projection_init_scale=architecture.hyper_projection_init_scale,
         tangent_scale_mode=architecture.tangent_scale_mode,
+        hyperbolic_level_encoding=architecture.hyperbolic_level_encoding,
     ).to(device)
     model.set_runtime_feature_normalizer(
         RuntimeFeatureNormalizer(
@@ -381,8 +402,20 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
             raise ValueError("streaming resume cursor exceeds the saved epoch")
     final_loss = 0.0
     final_metrics: dict[str, float] = {}
-    best_validation_loss = float("inf")
-    last_validation_step = 0
+    restored_training_state = (resume_payload or {}).get("training_state", {})
+    if restored_training_state and (
+        restored_training_state.get("best_metric") != config.best_metric
+        or restored_training_state.get("best_mode") != config.best_mode
+    ):
+        raise ValueError("resume best-metric selection differs from the checkpoint")
+    best_validation_loss = float(restored_training_state.get(
+        "best_metric_value",
+        float("inf") if config.best_mode == "min" else float("-inf"),
+    ))
+    last_validation_step = int(restored_training_state.get("last_validation_step", 0))
+    zero_positive_windows = int(restored_training_state.get(
+        "channel_zero_positive_validation_windows", 0
+    ))
     for step in range(start_step, config.max_steps):
         try:
             next_batch = next(batch_iterator)
@@ -424,6 +457,13 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 level_ids=train_batch["level_ids"],
                 node_mask=structural_mask,
                 b_side=train_batch["b_side"],
+                lca_node_id=train_batch["lca_node_id"],
+                edges_to_lca_from_i=train_batch["edges_to_lca_from_i"],
+                edges_to_lca_from_j=train_batch["edges_to_lca_from_j"],
+            )
+            parent_negative_mask = build_topology_safe_parent_negative_mask(
+                targets, structural_mask,
+                train_batch["ancestor_descendant_relation"],
             )
             branch_embeddings, branch_mask = pool_b_branch_embeddings(
                 encoded.channel_projection,
@@ -461,6 +501,7 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 tree_relation_mask=relation_mask,
                 lca_depth=train_batch["lca_depth"],
                 exact_tree_path_distance=train_batch["exact_tree_path_distance"],
+                parent_negative_mask=parent_negative_mask,
                 parent_ids=train_batch["parent_ids"],
                 level_ids=train_batch["level_ids"],
                 node_mask=structural_mask,
@@ -491,6 +532,11 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 curvature=config.curvature,
                 full_event_max_level=train_batch.get("full_event_max_level"),
                 tangent_variance_target=architecture.tangent_variance_target,
+                radius_target_mode=config.radius_target_mode,
+                depth_from_retained_root=train_batch["depth_from_retained_root"],
+                distance_to_nearest_retained_root=train_batch[
+                    "distance_to_nearest_retained_root"
+                ],
             )
             leaf_pid_loss = (
                 _leaf_pid_loss(leaf_pid_logits, train_batch)
@@ -574,6 +620,7 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 "candidate_correctness": correctness_loss,
                 "hard_negative": hard_negative_loss,
             }
+            loss_gradients: dict[str, tuple[torch.Tensor | None, ...]] = {}
             for name, value in per_loss.items():
                 gradients = torch.autograd.grad(
                     value,
@@ -581,8 +628,15 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                     retain_graph=True,
                     allow_unused=True,
                 )
+                loss_gradients[name] = gradients
                 gradient_metrics[f"gradient_loss_{name}_to_hyper_projection"] = (
                     _tensor_gradient_norm(gradients)
+                )
+            if "depth" in loss_gradients and "tree_distance" in loss_gradients:
+                gradient_metrics[
+                    "gradient_cosine_radius_tree_distance_hyper_projection"
+                ] = _gradient_cosine(
+                    loss_gradients["depth"], loss_gradients["tree_distance"]
                 )
         scaler.scale(loss).backward()
         scaler.unscale_(optimizer)
@@ -632,21 +686,39 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
             final_metrics.update(validation_metrics)
             logger.log(step=step + 1, split="validation", **validation_metrics)
             last_validation_step = step + 1
-            _save_pretrain_checkpoint(
-                output_dir / "latest.pt",
-                model=model, optimizer=optimizer, scheduler=scheduler, scaler=scaler,
-                config=config, data_module=data_module, step=step + 1,
-                metrics=final_metrics, streaming_cursor=cursor.state_dict(),
+            zero_positive_windows = _check_channel_positive_window(
+                validation_metrics, zero_positive_windows, config
             )
-            validation_loss = validation_metrics.get("validation_loss_total", float("inf"))
-            if validation_loss < best_validation_loss:
+            if config.best_metric not in validation_metrics:
+                raise ValueError(
+                    f"best_metric {config.best_metric!r} is absent from validation metrics"
+                )
+            validation_loss = float(validation_metrics[config.best_metric])
+            improved = (
+                validation_loss < best_validation_loss
+                if config.best_mode == "min"
+                else validation_loss > best_validation_loss
+            )
+            if improved:
                 best_validation_loss = validation_loss
                 _save_pretrain_checkpoint(
                     output_dir / "best.pt",
                     model=model, optimizer=optimizer, scheduler=scheduler, scaler=scaler,
                     config=config, data_module=data_module, step=step + 1,
                     metrics=final_metrics, streaming_cursor=cursor.state_dict(),
+                    best_metric_value=best_validation_loss,
+                    last_validation_step=last_validation_step,
+                    zero_positive_windows=zero_positive_windows,
                 )
+            _save_pretrain_checkpoint(
+                output_dir / "latest.pt",
+                model=model, optimizer=optimizer, scheduler=scheduler, scaler=scaler,
+                config=config, data_module=data_module, step=step + 1,
+                metrics=final_metrics, streaming_cursor=cursor.state_dict(),
+                best_metric_value=best_validation_loss,
+                last_validation_step=last_validation_step,
+                zero_positive_windows=zero_positive_windows,
+            )
         if (step + 1) % config.checkpoint_every == 0:
             _save_pretrain_checkpoint(
                 output_dir / f"checkpoint-step-{step + 1}.pt",
@@ -659,6 +731,9 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 step=step + 1,
                 metrics=final_metrics,
                 streaming_cursor=cursor.state_dict(),
+                best_metric_value=best_validation_loss,
+                last_validation_step=last_validation_step,
+                zero_positive_windows=zero_positive_windows,
             )
     if last_validation_step != config.max_steps:
         validation_metrics = _validate_pretraining(
@@ -666,20 +741,34 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
         )
         final_metrics.update(validation_metrics)
         logger.log(step=config.max_steps, split="validation", **validation_metrics)
-        validation_loss = validation_metrics.get("validation_loss_total", float("inf"))
-        if validation_loss < best_validation_loss:
+        last_validation_step = config.max_steps
+        zero_positive_windows = _check_channel_positive_window(
+            validation_metrics, zero_positive_windows, config
+        )
+        validation_loss = float(validation_metrics[config.best_metric])
+        improved = (
+            validation_loss < best_validation_loss
+            if config.best_mode == "min" else validation_loss > best_validation_loss
+        )
+        if improved:
             best_validation_loss = validation_loss
             _save_pretrain_checkpoint(
                 output_dir / "best.pt",
                 model=model, optimizer=optimizer, scheduler=scheduler, scaler=scaler,
                 config=config, data_module=data_module, step=config.max_steps,
                 metrics=final_metrics, streaming_cursor=cursor.state_dict(),
+                best_metric_value=best_validation_loss,
+                last_validation_step=last_validation_step,
+                zero_positive_windows=zero_positive_windows,
             )
     _save_pretrain_checkpoint(
         output_dir / "latest.pt",
         model=model, optimizer=optimizer, scheduler=scheduler, scaler=scaler,
         config=config, data_module=data_module, step=config.max_steps,
         metrics=final_metrics, streaming_cursor=cursor.state_dict(),
+        best_metric_value=best_validation_loss,
+        last_validation_step=last_validation_step,
+        zero_positive_windows=zero_positive_windows,
     )
     checkpoint = _save_pretrain_checkpoint(
         output_dir / "checkpoint.pt",
@@ -692,6 +781,9 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
         step=config.max_steps,
         metrics=final_metrics,
         streaming_cursor=cursor.state_dict(),
+        best_metric_value=best_validation_loss,
+        last_validation_step=last_validation_step,
+        zero_positive_windows=zero_positive_windows,
     )
     return TrainingResult(
         checkpoint=checkpoint,
@@ -730,6 +822,7 @@ def _validate_pretraining(
         tangent_variance_target=config.tangent_variance_target,
         hyper_projection_init_scale=config.hyper_projection_init_scale,
         tangent_scale_mode=config.tangent_scale_mode,
+        hyperbolic_level_encoding=config.hyperbolic_level_encoding,
     )
     split = "validation" if data_module.split_counts.get("validation", 0) else "train"
     totals: dict[str, list[float]] = {}
@@ -761,6 +854,13 @@ def _validate_pretraining(
             level_ids=validation_batch["level_ids"],
             node_mask=validation_batch["node_mask"],
             b_side=validation_batch["b_side"],
+            lca_node_id=validation_batch["lca_node_id"],
+            edges_to_lca_from_i=validation_batch["edges_to_lca_from_i"],
+            edges_to_lca_from_j=validation_batch["edges_to_lca_from_j"],
+        )
+        parent_negative_mask = build_topology_safe_parent_negative_mask(
+            targets, validation_batch["node_mask"],
+            validation_batch["ancestor_descendant_relation"],
         )
         attention_logits = (
             model.channel_pool_score(encoded.channel_projection).squeeze(-1)
@@ -799,6 +899,7 @@ def _validate_pretraining(
             tree_relation_mask=relation_mask,
             lca_depth=validation_batch["lca_depth"],
             exact_tree_path_distance=validation_batch["exact_tree_path_distance"],
+            parent_negative_mask=parent_negative_mask,
             parent_ids=validation_batch["parent_ids"],
             level_ids=validation_batch["level_ids"],
             node_mask=validation_batch["node_mask"],
@@ -819,6 +920,11 @@ def _validate_pretraining(
             curvature=config.curvature,
             full_event_max_level=validation_batch.get("full_event_max_level"),
             tangent_variance_target=architecture.tangent_variance_target,
+            radius_target_mode=config.radius_target_mode,
+            depth_from_retained_root=validation_batch["depth_from_retained_root"],
+            distance_to_nearest_retained_root=validation_batch[
+                "distance_to_nearest_retained_root"
+            ],
         )
         leaf_loss = _leaf_pid_loss(leaf_pid_logits, validation_batch)
         total_loss = loss_output.total + leaf_loss
@@ -839,6 +945,7 @@ def _validate_pretraining(
             lca_depth=validation_batch["lca_depth"],
             tree_relation_targets=targets,
             b_side=validation_batch["b_side"],
+            parent_negative_mask=parent_negative_mask,
         )
         totals.setdefault("validation_parent_ranking_accuracy", []).append(float(ranking))
         correlation = loss_output.diagnostics.get("radius_level_correlation")
@@ -903,6 +1010,22 @@ def _tensor_gradient_norm(
     return float(torch.stack(squares).sum().sqrt().cpu()) if squares else 0.0
 
 
+def _gradient_cosine(
+    left: tuple[torch.Tensor | None, ...],
+    right: tuple[torch.Tensor | None, ...],
+) -> float:
+    pairs = [
+        (a.detach().flatten(), b.detach().flatten())
+        for a, b in zip(left, right, strict=True)
+        if a is not None and b is not None
+    ]
+    if not pairs:
+        return 0.0
+    a = torch.cat([pair[0] for pair in pairs])
+    b = torch.cat([pair[1] for pair in pairs])
+    return float(F.cosine_similarity(a, b, dim=0, eps=1e-12).cpu())
+
+
 def _parameter_gradient_norm(parameters) -> float:
     return _tensor_gradient_norm(
         tuple(parameter.grad for parameter in parameters)
@@ -930,18 +1053,41 @@ def _leaf_pid_loss(
 
 
 def _add_topology_labels(batch: dict[str, torch.Tensor]) -> None:
+    required = {
+        "lca_depth", "lca_node_id", "edges_to_lca_from_i",
+        "edges_to_lca_from_j", "exact_tree_path_distance",
+        "depth_from_retained_root", "distance_to_nearest_retained_root",
+        "ancestor_descendant_relation",
+    }
+    if required.issubset(batch):
+        return
+    if batch["parent_ids"].is_cuda:
+        missing = sorted(required - set(batch))
+        raise RuntimeError(
+            "topology geometry must be collated on CPU before CUDA training; "
+            f"missing fields: {missing}"
+        )
+    # Compatibility path for tiny standalone CPU callers. Geometry is built
+    # exactly once per event and every derived tensor reuses that result.
     lca = torch.full(
         (*batch["parent_ids"].shape, batch["parent_ids"].shape[1]),
         -1,
         dtype=torch.long,
         device=batch["parent_ids"].device,
     )
+    geometries = []
+    counts = []
     for index in range(batch["parent_ids"].shape[0]):
         count = int(batch["node_mask"][index].sum())
-        lca[index, :count, :count] = build_lca_depth(
-            batch["parent_ids"][index, :count].cpu(),
-            batch["level_ids"][index, :count].cpu(),
-        ).to(lca.device)
+        geometry = build_exact_tree_geometry(batch["parent_ids"][index, :count])
+        geometries.append(geometry)
+        counts.append(count)
+        valid_lca = geometry.lca_node_id >= 0
+        event_lca = torch.full_like(geometry.lca_node_id, -1)
+        event_lca[valid_lca] = batch["level_ids"][index, :count][
+            geometry.lca_node_id[valid_lca]
+        ]
+        lca[index, :count, :count] = event_lca
     batch["lca_depth"] = lca
     pair_fields = (
         "lca_node_id",
@@ -955,9 +1101,8 @@ def _add_topology_labels(batch: dict[str, torch.Tensor]) -> None:
     batch["distance_to_nearest_retained_root"] = torch.full_like(
         batch["parent_ids"], -1
     )
-    for index in range(batch["parent_ids"].shape[0]):
-        count = int(batch["node_mask"][index].sum())
-        geometry = build_exact_tree_geometry(batch["parent_ids"][index, :count].cpu())
+    batch["ancestor_descendant_relation"] = torch.zeros_like(lca, dtype=torch.bool)
+    for index, (count, geometry) in enumerate(zip(counts, geometries, strict=True)):
         for field in pair_fields:
             batch[field][index, :count, :count] = getattr(geometry, field).to(lca.device)
         batch["depth_from_retained_root"][index, :count] = (
@@ -965,6 +1110,12 @@ def _add_topology_labels(batch: dict[str, torch.Tensor]) -> None:
         )
         batch["distance_to_nearest_retained_root"][index, :count] = (
             geometry.distance_to_nearest_retained_root.to(lca.device)
+        )
+        positions = torch.arange(count, device=lca.device)
+        batch["ancestor_descendant_relation"][index, :count, :count] = (
+            ((geometry.lca_node_id == positions[:, None])
+             | (geometry.lca_node_id == positions[None, :]))
+            & ~torch.eye(count, dtype=torch.bool, device=lca.device)
         )
 
 
@@ -1007,6 +1158,9 @@ def _save_pretrain_checkpoint(
     step: int,
     metrics: dict[str, float],
     streaming_cursor: dict[str, int],
+    best_metric_value: float = float("inf"),
+    last_validation_step: int = 0,
+    zero_positive_windows: int = 0,
 ) -> Path:
     return save_training_checkpoint(
         path,
@@ -1040,6 +1194,7 @@ def _save_pretrain_checkpoint(
             tangent_variance_target=config.tangent_variance_target,
             hyper_projection_init_scale=config.hyper_projection_init_scale,
             tangent_scale_mode=config.tangent_scale_mode,
+            hyperbolic_level_encoding=config.hyperbolic_level_encoding,
             n_heads=config.n_heads,
             n_context_layers=config.n_context_layers,
             ffn_dim=config.ffn_dim,
@@ -1050,7 +1205,36 @@ def _save_pretrain_checkpoint(
             max_cardinality=config.max_cardinality,
             max_cardinality_by_level=config.max_cardinality_by_level,
         ).to_dict(),
+        training_state={
+            "best_metric": config.best_metric,
+            "best_mode": config.best_mode,
+            "best_metric_value": float(best_metric_value),
+            "last_validation_step": int(last_validation_step),
+            "channel_zero_positive_validation_windows": int(
+                zero_positive_windows
+            ),
+        },
     )
+
+
+def _check_channel_positive_window(
+    metrics: dict[str, float],
+    previous: int,
+    config: PretrainConfig,
+) -> int:
+    positives = float(metrics.get("validation_channel_positive_pairs", 0.0))
+    current = previous + 1 if positives <= 0 else 0
+    if current >= config.channel_zero_positive_validation_window:
+        message = (
+            "channel objective had zero positive pairs for "
+            f"{current} consecutive validation windows; channel_memory_size="
+            f"{config.channel_memory_size}"
+        )
+        if config.channel_zero_positive_action == "fail":
+            raise RuntimeError(message)
+        if config.channel_zero_positive_action == "warn":
+            warnings.warn(message, RuntimeWarning, stacklevel=2)
+    return current
 
 
 def _pretrain_data_order_contract(

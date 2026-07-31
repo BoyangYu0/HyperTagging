@@ -160,13 +160,7 @@ def build_notebook() -> nbf.NotebookNode:
         code(
             """
             pair_distance = distance(z[:, :, None, :], z[:, None, :, :])
-            from hypertagging.data.level_collate import build_lca_depth
-            lca_height=torch.full_like(batch["exact_tree_path_distance"],-1)
-            for b in range(mask.shape[0]):
-                count=int(mask[b].sum())
-                lca_height[b,:count,:count]=build_lca_depth(
-                    batch["parent_ids"][b,:count],batch["level_ids"][b,:count]
-                )
+            lca_height=batch["lca_depth"]
             relation_targets,_=build_tree_relation_targets(
                 parent_ids=batch["parent_ids"],lca_depth=lca_height,
                 level_ids=batch["level_ids"],node_mask=mask,b_side=batch["b_side"],
@@ -241,6 +235,7 @@ def build_notebook() -> nbf.NotebookNode:
         code(
             """
             branch_embeddings, branch_mask = pool_b_branch_embeddings(encoded.channel_projection, batch["b_side"], mask)
+            fsp_branch_embeddings,fsp_branch_mask=pool_b_branch_embeddings(encoded.channel_projection,batch["b_side"],mask,mode="fsp_only",level_ids=batch["level_ids"])
             cosine = torch.nn.functional.cosine_similarity(branch_embeddings[:,0], branch_embeddings[:,1]).detach().numpy()
             channel_frame = pd.DataFrame({
                 "event": batch["event_ids"].numpy(),
@@ -250,6 +245,7 @@ def build_notebook() -> nbf.NotebookNode:
                 "b2_channel": batch["b2_channel_ids"].numpy(),
             })
             channel_frame["exact_same_channel"] = channel_frame.b1_channel == channel_frame.b2_channel
+            channel_frame["fsp_only_embedding_similarity"]=torch.nn.functional.cosine_similarity(fsp_branch_embeddings[:,0],fsp_branch_embeddings[:,1]).detach().numpy()
             display(channel_frame)
             fig, ax = plt.subplots(figsize=(7, 5))
             ax.scatter(channel_frame.structured_channel_similarity, channel_frame.embedding_similarity,
@@ -279,6 +275,7 @@ def build_notebook() -> nbf.NotebookNode:
             }
             print({name: tuple(value.shape) for name,value in representations.items()})
             curriculum_rows=[]
+            channel_representation_rows=[]
             corruption_contract_pass=True
             hard_negative_classes=[]
             for stage in PretrainingStage:
@@ -303,11 +300,15 @@ def build_notebook() -> nbf.NotebookNode:
                         & (view.batch["level_ids"][:,None,:] > view.batch["level_ids"][:,:,None])
                     ).sum()),
                 })
+                stage_branches,stage_branch_mask=pool_b_branch_embeddings(stage_encoded.channel_projection,view.batch["b_side"],view.batch["node_mask"],mode="mean_all",level_ids=view.batch["level_ids"])
+                full_ids=torch.stack([batch["b1_full_truth_channel_ids"],batch["b2_full_truth_channel_ids"]],-1);flat_ids=full_ids[stage_branch_mask];positive_pairs=int(((flat_ids[:,None]==flat_ids[None,:])&(flat_ids[:,None]>0)&~torch.eye(len(flat_ids),dtype=torch.bool)).sum()/2) if len(flat_ids) else 0;total_pairs=len(flat_ids)*(len(flat_ids)-1)//2
+                channel_representation_rows.append({"representation":stage.value,"pooling":"truth_guided_all_nodes" if stage is PretrainingStage.TRUTH_GUIDED_MULTILEVEL else "corrupted_predicted_like" if stage is PretrainingStage.CORRUPTED_COMPOSITES else "fsp_stage","positive_pairs":positive_pairs,"negative_pairs":total_pairs-positive_pairs,"valid_branches":int(stage_branch_mask.sum()),"mean_norm":float(stage_branches[stage_branch_mask].norm(dim=-1).mean()) if stage_branch_mask.any() else 0.0})
                 corruption_contract_pass &= bool(
                     torch.equal(view.corrupted_node_mask, view.corruption_code > 0)
                 )
                 hard_negative_classes.extend(view.hard_negative_relation_classes.tolist())
             display(pd.DataFrame(curriculum_rows))
+            fsp_ids=torch.stack([batch["b1_full_truth_channel_ids"],batch["b2_full_truth_channel_ids"]],-1)[fsp_branch_mask];fsp_positive=int(((fsp_ids[:,None]==fsp_ids[None,:])&(fsp_ids[:,None]>0)&~torch.eye(len(fsp_ids),dtype=torch.bool)).sum()/2) if len(fsp_ids) else 0;channel_representation_rows.append({"representation":"fsp_only_embeddings","pooling":"fsp_only","positive_pairs":fsp_positive,"negative_pairs":len(fsp_ids)*(len(fsp_ids)-1)//2-fsp_positive,"valid_branches":int(fsp_branch_mask.sum()),"mean_norm":float(fsp_branch_embeddings[fsp_branch_mask].norm(dim=-1).mean()) if fsp_branch_mask.any() else 0.0});display(pd.DataFrame(channel_representation_rows))
             assert all(row["causal_future_links"]==0 for row in curriculum_rows)
             assert corruption_contract_pass
             curriculum_report={
@@ -319,6 +320,9 @@ def build_notebook() -> nbf.NotebookNode:
                 "invalid_corruptions_excluded_from_positive_structure":all(row["invalid_structural_positives"]==0 for row in curriculum_rows),
                 "depth_pid_channel_shape":list(batch["b_depth_pid_count_arrays"].shape),
                 "branch_multiplicity_summary_shape":list(batch["b_branch_multiplicity_summaries"].shape),
+                "channel_representation_comparison":channel_representation_rows,
+                "channel_memory_comparison_configs":["configs/ablations/channel_memory_disabled.yaml","configs/ablations/channel_memory_bounded.yaml"],
+                "inactive_channel_loss_visible":all("positive_pairs" in row for row in channel_representation_rows),
             }
             (FIGURE_DIR/"curriculum_runtime_report.json").write_text(json.dumps(curriculum_report,indent=2))
             print("Corrupted Stage 3 rebuilds p4, charge, input PID histograms, source masks, and structural features.")

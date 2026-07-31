@@ -1,0 +1,3 @@
+name: level_encoding_euclidean
+hyperbolic_level_encoding: learned_euclidean
+default_baseline: true

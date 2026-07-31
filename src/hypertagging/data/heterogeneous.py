@@ -778,6 +778,12 @@ def collate_heterogeneous_events(events: Sequence[HeterogeneousEvent]) -> dict[s
     output["distance_to_nearest_retained_root"] = torch.full_like(
         output["depth_from_retained_root"], -1
     )
+    output["ancestor_descendant_relation"] = torch.zeros(
+        (batch_size, max_nodes, max_nodes), dtype=torch.bool
+    )
+    output["lca_depth"] = torch.full(
+        (batch_size, max_nodes, max_nodes), -1, dtype=torch.long
+    )
     for batch_index, event in enumerate(events):
         n_nodes = event.parent_ids.numel()
         geometry = build_exact_tree_geometry(event.parent_ids)
@@ -789,6 +795,18 @@ def collate_heterogeneous_events(events: Sequence[HeterogeneousEvent]) -> dict[s
         output["distance_to_nearest_retained_root"][batch_index, :n_nodes] = (
             geometry.distance_to_nearest_retained_root
         )
+        positions = torch.arange(n_nodes)
+        output["ancestor_descendant_relation"][batch_index, :n_nodes, :n_nodes] = (
+            ((geometry.lca_node_id == positions[:, None])
+             | (geometry.lca_node_id == positions[None, :]))
+            & ~torch.eye(n_nodes, dtype=torch.bool)
+        )
+        valid_lca = geometry.lca_node_id >= 0
+        event_lca_depth = torch.full_like(geometry.lca_node_id, -1)
+        event_lca_depth[valid_lca] = event.level_ids[
+            geometry.lca_node_id[valid_lca]
+        ]
+        output["lca_depth"][batch_index, :n_nodes, :n_nodes] = event_lca_depth
     output["event_ids"] = torch.tensor([event.event_id for event in events], dtype=torch.long)
     output["b1_channel_ids"] = torch.tensor([event.b1_channel_id for event in events], dtype=torch.long)
     output["b2_channel_ids"] = torch.tensor([event.b2_channel_id for event in events], dtype=torch.long)

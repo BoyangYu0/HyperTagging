@@ -49,7 +49,7 @@ def build_notebook():
         code(
             """
             reco_dir=OUT/"reconstruction"
-            reco=train_level_reconstruction(ReconstructionConfig(data=str(data),output_dir=str(reco_dir),pretrained_encoder=str(pre.checkpoint),transfer_leaf_pid_head=True,device="cpu",max_steps=1,batch_size=2,seed=11))
+            reco=train_level_reconstruction(ReconstructionConfig(data=str(data),output_dir=str(reco_dir),pretrained_encoder=str(pre.checkpoint),transfer_leaf_pid_head=True,device="cpu",max_steps=1,batch_size=2,seed=11,pilot_allow_train_validation_fallback=True))
             assert reco.checkpoint.exists() and reco.transfer_report and reco.transfer_report.loaded_keys
             print(reco.transfer_report); print(reco.metrics)
             """
@@ -57,11 +57,11 @@ def build_notebook():
         md("## Teacher-forced, scheduled, free validation and resume"),
         code(
             """
-            resumed=train_level_reconstruction(ReconstructionConfig(data=str(data),output_dir=str(OUT/"resumed"),pretrained_encoder=str(pre.checkpoint),transfer_leaf_pid_head=True,device="cpu",max_steps=2,batch_size=2,seed=11,resume=str(reco.checkpoint)))
+            resumed=train_level_reconstruction(ReconstructionConfig(data=str(data),output_dir=str(OUT/"resumed"),pretrained_encoder=str(pre.checkpoint),transfer_leaf_pid_head=True,device="cpu",max_steps=2,batch_size=2,seed=11,resume=str(reco.checkpoint),pilot_allow_train_validation_fallback=True))
             records=[json.loads(line) for line in reco.log_path.read_text().splitlines()]
             display(records)
             assert resumed.steps==2
-            losses=[record["loss"] for record in records]
+            losses=[record["loss"] for record in records if "loss" in record]
             plt.plot(range(1,len(losses)+1),losses,marker="o"); plt.title("Real trainer JSONL loss")
             plt.tight_layout(); plt.savefig(OUT/"training_loss.png"); plt.show()
             (OUT/"training_pipeline_pass.json").write_text(json.dumps({"pass":True,"checkpoint":str(reco.checkpoint),"resume_step":resumed.steps},indent=2),encoding="utf-8")

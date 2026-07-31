@@ -75,6 +75,7 @@ class LevelAutoregressiveReconstructor(nn.Module):
         pid_temperature: float = 1.0,
         hyper_projection_init_scale: float = 0.05,
         tangent_scale_mode: str = "fixed",
+        hyperbolic_level_encoding: str = "learned_euclidean",
     ) -> None:
         super().__init__()
         self.encoder_mode = encoder_mode
@@ -109,6 +110,7 @@ class LevelAutoregressiveReconstructor(nn.Module):
                 dropout=dropout,
                 hyper_projection_init_scale=hyper_projection_init_scale,
                 tangent_scale_mode=tangent_scale_mode,
+                hyperbolic_level_encoding=hyperbolic_level_encoding,
             )
         else:
             raise ValueError(f"Unknown encoder_mode: {encoder_mode}")
@@ -242,6 +244,7 @@ class LevelAutoregressiveReconstructor(nn.Module):
                 source_node_ids=batch.get("source_node_ids"),
                 recursive_leaf_source_mask=batch.get("recursive_leaf_source_mask"),
                 parent_ids=batch.get("parent_ids"),
+                ancestor_descendant_relation=batch.get("ancestor_descendant_relation"),
                 reco_ids=batch.get("reco_ids"),
             )
             if self.use_contextual_encoder:

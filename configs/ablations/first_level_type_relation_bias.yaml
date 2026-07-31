@@ -1,0 +1,5 @@
+name: first_level_type_relation_bias
+whole_set_compatibility_scorer: false
+iterative_within_mother_pointer: false
+type_conditioned_daughter_relation_bias: true
+enabled_by_default: false

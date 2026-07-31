@@ -1,0 +1,4 @@
+name: channel_memory_disabled
+channel_memory_size: 0
+channel_zero_positive_action: warn
+default_baseline: false
