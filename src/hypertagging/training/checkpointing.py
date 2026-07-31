@@ -34,6 +34,7 @@ def save_training_checkpoint(
     confidence_head_trained: bool = False,
     schedule_state: dict[str, Any] | None = None,
     legacy_conflated_fraction: float = 0.0,
+    streaming_cursor: dict[str, Any] | None = None,
 ) -> Path:
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -64,6 +65,7 @@ def save_training_checkpoint(
         "confidence_head_trained": bool(confidence_head_trained),
         "schedule_state": schedule_state or {},
         "legacy_conflated_fraction": float(legacy_conflated_fraction),
+        "streaming_cursor": streaming_cursor or {},
         "data_compatible_performance": not bool(legacy_conflated_fraction),
         "random_states": {
             "python": random.getstate(),

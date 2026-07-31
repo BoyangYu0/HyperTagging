@@ -676,6 +676,14 @@ def collate_heterogeneous_events(events: Sequence[HeterogeneousEvent]) -> dict[s
             event.recursive_leaf_source_mask
         )
     output["node_mask"] = output["active"].clone()
+    from hypertagging.reconstruction.pid_state import COMPOSITE_TYPE_SOURCE_TO_ID
+
+    output["runtime_composite_type_source_ids"] = torch.full_like(
+        output["pid_labels"], COMPOSITE_TYPE_SOURCE_TO_ID["input_fixed"]
+    )
+    output["runtime_composite_type_source_ids"][
+        output["node_mask"] & (output["level_ids"] > 0)
+    ] = COMPOSITE_TYPE_SOURCE_TO_ID["truth_teacher_forced"]
     output["node_features"] = output["common_features"]
     # The deprecated name is a compatibility alias only; models consume the
     # explicit input name below.

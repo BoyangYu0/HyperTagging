@@ -47,6 +47,7 @@ class RealDataModule:
     prefetch_factor: int = 2
     persistent_workers: bool = False
     source_schema_versions: tuple[str, ...] = ()
+    dataset_index: dict[str, object] | None = None
     _materialized_splits: dict[str, list[HeterogeneousEvent]] | None = field(
         default=None, init=False, repr=False
     )
@@ -131,12 +132,17 @@ class RealDataModule:
     def normalize_batch(self, batch: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
         result = dict(batch)
         for block, normalizer in self.normalizers.items():
+            # Common/composite values remain raw until the authoritative
+            # model-side runtime normalizer. Track/cluster blocks are static.
+            if block in {"common", "composite"}:
+                continue
             values_key = f"{block}_features"
             availability_key = f"{block}_availability"
             result[values_key] = normalizer.transform(
                 result[values_key], result[availability_key]
             )
         result["node_features"] = result["common_features"]
+        result["runtime_features_are_raw"] = torch.tensor(True)
         return result
 
     def normalization_state(self) -> dict[str, dict[str, torch.Tensor]]:
@@ -148,6 +154,11 @@ class RealDataModule:
     def splits(self) -> dict[str, list[HeterogeneousEvent]]:
         """Diagnostic compatibility view; trainers intentionally do not use it."""
 
+        if self.max_events is None or self.max_events > 10_000:
+            raise RuntimeError(
+                "materializing RealDataModule.splits is disabled for large datasets; "
+                "use iter_events or an explicit max_events<=10000 diagnostic pilot"
+            )
         if self._materialized_splits is None:
             self._materialized_splits = {
                 name: list(self.iter_events(name, shuffle=False))
@@ -180,11 +191,75 @@ def build_real_data_module(
     num_workers: int = 0,
     prefetch_factor: int = 2,
     persistent_workers: bool = False,
+    dataset_index: str | Path | None = None,
+    rescan_dataset: bool = False,
 ) -> RealDataModule:
     """Build a restartable streaming data module without retaining event lists."""
 
     paths = resolve_data_paths(data)
     config = split_config or SourceAwareSplitConfig(seed=seed)
+    if dataset_index is not None and not rescan_dataset:
+        from hypertagging.data.dataset_index import (
+            load_dataset_index,
+            tensor_normalizer_state,
+        )
+
+        index = load_dataset_index(dataset_index)
+        indexed_paths = {str(Path(path).resolve()) for path in index["paths"]}
+        if indexed_paths != {str(path.resolve()) for path in paths}:
+            raise ValueError("dataset index shard paths do not match requested data")
+        if index["split_config"] != config.__dict__:
+            raise ValueError("dataset index split configuration mismatch")
+        legacy_fraction = float(index["legacy_fraction"])
+        if legacy_fraction and not allow_legacy_conflated:
+            raise ValueError("dataset index reports legacy-conflated nodes")
+        split_counts = {
+            name: int(index["split_counts"].get(name, 0))
+            for name in ("train", "validation", "test")
+        }
+        missing = [name for name in required_splits if split_counts[name] == 0]
+        if missing:
+            raise ValueError(f"indexed dataset has empty required split(s) {missing}")
+        split_manifest = {
+            "seed": seed,
+            "groups": index["source_groups"],
+            "split_counts": split_counts,
+            "pilot_split_repair": False,
+            "overrides": {},
+            "dataset_index_hash": index["index_hash"],
+        }
+        manifest_json = json.dumps(split_manifest, sort_keys=True, separators=(",", ":"))
+        module = RealDataModule(
+            input_paths=tuple(str(path) for path in paths),
+            normalizers={},
+            split_manifest=split_manifest,
+            split_manifest_hash=hashlib.sha256(manifest_json.encode()).hexdigest(),
+            overflow_counters={"max_nodes_dropped": 0, "invalid_events": 0},
+            seed=seed,
+            split_config=config,
+            max_events=max_events,
+            max_nodes=max_nodes,
+            max_nodes_overflow=max_nodes_overflow,
+            shuffle_buffer_size=shuffle_buffer_size,
+            allow_legacy_conflated=allow_legacy_conflated,
+            split_counts=split_counts,
+            legacy_conflated_fraction=legacy_fraction,
+            allowed_types_by_level={
+                int(level): tuple(int(token) for token in tokens)
+                for level, tokens in index["allowed_types_by_level"].items()
+            },
+            num_workers=num_workers,
+            prefetch_factor=prefetch_factor,
+            persistent_workers=persistent_workers,
+            source_schema_versions=tuple(index["schema_versions"]),
+            dataset_index=index,
+        )
+        state = normalization_state or tensor_normalizer_state(index)
+        for block, block_state in state.items():
+            normalizer = StreamingMaskedFeatureNormalizer()
+            normalizer.load_state_dict(block_state)
+            module.normalizers[block] = normalizer
+        return module
     split_counts = {"train": 0, "validation": 0, "test": 0}
     group_splits: dict[str, str] = {}
     source_counts: dict[str, dict[str, int]] = {
@@ -382,6 +457,7 @@ class _StreamingHeterogeneousDataset(IterableDataset):
         self.overflow = module.max_nodes_overflow
         self.split = split
         self.split_config = module.split_config
+        self.split_overrides = module.split_overrides
         self.shuffle_buffer_size = module.shuffle_buffer_size if shuffle else 0
         self.seed = module.seed + epoch
 
@@ -395,6 +471,7 @@ class _StreamingHeterogeneousDataset(IterableDataset):
             seed=self.seed,
             split_name=self.split,
             split_config=self.split_config,
+            split_overrides=self.split_overrides,
         )
         for record in records:
             event = heterogeneous_event_from_record(record)

@@ -103,3 +103,20 @@ Do not refactor these before stronger equivalence tests exist:
 - `notebooks/inspect_leaf_pid_and_composite_inputs.ipynb` and
   `notebooks/inspect_streaming_dataset.ipynb`: deterministic fixture/real-data
   inspection for the new contracts.
+
+## Final runtime and scale revision
+
+- `data/streaming.py`: checkpointed runtime normalization, serializable cursor,
+  bounded shuffle, and file/row-group worker partitioning.
+- `data/dataset_index.py`: versioned mergeable startup index with split,
+  Welford, capacity, PID, depth, and completeness statistics.
+- `preprocessing/schema_v5.py`: experimental native nested Arrow rows and a
+  bounded comparison against JSON-in-Parquet v4.
+- `training/reconstruction_trainer.py`: one sampled primary context per
+  event/level and multi-event metric aggregation.
+- `training/pretraining_curriculum.py`: actual applied corruption labels and
+  relation-valid hard negatives.
+- `scripts/build_dataset_index.py` and `scripts/benchmark_parquet_storage.py`:
+  explicit scale-preparation tools.
+- `docs/final_runtime_and_scale_audit.md`: baseline, issues, compatibility,
+  implementation outcome, and verification boundary.

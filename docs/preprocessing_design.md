@@ -269,3 +269,23 @@ Recursive completeness is stored independently from local daughter counts.
 The default `complete_only` target policy admits only valid, recursively
 reconstructable-complete mothers. Capacity scans and training use the same
 policy.
+
+## Runtime-scale publication contract
+
+V4 buffers only a configured event window and publishes the parquet and
+metadata sidecar followed by an atomic completion marker. Failed basf2
+processing aborts and removes unpublished partial files. The sidecar includes
+mergeable feature Welford state as well as capacity, PID, completeness, and
+actual per-node leaf-mode distributions.
+
+Requested collection mode and actual node provenance are separate. A
+fixed-hypothesis request requires explicit Particle arrays and rejects raw
+Tracks; validation checks the actual distribution rather than trusting the
+manifest label. Mixed raw-track, ECL, and composite events are marked
+`mixed_explicit_per_node`.
+
+V4 retains JSON event payloads for compatibility. Experimental
+`schema_v5.py` writes native nested Arrow events, and
+`scripts/benchmark_parquet_storage.py` measures size, writes, full decode, and
+projected reads on a pilot. Production must remain v4 until that benchmark is
+reviewed on representative data.

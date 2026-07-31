@@ -26,6 +26,18 @@ class RuntimePIDState:
     daughter_histogram_available: torch.Tensor
 
 
+COMPOSITE_TYPE_SOURCES = (
+    "input_fixed",
+    "truth_teacher_forced",
+    "predicted",
+    "corrupted",
+    "unknown",
+)
+COMPOSITE_TYPE_SOURCE_TO_ID = {
+    name: index for index, name in enumerate(COMPOSITE_TYPE_SOURCES)
+}
+
+
 def charge_compatible_pid_mask(charge: torch.Tensor) -> torch.Tensor:
     """Return charged-stable reduced-token support for each reconstructed charge."""
 
@@ -82,10 +94,56 @@ def rebuild_runtime_pid_state(
         input_tokens, num_classes=len(PDG_TOKENS)
     ).to(leaf_pid_logits.dtype)
     probabilities = one_hot.clone()
+    source_ids = batch.get(
+        "runtime_composite_type_source_ids",
+        torch.full_like(input_tokens, COMPOSITE_TYPE_SOURCE_TO_ID["input_fixed"]),
+    )
+    composite = node_mask & (
+        modes == LEAF_MODE_TO_ID["composite"]
+    )
+    teacher = composite & (
+        source_ids == COMPOSITE_TYPE_SOURCE_TO_ID["truth_teacher_forced"]
+    )
+    if teacher.any():
+        if "pid_target_labels" not in batch:
+            raise ValueError("teacher-forced composite types require pid_target_labels")
+        probabilities = torch.where(
+            teacher.unsqueeze(-1),
+            torch.nn.functional.one_hot(
+                batch["pid_target_labels"], num_classes=len(PDG_TOKENS)
+            ).to(probabilities.dtype),
+            probabilities,
+        )
+    generated = composite & (
+        (source_ids == COMPOSITE_TYPE_SOURCE_TO_ID["predicted"])
+        | (source_ids == COMPOSITE_TYPE_SOURCE_TO_ID["corrupted"])
+    )
+    if generated.any():
+        generated_tokens = batch.get("current_pid_tokens", input_tokens)
+        probabilities = torch.where(
+            generated.unsqueeze(-1),
+            torch.nn.functional.one_hot(
+                generated_tokens, num_classes=len(PDG_TOKENS)
+            ).to(probabilities.dtype),
+            probabilities,
+        )
+    unknown = composite & (
+        source_ids == COMPOSITE_TYPE_SOURCE_TO_ID["unknown"]
+    )
+    if unknown.any():
+        unknown_one_hot = torch.zeros_like(probabilities)
+        unknown_one_hot[..., 0] = 1
+        probabilities = torch.where(unknown.unsqueeze(-1), unknown_one_hot, probabilities)
     raw = node_mask & (
         modes == LEAF_MODE_TO_ID["raw_track_predicted_pid"]
     )
     compatible = charge_compatible_pid_mask(batch["charge"])
+    if raw.any() and (~compatible.any(dim=-1) & raw).any():
+        bad = torch.nonzero(~compatible.any(dim=-1) & raw, as_tuple=False).tolist()
+        raise ValueError(
+            "raw track has no charge-compatible stable PID species at positions "
+            f"{bad}"
+        )
     raw_logits = leaf_pid_logits.masked_fill(~compatible, -1e4)
     raw_probabilities = torch.softmax(raw_logits, dim=-1)
     probabilities = torch.where(raw.unsqueeze(-1), raw_probabilities, probabilities)
@@ -153,4 +211,6 @@ __all__ = [
     "hard_daughter_pid_histograms",
     "rebuild_runtime_pid_state",
     "soft_daughter_pid_histograms",
+    "COMPOSITE_TYPE_SOURCES",
+    "COMPOSITE_TYPE_SOURCE_TO_ID",
 ]

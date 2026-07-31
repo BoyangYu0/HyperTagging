@@ -70,3 +70,13 @@ Recommended first matched-split ablations are
 `plus_leaf_pid`, `plus_scheduled_sampling`, and `full_revised`. Render each
 command first and inspect it; no repository command automatically submits a
 job.
+
+Build and review a dataset index before rendering a production trainer and add
+`--dataset-index /data/volume/dataset_index.json` to the command. This avoids
+repeated 10M-event startup scans. Use `--num-workers 0` when exact mid-epoch
+resume is required; multiworker jobs partition I/O disjointly but do not claim
+an exact prefetched-worker cursor.
+
+Run the JSON-v4/native-nested storage benchmark on a representative pilot and
+archive its JSON report before changing production format. Native v5 is
+experimental and is never selected automatically.

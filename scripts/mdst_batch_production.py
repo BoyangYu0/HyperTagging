@@ -10,8 +10,10 @@ import json
 import os
 from pathlib import Path
 import shutil
+import sqlite3
 import subprocess
 import sys
+import tempfile
 import tempfile
 import hashlib
 
@@ -243,12 +245,13 @@ def validate_shard(
         if not sidecar.exists():
             raise ValueError(f"Missing schema-v4 metadata sidecar for {path}")
         metadata = json.loads(sidecar.read_text(encoding="utf-8"))
-        events = list(iter_event_records_v4(path))
         payload = {
             **metadata,
             "schema_version": metadata.get("schema_version"),
-            "events": events,
         }
+        marker = path.with_suffix(path.suffix + ".complete")
+        if not marker.exists():
+            raise ValueError(f"Missing schema-v4 completion marker for {path}")
     else:
         payload = ak.to_list(ak.from_parquet(path))[0]
     if payload.get("schema_version") != expected_schema:
@@ -265,10 +268,27 @@ def validate_shard(
         raise ValueError(f"PID-vocabulary mismatch in {path}")
     if (
         expected_leaf_kinematics_mode is not None
-        and payload.get("leaf_kinematics_mode") is not None
-        and payload.get("leaf_kinematics_mode") != expected_leaf_kinematics_mode
+        and payload.get("requested_collection_mode") is not None
+        and payload.get("requested_collection_mode") != expected_leaf_kinematics_mode
     ):
         raise ValueError(f"Leaf-kinematics-mode mismatch in {path}")
+    if expected_schema == SCHEMA_VERSION_V4 and expected_leaf_kinematics_mode:
+        actual_modes = {
+            str(name): int(count)
+            for name, count in payload.get("actual_leaf_mode_distribution", {}).items()
+        }
+        if expected_leaf_kinematics_mode == "raw_track_predicted_pid":
+            if actual_modes.get("raw_track_predicted_pid", 0) <= 0:
+                raise ValueError(f"Requested raw Tracks but output contains none in {path}")
+        elif expected_leaf_kinematics_mode == "fixed_hypothesis_candidate":
+            if actual_modes.get("fixed_hypothesis_candidate", 0) <= 0:
+                raise ValueError(
+                    f"Requested fixed-hypothesis candidates but output contains none in {path}"
+                )
+            if actual_modes.get("raw_track_predicted_pid", 0) > 0:
+                raise ValueError(
+                    f"Fixed-hypothesis production unexpectedly contains raw Tracks in {path}"
+                )
     if (
         expected_charge_conjugate_normalization is not None
         and payload.get("charge_conjugate_normalization") is not None
@@ -276,20 +296,34 @@ def validate_shard(
         != bool(expected_charge_conjugate_normalization)
     ):
         raise ValueError(f"Charge-conjugate-normalization mismatch in {path}")
-    actual_events = len(payload["events"])
+    if expected_schema == SCHEMA_VERSION_V4:
+        actual_events = 0
+        seen_uids: set[str] = set()
+        for event in iter_event_records_v4(path):
+            uid = str(event.get("event_uid", ""))
+            if not uid:
+                raise ValueError(f"Missing event_uid in {path}")
+            if uid in seen_uids:
+                raise ValueError(f"Duplicate event_uid within {path}")
+            seen_uids.add(uid)
+            actual_events += 1
+        unique_events = len(seen_uids)
+    else:
+        actual_events = len(payload["events"])
+        event_uids = [event.get("event_uid", "") for event in payload["events"]]
+        if any(not event_uid for event_uid in event_uids):
+            raise ValueError(f"Missing event_uid in {path}")
+        if len(set(event_uids)) != len(event_uids):
+            raise ValueError(f"Duplicate event_uid within {path}")
+        unique_events = len(set(event_uids))
     if actual_events != expected_events:
         raise ValueError(
             f"Event-count mismatch for {path}: expected {expected_events}, got {actual_events}"
         )
-    event_uids = [event.get("event_uid", "") for event in payload["events"]]
-    if any(not event_uid for event_uid in event_uids):
-        raise ValueError(f"Missing event_uid in {path}")
-    if len(set(event_uids)) != len(event_uids):
-        raise ValueError(f"Duplicate event_uid within {path}")
     return {
         "output_file": str(path),
         "events": actual_events,
-        "unique_event_uids": len(set(event_uids)),
+        "unique_event_uids": unique_events,
         "schema_version": payload.get("schema_version"),
         "feature_spec_hash": payload.get("feature_spec_hash", ""),
         "pid_vocabulary_version": payload.get("pid_vocabulary_version", ""),
@@ -408,7 +442,6 @@ def run_task(
                 record["charge_conjugate_normalization"]
             ),
         )
-        os.replace(temporary_output, output_file)
         temporary_sidecar = temporary_output.with_suffix(
             temporary_output.suffix + ".metadata.json"
         )
@@ -416,6 +449,15 @@ def run_task(
             os.replace(
                 temporary_sidecar,
                 output_file.with_suffix(output_file.suffix + ".metadata.json"),
+            )
+        os.replace(temporary_output, output_file)
+        temporary_marker = temporary_output.with_suffix(
+            temporary_output.suffix + ".complete"
+        )
+        if temporary_marker.exists():
+            os.replace(
+                temporary_marker,
+                output_file.with_suffix(output_file.suffix + ".complete"),
             )
     finally:
         if temporary_output.exists():
@@ -425,6 +467,9 @@ def run_task(
         )
         if temporary_sidecar.exists():
             temporary_sidecar.unlink()
+        temporary_output.with_suffix(
+            temporary_output.suffix + ".complete"
+        ).unlink(missing_ok=True)
 
     result.update(
         {
@@ -450,7 +495,13 @@ def validate_production_manifest(manifest: Path) -> dict[str, object]:
         raise ValueError("production manifest is empty")
     by_file: dict[str, list[tuple[int, int, int]]] = defaultdict(list)
     seen_task_ids: set[int] = set()
-    all_uids: set[str] = set()
+    uid_database_file = tempfile.NamedTemporaryFile(
+        prefix="hypertagging-uids-", suffix=".sqlite", delete=False
+    )
+    uid_database_file.close()
+    uid_database_path = Path(uid_database_file.name)
+    uid_database = sqlite3.connect(uid_database_path)
+    uid_database.execute("CREATE TABLE event_uids (uid TEXT PRIMARY KEY)")
     categories: Counter[str] = Counter()
     completed = 0
     missing: list[int] = []
@@ -491,15 +542,16 @@ def validate_production_manifest(manifest: Path) -> dict[str, object]:
             ),
         )
         events = (
-            list(iter_event_records_v4(output))
+            iter_event_records_v4(output)
             if str(record["schema_version"]) == SCHEMA_VERSION_V4
-            else ak.to_list(ak.from_parquet(output))[0]["events"]
+            else iter(ak.to_list(ak.from_parquet(output))[0]["events"])
         )
         for event in events:
             uid = str(event["event_uid"])
-            if uid in all_uids:
+            try:
+                uid_database.execute("INSERT INTO event_uids(uid) VALUES (?)", (uid,))
+            except sqlite3.IntegrityError:
                 raise ValueError(f"duplicate event_uid across shards: {uid}")
-            all_uids.add(uid)
         completed += 1
         total_events += int(result["events"])
     for input_file, ranges in by_file.items():
@@ -512,13 +564,18 @@ def validate_production_manifest(manifest: Path) -> dict[str, object]:
     planned = sum(int(record["planned_events"]) for record in records)
     if not missing and total_events != planned:
         raise ValueError(f"global event count mismatch: planned {planned}, found {total_events}")
+    unique_uid_count = int(
+        uid_database.execute("SELECT COUNT(*) FROM event_uids").fetchone()[0]
+    )
+    uid_database.close()
+    uid_database_path.unlink(missing_ok=True)
     return {
         "tasks": len(records),
         "completed_shards": completed,
         "missing_shards": missing,
         "planned_events": planned,
         "validated_events": total_events,
-        "unique_event_uids": len(all_uids),
+        "unique_event_uids": unique_uid_count,
         "category_distribution": dict(sorted(categories.items())),
         **expected_config,
     }

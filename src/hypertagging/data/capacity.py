@@ -115,4 +115,62 @@ def require_capacity(
         )
 
 
-__all__ = ["CapacityStatistics", "dataset_capacity_statistics", "require_capacity"]
+def capacity_statistics_from_index(
+    index: Mapping[str, object],
+    *,
+    global_n_queries: int,
+    global_max_cardinality: int,
+) -> CapacityStatistics:
+    """Reconstruct bounded capacity statistics from histogram sidecars."""
+
+    histograms = index.get("mother_count_histograms_by_level", {})
+    maxima: dict[int, int] = {}
+    percentiles: dict[int, dict[str, float]] = {}
+    query_overflow = total_level_events = 0
+    for level_text, raw_hist in dict(histograms).items():
+        level = int(level_text)
+        hist = {int(key): int(value) for key, value in dict(raw_hist).items()}
+        maxima[level] = max(hist, default=0)
+        total = sum(hist.values())
+        total_level_events += total
+        query_overflow += sum(v for k, v in hist.items() if k > global_n_queries)
+        percentiles[level] = {
+            name: _histogram_percentile(hist, quantile)
+            for name, quantile in (("p50", 0.50), ("p90", 0.90), ("p95", 0.95), ("p99", 0.99))
+        }
+    cardinality = {
+        int(key): int(value)
+        for key, value in dict(index.get("daughter_cardinality_histogram", {})).items()
+    }
+    total_mothers = sum(cardinality.values())
+    cardinality_overflow = sum(
+        value for count, value in cardinality.items() if count > global_max_cardinality
+    )
+    return CapacityStatistics(
+        maximum_mothers_per_level=maxima,
+        percentile_mothers_per_level=percentiles,
+        daughter_cardinality_counts=cardinality,
+        maximum_daughter_cardinality=max(cardinality, default=0),
+        query_overflow_events=query_overflow,
+        cardinality_overflow_mothers=cardinality_overflow,
+        query_overflow_rate=query_overflow / max(total_level_events, 1),
+        cardinality_overflow_rate=cardinality_overflow / max(total_mothers, 1),
+    )
+
+
+def _histogram_percentile(histogram: Mapping[int, int], quantile: float) -> float:
+    target = quantile * max(sum(histogram.values()) - 1, 0)
+    cumulative = 0
+    for value, count in sorted(histogram.items()):
+        cumulative += count
+        if cumulative - 1 >= target:
+            return float(value)
+    return float(max(histogram, default=0))
+
+
+__all__ = [
+    "CapacityStatistics",
+    "capacity_statistics_from_index",
+    "dataset_capacity_statistics",
+    "require_capacity",
+]

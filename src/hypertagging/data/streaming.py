@@ -5,9 +5,11 @@ from __future__ import annotations
 from collections.abc import Iterable, Iterator
 import random
 from pathlib import Path
+from dataclasses import dataclass
 from typing import Any, Generic, Mapping, TypeVar
 
 import torch
+from torch import nn
 from torch.utils.data import IterableDataset, get_worker_info
 
 from hypertagging.preprocessing.schema_v4 import iter_event_records_v4
@@ -40,6 +42,28 @@ class BoundedShuffleBuffer(Generic[T]):
             yield buffer.pop(rng.randrange(len(buffer)))
 
 
+@dataclass
+class StreamingCursor:
+    """Serializable exact cursor for deterministic single-worker iteration."""
+
+    epoch: int = 0
+    events_consumed: int = 0
+    shard_index: int = 0
+    row_group_index: int = 0
+    event_offset: int = 0
+    batch_index: int = 0
+
+    def state_dict(self) -> dict[str, int]:
+        return {
+            name: int(getattr(self, name))
+            for name in self.__dataclass_fields__
+        }
+
+    @classmethod
+    def from_state_dict(cls, state: Mapping[str, Any]) -> "StreamingCursor":
+        return cls(**{name: int(state.get(name, 0)) for name in cls.__dataclass_fields__})
+
+
 class ParquetEventIterableDataset(IterableDataset):
     """Worker-safe lazy iteration over v4 event rows or adapted legacy shards."""
 
@@ -52,6 +76,7 @@ class ParquetEventIterableDataset(IterableDataset):
         seed: int = 0,
         split_name: str | None = None,
         split_config: Any | None = None,
+        split_overrides: Mapping[str, str] | None = None,
     ) -> None:
         super().__init__()
         self.paths = tuple(Path(path) for path in paths)
@@ -60,26 +85,53 @@ class ParquetEventIterableDataset(IterableDataset):
         self.seed = int(seed)
         self.split_name = split_name
         self.split_config = split_config
+        self.split_overrides = dict(split_overrides or {})
 
     def __iter__(self) -> Iterator[dict[str, Any]]:
+        yield from self.iter_from_cursor(StreamingCursor())
+
+    def iter_from_cursor(
+        self, cursor: StreamingCursor
+    ) -> Iterator[dict[str, Any]]:
         worker = get_worker_info()
         worker_id = 0 if worker is None else worker.id
         worker_count = 1 if worker is None else worker.num_workers
 
         def records() -> Iterator[dict[str, Any]]:
             global_index = 0
-            for path in self.paths:
-                for event in iter_event_records_v4(path):
-                    if self.max_events is not None and global_index >= self.max_events:
+            # Files are the primary disjoint work unit. For fewer files than
+            # workers, row groups are assigned directly by the schema iterator.
+            assigned_paths = (
+                self.paths
+                if len(self.paths) < worker_count
+                else self.paths[worker_id::worker_count]
+            )
+            for path in assigned_paths:
+                for event in iter_event_records_v4(
+                    path,
+                    worker_id=worker_id if len(self.paths) < worker_count else 0,
+                    worker_count=worker_count if len(self.paths) < worker_count else 1,
+                ):
+                    local_limit = (
+                        None
+                        if self.max_events is None
+                        else max(
+                            0,
+                            (self.max_events + worker_count - 1 - worker_id)
+                            // worker_count,
+                        )
+                    )
+                    if local_limit is not None and global_index >= local_limit:
                         return
-                    belongs = global_index % worker_count == worker_id
                     global_index += 1
-                    if not belongs:
-                        continue
                     if self.split_name is not None:
                         from hypertagging.data.splitting import stable_split_name
 
-                        if stable_split_name(event, self.split_config) != self.split_name:
+                        assigned = self.split_overrides.get(
+                            str(event["event_uid"]),
+                            stable_split_name(event, self.split_config),
+                        )
+                        if assigned != self.split_name:
                             continue
                     yield event
 
@@ -90,7 +142,12 @@ class ParquetEventIterableDataset(IterableDataset):
                 size=self.shuffle_buffer_size,
                 seed=self.seed + worker_id,
             )
-        yield from source
+        skipped = 0
+        for event in source:
+            if skipped < cursor.events_consumed:
+                skipped += 1
+                continue
+            yield event
 
 
 class ShardManifestDataset(ParquetEventIterableDataset):
@@ -194,9 +251,81 @@ class StreamingMaskedFeatureNormalizer:
             self.m2 = std.square() * self.count
 
 
+class RuntimeFeatureNormalizer(nn.Module):
+    """Normalize only raw fields rebuilt between contextual passes."""
+
+    def __init__(
+        self,
+        *,
+        common_mean: torch.Tensor,
+        common_std: torch.Tensor,
+        composite_mean: torch.Tensor,
+        composite_std: torch.Tensor,
+    ) -> None:
+        super().__init__()
+        self.register_buffer("common_mean", common_mean.detach().clone().float())
+        self.register_buffer("common_std", common_std.detach().clone().float().clamp_min(1e-6))
+        self.register_buffer("composite_mean", composite_mean.detach().clone().float())
+        self.register_buffer(
+            "composite_std", composite_std.detach().clone().float().clamp_min(1e-6)
+        )
+
+    @classmethod
+    def identity(cls, common_width: int, composite_width: int) -> "RuntimeFeatureNormalizer":
+        return cls(
+            common_mean=torch.zeros(common_width),
+            common_std=torch.ones(common_width),
+            composite_mean=torch.zeros(composite_width),
+            composite_std=torch.ones(composite_width),
+        )
+
+    def normalize_runtime(
+        self,
+        common: torch.Tensor,
+        common_availability: torch.Tensor,
+        composite: torch.Tensor,
+        composite_availability: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        from hypertagging.preprocessing.schema_v4 import (
+            CATEGORICAL_COMMON_FEATURE_NAMES,
+            CONTINUOUS_COMMON_INDICES,
+            DYNAMIC_COMPOSITE_INDICES,
+            feature_spec_v4,
+        )
+
+        common_out = common.clone()
+        common_mask = common_availability.clone()
+        # Static common quantities arrive raw from the streaming data module,
+        # while dynamic quantities may have just been rebuilt.  Applying the
+        # same fitted transform to every continuous slot here prevents a
+        # raw/normalized mixture in either contextual pass.
+        for index in CONTINUOUS_COMMON_INDICES:
+            common_out[..., index] = (
+                common[..., index] - self.common_mean[index].to(common)
+            ) / self.common_std[index].to(common)
+        common_names = feature_spec_v4()["common"]
+        for name in CATEGORICAL_COMMON_FEATURE_NAMES:
+            index = common_names.index(name)
+            common_out[..., index] = 0
+            common_mask[..., index] = False
+        common_out = torch.where(common_mask, common_out, torch.zeros_like(common_out))
+        composite_out = composite.clone()
+        for index in DYNAMIC_COMPOSITE_INDICES:
+            if index < composite.shape[-1]:
+                composite_out[..., index] = (
+                    composite[..., index] - self.composite_mean[index].to(composite)
+                ) / self.composite_std[index].to(composite)
+        composite_out = torch.where(
+            composite_availability, composite_out, torch.zeros_like(composite_out)
+        )
+        return common_out, common_mask, composite_out, composite_availability
+
+
 __all__ = [
     "BoundedShuffleBuffer",
     "ParquetEventIterableDataset",
     "ShardManifestDataset",
     "StreamingMaskedFeatureNormalizer",
+    "RuntimeFeatureNormalizer",
+    "StreamingCursor",
 ]

@@ -65,6 +65,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="linear",
     )
     parser.add_argument("--scheduled-sampling-duration-steps", type=int, default=1000)
+    parser.add_argument("--auxiliary-teacher-weight", type=float, default=0.0)
+    parser.add_argument("--dataset-index", default=None)
+    parser.add_argument("--rescan-dataset", action="store_true")
     parser.add_argument("--max-validation-events", type=int, default=32)
     parser.add_argument("--rollout-validation-events", type=int, default=8)
     parser.add_argument("--validation-batch-size", type=int, default=4)
@@ -117,6 +120,9 @@ def main(argv: list[str] | None = None) -> int:
                 target_policy=args.target_policy,
                 scheduled_sampling_schedule=args.scheduled_sampling_schedule,
                 scheduled_sampling_duration_steps=args.scheduled_sampling_duration_steps,
+                auxiliary_teacher_weight=args.auxiliary_teacher_weight,
+                dataset_index=args.dataset_index,
+                rescan_dataset=args.rescan_dataset,
                 max_validation_events=args.max_validation_events,
                 rollout_validation_events=args.rollout_validation_events,
                 validation_batch_size=args.validation_batch_size,

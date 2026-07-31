@@ -39,7 +39,7 @@ def build_notebook() -> nbf.NotebookNode:
         code(
             """
             from pathlib import Path
-            import os, sys
+            import json, os, sys
             import matplotlib.pyplot as plt
             import numpy as np
             import pandas as pd
@@ -54,6 +54,7 @@ def build_notebook() -> nbf.NotebookNode:
             from hypertagging.losses.level_reconstruction import level_reconstruction_loss
             from hypertagging.models.level_autoregressive import LevelAutoregressiveReconstructor
             from hypertagging.models.stair_masks import stair_attention_mask
+            from hypertagging.preprocessing.pid_filter import PDG_TOKENS
             from hypertagging.reconstruction.level_rollout import RolloutConfig, hard_decode_proposals, level_rollout
 
             SEED = int(os.environ.get("HYPERTAGGING_NOTEBOOK_SEED", "20260730"))
@@ -69,7 +70,7 @@ def build_notebook() -> nbf.NotebookNode:
             if not events: raise ValueError("No usable events")
             batch = collate_heterogeneous_events(events)
             model = LevelAutoregressiveReconstructor(
-                n_features=batch["node_features"].shape[-1], n_types=64,
+                n_features=batch["node_features"].shape[-1], n_types=len(PDG_TOKENS),
                 hidden_dim=24, hyper_dim=6, n_queries=6, n_heads=4, n_context_layers=2,
             )
             checkpoint = os.environ.get("HYPERTAGGING_CHECKPOINT", "").strip()
@@ -236,7 +237,10 @@ def build_notebook() -> nbf.NotebookNode:
         code(
             """
             from hypertagging.evaluation.hierarchical_metrics import canonical_tree_metrics
-            from hypertagging.training.scheduled_sampling import TeacherForcingSchedule, aligned_level_targets
+            from hypertagging.training.scheduled_sampling import (
+                TeacherForcingSchedule, aligned_level_targets,
+                combine_sampled_context_losses,
+            )
             with torch.no_grad():
                 level1=model(batch,target_level=1)
                 level2=model(batch,target_level=2)
@@ -253,6 +257,20 @@ def build_notebook() -> nbf.NotebookNode:
             canonical=canonical_tree_metrics(teacher.batch,batch)
             schedule=TeacherForcingSchedule(kind="linear",start_probability=1.0,end_probability=.2,duration_steps=100)
             aligned=aligned_level_targets(batch, predicted.batch, target_level=1)
+            primary, primary_metrics=combine_sampled_context_losses(
+                torch.tensor([1.0]),torch.tensor([3.0]),
+                choose_teacher=torch.tensor([False]),auxiliary_teacher_weight=0.0,
+            )
+            scheduled_report={
+                "sampled_context":"predicted",
+                "primary_loss":float(primary),
+                "teacher_event_double_counted":False,
+                "auxiliary_teacher_weight":0.0,
+                "representable_targets":aligned.representable_count,
+                "unrepresentable_targets":aligned.truth_target_count-aligned.representable_count,
+                **primary_metrics,
+            }
+            (FIGURE_DIR/"scheduled_context_report.json").write_text(json.dumps(scheduled_report,indent=2))
             print({
                 "confidence_scores":torch.sigmoid(level1.pointer.confidence_logits).tolist(),
                 "recursive_leaf_source_shape":tuple(batch["recursive_leaf_source_mask"].shape),
@@ -263,6 +281,7 @@ def build_notebook() -> nbf.NotebookNode:
                 "representable_targets":aligned.representable_count,
                 "unrepresentable_targets":aligned.truth_target_count-aligned.representable_count,
                 "first_context_divergence_level":canonical.first_divergence_level,
+                "primary_sampled_loss":float(primary),
             })
             assert canonical.full_tree_exact_match
             """

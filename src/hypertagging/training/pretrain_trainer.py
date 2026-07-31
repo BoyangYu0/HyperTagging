@@ -20,6 +20,7 @@ from hypertagging.losses.hyperbolic_pretraining import (
 from hypertagging.models.heterogeneous import HeterogeneousNodeEncoder
 from hypertagging.models.ablation import ALL_ABLATIONS
 from hypertagging.preprocessing.pid_filter import PDG_TOKENS
+from hypertagging.preprocessing.schema_v4 import LEAF_MODE_TO_ID, feature_spec_v4
 from hypertagging.training.checkpointing import (
     load_training_checkpoint,
     restore_training_checkpoint,
@@ -33,6 +34,7 @@ from hypertagging.training.pretraining_curriculum import (
     build_curriculum_batch,
 )
 from hypertagging.training.validation import validate_contextual_geometry
+from hypertagging.data.streaming import RuntimeFeatureNormalizer, StreamingCursor
 from hypertagging.utils.seeds import seed_everything
 
 
@@ -67,6 +69,8 @@ class PretrainConfig:
     pilot_split_repair: bool = False
     allow_legacy_conflated: bool = False
     log_every: int = 10
+    dataset_index: str | None = None
+    rescan_dataset: bool = False
 
 
 @dataclass(frozen=True)
@@ -105,6 +109,31 @@ class ContextualPretrainingModel(torch.nn.Module):
         self.candidate_correctness_head = torch.nn.Linear(d_model, 1)
         self.corruption_type_head = torch.nn.Linear(d_model, 5)
         self.channel_memory = ChannelMemoryBank(channel_memory_size, d_model)
+        self.runtime_feature_normalizer = RuntimeFeatureNormalizer.identity(12, 13)
+
+    def set_runtime_feature_normalizer(
+        self, normalizer: RuntimeFeatureNormalizer
+    ) -> None:
+        self.runtime_feature_normalizer = normalizer
+
+    def normalize_batch(
+        self, batch: dict[str, torch.Tensor]
+    ) -> dict[str, torch.Tensor]:
+        common, common_mask, composite, composite_mask = (
+            self.runtime_feature_normalizer.normalize_runtime(
+                batch["common_features"],
+                batch["common_availability"],
+                batch["composite_features"],
+                batch["composite_availability"],
+            )
+        )
+        result = dict(batch)
+        result["common_features"] = common
+        result["common_availability"] = common_mask
+        result["composite_features"] = composite
+        result["composite_availability"] = composite_mask
+        result["node_features"] = common
+        return result
 
 
 class ChannelMemoryBank(torch.nn.Module):
@@ -160,6 +189,8 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
     if config.max_steps <= 0:
         raise ValueError("max_steps must be positive")
     seed_everything(config.seed)
+    if config.resume and config.num_workers > 0:
+        raise ValueError("exact streaming resume currently requires num_workers=0")
     device = torch.device(config.device)
     resume_payload = (
         load_training_checkpoint(config.resume, map_location="cpu")
@@ -181,6 +212,8 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
             if resume_payload is not None
             else None
         ),
+        dataset_index=config.dataset_index,
+        rescan_dataset=config.rescan_dataset,
     )
     output_dir = Path(config.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -195,6 +228,14 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
         use_hyperbolic_relations=ablation.hyperbolic_relation_attention,
         channel_memory_size=config.channel_memory_size,
     ).to(device)
+    model.set_runtime_feature_normalizer(
+        RuntimeFeatureNormalizer(
+            common_mean=data_module.normalizers["common"].mean,
+            common_std=data_module.normalizers["common"].std,
+            composite_mean=data_module.normalizers["composite"].mean,
+            composite_std=data_module.normalizers["composite"].std,
+        ).to(device)
+    )
     optimizer = torch.optim.AdamW(
         model.parameters(),
         lr=config.learning_rate,
@@ -220,16 +261,23 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 else None
             ),
             expected_split_manifest_hash=data_module.split_manifest_hash,
+            expected_feature_spec_hash=feature_spec_v4()["feature_spec_hash"],
         )
         start_step = int(payload.get("step", 0))
     (output_dir / "split_manifest.json").write_text(
         json.dumps(data_module.split_manifest, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
-    batch_iterator = data_module.batches(
-        "train", batch_size=config.batch_size, shuffle=True, epoch=0
+    cursor = StreamingCursor.from_state_dict(
+        (resume_payload or {}).get("streaming_cursor", {})
     )
-    epoch = 0
+    epoch = cursor.epoch
+    batch_iterator = data_module.batches(
+        "train", batch_size=config.batch_size, shuffle=True, epoch=epoch
+    )
+    for _ in range(cursor.batch_index):
+        if next(batch_iterator, None) is None:
+            raise ValueError("streaming resume cursor exceeds the saved epoch")
     final_loss = 0.0
     final_metrics: dict[str, float] = {}
     for step in range(start_step, config.max_steps):
@@ -237,6 +285,9 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
             next_batch = next(batch_iterator)
         except StopIteration:
             epoch += 1
+            cursor.epoch = epoch
+            cursor.batch_index = 0
+            cursor.events_consumed = 0
             batch_iterator = data_module.batches(
                 "train", batch_size=config.batch_size, shuffle=True, epoch=epoch
             )
@@ -244,11 +295,13 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 next_batch = next(batch_iterator)
             except StopIteration as error:
                 raise ValueError("training split produced no batches") from error
+        cursor.batch_index += 1
+        cursor.events_consumed += int(next_batch["node_mask"].shape[0])
         batch = _to_device(next_batch, device)
         _add_topology_labels(batch)
         stage = PretrainingStage(config.curriculum[step % len(config.curriculum)])
         curriculum = build_curriculum_batch(batch, stage, seed=config.seed + step)
-        train_batch = curriculum.batch
+        train_batch = model.normalize_batch(curriculum.batch)
         optimizer.zero_grad(set_to_none=True)
         with torch.autocast(
             device_type=device.type,
@@ -342,6 +395,7 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
             hard_negative_loss = _hard_negative_tree_loss(
                 encoded.hyperbolic_embeddings,
                 curriculum.hard_negative_pairs,
+                curvature=config.curvature,
             )
             loss = (
                 loss_output.total
@@ -389,6 +443,7 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
             "corruption_loss": float(corruption_loss.detach().cpu()),
             "candidate_correctness_loss": float(correctness_loss.detach().cpu()),
             "hard_negative_loss": float(hard_negative_loss.detach().cpu()),
+            "hard_negative_count": float(curriculum.hard_negative_pairs.shape[0]),
             **{
                 f"loss_{name}": float(value.detach().cpu())
                 for name, value in loss_output.components.items()
@@ -410,6 +465,7 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 data_module=data_module,
                 step=step + 1,
                 metrics=final_metrics,
+                streaming_cursor=cursor.state_dict(),
             )
     validation_iterator = data_module.batches(
         "validation", batch_size=config.batch_size, shuffle=False
@@ -423,6 +479,9 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
             None,
         )
     if validation_batch is not None:
+        validation_batch = model.normalize_batch(
+            _to_device(validation_batch, device)
+        )
         validation_metrics = validate_contextual_geometry(
             model.encoder,
             validation_batch,
@@ -441,6 +500,7 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
         data_module=data_module,
         step=config.max_steps,
         metrics=final_metrics,
+        streaming_cursor=cursor.state_dict(),
     )
     return TrainingResult(
         checkpoint=checkpoint,
@@ -472,7 +532,10 @@ def _leaf_pid_loss(
 ) -> torch.Tensor:
     raw_tracks = (
         batch["node_mask"]
-        & (batch["node_kind_ids"] == 1)
+        & (
+            batch["leaf_kinematics_mode_ids"]
+            == LEAF_MODE_TO_ID["raw_track_predicted_pid"]
+        )
         & batch["truth_pid_available"]
     )
     if not raw_tracks.any():
@@ -517,6 +580,7 @@ def _save_pretrain_checkpoint(
     data_module: RealDataModule,
     step: int,
     metrics: dict[str, float],
+    streaming_cursor: dict[str, int],
 ) -> Path:
     return save_training_checkpoint(
         path,
@@ -536,6 +600,7 @@ def _save_pretrain_checkpoint(
             if len(data_module.source_schema_versions) == 1
             else "mixed"
         ),
+        streaming_cursor=streaming_cursor,
     )
 
 
@@ -544,6 +609,7 @@ def _hard_negative_tree_loss(
     pairs: torch.Tensor,
     *,
     margin: float = 1.0,
+    curvature: float = 1.0,
 ) -> torch.Tensor:
     if not pairs.numel():
         return z.sum() * 0.0
@@ -551,7 +617,13 @@ def _hard_negative_tree_loss(
 
     values = []
     for batch_index, left, right in pairs.tolist():
-        values.append(distance(z[batch_index, left], z[batch_index, right]))
+        values.append(
+            distance(
+                z[batch_index, left],
+                z[batch_index, right],
+                curvature=curvature,
+            )
+        )
     distances = torch.stack(values)
     return torch.relu(margin - distances).mean()
 

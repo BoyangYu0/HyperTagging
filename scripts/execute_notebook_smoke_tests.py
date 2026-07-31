@@ -135,10 +135,16 @@ def execute_one(
         raise AssertionError(f"{source.name} did not produce expected figures")
     required_artifacts = {
         "leaf_composite": ("leaf_composite_contract.json",),
-        "streaming": ("streaming_report.json",),
+        "streaming": (
+            "streaming_report.json",
+            "dataset_index.json",
+            "storage_benchmark/storage_benchmark.json",
+        ),
         "leaf_pid": ("leaf_pid_token_range.csv", "leaf_input_leakage_check.json"),
         "capacity": ("capacity_report.json", "sparse_loss_table.csv"),
         "training": ("training_pipeline_pass.json", "reconstruction/checkpoint.pt"),
+        "hyperbolic": ("curriculum_runtime_report.json",),
+        "reconstruction": ("scheduled_context_report.json",),
         "qa": (),
         "manifest": ("production_manifest_report.json",),
     }.get(name, ())
@@ -153,6 +159,8 @@ def execute_one(
         )
         if not report.get("truth_clean_composite_input") or not report.get(
             "raw_track_unknown_input_pass"
+        ) or not report.get("runtime_dynamic_normalization_pass") or not report.get(
+            "teacher_composite_type_source_pass"
         ):
             raise AssertionError(f"leaf/composite contract failed: {report}")
     if name == "streaming":
@@ -163,8 +171,30 @@ def execute_one(
         )
         if not report.get("manifest_output_file_resolved") or not report.get(
             "source_leakage_pass"
-        ):
+        ) or not report.get("disjoint_worker_units_pass") or not report.get(
+            "cursor_resume_pass"
+        ) or not report.get("dataset_index_pass"):
             raise AssertionError(f"streaming report failed: {report}")
+    if name == "hyperbolic":
+        import json
+
+        report = json.loads(
+            (figure_dir / "curriculum_runtime_report.json").read_text(encoding="utf-8")
+        )
+        if not report.get("level_causal_pass") or not report.get(
+            "actual_corruption_labels_pass"
+        ) or not report.get("hard_negatives_are_explicit_tree_relations"):
+            raise AssertionError(f"curriculum runtime report failed: {report}")
+    if name == "reconstruction":
+        import json
+
+        report = json.loads(
+            (figure_dir / "scheduled_context_report.json").read_text(encoding="utf-8")
+        )
+        if report.get("teacher_event_double_counted") or report.get(
+            "sampled_context"
+        ) != "predicted":
+            raise AssertionError(f"scheduled context report failed: {report}")
     if name == "qa":
         qa_path = work_root / "preprocessing_qa.json"
         if not qa_path.exists():

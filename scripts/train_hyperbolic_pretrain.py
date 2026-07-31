@@ -44,6 +44,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--persistent-workers", action="store_true")
     parser.add_argument("--pilot-split-repair", action="store_true")
     parser.add_argument("--allow-legacy-conflated", action="store_true")
+    parser.add_argument("--dataset-index", default=None)
+    parser.add_argument("--rescan-dataset", action="store_true")
     return resolve_argparse_namespace(parser, argv)
 
 
@@ -72,6 +74,8 @@ def main(argv: list[str] | None = None) -> int:
                 pilot_split_repair=args.pilot_split_repair,
                 allow_legacy_conflated=args.allow_legacy_conflated,
                 log_every=args.log_every,
+                dataset_index=args.dataset_index,
+                rescan_dataset=args.rescan_dataset,
             )
         )
         print(

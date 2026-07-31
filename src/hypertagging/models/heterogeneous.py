@@ -18,6 +18,7 @@ from hypertagging.preprocessing.schema_v3 import (
     V3_TRACK_FEATURE_NAMES as TRACK_FEATURE_NAMES,
 )
 from hypertagging.preprocessing.pid_filter import PDG_TOKENS, validate_pid_tokens
+from hypertagging.preprocessing.schema_v4 import CATEGORICAL_COMMON_FEATURE_NAMES
 
 
 def masked_mean_pool(
@@ -158,6 +159,8 @@ class HeterogeneousNodeEncoder(nn.Module):
         self.pid_embedding = nn.Embedding(n_pid, d_model)
         self.node_kind_embedding = nn.Embedding(len(NODE_KINDS), d_model)
         self.level_embedding = nn.Embedding(max_level + 2, d_model)
+        self.active_embedding = nn.Embedding(2, d_model)
+        self.copied_embedding = nn.Embedding(2, d_model)
         availability_width = (
             len(COMMON_FEATURE_NAMES)
             + len(TRACK_FEATURE_NAMES)
@@ -202,7 +205,10 @@ class HeterogeneousNodeEncoder(nn.Module):
         *,
         attention_mask: torch.Tensor | None = None,
     ) -> HeterogeneousEncoderOutput:
-        common = self.common_encoder(batch["common_features"], batch["common_availability"])
+        common_availability = batch["common_availability"].clone()
+        for name in CATEGORICAL_COMMON_FEATURE_NAMES:
+            common_availability[..., COMMON_FEATURE_NAMES.index(name)] = False
+        common = self.common_encoder(batch["common_features"], common_availability)
         track = self.track_encoder(batch["track_features"], batch["track_availability"])
         cluster = self.cluster_encoder(batch["cluster_features"], batch["cluster_availability"])
         kinds = batch["node_kind_ids"]
@@ -226,7 +232,7 @@ class HeterogeneousNodeEncoder(nn.Module):
         )
         availability = torch.cat(
             [
-                batch["common_availability"],
+                common_availability,
                 batch["track_availability"],
                 batch["cluster_availability"],
                 batch["composite_availability"],
@@ -251,6 +257,8 @@ class HeterogeneousNodeEncoder(nn.Module):
             + pid_h
             + self.node_kind_embedding(kinds)
             + self.level_embedding(levels)
+            + self.active_embedding(batch["active"].long())
+            + self.copied_embedding(batch["copied"].long())
             + self.availability_encoder(availability)
         )
         daughter_summary = masked_mean_pool(pre_composite, batch["daughter_adjacency"])
@@ -271,6 +279,8 @@ class HeterogeneousNodeEncoder(nn.Module):
             + pid_h
             + self.node_kind_embedding(kinds)
             + self.level_embedding(levels)
+            + self.active_embedding(batch["active"].long())
+            + self.copied_embedding(batch["copied"].long())
             + self.availability_encoder(availability)
         )
         adapter_h = self.shared_norm(h0 + self.shared_mlp(h0))

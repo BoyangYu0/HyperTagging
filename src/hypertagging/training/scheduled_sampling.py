@@ -79,6 +79,44 @@ class TeacherForcingSchedule:
         )
 
 
+def combine_sampled_context_losses(
+    teacher_losses: torch.Tensor,
+    predicted_losses: torch.Tensor,
+    choose_teacher: torch.Tensor,
+    *,
+    auxiliary_teacher_weight: float = 0.0,
+) -> tuple[torch.Tensor, dict[str, float]]:
+    """Choose one primary loss per event, with optional auxiliary teacher loss."""
+
+    if (
+        teacher_losses.shape != predicted_losses.shape
+        or choose_teacher.shape != teacher_losses.shape
+    ):
+        raise ValueError("context losses and choices must have identical shapes")
+    primary = torch.where(choose_teacher, teacher_losses, predicted_losses)
+    auxiliary = (
+        teacher_losses[~choose_teacher].mean()
+        if (~choose_teacher).any()
+        else teacher_losses.sum() * 0.0
+    )
+    total = primary.mean() + float(auxiliary_teacher_weight) * auxiliary
+    return total, {
+        "sampled_teacher_count": int(choose_teacher.sum()),
+        "sampled_predicted_count": int((~choose_teacher).sum()),
+        "primary_teacher_loss": float(
+            teacher_losses[choose_teacher].detach().mean().cpu()
+            if choose_teacher.any()
+            else 0.0
+        ),
+        "primary_predicted_loss": float(
+            predicted_losses[~choose_teacher].detach().mean().cpu()
+            if (~choose_teacher).any()
+            else 0.0
+        ),
+        "auxiliary_teacher_loss": float(auxiliary.detach().cpu()),
+    }
+
+
 @dataclass(frozen=True)
 class ContextAlignment:
     predicted_to_truth: torch.Tensor
@@ -228,4 +266,5 @@ __all__ = [
     "align_context_by_recursive_sources",
     "aligned_level_targets",
     "scheduled_sampling_probability",
+    "combine_sampled_context_losses",
 ]

@@ -1,4 +1,5 @@
 import torch
+from torch.utils.data import DataLoader
 
 from hypertagging.data.notebook_fixtures import write_notebook_fixture_v4
 from hypertagging.data.streaming import (
@@ -35,3 +36,22 @@ def test_streaming_normalizer_matches_batch_fit_and_merges():
     torch.testing.assert_close(
         online.std, expected.standard_deviation, rtol=1e-5, atol=1e-6
     )
+
+
+def test_workers_receive_disjoint_row_groups_without_missing_events(tmp_path):
+    path = write_notebook_fixture_v4(tmp_path / "worker-events.parquet", row_group_size=1)
+    expected = [record["event_uid"] for record in ParquetEventIterableDataset([path])]
+
+    def collect():
+        loader = DataLoader(
+            ParquetEventIterableDataset([path]),
+            batch_size=None,
+            num_workers=2,
+        )
+        return [record["event_uid"] for record in loader]
+
+    first = collect()
+    second = collect()
+    assert len(first) == len(set(first)) == len(expected)
+    assert set(first) == set(expected)
+    assert first == second

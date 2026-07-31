@@ -30,7 +30,7 @@ def build_notebook():
             data=Path(requested) if requested else Path("/tmp/hypertagging_training_v4.parquet")
             if FIXTURE_MODE: write_notebook_fixture_v4(data)
             OUT=Path(os.environ.get("HYPERTAGGING_FIGURE_DIR","/tmp/hypertagging_figures/training")); OUT.mkdir(parents=True,exist_ok=True)
-            module=build_real_data_module(data,seed=20260730,pilot_split_repair=True)
+            module=build_real_data_module(data,seed=20260730,pilot_split_repair=True,max_events=2)
             print("TINY FIXTURE — NOT REAL DATA" if FIXTURE_MODE else "REAL PILOT SAMPLE")
             print({name:[event.event_uid for event in events] for name,events in module.splits.items()})
             assert module.split_counts["train"] > 0

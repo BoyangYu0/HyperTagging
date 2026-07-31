@@ -38,7 +38,7 @@ def build_notebook() -> nbf.NotebookNode:
         code(
             """
             from pathlib import Path
-            import os, sys
+            import json, os, sys
             import matplotlib.pyplot as plt
             import numpy as np
             import pandas as pd
@@ -256,6 +256,8 @@ def build_notebook() -> nbf.NotebookNode:
             }
             print({name: tuple(value.shape) for name,value in representations.items()})
             curriculum_rows=[]
+            corruption_contract_pass=True
+            hard_negative_classes=[]
             for stage in PretrainingStage:
                 view=build_curriculum_batch(batch,stage,seed=SEED,corruption_probability=1.0)
                 with torch.no_grad(): stage_encoded=model(view.batch,attention_mask=view.batch["curriculum_attention_mask"])
@@ -266,13 +268,27 @@ def build_notebook() -> nbf.NotebookNode:
                     "mean_radius":float(radius(stage_encoded.hyperbolic_embeddings)[view.batch["node_mask"]].mean()),
                     "original_max_level":int(view.batch["full_event_max_level"].max()),
                     "hard_negative_pairs":int(view.hard_negative_pairs.shape[0]),
+                    "actual_corruption_codes":sorted(set(view.corruption_code[view.corrupted_node_mask].tolist())),
+                    "hard_negative_relation_classes":sorted(set(view.hard_negative_relation_classes.tolist())),
                     "causal_future_links":int((
                         view.batch["curriculum_attention_mask"]
                         & (view.batch["level_ids"][:,None,:] > view.batch["level_ids"][:,:,None])
                     ).sum()),
                 })
+                corruption_contract_pass &= bool(
+                    torch.equal(view.corrupted_node_mask, view.corruption_code > 0)
+                )
+                hard_negative_classes.extend(view.hard_negative_relation_classes.tolist())
             display(pd.DataFrame(curriculum_rows))
             assert all(row["causal_future_links"]==0 for row in curriculum_rows)
+            assert corruption_contract_pass
+            curriculum_report={
+                "level_causal_pass":all(row["causal_future_links"]==0 for row in curriculum_rows),
+                "actual_corruption_labels_pass":corruption_contract_pass,
+                "hard_negative_relation_classes":sorted(set(hard_negative_classes)),
+                "hard_negatives_are_explicit_tree_relations":all(code in (1,2) for code in hard_negative_classes),
+            }
+            (FIGURE_DIR/"curriculum_runtime_report.json").write_text(json.dumps(curriculum_report,indent=2))
             print("Corrupted Stage 3 rebuilds p4, charge, input PID histograms, source masks, and structural features.")
             """
         ),

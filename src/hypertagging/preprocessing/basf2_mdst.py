@@ -60,6 +60,15 @@ class Basf2PreprocessConfig:
 def run_basf2_preprocessing(config: Basf2PreprocessConfig) -> Path:
     """Run direct-mDST preprocessing inside a basf2 Python process."""
 
+    if config.leaf_kinematics_mode == "fixed_hypothesis_candidate":
+        if not config.particle_arrays:
+            raise ValueError(
+                "fixed_hypothesis_candidate requires at least one explicit Particle array"
+            )
+        if config.include_tracks:
+            raise ValueError(
+                "fixed_hypothesis_candidate cannot silently include raw Tracks; pass --no-tracks"
+            )
     import basf2 as b2  # type: ignore[import-not-found]
     import modularAnalysis as ma  # type: ignore[import-not-found]
 
@@ -79,8 +88,13 @@ def run_basf2_preprocessing(config: Basf2PreprocessConfig) -> Path:
 
     collector = DirectMdstCollector(config)
     main.add_module(collector)
-    b2.process(path=main, max_event=config.max_events or 0)
-    return collector.write_output()
+    try:
+        b2.process(path=main, max_event=config.max_events or 0)
+        return collector.write_output()
+    except Exception:
+        if collector._v4_writer is not None:
+            collector._v4_writer.abort()
+        raise
 
 
 class _DirectMdstCollector:

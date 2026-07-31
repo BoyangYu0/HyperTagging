@@ -257,3 +257,40 @@ basf2 scripts/preprocess_mdst.py -- \
   --schema-version direct-mdst-tree-v4 --max-events 50 \
   --event-buffer-size 32 --row-group-size 16
 ```
+
+## Runtime normalization and scale index
+
+Common/composite tensors remain raw at the streaming boundary. The model owns a
+train-fitted `RuntimeFeatureNormalizer`, applies it before contextual encoding,
+rebuilds PID-conditioned p4/composite quantities in raw physical units, and
+applies the same transform before pass B. PID token, level, node kind, active,
+and copied are categorical/binary embeddings rather than z-scored numbers.
+
+Build the reusable startup index once:
+
+```bash
+python scripts/build_dataset_index.py \
+  --data /data/volume/manifest.jsonl \
+  --output /data/volume/dataset_index.json
+```
+
+Pass `--dataset-index /data/volume/dataset_index.json` to either trainer. The
+index supplies Welford and capacity/split summaries without repeated event
+payload scans. `--rescan-dataset` is the diagnostic fallback.
+
+Exact interrupted/resumed event order is supported for `--num-workers 0`.
+Multiworker training uses disjoint file/row-group work units, but exact
+mid-epoch multiworker resume is deliberately rejected pending a coordinated
+worker-cursor protocol.
+
+Before any 10M storage migration, benchmark event-JSON v4 against experimental
+native nested Arrow v5:
+
+```bash
+python scripts/benchmark_parquet_storage.py \
+  --data /data/volume/pilot-v4.parquet \
+  --output-dir /data/volume/storage-benchmark --max-events 10000
+```
+
+The benchmark is a decision artifact, not evidence that native storage is
+faster for every shard size.

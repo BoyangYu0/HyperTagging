@@ -18,7 +18,10 @@ from hypertagging.preprocessing.schema_v2 import NODE_KIND_TO_ID
 from hypertagging.reconstruction.kinematics import (
     hard_reconstructed_p4_from_leaf_pid,
 )
-from hypertagging.reconstruction.pid_state import rebuild_runtime_pid_state
+from hypertagging.reconstruction.pid_state import (
+    COMPOSITE_TYPE_SOURCE_TO_ID,
+    rebuild_runtime_pid_state,
+)
 from hypertagging.models.mother_pointer import constrained_daughter_decode
 from hypertagging.preprocessing.schema_v4 import LEAF_MODE_TO_ID
 
@@ -39,6 +42,13 @@ class RolloutConfig:
     use_learned_confidence: bool = False
     confidence_trained: bool = False
     cardinality_insufficient_policy: str = "invalid"
+    mother_charge_by_token: tuple[tuple[int, float], ...] = ()
+    allowed_daughter_node_kinds: tuple[int, ...] = (
+        NODE_KIND_TO_ID["track"],
+        NODE_KIND_TO_ID["ecl_cluster"],
+        NODE_KIND_TO_ID["composite"],
+        NODE_KIND_TO_ID["other"],
+    )
 
 
 @dataclass(frozen=True)
@@ -136,6 +146,20 @@ def hard_decode_proposals(
         )
         if len(daughter_positions) < config.min_daughters:
             continue
+        if any(
+            int(batch["node_kind_ids"][0, position])
+            not in config.allowed_daughter_node_kinds
+            for position in daughter_positions
+        ):
+            continue
+        mother_type = int(output.pointer.type_logits[0, query_id].argmax())
+        charge_contract = dict(config.mother_charge_by_token)
+        if mother_type in charge_contract:
+            daughter_charge = float(
+                batch["charge"][0, list(daughter_positions)].sum()
+            )
+            if abs(daughter_charge - charge_contract[mother_type]) > 1e-6:
+                continue
         pointer_quality = (
             float(probabilities[selected_local].mean().detach())
             if selected_local.numel()
@@ -154,7 +178,7 @@ def hard_decode_proposals(
         proposals.append(
             CompositeProposal(
                 query_id=query_id,
-                mother_type=int(output.pointer.type_logits[0, query_id].argmax()),
+                mother_type=mother_type,
                 daughter_positions=daughter_positions,
                 object_score=object_score,
                 confidence=confidence,
@@ -532,6 +556,12 @@ def append_composite_proposals(
         "leaf_kinematics_mode_ids": torch.full(
             (1, proposal_count),
             LEAF_MODE_TO_ID["composite"],
+            dtype=torch.long,
+            device=device,
+        ),
+        "runtime_composite_type_source_ids": torch.full(
+            (1, proposal_count),
+            COMPOSITE_TYPE_SOURCE_TO_ID["predicted"],
             dtype=torch.long,
             device=device,
         ),

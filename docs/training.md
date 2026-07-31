@@ -152,3 +152,33 @@ normalization, and split hash. Schema, PID vocabulary, feature specification,
 and split mismatches are rejected unless an explicit supported override is
 used. YAML precedence is defaults, then YAML, then explicitly supplied CLI
 arguments.
+
+## Runtime transform, index, and exact cursor
+
+The streaming data module normalizes static detector-specific track/ECL blocks.
+Common and composite values stay in physical units until the model-owned
+runtime transform. The same checkpointed buffers normalize the initial context
+and every PID/composite-rebuilt context. Categorical compatibility slots are
+masked and dedicated embeddings carry their meaning. Pretraining uses this
+same transform before contextual encoding.
+
+`scripts/build_dataset_index.py` writes
+`hypertagging-dataset-index-v1`: source-safe split inputs, Welford
+count/mean/M2, allowed types, bounded capacity/cardinality histograms,
+depth/completeness/category counts, and schema/PID/feature contracts.
+`--dataset-index` initializes training from those sufficient statistics;
+`--rescan-dataset` is explicit.
+
+For `num_workers=0`, checkpoints persist epoch, batch index, events consumed,
+and logical shard/row-group/offset cursor fields. Resume deterministically
+replays the bounded shuffle to the saved cursor, prioritizing exactness over
+restart latency. Exact mid-epoch resume with prefetched workers is rejected.
+
+Scheduled sampling chooses one primary truth or predicted context for each
+event and target level. Predicted targets are aligned by recursive leaf sources
+and unrepresentable targets are counted. `--auxiliary-teacher-weight` defaults
+to zero, so predicted events are not counted a second time.
+
+Validation reports per-level object, pointer, type, and cardinality metrics
+with numerator/denominator counts, plus source-aligned rollout, confidence,
+p4-closure, and validity metrics over the configured event samples.

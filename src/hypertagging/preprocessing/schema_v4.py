@@ -34,6 +34,44 @@ from hypertagging.preprocessing.schema_v3 import (
 
 
 SCHEMA_VERSION_V4 = "direct-mdst-tree-v4"
+FEATURE_SPEC_REVISION_V4 = "v4-runtime-normalized-categorical-separated-r2"
+
+# These positions retain their stored compatibility values, but are never
+# interpreted as continuous geometry. Dedicated embeddings/flags own them.
+CATEGORICAL_COMMON_FEATURE_NAMES = (
+    "reduced_pid",
+    "level",
+    "active",
+    "copied",
+)
+CONTINUOUS_COMMON_FEATURE_NAMES = tuple(
+    name
+    for name in feature_spec_v3()["common"]
+    if name not in CATEGORICAL_COMMON_FEATURE_NAMES
+)
+CONTINUOUS_COMMON_INDICES = tuple(
+    feature_spec_v3()["common"].index(name)
+    for name in CONTINUOUS_COMMON_FEATURE_NAMES
+)
+DYNAMIC_COMMON_FEATURE_NAMES = (
+    "px",
+    "py",
+    "pz",
+    "energy",
+    "mass",
+    "charge",
+    "n_daughters",
+)
+DYNAMIC_COMMON_INDICES = tuple(
+    feature_spec_v3()["common"].index(name)
+    for name in DYNAMIC_COMMON_FEATURE_NAMES
+)
+STATIC_COMMON_FEATURE_NAMES = tuple(
+    name
+    for name in CONTINUOUS_COMMON_FEATURE_NAMES
+    if name not in DYNAMIC_COMMON_FEATURE_NAMES
+)
+DYNAMIC_COMPOSITE_INDICES = tuple(range(len(feature_spec_v3()["composite"])))
 
 LEAF_KINEMATICS_MODES: tuple[str, ...] = (
     "raw_track_predicted_pid",
@@ -52,6 +90,7 @@ def feature_spec_v4() -> dict[str, Any]:
     spec.update(
         {
             "schema_version": SCHEMA_VERSION_V4,
+            "feature_spec_revision": FEATURE_SPEC_REVISION_V4,
             "event_layout": "one-event-per-parquet-row",
             "leaf_kinematics_modes": list(LEAF_KINEMATICS_MODES),
             "daughter_pid_histograms": {
@@ -61,6 +100,16 @@ def feature_spec_v4() -> dict[str, Any]:
                 "daughter_truth_pid_histogram": "truth-only target/diagnostic",
             },
             "legacy_daughter_pid_histogram": "not present in native v4",
+            "continuous_common_features": list(CONTINUOUS_COMMON_FEATURE_NAMES),
+            "categorical_common_features": {
+                "reduced_pid": "PID embedding/current soft PID embedding",
+                "level": "level embedding",
+                "active": "binary active embedding",
+                "copied": "binary copied embedding",
+            },
+            "runtime_dynamic_common_features": list(DYNAMIC_COMMON_FEATURE_NAMES),
+            "runtime_static_common_features": list(STATIC_COMMON_FEATURE_NAMES),
+            "runtime_dynamic_composite_indices": list(DYNAMIC_COMPOSITE_INDICES),
         }
     )
     spec.pop("feature_spec_hash", None)
@@ -98,6 +147,7 @@ class ParquetEventWriter:
         self.partial = self.output.with_name(f".{self.output.name}.partial")
         self.sidecar = self.output.with_suffix(self.output.suffix + ".metadata.json")
         self.partial_sidecar = self.sidecar.with_name(f".{self.sidecar.name}.partial")
+        self.completion_marker = self.output.with_suffix(self.output.suffix + ".complete")
         self.event_buffer_size = int(event_buffer_size)
         self.row_group_size = int(row_group_size or event_buffer_size)
         self.spec = feature_spec_v4()
@@ -127,6 +177,10 @@ class ParquetEventWriter:
         self._capacity = Counter()
         self._pid = Counter()
         self._completeness = Counter()
+        self._feature_statistics = {
+            block: _empty_feature_statistics(len(self.spec[block]))
+            for block in ("common", "track", "ecl_cluster", "composite")
+        }
 
     @property
     def buffered_events(self) -> int:
@@ -191,6 +245,22 @@ class ParquetEventWriter:
                 "aggregate_completeness_statistics": dict(
                     sorted(self._completeness.items())
                 ),
+                "aggregate_feature_welford": self._feature_statistics,
+                "requested_collection_mode": self.metadata.get(
+                    "leaf_kinematics_mode", "mixed_explicit_per_node"
+                ),
+                "actual_leaf_mode_distribution": {
+                    key.removeprefix("leaf_mode_"): value
+                    for key, value in sorted(self._capacity.items())
+                    if key.startswith("leaf_mode_")
+                },
+                "actual_collection_mode": _actual_collection_mode(
+                    {
+                        key.removeprefix("leaf_mode_"): value
+                        for key, value in self._capacity.items()
+                        if key.startswith("leaf_mode_")
+                    }
+                ),
             }
             self.partial_sidecar.write_text(
                 json.dumps(final_metadata, indent=2, sort_keys=True) + "\n",
@@ -198,6 +268,22 @@ class ParquetEventWriter:
             )
             os.replace(self.partial, self.output)
             os.replace(self.partial_sidecar, self.sidecar)
+            marker_partial = self.completion_marker.with_name(
+                f".{self.completion_marker.name}.partial"
+            )
+            marker_partial.write_text(
+                json.dumps(
+                    {
+                        "schema_version": SCHEMA_VERSION_V4,
+                        "event_count": self._event_count,
+                        "feature_spec_hash": self.spec["feature_spec_hash"],
+                    },
+                    sort_keys=True,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            os.replace(marker_partial, self.completion_marker)
             self._closed = True
             return self.output
         except Exception:
@@ -232,12 +318,22 @@ class ParquetEventWriter:
         nodes = event.get("nodes", [])
         self._capacity["events"] += 1
         self._capacity["nodes"] += len(nodes)
+        mothers_by_level: Counter[int] = Counter()
+        event_max_depth = 0
         for node in nodes:
             level = int(node.get("level", 0))
             daughters = len(node.get("daughter_ids", []))
+            event_max_depth = max(event_max_depth, level)
+            if daughters > 0 and bool(node.get("valid_reconstruction_target", False)):
+                mothers_by_level[level] += 1
             self._capacity[f"nodes_level_{level}"] += 1
             self._capacity[f"mothers_level_{level}"] += int(daughters > 0)
             self._capacity[f"daughter_cardinality_{daughters}"] += int(daughters > 0)
+            if daughters > 0 and bool(node.get("valid_reconstruction_target", False)):
+                target_token = int(node.get("pid_target_token", 0))
+                self._capacity[
+                    f"target_type_level_{level}_token_{target_token}"
+                ] += 1
             self._capacity["max_depth"] = max(self._capacity["max_depth"], level)
             self._pid[str(int(node.get("input_pid_token", 0)))] += 1
             mode = str(node.get("leaf_kinematics_mode", "legacy_conflated"))
@@ -251,6 +347,49 @@ class ParquetEventWriter:
             self._completeness["recursive_complete"] += int(
                 bool(node.get("recursive_reconstructable_complete", False))
             )
+            for block, record_key, availability_key in (
+                ("common", "common_features", "common_availability"),
+                ("track", "track_features", "track_availability"),
+                ("ecl_cluster", "cluster_features", "cluster_availability"),
+                ("composite", "composite_features", "composite_availability"),
+            ):
+                names = self.spec[block]
+                values = node.get(record_key, {})
+                available = node.get(availability_key, {})
+                for index, name in enumerate(names):
+                    if bool(available.get(name, False)):
+                        _update_feature_statistic(
+                            self._feature_statistics[block], index, float(values[name])
+                        )
+        self._capacity[f"depth_{event_max_depth}"] += 1
+        for level in range(1, event_max_depth + 1):
+            self._capacity[
+                f"mother_count_level_{level}_value_{mothers_by_level[level]}"
+            ] += 1
+
+
+def _empty_feature_statistics(width: int) -> dict[str, list[float]]:
+    return {
+        "count": [0.0] * width,
+        "mean": [0.0] * width,
+        "m2": [0.0] * width,
+    }
+
+
+def _actual_collection_mode(distribution: Mapping[str, int]) -> str:
+    populated = sorted(name for name, count in distribution.items() if int(count) > 0)
+    return populated[0] if len(populated) == 1 else "mixed_explicit_per_node"
+
+
+def _update_feature_statistic(
+    statistics: dict[str, list[float]], index: int, value: float
+) -> None:
+    count = statistics["count"][index] + 1.0
+    delta = value - statistics["mean"][index]
+    mean = statistics["mean"][index] + delta / count
+    statistics["m2"][index] += delta * (value - mean)
+    statistics["mean"][index] = mean
+    statistics["count"][index] = count
 
 
 def export_trees_v4(
@@ -289,6 +428,8 @@ def iter_event_records_v4(
     path: str | Path,
     *,
     batch_size: int = 64,
+    worker_id: int = 0,
+    worker_count: int = 1,
 ) -> Iterator[dict[str, Any]]:
     """Yield v4 records lazily, or explicitly adapted legacy records."""
 
@@ -302,7 +443,9 @@ def iter_event_records_v4(
         )
         if schema_version != SCHEMA_VERSION_V4:
             raise ValueError(f"event-row parquet has unsupported schema {schema_version!r}")
-        for row_group in range(parquet.num_row_groups):
+        if worker_count <= 0 or not 0 <= worker_id < worker_count:
+            raise ValueError("invalid worker row-group partition")
+        for row_group in range(worker_id, parquet.num_row_groups, worker_count):
             table = parquet.read_row_group(row_group, columns=["event_json"])
             for record_batch in table.to_batches(max_chunksize=batch_size):
                 for text in record_batch.column(0).to_pylist():
@@ -322,7 +465,14 @@ def load_payload_v4(path: str | Path) -> dict[str, Any]:
     spec = feature_spec_v4()
     sidecar = source.with_suffix(source.suffix + ".metadata.json")
     metadata = json.loads(sidecar.read_text()) if sidecar.exists() else {}
-    summary = dict(metadata.get("aggregate_statistics", {}))
+    summary = {
+        "capacity": dict(metadata.get("aggregate_capacity_statistics", {})),
+        "pid": dict(metadata.get("aggregate_pid_statistics", {})),
+        "completeness": dict(
+            metadata.get("aggregate_completeness_statistics", {})
+        ),
+        "leaf_modes": dict(metadata.get("actual_leaf_mode_distribution", {})),
+    }
     summary.setdefault("n_events", len(records))
     source_version = (
         records[0].get("source_schema_version", SCHEMA_VERSION_V4)
@@ -371,6 +521,10 @@ def _native_v4_event(event: Mapping[str, Any]) -> dict[str, Any]:
         node["daughter_truth_pid_histogram_available"] = available
         node.pop("daughter_pid_histogram", None)
         node.pop("daughter_pid_histogram_available", None)
+        common_availability = dict(node.get("common_availability", {}))
+        for name in CATEGORICAL_COMMON_FEATURE_NAMES:
+            common_availability[name] = False
+        node["common_availability"] = common_availability
         node.setdefault(
             "retained_truth_daughter_count_expected",
             int(node.get("full_truth_daughter_count", len(node.get("daughter_ids", [])))),

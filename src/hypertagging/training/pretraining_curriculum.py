@@ -8,7 +8,10 @@ from enum import Enum
 import torch
 
 from hypertagging.preprocessing.pid_filter import PDG_TOKENS
-from hypertagging.reconstruction.pid_state import hard_daughter_pid_histograms
+from hypertagging.reconstruction.pid_state import (
+    COMPOSITE_TYPE_SOURCE_TO_ID,
+    hard_daughter_pid_histograms,
+)
 
 
 class PretrainingStage(str, Enum):
@@ -24,6 +27,7 @@ class CurriculumBatch:
     corrupted_node_mask: torch.Tensor
     corruption_code: torch.Tensor
     hard_negative_pairs: torch.Tensor
+    hard_negative_relation_classes: torch.Tensor
 
 
 def build_curriculum_batch(
@@ -49,22 +53,33 @@ def build_curriculum_batch(
         candidates = original_mask & (output["level_ids"] > 0)
         draws = torch.rand(candidates.shape, generator=generator, device=candidates.device)
         corrupted = candidates & (draws < corruption_probability)
-        _apply_composite_corruptions(output, corrupted, generator)
-        # Codes: 1 missing daughter, 2 wrong daughter, 3 wrong type,
-        # 4 shared-leaf conflict.  Deterministic cycling gives tiny batches
-        # coverage without relying on chance.
-        indices = torch.nonzero(corrupted, as_tuple=False)
-        for ordinal, (batch_index, node_index) in enumerate(indices.tolist()):
-            corruption_code[batch_index, node_index] = ordinal % 4 + 1
+        corruption_code, corrupted = _apply_composite_corruptions(
+            output, corrupted, generator
+        )
+        output["runtime_composite_type_source_ids"] = torch.where(
+            corrupted,
+            torch.full_like(
+                output["level_ids"],
+                COMPOSITE_TYPE_SOURCE_TO_ID["corrupted"],
+            ),
+            output.get(
+                "runtime_composite_type_source_ids",
+                torch.full_like(
+                    output["level_ids"],
+                    COMPOSITE_TYPE_SOURCE_TO_ID["input_fixed"],
+                ),
+            ),
+        )
         _rebuild_corrupted_derived_fields(output)
     output["curriculum_attention_mask"] = curriculum_attention_mask(output, stage)
-    hard_negatives = relation_aware_hard_negative_pairs(output)
+    hard_negatives, hard_negative_classes = hard_negative_pairs_with_classes(output)
     return CurriculumBatch(
         batch=output,
         stage=stage,
         corrupted_node_mask=corrupted,
         corruption_code=corruption_code,
         hard_negative_pairs=hard_negatives,
+        hard_negative_relation_classes=hard_negative_classes,
     )
 
 
@@ -91,9 +106,13 @@ def _apply_composite_corruptions(
     batch: dict[str, torch.Tensor],
     corrupted: torch.Tensor,
     generator: torch.Generator,
-) -> None:
+) -> tuple[torch.Tensor, torch.Tensor]:
     adjacency = batch["daughter_adjacency"]
+    codes = torch.zeros_like(batch["level_ids"])
+    applied = torch.zeros_like(corrupted)
     for batch_index, node_index in torch.nonzero(corrupted, as_tuple=False).tolist():
+        before_adjacency = adjacency[batch_index, node_index].clone()
+        before_type = batch["pid_labels"][batch_index, node_index].clone()
         daughters = adjacency[batch_index, node_index].nonzero(as_tuple=False).flatten()
         context = (
             batch["node_mask"][batch_index]
@@ -127,6 +146,14 @@ def _apply_composite_corruptions(
                 if shared.numel():
                     adjacency[batch_index, node_index, shared[0]] = True
                     break
+        changed = (
+            not torch.equal(before_adjacency, adjacency[batch_index, node_index])
+            or not torch.equal(before_type, batch["pid_labels"][batch_index, node_index])
+        )
+        if changed:
+            applied[batch_index, node_index] = True
+            codes[batch_index, node_index] = mode + 1
+    return codes, applied
 
 
 def _rebuild_corrupted_derived_fields(batch: dict[str, torch.Tensor]) -> None:
@@ -184,22 +211,46 @@ def _rebuild_corrupted_derived_fields(batch: dict[str, torch.Tensor]) -> None:
 
 
 def relation_aware_hard_negative_pairs(batch: dict[str, torch.Tensor]) -> torch.Tensor:
-    """Select nearest-p4 non-sibling pairs among valid contextual nodes."""
+    return hard_negative_pairs_with_classes(batch)[0]
+
+
+def hard_negative_pairs_with_classes(
+    batch: dict[str, torch.Tensor],
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Select plausible pairs only from explicit negative tree relations."""
 
     mask = batch["node_mask"].bool()
     p3 = batch["p4"][..., :3]
     parent = batch["parent_ids"]
     pairs: list[list[int]] = []
+    classes: list[int] = []
     for batch_index in range(mask.shape[0]):
         valid = mask[batch_index].nonzero(as_tuple=False).flatten()
         for left in valid.tolist():
-            candidates = valid[
-                (valid != left)
-                & (
-                    (parent[batch_index, valid] != parent[batch_index, left])
-                    | (parent[batch_index, left] < 0)
-                )
-            ]
+            eligible = []
+            relation_classes = []
+            left_ancestors = _ancestor_positions(parent[batch_index], left)
+            for right in valid.tolist():
+                if right == left:
+                    continue
+                right_ancestors = _ancestor_positions(parent[batch_index], right)
+                if right in left_ancestors or left in right_ancestors:
+                    continue
+                if (
+                    int(parent[batch_index, left]) >= 0
+                    and parent[batch_index, left] == parent[batch_index, right]
+                ):
+                    continue
+                left_side = int(batch["b_side"][batch_index, left])
+                right_side = int(batch["b_side"][batch_index, right])
+                if left_side >= 0 and right_side >= 0 and left_side != right_side:
+                    eligible.append(right)
+                    relation_classes.append(1)  # different B side
+                    continue
+                if not (left_ancestors & right_ancestors):
+                    eligible.append(right)
+                    relation_classes.append(2)  # unrelated retained roots
+            candidates = torch.tensor(eligible, device=valid.device, dtype=torch.long)
             if candidates.numel() == 0:
                 continue
             distances = torch.linalg.vector_norm(
@@ -208,7 +259,20 @@ def relation_aware_hard_negative_pairs(batch: dict[str, torch.Tensor]) -> torch.
             )
             right = int(candidates[distances.argmin()])
             pairs.append([batch_index, left, right])
-    return torch.tensor(pairs, dtype=torch.long, device=mask.device).reshape(-1, 3)
+            classes.append(relation_classes[int(distances.argmin())])
+    return (
+        torch.tensor(pairs, dtype=torch.long, device=mask.device).reshape(-1, 3),
+        torch.tensor(classes, dtype=torch.long, device=mask.device),
+    )
+
+
+def _ancestor_positions(parent: torch.Tensor, node: int) -> set[int]:
+    ancestors: set[int] = set()
+    current = int(parent[node])
+    while current >= 0 and current not in ancestors:
+        ancestors.add(current)
+        current = int(parent[current])
+    return ancestors
 
 
 __all__ = [
@@ -217,4 +281,5 @@ __all__ = [
     "build_curriculum_batch",
     "curriculum_attention_mask",
     "relation_aware_hard_negative_pairs",
+    "hard_negative_pairs_with_classes",
 ]

@@ -86,6 +86,35 @@ def build_notebook():
             print({"max_pid_refined_p4_change":p4_change,"max_level1_pointer_change":pointer_change})
             """
         ),
+        md("## Dynamic runtime normalization and composite type semantics"),
+        code(
+            """
+            from hypertagging.data.streaming import RuntimeFeatureNormalizer
+            from hypertagging.reconstruction.pid_state import COMPOSITE_TYPE_SOURCE_TO_ID
+            fitted=RuntimeFeatureNormalizer(
+                common_mean=torch.arange(12,dtype=torch.float32),
+                common_std=torch.full((12,),2.0),
+                composite_mean=torch.zeros(13),
+                composite_std=torch.full((13,),2.0),
+            )
+            model.set_runtime_feature_normalizer(fitted)
+            normalized=model(batch,target_level=1)
+            raw_runtime=normalized.current_p4[0,batch["node_mask"][0],:4].detach()
+            normalized_runtime=normalized.second_pass_common_features[0,batch["node_mask"][0],:4].detach()
+            expected=(raw_runtime-torch.arange(4,dtype=raw_runtime.dtype))/2
+            normalization_pass=bool(torch.allclose(normalized_runtime,expected))
+            composite_mask=batch["node_mask"] & (batch["level_ids"]>0)
+            teacher_source=COMPOSITE_TYPE_SOURCE_TO_ID["truth_teacher_forced"]
+            type_source_pass=bool(
+                (batch["runtime_composite_type_source_ids"][composite_mask]==teacher_source).all()
+            )
+            plt.figure(figsize=(7,3))
+            plt.hist(raw_runtime[:,3].numpy(),alpha=.6,label="raw runtime E")
+            plt.hist(normalized_runtime[:,3].numpy(),alpha=.6,label="normalized pass-B E")
+            plt.legend(); plt.tight_layout()
+            plt.savefig(OUT/"runtime_dynamic_normalization.png"); plt.show()
+            """
+        ),
         md("## Reconstruction gradient reaches the leaf PID head"),
         code(
             """
@@ -97,9 +126,9 @@ def build_notebook():
                 for node in nodes
                 if node["leaf_kinematics_mode"]=="raw_track_predicted_pid"
             )
-            report={"schema_v4":True,"truth_clean_composite_input":True,"raw_track_unknown_input_pass":leakage_pass,"pointer_gradient_to_leaf_pid":gradient,"pointer_response":pointer_change}
+            report={"schema_v4":True,"truth_clean_composite_input":True,"raw_track_unknown_input_pass":leakage_pass,"pointer_gradient_to_leaf_pid":gradient,"pointer_response":pointer_change,"runtime_dynamic_normalization_pass":normalization_pass,"teacher_composite_type_source_pass":type_source_pass}
             (OUT/"leaf_composite_contract.json").write_text(json.dumps(report,indent=2),encoding="utf-8")
-            assert leakage_pass and gradient>0
+            assert leakage_pass and gradient>0 and normalization_pass and type_source_pass
             plt.figure(figsize=(6,3)); plt.bar(["pointer→leaf PID gradient"],[gradient]); plt.yscale("log"); plt.tight_layout()
             plt.savefig(OUT/"leaf_pid_gradient.png"); plt.show()
             """

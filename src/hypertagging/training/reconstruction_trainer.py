@@ -10,7 +10,11 @@ from typing import Any
 import torch
 import torch.nn.functional as F
 
-from hypertagging.data.capacity import dataset_capacity_statistics, require_capacity
+from hypertagging.data.capacity import (
+    capacity_statistics_from_index,
+    dataset_capacity_statistics,
+    require_capacity,
+)
 from hypertagging.data.heterogeneous import collate_heterogeneous_events
 from hypertagging.evaluation.hierarchical_metrics import next_level_metrics, summarize_rollout
 from hypertagging.losses.level_reconstruction import (
@@ -27,6 +31,7 @@ from hypertagging.training.checkpointing import (
     save_training_checkpoint,
 )
 from hypertagging.training.data_module import RealDataModule, build_real_data_module
+from hypertagging.data.streaming import RuntimeFeatureNormalizer, StreamingCursor
 from hypertagging.training.logging import JsonlLogger
 from hypertagging.training.pretrained_transfer import (
     EncoderTransferReport,
@@ -35,7 +40,7 @@ from hypertagging.training.pretrained_transfer import (
     unfreeze_encoder,
 )
 from hypertagging.utils.seeds import seed_everything
-from hypertagging.preprocessing.schema_v4 import LEAF_MODE_TO_ID
+from hypertagging.preprocessing.schema_v4 import LEAF_MODE_TO_ID, feature_spec_v4
 from hypertagging.training.scheduled_sampling import (
     TeacherForcingSchedule,
     aligned_level_targets,
@@ -80,6 +85,9 @@ class ReconstructionConfig:
     rollout_validation_events: int = 8
     validation_batch_size: int = 4
     log_every: int = 10
+    auxiliary_teacher_weight: float = 0.0
+    dataset_index: str | None = None
+    rescan_dataset: bool = False
 
 
 @dataclass(frozen=True)
@@ -101,6 +109,11 @@ def train_level_reconstruction(
     if not 0.0 <= config.scheduled_sampling_probability <= 1.0:
         raise ValueError("scheduled_sampling_probability must lie in [0, 1]")
     seed_everything(config.seed)
+    if config.resume and config.num_workers > 0:
+        raise ValueError(
+            "exact streaming resume currently requires num_workers=0; "
+            "multiworker resume is intentionally not claimed"
+        )
     device = torch.device(config.device)
     resume_payload = (
         load_training_checkpoint(config.resume, map_location="cpu")
@@ -122,12 +135,22 @@ def train_level_reconstruction(
             if resume_payload is not None
             else None
         ),
+        dataset_index=config.dataset_index,
+        rescan_dataset=config.rescan_dataset,
     )
-    capacity = dataset_capacity_statistics(
-        data_module.iter_events("train", shuffle=False),
-        global_n_queries=config.n_queries,
-        global_max_cardinality=config.max_cardinality,
-        target_policy=config.target_policy,
+    capacity = (
+        capacity_statistics_from_index(
+            data_module.dataset_index,
+            global_n_queries=config.n_queries,
+            global_max_cardinality=config.max_cardinality,
+        )
+        if data_module.dataset_index is not None
+        else dataset_capacity_statistics(
+            data_module.iter_events("train", shuffle=False),
+            global_n_queries=config.n_queries,
+            global_max_cardinality=config.max_cardinality,
+            target_policy=config.target_policy,
+        )
     )
     require_capacity(capacity)
     if config.ablation not in ALL_ABLATIONS:
@@ -141,6 +164,14 @@ def train_level_reconstruction(
         hyper_dim=8,
         n_queries=config.n_queries,
     ).to(device)
+    model.set_runtime_feature_normalizer(
+        RuntimeFeatureNormalizer(
+            common_mean=data_module.normalizers["common"].mean,
+            common_std=data_module.normalizers["common"].std,
+            composite_mean=data_module.normalizers["composite"].mean,
+            composite_std=data_module.normalizers["composite"].std,
+        ).to(device)
+    )
     # Cardinality capacity is a scientific data contract, not a decode clamp.
     if model.decoder.max_cardinality != config.max_cardinality:
         model.decoder = type(model.decoder)(
@@ -188,6 +219,7 @@ def train_level_reconstruction(
                 else None
             ),
             expected_split_manifest_hash=data_module.split_manifest_hash,
+            expected_feature_spec_hash=feature_spec_v4()["feature_spec_hash"],
         )
         start_step = int(payload.get("step", 0))
     output_dir = Path(config.output_dir)
@@ -197,10 +229,16 @@ def train_level_reconstruction(
         encoding="utf-8",
     )
     logger = JsonlLogger(output_dir / "metrics.jsonl")
-    batch_iterator = data_module.batches(
-        "train", batch_size=config.batch_size, shuffle=True, epoch=0
+    cursor = StreamingCursor.from_state_dict(
+        (resume_payload or {}).get("streaming_cursor", {})
     )
-    epoch = 0
+    epoch = cursor.epoch
+    batch_iterator = data_module.batches(
+        "train", batch_size=config.batch_size, shuffle=True, epoch=epoch
+    )
+    for _ in range(cursor.batch_index):
+        if next(batch_iterator, None) is None:
+            raise ValueError("streaming resume cursor exceeds the saved epoch")
     schedule = TeacherForcingSchedule(
         kind=config.scheduled_sampling_schedule,
         start_probability=1.0,
@@ -225,6 +263,9 @@ def train_level_reconstruction(
             next_batch = next(batch_iterator)
         except StopIteration:
             epoch += 1
+            cursor.epoch = epoch
+            cursor.batch_index = 0
+            cursor.events_consumed = 0
             batch_iterator = data_module.batches(
                 "train", batch_size=config.batch_size, shuffle=True, epoch=epoch
             )
@@ -232,6 +273,8 @@ def train_level_reconstruction(
                 next_batch = next(batch_iterator)
             except StopIteration as error:
                 raise ValueError("training split produced no batches") from error
+        cursor.batch_index += 1
+        cursor.events_consumed += int(next_batch["node_mask"].shape[0])
         batch = {name: value.to(device) for name, value in next_batch.items()}
         valid_levels = sorted(
             {
@@ -310,6 +353,7 @@ def train_level_reconstruction(
                 data_module=data_module,
                 step=step + 1,
                 metrics=final_metrics,
+                streaming_cursor=cursor.state_dict(),
             )
     validation_metrics = validate_reconstruction(
         model,
@@ -321,6 +365,8 @@ def train_level_reconstruction(
         seed=config.seed,
         max_validation_events=config.max_validation_events,
         rollout_validation_events=config.rollout_validation_events,
+        validation_batch_size=config.validation_batch_size,
+        target_policy=config.target_policy,
     )
     final_metrics.update(validation_metrics)
     checkpoint = _save_reconstruction_checkpoint(
@@ -333,6 +379,7 @@ def train_level_reconstruction(
         data_module=data_module,
         step=config.max_steps,
         metrics=final_metrics,
+        streaming_cursor=cursor.state_dict(),
     )
     return ReconstructionTrainingResult(
         checkpoint=checkpoint,
@@ -356,51 +403,21 @@ def _optimization_loss(
     use_scheduled_sampling: bool,
     allowed_types_by_level: dict[int, tuple[int, ...]],
 ):
-    """Batched truth loss plus deterministic per-event predicted micro-rollouts."""
+    """Choose exactly one primary context per event and target level."""
 
     level_outputs = []
     component_accumulator: dict[str, torch.Tensor] = {}
     leaf_pid_losses = []
-    scheduled_losses = []
+    primary_losses = []
+    teacher_primary = []
+    predicted_primary = []
+    auxiliary_losses = []
     truth_contexts = 0
     predicted_contexts = 0
     representable = 0
     truth_targets = 0
     first_divergence: list[int] = []
-    teacher_probability = schedule.probability(step) if use_scheduled_sampling else 1.0
     for target_level in valid_levels:
-        teacher_batch = _with_allowed_types(
-            batch, target_level, allowed_types_by_level
-        )
-        output = model(teacher_batch, target_level=target_level)
-        loss_batch = dict(teacher_batch)
-        if output.current_p4 is not None:
-            loss_batch["p4"] = output.current_p4
-        loss_output = level_reconstruction_loss(
-            output.pointer,
-            loss_batch,
-            target_level=target_level,
-            target_policy=config.target_policy,
-            matching_production=not config.allow_tiny_bruteforce_matching,
-        )
-        level_outputs.append((target_level, output, loss_output))
-        for name, value in loss_output.components.items():
-            component_accumulator[name] = component_accumulator.get(name, 0) + value
-        raw_tracks = (
-            batch["node_mask"]
-            & (
-                batch["leaf_kinematics_mode_ids"]
-                == LEAF_MODE_TO_ID["raw_track_predicted_pid"]
-            )
-            & batch["truth_pid_available"]
-        )
-        if output.leaf_pid_logits is not None and raw_tracks.any():
-            leaf_pid_losses.append(
-                F.cross_entropy(
-                    output.leaf_pid_logits[raw_tracks],
-                    batch["truth_pid_labels"][raw_tracks],
-                )
-            )
         choices = schedule.sample(
             batch["node_mask"].shape[0],
             step=step * 100 + target_level,
@@ -409,30 +426,42 @@ def _optimization_loss(
         )
         if not use_scheduled_sampling:
             choices.fill_(True)
-        truth_contexts += int(choices.sum())
-        for batch_index in (~choices).nonzero(as_tuple=False).flatten().tolist():
-            predicted_contexts += 1
+        per_level_components: dict[str, list[torch.Tensor]] = {}
+        for batch_index in range(batch["node_mask"].shape[0]):
             truth_single = _single_event_batch(batch, batch_index)
-            with torch.no_grad():
-                rollout = level_rollout(
-                    model,
+            choose_teacher = bool(choices[batch_index])
+            if choose_teacher:
+                truth_contexts += 1
+                context = truth_single
+                target_override = None
+                aligned = aligned_level_targets(
                     truth_single,
-                    mode="predicted",
-                    config=RolloutConfig(
-                        max_level=max(target_level - 1, 0),
-                        root_types=(),
-                        exclusive_final=False,
-                        use_learned_confidence=False,
-                        seed=config.seed + step + batch_index,
-                    ),
+                    truth_single,
+                    target_level=target_level,
+                    target_policy=config.target_policy,
                 )
-                context = rollout.batch
-            aligned = aligned_level_targets(
-                truth_single,
-                context,
-                target_level=target_level,
-                target_policy=config.target_policy,
-            )
+            else:
+                predicted_contexts += 1
+                with torch.no_grad():
+                    context = level_rollout(
+                        model,
+                        truth_single,
+                        mode="predicted",
+                        config=RolloutConfig(
+                            max_level=max(target_level - 1, 0),
+                            root_types=(),
+                            exclusive_final=False,
+                            use_learned_confidence=False,
+                            seed=config.seed + step + batch_index,
+                        ),
+                    ).batch
+                aligned = aligned_level_targets(
+                    truth_single,
+                    context,
+                    target_level=target_level,
+                    target_policy=config.target_policy,
+                )
+                target_override = aligned.target_override
             truth_targets += aligned.truth_target_count
             representable += aligned.representable_count
             if aligned.representable_count < aligned.truth_target_count:
@@ -440,44 +469,101 @@ def _optimization_loss(
             context = _with_allowed_types(
                 context, target_level, allowed_types_by_level
             )
-            predicted_output = model(context, target_level=target_level)
-            predicted_loss_batch = dict(context)
-            if predicted_output.current_p4 is not None:
-                predicted_loss_batch["p4"] = predicted_output.current_p4
-            predicted_loss = level_reconstruction_loss(
-                predicted_output.pointer,
-                predicted_loss_batch,
+            output = model(context, target_level=target_level)
+            loss_batch = dict(context)
+            if output.current_p4 is not None:
+                loss_batch["p4"] = output.current_p4
+            loss_output = level_reconstruction_loss(
+                output.pointer,
+                loss_batch,
                 target_level=target_level,
                 target_policy=config.target_policy,
-                target_override=aligned.target_override,
+                target_override=target_override,
                 matching_production=not config.allow_tiny_bruteforce_matching,
             )
-            scheduled_losses.append(predicted_loss.total)
-    teacher_loss = torch.stack([value[2].total for value in level_outputs]).mean()
-    scheduled_loss = (
-        torch.stack(scheduled_losses).mean()
-        if scheduled_losses
-        else teacher_loss * 0.0
+            primary_losses.append(loss_output.total)
+            (teacher_primary if choose_teacher else predicted_primary).append(loss_output.total)
+            for name, value in loss_output.components.items():
+                per_level_components.setdefault(name, []).append(value)
+            raw_tracks = (
+                context["node_mask"]
+                & (context["leaf_kinematics_mode_ids"] == LEAF_MODE_TO_ID["raw_track_predicted_pid"])
+                & context["truth_pid_available"]
+            )
+            if output.leaf_pid_logits is not None and raw_tracks.any():
+                leaf_pid_losses.append(
+                    F.cross_entropy(
+                        output.leaf_pid_logits[raw_tracks],
+                        context["truth_pid_labels"][raw_tracks],
+                    )
+                )
+            if not choose_teacher and config.auxiliary_teacher_weight > 0:
+                aux_batch = _with_allowed_types(truth_single, target_level, allowed_types_by_level)
+                aux_output = model(aux_batch, target_level=target_level)
+                aux_loss_batch = dict(aux_batch)
+                if aux_output.current_p4 is not None:
+                    aux_loss_batch["p4"] = aux_output.current_p4
+                auxiliary_losses.append(
+                    level_reconstruction_loss(
+                        aux_output.pointer,
+                        aux_loss_batch,
+                        target_level=target_level,
+                        target_policy=config.target_policy,
+                        matching_production=not config.allow_tiny_bruteforce_matching,
+                    ).total
+                )
+        for name, values in per_level_components.items():
+            component_accumulator[name] = component_accumulator.get(name, 0) + torch.stack(values).mean()
+        # Detached batched teacher view is retained only for metric reporting.
+        with torch.no_grad():
+            diagnostic_batch = _with_allowed_types(batch, target_level, allowed_types_by_level)
+            diagnostic_output = model(diagnostic_batch, target_level=target_level)
+            diagnostic_loss_batch = dict(diagnostic_batch)
+            if diagnostic_output.current_p4 is not None:
+                diagnostic_loss_batch["p4"] = diagnostic_output.current_p4
+            diagnostic_loss = level_reconstruction_loss(
+                diagnostic_output.pointer,
+                diagnostic_loss_batch,
+                target_level=target_level,
+                target_policy=config.target_policy,
+                matching_production=not config.allow_tiny_bruteforce_matching,
+            )
+        level_outputs.append((target_level, diagnostic_output, diagnostic_loss))
+    primary_loss = torch.stack(primary_losses).mean()
+    auxiliary_teacher_loss = (
+        torch.stack(auxiliary_losses).mean()
+        if auxiliary_losses
+        else primary_loss * 0.0
     )
     reconstruction_loss = (
-        0.5 * (teacher_loss + scheduled_loss)
-        if scheduled_losses
-        else teacher_loss
+        primary_loss + config.auxiliary_teacher_weight * auxiliary_teacher_loss
     )
     leaf_pid_loss = (
         torch.stack(leaf_pid_losses).mean()
         if leaf_pid_losses
-        else reconstruction_loss * 0.0
+        else primary_loss * 0.0
     )
     total_contexts = truth_contexts + predicted_contexts
     metrics = {
         "context_truth_fraction": truth_contexts / max(total_contexts, 1),
         "context_predicted_fraction": predicted_contexts / max(total_contexts, 1),
         "target_representable_rate": representable / max(truth_targets, 1),
+        "unrepresentable_target_count": float(truth_targets - representable),
+        "sampled_teacher_count": float(truth_contexts),
+        "sampled_predicted_count": float(predicted_contexts),
+        "primary_teacher_loss": float(
+            torch.stack(teacher_primary).mean().detach().cpu() if teacher_primary else 0.0
+        ),
+        "primary_predicted_loss": float(
+            torch.stack(predicted_primary).mean().detach().cpu() if predicted_primary else 0.0
+        ),
+        "auxiliary_teacher_loss": float(auxiliary_teacher_loss.detach().cpu()),
         "first_context_divergence_level": float(
             min(first_divergence) if first_divergence else -1
         ),
-        "scheduled_sampling_loss": float(scheduled_loss.detach().cpu()),
+        "scheduled_sampling_loss": float(
+            torch.stack(predicted_primary).mean().detach().cpu() if predicted_primary else 0.0
+        ),
     }
     return (
         reconstruction_loss,
@@ -524,7 +610,9 @@ def _with_allowed_types(
         allowed[:] = True
     result["allowed_type_mask"] = allowed
     result["pointer_validity_mask"] = (
-        batch["node_mask"] & (batch["level_ids"] < target_level)
+        batch["node_mask"]
+        & (batch["level_ids"] < target_level)
+        & (batch["node_kind_ids"] != 0)
     )
     return result
 
@@ -539,6 +627,8 @@ def validate_reconstruction(
     seed: int = 11,
     max_validation_events: int = 32,
     rollout_validation_events: int = 8,
+    validation_batch_size: int = 4,
+    target_policy: str = "complete_only",
 ) -> dict[str, float]:
     model.eval()
     source = data_module.iter_events("validation", shuffle=False)
@@ -547,10 +637,47 @@ def validate_reconstruction(
     accumulated: dict[str, list[float]] = {}
     event_count = 0
     for event in source:
-        if event_count >= min(max_validation_events, rollout_validation_events):
+        if event_count >= max_validation_events:
             break
         batch = data_module.normalize_batch(collate_heterogeneous_events([event]))
         batch = {name: value.to(device) for name, value in batch.items()}
+        for target_level in sorted(
+            {
+                int(level)
+                for level in batch["level_ids"][batch["node_mask"]].tolist()
+                if int(level) > 0
+            }
+        ):
+            level_batch = _with_allowed_types(
+                batch, target_level, data_module.allowed_types_by_level
+            )
+            output = model(level_batch, target_level=target_level)
+            loss_batch = dict(level_batch)
+            if output.current_p4 is not None:
+                loss_batch["p4"] = output.current_p4
+            loss_output = level_reconstruction_loss(
+                output.pointer,
+                loss_batch,
+                target_level=target_level,
+                target_policy=target_policy,
+            )
+            metrics = next_level_metrics(
+                output.pointer,
+                loss_batch,
+                loss_output.matches,
+                target_level=target_level,
+            )
+            for name, value in metrics.items():
+                accumulated.setdefault(f"level_{target_level}_{name}", []).append(float(value))
+            if loss_output.confidence_targets is not None:
+                for name, value in confidence_calibration_metrics(
+                    output.pointer.confidence_logits,
+                    loss_output.confidence_targets,
+                ).items():
+                    accumulated.setdefault(name, []).append(float(value))
+        if event_count >= rollout_validation_events:
+            event_count += 1
+            continue
         teacher = level_rollout(
             model,
             batch,
@@ -581,6 +708,34 @@ def validate_reconstruction(
         )
         teacher_metrics = summarize_rollout(teacher.batch, batch)
         predicted_metrics = summarize_rollout(predicted.batch, batch)
+        leaf_multiplicity = int(
+            (
+                batch["node_mask"][0]
+                & (batch["level_ids"][0] == 0)
+            ).sum()
+        )
+        multiplicity_slice = (
+            "low" if leaf_multiplicity <= 4 else "medium" if leaf_multiplicity <= 8 else "high"
+        )
+        truth_depth = int(batch["level_ids"][batch["node_mask"]].max())
+        channel_pair = tuple(
+            sorted(
+                (
+                    int(batch["b1_full_truth_channel_ids"][0]),
+                    int(batch["b2_full_truth_channel_ids"][0]),
+                )
+            )
+        )
+        represented = total_targets = 0
+        for target_level in range(1, truth_depth + 1):
+            alignment = aligned_level_targets(
+                batch,
+                predicted.batch,
+                target_level=target_level,
+                target_policy=target_policy,
+            )
+            represented += alignment.representable_count
+            total_targets += alignment.truth_target_count
         values = {
             "teacher_forced_p4_closure_rate": float(
                 teacher_metrics["p4_closure_rate"]
@@ -590,15 +745,47 @@ def validate_reconstruction(
                 predicted_metrics["tree_validity_rate"]
             ),
             "scheduled_rollout_valid": float(scheduled.valid),
+            "representable_target_rate": represented / max(total_targets, 1),
+            "complete_target_efficiency": float(
+                predicted_metrics["canonical_subtree_exact_match"]
+            ),
+            f"multiplicity_{multiplicity_slice}_full_tree_exact_match": float(
+                predicted_metrics["full_tree_exact_match"]
+            ),
+            f"depth_{truth_depth}_full_tree_exact_match": float(
+                predicted_metrics["full_tree_exact_match"]
+            ),
+            f"channel_pair_{channel_pair[0]}_{channel_pair[1]}_full_tree_exact_match": float(
+                predicted_metrics["full_tree_exact_match"]
+            ),
+            **{
+                f"predicted_{name}": float(value)
+                for name, value in predicted_metrics.items()
+                if isinstance(value, (bool, int, float))
+            },
         }
         for name, value in values.items():
             accumulated.setdefault(name, []).append(value)
         event_count += 1
     model.train()
-    return {
+    output_metrics: dict[str, float] = {
         name: sum(values) / len(values)
         for name, values in accumulated.items()
-    } | {"validation_events": float(event_count)}
+    }
+    for name, values in accumulated.items():
+        if name.endswith(("_numerator", "_denominator")):
+            output_metrics[name] = float(sum(values))
+        else:
+            output_metrics[f"{name}_numerator"] = float(sum(values))
+            output_metrics[f"{name}_denominator"] = float(len(values))
+    output_metrics.update(
+        {
+            "validation_events": float(event_count),
+            "rollout_validation_events": float(min(event_count, rollout_validation_events)),
+            "validation_batch_size": float(validation_batch_size),
+        }
+    )
+    return output_metrics
 
 
 def _save_reconstruction_checkpoint(
@@ -612,6 +799,7 @@ def _save_reconstruction_checkpoint(
     data_module: RealDataModule,
     step: int,
     metrics: dict[str, float],
+    streaming_cursor: dict[str, int],
 ) -> Path:
     return save_training_checkpoint(
         path,
@@ -642,6 +830,7 @@ def _save_reconstruction_checkpoint(
             if len(data_module.source_schema_versions) == 1
             else "mixed"
         ),
+        streaming_cursor=streaming_cursor,
     )
 
 

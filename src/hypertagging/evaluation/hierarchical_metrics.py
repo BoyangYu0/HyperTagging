@@ -410,6 +410,9 @@ def summarize_rollout(
         "edge_precision": canonical.edge_precision,
         "edge_recall": canonical.edge_recall,
         "edge_f1": canonical.edge_f1,
+        "mother_type_accuracy": canonical.mother_type_accuracy,
+        "leaf_assignment_accuracy": canonical.leaf_assignment_accuracy,
+        "recursive_source_overlap": canonical.recursive_source_overlap,
         "tree_edit_like_distance": canonical.tree_edit_like_distance,
         "first_divergence_level": canonical.first_divergence_level,
         "root_reconstruction_success": canonical.root_reconstruction_success,
@@ -463,6 +466,7 @@ def next_level_metrics(
     target_types, target_masks, _, _ = targets_for_level(batch, target_level)
     object_target = torch.zeros_like(output.object_logits, dtype=torch.bool)
     type_correct, pointer_tp, pointer_fp, pointer_fn = 0, 0, 0, 0
+    cardinality_correct = 0
     matched_count = 0
     for batch_index, event_matches in enumerate(matches):
         context = batch["node_mask"][batch_index] & (
@@ -483,15 +487,47 @@ def next_level_metrics(
             pointer_tp += int((predicted & truth).sum())
             pointer_fp += int((predicted & ~truth).sum())
             pointer_fn += int((~predicted & truth).sum())
+            cardinality_correct += int(
+                int(output.cardinality_logits[batch_index, query].argmax())
+                == int(truth.sum())
+            )
     object_prediction = torch.sigmoid(output.object_logits) >= 0.5
+    object_tp = int((object_prediction & object_target).sum())
+    object_fp = int((object_prediction & ~object_target).sum())
+    object_fn = int((~object_prediction & object_target).sum())
     object_accuracy = float((object_prediction == object_target).float().mean())
+    object_precision = object_tp / (object_tp + object_fp) if object_tp + object_fp else 1.0
+    object_recall = object_tp / (object_tp + object_fn) if object_tp + object_fn else 1.0
     pointer_precision = pointer_tp / (pointer_tp + pointer_fp) if pointer_tp + pointer_fp else 1.0
     pointer_recall = pointer_tp / (pointer_tp + pointer_fn) if pointer_tp + pointer_fn else 1.0
+    pointer_f1 = (
+        2 * pointer_precision * pointer_recall / (pointer_precision + pointer_recall)
+        if pointer_precision + pointer_recall
+        else 0.0
+    )
     return {
         "object_no_object_accuracy": object_accuracy,
+        "object_precision": object_precision,
+        "object_recall": object_recall,
         "mother_type_accuracy": type_correct / matched_count if matched_count else 0.0,
+        "cardinality_accuracy": (
+            cardinality_correct / matched_count if matched_count else 0.0
+        ),
         "pointer_precision": pointer_precision,
         "pointer_recall": pointer_recall,
+        "pointer_f1": pointer_f1,
+        "object_precision_numerator": float(object_tp),
+        "object_precision_denominator": float(object_tp + object_fp),
+        "object_recall_numerator": float(object_tp),
+        "object_recall_denominator": float(object_tp + object_fn),
+        "pointer_precision_numerator": float(pointer_tp),
+        "pointer_precision_denominator": float(pointer_tp + pointer_fp),
+        "pointer_recall_numerator": float(pointer_tp),
+        "pointer_recall_denominator": float(pointer_tp + pointer_fn),
+        "mother_type_accuracy_numerator": float(type_correct),
+        "mother_type_accuracy_denominator": float(matched_count),
+        "cardinality_accuracy_numerator": float(cardinality_correct),
+        "cardinality_accuracy_denominator": float(matched_count),
     }
 
 

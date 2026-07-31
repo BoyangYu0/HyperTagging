@@ -22,6 +22,7 @@ from hypertagging.preprocessing.schema_v3 import (
 )
 from hypertagging.preprocessing.pid_filter import PDG_TOKENS, validate_pid_tokens
 from hypertagging.reconstruction.pid_state import rebuild_runtime_pid_state
+from hypertagging.data.streaming import RuntimeFeatureNormalizer
 
 
 @dataclass(frozen=True)
@@ -40,6 +41,8 @@ class LevelReconstructionOutput:
     current_pid_probabilities: torch.Tensor | None = None
     current_pid_tokens: torch.Tensor | None = None
     current_p4: torch.Tensor | None = None
+    second_pass_common_features: torch.Tensor | None = None
+    second_pass_common_availability: torch.Tensor | None = None
 
 
 class LevelAutoregressiveReconstructor(nn.Module):
@@ -96,6 +99,14 @@ class LevelAutoregressiveReconstructor(nn.Module):
         )
         self.decoder = MotherPointerDecoder(hidden_dim=hidden_dim, n_types=n_types, n_queries=n_queries)
         self.leaf_pid_head = nn.Linear(hidden_dim, len(PDG_TOKENS))
+        self.runtime_feature_normalizer = RuntimeFeatureNormalizer.identity(
+            len(COMMON_FEATURE_NAMES), len(COMPOSITE_FEATURE_NAMES)
+        )
+
+    def set_runtime_feature_normalizer(
+        self, normalizer: RuntimeFeatureNormalizer
+    ) -> None:
+        self.runtime_feature_normalizer = normalizer
 
     @property
     def relation_bias(self) -> nn.Module:
@@ -109,9 +120,14 @@ class LevelAutoregressiveReconstructor(nn.Module):
         if self.encoder_mode == "heterogeneous":
             batch = _upgrade_flat_batch(batch)
             _assert_truth_free_model_inputs(batch)
+            first_pass_batch = _normalize_runtime_feature_blocks(
+                batch, self.runtime_feature_normalizer
+            )
             first_pass = self.encoder(
-                batch,
-                attention_mask=stair_attention_mask(batch["level_ids"], batch["node_mask"]),
+                first_pass_batch,
+                attention_mask=stair_attention_mask(
+                    first_pass_batch["level_ids"], first_pass_batch["node_mask"]
+                ),
             )
             leaf_pid_logits = self.leaf_pid_head(first_pass.node_embeddings)
             runtime = rebuild_runtime_pid_state(
@@ -122,6 +138,8 @@ class LevelAutoregressiveReconstructor(nn.Module):
             reconstruction_batch = _runtime_reconstruction_batch(
                 batch,
                 runtime,
+                normalizer=self.runtime_feature_normalizer,
+                canonical_batch=first_pass_batch,
                 use_canonical=(
                     self.canonical_pion_first_level and target_level == 1
                 ),
@@ -211,6 +229,16 @@ class LevelAutoregressiveReconstructor(nn.Module):
             current_probabilities,
             current_tokens,
             current_p4,
+            (
+                reconstruction_batch["common_features"]
+                if self.encoder_mode == "heterogeneous"
+                else None
+            ),
+            (
+                reconstruction_batch["common_availability"]
+                if self.encoder_mode == "heterogeneous"
+                else None
+            ),
         )
 
 
@@ -218,10 +246,12 @@ def _runtime_reconstruction_batch(
     batch: dict[str, torch.Tensor],
     runtime,
     *,
+    normalizer: RuntimeFeatureNormalizer,
+    canonical_batch: dict[str, torch.Tensor],
     use_canonical: bool,
 ) -> dict[str, torch.Tensor]:
     if use_canonical:
-        return batch
+        return canonical_batch
     output = dict(batch)
     output["current_pid_probabilities"] = runtime.probabilities
     output["current_pid_tokens"] = runtime.current_tokens
@@ -246,6 +276,37 @@ def _runtime_reconstruction_batch(
             runtime.p4,
         )
     output["composite_features"] = composite
+    (
+        output["common_features"],
+        output["common_availability"],
+        output["composite_features"],
+        output["composite_availability"],
+    ) = normalizer.normalize_runtime(
+        output["common_features"],
+        output["common_availability"],
+        output["composite_features"],
+        output["composite_availability"],
+    )
+    return output
+
+
+def _normalize_runtime_feature_blocks(
+    batch: dict[str, torch.Tensor],
+    normalizer: RuntimeFeatureNormalizer,
+) -> dict[str, torch.Tensor]:
+    output = dict(batch)
+    (
+        output["common_features"],
+        output["common_availability"],
+        output["composite_features"],
+        output["composite_availability"],
+    ) = normalizer.normalize_runtime(
+        batch["common_features"],
+        batch["common_availability"],
+        batch["composite_features"],
+        batch["composite_availability"],
+    )
+    output["node_features"] = output["common_features"]
     return output
 
 
@@ -283,6 +344,19 @@ def _upgrade_flat_batch(batch: dict[str, torch.Tensor]) -> dict[str, torch.Tenso
     """Upgrade legacy/tiny batches without claiming detector-specific values."""
 
     if "common_features" in batch:
+        if "runtime_composite_type_source_ids" not in batch:
+            from hypertagging.reconstruction.pid_state import (
+                COMPOSITE_TYPE_SOURCE_TO_ID,
+            )
+
+            batch = dict(batch)
+            sources = torch.full_like(
+                batch["level_ids"], COMPOSITE_TYPE_SOURCE_TO_ID["input_fixed"]
+            )
+            sources[batch["level_ids"] > 0] = COMPOSITE_TYPE_SOURCE_TO_ID[
+                "truth_teacher_forced"
+            ]
+            batch["runtime_composite_type_source_ids"] = sources
         return batch
     p4 = batch["p4"]
     charge = batch["charge"]
@@ -310,6 +384,9 @@ def _upgrade_flat_batch(batch: dict[str, torch.Tensor]) -> dict[str, torch.Tenso
     )
     common_availability = active.unsqueeze(-1).expand_as(common).clone()
     common_availability[..., -1] = False
+    from hypertagging.preprocessing.schema_v4 import CATEGORICAL_COMMON_FEATURE_NAMES
+    for name in CATEGORICAL_COMMON_FEATURE_NAMES:
+        common_availability[..., COMMON_FEATURE_NAMES.index(name)] = False
     batch = dict(batch)
     batch["common_features"] = common
     batch["common_availability"] = common_availability
@@ -354,6 +431,10 @@ def _upgrade_flat_batch(batch: dict[str, torch.Tensor]) -> dict[str, torch.Tenso
         kinds[levels > 0] = NODE_KIND_TO_ID["composite"]
         kinds[(levels == 0) & (charge != 0)] = NODE_KIND_TO_ID["track"]
     batch["node_kind_ids"] = kinds
+    # Historical flat CPU fixtures predate the separated target field. Their
+    # reduced composite labels are topology targets, so expose that fact
+    # explicitly instead of leaving teacher-forced composites unknown.
+    batch.setdefault("pid_target_labels", batch["pid_labels"].clone())
     default_ids = torch.arange(
         active.shape[1],
         device=p4.device,
@@ -377,6 +458,18 @@ def _upgrade_flat_batch(batch: dict[str, torch.Tensor]) -> dict[str, torch.Tenso
             LEAF_MODE_TO_ID["ecl_cluster"]
         )
         batch["leaf_kinematics_mode_ids"] = modes
+    if "runtime_composite_type_source_ids" not in batch:
+        from hypertagging.reconstruction.pid_state import (
+            COMPOSITE_TYPE_SOURCE_TO_ID,
+        )
+
+        sources = torch.full_like(
+            levels, COMPOSITE_TYPE_SOURCE_TO_ID["input_fixed"]
+        )
+        sources[levels > 0] = COMPOSITE_TYPE_SOURCE_TO_ID[
+            "truth_teacher_forced"
+        ]
+        batch["runtime_composite_type_source_ids"] = sources
     daughter_count = adjacency.sum(dim=-1).long()
     batch.setdefault("full_truth_daughter_count", daughter_count.clone())
     batch.setdefault(
