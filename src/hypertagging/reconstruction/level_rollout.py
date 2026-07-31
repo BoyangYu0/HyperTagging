@@ -51,6 +51,8 @@ class RolloutConfig:
         NODE_KIND_TO_ID["other"],
     )
     constraint_policy: ReconstructionConstraintPolicy | None = None
+    exclusive_resolution: str = "greedy"  # greedy | weighted_set_packing
+    max_resolution_proposals: int = 12
 
 
 @dataclass(frozen=True)
@@ -166,6 +168,11 @@ def hard_decode_proposals(
         if any(not bool(policy_valid[position]) for position in daughter_positions):
             continue
         mother_type = int(output.pointer.type_logits[0, query_id].argmax())
+        allowed_types, _type_bias = policy.type_constraints(
+            output.target_level, device=output.pointer.type_logits.device
+        )
+        if not bool(allowed_types[mother_type]):
+            continue
         charge_contract = dict(config.mother_charge_by_token)
         expected_charge = charge_contract.get(mother_type, policy.expected_charge(mother_type))
         if policy.mother_charge_compatibility in {"hard", "soft_train_hard_rollout"}:
@@ -248,6 +255,114 @@ def resolve_exclusive_proposals(
     return sorted(accepted, key=lambda proposal: proposal.query_id)
 
 
+def resolve_weighted_set_packing(
+    proposals: list[CompositeProposal],
+    *,
+    recursive_leaf_source_mask: torch.Tensor,
+    max_proposals: int = 12,
+) -> list[CompositeProposal]:
+    """Evaluation-only exact weighted set packing for a bounded proposal list."""
+
+    if len(proposals) > max_proposals:
+        raise ValueError(
+            f"weighted set packing is bounded to {max_proposals} proposals, got {len(proposals)}"
+        )
+    source_sets = [
+        set(
+            recursive_leaf_source_mask[list(proposal.daughter_positions)]
+            .any(dim=0)
+            .nonzero(as_tuple=False)
+            .flatten()
+            .tolist()
+        )
+        for proposal in proposals
+    ]
+    best_indices: tuple[int, ...] = ()
+    best_score = float("-inf")
+    for subset_bits in range(1 << len(proposals)):
+        chosen = tuple(index for index in range(len(proposals)) if subset_bits & (1 << index))
+        used: set[int] = set()
+        valid = True
+        for index in chosen:
+            if used & source_sets[index]:
+                valid = False
+                break
+            used.update(source_sets[index])
+        if not valid:
+            continue
+        score = sum(proposals[index].confidence for index in chosen)
+        tie_key = tuple(proposals[index].query_id for index in chosen)
+        best_tie = tuple(proposals[index].query_id for index in best_indices)
+        if score > best_score or (score == best_score and tie_key < best_tie):
+            best_score = score
+            best_indices = chosen
+    return sorted((proposals[index] for index in best_indices), key=lambda item: item.query_id)
+
+
+def proposal_ambiguity_metrics(
+    proposals: list[CompositeProposal],
+    accepted: list[CompositeProposal],
+    *,
+    total_queries: int,
+    recursive_leaf_source_mask: torch.Tensor,
+) -> dict[str, float]:
+    """Bounded query-collapse and overlap diagnostics for one decoded level."""
+
+    def duplicate_rate(keys: list[object]) -> float:
+        return (len(keys) - len(set(keys))) / max(len(keys), 1)
+
+    def overlap_rate(items: list[CompositeProposal]) -> float:
+        sources = [
+            set(
+                recursive_leaf_source_mask[list(item.daughter_positions)]
+                .any(dim=0)
+                .nonzero(as_tuple=False)
+                .flatten()
+                .tolist()
+            )
+            for item in items
+        ]
+        pairs = overlaps = 0
+        for left in range(len(sources)):
+            for right in range(left + 1, len(sources)):
+                pairs += 1
+                overlaps += int(bool(sources[left] & sources[right]))
+        return overlaps / max(pairs, 1)
+
+    daughter_keys = [tuple(item.daughter_positions) for item in proposals]
+    typed_keys = [(item.mother_type, tuple(item.daughter_positions)) for item in proposals]
+    return {
+        "duplicate_daughter_set_rate": duplicate_rate(daughter_keys),
+        "duplicate_mother_type_daughter_set_rate": duplicate_rate(typed_keys),
+        "unused_query_fraction": max(total_queries - len(proposals), 0) / max(total_queries, 1),
+        "overlap_rate_before_exclusive_resolution": overlap_rate(proposals),
+        "overlap_rate_after_exclusive_resolution": overlap_rate(accepted),
+    }
+
+
+def _resolve_with_config(
+    proposals: list[CompositeProposal],
+    state: dict[str, torch.Tensor],
+    config: RolloutConfig,
+) -> list[CompositeProposal]:
+    recursive = state.get("recursive_leaf_source_mask")
+    if config.exclusive_resolution == "weighted_set_packing":
+        if recursive is None:
+            raise ValueError("weighted set packing requires recursive leaf sources")
+        return resolve_weighted_set_packing(
+            proposals,
+            recursive_leaf_source_mask=recursive[0],
+            max_proposals=config.max_resolution_proposals,
+        )
+    if config.exclusive_resolution != "greedy":
+        raise ValueError(f"unknown exclusive resolution: {config.exclusive_resolution}")
+    return resolve_exclusive_proposals(
+        proposals,
+        state["source_node_ids"][0],
+        recursive_leaf_source_mask=recursive[0] if recursive is not None else None,
+    )
+
+
 def validate_proposals(
     proposals: list[CompositeProposal],
     *,
@@ -294,13 +409,7 @@ def level_rollout(
             state = _with_hard_predicted_leaf_p4(state, output.leaf_pid_logits)
         predicted = hard_decode_proposals(output, state, config)
         if not config.allow_competing:
-            predicted = resolve_exclusive_proposals(
-                predicted,
-                state["source_node_ids"][0],
-                recursive_leaf_source_mask=state.get("recursive_leaf_source_mask", None)[0]
-                if "recursive_leaf_source_mask" in state
-                else None,
-            )
+            predicted = _resolve_with_config(predicted, state, config)
 
         use_truth = mode == "teacher_forced"
         if mode == "scheduled":
@@ -323,13 +432,7 @@ def level_rollout(
             )
             break
         accepted = (
-            resolve_exclusive_proposals(
-                proposals,
-                state["source_node_ids"][0],
-                recursive_leaf_source_mask=state.get("recursive_leaf_source_mask", None)[0]
-                if "recursive_leaf_source_mask" in state
-                else None,
-            )
+            _resolve_with_config(proposals, state, config)
             if config.exclusive_final
             else proposals
         )
@@ -862,5 +965,7 @@ __all__ = [
     "level_rollout",
     "cached_context_for_level",
     "resolve_exclusive_proposals",
+    "resolve_weighted_set_packing",
+    "proposal_ambiguity_metrics",
     "validate_proposals",
 ]

@@ -255,6 +255,7 @@ def benchmark_storage_formats(
     source_json_decode_cpu_seconds = max(time.process_time() - decode_cpu_start, 0.0)
     if not records:
         raise ValueError("storage benchmark requires at least one event")
+    node_count = sum(len(record.get("nodes", ())) for record in records)
     json_path = output / "event-json-v4.parquet"
     json_write_start = time.perf_counter()
     with ParquetEventWriter(
@@ -271,8 +272,10 @@ def benchmark_storage_formats(
     native_write_seconds = max(time.perf_counter() - write_start, 1e-9)
     tracemalloc.start()
     read_start = time.perf_counter()
+    native_cpu_start = time.process_time()
     native_records = list(iter_native_nested_v5(native_path))
     native_read_seconds = max(time.perf_counter() - read_start, 1e-9)
+    native_decode_cpu_seconds = max(time.process_time() - native_cpu_start, 0.0)
     _, native_peak_python_bytes = tracemalloc.get_traced_memory()
     tracemalloc.stop()
     projected_start = time.perf_counter()
@@ -280,24 +283,38 @@ def benchmark_storage_formats(
     projected_seconds = max(time.perf_counter() - projected_start, 1e-9)
     tracemalloc.start()
     comparable_json_start = time.perf_counter()
+    comparable_json_cpu_start = time.process_time()
     comparable_json_records = list(iter_event_records_v4(json_path))
     comparable_json_seconds = max(time.perf_counter() - comparable_json_start, 1e-9)
+    comparable_json_cpu_seconds = max(
+        time.process_time() - comparable_json_cpu_start, 0.0
+    )
     _, json_peak_python_bytes = tracemalloc.get_traced_memory()
     tracemalloc.stop()
     result: dict[str, float | int | str] = {
         "event_count": len(records),
+        "node_count": node_count,
         "json_file_size_bytes": json_path.stat().st_size,
         "native_file_size_bytes": native_path.stat().st_size,
         "json_write_events_per_second": len(records) / json_write_seconds,
+        "json_write_nodes_per_second": node_count / json_write_seconds,
+        "json_write_bytes_per_second": json_path.stat().st_size / json_write_seconds,
         "json_read_events_per_second": len(comparable_json_records)
         / comparable_json_seconds,
+        "json_read_nodes_per_second": node_count / comparable_json_seconds,
+        "json_full_read_bytes_per_second": json_path.stat().st_size / comparable_json_seconds,
         "native_write_events_per_second": len(records) / native_write_seconds,
+        "native_write_nodes_per_second": node_count / native_write_seconds,
+        "native_write_bytes_per_second": native_path.stat().st_size / native_write_seconds,
         "native_read_events_per_second": len(native_records) / native_read_seconds,
+        "native_read_nodes_per_second": node_count / native_read_seconds,
+        "native_full_read_bytes_per_second": native_path.stat().st_size / native_read_seconds,
         "native_projected_read_events_per_second": len(projected) / projected_seconds,
-        "json_decode_cpu_seconds": comparable_json_seconds,
+        "native_projected_read_bytes_per_second": native_path.stat().st_size / projected_seconds,
+        "json_decode_cpu_seconds": comparable_json_cpu_seconds,
         "source_sample_decode_seconds": json_decode_seconds,
         "source_json_decode_cpu_seconds": source_json_decode_cpu_seconds,
-        "native_decode_cpu_seconds": native_read_seconds,
+        "native_decode_cpu_seconds": native_decode_cpu_seconds,
         "json_peak_python_bytes": json_peak_python_bytes,
         "native_peak_python_bytes": native_peak_python_bytes,
         "process_peak_rss_bytes": int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss) * 1024,

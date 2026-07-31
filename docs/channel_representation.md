@@ -28,8 +28,11 @@ The Upsilon representation is explicitly permutation-invariant.
 
 ## Count arrays and similarity
 
-No historical dictionary-array implementation was recoverable from the
-checked-in history; see `docs/model_revision_audit.md`. V2 therefore implements
+**Compatibility boundary:** no historical dictionary-array implementation was
+recoverable after searching every reachable commit, branch/tag, migration and
+legacy/archive reference, and unreachable Git object in this repository. The
+current representation is not claimed to be exactly legacy-equivalent. See
+`docs/model_revision_audit.md` and `docs/current_head_gap_audit.md`. V2 therefore implements
 the explicit fallback design:
 
 - dense reduced-PID counts;
@@ -59,6 +62,14 @@ required to classify the full B decay.
 
 Exact IDs remain useful for diagnostics, rare-channel stratification, and
 seen/unseen evaluation. They are not the only training objective.
+
+## Pooling ablations
+
+The current baseline uses the mean of all retained nodes on each truth-guided
+B branch. CPU-testable alternatives are B-root-only, learned within-branch
+attention, and level-weighted pooling. Their configs are
+`configs/ablations/channel_pool_*.yaml`. Fixture execution validates mechanics
+only; a held-out matched-split HTCondor comparison is deferred.
 # Correctness revision
 
 Schema-v3 stores full retained generator-decay and reconstructable retained-tree

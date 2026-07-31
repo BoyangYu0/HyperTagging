@@ -66,6 +66,14 @@ ranking loss/accuracy, radius-depth, pooled-channel, variance, covariance, and
 the collapse diagnostics documented in
 `docs/hyperbolic_level_autoregressive_reconstruction.md`.
 
+`validate_every` triggers bounded held-out validation over
+`validation_batches`. It aggregates total/component losses, relation accuracy,
+topology-safe parent ranking, tree distance, radius monotonicity,
+variance/covariance/effective rank/boundary fraction, channel retrieval, and
+leaf PID accuracy/entropy. `latest.pt` and validation-selected `best.pt` are
+separate; `checkpoint.pt` remains the final compatibility checkpoint.
+`log_every` controls training-log cadence.
+
 Reconstruction runs log object/no-object and mother-type accuracy, Level-1
 pointer precision/recall, component losses, Hungarian matches, and both
 teacher-forced/free-rollout results. Full evaluation helpers report exact tree
@@ -160,10 +168,21 @@ keeps alignment explicit at the cost of lower throughput than a fully padded
 variable-state rollout.
 
 The default target policy is `complete_only`; `reconstructable_partial` and
-`diagnostic_all` are explicit alternatives. Allowed mother tokens are derived
-per level from eligible training targets. Pointer decoding applies target-level
+`diagnostic_all` are explicit alternatives. A versioned static reduced-PID
+mother ontology always rejects unknown and leaf-only species; eligible
+training-target frequencies add hard, soft, or off empirical level priors.
+Pointer decoding applies target-level
 and node masks, recursive-source conflicts, charge/type compatibility where
 configured, and a minimum pointer probability in addition to cardinality.
+
+`complete_only` is not complete full-event reconstruction: it excludes targets
+made incomplete by neutrinos, K_L treatment, acceptance/reconstruction loss,
+or other missing daughters. Explicit policy configs live under
+`configs/target_policies/`; their metric namespaces and denominators must never
+be merged. Run `scripts/report_reconstruction_capacity.py` against the exact
+policy-specific dataset index before production training. It reports every
+retained level, distributions, configured limits, overflow, and margin and
+refuses any overflow.
 
 Resume restores model/encoder/leaf-PID head, optimizer, scheduler, AMP scaler,
 Python/NumPy/Torch/CUDA RNG, step/epoch, scheduling state, channel memory bank,

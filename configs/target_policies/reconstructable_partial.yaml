@@ -1,0 +1,7 @@
+target_policy: reconstructable_partial
+description: Valid retained mothers contribute even when the generator decay is incomplete.
+metric_namespace: reconstructable_partial
+exclude_partial_topologies: false
+notes:
+  - Separate denominators are required for neutrino, K_L, acceptance-loss, and incomplete decays.
+  - This is partial-topology reconstruction, not complete full-event reconstruction.

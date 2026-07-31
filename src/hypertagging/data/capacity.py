@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass
-from typing import Iterable, Mapping
+from typing import Any, Iterable, Mapping
 
 import numpy as np
 
@@ -200,9 +200,90 @@ def _histogram_percentile(histogram: Mapping[int, int], quantile: float) -> floa
     return float(max(histogram, default=0))
 
 
+def production_capacity_report(
+    index: Mapping[str, object],
+    *,
+    global_n_queries: int,
+    global_max_cardinality: int,
+    n_queries_by_level: Mapping[int, int] | None = None,
+    max_cardinality_by_level: Mapping[int, int] | None = None,
+    target_policy: str = "complete_only",
+) -> dict[str, Any]:
+    """Return an explicit every-level capacity/margin report from an index."""
+
+    indexed_policy = str(index.get("target_policy", target_policy))
+    if indexed_policy != target_policy:
+        raise ValueError(
+            f"dataset index target policy {indexed_policy!r} does not match {target_policy!r}"
+        )
+    mother_histograms = dict(index.get("mother_count_histograms_by_level", {}))
+    cardinality_histograms = dict(
+        index.get("daughter_cardinality_histograms_by_level", {})
+    )
+    levels = sorted(
+        {int(level) for level in mother_histograms}
+        | {int(level) for level in cardinality_histograms}
+    )
+    rows = []
+    total_query_overflow = total_cardinality_overflow = 0
+    for level in levels:
+        mother_hist = {
+            int(count): int(events)
+            for count, events in dict(mother_histograms.get(str(level), {})).items()
+        }
+        cardinality_hist = {
+            int(count): int(mothers)
+            for count, mothers in dict(cardinality_histograms.get(str(level), {})).items()
+        }
+        queries = (
+            n_queries_by_level[level]
+            if n_queries_by_level is not None and level in n_queries_by_level
+            else global_n_queries
+        )
+        max_cardinality = (
+            max_cardinality_by_level[level]
+            if max_cardinality_by_level is not None and level in max_cardinality_by_level
+            else global_max_cardinality
+        )
+        maximum_mothers = max(mother_hist, default=0)
+        maximum_cardinality = max(cardinality_hist, default=0)
+        query_overflow = sum(events for count, events in mother_hist.items() if count > queries)
+        cardinality_overflow = sum(
+            mothers for count, mothers in cardinality_hist.items()
+            if count > max_cardinality
+        )
+        total_query_overflow += query_overflow
+        total_cardinality_overflow += cardinality_overflow
+        rows.append(
+            {
+                "level": level,
+                "maximum_mothers": maximum_mothers,
+                "mother_count_distribution": dict(sorted(mother_hist.items())),
+                "daughter_cardinality_distribution": dict(sorted(cardinality_hist.items())),
+                "configured_queries": queries,
+                "configured_max_cardinality": max_cardinality,
+                "query_overflow_count": query_overflow,
+                "cardinality_overflow_count": cardinality_overflow,
+                "query_capacity_margin": queries - maximum_mothers,
+                "cardinality_capacity_margin": max_cardinality - maximum_cardinality,
+            }
+        )
+    return {
+        "report_version": "hypertagging-capacity-report-v1",
+        "target_policy": target_policy,
+        "levels": rows,
+        "query_overflow_count": total_query_overflow,
+        "cardinality_overflow_count": total_cardinality_overflow,
+        "production_training_allowed": not (
+            total_query_overflow or total_cardinality_overflow
+        ),
+    }
+
+
 __all__ = [
     "CapacityStatistics",
     "capacity_statistics_from_index",
     "dataset_capacity_statistics",
     "require_capacity",
+    "production_capacity_report",
 ]

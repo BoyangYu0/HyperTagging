@@ -101,8 +101,48 @@ PDG_TOKENS: tuple[int, ...] = (
 )
 PID_VOCABULARY_VERSION = "legacy-reduced-pdg-v1"
 
+# Static reconstruction ontology.  These are reduced-PID species which can be
+# retained composite mothers after the documented pruning/contraction step.
+# Stable detector leaves (gamma, K_L, e, mu, pi, K, p) and unknown token 0 are
+# deliberately absent.  Empirical frequency priors may further constrain this
+# set, but can never make a leaf-only or unknown token reconstructable.
+MOTHER_ONTOLOGY_VERSION = "reduced-mother-ontology-v1"
+STATIC_MOTHER_PDGS: tuple[int, ...] = (
+    300553,
+    111,
+    443,
+    310,
+    3122,
+    3222,
+    411,
+    421,
+    431,
+    4122,
+    413,
+    423,
+    433,
+    511,
+    521,
+    531,
+    -3122,
+    -3222,
+    -411,
+    -421,
+    -431,
+    -4122,
+    -413,
+    -423,
+    -433,
+    -511,
+    -521,
+    -531,
+)
+
 TOKENIZE_DICT: dict[int, int] = {pdg: index for index, pdg in enumerate(PDG_TOKENS)}
 DETOKENIZE_DICT: dict[int, int] = {index: pdg for pdg, index in TOKENIZE_DICT.items()}
+STATIC_MOTHER_TOKENS: tuple[int, ...] = tuple(
+    TOKENIZE_DICT[pdg] for pdg in STATIC_MOTHER_PDGS
+)
 ALLOWED_PDGS: frozenset[int] = frozenset(PDG_TOKENS[1:])
 ALLOWED_NAMES: frozenset[str] = frozenset(LEGACY_PARTICLE_NAMES)
 

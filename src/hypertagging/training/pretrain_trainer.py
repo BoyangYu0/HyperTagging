@@ -15,6 +15,7 @@ from hypertagging.data.level_collate import build_lca_depth
 from hypertagging.losses.hyperbolic_pretraining import (
     build_tree_relation_targets,
     hyperbolic_pretraining_loss,
+    parent_child_ranking_accuracy,
     pool_b_branch_embeddings,
 )
 from hypertagging.models.heterogeneous import HeterogeneousNodeEncoder
@@ -86,6 +87,8 @@ class PretrainConfig:
     n_queries_by_level: tuple[tuple[int, int], ...] = ()
     max_cardinality: int | None = None
     max_cardinality_by_level: tuple[tuple[int, int], ...] = ()
+    validation_batches: int = 4
+    channel_pooling: str = "mean_all"
 
 
 @dataclass(frozen=True)
@@ -113,6 +116,7 @@ class ContextualPretrainingModel(torch.nn.Module):
         n_context_layers: int = 2,
         ffn_dim: int | None = None,
         dropout: float = 0.0,
+        channel_pooling: str = "mean_all",
     ) -> None:
         super().__init__()
         self.encoder = HeterogeneousNodeEncoder(
@@ -132,6 +136,15 @@ class ContextualPretrainingModel(torch.nn.Module):
         self.candidate_correctness_head = torch.nn.Linear(d_model, 1)
         self.corruption_type_head = torch.nn.Linear(d_model, 5)
         self.channel_memory = ChannelMemoryBank(channel_memory_size, d_model)
+        if channel_pooling not in {
+            "mean_all", "b_root", "learned_attention", "level_weighted"
+        }:
+            raise ValueError(f"unknown channel pooling mode: {channel_pooling}")
+        self.channel_pooling = channel_pooling
+        self.channel_pool_score = (
+            torch.nn.Linear(d_model, 1)
+            if channel_pooling == "learned_attention" else None
+        )
         self.runtime_feature_normalizer = RuntimeFeatureNormalizer.identity(12, 13)
 
     def set_runtime_feature_normalizer(
@@ -168,7 +181,7 @@ class ContextualPretrainingModel(torch.nn.Module):
 
         first_batch = self.normalize_batch(batch)
         first = self.encoder(first_batch, attention_mask=attention_mask)
-        leaf_pid_logits = self.leaf_pid_head(first.node_embeddings)
+        leaf_pid_logits = self.leaf_pid_head(first.reconstruction_projection)
         runtime = rebuild_runtime_pid_state(batch, leaf_pid_logits, hard=False)
         second_batch = _runtime_reconstruction_batch(
             batch,
@@ -234,6 +247,10 @@ class ChannelMemoryBank(torch.nn.Module):
 def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
     if config.max_steps <= 0:
         raise ValueError("max_steps must be positive")
+    if config.validate_every <= 0 or config.validation_batches <= 0:
+        raise ValueError("validate_every and validation_batches must be positive")
+    if config.log_every <= 0:
+        raise ValueError("log_every must be positive")
     seed_everything(config.seed)
     if config.resume and config.num_workers > 0:
         raise ValueError("exact streaming resume currently requires num_workers=0")
@@ -293,6 +310,7 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
         use_physical_relations=ablation.relation_attention,
         use_hyperbolic_relations=ablation.hyperbolic_relation_attention,
         channel_memory_size=config.channel_memory_size,
+        channel_pooling=config.channel_pooling,
     ).to(device)
     model.set_runtime_feature_normalizer(
         RuntimeFeatureNormalizer(
@@ -350,6 +368,8 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
             raise ValueError("streaming resume cursor exceeds the saved epoch")
     final_loss = 0.0
     final_metrics: dict[str, float] = {}
+    best_validation_loss = float("inf")
+    last_validation_step = 0
     for step in range(start_step, config.max_steps):
         try:
             next_batch = next(batch_iterator)
@@ -396,6 +416,12 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 encoded.channel_projection,
                 train_batch["b_side"],
                 train_batch["node_mask"],
+                mode=model.channel_pooling,
+                level_ids=train_batch["level_ids"],
+                attention_logits=(
+                    model.channel_pool_score(encoded.channel_projection).squeeze(-1)
+                    if model.channel_pool_score is not None else None
+                ),
             )
             valid_channel_event = valid_b_root_channel_mask(
                 train_batch,
@@ -541,7 +567,33 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 for name, value in loss_output.diagnostics.items()
             },
         }
-        logger.log(step=step + 1, stage=stage.value, **final_metrics)
+        if (step + 1) % config.log_every == 0 or step == start_step or step + 1 == config.max_steps:
+            logger.log(step=step + 1, stage=stage.value, **final_metrics)
+        if (step + 1) % config.validate_every == 0:
+            validation_metrics = _validate_pretraining(
+                model,
+                data_module,
+                device=device,
+                config=config,
+            )
+            final_metrics.update(validation_metrics)
+            logger.log(step=step + 1, split="validation", **validation_metrics)
+            last_validation_step = step + 1
+            _save_pretrain_checkpoint(
+                output_dir / "latest.pt",
+                model=model, optimizer=optimizer, scheduler=scheduler, scaler=scaler,
+                config=config, data_module=data_module, step=step + 1,
+                metrics=final_metrics, streaming_cursor=cursor.state_dict(),
+            )
+            validation_loss = validation_metrics.get("validation_loss_total", float("inf"))
+            if validation_loss < best_validation_loss:
+                best_validation_loss = validation_loss
+                _save_pretrain_checkpoint(
+                    output_dir / "best.pt",
+                    model=model, optimizer=optimizer, scheduler=scheduler, scaler=scaler,
+                    config=config, data_module=data_module, step=step + 1,
+                    metrics=final_metrics, streaming_cursor=cursor.state_dict(),
+                )
         if (step + 1) % config.checkpoint_every == 0:
             _save_pretrain_checkpoint(
                 output_dir / f"checkpoint-step-{step + 1}.pt",
@@ -555,29 +607,27 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 metrics=final_metrics,
                 streaming_cursor=cursor.state_dict(),
             )
-    validation_iterator = data_module.batches(
-        "validation", batch_size=config.batch_size, shuffle=False
-    )
-    validation_batch = next(validation_iterator, None)
-    if validation_batch is None:
-        validation_batch = next(
-            data_module.batches(
-                "train", batch_size=config.batch_size, shuffle=False
-            ),
-            None,
-        )
-    if validation_batch is not None:
-        validation_batch = model.normalize_batch(
-            _to_device(validation_batch, device)
-        )
-        validation_metrics = validate_contextual_geometry(
-            model.encoder,
-            validation_batch,
-            device=device,
-            curvature=config.curvature,
+    if last_validation_step != config.max_steps:
+        validation_metrics = _validate_pretraining(
+            model, data_module, device=device, config=config
         )
         final_metrics.update(validation_metrics)
         logger.log(step=config.max_steps, split="validation", **validation_metrics)
+        validation_loss = validation_metrics.get("validation_loss_total", float("inf"))
+        if validation_loss < best_validation_loss:
+            best_validation_loss = validation_loss
+            _save_pretrain_checkpoint(
+                output_dir / "best.pt",
+                model=model, optimizer=optimizer, scheduler=scheduler, scaler=scaler,
+                config=config, data_module=data_module, step=config.max_steps,
+                metrics=final_metrics, streaming_cursor=cursor.state_dict(),
+            )
+    _save_pretrain_checkpoint(
+        output_dir / "latest.pt",
+        model=model, optimizer=optimizer, scheduler=scheduler, scaler=scaler,
+        config=config, data_module=data_module, step=config.max_steps,
+        metrics=final_metrics, streaming_cursor=cursor.state_dict(),
+    )
     checkpoint = _save_pretrain_checkpoint(
         output_dir / "checkpoint.pt",
         model=model,
@@ -598,6 +648,167 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
         metrics=final_metrics,
         data_module=data_module,
     )
+
+
+@torch.no_grad()
+def _validate_pretraining(
+    model: ContextualPretrainingModel,
+    data_module: RealDataModule,
+    *,
+    device: torch.device,
+    config: PretrainConfig,
+) -> dict[str, float]:
+    """Aggregate bounded held-out objective and representation diagnostics."""
+
+    model.eval()
+    split = "validation" if data_module.split_counts.get("validation", 0) else "train"
+    totals: dict[str, list[float]] = {}
+    retrieval_embeddings: list[torch.Tensor] = []
+    retrieval_ids: list[torch.Tensor] = []
+    batch_count = event_count = 0
+    for raw_batch in data_module.batches(
+        split, batch_size=config.batch_size, shuffle=False
+    ):
+        if batch_count >= config.validation_batches:
+            break
+        batch_count += 1
+        event_count += int(raw_batch["node_mask"].shape[0])
+        batch = _to_device(raw_batch, device)
+        _add_topology_labels(batch)
+        curriculum = build_curriculum_batch(
+            batch, PretrainingStage.TRUTH_GUIDED_MULTILEVEL,
+            seed=config.seed + batch_count,
+            corruption_objective=config.corruption_objective,
+        )
+        encoded, leaf_pid_logits, validation_batch = model.encode_runtime(
+            curriculum.batch,
+            attention_mask=curriculum.batch["curriculum_attention_mask"],
+        )
+        relation_logits = model.relation_head(encoded.tree_projection)
+        targets, relation_mask = build_tree_relation_targets(
+            parent_ids=validation_batch["parent_ids"],
+            lca_depth=validation_batch["lca_depth"],
+            level_ids=validation_batch["level_ids"],
+            node_mask=validation_batch["node_mask"],
+            b_side=validation_batch["b_side"],
+        )
+        attention_logits = (
+            model.channel_pool_score(encoded.channel_projection).squeeze(-1)
+            if model.channel_pool_score is not None else None
+        )
+        branch_embeddings, branch_mask = pool_b_branch_embeddings(
+            encoded.channel_projection,
+            validation_batch["b_side"],
+            validation_batch["node_mask"],
+            mode=model.channel_pooling,
+            level_ids=validation_batch["level_ids"],
+            attention_logits=attention_logits,
+        )
+        valid_channel = valid_b_root_channel_mask(validation_batch)
+        branch_mask &= valid_channel[:, None]
+        full_channel_ids = torch.stack(
+            [
+                validation_batch["b1_full_truth_channel_ids"],
+                validation_batch["b2_full_truth_channel_ids"],
+            ],
+            dim=-1,
+        )
+        structural_features = torch.cat(
+            [
+                validation_batch["b_channel_count_arrays"],
+                validation_batch["b_depth_pid_count_arrays"].flatten(start_dim=2),
+                validation_batch["b_branch_multiplicity_summaries"],
+                validation_batch["b_intermediate_count_arrays"],
+            ],
+            dim=-1,
+        )
+        loss_output = hyperbolic_pretraining_loss(
+            z=encoded.hyperbolic_embeddings,
+            tree_relation_logits=relation_logits,
+            tree_relation_targets=targets,
+            tree_relation_mask=relation_mask,
+            lca_depth=validation_batch["lca_depth"],
+            parent_ids=validation_batch["parent_ids"],
+            level_ids=validation_batch["level_ids"],
+            node_mask=validation_batch["node_mask"],
+            b_side=validation_batch["b_side"],
+            node_kind_ids=validation_batch["node_kind_ids"],
+            event_ids=validation_batch["event_ids"],
+            channel_embeddings=branch_embeddings,
+            channel_mask=branch_mask,
+            full_truth_channel_ids=full_channel_ids,
+            reconstructable_channel_ids=torch.stack(
+                [
+                    validation_batch["b1_reconstructable_channel_ids"],
+                    validation_batch["b2_reconstructable_channel_ids"],
+                ], dim=-1,
+            ),
+            channel_branch_count_arrays=structural_features,
+            weights=_pretraining_weights(config.ablation),
+            curvature=config.curvature,
+            full_event_max_level=validation_batch.get("full_event_max_level"),
+        )
+        leaf_loss = _leaf_pid_loss(leaf_pid_logits, validation_batch)
+        total_loss = loss_output.total + leaf_loss
+        totals.setdefault("validation_loss_total", []).append(float(total_loss))
+        totals.setdefault("validation_loss_leaf_pid", []).append(float(leaf_loss))
+        for name, value in loss_output.components.items():
+            totals.setdefault(f"validation_loss_{name}", []).append(float(value))
+        for name, value in loss_output.diagnostics.items():
+            totals.setdefault(f"validation_{name}", []).append(float(value))
+        if relation_mask.any():
+            accuracy = (relation_logits.argmax(dim=-1)[relation_mask] == targets[relation_mask]).float().mean()
+            totals.setdefault("validation_relation_accuracy", []).append(float(accuracy))
+        ranking = parent_child_ranking_accuracy(
+            encoded.hyperbolic_embeddings,
+            validation_batch["parent_ids"],
+            validation_batch["node_mask"],
+            curvature=config.curvature,
+            lca_depth=validation_batch["lca_depth"],
+            tree_relation_targets=targets,
+            b_side=validation_batch["b_side"],
+        )
+        totals.setdefault("validation_parent_ranking_accuracy", []).append(float(ranking))
+        correlation = loss_output.diagnostics.get("radius_level_correlation")
+        if correlation is not None:
+            totals.setdefault("validation_radius_level_monotonicity", []).append(float(-correlation))
+        raw_tracks = (
+            validation_batch["node_mask"]
+            & (validation_batch["leaf_kinematics_mode_ids"] == LEAF_MODE_TO_ID["raw_track_predicted_pid"])
+            & validation_batch["truth_pid_available"]
+        )
+        if raw_tracks.any():
+            probabilities = torch.softmax(leaf_pid_logits[raw_tracks], dim=-1)
+            totals.setdefault("validation_leaf_pid_accuracy", []).append(
+                float((probabilities.argmax(dim=-1) == validation_batch["truth_pid_labels"][raw_tracks]).float().mean())
+            )
+            totals.setdefault("validation_leaf_pid_entropy", []).append(
+                float((-(probabilities * probabilities.clamp_min(1e-12).log()).sum(dim=-1)).mean())
+            )
+        selected = branch_mask.reshape(-1) & (full_channel_ids.reshape(-1) > 0)
+        if selected.any():
+            retrieval_embeddings.append(branch_embeddings.reshape(-1, branch_embeddings.shape[-1])[selected].cpu())
+            retrieval_ids.append(full_channel_ids.reshape(-1)[selected].cpu())
+    if retrieval_embeddings:
+        embeddings = F.normalize(torch.cat(retrieval_embeddings), dim=-1)
+        ids = torch.cat(retrieval_ids)
+        similarity = embeddings @ embeddings.T
+        similarity.fill_diagonal_(float("-inf"))
+        has_peer = (ids[:, None] == ids[None, :]).fill_diagonal_(False).any(dim=-1)
+        if has_peer.any():
+            nearest = similarity.argmax(dim=-1)
+            totals["validation_channel_retrieval_accuracy"] = [
+                float((ids[nearest[has_peer]] == ids[has_peer]).float().mean())
+            ]
+    model.train()
+    metrics = {
+        name: sum(values) / len(values)
+        for name, values in totals.items()
+        if values
+    }
+    metrics["validation_batches"] = float(batch_count)
+    metrics["validation_events"] = float(event_count)
+    return metrics
 
 
 def _pretraining_weights(ablation_name: str) -> dict[str, float]:

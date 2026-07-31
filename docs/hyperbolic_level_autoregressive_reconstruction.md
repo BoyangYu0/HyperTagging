@@ -54,8 +54,12 @@ The exact LCA relation classes are:
 6. unrelated or unavailable truth relation.
 
 `balanced_tree_relation_loss` averages present class losses so unrelated pairs
-cannot dominate. Hard parent negatives are the hyperbolically nearest valid
-non-parent nodes.
+cannot dominate. Directed parent-ranking negatives are explicitly topology-
+safe. The child, true parent, descendants, ancestors, immediate siblings, and
+LCA classes 0--3 are excluded. Other-B nodes are preferred, followed by
+unrelated retained roots or explicit negative LCA classes. This directed
+objective is distinct from the symmetric/undirected tree-distance geometry
+loss.
 
 Parent ranking uses the actual Poincare distance:
 
@@ -105,11 +109,26 @@ source conflicts. Stair-causal and padding masks are applied in the same
 softmax. Tests verify that changing only this bias changes outputs and that its
 parameters receive finite gradients. `use_relation_bias=False` is the ablation.
 
+Physical continuous relations follow the versioned fixed scaling contract
+`physical-relations-logscale-v1`: level/charge use fixed divisors and GeV-valued
+mass, energy, and momentum-dot use signed log compression. Node kinds use a
+collision-free symmetric pair embedding. Hyperbolic angular alignment uses
+`logmap0(z_i) dot logmap0(z_j)`, not a raw Poincare-coordinate dot product.
+The overall attention relation is directed because level difference and the
+ordered pair of node radii are directed features.
+
 ## Decoder and full rollout
 
 Learned query slots predict object/no-object, mother token, daughter pointers,
 cardinality, and confidence. Hungarian matching makes target-mother ordering
 irrelevant.
+
+Queries first interact through query-query self-attention and then cross-
+attend to the event. Validation reports duplicate daughter sets, duplicate
+type/daughter sets, unused queries, and recursive-source overlap before/after
+exclusivity. Greedy exclusivity remains the production default; an exact
+bounded weighted set-packing resolver is evaluation-only and does not turn
+greedy decoding into a claim of global ambiguity resolution.
 
 Each rollout step:
 
@@ -172,6 +191,13 @@ and composite input histograms. Pass B then contextualizes those refined
 quantities before the principal hyperbolic projection and pointer decoder.
 Thus leaf-PID gradients can originate in Level-1 reconstruction loss.
 `canonical_pion_first_level` remains an explicit disabled-by-default ablation.
+
+The default training PID mode remains differentiable soft expected energy,
+while rollout uses a hard charge-compatible token and physical discrete mass.
+Soft-hard energy/mother-mass, PID entropy, relation-bias change, and pointer-
+logit change are measured. Configured alternatives are soft expectation,
+optimizer-step temperature annealing, straight-through hard PID, and canonical-
+pion first-level mode. Fixtures do not select among them.
 
 Corruption training rebuilds all derived p4, charge, source, histogram, level,
 and conflict features. Candidate-correctness, corruption-class, and explicit

@@ -100,8 +100,18 @@ def parent_child_margin_loss(
     margin: float = 0.2,
     hard_negative: bool = True,
     curvature: float = 1.0,
+    lca_depth: torch.Tensor | None = None,
+    tree_relation_targets: torch.Tensor | None = None,
+    b_side: torch.Tensor | None = None,
 ) -> torch.Tensor:
-    """Rank true parents with actual Poincare distance."""
+    """Directed parent ranking against explicitly topology-safe negatives.
+
+    This is distinct from the undirected tree-distance geometry objective.  A
+    negative may not be the child, its parent, any ancestor/descendant,
+    immediate sibling, or an LCA relation class declared positive/near-positive
+    (classes 0--3). Different-B nodes are preferred, followed by unrelated
+    retained roots / explicit negative LCA classes.
+    """
 
     losses: list[torch.Tensor] = []
     for batch_index in range(z.shape[0]):
@@ -110,7 +120,18 @@ def parent_child_margin_loss(
             parent = int(parent_ids[batch_index, child])
             if parent < 0 or parent >= z.shape[1] or not bool(mask[batch_index, parent]):
                 continue
-            negatives = valid[(valid != parent) & (valid != child)]
+            eligible = topology_safe_parent_negative_mask(
+                parent_ids[batch_index],
+                mask[batch_index],
+                child,
+                lca_depth=(lca_depth[batch_index] if lca_depth is not None else None),
+                tree_relation_targets=(
+                    tree_relation_targets[batch_index]
+                    if tree_relation_targets is not None else None
+                ),
+                b_side=(b_side[batch_index] if b_side is not None else None),
+            )
+            negatives = torch.nonzero(eligible, as_tuple=False).flatten()
             if negatives.numel() == 0:
                 continue
             positive_distance = distance(
@@ -132,6 +153,103 @@ def parent_child_margin_loss(
             )
             losses.append(F.relu(positive_distance - negative_distance + margin))
     return torch.stack(losses).mean() if losses else z.sum() * 0.0
+
+
+def topology_safe_parent_negative_mask(
+    parent_ids: torch.Tensor,
+    node_mask: torch.Tensor,
+    child: int,
+    *,
+    lca_depth: torch.Tensor | None = None,
+    tree_relation_targets: torch.Tensor | None = None,
+    b_side: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Return candidates allowed by the directed parent-ranking contract."""
+
+    valid = node_mask.bool().clone()
+    parent = int(parent_ids[child])
+    valid[child] = False
+    if 0 <= parent < valid.numel():
+        valid[parent] = False
+
+    def ancestors(node: int) -> set[int]:
+        result: set[int] = set()
+        current = int(parent_ids[node])
+        while 0 <= current < parent_ids.numel() and current not in result:
+            result.add(current)
+            current = int(parent_ids[current])
+        return result
+
+    child_ancestors = ancestors(child)
+    for candidate in torch.nonzero(valid, as_tuple=False).flatten().tolist():
+        candidate_ancestors = ancestors(candidate)
+        if candidate in child_ancestors or child in candidate_ancestors:
+            valid[candidate] = False
+            continue
+        if parent >= 0 and int(parent_ids[candidate]) == parent:
+            valid[candidate] = False
+            continue
+        if tree_relation_targets is not None and int(
+            tree_relation_targets[child, candidate]
+        ) <= 3:
+            valid[candidate] = False
+            continue
+        # With only LCA depth available, any retained common ancestor at most
+        # two levels above either node is explicitly near-positive.
+        if lca_depth is not None and int(lca_depth[child, candidate]) >= 0:
+            valid[candidate] = False
+
+    if not valid.any():
+        return valid
+    if b_side is not None and int(b_side[child]) >= 0:
+        other_branch = valid & (b_side >= 0) & (b_side != b_side[child])
+        if other_branch.any():
+            return other_branch
+    if tree_relation_targets is not None:
+        explicit_negative = valid & (tree_relation_targets[child] >= 4)
+        if explicit_negative.any():
+            return explicit_negative
+    return valid
+
+
+@torch.no_grad()
+def parent_child_ranking_accuracy(
+    z: torch.Tensor,
+    parent_ids: torch.Tensor,
+    node_mask: torch.Tensor,
+    *,
+    curvature: float = 1.0,
+    lca_depth: torch.Tensor | None = None,
+    tree_relation_targets: torch.Tensor | None = None,
+    b_side: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Fraction of directed parents closer than every eligible safe negative."""
+
+    outcomes: list[torch.Tensor] = []
+    for batch_index in range(z.shape[0]):
+        for child in torch.nonzero(node_mask[batch_index], as_tuple=False).flatten().tolist():
+            parent = int(parent_ids[batch_index, child])
+            if parent < 0 or not bool(node_mask[batch_index, parent]):
+                continue
+            eligible = topology_safe_parent_negative_mask(
+                parent_ids[batch_index], node_mask[batch_index], child,
+                lca_depth=lca_depth[batch_index] if lca_depth is not None else None,
+                tree_relation_targets=(
+                    tree_relation_targets[batch_index]
+                    if tree_relation_targets is not None else None
+                ),
+                b_side=b_side[batch_index] if b_side is not None else None,
+            )
+            negatives = torch.nonzero(eligible, as_tuple=False).flatten()
+            if not negatives.numel():
+                continue
+            positive = distance(z[batch_index, child], z[batch_index, parent], curvature=curvature)
+            negative = distance(
+                z[batch_index, child].expand_as(z[batch_index, negatives]),
+                z[batch_index, negatives], curvature=curvature,
+            ).min()
+            outcomes.append((positive < negative).to(z.dtype))
+    return torch.stack(outcomes).mean() if outcomes else z.sum() * 0.0
 
 
 def radius_targets(
@@ -251,14 +369,41 @@ def pool_b_branch_embeddings(
     node_embeddings: torch.Tensor,
     b_side: torch.Tensor,
     node_mask: torch.Tensor,
+    *,
+    mode: str = "mean_all",
+    level_ids: torch.Tensor | None = None,
+    attention_logits: torch.Tensor | None = None,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    """Pool two unordered branch sets without node-level channel prediction."""
+    """Pool two unordered branch sets with an explicit ablation contract."""
+
+    if mode not in {"mean_all", "b_root", "learned_attention", "level_weighted"}:
+        raise ValueError(f"unknown channel pooling mode: {mode}")
+    if mode in {"b_root", "level_weighted"} and level_ids is None:
+        raise ValueError(f"{mode} channel pooling requires level_ids")
+    if mode == "learned_attention" and attention_logits is None:
+        raise ValueError("learned_attention channel pooling requires attention logits")
 
     pooled = []
     available = []
     for side in (0, 1):
         membership = node_mask & (b_side == side)
-        weights = membership.to(node_embeddings.dtype)
+        if mode == "mean_all":
+            weights = membership.to(node_embeddings.dtype)
+        elif mode == "b_root":
+            branch_levels = torch.where(
+                membership, level_ids, torch.full_like(level_ids, -1)
+            )
+            root_level = branch_levels.max(dim=-1, keepdim=True).values
+            weights = (membership & (level_ids == root_level)).to(node_embeddings.dtype)
+        elif mode == "level_weighted":
+            weights = membership.to(node_embeddings.dtype) * (
+                level_ids.clamp_min(0) + 1
+            ).to(node_embeddings.dtype)
+        else:
+            masked_logits = attention_logits.masked_fill(~membership, -1e4)
+            weights = torch.softmax(masked_logits, dim=-1) * membership.to(
+                node_embeddings.dtype
+            )
         pooled.append(
             torch.einsum("bn,bnd->bd", weights, node_embeddings)
             / weights.sum(dim=-1, keepdim=True).clamp_min(1)
@@ -611,6 +756,9 @@ def hyperbolic_pretraining_loss(
             parent_ids,
             node_mask,
             curvature=curvature,
+            lca_depth=lca_depth,
+            tree_relation_targets=tree_relation_targets,
+            b_side=b_side,
         ),
         "depth": radius_depth_loss(
             z,
@@ -718,6 +866,8 @@ __all__ = [
     "covariance_regularization",
     "hyperbolic_pretraining_loss",
     "parent_child_margin_loss",
+    "parent_child_ranking_accuracy",
+    "topology_safe_parent_negative_mask",
     "hyperbolic_tree_distance_loss",
     "pool_b_branch_embeddings",
     "radius_depth_loss",

@@ -1,0 +1,3 @@
+name: channel_pool_mean_all
+channel_pooling: mean_all
+note: Current production baseline; requires held-out comparison.

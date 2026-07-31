@@ -22,6 +22,8 @@ class AblationConfig:
     scheduled_sampling: bool = False
     pretrained_encoder_transfer: bool = False
     canonical_pion_first_level: bool = False
+    pid_kinematics_mode: str = "soft_expectation"
+    pid_temperature: float = 1.0
 
 
 ABLATIONS: dict[str, AblationConfig] = {
@@ -103,6 +105,18 @@ EXPERIMENT_VARIANTS: dict[str, AblationConfig] = {
         True,
         True,
     ),
+    "soft_pid_expectation": AblationConfig(
+        "soft_pid_expectation", True, True, True, True, True, True,
+        True, True, True, True, True, False, "soft_expectation", 1.0,
+    ),
+    "temperature_annealed_softmax": AblationConfig(
+        "temperature_annealed_softmax", True, True, True, True, True, True,
+        True, True, True, True, True, False, "temperature_softmax", 1.0,
+    ),
+    "straight_through_hard_pid": AblationConfig(
+        "straight_through_hard_pid", True, True, True, True, True, True,
+        True, True, True, True, True, False, "straight_through_hard", 1.0,
+    ),
 }
 ALL_ABLATIONS: dict[str, AblationConfig] = ABLATIONS | EXPERIMENT_VARIANTS
 
@@ -144,6 +158,8 @@ def build_ablation_model(
         use_relation_bias=config.relation_attention,
         use_hyperbolic_relation_refinement=config.hyperbolic_relation_attention,
         canonical_pion_first_level=config.canonical_pion_first_level,
+        pid_kinematics_mode=config.pid_kinematics_mode,
+        pid_temperature=config.pid_temperature,
     )
 
 

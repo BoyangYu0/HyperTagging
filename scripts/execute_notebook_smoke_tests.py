@@ -163,6 +163,15 @@ def execute_one(
             "teacher_composite_type_source_pass"
         ) or not report.get("target_metadata_invariance"):
             raise AssertionError(f"leaf/composite contract failed: {report}")
+        required_pid_diagnostics = {
+            "soft_hard_energy_difference",
+            "soft_hard_mother_mass_difference",
+            "pid_entropy",
+            "soft_hard_relation_bias_change",
+            "soft_hard_pointer_logit_change",
+        }
+        if not required_pid_diagnostics <= report.keys():
+            raise AssertionError(f"leaf/composite PID diagnostics missing: {report}")
     if name == "streaming":
         import json
 
@@ -201,6 +210,21 @@ def execute_one(
             "constraint_policy_round_trip"
         ):
             raise AssertionError(f"scheduled context report failed: {report}")
+        if not report.get("duplicate_metrics_by_level") or not report.get(
+            "bounded_set_packing_rollout"
+        ) or not report.get("evaluation_slices"):
+            raise AssertionError(f"rollout ambiguity diagnostics missing: {report}")
+    if name == "capacity":
+        import json
+
+        report = json.loads(
+            (figure_dir / "capacity_report.json").read_text(encoding="utf-8")
+        )
+        rows = report.get("production_baseline_by_level", [])
+        if report.get("schema_default") != "direct-mdst-tree-v4" or not rows:
+            raise AssertionError(f"capacity report misses v4/every-level contract: {report}")
+        if any(row.get("overflow_count") for row in rows):
+            raise AssertionError(f"fixture capacity overflow: {report}")
     if name == "qa":
         qa_path = work_root / "preprocessing_qa.json"
         if not qa_path.exists():

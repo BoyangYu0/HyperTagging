@@ -47,6 +47,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--checkpoint-every", type=int, default=100)
     parser.add_argument("--log-every", type=int, default=10)
     parser.add_argument("--validate-every", type=int, default=100)
+    parser.add_argument("--validation-batches", type=int, default=4)
+    parser.add_argument(
+        "--channel-pooling",
+        choices=("mean_all", "b_root", "learned_attention", "level_weighted"),
+        default="mean_all",
+    )
     parser.add_argument("--channel-memory-size", type=int, default=0)
     parser.add_argument("--model-preset", choices=sorted(MODEL_PRESETS), default="tiny_cpu")
     parser.add_argument("--d-model", type=int, default=None)
@@ -86,6 +92,8 @@ def main(argv: list[str] | None = None) -> int:
                 seed=args.seed,
                 checkpoint_every=args.checkpoint_every,
                 validate_every=args.validate_every,
+                validation_batches=args.validation_batches,
+                channel_pooling=args.channel_pooling,
                 resume=args.resume,
                 ablation=args.ablation,
                 channel_memory_size=args.channel_memory_size,

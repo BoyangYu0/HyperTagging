@@ -1,7 +1,7 @@
 # Dataset and model visualization
 
 All revised notebooks are generated deterministically and run on CPU without
-basf2. If `HYPERTAGGING_PARQUET` is unset they create a tiny schema-v2 fixture
+basf2. If `HYPERTAGGING_PARQUET` is unset they create a tiny schema-v4 fixture
 under `/tmp` and label every result as a software fixture. Set the variable to
 inspect a real v1 or v2 shard. V1 is adapted in memory; the source parquet is
 never modified.
@@ -35,6 +35,9 @@ done
 ```
 
 ## Notebooks
+
+The authoritative 12-group inventory is in `notebooks/README.md` and
+`scripts/execute_notebook_smoke_tests.py`.
 
 - `inspect_preprocessed_dataset.ipynb`: schemas, duplicate IDs, complete PID
   vocabulary, heterogeneous missingness, all level violations, representative

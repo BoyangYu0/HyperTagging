@@ -23,6 +23,7 @@ def build_notebook():
             """
             from pathlib import Path
             import json, os, sys
+            from collections import Counter
             import matplotlib.pyplot as plt
             import pandas as pd
             import torch
@@ -32,6 +33,7 @@ def build_notebook():
             from hypertagging.data.capacity import dataset_capacity_statistics
             from hypertagging.losses.level_reconstruction import focal_binary_cross_entropy_with_logits
             from hypertagging.losses.set_matching import matching_cost, hungarian_assignment
+            from hypertagging.training.model_config import MODEL_PRESETS
             requested=os.environ.get("HYPERTAGGING_PARQUET","").strip(); FIXTURE_MODE=not bool(requested)
             path=Path(requested) if requested else Path("/tmp/hypertagging_capacity_v3.parquet")
             if FIXTURE_MODE: write_notebook_fixture_v4(path)
@@ -44,7 +46,31 @@ def build_notebook():
         code(
             """
             stats=dataset_capacity_statistics(events,global_n_queries=8,global_max_cardinality=6)
+            architecture=MODEL_PRESETS["production_baseline"]
+            query_by_level=dict(architecture.n_queries_by_level)
+            cardinality_by_level=dict(architecture.max_cardinality_by_level)
+            level_rows=[]
+            retained_levels=sorted({int(level) for event in events for level in event.level_ids[event.active].tolist() if int(level)>0})
+            for level in retained_levels:
+                mother_counts=[]; cardinalities=[]
+                for event in events:
+                    mothers=(event.active&(event.level_ids==level)&event.valid_reconstruction_target&event.recursive_reconstructable_complete).nonzero().flatten()
+                    mother_counts.append(int(mothers.numel()))
+                    cardinalities.extend(int(event.daughter_adjacency[index].sum()) for index in mothers.tolist())
+                queries=query_by_level.get(level,architecture.n_queries)
+                max_cardinality=cardinality_by_level.get(level,architecture.max_cardinality)
+                level_rows.append({
+                    "level":level,"maximum_mothers":max(mother_counts,default=0),
+                    "cardinality_distribution":dict(Counter(cardinalities)),
+                    "configured_queries":queries,"configured_max_cardinality":max_cardinality,
+                    "overflow_count":sum(value>queries for value in mother_counts)+sum(value>max_cardinality for value in cardinalities),
+                    "query_capacity_margin":queries-max(mother_counts,default=0),
+                    "cardinality_capacity_margin":max_cardinality-max(cardinalities,default=0),
+                })
             report={
+                "schema_default":"direct-mdst-tree-v4",
+                "target_policy":"complete_only",
+                "production_baseline_by_level":level_rows,
                 "maximum_mothers_per_level":stats.maximum_mothers_per_level,
                 "percentiles":stats.percentile_mothers_per_level,
                 "daughter_cardinality_counts":stats.daughter_cardinality_counts,
@@ -54,6 +80,7 @@ def build_notebook():
             }
             print(json.dumps(report,indent=2)); (OUT/"capacity_report.json").write_text(json.dumps(report,indent=2),encoding="utf-8")
             assert stats.query_overflow_rate==0 and stats.cardinality_overflow_rate==0
+            assert all(row["overflow_count"]==0 for row in level_rows)
             pd.Series(stats.maximum_mothers_per_level).plot.bar(title="Maximum mothers per target level")
             plt.tight_layout(); plt.savefig(OUT/"mothers_per_level.png"); plt.show()
             """

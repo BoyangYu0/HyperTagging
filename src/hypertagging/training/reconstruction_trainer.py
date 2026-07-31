@@ -24,12 +24,16 @@ from hypertagging.losses.level_reconstruction import (
     confidence_calibration_metrics,
     level_reconstruction_loss,
 )
-from hypertagging.models.level_autoregressive import LevelAutoregressiveReconstructor
+from hypertagging.models.level_autoregressive import (
+    LevelAutoregressiveReconstructor,
+    compare_pid_kinematics_modes,
+)
 from hypertagging.models.mother_pointer import MotherPointerOutput
 from hypertagging.models.ablation import ALL_ABLATIONS, build_ablation_model
 from hypertagging.preprocessing.pid_filter import PDG_TOKENS
 from hypertagging.reconstruction.level_rollout import (
     RolloutConfig, cached_context_for_level, level_rollout,
+    proposal_ambiguity_metrics,
 )
 from hypertagging.reconstruction.constraints import ReconstructionConstraintPolicy
 from hypertagging.training.checkpointing import (
@@ -115,6 +119,9 @@ class ReconstructionConfig:
     minimum_encoder_transfer_coverage: float = 0.9
     allow_low_encoder_transfer_coverage: bool = False
     allow_incomplete_v4_publication: bool = False
+    pid_temperature_start: float = 1.0
+    pid_temperature_end: float = 0.2
+    pid_temperature_duration_steps: int = 1000
 
 
 @dataclass(frozen=True)
@@ -321,6 +328,12 @@ def train_level_reconstruction(
     final_loss = 0.0
     final_metrics: dict[str, float] = {}
     for step in range(start_step, config.max_steps):
+        if model.pid_kinematics_mode == "temperature_softmax":
+            progress = min(step / max(config.pid_temperature_duration_steps, 1), 1.0)
+            model.pid_temperature = (
+                config.pid_temperature_start
+                + progress * (config.pid_temperature_end - config.pid_temperature_start)
+            )
         if (
             config.freeze_pretrained_encoder_steps > 0
             and step == config.freeze_pretrained_encoder_steps
@@ -396,10 +409,19 @@ def train_level_reconstruction(
             "levels_trained": float(len(valid_levels)),
             **context_metrics,
             "teacher_forcing_probability": schedule.probability(step),
+            "pid_temperature": float(model.pid_temperature),
             "events_per_second": batch["node_mask"].shape[0] / optimization_seconds,
             "target_levels_per_second": context_metrics["optimized_event_level_count"]
             / optimization_seconds,
         }
+        if step % max(config.diagnostic_forward_interval, 1) == 0:
+            diagnostic_level = valid_levels[0]
+            with torch.no_grad():
+                final_metrics.update(
+                    compare_pid_kinematics_modes(
+                        model, batch, target_level=diagnostic_level
+                    )
+                )
         for name, value in component_accumulator.items():
             final_metrics[f"loss_{name}"] = float(
                 (value / len(valid_levels)).detach().cpu()
@@ -1068,6 +1090,25 @@ def validate_reconstruction(
                 constraint_policy=constraint_policy,
             ),
         )
+        bounded = None
+        try:
+            bounded = level_rollout(
+                model,
+                batch,
+                mode="predicted",
+                config=RolloutConfig(
+                    max_level=8,
+                    root_types=(),
+                    confidence_trained=True,
+                    use_learned_confidence=True,
+                    constraint_policy=constraint_policy,
+                    exclusive_resolution="weighted_set_packing",
+                    max_resolution_proposals=12,
+                ),
+            )
+        except ValueError as error:
+            if "weighted set packing is bounded" not in str(error):
+                raise
         scheduled = level_rollout(
             model,
             batch,
@@ -1137,6 +1178,37 @@ def validate_reconstruction(
                 if isinstance(value, (bool, int, float))
             },
         }
+        ambiguity: dict[str, list[float]] = {}
+        for step_result in predicted.steps:
+            context = cached_context_for_level(predicted, step_result.target_level)
+            recursive = context.get("recursive_leaf_source_mask")
+            if recursive is None:
+                continue
+            metrics = proposal_ambiguity_metrics(
+                list(step_result.proposals),
+                list(step_result.accepted),
+                total_queries=step_result.model_output.pointer.object_logits.shape[1],
+                recursive_leaf_source_mask=recursive[0],
+            )
+            for name, value in metrics.items():
+                ambiguity.setdefault(name, []).append(value)
+        values.update(
+            {
+                name: sum(metric_values) / len(metric_values)
+                for name, metric_values in ambiguity.items()
+                if metric_values
+            }
+        )
+        values["bounded_resolution_available"] = float(bounded is not None)
+        if bounded is not None:
+            bounded_metrics = summarize_rollout(bounded.batch, batch)
+            values["bounded_full_tree_exact_match"] = float(
+                bounded_metrics["full_tree_exact_match"]
+            )
+            values["greedy_bounded_tree_difference"] = float(
+                predicted_metrics["full_tree_exact_match"]
+                != bounded_metrics["full_tree_exact_match"]
+            )
         complete_correct, complete_eligible = complete_target_efficiency_counts(
             predicted.batch, batch, target_policy=target_policy
         )

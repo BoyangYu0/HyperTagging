@@ -107,6 +107,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--max-validation-events", type=int, default=32)
     parser.add_argument("--rollout-validation-events", type=int, default=8)
     parser.add_argument("--validation-batch-size", type=int, default=4)
+    parser.add_argument("--pid-temperature-start", type=float, default=1.0)
+    parser.add_argument("--pid-temperature-end", type=float, default=0.2)
+    parser.add_argument("--pid-temperature-duration-steps", type=int, default=1000)
     parser.add_argument("--allow-local-tiny-gpu-test", action="store_true")
     return resolve_argparse_namespace(parser, argv)
 
@@ -178,6 +181,9 @@ def main(argv: list[str] | None = None) -> int:
                 max_validation_events=args.max_validation_events,
                 rollout_validation_events=args.rollout_validation_events,
                 validation_batch_size=args.validation_batch_size,
+                pid_temperature_start=args.pid_temperature_start,
+                pid_temperature_end=args.pid_temperature_end,
+                pid_temperature_duration_steps=args.pid_temperature_duration_steps,
                 log_every=args.log_every,
             )
         )

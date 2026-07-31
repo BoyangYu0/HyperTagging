@@ -41,7 +41,9 @@ _EXPORT_MODULE = {
             "RolloutConfig",
             "append_composite_proposals",
             "level_rollout",
+            "proposal_ambiguity_metrics",
             "resolve_exclusive_proposals",
+            "resolve_weighted_set_packing",
         )
     },
 }

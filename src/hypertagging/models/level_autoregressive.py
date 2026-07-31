@@ -69,11 +69,15 @@ class LevelAutoregressiveReconstructor(nn.Module):
         max_cardinality: int = 6,
         n_queries_by_level: tuple[tuple[int, int], ...] = (),
         max_cardinality_by_level: tuple[tuple[int, int], ...] = (),
+        pid_kinematics_mode: str = "soft_expectation",
+        pid_temperature: float = 1.0,
     ) -> None:
         super().__init__()
         self.encoder_mode = encoder_mode
         self.use_contextual_encoder = use_contextual_encoder
         self.canonical_pion_first_level = bool(canonical_pion_first_level)
+        self.pid_kinematics_mode = str(pid_kinematics_mode)
+        self.pid_temperature = float(pid_temperature)
         # The public argument is retained for source compatibility, but the
         # scientific contract has exactly one model vocabulary.
         n_types = len(PDG_TOKENS)
@@ -154,11 +158,12 @@ class LevelAutoregressiveReconstructor(nn.Module):
                     first_pass_batch["level_ids"], first_pass_batch["node_mask"]
                 ),
             )
-            leaf_pid_logits = self.leaf_pid_head(first_pass.node_embeddings)
+            leaf_pid_logits = self.leaf_pid_head(first_pass.reconstruction_projection)
             runtime = rebuild_runtime_pid_state(
                 batch,
                 leaf_pid_logits,
-                hard=False,
+                mode=self.pid_kinematics_mode,
+                temperature=self.pid_temperature,
             )
             reconstruction_batch = _runtime_reconstruction_batch(
                 batch,
@@ -177,6 +182,7 @@ class LevelAutoregressiveReconstructor(nn.Module):
                 ),
             )
             h = encoded.node_embeddings
+            reconstruction_h = encoded.reconstruction_projection
             z = encoded.hyperbolic_embeddings
             tree_projection = encoded.tree_projection
             reconstruction_projection = encoded.reconstruction_projection
@@ -222,7 +228,8 @@ class LevelAutoregressiveReconstructor(nn.Module):
                 attention_weights = relation_bias.new_zeros(
                     (*relation_bias.shape[:1], 1, *relation_bias.shape[-2:])
                 )
-            leaf_pid_logits = self.leaf_pid_head(h)
+            reconstruction_h = reconstruction_projection
+            leaf_pid_logits = self.leaf_pid_head(reconstruction_h)
             current_probabilities = None
             current_tokens = batch["pid_labels"]
             current_p4 = batch["p4"]
@@ -238,7 +245,7 @@ class LevelAutoregressiveReconstructor(nn.Module):
                 -1, decoder.n_queries, -1
             )
         pointer = decoder(
-            h,
+            reconstruction_h,
             context_mask,
             target_level=target_level,
             allowed_type_mask=batch.get("allowed_type_mask"),
@@ -271,6 +278,57 @@ class LevelAutoregressiveReconstructor(nn.Module):
                 else None
             ),
         )
+
+
+@torch.no_grad()
+def compare_pid_kinematics_modes(
+    model: LevelAutoregressiveReconstructor,
+    batch: dict[str, torch.Tensor],
+    *,
+    target_level: int = 1,
+    temperature: float = 0.5,
+) -> dict[str, float]:
+    """Measure the train/rollout PID-kinematics mismatch on one bounded batch."""
+
+    original_mode = model.pid_kinematics_mode
+    original_temperature = model.pid_temperature
+    try:
+        model.pid_kinematics_mode = "soft_expectation"
+        model.pid_temperature = 1.0
+        soft = model(batch, target_level=target_level)
+        model.pid_kinematics_mode = "hard"
+        hard = model(batch, target_level=target_level)
+        model.pid_kinematics_mode = "temperature_softmax"
+        model.pid_temperature = float(temperature)
+        annealed = model(batch, target_level=target_level)
+    finally:
+        model.pid_kinematics_mode = original_mode
+        model.pid_temperature = original_temperature
+    node_mask = batch["node_mask"]
+    composite = node_mask & (batch["level_ids"] > 0)
+    soft_p4 = soft.current_p4 if soft.current_p4 is not None else batch["p4"]
+    hard_p4 = hard.current_p4 if hard.current_p4 is not None else batch["p4"]
+    soft_mass = (
+        soft_p4[..., 3].square() - soft_p4[..., :3].square().sum(dim=-1)
+    ).clamp_min(0).sqrt()
+    hard_mass = (
+        hard_p4[..., 3].square() - hard_p4[..., :3].square().sum(dim=-1)
+    ).clamp_min(0).sqrt()
+    probabilities = soft.current_pid_probabilities
+    entropy = 0.0
+    if probabilities is not None:
+        raw = node_mask & (batch["level_ids"] == 0) & (batch["charge"] != 0)
+        if raw.any():
+            values = probabilities[raw].clamp_min(1e-12)
+            entropy = float((-(values * values.log()).sum(dim=-1)).mean())
+    return {
+        "soft_hard_energy_difference": float((soft_p4[..., 3] - hard_p4[..., 3])[node_mask].abs().mean()),
+        "soft_hard_mother_mass_difference": float((soft_mass - hard_mass)[composite].abs().mean()) if composite.any() else 0.0,
+        "pid_entropy": entropy,
+        "soft_hard_relation_bias_change": float((soft.relation_bias - hard.relation_bias).abs().mean()),
+        "soft_hard_pointer_logit_change": float((soft.pointer.pointer_logits - hard.pointer.pointer_logits).abs().mean()),
+        "annealed_soft_pointer_logit_change": float((soft.pointer.pointer_logits - annealed.pointer.pointer_logits).abs().mean()),
+    }
 
 
 def _runtime_reconstruction_batch(

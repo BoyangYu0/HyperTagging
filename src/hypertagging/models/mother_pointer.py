@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import torch
 from torch import nn
 
-from hypertagging.preprocessing.pid_filter import PDG_TOKENS
+from hypertagging.preprocessing.pid_filter import PDG_TOKENS, STATIC_MOTHER_TOKENS
 
 
 @dataclass(frozen=True)
@@ -40,13 +40,27 @@ class MotherPointerDecoder(nn.Module):
         self.query = nn.Parameter(torch.randn(n_queries, hidden_dim) * 0.02)
         self.target_level_embedding = nn.Embedding(max_level + 1, hidden_dim)
         self.type_embedding = nn.Embedding(n_types, hidden_dim)
+        self.query_self_attention = nn.MultiheadAttention(
+            hidden_dim, num_heads=1, batch_first=True
+        )
         self.cross_attention = nn.MultiheadAttention(hidden_dim, num_heads=1, batch_first=True)
+        self.query_norm = nn.LayerNorm(hidden_dim)
+        self.cross_norm = nn.LayerNorm(hidden_dim)
+        self.query_ffn = nn.Sequential(
+            nn.Linear(hidden_dim, 2 * hidden_dim),
+            nn.GELU(),
+            nn.Linear(2 * hidden_dim, hidden_dim),
+        )
+        self.output_norm = nn.LayerNorm(hidden_dim)
         self.object_head = nn.Linear(hidden_dim, 1)
         self.type_head = nn.Linear(hidden_dim, n_types)
         self.cardinality_head = nn.Linear(hidden_dim, max_cardinality + 1)
         self.confidence_head = nn.Linear(hidden_dim, 1)
         self.pointer_query = nn.Linear(2 * hidden_dim, hidden_dim)
         self.pointer_key = nn.Linear(hidden_dim, hidden_dim)
+        static_mask = torch.zeros(n_types, dtype=torch.bool)
+        static_mask[list(STATIC_MOTHER_TOKENS)] = True
+        self.register_buffer("static_mother_type_mask", static_mask)
 
     def forward(
         self,
@@ -63,6 +77,10 @@ class MotherPointerDecoder(nn.Module):
         batch_size = context.shape[0]
         level = self.target_level_embedding.weight[target_level]
         queries = (self.query + level).unsqueeze(0).expand(batch_size, -1, -1)
+        interacted, _weights = self.query_self_attention(
+            queries, queries, queries, need_weights=False
+        )
+        queries = self.query_norm(queries + interacted)
         attended, _weights = self.cross_attention(
             queries,
             context,
@@ -70,17 +88,21 @@ class MotherPointerDecoder(nn.Module):
             key_padding_mask=~context_mask,
             need_weights=False,
         )
+        attended = self.cross_norm(queries + attended)
+        attended = self.output_norm(attended + self.query_ffn(attended))
         type_logits = self.type_head(attended)
         if type_logit_bias is not None:
             if type_logit_bias.shape != (type_logits.shape[-1],):
                 raise ValueError("type_logit_bias must have one entry per reduced PID token")
             type_logits = type_logits + type_logit_bias[None, None, :]
+        effective_allowed = self.static_mother_type_mask
         if allowed_type_mask is not None:
             if allowed_type_mask.shape != (type_logits.shape[-1],):
                 raise ValueError("allowed_type_mask must have one entry per reduced PID token")
-            if not bool(allowed_type_mask.any()):
+            effective_allowed = effective_allowed & allowed_type_mask
+            if not bool(effective_allowed.any()):
                 raise ValueError("allowed_type_mask rejects every mother type")
-            type_logits = type_logits.masked_fill(~allowed_type_mask[None, None, :], -1e4)
+        type_logits = type_logits.masked_fill(~effective_allowed[None, None, :], -1e4)
         expected_type = torch.softmax(type_logits, dim=-1) @ self.type_embedding.weight
         q = self.pointer_query(torch.cat([attended, expected_type], dim=-1))
         k = self.pointer_key(context)

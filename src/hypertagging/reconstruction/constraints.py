@@ -7,7 +7,11 @@ from typing import Any, Mapping
 
 import torch
 
-from hypertagging.preprocessing.pid_filter import PDG_TOKENS
+from hypertagging.preprocessing.pid_filter import (
+    MOTHER_ONTOLOGY_VERSION,
+    PDG_TOKENS,
+    STATIC_MOTHER_TOKENS,
+)
 from hypertagging.preprocessing.schema_v2 import NODE_KIND_TO_ID
 from hypertagging.preprocessing.schema_v4 import LEAF_MODE_TO_ID
 
@@ -29,7 +33,9 @@ REDUCED_TOKEN_CHARGE: tuple[float, ...] = tuple(
 class ReconstructionConstraintPolicy:
     """One policy object for teacher contexts, rollout, validation and export."""
 
-    version: str = "reconstruction-constraints-v1"
+    version: str = "reconstruction-constraints-v2"
+    mother_ontology_version: str = MOTHER_ONTOLOGY_VERSION
+    static_allowed_mother_tokens: tuple[int, ...] = STATIC_MOTHER_TOKENS
     allowed_mother_types_by_level: tuple[tuple[int, tuple[int, ...]], ...] = ()
     empirical_type_prior_mode: str = "soft"  # hard | soft | off
     empirical_type_soft_penalty: float = 2.0
@@ -52,6 +58,16 @@ class ReconstructionConstraintPolicy:
     loose_physical_constraints: tuple[tuple[str, float], ...] = ()
 
     def __post_init__(self) -> None:
+        if self.mother_ontology_version != MOTHER_ONTOLOGY_VERSION:
+            raise ValueError(
+                "unsupported static mother ontology version: "
+                f"{self.mother_ontology_version}"
+            )
+        static_tokens = set(self.static_allowed_mother_tokens)
+        if 0 in static_tokens:
+            raise ValueError("unknown token 0 cannot be a reconstructed mother")
+        if not static_tokens or min(static_tokens) < 0 or max(static_tokens) >= len(PDG_TOKENS):
+            raise ValueError("static mother token mask is invalid")
         if self.empirical_type_prior_mode not in {"hard", "soft", "off"}:
             raise ValueError("empirical_type_prior_mode must be hard, soft, or off")
         if self.daughter_cardinality_policy not in {"predicted", "threshold"}:
@@ -81,7 +97,8 @@ class ReconstructionConstraintPolicy:
     def from_dict(cls, payload: Mapping[str, Any]) -> "ReconstructionConstraintPolicy":
         values = dict(payload)
         for name in (
-            "allowed_mother_types_by_level", "valid_leaf_node_kinds",
+            "allowed_mother_types_by_level", "static_allowed_mother_tokens",
+            "valid_leaf_node_kinds",
             "valid_composite_node_kinds", "loose_physical_constraints",
         ):
             if name in values:
@@ -103,15 +120,21 @@ class ReconstructionConstraintPolicy:
         self, level: int, *, device: torch.device
     ) -> tuple[torch.Tensor, torch.Tensor]:
         observed = self.observed_types(level)
-        allowed = torch.ones(len(PDG_TOKENS), dtype=torch.bool, device=device)
+        allowed = torch.zeros(len(PDG_TOKENS), dtype=torch.bool, device=device)
+        allowed[list(self.static_allowed_mother_tokens)] = True
         bias = torch.zeros(len(PDG_TOKENS), dtype=torch.float32, device=device)
         if observed and self.empirical_type_prior_mode == "hard":
-            allowed.fill_(False)
-            allowed[list(observed)] = True
+            observed_mask = torch.zeros_like(allowed)
+            observed_mask[list(observed)] = True
+            allowed &= observed_mask
         elif observed and self.empirical_type_prior_mode == "soft":
             seen = torch.zeros_like(allowed)
             seen[list(observed)] = True
-            bias[~seen] = -float(self.empirical_type_soft_penalty)
+            bias[allowed & ~seen] = -float(self.empirical_type_soft_penalty)
+        if not bool(allowed.any()):
+            raise ValueError(
+                f"mother constraints reject every static ontology type at level {level}"
+            )
         return allowed, bias
 
     def pointer_validity_mask(

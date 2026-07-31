@@ -13,6 +13,7 @@ from hypertagging.reconstruction.kinematics import (
     PARTICLE_CHARGES,
     hard_track_p4_from_pid_token,
     soft_track_p4_from_pid_logits,
+    track_p4_from_pid_probabilities,
 )
 
 
@@ -84,9 +85,19 @@ def rebuild_runtime_pid_state(
     *,
     hard: bool = False,
     refine_fixed_hypothesis: bool = False,
+    mode: str = "soft_expectation",
+    temperature: float = 1.0,
 ) -> RuntimePIDState:
     """Build current PID/p4/histograms without reading any truth target field."""
 
+    if hard:
+        mode = "hard"
+    if mode not in {
+        "soft_expectation", "temperature_softmax", "straight_through_hard", "hard"
+    }:
+        raise ValueError(f"unknown PID kinematics mode: {mode}")
+    if temperature <= 0:
+        raise ValueError("PID softmax temperature must be positive")
     node_mask = batch["node_mask"].bool()
     modes = batch["leaf_kinematics_mode_ids"]
     input_tokens = batch["pid_labels"]
@@ -145,7 +156,19 @@ def rebuild_runtime_pid_state(
             f"{bad}"
         )
     raw_logits = leaf_pid_logits.masked_fill(~compatible, -1e4)
-    raw_probabilities = torch.softmax(raw_logits, dim=-1)
+    effective_temperature = temperature if mode == "temperature_softmax" else 1.0
+    soft_probabilities = torch.softmax(raw_logits / effective_temperature, dim=-1)
+    hard_probabilities = torch.nn.functional.one_hot(
+        soft_probabilities.argmax(dim=-1), num_classes=len(PDG_TOKENS)
+    ).to(soft_probabilities.dtype)
+    if mode == "straight_through_hard":
+        raw_probabilities = (
+            hard_probabilities + soft_probabilities - soft_probabilities.detach()
+        )
+    elif mode == "hard":
+        raw_probabilities = hard_probabilities
+    else:
+        raw_probabilities = soft_probabilities
     probabilities = torch.where(raw.unsqueeze(-1), raw_probabilities, probabilities)
     if refine_fixed_hypothesis:
         fixed = node_mask & (
@@ -158,9 +181,13 @@ def rebuild_runtime_pid_state(
     available = node_mask & (probabilities.sum(dim=-1) > 0)
     p4 = batch["p4"].clone()
     if raw.any():
-        if hard:
+        if mode == "hard":
             p4[raw] = hard_track_p4_from_pid_token(
                 batch["p4"][raw, :3], current_tokens[raw]
+            )
+        elif mode == "straight_through_hard":
+            p4[raw] = track_p4_from_pid_probabilities(
+                batch["p4"][raw, :3], raw_probabilities[raw]
             )
         else:
             for sign in (-1, 1):
@@ -176,7 +203,7 @@ def rebuild_runtime_pid_state(
                 )
                 p4[selected] = soft_track_p4_from_pid_logits(
                     batch["p4"][selected, :3],
-                    raw_logits[selected],
+                    raw_logits[selected] / effective_temperature,
                     allowed_tokens=allowed,
                 )
     levels = sorted(

@@ -1,0 +1,6 @@
+name: temperature_annealed_softmax
+pid_kinematics_mode: temperature_softmax
+pid_temperature_start: 1.0
+pid_temperature_end: 0.2
+pid_temperature_duration_steps: 1000
+note: Anneal by optimizer step; requires held-out HTCondor evaluation.

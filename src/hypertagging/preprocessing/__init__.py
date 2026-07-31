@@ -15,7 +15,13 @@ from hypertagging.preprocessing.mdst_tree_builder import (
     recompute_mother_p4_from_daughters,
     validate_tree,
 )
-from hypertagging.preprocessing.pid_filter import PDG_TOKENS, TOKENIZE_DICT, PidFilter
+from hypertagging.preprocessing.pid_filter import (
+    MOTHER_ONTOLOGY_VERSION,
+    PDG_TOKENS,
+    STATIC_MOTHER_TOKENS,
+    TOKENIZE_DICT,
+    PidFilter,
+)
 from hypertagging.preprocessing.schema_v2 import SCHEMA_VERSION_V2, load_payload_v2
 from hypertagging.preprocessing.schema_v3 import (
     SCHEMA_VERSION_V3,
@@ -38,6 +44,8 @@ __all__ = [
     "SCHEMA_VERSION_V4",
     "ParquetEventWriter",
     "PDG_TOKENS",
+    "MOTHER_ONTOLOGY_VERSION",
+    "STATIC_MOTHER_TOKENS",
     "TOKENIZE_DICT",
     "EventTree",
     "FourVector",

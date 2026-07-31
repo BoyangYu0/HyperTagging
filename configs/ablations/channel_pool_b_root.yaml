@@ -1,0 +1,3 @@
+name: channel_pool_b_root
+channel_pooling: b_root
+note: Pool the maximum-level retained B root only.

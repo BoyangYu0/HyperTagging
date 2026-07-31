@@ -16,11 +16,20 @@ def test_real_parquet_train_transfer_validate_and_resume(tmp_path):
             max_steps=1,
             batch_size=2,
             allow_legacy_conflated=True,
+            validate_every=1,
+            validation_batches=1,
+            log_every=1,
         )
     )
     checkpoint = load_training_checkpoint(pretrain.checkpoint)
     assert checkpoint["encoder_state_dict"]
     assert checkpoint["normalizer_state"]
+    assert (tmp_path / "pretrain" / "best.pt").exists()
+    assert (tmp_path / "pretrain" / "latest.pt").exists()
+    assert pretrain.metrics["validation_batches"] == 1
+    assert "validation_loss_total" in pretrain.metrics
+    assert "validation_relation_accuracy" in pretrain.metrics
+    assert "validation_parent_ranking_accuracy" in pretrain.metrics
     reconstruction = train_level_reconstruction(
         ReconstructionConfig(
             data=str(data),

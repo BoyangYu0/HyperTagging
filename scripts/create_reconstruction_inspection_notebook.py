@@ -52,10 +52,10 @@ def build_notebook() -> nbf.NotebookNode:
             from hypertagging.data.notebook_fixtures import write_notebook_fixture_v4
             from hypertagging.evaluation.hierarchical_metrics import edge_set, summarize_rollout
             from hypertagging.losses.level_reconstruction import level_reconstruction_loss
-            from hypertagging.models.level_autoregressive import LevelAutoregressiveReconstructor
+            from hypertagging.models.level_autoregressive import LevelAutoregressiveReconstructor, compare_pid_kinematics_modes
             from hypertagging.models.stair_masks import stair_attention_mask
             from hypertagging.preprocessing.pid_filter import PDG_TOKENS
-            from hypertagging.reconstruction.level_rollout import RolloutConfig, cached_context_for_level, hard_decode_proposals, level_rollout
+            from hypertagging.reconstruction.level_rollout import RolloutConfig, cached_context_for_level, hard_decode_proposals, level_rollout, proposal_ambiguity_metrics
             from hypertagging.reconstruction.constraints import ReconstructionConstraintPolicy
 
             SEED = int(os.environ.get("HYPERTAGGING_NOTEBOOK_SEED", "20260730"))
@@ -153,9 +153,18 @@ def build_notebook() -> nbf.NotebookNode:
             teacher = level_rollout(model, batch, mode="teacher_forced",
                                     config=RolloutConfig(max_level=4, root_types=(), exclusive_final=False))
             predicted = level_rollout(model, batch, mode="predicted", config=rollout_config)
+            bounded = level_rollout(
+                model, batch, mode="predicted",
+                config=RolloutConfig(
+                    max_level=4, root_types=(), object_threshold=0.4,
+                    pointer_threshold=0.4, use_cardinality=False,
+                    exclusive_final=True, exclusive_resolution="weighted_set_packing",
+                    max_resolution_proposals=12,
+                ),
+            )
             print("Teacher-forced levels:", [(step.target_level, len(step.accepted)) for step in teacher.steps])
             print("Predicted levels:", [(step.target_level, len(step.accepted)) for step in predicted.steps])
-            print("Stop reasons:", teacher.stop_reason, predicted.stop_reason)
+            print("Stop reasons:", teacher.stop_reason, predicted.stop_reason, bounded.stop_reason)
             constructed_rows = []
             for step in teacher.steps:
                 for node_id in step.appended_node_ids:
@@ -232,6 +241,22 @@ def build_notebook() -> nbf.NotebookNode:
             )
             print("First rollout divergence level:", first_divergence)
             print("Missing/extra edges and wrong types above show error propagation to later levels.")
+            ambiguity_rows=[]
+            for step in predicted.steps:
+                context=cached_context_for_level(predicted,step.target_level)
+                if "recursive_leaf_source_mask" not in context: continue
+                row={"level":step.target_level,**proposal_ambiguity_metrics(
+                    list(step.proposals),list(step.accepted),
+                    total_queries=step.model_output.pointer.object_logits.shape[1],
+                    recursive_leaf_source_mask=context["recursive_leaf_source_mask"][0],
+                )}
+                ambiguity_rows.append(row)
+            display(pd.DataFrame(ambiguity_rows))
+            print({
+                "greedy_tree":summarize_rollout(predicted.batch,batch),
+                "bounded_set_packing_tree":summarize_rollout(bounded.batch,batch),
+                "bounded_alternative_is_evaluation_only":True,
+            })
             """
         ),
         md("## Leaf PID, level conditioning, confidence, and recursive-source audit"),
@@ -285,6 +310,16 @@ def build_notebook() -> nbf.NotebookNode:
                 "cached_state_count":len(teacher.cached_states),
                 "rollout_forward_count":len(teacher.steps),
                 **primary_metrics,
+            }
+            pid_mismatch=compare_pid_kinematics_modes(model,batch,target_level=1,temperature=.5)
+            scheduled_report.update(pid_mismatch)
+            scheduled_report["duplicate_metrics_by_level"]=ambiguity_rows
+            scheduled_report["greedy_rollout"]=summarize_rollout(predicted.batch,batch)
+            scheduled_report["bounded_set_packing_rollout"]=summarize_rollout(bounded.batch,batch)
+            scheduled_report["evaluation_slices"]={
+                "channel_pair":[int(batch["b1_full_truth_channel_ids"][0]),int(batch["b2_full_truth_channel_ids"][0])],
+                "leaf_multiplicity":int(((batch["level_ids"]==0)&batch["node_mask"]).sum()),
+                "truth_depth":int(batch["level_ids"][batch["node_mask"]].max()),
             }
             (FIGURE_DIR/"scheduled_context_report.json").write_text(json.dumps(scheduled_report,indent=2))
             print({

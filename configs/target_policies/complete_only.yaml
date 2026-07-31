@@ -1,0 +1,4 @@
+target_policy: complete_only
+description: Only recursively reconstructable-complete retained mothers contribute.
+metric_namespace: complete_only
+exclude_partial_topologies: true

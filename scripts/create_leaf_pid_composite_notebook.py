@@ -47,7 +47,7 @@ def build_notebook():
             from hypertagging.data.notebook_fixtures import write_notebook_fixture_v4
             from hypertagging.preprocessing.schema_v4 import load_payload_v4, MODEL_COMPOSITE_FEATURE_NAMES, TARGET_COMPOSITE_METADATA_NAMES, TARGET_COMPOSITE_METADATA_INDICES
             from hypertagging.data.heterogeneous import load_heterogeneous_events, collate_heterogeneous_events
-            from hypertagging.models.level_autoregressive import LevelAutoregressiveReconstructor
+            from hypertagging.models.level_autoregressive import LevelAutoregressiveReconstructor, compare_pid_kinematics_modes
             SEED=int(os.environ.get("HYPERTAGGING_NOTEBOOK_SEED","20260730")); torch.manual_seed(SEED)
             requested=os.environ.get("HYPERTAGGING_PARQUET","").strip(); FIXTURE_MODE=not bool(requested)
             path=Path(requested) if requested else Path("/tmp/hypertagging_leaf_composite_v4.parquet")
@@ -83,7 +83,8 @@ def build_notebook():
             baseline=canonical(batch,target_level=1)
             p4_change=float((refined.current_p4-batch["p4"]).abs().max())
             pointer_change=float((refined.pointer.pointer_logits-baseline.pointer.pointer_logits).abs().max())
-            print({"max_pid_refined_p4_change":p4_change,"max_level1_pointer_change":pointer_change})
+            pid_mismatch=compare_pid_kinematics_modes(model,batch,target_level=1,temperature=.5)
+            print({"max_pid_refined_p4_change":p4_change,"max_level1_pointer_change":pointer_change,**pid_mismatch})
             """
         ),
         md("## Dynamic runtime normalization and composite type semantics"),
@@ -148,7 +149,7 @@ def build_notebook():
                 for node in nodes
                 if node["leaf_kinematics_mode"]=="raw_track_predicted_pid"
             )
-            report={"schema_v4":True,"truth_clean_composite_input":True,"target_metadata_invariance":metadata_invariance_pass,"raw_track_unknown_input_pass":leakage_pass,"pointer_gradient_to_leaf_pid":gradient,"pointer_response":pointer_change,"runtime_dynamic_normalization_pass":normalization_pass,"teacher_composite_type_source_pass":type_source_pass}
+            report={"schema_v4":True,"truth_clean_composite_input":True,"target_metadata_invariance":metadata_invariance_pass,"raw_track_unknown_input_pass":leakage_pass,"pointer_gradient_to_leaf_pid":gradient,"pointer_response":pointer_change,"runtime_dynamic_normalization_pass":normalization_pass,"teacher_composite_type_source_pass":type_source_pass,**pid_mismatch}
             (OUT/"leaf_composite_contract.json").write_text(json.dumps(report,indent=2),encoding="utf-8")
             assert leakage_pass and gradient>0 and normalization_pass and type_source_pass and metadata_invariance_pass
             plt.figure(figsize=(6,3)); plt.bar(["pointer→leaf PID gradient"],[gradient]); plt.yscale("log"); plt.tight_layout()

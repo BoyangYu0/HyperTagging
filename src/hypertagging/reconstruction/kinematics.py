@@ -132,6 +132,28 @@ def soft_track_p4_from_pid_logits(
     return torch.cat((p3, energy), dim=-1)
 
 
+def track_p4_from_pid_probabilities(
+    p3: torch.Tensor,
+    probabilities: torch.Tensor,
+) -> torch.Tensor:
+    """Build a differentiable expected-energy p4 from reduced-PID weights."""
+
+    p3 = _as_p3(p3)
+    if probabilities.shape != (*p3.shape[:-1], len(PDG_TOKENS)):
+        raise ValueError("PID probability shape is incompatible with track p3")
+    masses = _mass_by_reduced_token(device=p3.device, dtype=p3.dtype)
+    supported = torch.isfinite(masses)
+    if torch.any(probabilities[..., ~supported].abs() > 1e-7):
+        raise ValueError("PID probabilities assign weight to a non-track species")
+    energies = torch.sqrt(
+        p3.square().sum(dim=-1, keepdim=True) + masses[supported].square()
+    )
+    weights = probabilities[..., supported]
+    weights = weights / weights.sum(dim=-1, keepdim=True).clamp_min(1e-12)
+    energy = (weights * energies).sum(dim=-1, keepdim=True)
+    return torch.cat((p3, energy), dim=-1)
+
+
 def cluster_reco_p4(
     *,
     energy: torch.Tensor,

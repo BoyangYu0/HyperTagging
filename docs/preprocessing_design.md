@@ -289,3 +289,22 @@ V4 retains JSON event payloads for compatibility. Experimental
 `scripts/benchmark_parquet_storage.py` measures size, writes, full decode, and
 projected reads on a pilot. Production must remain v4 until that benchmark is
 reviewed on representative data.
+
+Run progressively larger existing fixture or pilot samples without touching
+production parquet files:
+
+```bash
+for events in 10 100 1000 10000
+do
+  python scripts/benchmark_parquet_storage.py \
+    --data /data/volume/pilot-or-fixture-manifest.jsonl \
+    --max-events "$events" \
+    --output-dir "/tmp/hypertagging-storage-${events}"
+done
+```
+
+Each JSON report contains file sizes, write/full-read/projected-read
+throughput, JSON/native decode CPU, process peak RSS (with the Arrow allocation
+caveat), and events/s plus nodes/s. This command is diagnostic: schema-v4 stays
+the production default, v5 is not promoted, and ten-million-event readiness is
+not claimed until representative measurements exist.
