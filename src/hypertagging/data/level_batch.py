@@ -44,6 +44,12 @@ class LevelBatch:
     same_mother: torch.Tensor
     same_branch: torch.Tensor
     lca_depth: torch.Tensor
+    lca_node_id: torch.Tensor
+    edges_to_lca_from_i: torch.Tensor
+    edges_to_lca_from_j: torch.Tensor
+    exact_tree_path_distance: torch.Tensor
+    depth_from_retained_root: torch.Tensor
+    distance_to_nearest_retained_root: torch.Tensor
     query_mask: torch.Tensor
     event_ids: torch.Tensor
 
@@ -65,6 +71,12 @@ class LevelBatch:
             "same_mother": self.same_mother,
             "same_branch": self.same_branch,
             "lca_depth": self.lca_depth,
+            "lca_node_id": self.lca_node_id,
+            "edges_to_lca_from_i": self.edges_to_lca_from_i,
+            "edges_to_lca_from_j": self.edges_to_lca_from_j,
+            "exact_tree_path_distance": self.exact_tree_path_distance,
+            "depth_from_retained_root": self.depth_from_retained_root,
+            "distance_to_nearest_retained_root": self.distance_to_nearest_retained_root,
             "query_mask": self.query_mask,
             "event_ids": self.event_ids,
         }

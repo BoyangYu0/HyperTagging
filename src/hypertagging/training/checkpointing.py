@@ -13,7 +13,11 @@ import numpy as np
 import torch
 
 from hypertagging.preprocessing.pid_filter import PID_VOCABULARY_VERSION
-from hypertagging.preprocessing.schema_v4 import SCHEMA_VERSION_V4, feature_spec_v4
+from hypertagging.preprocessing.schema_v4 import (
+    RUNTIME_MODEL_CONTRACTS_V4,
+    SCHEMA_VERSION_V4,
+    feature_spec_v4,
+)
 
 
 def save_training_checkpoint(
@@ -63,6 +67,7 @@ def save_training_checkpoint(
         "preprocessing_schema_version": schema_version,
         "pid_vocabulary_version": PID_VOCABULARY_VERSION,
         "feature_specification": feature_spec_v4(),
+        "runtime_model_contracts": dict(RUNTIME_MODEL_CONTRACTS_V4),
         "split_manifest_hash": split_manifest_hash,
         "git_commit": _git_commit(),
         "confidence_head_trained": bool(confidence_head_trained),

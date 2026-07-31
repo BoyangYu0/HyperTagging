@@ -51,6 +51,7 @@ def build_notebook() -> nbf.NotebookNode:
             from hypertagging.data.notebook_fixtures import write_notebook_fixture_v4
             from hypertagging.losses.hyperbolic_pretraining import (
                 build_tree_relation_targets, collapse_diagnostics, pool_b_branch_embeddings,
+                topology_safe_parent_negative_mask,
             )
             from hypertagging.models.heterogeneous import HeterogeneousNodeEncoder
             from hypertagging.models.hyperbolic import distance, logmap0, radius
@@ -159,6 +160,20 @@ def build_notebook() -> nbf.NotebookNode:
         code(
             """
             pair_distance = distance(z[:, :, None, :], z[:, None, :, :])
+            from hypertagging.data.level_collate import build_lca_depth
+            lca_height=torch.full_like(batch["exact_tree_path_distance"],-1)
+            for b in range(mask.shape[0]):
+                count=int(mask[b].sum())
+                lca_height[b,:count,:count]=build_lca_depth(
+                    batch["parent_ids"][b,:count],batch["level_ids"][b,:count]
+                )
+            relation_targets,_=build_tree_relation_targets(
+                parent_ids=batch["parent_ids"],lca_depth=lca_height,
+                level_ids=batch["level_ids"],node_mask=mask,b_side=batch["b_side"],
+                lca_node_id=batch["lca_node_id"],
+                edges_to_lca_from_i=batch["edges_to_lca_from_i"],
+                edges_to_lca_from_j=batch["edges_to_lca_from_j"],
+            )
             categories = {"same immediate mother": [], "same branch": [], "different B sides": [],
                           "unrelated": [], "true parent-child": [], "hard negative": []}
             for b in range(mask.shape[0]):
@@ -178,9 +193,14 @@ def build_notebook() -> nbf.NotebookNode:
                             categories["true parent-child"].append(value)
                 for child in valid:
                     parent = int(batch["parent_ids"][b, child])
-                    negatives = [index for index in valid if index not in (child, parent)]
+                    eligible=topology_safe_parent_negative_mask(
+                        batch["parent_ids"][b],mask[b],child,
+                        lca_depth=lca_height[b],tree_relation_targets=relation_targets[b],
+                        b_side=batch["b_side"][b],
+                    )
+                    negatives=eligible.nonzero().flatten().tolist()
                     if parent >= 0 and negatives:
-                        categories["hard negative"].append(min(float(pair_distance[b, child, index]) for index in negatives))
+                        categories["hard negative"].append(min(float(pair_distance[b,child,index]) for index in negatives))
             fig, ax = plt.subplots(figsize=(11, 5))
             plotted = [values for values in categories.values() if values]
             labels = [name for name, values in categories.items() if values]
@@ -307,16 +327,13 @@ def build_notebook() -> nbf.NotebookNode:
         md("## Direct tree-distance target versus hyperbolic distance"),
         code(
             """
-            from hypertagging.data.level_collate import build_lca_depth
             from hypertagging.losses.hyperbolic_pretraining import tree_distance_targets
-            lca=torch.full((len(events),batch["node_mask"].shape[1],batch["node_mask"].shape[1]),-1,dtype=torch.long)
-            for index,event in enumerate(events):
-                count=int(batch["node_mask"][index].sum())
-                lca[index,:count,:count]=build_lca_depth(batch["parent_ids"][index,:count],batch["level_ids"][index,:count])
             pair_mask=mask[:,:,None]&mask[:,None,:]
-            target_distance=tree_distance_targets(lca_depth=lca,level_ids=batch["level_ids"],pair_mask=pair_mask)
+            target_distance=tree_distance_targets(
+                exact_tree_path_distance=batch["exact_tree_path_distance"],pair_mask=pair_mask
+            )
             predicted_distance=distance(z[:,:,None,:],z[:,None,:,:])
-            selected=pair_mask&(lca>=0)
+            selected=pair_mask&(batch["exact_tree_path_distance"]>=0)
             plt.scatter(target_distance[selected].numpy(),predicted_distance[selected].numpy(),s=15,alpha=.6)
             plt.xlabel("Normalized retained-tree distance target"); plt.ylabel("Poincare distance")
             plt.tight_layout(); plt.savefig(FIGURE_DIR/"tree_distance_supervision.png"); plt.show()

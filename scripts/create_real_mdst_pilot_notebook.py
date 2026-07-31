@@ -82,10 +82,15 @@ def build_notebook():
             pid_names=[f"pid_log_likelihood_{name}" for name in ("electron","muon","pion","kaon","proton")]
             pid_available={name:sum(bool(node.get("track_availability",{}).get(name,False)) for node in tracks) for name in pid_names}
             charge_values=Counter(float(node.get("charge",0.0)) for node in tracks)
+            ecl=[node for node in leaves if node.get("node_kind")=="ecl_cluster"]
+            ecl_energy_sources=Counter(node.get("energy_source","missing") for node in ecl)
+            detector_inputs=[node for node in leaves if node.get("active",False)]
+            truth_detector_inputs=[node for node in detector_inputs if node.get("leaf_kinematics_mode")=="truth_topology_only" or str(node.get("energy_source","")).startswith("truth_")]
             display(pd.DataFrame({"leaf_mode":provenance.keys(),"count":provenance.values()}))
-            print({"track_energy_sources":dict(energy_sources),"PIDLikelihood_available":pid_available,"reconstructed_charge":dict(charge_values)})
+            print({"track_energy_sources":dict(energy_sources),"ecl_energy_sources":dict(ecl_energy_sources),"PIDLikelihood_available":pid_available,"reconstructed_charge":dict(charge_values),"truth_derived_detector_inputs":len(truth_detector_inputs)})
             if any(node.get("input_pid_token",0) != 0 for node in tracks if node.get("leaf_kinematics_mode")=="raw_track_predicted_pid"):
                 raise AssertionError("raw track entered with non-unknown input PID")
+            if truth_detector_inputs:raise AssertionError("truth-derived leaf kinematics entered the active detector input")
             """
         ),
         md("## Recursive p4 closure and B-root discovery"),
@@ -113,11 +118,13 @@ def build_notebook():
             """
             pid_counts=Counter(int(node.get("pid_target_token",node.get("token",0))) for node in nodes)
             level_counts=Counter(int(node.get("level",-1)) for node in nodes)
+            kl_nodes=[node for node in leaves if abs(int(node.get("pdg",0)))==130 or int(node.get("pid_target_token",node.get("token",-1)))==PDG_TOKENS.index(130)]
+            klm_fields=Counter("present" if any("klm" in str(key).lower() for key in node) else "absent" for node in kl_nodes)
             failure_examples=(failures+[row for row in b_root if not row["valid"]])[:20]
             display(pd.DataFrame({"pid_token":pid_counts.keys(),"count":pid_counts.values()}))
             display(pd.DataFrame({"level":level_counts.keys(),"count":level_counts.values()}))
             display(pd.DataFrame(failure_examples))
-            report={"real_data":True,"events":len(events),"leaf_provenance":dict(provenance),"pidlikelihood_available":pid_available,"track_energy_sources":dict(energy_sources),"charge_distribution":dict(charge_values),"maximum_p4_residual":max(closure,default=0.0),"valid_b_root_events":sum(row["valid"] for row in b_root),"fallback_b_root_events":sum(row["fallback"] for row in b_root),"pid_distribution":dict(pid_counts),"level_distribution":dict(level_counts),"failure_examples":failure_examples}
+            report={"real_data":True,"events":len(events),"leaf_provenance":dict(provenance),"pidlikelihood_available":pid_available,"track_energy_sources":dict(energy_sources),"ecl_energy_sources":dict(ecl_energy_sources),"charge_distribution":dict(charge_values),"truth_derived_detector_inputs":len(truth_detector_inputs),"maximum_p4_residual":max(closure,default=0.0),"valid_b_root_events":sum(row["valid"] for row in b_root),"fallback_b_root_events":sum(row["fallback"] for row in b_root),"pid_distribution":dict(pid_counts),"level_distribution":dict(level_counts),"k_l_leaf_count":len(kl_nodes),"k_l_klm_provenance_fields":dict(klm_fields),"klm_collection_contract":"report only; current direct collector declares Tracks and ECLClusters, not KLMClusters","failure_examples":failure_examples}
             report_path=Path(os.environ.get("HYPERTAGGING_REAL_PILOT_REPORT","/tmp/hypertagging-real-pilot-report.json"))
             report_path.write_text(json.dumps(report,indent=2,sort_keys=True),encoding="utf-8")
             print(report_path)

@@ -12,6 +12,7 @@ import torch.nn.functional as F
 
 from hypertagging.data.heterogeneous import collate_heterogeneous_events
 from hypertagging.data.level_collate import build_lca_depth
+from hypertagging.data.tree_geometry import build_exact_tree_geometry
 from hypertagging.losses.hyperbolic_pretraining import (
     build_tree_relation_targets,
     hyperbolic_pretraining_loss,
@@ -89,6 +90,9 @@ class PretrainConfig:
     max_cardinality_by_level: tuple[tuple[int, int], ...] = ()
     validation_batches: int = 4
     channel_pooling: str = "mean_all"
+    tangent_variance_target: float | None = None
+    hyper_projection_init_scale: float | None = None
+    tangent_scale_mode: str | None = None
 
 
 @dataclass(frozen=True)
@@ -117,6 +121,8 @@ class ContextualPretrainingModel(torch.nn.Module):
         ffn_dim: int | None = None,
         dropout: float = 0.0,
         channel_pooling: str = "mean_all",
+        hyper_projection_init_scale: float = 0.05,
+        tangent_scale_mode: str = "fixed",
     ) -> None:
         super().__init__()
         self.encoder = HeterogeneousNodeEncoder(
@@ -130,6 +136,8 @@ class ContextualPretrainingModel(torch.nn.Module):
             use_contextual_encoder=use_contextual_encoder,
             use_physical_context=use_physical_relations,
             use_hyperbolic_refinement=use_hyperbolic_relations,
+            hyper_projection_init_scale=hyper_projection_init_scale,
+            tangent_scale_mode=tangent_scale_mode,
         )
         self.relation_head = TreeRelationHead(d_model)
         self.leaf_pid_head = torch.nn.Linear(d_model, len(PDG_TOKENS))
@@ -297,6 +305,9 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
         n_queries_by_level=config.n_queries_by_level,
         max_cardinality=config.max_cardinality,
         max_cardinality_by_level=config.max_cardinality_by_level,
+        tangent_variance_target=config.tangent_variance_target,
+        hyper_projection_init_scale=config.hyper_projection_init_scale,
+        tangent_scale_mode=config.tangent_scale_mode,
     )
     model = ContextualPretrainingModel(
         d_model=architecture.d_model,
@@ -311,6 +322,8 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
         use_hyperbolic_relations=ablation.hyperbolic_relation_attention,
         channel_memory_size=config.channel_memory_size,
         channel_pooling=config.channel_pooling,
+        hyper_projection_init_scale=architecture.hyper_projection_init_scale,
+        tangent_scale_mode=architecture.tangent_scale_mode,
     ).to(device)
     model.set_runtime_feature_normalizer(
         RuntimeFeatureNormalizer(
@@ -447,6 +460,7 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 tree_relation_targets=targets,
                 tree_relation_mask=relation_mask,
                 lca_depth=train_batch["lca_depth"],
+                exact_tree_path_distance=train_batch["exact_tree_path_distance"],
                 parent_ids=train_batch["parent_ids"],
                 level_ids=train_batch["level_ids"],
                 node_mask=structural_mask,
@@ -476,6 +490,7 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 weights=_pretraining_weights(config.ablation),
                 curvature=config.curvature,
                 full_event_max_level=train_batch.get("full_event_max_level"),
+                tangent_variance_target=architecture.tangent_variance_target,
             )
             leaf_pid_loss = (
                 _leaf_pid_loss(leaf_pid_logits, train_batch)
@@ -544,8 +559,45 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 dim=-1,
             ),
         )
+        should_log_gradients = (
+            (step + 1) % config.log_every == 0
+            or step == start_step
+            or step + 1 == config.max_steps
+        )
+        gradient_metrics: dict[str, float] = {}
+        if should_log_gradients:
+            hyper_parameters = tuple(model.encoder.hyper_projection.parameters())
+            per_loss = {
+                **loss_output.components,
+                "leaf_pid": leaf_pid_loss,
+                "corruption": corruption_loss,
+                "candidate_correctness": correctness_loss,
+                "hard_negative": hard_negative_loss,
+            }
+            for name, value in per_loss.items():
+                gradients = torch.autograd.grad(
+                    value,
+                    hyper_parameters,
+                    retain_graph=True,
+                    allow_unused=True,
+                )
+                gradient_metrics[f"gradient_loss_{name}_to_hyper_projection"] = (
+                    _tensor_gradient_norm(gradients)
+                )
         scaler.scale(loss).backward()
         scaler.unscale_(optimizer)
+        if should_log_gradients:
+            for name in (
+                "tree_head",
+                "reconstruction_head",
+                "channel_head",
+                "hyper_projection",
+                "tangent_scale",
+            ):
+                module = getattr(model.encoder, name)
+                gradient_metrics[f"gradient_projection_{name}"] = (
+                    _parameter_gradient_norm(module.parameters())
+                )
         torch.nn.utils.clip_grad_norm_(model.parameters(), config.gradient_clip)
         scaler.step(optimizer)
         scaler.update()
@@ -566,6 +618,7 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 name: float(value.detach().cpu())
                 for name, value in loss_output.diagnostics.items()
             },
+            **gradient_metrics,
         }
         if (step + 1) % config.log_every == 0 or step == start_step or step + 1 == config.max_steps:
             logger.log(step=step + 1, stage=stage.value, **final_metrics)
@@ -661,6 +714,23 @@ def _validate_pretraining(
     """Aggregate bounded held-out objective and representation diagnostics."""
 
     model.eval()
+    architecture = resolve_model_architecture(
+        config.model_preset,
+        d_model=config.d_model,
+        hyper_dim=config.hyper_dim,
+        n_heads=config.n_heads,
+        n_context_layers=config.n_context_layers,
+        ffn_dim=config.ffn_dim,
+        dropout=config.dropout,
+        curvature=config.curvature,
+        n_queries=config.n_queries,
+        n_queries_by_level=config.n_queries_by_level,
+        max_cardinality=config.max_cardinality,
+        max_cardinality_by_level=config.max_cardinality_by_level,
+        tangent_variance_target=config.tangent_variance_target,
+        hyper_projection_init_scale=config.hyper_projection_init_scale,
+        tangent_scale_mode=config.tangent_scale_mode,
+    )
     split = "validation" if data_module.split_counts.get("validation", 0) else "train"
     totals: dict[str, list[float]] = {}
     retrieval_embeddings: list[torch.Tensor] = []
@@ -728,6 +798,7 @@ def _validate_pretraining(
             tree_relation_targets=targets,
             tree_relation_mask=relation_mask,
             lca_depth=validation_batch["lca_depth"],
+            exact_tree_path_distance=validation_batch["exact_tree_path_distance"],
             parent_ids=validation_batch["parent_ids"],
             level_ids=validation_batch["level_ids"],
             node_mask=validation_batch["node_mask"],
@@ -747,6 +818,7 @@ def _validate_pretraining(
             weights=_pretraining_weights(config.ablation),
             curvature=config.curvature,
             full_event_max_level=validation_batch.get("full_event_max_level"),
+            tangent_variance_target=architecture.tangent_variance_target,
         )
         leaf_loss = _leaf_pid_loss(leaf_pid_logits, validation_batch)
         total_loss = loss_output.total + leaf_loss
@@ -824,6 +896,19 @@ def _pretraining_weights(ablation_name: str) -> dict[str, float]:
     }
 
 
+def _tensor_gradient_norm(
+    gradients: tuple[torch.Tensor | None, ...],
+) -> float:
+    squares = [gradient.detach().float().square().sum() for gradient in gradients if gradient is not None]
+    return float(torch.stack(squares).sum().sqrt().cpu()) if squares else 0.0
+
+
+def _parameter_gradient_norm(parameters) -> float:
+    return _tensor_gradient_norm(
+        tuple(parameter.grad for parameter in parameters)
+    )
+
+
 def _leaf_pid_loss(
     leaf_pid_logits: torch.Tensor,
     batch: dict[str, torch.Tensor],
@@ -858,6 +943,29 @@ def _add_topology_labels(batch: dict[str, torch.Tensor]) -> None:
             batch["level_ids"][index, :count].cpu(),
         ).to(lca.device)
     batch["lca_depth"] = lca
+    pair_fields = (
+        "lca_node_id",
+        "edges_to_lca_from_i",
+        "edges_to_lca_from_j",
+        "exact_tree_path_distance",
+    )
+    for field in pair_fields:
+        batch[field] = torch.full_like(lca, -1)
+    batch["depth_from_retained_root"] = torch.full_like(batch["parent_ids"], -1)
+    batch["distance_to_nearest_retained_root"] = torch.full_like(
+        batch["parent_ids"], -1
+    )
+    for index in range(batch["parent_ids"].shape[0]):
+        count = int(batch["node_mask"][index].sum())
+        geometry = build_exact_tree_geometry(batch["parent_ids"][index, :count].cpu())
+        for field in pair_fields:
+            batch[field][index, :count, :count] = getattr(geometry, field).to(lca.device)
+        batch["depth_from_retained_root"][index, :count] = (
+            geometry.depth_from_retained_root.to(lca.device)
+        )
+        batch["distance_to_nearest_retained_root"][index, :count] = (
+            geometry.distance_to_nearest_retained_root.to(lca.device)
+        )
 
 
 def _to_device(
@@ -929,6 +1037,9 @@ def _save_pretrain_checkpoint(
             config.model_preset,
             d_model=config.d_model,
             hyper_dim=config.hyper_dim,
+            tangent_variance_target=config.tangent_variance_target,
+            hyper_projection_init_scale=config.hyper_projection_init_scale,
+            tangent_scale_mode=config.tangent_scale_mode,
             n_heads=config.n_heads,
             n_context_layers=config.n_context_layers,
             ffn_dim=config.ffn_dim,

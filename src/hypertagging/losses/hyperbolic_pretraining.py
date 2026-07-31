@@ -7,6 +7,10 @@ from dataclasses import dataclass, field
 import torch
 import torch.nn.functional as F
 
+from hypertagging.data.tree_geometry import (
+    EXACT_TREE_GEOMETRY_CONTRACT_VERSION,
+    build_exact_tree_geometry,
+)
 from hypertagging.models.hyperbolic import distance, logmap0, radius
 
 
@@ -19,6 +23,21 @@ TREE_RELATION_NAMES = (
     "different_b_same_event",
     "unrelated_or_unknown",
 )
+TREE_DISTANCE_CONTRACT_VERSION = "exact-edge-log-fixed-scale-v2"
+LEVEL_HEIGHT_DISTANCE_ABLATION_VERSION = "reconstruction-height-distance-v1"
+HYPERBOLIC_SCALE_CONTRACT_VERSION = "dimension-aware-tangent-radius-v2"
+
+
+def dimension_aware_tangent_variance_target(
+    hyper_dim: int,
+    *,
+    target_tangent_norm: float = 0.5,
+) -> float:
+    """Per-coordinate floor implied by a fixed RMS tangent-vector norm."""
+
+    if hyper_dim <= 0 or target_tangent_norm < 0:
+        raise ValueError("hyper_dim must be positive and target_tangent_norm non-negative")
+    return float(target_tangent_norm) / hyper_dim**0.5
 
 
 @dataclass(frozen=True)
@@ -42,11 +61,14 @@ def build_tree_relation_targets(
     level_ids: torch.Tensor,
     node_mask: torch.Tensor,
     b_side: torch.Tensor | None = None,
+    lca_node_id: torch.Tensor | None = None,
+    edges_to_lca_from_i: torch.Tensor | None = None,
+    edges_to_lca_from_j: torch.Tensor | None = None,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Build the documented six-class LCA relation convention.
 
-    Local branch means a retained common ancestor no more than two levels above
-    the deeper node. Same-B and different-B relations use explicit B-side
+    Local branch means a retained common ancestor no more than two exact edges
+    from either node. Same-B and different-B relations use explicit B-side
     labels. Pairs without a retained common ancestor or B label are class 5.
     """
 
@@ -66,8 +88,22 @@ def build_tree_relation_targets(
         & ~identity
     )
     targets[valid & same_parent] = 1
-    max_child_level = torch.maximum(level_ids[:, :, None], level_ids[:, None, :])
-    local = (lca_depth >= 0) & ((lca_depth - max_child_level) <= 2) & ~same_parent & ~identity
+    if lca_node_id is None or edges_to_lca_from_i is None or edges_to_lca_from_j is None:
+        lca_node_id = torch.full_like(lca_depth, -1)
+        edges_to_lca_from_i = torch.full_like(lca_depth, -1)
+        edges_to_lca_from_j = torch.full_like(lca_depth, -1)
+        for batch_index in range(batch_size):
+            geometry = build_exact_tree_geometry(parent_ids[batch_index])
+            lca_node_id[batch_index] = geometry.lca_node_id
+            edges_to_lca_from_i[batch_index] = geometry.edges_to_lca_from_i
+            edges_to_lca_from_j[batch_index] = geometry.edges_to_lca_from_j
+    local = (
+        (lca_node_id >= 0)
+        & (edges_to_lca_from_i <= 2)
+        & (edges_to_lca_from_j <= 2)
+        & ~same_parent
+        & ~identity
+    )
     targets[valid & local] = 2
     if b_side is not None:
         valid_side = (b_side[:, :, None] >= 0) & (b_side[:, None, :] >= 0)
@@ -164,7 +200,12 @@ def topology_safe_parent_negative_mask(
     tree_relation_targets: torch.Tensor | None = None,
     b_side: torch.Tensor | None = None,
 ) -> torch.Tensor:
-    """Return candidates allowed by the directed parent-ranking contract."""
+    """Return candidates allowed by the directed parent-ranking contract.
+
+    Explicit relation labels are authoritative: classes 0--3 are excluded and
+    classes 4--5 are negative.  In particular, a class-4 pair is not removed
+    merely because both B branches meet at the retained Upsilon root.
+    """
 
     valid = node_mask.bool().clone()
     parent = int(parent_ids[child])
@@ -181,6 +222,11 @@ def topology_safe_parent_negative_mask(
         return result
 
     child_ancestors = ancestors(child)
+    fallback_geometry = (
+        build_exact_tree_geometry(parent_ids)
+        if tree_relation_targets is None
+        else None
+    )
     for candidate in torch.nonzero(valid, as_tuple=False).flatten().tolist():
         candidate_ancestors = ancestors(candidate)
         if candidate in child_ancestors or child in candidate_ancestors:
@@ -189,27 +235,97 @@ def topology_safe_parent_negative_mask(
         if parent >= 0 and int(parent_ids[candidate]) == parent:
             valid[candidate] = False
             continue
-        if tree_relation_targets is not None and int(
-            tree_relation_targets[child, candidate]
-        ) <= 3:
-            valid[candidate] = False
+        if tree_relation_targets is not None:
+            if int(tree_relation_targets[child, candidate]) <= 3:
+                valid[candidate] = False
+            # Do not apply the fallback LCA rule after explicit classes exist.
             continue
-        # With only LCA depth available, any retained common ancestor at most
-        # two levels above either node is explicitly near-positive.
-        if lca_depth is not None and int(lca_depth[child, candidate]) >= 0:
+        assert fallback_geometry is not None
+        left_edges = int(fallback_geometry.edges_to_lca_from_i[child, candidate])
+        right_edges = int(fallback_geometry.edges_to_lca_from_j[child, candidate])
+        close_local_branch = (
+            int(fallback_geometry.lca_node_id[child, candidate]) >= 0
+            and left_edges <= 2
+            and right_edges <= 2
+        )
+        same_explicit_branch = (
+            b_side is not None
+            and int(b_side[child]) >= 0
+            and int(b_side[candidate]) == int(b_side[child])
+        )
+        if close_local_branch or same_explicit_branch:
             valid[candidate] = False
 
     if not valid.any():
         return valid
+    if tree_relation_targets is not None:
+        different_b = valid & (tree_relation_targets[child] == 4)
+        if different_b.any():
+            return different_b
+        unrelated = valid & (tree_relation_targets[child] == 5)
+        if unrelated.any():
+            return unrelated
+        return torch.zeros_like(valid)
     if b_side is not None and int(b_side[child]) >= 0:
         other_branch = valid & (b_side >= 0) & (b_side != b_side[child])
         if other_branch.any():
             return other_branch
-    if tree_relation_targets is not None:
-        explicit_negative = valid & (tree_relation_targets[child] >= 4)
-        if explicit_negative.any():
-            return explicit_negative
     return valid
+
+
+@torch.no_grad()
+def parent_negative_coverage_statistics(
+    parent_ids: torch.Tensor,
+    node_mask: torch.Tensor,
+    *,
+    lca_depth: torch.Tensor | None = None,
+    tree_relation_targets: torch.Tensor | None = None,
+    b_side: torch.Tensor | None = None,
+) -> dict[str, torch.Tensor]:
+    """Count the exact denominator of the directed parent objective."""
+
+    eligible_children = different_b_children = total_children = 0
+    for batch_index in range(parent_ids.shape[0]):
+        for child in torch.nonzero(node_mask[batch_index], as_tuple=False).flatten().tolist():
+            parent = int(parent_ids[batch_index, child])
+            if parent < 0 or parent >= parent_ids.shape[1] or not bool(node_mask[batch_index, parent]):
+                continue
+            total_children += 1
+            eligible = topology_safe_parent_negative_mask(
+                parent_ids[batch_index],
+                node_mask[batch_index],
+                child,
+                lca_depth=lca_depth[batch_index] if lca_depth is not None else None,
+                tree_relation_targets=(
+                    tree_relation_targets[batch_index]
+                    if tree_relation_targets is not None
+                    else None
+                ),
+                b_side=b_side[batch_index] if b_side is not None else None,
+            )
+            if eligible.any():
+                eligible_children += 1
+            if tree_relation_targets is not None and (
+                eligible & (tree_relation_targets[batch_index, child] == 4)
+            ).any():
+                different_b_children += 1
+            elif b_side is not None and int(b_side[batch_index, child]) >= 0 and (
+                eligible
+                & (b_side[batch_index] >= 0)
+                & (b_side[batch_index] != b_side[batch_index, child])
+            ).any():
+                different_b_children += 1
+    reference = node_mask.sum().to(torch.float32) * 0.0
+    total = reference + float(total_children)
+    eligible = reference + float(eligible_children)
+    different_b = reference + float(different_b_children)
+    return {
+        "parent_children_with_eligible_negative": eligible,
+        "parent_children_with_different_b_negative": different_b,
+        "parent_children_with_no_negative": total - eligible,
+        "parent_loss_active_fraction": eligible / total.clamp_min(1.0),
+        "parent_ranking_accuracy_denominator": eligible,
+    }
 
 
 @torch.no_grad()
@@ -307,14 +423,23 @@ def variance_regularization(
     tangent: torch.Tensor,
     mask: torch.Tensor,
     *,
-    gamma: float = 1.0,
+    gamma: float | None = None,
+    target_tangent_norm: float = 0.5,
     eps: float = 1e-4,
 ) -> torch.Tensor:
     valid = tangent[mask]
     if valid.shape[0] < 2:
         return tangent.sum() * 0.0
+    if gamma is None:
+        # For curvature one, d_H(0, exp_0(u)) = 2 ||u||.  A fixed RMS tangent
+        # norm therefore requires a 1/sqrt(dimension) per-coordinate target.
+        gamma = dimension_aware_tangent_variance_target(
+            tangent.shape[-1], target_tangent_norm=target_tangent_norm
+        )
+    if gamma < 0:
+        raise ValueError("tangent variance target must be non-negative")
     standard_deviation = torch.sqrt(valid.var(dim=0, unbiased=False) + eps)
-    return F.relu(gamma - standard_deviation).mean()
+    return F.relu(float(gamma) - standard_deviation).mean()
 
 
 def covariance_regularization(tangent: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
@@ -560,13 +685,13 @@ def cross_event_channel_metric_loss(
     }
 
 
-def tree_distance_targets(
+def level_height_tree_distance_targets_v1(
     *,
     lca_depth: torch.Tensor,
     level_ids: torch.Tensor,
     pair_mask: torch.Tensor,
 ) -> torch.Tensor:
-    """Normalized retained-tree path distance derived from LCA level."""
+    """Backward-compatible ablation using reconstruction height differences."""
 
     left = level_ids[:, :, None].float()
     right = level_ids[:, None, :].float()
@@ -578,31 +703,57 @@ def tree_distance_targets(
     return raw / maximum[:, None]
 
 
+def tree_distance_targets(
+    *,
+    exact_tree_path_distance: torch.Tensor,
+    pair_mask: torch.Tensor,
+    target_scale_edges: float = 8.0,
+) -> torch.Tensor:
+    """Robust fixed-scale target for exact retained-tree edge distance.
+
+    ``log1p(distance) / log1p(target_scale_edges)`` has a versioned, event-
+    independent scale.  Adding a distant outlier therefore cannot rescale all
+    existing target pairs.
+    """
+
+    if target_scale_edges <= 0:
+        raise ValueError("target_scale_edges must be positive")
+    raw = exact_tree_path_distance.to(torch.float32).clamp_min(0)
+    target = torch.log1p(raw) / torch.log1p(
+        raw.new_tensor(float(target_scale_edges))
+    )
+    return torch.where(
+        pair_mask & (exact_tree_path_distance >= 0),
+        target,
+        torch.zeros_like(target),
+    )
+
+
 def hyperbolic_tree_distance_loss(
     z: torch.Tensor,
     *,
-    lca_depth: torch.Tensor,
-    level_ids: torch.Tensor,
+    exact_tree_path_distance: torch.Tensor,
     pair_mask: torch.Tensor,
     curvature: float = 1.0,
+    target_scale_edges: float = 8.0,
+    prediction_scale: float = 3.0,
 ) -> torch.Tensor:
-    """Directly regress normalized Poincare distance to retained-tree distance."""
+    """Regress fixed-scale Poincare distance to exact retained-tree distance."""
 
     target = tree_distance_targets(
-        lca_depth=lca_depth,
-        level_ids=level_ids,
+        exact_tree_path_distance=exact_tree_path_distance,
         pair_mask=pair_mask,
+        target_scale_edges=target_scale_edges,
     )
     prediction = distance(
         z[:, :, None, :],
         z[:, None, :, :],
         curvature=curvature,
     )
-    scale = torch.where(pair_mask, prediction, torch.zeros_like(prediction)).flatten(1).max(
-        dim=-1, keepdim=True
-    ).values.clamp_min(1e-6)
-    prediction = prediction / scale[:, None]
-    selected = pair_mask & (lca_depth >= 0)
+    if prediction_scale <= 0:
+        raise ValueError("prediction_scale must be positive")
+    prediction = prediction / float(prediction_scale)
+    selected = pair_mask & (exact_tree_path_distance >= 0)
     return F.smooth_l1_loss(prediction[selected], target[selected]) if selected.any() else z.sum() * 0.0
 
 
@@ -658,7 +809,9 @@ def collapse_diagnostics(
         "min_dimension_std": std.min(),
         "covariance_off_diagonal_norm": torch.linalg.matrix_norm(off_diagonal),
         "effective_rank": effective_rank,
-        "boundary_fraction": (norm >= boundary_threshold).float().mean(),
+        "boundary_fraction": (
+            curvature**0.5 * norm >= boundary_threshold
+        ).float().mean(),
         "radius_level_correlation": correlation,
         "angular_separation_by_branch": angular,
     }
@@ -694,6 +847,7 @@ def hyperbolic_pretraining_loss(
     tree_relation_targets: torch.Tensor | None = None,
     tree_relation_mask: torch.Tensor | None = None,
     lca_depth: torch.Tensor | None = None,
+    exact_tree_path_distance: torch.Tensor | None = None,
     b_side: torch.Tensor | None = None,
     node_kind_ids: torch.Tensor | None = None,
     event_ids: torch.Tensor | None = None,
@@ -715,6 +869,7 @@ def hyperbolic_pretraining_loss(
     weights: dict[str, float] | None = None,
     curvature: float = 1.0,
     full_event_max_level: torch.Tensor | None = None,
+    tangent_variance_target: float | None = None,
 ) -> HyperbolicLossOutput:
     """Principal LCA, parent, depth, channel, variance and covariance objective."""
 
@@ -770,8 +925,7 @@ def hyperbolic_pretraining_loss(
         "tree_distance": (
             hyperbolic_tree_distance_loss(
                 z,
-                lca_depth=lca_depth,
-                level_ids=level_ids,
+                exact_tree_path_distance=exact_tree_path_distance,
                 pair_mask=(
                     tree_relation_mask
                     if tree_relation_mask is not None
@@ -779,7 +933,7 @@ def hyperbolic_pretraining_loss(
                 ),
                 curvature=curvature,
             )
-            if lca_depth is not None
+            if exact_tree_path_distance is not None
             else zero
         ),
     }
@@ -817,7 +971,11 @@ def hyperbolic_pretraining_loss(
         b_side=b_side,
         group_by=anti_collapse_group_by,
     )
-    components["var"] = variance_regularization(tangent, anti_collapse_mask)
+    components["var"] = variance_regularization(
+        tangent,
+        anti_collapse_mask,
+        gamma=tangent_variance_target,
+    )
     components["cov"] = covariance_regularization(tangent, anti_collapse_mask)
     if (
         same_mother_logits is not None
@@ -839,6 +997,15 @@ def hyperbolic_pretraining_loss(
         b_side=b_side,
         curvature=curvature,
     )
+    diagnostics.update(
+        parent_negative_coverage_statistics(
+            parent_ids,
+            node_mask,
+            lca_depth=lca_depth,
+            tree_relation_targets=tree_relation_targets,
+            b_side=b_side,
+        )
+    )
     diagnostics.update(channel_pair_diagnostics)
     if tree_relation_targets is not None:
         diagnostics.update(
@@ -855,6 +1022,9 @@ def hyperbolic_pretraining_loss(
 
 
 __all__ = [
+    "HYPERBOLIC_SCALE_CONTRACT_VERSION",
+    "LEVEL_HEIGHT_DISTANCE_ABLATION_VERSION",
+    "TREE_DISTANCE_CONTRACT_VERSION",
     "HyperbolicLossOutput",
     "N_TREE_RELATIONS",
     "TREE_RELATION_NAMES",
@@ -864,6 +1034,9 @@ __all__ = [
     "cross_event_channel_metric_loss",
     "collapse_diagnostics",
     "covariance_regularization",
+    "dimension_aware_tangent_variance_target",
+    "parent_negative_coverage_statistics",
+    "level_height_tree_distance_targets_v1",
     "hyperbolic_pretraining_loss",
     "parent_child_margin_loss",
     "parent_child_ranking_accuracy",

@@ -37,13 +37,18 @@ _EXPORT_MODULE = {
         name: "hypertagging.reconstruction.level_rollout"
         for name in (
             "CompositeProposal",
+            "BeamRolloutHypothesis",
             "LevelRolloutResult",
             "RolloutConfig",
             "append_composite_proposals",
             "level_rollout",
             "proposal_ambiguity_metrics",
+            "rollout_search_metrics",
+            "resolver_difference_rate",
             "resolve_exclusive_proposals",
             "resolve_weighted_set_packing",
+            "bounded_beam_proposal_sets",
+            "bounded_beam_rollout",
         )
     },
 }

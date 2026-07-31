@@ -9,6 +9,52 @@ import torch.nn.functional as F
 from hypertagging.preprocessing.pid_filter import PDG_TOKENS, validate_pid_tokens
 
 
+HYPERBOLIC_SCALE_CONTRACT_VERSION = "dimension-aware-tangent-radius-v2"
+
+
+def initialize_hyper_projection(linear: nn.Linear, *, output_std: float) -> None:
+    """Initialize tangent coordinates at a dimension-independent scale."""
+
+    if output_std <= 0:
+        raise ValueError("hyper_projection_init_scale must be positive")
+    nn.init.normal_(linear.weight, std=float(output_std) / linear.in_features**0.5)
+    if linear.bias is not None:
+        nn.init.zeros_(linear.bias)
+
+
+class BoundedTangentScale(nn.Module):
+    """Optional bounded scalar on tangent vectors before ``expmap0``."""
+
+    def __init__(
+        self,
+        *,
+        mode: str = "fixed",
+        initial: float = 1.0,
+        minimum: float = 0.25,
+        maximum: float = 2.0,
+    ) -> None:
+        super().__init__()
+        if mode not in {"fixed", "learned_bounded"}:
+            raise ValueError(f"unknown tangent scale mode: {mode}")
+        if not 0 < minimum <= initial <= maximum:
+            raise ValueError("tangent scale bounds must contain the positive initial value")
+        self.mode = mode
+        self.minimum = float(minimum)
+        self.maximum = float(maximum)
+        fraction = (float(initial) - minimum) / max(maximum - minimum, 1e-12)
+        logit = torch.logit(torch.tensor(fraction).clamp(1e-6, 1 - 1e-6))
+        if mode == "learned_bounded":
+            self.logit = nn.Parameter(logit)
+        else:
+            self.register_buffer("logit", logit)
+
+    def value(self) -> torch.Tensor:
+        return self.minimum + (self.maximum - self.minimum) * torch.sigmoid(self.logit)
+
+    def forward(self, tangent: torch.Tensor) -> torch.Tensor:
+        return tangent * self.value().to(tangent)
+
+
 def project(x: torch.Tensor, *, curvature: float = 1.0, eps: float = 1e-5) -> torch.Tensor:
     """Project points inside the Poincare ball."""
 
@@ -70,6 +116,8 @@ class HyperbolicNodeEncoder(nn.Module):
         hyper_dim: int = 16,
         max_level: int = 16,
         curvature: float = 1.0,
+        hyper_projection_init_scale: float = 0.05,
+        tangent_scale_mode: str = "fixed",
     ) -> None:
         super().__init__()
         self.curvature = curvature
@@ -80,6 +128,10 @@ class HyperbolicNodeEncoder(nn.Module):
         self.feature_projection = nn.Linear(n_features + 1, hidden_dim)
         self.mlp = nn.Sequential(nn.Linear(hidden_dim * 3, hidden_dim), nn.GELU(), nn.Linear(hidden_dim, hidden_dim))
         self.hyper_projection = nn.Linear(hidden_dim, hyper_dim)
+        initialize_hyper_projection(
+            self.hyper_projection, output_std=hyper_projection_init_scale
+        )
+        self.tangent_scale = BoundedTangentScale(mode=tangent_scale_mode)
 
     def forward(
         self,
@@ -93,7 +145,10 @@ class HyperbolicNodeEncoder(nn.Module):
         pid_safe = pid_labels
         base = self.feature_projection(torch.cat([node_features, charge.unsqueeze(-1)], dim=-1))
         h = self.mlp(torch.cat([base, self.pid_embedding(pid_safe), self.level_embedding(level_safe)], dim=-1))
-        z = expmap0(self.hyper_projection(h), curvature=self.curvature)
+        z = expmap0(
+            self.tangent_scale(self.hyper_projection(h)),
+            curvature=self.curvature,
+        )
         return h, z
 
 

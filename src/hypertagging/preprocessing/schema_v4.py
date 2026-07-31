@@ -35,6 +35,12 @@ from hypertagging.preprocessing.schema_v3 import (
 
 SCHEMA_VERSION_V4 = "direct-mdst-tree-v4"
 FEATURE_SPEC_REVISION_V4 = "v4-model-composite-target-separated-r3"
+RUNTIME_MODEL_CONTRACTS_V4 = {
+    "tree_geometry": "retained-tree-exact-edges-v2",
+    "tree_distance": "exact-edge-log-fixed-scale-v2",
+    "hyperbolic_scale": "dimension-aware-tangent-radius-v2",
+    "physical_relation_features": "physical-relations-overlap-aware-v2",
+}
 
 # These positions retain their stored compatibility values, but are never
 # interpreted as continuous geometry. Dedicated embeddings/flags own them.
@@ -178,6 +184,11 @@ def feature_spec_v4() -> dict[str, Any]:
     spec["feature_spec_hash"] = hashlib.sha256(
         json.dumps(spec, sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()
+    # These are deterministic runtime/model transforms, not stored parquet
+    # columns.  Keep them outside the persisted-feature hash so existing
+    # schema-v4 shards remain readable while checkpoints still name the exact
+    # geometry, scale, and relation contracts used by the model.
+    spec["runtime_model_contracts"] = dict(RUNTIME_MODEL_CONTRACTS_V4)
     return spec
 
 
@@ -746,6 +757,7 @@ def _git_commit() -> str:
 
 
 __all__ = [
+    "FEATURE_SPEC_REVISION_V4",
     "LEAF_KINEMATICS_MODES",
     "LEAF_MODE_FROM_ID",
     "LEAF_MODE_TO_ID",
@@ -757,6 +769,7 @@ __all__ = [
     "adapt_model_composite_features",
     "model_composite_feature_contract_hash",
     "SCHEMA_VERSION_V4",
+    "RUNTIME_MODEL_CONTRACTS_V4",
     "export_trees_v4",
     "feature_spec_v4",
     "iter_event_records_v4",

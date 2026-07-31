@@ -137,6 +137,8 @@ def build_ablation_model(
     dropout: float = 0.0,
     n_queries_by_level: tuple[tuple[int, int], ...] = (),
     max_cardinality_by_level: tuple[tuple[int, int], ...] = (),
+    hyper_projection_init_scale: float = 0.05,
+    tangent_scale_mode: str = "fixed",
 ) -> LevelAutoregressiveReconstructor:
     config = ALL_ABLATIONS[name]
     return LevelAutoregressiveReconstructor(
@@ -160,6 +162,8 @@ def build_ablation_model(
         canonical_pion_first_level=config.canonical_pion_first_level,
         pid_kinematics_mode=config.pid_kinematics_mode,
         pid_temperature=config.pid_temperature,
+        hyper_projection_init_scale=hyper_projection_init_scale,
+        tangent_scale_mode=tangent_scale_mode,
     )
 
 

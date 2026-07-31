@@ -11,6 +11,7 @@ from typing import Any, Sequence
 import torch
 
 from hypertagging.data.level_batch import LevelEvent
+from hypertagging.data.tree_geometry import build_exact_tree_geometry
 from hypertagging.preprocessing.schema_v2 import (
     NODE_KIND_TO_ID,
 )
@@ -761,6 +762,33 @@ def collate_heterogeneous_events(events: Sequence[HeterogeneousEvent]) -> dict[s
     ) > 0
     diagonal = torch.eye(max_nodes, dtype=torch.bool).unsqueeze(0)
     output["source_conflict_matrix"] = source_overlap & ~diagonal
+    geometry_fields = (
+        "lca_node_id",
+        "edges_to_lca_from_i",
+        "edges_to_lca_from_j",
+        "exact_tree_path_distance",
+    )
+    for field in geometry_fields:
+        output[field] = torch.full(
+            (batch_size, max_nodes, max_nodes), -1, dtype=torch.long
+        )
+    output["depth_from_retained_root"] = torch.full(
+        (batch_size, max_nodes), -1, dtype=torch.long
+    )
+    output["distance_to_nearest_retained_root"] = torch.full_like(
+        output["depth_from_retained_root"], -1
+    )
+    for batch_index, event in enumerate(events):
+        n_nodes = event.parent_ids.numel()
+        geometry = build_exact_tree_geometry(event.parent_ids)
+        for field in geometry_fields:
+            output[field][batch_index, :n_nodes, :n_nodes] = getattr(geometry, field)
+        output["depth_from_retained_root"][batch_index, :n_nodes] = (
+            geometry.depth_from_retained_root
+        )
+        output["distance_to_nearest_retained_root"][batch_index, :n_nodes] = (
+            geometry.distance_to_nearest_retained_root
+        )
     output["event_ids"] = torch.tensor([event.event_id for event in events], dtype=torch.long)
     output["b1_channel_ids"] = torch.tensor([event.b1_channel_id for event in events], dtype=torch.long)
     output["b2_channel_ids"] = torch.tensor([event.b2_channel_id for event in events], dtype=torch.long)

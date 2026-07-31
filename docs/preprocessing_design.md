@@ -230,10 +230,15 @@ truth-only target. Fixed basf2 Particle candidates are explicitly tagged
 
 The canonical pion value is only the tensor-compatible encoder baseline.
 Reconstruction training substitutes the differentiable, charge-compatible
-PID-energy mixture before daughter-sum physics losses. Teacher-forced,
-scheduled, and free rollout hard-decode a charge-compatible PID and
-recursively rebuild all composite p4 values. Fixed-hypothesis candidates and
-ECL measurements are not rewritten by this raw-track path.
+PID-energy mixture before daughter-sum physics losses. Rollout now names the
+PID contract explicitly. The compatibility default,
+`soft_decision_hard_construction`, computes relation features and pointer/type
+logits with soft expected PID kinematics, then uses hard predicted-PID track p4
+for exact daughter-sum mother construction. Only
+`rollout_pid_kinematics_mode=hard` is a fully hard-conditioned neural rollout.
+Temperature-softmax and straight-through-hard modes are explicit alternatives.
+Fixed-hypothesis candidates and ECL measurements are not rewritten by this
+raw-track path.
 
 Composites store exact recursive daughter sums and recursive reconstructed leaf
 sources. Partial targets expose truth/retained/reconstructed daughter counts and

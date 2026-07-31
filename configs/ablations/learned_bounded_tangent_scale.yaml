@@ -1,0 +1,3 @@
+tangent_scale_mode: learned_bounded
+hyper_projection_init_scale: 0.05
+tangent_variance_target: 0.05

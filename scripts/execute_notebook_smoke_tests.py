@@ -42,6 +42,21 @@ NOTEBOOKS = {
         REPO_ROOT / "notebooks" / "inspect_hyperbolic_pretraining.ipynb",
         ("Embedding projections", "Radius/depth validation", "Anti-collapse diagnostics", "Channel embeddings"),
     ),
+    "exact_geometry": (
+        REPO_ROOT / "scripts" / "create_exact_tree_geometry_notebook.py",
+        REPO_ROOT / "notebooks" / "inspect_exact_tree_geometry_and_loss_scales.ipynb",
+        ("Exact tree geometry", "connected two-B", "initialization scale"),
+    ),
+    "rollout_search": (
+        REPO_ROOT / "scripts" / "create_rollout_search_calibration_notebook.py",
+        REPO_ROOT / "notebooks" / "inspect_rollout_search_and_calibration.ipynb",
+        ("Rollout search and calibration", "bounded-beam", "reliability"),
+    ),
+    "runtime_scaling": (
+        REPO_ROOT / "scripts" / "create_runtime_scaling_notebook.py",
+        REPO_ROOT / "notebooks" / "inspect_runtime_scaling.ipynb",
+        ("Runtime scaling", "attention", "rollout"),
+    ),
     "capacity": (
         REPO_ROOT / "scripts" / "create_query_capacity_notebook.py",
         REPO_ROOT / "notebooks" / "inspect_query_capacity_and_losses.ipynb",
@@ -144,6 +159,9 @@ def execute_one(
         "capacity": ("capacity_report.json", "sparse_loss_table.csv"),
         "training": ("training_pipeline_pass.json", "reconstruction/checkpoint.pt"),
         "hyperbolic": ("curriculum_runtime_report.json",),
+        "exact_geometry": ("exact_geometry_scale_summary.json",),
+        "rollout_search": ("rollout_search_calibration_summary.json",),
+        "runtime_scaling": ("runtime_scaling_summary.json",),
         "reconstruction": ("scheduled_context_report.json",),
         "qa": (),
         "manifest": ("production_manifest_report.json",),
@@ -214,6 +232,23 @@ def execute_one(
             "bounded_set_packing_rollout"
         ) or not report.get("evaluation_slices"):
             raise AssertionError(f"rollout ambiguity diagnostics missing: {report}")
+    if name == "exact_geometry":
+        import json
+        report = json.loads((figure_dir / "exact_geometry_scale_summary.json").read_text())
+        if report.get("direct_leaf_root_edges") != 1 or not report.get(
+            "eligible_different_b_positions"
+        ) or not all(row.get("finite_z") and row.get("finite_gradients") for row in report.get("presets", [])):
+            raise AssertionError(f"exact geometry/scale contract failed: {report}")
+    if name == "rollout_search":
+        import json
+        report = json.loads((figure_dir / "rollout_search_calibration_summary.json").read_text())
+        if not report.get("pid_modes") or not report.get("resolver", {}).get("beam") or not report.get("reliability"):
+            raise AssertionError(f"rollout search/calibration contract failed: {report}")
+    if name == "runtime_scaling":
+        import json
+        report = json.loads((figure_dir / "runtime_scaling_summary.json").read_text())
+        if report.get("throughput_claim") or len(report.get("measurements", [])) != 3:
+            raise AssertionError(f"runtime scaling contract failed: {report}")
     if name == "capacity":
         import json
 

@@ -122,6 +122,12 @@ class ReconstructionConfig:
     pid_temperature_start: float = 1.0
     pid_temperature_end: float = 0.2
     pid_temperature_duration_steps: int = 1000
+    tangent_variance_target: float | None = None
+    hyper_projection_init_scale: float | None = None
+    tangent_scale_mode: str | None = None
+    query_repulsion_weight: float = 0.0
+    rollout_pid_kinematics_mode: str = "soft_decision_hard_construction"
+    rollout_pid_temperature: float = 0.5
 
 
 @dataclass(frozen=True)
@@ -200,6 +206,9 @@ def train_level_reconstruction(
         max_cardinality=config.max_cardinality,
         n_queries_by_level=config.n_queries_by_level,
         max_cardinality_by_level=config.max_cardinality_by_level,
+        tangent_variance_target=config.tangent_variance_target,
+        hyper_projection_init_scale=config.hyper_projection_init_scale,
+        tangent_scale_mode=config.tangent_scale_mode,
     )
     capacity = (
         capacity_statistics_from_index(
@@ -238,6 +247,8 @@ def train_level_reconstruction(
         dropout=architecture.dropout,
         n_queries_by_level=architecture.n_queries_by_level,
         max_cardinality_by_level=architecture.max_cardinality_by_level,
+        hyper_projection_init_scale=architecture.hyper_projection_init_scale,
+        tangent_scale_mode=architecture.tangent_scale_mode,
     ).to(device)
     model.set_runtime_feature_normalizer(
         RuntimeFeatureNormalizer(
@@ -471,6 +482,8 @@ def train_level_reconstruction(
         validation_batch_size=config.validation_batch_size,
         target_policy=config.target_policy,
         constraint_policy=constraint_policy,
+        rollout_pid_kinematics_mode=config.rollout_pid_kinematics_mode,
+        rollout_pid_temperature=config.rollout_pid_temperature,
     )
     final_metrics.update(validation_metrics)
     checkpoint = _save_reconstruction_checkpoint(
@@ -574,6 +587,8 @@ def _optimization_loss(
                         exclusive_final=False, use_learned_confidence=False,
                         seed=config.seed + step + batch_index,
                         constraint_policy=constraint_policy,
+                        rollout_pid_kinematics_mode=config.rollout_pid_kinematics_mode,
+                        rollout_pid_temperature=config.rollout_pid_temperature,
                     ),
                 )
             predicted_rollouts[batch_index] = rollout
@@ -678,6 +693,7 @@ def _optimization_loss(
                 matching_production=not config.allow_tiny_bruteforce_matching,
                 constraint_policy=constraint_policy,
                 unrepresentable_target_counts=[masked_missing],
+                weights={"query_repulsion": config.query_repulsion_weight},
             )
             recovery_loss = loss_output.total * 0.0
             if recovery_missing:
@@ -721,6 +737,7 @@ def _optimization_loss(
                         target_policy=config.target_policy,
                         matching_production=not config.allow_tiny_bruteforce_matching,
                         constraint_policy=constraint_policy,
+                        weights={"query_repulsion": config.query_repulsion_weight},
                     ).total
                 )
         for name, values in per_level_components.items():
@@ -741,6 +758,7 @@ def _optimization_loss(
                 target_policy=config.target_policy,
                 matching_production=not config.allow_tiny_bruteforce_matching,
                 constraint_policy=constraint_policy,
+                weights={"query_repulsion": config.query_repulsion_weight},
             )
           level_outputs.append((target_level, diagnostic_output, diagnostic_loss))
     primary_loss = (
@@ -1003,6 +1021,8 @@ def validate_reconstruction(
     validation_batch_size: int = 4,
     target_policy: str = "complete_only",
     constraint_policy: ReconstructionConstraintPolicy | None = None,
+    rollout_pid_kinematics_mode: str = "soft_decision_hard_construction",
+    rollout_pid_temperature: float = 0.5,
 ) -> dict[str, float]:
     model.eval()
     source = data_module.iter_events("validation", shuffle=False)
@@ -1076,7 +1096,7 @@ def validate_reconstruction(
             model,
             batch,
             mode="teacher_forced",
-            config=RolloutConfig(max_level=8, root_types=(), exclusive_final=False, constraint_policy=constraint_policy),
+            config=RolloutConfig(max_level=8, root_types=(), exclusive_final=False, constraint_policy=constraint_policy, rollout_pid_kinematics_mode=rollout_pid_kinematics_mode, rollout_pid_temperature=rollout_pid_temperature),
         )
         predicted = level_rollout(
             model,
@@ -1088,6 +1108,8 @@ def validate_reconstruction(
                 confidence_trained=True,
                 use_learned_confidence=True,
                 constraint_policy=constraint_policy,
+                rollout_pid_kinematics_mode=rollout_pid_kinematics_mode,
+                rollout_pid_temperature=rollout_pid_temperature,
             ),
         )
         bounded = None
@@ -1104,6 +1126,8 @@ def validate_reconstruction(
                     constraint_policy=constraint_policy,
                     exclusive_resolution="weighted_set_packing",
                     max_resolution_proposals=12,
+                    rollout_pid_kinematics_mode=rollout_pid_kinematics_mode,
+                    rollout_pid_temperature=rollout_pid_temperature,
                 ),
             )
         except ValueError as error:
@@ -1119,6 +1143,8 @@ def validate_reconstruction(
                 scheduled_sampling_probability=scheduled_sampling_probability,
                 seed=seed + event_count,
                 constraint_policy=constraint_policy,
+                rollout_pid_kinematics_mode=rollout_pid_kinematics_mode,
+                rollout_pid_temperature=rollout_pid_temperature,
             ),
         )
         teacher_metrics = summarize_rollout(teacher.batch, batch)
@@ -1361,6 +1387,9 @@ def _architecture_contract(config: ReconstructionConfig) -> dict[str, Any]:
         max_cardinality=config.max_cardinality,
         n_queries_by_level=config.n_queries_by_level,
         max_cardinality_by_level=config.max_cardinality_by_level,
+        tangent_variance_target=config.tangent_variance_target,
+        hyper_projection_init_scale=config.hyper_projection_init_scale,
+        tangent_scale_mode=config.tangent_scale_mode,
     ).to_dict()
 
 

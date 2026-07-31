@@ -37,13 +37,11 @@ def test_curvature_round_trip_is_consistent():
 def test_direct_tree_distance_objective_has_finite_gradients():
     tangent = (torch.randn(1, 3, 2) * 0.1).requires_grad_()
     z = expmap0(tangent)
-    levels = torch.tensor([[0, 0, 1]])
-    lca = torch.tensor([[[0, 1, 1], [1, 0, 1], [1, 1, 1]]])
+    exact_distance = torch.tensor([[[0, 2, 1], [2, 0, 1], [1, 1, 0]]])
     mask = torch.ones((1, 3, 3), dtype=torch.bool)
     loss = hyperbolic_tree_distance_loss(
         z,
-        lca_depth=lca,
-        level_ids=levels,
+        exact_tree_path_distance=exact_distance,
         pair_mask=mask,
     )
     loss.backward()

@@ -2,7 +2,8 @@
 
 The deterministic notebook suite uses CPU fixtures and schema-v4 by default.
 It is software validation, not a physics-performance measurement. The 12
-runner groups are:
+historical groups remain intact and three post-audit fixture groups extend the
+runner to 15:
 
 | Group | Notebook |
 |---|---|
@@ -11,6 +12,9 @@ runner groups are:
 | `leaf_pid` | `inspect_leaf_input_pid_contract.ipynb` |
 | `dataset` | `inspect_preprocessed_dataset.ipynb` |
 | `hyperbolic` | `inspect_hyperbolic_pretraining.ipynb` |
+| `exact_geometry` | `inspect_exact_tree_geometry_and_loss_scales.ipynb` |
+| `rollout_search` | `inspect_rollout_search_and_calibration.ipynb` |
+| `runtime_scaling` | `inspect_runtime_scaling.ipynb` |
 | `capacity` | `inspect_query_capacity_and_losses.ipynb` |
 | `training` | `inspect_training_pipeline.ipynb` |
 | `reconstruction` | `inspect_level_autoregressive_reconstruction.ipynb` |
@@ -36,6 +40,12 @@ fallback. It requires a published real schema-v4 pilot containing fewer than
 fit/energy selection, reconstructed charge, p4 closure, B-root discovery,
 PID/level distributions, and bounded failure examples. See the first cell for
 the exact basf2 and execution commands.
+
+`inspect_trained_physics_validation.ipynb` is also outside the fixture runner.
+It requires both `HYPERTAGGING_REAL_PARQUET` and
+`HYPERTAGGING_TRAINED_CHECKPOINT` and fails with `REAL INPUT REQUIRED` when
+either is missing. It never substitutes a fixture for efficiency, purity,
+calibration, mass, Mbc/DeltaE, missing-mass, rare-channel, or rollout claims.
 
 Set `HYPERTAGGING_PARQUET` for supported real-data inspection notebooks and
 write figures/executed copies to `/tmp` or the configured data volume. Checked-

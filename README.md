@@ -12,11 +12,13 @@ the verified v1 preprocessing contract intact:
 - v1-to-v2 in-memory adaptation without fabricated detector fields;
 - canonical structured two-B channels and unordered Upsilon pair identity;
 - track, ECL, and composite adapters in one shared latent/Poincare space;
-- LCA, true-Poincare parent, radius-depth, channel, variance, and covariance
-  pretraining objectives;
+- exact retained-tree LCA/path geometry, topology-safe directed-parent,
+  radius-depth, channel, dimension-aware variance, and covariance pretraining;
 - relation bias applied to actual stair-causal attention logits;
+- overlap-aware physical pair relations that expose mass/energy only for
+  disjoint recursive sources;
 - teacher-forced, scheduled, and free full-tree rollout with daughter-summed
-  composite p4;
+  composite p4 and explicit soft/hard PID-kinematics modes;
 - fixture-executable dataset, geometry, rollout, and QA notebooks.
 
 These additions are software-validated on tiny CPU fixtures. Full-training

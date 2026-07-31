@@ -13,7 +13,22 @@ from hypertagging.models.hyperbolic import (
 from hypertagging.preprocessing.schema_v2 import NODE_KINDS
 
 
-PHYSICAL_RELATION_SCALING_VERSION = "physical-relations-logscale-v1"
+PHYSICAL_RELATION_SCALING_VERSION = "physical-relations-overlap-aware-v2"
+PHYSICAL_RELATION_FEATURE_NAMES = (
+    "directed_level_difference",
+    "same_level",
+    "charge_sum",
+    "disjoint_pair_mass",
+    "disjoint_pair_energy",
+    "momentum_dot",
+    "same_node_kind",
+    "recursive_source_overlap",
+    "ancestor_descendant_relation",
+    "disjoint_source_pair",
+    "same_reco_source",
+    "copied_source_conflict",
+    "pair_mass_energy_available",
+)
 
 
 def _signed_log_scale(value: torch.Tensor, scale: float) -> torch.Tensor:
@@ -30,6 +45,9 @@ def _physical_features(
     node_kind_ids: torch.Tensor | None,
     copied: torch.Tensor | None,
     source_node_ids: torch.Tensor | None,
+    recursive_leaf_source_mask: torch.Tensor | None = None,
+    parent_ids: torch.Tensor | None = None,
+    reco_ids: torch.Tensor | None = None,
 ) -> torch.Tensor:
     level_diff = (level_ids[:, :, None] - level_ids[:, None, :]).float()
     same_level = (level_ids[:, :, None] == level_ids[:, None, :]).float()
@@ -47,16 +65,54 @@ def _physical_features(
     if copied is not None and source_node_ids is not None:
         same_source = source_node_ids[:, :, None] == source_node_ids[:, None, :]
         copied_conflict = (same_source & (copied[:, :, None] | copied[:, None, :])).float()
+    recursive_overlap = torch.zeros_like(level_diff, dtype=torch.bool)
+    source_available = torch.zeros_like(level_ids, dtype=torch.bool)
+    if recursive_leaf_source_mask is not None:
+        source_available = recursive_leaf_source_mask.any(dim=-1)
+        recursive_overlap = torch.einsum(
+            "bns,bms->bnm",
+            recursive_leaf_source_mask.to(torch.int32),
+            recursive_leaf_source_mask.to(torch.int32),
+        ) > 0
+    source_pair_available = source_available[:, :, None] & source_available[:, None, :]
+    disjoint_source_pair = source_pair_available & ~recursive_overlap
+    ancestor_descendant = torch.zeros_like(recursive_overlap)
+    if parent_ids is not None:
+        for batch_index in range(parent_ids.shape[0]):
+            for node in range(parent_ids.shape[1]):
+                seen: set[int] = set()
+                parent = int(parent_ids[batch_index, node])
+                while 0 <= parent < parent_ids.shape[1] and parent not in seen:
+                    ancestor_descendant[batch_index, node, parent] = True
+                    ancestor_descendant[batch_index, parent, node] = True
+                    seen.add(parent)
+                    parent = int(parent_ids[batch_index, parent])
+    same_reco_source = torch.zeros_like(recursive_overlap)
+    if reco_ids is not None:
+        same_reco_source = (
+            (reco_ids[:, :, None] >= 0)
+            & (reco_ids[:, None, :] >= 0)
+            & (reco_ids[:, :, None] == reco_ids[:, None, :])
+        )
+    physical_mass = torch.where(disjoint_source_pair, mass, torch.zeros_like(mass))
+    physical_energy = torch.where(
+        disjoint_source_pair, pair_p4[..., 3], torch.zeros_like(pair_p4[..., 3])
+    )
     return torch.stack(
         [
             level_diff / 8.0,
             same_level,
             charge_sum / 4.0,
-            _signed_log_scale(mass, 1.0),
-            _signed_log_scale(pair_p4[..., 3], 1.0),
+            _signed_log_scale(physical_mass, 1.0),
+            _signed_log_scale(physical_energy, 1.0),
             _signed_log_scale(momentum_dot, 1.0),
             same_kind,
+            recursive_overlap.float(),
+            ancestor_descendant.float(),
+            disjoint_source_pair.float(),
+            same_reco_source.float(),
             copied_conflict,
+            disjoint_source_pair.float(),
         ],
         dim=-1,
     )
@@ -66,10 +122,11 @@ class PhysicalRelationBias(nn.Module):
     """Stage-A relation bias using only data-compatible physical inputs.
 
     Continuous GeV-valued features follow
-    ``physical-relations-logscale-v1``: level and charge use fixed divisors;
-    mass, energy and momentum-dot use signed ``log1p(abs(x)/1 GeV^k)``.
-    Binary indicators stay in {0,1}. Node kinds use a collision-free symmetric
-    pair embedding rather than a summed scalar code.
+    ``physical-relations-overlap-aware-v2``: level and charge use fixed
+    divisors; mass and energy are exposed only for disjoint recursive-source
+    pairs and carry an explicit availability flag. Binary overlap/provenance
+    indicators stay in {0,1}. Node kinds use a collision-free symmetric pair
+    embedding rather than a summed scalar code.
     """
 
     def __init__(self, hidden_dim: int = 32, *, enabled: bool = True) -> None:
@@ -79,7 +136,9 @@ class PhysicalRelationBias(nn.Module):
         pair_dim = max(4, hidden_dim // 4)
         self.pair_kind_embedding = nn.Embedding(len(NODE_KINDS) ** 2, pair_dim)
         self.net = nn.Sequential(
-            nn.Linear(8 + pair_dim, hidden_dim), nn.GELU(), nn.Linear(hidden_dim, 1)
+            nn.Linear(len(PHYSICAL_RELATION_FEATURE_NAMES) + pair_dim, hidden_dim),
+            nn.GELU(),
+            nn.Linear(hidden_dim, 1),
         )
 
     def forward(
@@ -92,6 +151,9 @@ class PhysicalRelationBias(nn.Module):
         node_kind_ids: torch.Tensor | None = None,
         copied: torch.Tensor | None = None,
         source_node_ids: torch.Tensor | None = None,
+        recursive_leaf_source_mask: torch.Tensor | None = None,
+        parent_ids: torch.Tensor | None = None,
+        reco_ids: torch.Tensor | None = None,
     ) -> torch.Tensor:
         features = _physical_features(
             p4=p4,
@@ -100,6 +162,9 @@ class PhysicalRelationBias(nn.Module):
             node_kind_ids=node_kind_ids,
             copied=copied,
             source_node_ids=source_node_ids,
+            recursive_leaf_source_mask=recursive_leaf_source_mask,
+            parent_ids=parent_ids,
+            reco_ids=reco_ids,
         )
         if node_kind_ids is None:
             pair_embedding = features.new_zeros((*features.shape[:-1], self.pair_kind_embedding.embedding_dim))
@@ -184,6 +249,9 @@ class RelationBias(nn.Module):
         node_kind_ids: torch.Tensor | None = None,
         copied: torch.Tensor | None = None,
         source_node_ids: torch.Tensor | None = None,
+        recursive_leaf_source_mask: torch.Tensor | None = None,
+        parent_ids: torch.Tensor | None = None,
+        reco_ids: torch.Tensor | None = None,
     ) -> torch.Tensor:
         return self.physical(
             p4=p4,
@@ -193,12 +261,16 @@ class RelationBias(nn.Module):
             node_kind_ids=node_kind_ids,
             copied=copied,
             source_node_ids=source_node_ids,
+            recursive_leaf_source_mask=recursive_leaf_source_mask,
+            parent_ids=parent_ids,
+            reco_ids=reco_ids,
         ) + self.hyperbolic(z_hyperbolic=z_hyperbolic, node_mask=node_mask)
 
 
 __all__ = [
     "HyperbolicRelationBias",
     "PHYSICAL_RELATION_SCALING_VERSION",
+    "PHYSICAL_RELATION_FEATURE_NAMES",
     "PhysicalRelationBias",
     "RelationBias",
 ]

@@ -7,7 +7,11 @@ from dataclasses import dataclass
 import torch
 from torch import nn
 
-from hypertagging.models.hyperbolic import expmap0
+from hypertagging.models.hyperbolic import (
+    BoundedTangentScale,
+    expmap0,
+    initialize_hyper_projection,
+)
 from hypertagging.models.relation_attention import RelationAwareSetTransformer
 from hypertagging.models.relations import HyperbolicRelationBias, PhysicalRelationBias
 from hypertagging.preprocessing.schema_v2 import NODE_KINDS
@@ -149,6 +153,8 @@ class HeterogeneousNodeEncoder(nn.Module):
         use_hyperbolic_refinement: bool = False,
         ffn_dim: int | None = None,
         dropout: float = 0.0,
+        hyper_projection_init_scale: float = 0.05,
+        tangent_scale_mode: str = "fixed",
     ) -> None:
         super().__init__()
         self.d_model = d_model
@@ -214,6 +220,10 @@ class HeterogeneousNodeEncoder(nn.Module):
         self.reconstruction_head = nn.Linear(d_model, d_model)
         self.channel_head = nn.Linear(d_model, d_model)
         self.hyper_projection = nn.Linear(d_model, hyper_dim)
+        initialize_hyper_projection(
+            self.hyper_projection, output_std=hyper_projection_init_scale
+        )
+        self.tangent_scale = BoundedTangentScale(mode=tangent_scale_mode)
 
     def forward(
         self,
@@ -314,6 +324,9 @@ class HeterogeneousNodeEncoder(nn.Module):
             node_kind_ids=batch.get("node_kind_ids"),
             copied=batch.get("copied"),
             source_node_ids=batch.get("source_node_ids"),
+            recursive_leaf_source_mask=batch.get("recursive_leaf_source_mask"),
+            parent_ids=batch.get("parent_ids"),
+            reco_ids=batch.get("reco_ids"),
         )
         if self.use_contextual_encoder:
             h, attention_weights = self.physical_contextualizer(
@@ -329,7 +342,7 @@ class HeterogeneousNodeEncoder(nn.Module):
             )
         preliminary_tree = self.tree_head(h)
         preliminary_z = expmap0(
-            self.hyper_projection(preliminary_tree),
+            self.tangent_scale(self.hyper_projection(preliminary_tree)),
             curvature=self.curvature,
         )
         hyper_bias = self.hyperbolic_relation_bias(
@@ -346,7 +359,10 @@ class HeterogeneousNodeEncoder(nn.Module):
         tree = self.tree_head(h)
         reconstruction = self.reconstruction_head(h)
         channel = self.channel_head(h)
-        z = expmap0(self.hyper_projection(tree), curvature=self.curvature)
+        z = expmap0(
+            self.tangent_scale(self.hyper_projection(tree)),
+            curvature=self.curvature,
+        )
         z = z * batch["node_mask"].unsqueeze(-1)
         return HeterogeneousEncoderOutput(
             adapter_h,

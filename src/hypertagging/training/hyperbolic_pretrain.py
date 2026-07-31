@@ -80,7 +80,17 @@ def run_hyperbolic_pretrain_dry_run(
     batch = collate_heterogeneous_events(
         [heterogeneous_from_level_event(event) for event in events]
     )
-    for name in ("same_mother", "same_branch", "lca_depth"):
+    for name in (
+        "same_mother",
+        "same_branch",
+        "lca_depth",
+        "lca_node_id",
+        "edges_to_lca_from_i",
+        "edges_to_lca_from_j",
+        "exact_tree_path_distance",
+        "depth_from_retained_root",
+        "distance_to_nearest_retained_root",
+    ):
         batch[name] = topology_batch[name]
     batch = {key: value.to(device) for key, value in batch.items()}
     encoder = HeterogeneousNodeEncoder(d_model=24, hyper_dim=8).to(device)
@@ -128,6 +138,8 @@ def run_hyperbolic_pretrain_dry_run(
             tree_relation_logits=relation_logits,
             tree_relation_targets=relation_targets,
             tree_relation_mask=relation_mask,
+            lca_depth=batch["lca_depth"],
+            exact_tree_path_distance=batch["exact_tree_path_distance"],
             parent_ids=batch["parent_ids"],
             level_ids=batch["level_ids"],
             node_mask=batch["node_mask"],

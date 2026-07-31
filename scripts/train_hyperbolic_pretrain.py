@@ -57,6 +57,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--model-preset", choices=sorted(MODEL_PRESETS), default="tiny_cpu")
     parser.add_argument("--d-model", type=int, default=None)
     parser.add_argument("--hyper-dim", type=int, default=None)
+    parser.add_argument("--tangent-variance-target", type=float, default=None)
+    parser.add_argument("--hyper-projection-init-scale", type=float, default=None)
+    parser.add_argument("--tangent-scale-mode", choices=("fixed", "learned_bounded"), default=None)
     parser.add_argument("--n-heads", type=int, default=None)
     parser.add_argument("--n-context-layers", type=int, default=None)
     parser.add_argument("--ffn-dim", type=int, default=None)
@@ -109,6 +112,9 @@ def main(argv: list[str] | None = None) -> int:
                 model_preset=args.model_preset,
                 d_model=args.d_model,
                 hyper_dim=args.hyper_dim,
+                tangent_variance_target=args.tangent_variance_target,
+                hyper_projection_init_scale=args.hyper_projection_init_scale,
+                tangent_scale_mode=args.tangent_scale_mode,
                 n_heads=args.n_heads,
                 n_context_layers=args.n_context_layers,
                 ffn_dim=args.ffn_dim,

@@ -61,8 +61,10 @@ IDs are not the only channel objective.
 
 ## Losses and logging
 
-Hyperbolic runs log LCA/tree-relation loss and accuracy, true Poincare parent
-ranking loss/accuracy, radius-depth, pooled-channel, variance, covariance, and
+Hyperbolic runs log exact-edge tree-relation loss and accuracy, topology-safe
+directed-parent ranking loss/accuracy and its eligible-negative denominator,
+radius-depth, pooled-channel, variance, covariance, per-loss gradient norms to
+the hyperbolic projection, per-projection gradient norms, and
 the collapse diagnostics documented in
 `docs/hyperbolic_level_autoregressive_reconstruction.md`.
 

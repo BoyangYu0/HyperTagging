@@ -1,0 +1,3 @@
+tangent_scale_mode: fixed
+hyper_projection_init_scale: 0.04
+tangent_variance_target: 0.035

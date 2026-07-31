@@ -7,6 +7,7 @@ from collections.abc import Sequence
 import torch
 
 from hypertagging.data.level_batch import LevelBatch, LevelEvent
+from hypertagging.data.tree_geometry import build_exact_tree_geometry
 
 
 def collate_level_events(events: Sequence[LevelEvent], *, max_query_slots: int | None = None) -> LevelBatch:
@@ -33,6 +34,12 @@ def collate_level_events(events: Sequence[LevelEvent], *, max_query_slots: int |
     same_mother = torch.zeros((batch_size, max_nodes, max_nodes), dtype=torch.bool)
     same_branch = torch.zeros((batch_size, max_nodes, max_nodes), dtype=torch.bool)
     lca_depth = torch.full((batch_size, max_nodes, max_nodes), -1, dtype=torch.long)
+    lca_node_id = torch.full_like(lca_depth, -1)
+    edges_to_lca_from_i = torch.full_like(lca_depth, -1)
+    edges_to_lca_from_j = torch.full_like(lca_depth, -1)
+    exact_tree_path_distance = torch.full_like(lca_depth, -1)
+    depth_from_retained_root = torch.full((batch_size, max_nodes), -1, dtype=torch.long)
+    distance_to_nearest_retained_root = torch.full_like(depth_from_retained_root, -1)
     query_mask = torch.zeros((batch_size, max_level + 1, query_slots), dtype=torch.bool)
     event_ids = torch.tensor([event.event_id for event in events], dtype=torch.long)
 
@@ -50,7 +57,14 @@ def collate_level_events(events: Sequence[LevelEvent], *, max_query_slots: int |
         copied_from[batch_index, :n_nodes] = event.copied_from
         same_mother[batch_index, :n_nodes, :n_nodes] = build_same_mother(event.parent_ids)
         same_branch[batch_index, :n_nodes, :n_nodes] = build_same_branch(event.parent_ids)
+        geometry = build_exact_tree_geometry(event.parent_ids)
         lca_depth[batch_index, :n_nodes, :n_nodes] = build_lca_depth(event.parent_ids, event.level_ids)
+        lca_node_id[batch_index, :n_nodes, :n_nodes] = geometry.lca_node_id
+        edges_to_lca_from_i[batch_index, :n_nodes, :n_nodes] = geometry.edges_to_lca_from_i
+        edges_to_lca_from_j[batch_index, :n_nodes, :n_nodes] = geometry.edges_to_lca_from_j
+        exact_tree_path_distance[batch_index, :n_nodes, :n_nodes] = geometry.exact_tree_path_distance
+        depth_from_retained_root[batch_index, :n_nodes] = geometry.depth_from_retained_root
+        distance_to_nearest_retained_root[batch_index, :n_nodes] = geometry.distance_to_nearest_retained_root
         for level in range(max_level + 1):
             count = int((event.level_ids == level).sum().item())
             query_mask[batch_index, level, : min(query_slots, max(1, count))] = True
@@ -70,6 +84,12 @@ def collate_level_events(events: Sequence[LevelEvent], *, max_query_slots: int |
         same_mother=same_mother,
         same_branch=same_branch,
         lca_depth=lca_depth,
+        lca_node_id=lca_node_id,
+        edges_to_lca_from_i=edges_to_lca_from_i,
+        edges_to_lca_from_j=edges_to_lca_from_j,
+        exact_tree_path_distance=exact_tree_path_distance,
+        depth_from_retained_root=depth_from_retained_root,
+        distance_to_nearest_retained_root=distance_to_nearest_retained_root,
         query_mask=query_mask,
         event_ids=event_ids,
     )
@@ -92,18 +112,12 @@ def build_same_branch(parent_ids: torch.Tensor) -> torch.Tensor:
 
 
 def build_lca_depth(parent_ids: torch.Tensor, level_ids: torch.Tensor) -> torch.Tensor:
-    n_nodes = parent_ids.numel()
-    ancestor_paths = [_ancestor_path(parent_ids, index) for index in range(n_nodes)]
-    out = torch.full((n_nodes, n_nodes), -1, dtype=torch.long)
-    for i in range(n_nodes):
-        for j in range(n_nodes):
-            common = set(ancestor_paths[i]) & set(ancestor_paths[j])
-            if common:
-                # Levels increase toward the root, so the nearest/lowest common
-                # ancestor has the minimum reconstruction level.
-                out[i, j] = int(min(level_ids[list(common)]).item())
-            elif i == j:
-                out[i, j] = int(level_ids[i].item())
+    """Backward-compatible LCA *reconstruction height*, not an edge distance."""
+
+    geometry = build_exact_tree_geometry(parent_ids)
+    out = torch.full_like(geometry.lca_node_id, -1)
+    valid = geometry.lca_node_id >= 0
+    out[valid] = level_ids[geometry.lca_node_id[valid]].to(out.device)
     return out
 
 

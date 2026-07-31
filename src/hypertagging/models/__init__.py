@@ -18,7 +18,17 @@ from hypertagging.models.common import (
 )
 from hypertagging.models.ablation import ABLATIONS, AblationConfig, build_ablation_model
 from hypertagging.models.gpt_like import EmbLinker, GPTReconstructor, MultiGPT, ParticleEmbedder
-from hypertagging.models.hyperbolic import HyperbolicNodeEncoder, distance, expmap0, logmap0, project, radius
+from hypertagging.models.hyperbolic import (
+    HYPERBOLIC_SCALE_CONTRACT_VERSION,
+    BoundedTangentScale,
+    HyperbolicNodeEncoder,
+    distance,
+    expmap0,
+    initialize_hyper_projection,
+    logmap0,
+    project,
+    radius,
+)
 from hypertagging.models.heterogeneous import (
     ClusterNodeEncoder,
     CommonNodeEncoder,
@@ -44,6 +54,8 @@ __all__ = [
     "Generator",
     "HyperEmbedder",
     "HyperbolicNodeEncoder",
+    "HYPERBOLIC_SCALE_CONTRACT_VERSION",
+    "BoundedTangentScale",
     "HeterogeneousNodeEncoder",
     "CommonNodeEncoder",
     "TrackNodeEncoder",
@@ -66,6 +78,7 @@ __all__ = [
     "distance",
     "doubleReconstructor",
     "expmap0",
+    "initialize_hyper_projection",
     "linearLinker",
     "logmap0",
     "particleCombiner",

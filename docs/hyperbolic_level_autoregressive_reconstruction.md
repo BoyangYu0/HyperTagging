@@ -9,6 +9,15 @@ p(tree | S0) = product_t p(S_{t+1} | S_{<=t})
 Level 0 contains reconstructed final-state objects. Levels increase toward the
 retained root and obey `L(mother) = 1 + max L(daughter)`.
 
+This reconstruction level is a tree height used only for generation order. It
+is not an edge depth or graph distance. The versioned
+`retained-tree-exact-edges-v2` contract derives LCA node positions, both
+edge-to-LCA distances, exact path distance, root depth, and nearest-root
+distance from `parent_ids`. Exact quantities drive local-branch labels,
+directed-negative safety, distance regression, and geometry diagnostics. The
+old height-difference objective survives only as the named
+`reconstruction-height-distance-v1` ablation.
+
 ## Kinematics and topology
 
 MC truth may supervise retained topology, B-side membership, LCA relations,
@@ -92,6 +101,15 @@ off-diagonal covariance norm, singular-value effective rank, positive/negative
 relation distance, radius-level correlation, angular B-branch separation, and
 Poincare-boundary fraction.
 
+The hyperbolic scale contract is `dimension-aware-tangent-radius-v2`. For
+curvature one, `d_H(0, exp_0(u)) = 2 ||u||`; consequently the tangent variance
+floor scales as `1/sqrt(hyper_dim)` instead of remaining one in every
+dimension. Presets serialize `tangent_variance_target`,
+`hyper_projection_init_scale`, and `tangent_scale_mode`. The optional
+`learned_bounded` scale is an ablation; fixed safe initialization remains the
+default. Boundary occupancy compares `sqrt(curvature) * ||z||` with the
+dimensionless threshold.
+
 ## Channel objective
 
 Shared channel projections are pooled over truth-guided B branches. Cosine
@@ -109,9 +127,14 @@ source conflicts. Stair-causal and padding masks are applied in the same
 softmax. Tests verify that changing only this bias changes outputs and that its
 parameters receive finite gradients. `use_relation_bias=False` is the ablation.
 
-Physical continuous relations follow the versioned fixed scaling contract
-`physical-relations-logscale-v1`: level/charge use fixed divisors and GeV-valued
-mass, energy, and momentum-dot use signed log compression. Node kinds use a
+Physical continuous relations follow the versioned overlap-aware contract
+`physical-relations-overlap-aware-v2`: level/charge use fixed divisors and
+GeV-valued quantities use signed log compression. Pair mass and energy are
+available only for disjoint recursive leaf-source pairs. Explicit channels mark
+recursive overlap, ancestor/descendant relations, disjointness, same reco
+source, and copied-source conflict, so double-counted composite/descendant or
+overlapping-composite sums are never presented as ordinary combination mass.
+Node kinds use a
 collision-free symmetric pair embedding. Hyperbolic angular alignment uses
 `logmap0(z_i) dot logmap0(z_j)`, not a raw Poincare-coordinate dot product.
 The overall attention relation is directed because level difference and the
@@ -129,6 +152,12 @@ type/daughter sets, unused queries, and recursive-source overlap before/after
 exclusivity. Greedy exclusivity remains the production default; an exact
 bounded weighted set-packing resolver is evaluation-only and does not turn
 greedy decoding into a claim of global ambiguity resolution.
+
+An additional top-K bounded beam preserves competing partial trees for one or
+two levels. It and set packing are evaluation-only. Free rollout is currently
+batch-size one; runtime reporting labels that limitation and records the
+concrete batched design: padded/ragged event and beam axes, segmented append,
+and compaction between levels.
 
 Each rollout step:
 
@@ -192,8 +221,15 @@ quantities before the principal hyperbolic projection and pointer decoder.
 Thus leaf-PID gradients can originate in Level-1 reconstruction loss.
 `canonical_pion_first_level` remains an explicit disabled-by-default ablation.
 
-The default training PID mode remains differentiable soft expected energy,
-while rollout uses a hard charge-compatible token and physical discrete mass.
+The default training PID mode remains differentiable soft expected energy.
+Rollout has a separate explicit `rollout_pid_kinematics_mode`. The compatibility
+default is `soft_decision_hard_construction`: relation features and pointer/type
+logits are generated under soft expectation, then accepted daughters are
+rebuilt with hard PID kinematics before mother construction. It is deliberately
+not called hard rollout. `hard` uses hard PID kinematics in the forward that
+creates neural decisions as well as construction. `temperature_softmax` and
+`straight_through_hard` are explicit alternatives, with the latter primarily a
+training ablation. Forward overrides avoid global model-state mutation.
 Soft-hard energy/mother-mass, PID entropy, relation-bias change, and pointer-
 logit change are measured. Configured alternatives are soft expectation,
 optimizer-step temperature annealing, straight-through hard PID, and canonical-

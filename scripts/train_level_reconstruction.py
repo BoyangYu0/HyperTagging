@@ -46,6 +46,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--model-preset", choices=sorted(MODEL_PRESETS), default="tiny_cpu")
     parser.add_argument("--d-model", type=int, default=None)
     parser.add_argument("--hyper-dim", type=int, default=None)
+    parser.add_argument("--tangent-variance-target", type=float, default=None)
+    parser.add_argument("--hyper-projection-init-scale", type=float, default=None)
+    parser.add_argument("--tangent-scale-mode", choices=("fixed", "learned_bounded"), default=None)
     parser.add_argument("--n-heads", type=int, default=None)
     parser.add_argument("--n-context-layers", type=int, default=None)
     parser.add_argument("--ffn-dim", type=int, default=None)
@@ -110,6 +113,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--pid-temperature-start", type=float, default=1.0)
     parser.add_argument("--pid-temperature-end", type=float, default=0.2)
     parser.add_argument("--pid-temperature-duration-steps", type=int, default=1000)
+    parser.add_argument("--rollout-pid-kinematics-mode", choices=("soft_decision_hard_construction", "hard", "temperature_softmax", "straight_through_hard"), default="soft_decision_hard_construction")
+    parser.add_argument("--rollout-pid-temperature", type=float, default=0.5)
+    parser.add_argument("--query-repulsion-weight", type=float, default=0.0)
     parser.add_argument("--allow-local-tiny-gpu-test", action="store_true")
     return resolve_argparse_namespace(parser, argv)
 
@@ -137,6 +143,9 @@ def main(argv: list[str] | None = None) -> int:
                 model_preset=args.model_preset,
                 d_model=args.d_model,
                 hyper_dim=args.hyper_dim,
+                tangent_variance_target=args.tangent_variance_target,
+                hyper_projection_init_scale=args.hyper_projection_init_scale,
+                tangent_scale_mode=args.tangent_scale_mode,
                 n_heads=args.n_heads,
                 n_context_layers=args.n_context_layers,
                 ffn_dim=args.ffn_dim,
@@ -184,6 +193,9 @@ def main(argv: list[str] | None = None) -> int:
                 pid_temperature_start=args.pid_temperature_start,
                 pid_temperature_end=args.pid_temperature_end,
                 pid_temperature_duration_steps=args.pid_temperature_duration_steps,
+                rollout_pid_kinematics_mode=args.rollout_pid_kinematics_mode,
+                rollout_pid_temperature=args.rollout_pid_temperature,
+                query_repulsion_weight=args.query_repulsion_weight,
                 log_every=args.log_every,
             )
         )

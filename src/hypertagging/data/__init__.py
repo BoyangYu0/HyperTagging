@@ -47,6 +47,11 @@ from hypertagging.data.heterogeneous import (
 from hypertagging.data.level_batch import LevelBatch, LevelEvent
 from hypertagging.data.level_collate import collate_level_events
 from hypertagging.data.level_dataset import LevelReconstructionDataset
+from hypertagging.data.tree_geometry import (
+    EXACT_TREE_GEOMETRY_CONTRACT_VERSION,
+    ExactTreeGeometry,
+    build_exact_tree_geometry,
+)
 from hypertagging.data.preprocessing import (
     DEFAULT_GRAFEI_INPUT_ROOT,
     DEFAULT_TOY_MC_INPUT_ROOT,
@@ -84,11 +89,14 @@ __all__ = [
     "LevelEvent",
     "HeterogeneousEvent",
     "LevelReconstructionDataset",
+    "EXACT_TREE_GEOMETRY_CONTRACT_VERSION",
+    "ExactTreeGeometry",
     "PreprocessingPlan",
     "TOY_MC_BATCH",
     "all_tiny_batches",
     "assert_legacy_scripts_exist",
     "build_preprocessing_plan",
+    "build_exact_tree_geometry",
     "build_gpt_like_plan",
     "build_grafei_plan",
     "build_toy_mc_dataprod_plan",

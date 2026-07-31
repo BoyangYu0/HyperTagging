@@ -104,6 +104,7 @@ def level_reconstruction_loss(
         "physics": 0.1,
         "source_conflict": 0.1,
         "mother_charge": 1.0,
+        "query_repulsion": 0.0,
         **(weights or {}),
     }
     if target_override is None:
@@ -275,6 +276,10 @@ def level_reconstruction_loss(
         "mother_charge": (
             torch.stack(mother_charge_losses).mean() if mother_charge_losses else zero
         ),
+        "query_repulsion": query_proposal_repulsion_loss(
+            output.pointer_logits,
+            output.object_logits,
+        ),
     }
     total = sum(components[name] * weights[name] for name in components)
     return LevelLossOutput(
@@ -283,6 +288,26 @@ def level_reconstruction_loss(
         matches=all_matches,
         confidence_targets=confidence_targets,
     )
+
+
+def query_proposal_repulsion_loss(
+    pointer_logits: torch.Tensor,
+    object_logits: torch.Tensor,
+) -> torch.Tensor:
+    """Penalize identical active query proposals without imposing an ordering."""
+
+    if pointer_logits.shape[1] < 2:
+        return pointer_logits.sum() * 0.0
+    proposals = torch.sigmoid(pointer_logits)
+    normalized = F.normalize(proposals, dim=-1, eps=1e-8)
+    similarity = torch.einsum("bqn,bkn->bqk", normalized, normalized)
+    active = torch.sigmoid(object_logits)
+    weights = active[:, :, None] * active[:, None, :]
+    off_diagonal = ~torch.eye(
+        pointer_logits.shape[1], dtype=torch.bool, device=pointer_logits.device
+    ).unsqueeze(0)
+    selected = off_diagonal.expand_as(similarity)
+    return (similarity[selected] * weights[selected]).mean()
 
 
 def focal_binary_cross_entropy_with_logits(

@@ -43,6 +43,8 @@ class LevelReconstructionOutput:
     current_p4: torch.Tensor | None = None
     second_pass_common_features: torch.Tensor | None = None
     second_pass_common_availability: torch.Tensor | None = None
+    relation_pid_kinematics_mode: str = "input"
+    decision_pid_kinematics_mode: str = "input"
 
 
 class LevelAutoregressiveReconstructor(nn.Module):
@@ -71,6 +73,8 @@ class LevelAutoregressiveReconstructor(nn.Module):
         max_cardinality_by_level: tuple[tuple[int, int], ...] = (),
         pid_kinematics_mode: str = "soft_expectation",
         pid_temperature: float = 1.0,
+        hyper_projection_init_scale: float = 0.05,
+        tangent_scale_mode: str = "fixed",
     ) -> None:
         super().__init__()
         self.encoder_mode = encoder_mode
@@ -87,6 +91,8 @@ class LevelAutoregressiveReconstructor(nn.Module):
                 n_pid=len(PDG_TOKENS),
                 hidden_dim=hidden_dim,
                 hyper_dim=hyper_dim,
+                hyper_projection_init_scale=hyper_projection_init_scale,
+                tangent_scale_mode=tangent_scale_mode,
             )
         elif encoder_mode == "heterogeneous":
             self.encoder = HeterogeneousNodeEncoder(
@@ -101,6 +107,8 @@ class LevelAutoregressiveReconstructor(nn.Module):
                 curvature=curvature,
                 ffn_dim=ffn_dim,
                 dropout=dropout,
+                hyper_projection_init_scale=hyper_projection_init_scale,
+                tangent_scale_mode=tangent_scale_mode,
             )
         else:
             raise ValueError(f"Unknown encoder_mode: {encoder_mode}")
@@ -145,7 +153,24 @@ class LevelAutoregressiveReconstructor(nn.Module):
             return self.encoder.physical_relation_bias  # type: ignore[attr-defined]
         return self.flat_relation_bias
 
-    def forward(self, batch: dict[str, torch.Tensor], *, target_level: int = 1) -> LevelReconstructionOutput:
+    def forward(
+        self,
+        batch: dict[str, torch.Tensor],
+        *,
+        target_level: int = 1,
+        pid_kinematics_mode_override: str | None = None,
+        pid_temperature_override: float | None = None,
+    ) -> LevelReconstructionOutput:
+        pid_mode = (
+            self.pid_kinematics_mode
+            if pid_kinematics_mode_override is None
+            else str(pid_kinematics_mode_override)
+        )
+        pid_temperature = (
+            self.pid_temperature
+            if pid_temperature_override is None
+            else float(pid_temperature_override)
+        )
         if self.encoder_mode == "heterogeneous":
             batch = _upgrade_flat_batch(batch)
             _assert_truth_free_model_inputs(batch)
@@ -162,8 +187,8 @@ class LevelAutoregressiveReconstructor(nn.Module):
             runtime = rebuild_runtime_pid_state(
                 batch,
                 leaf_pid_logits,
-                mode=self.pid_kinematics_mode,
-                temperature=self.pid_temperature,
+                mode=pid_mode,
+                temperature=pid_temperature,
             )
             reconstruction_batch = _runtime_reconstruction_batch(
                 batch,
@@ -215,6 +240,9 @@ class LevelAutoregressiveReconstructor(nn.Module):
                 node_kind_ids=batch.get("node_kind_ids"),
                 copied=batch.get("copied"),
                 source_node_ids=batch.get("source_node_ids"),
+                recursive_leaf_source_mask=batch.get("recursive_leaf_source_mask"),
+                parent_ids=batch.get("parent_ids"),
+                reco_ids=batch.get("reco_ids"),
             )
             if self.use_contextual_encoder:
                 h, attention_weights = self.flat_contextualizer(
@@ -277,6 +305,8 @@ class LevelAutoregressiveReconstructor(nn.Module):
                 if self.encoder_mode == "heterogeneous"
                 else None
             ),
+            pid_mode if self.encoder_mode == "heterogeneous" else "input",
+            pid_mode if self.encoder_mode == "heterogeneous" else "input",
         )
 
 
@@ -290,20 +320,23 @@ def compare_pid_kinematics_modes(
 ) -> dict[str, float]:
     """Measure the train/rollout PID-kinematics mismatch on one bounded batch."""
 
-    original_mode = model.pid_kinematics_mode
-    original_temperature = model.pid_temperature
-    try:
-        model.pid_kinematics_mode = "soft_expectation"
-        model.pid_temperature = 1.0
-        soft = model(batch, target_level=target_level)
-        model.pid_kinematics_mode = "hard"
-        hard = model(batch, target_level=target_level)
-        model.pid_kinematics_mode = "temperature_softmax"
-        model.pid_temperature = float(temperature)
-        annealed = model(batch, target_level=target_level)
-    finally:
-        model.pid_kinematics_mode = original_mode
-        model.pid_temperature = original_temperature
+    soft = model(
+        batch,
+        target_level=target_level,
+        pid_kinematics_mode_override="soft_expectation",
+        pid_temperature_override=1.0,
+    )
+    hard = model(
+        batch,
+        target_level=target_level,
+        pid_kinematics_mode_override="hard",
+    )
+    annealed = model(
+        batch,
+        target_level=target_level,
+        pid_kinematics_mode_override="temperature_softmax",
+        pid_temperature_override=float(temperature),
+    )
     node_mask = batch["node_mask"]
     composite = node_mask & (batch["level_ids"] > 0)
     soft_p4 = soft.current_p4 if soft.current_p4 is not None else batch["p4"]
