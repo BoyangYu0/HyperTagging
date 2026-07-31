@@ -100,6 +100,8 @@ class PretrainConfig:
     channel_zero_positive_validation_window: int = 3
     channel_zero_positive_action: str = "warn"
     hyperbolic_level_encoding: str = "learned_euclidean"
+    objective_gradient_diagnostics: bool = False
+    objective_gradient_diagnostics_every: int = 100
 
 
 @dataclass(frozen=True)
@@ -213,7 +215,7 @@ class ContextualPretrainingModel(torch.nn.Module):
 
 
 class ChannelMemoryBank(torch.nn.Module):
-    """Optional detached FIFO of cross-event B-branch channel examples."""
+    """Optional detached ring buffer of cross-event channel examples."""
 
     def __init__(self, capacity: int, embedding_dim: int) -> None:
         super().__init__()
@@ -224,13 +226,20 @@ class ChannelMemoryBank(torch.nn.Module):
             "reconstructable_ids", torch.zeros(self.capacity, dtype=torch.long)
         )
         self.register_buffer("count", torch.zeros((), dtype=torch.long))
+        self.register_buffer("cursor", torch.zeros((), dtype=torch.long))
+        self.register_buffer("valid", torch.zeros(self.capacity, dtype=torch.bool))
 
     def contents(self) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        count = int(self.count)
+        if self.capacity == 0:
+            return self.embeddings, self.full_ids, self.reconstructable_ids
+        order = (
+            torch.arange(self.capacity, device=self.embeddings.device) + self.cursor
+        ) % self.capacity
+        order = order[self.valid[order]]
         return (
-            self.embeddings[:count],
-            self.full_ids[:count],
-            self.reconstructable_ids[:count],
+            self.embeddings[order],
+            self.full_ids[order],
+            self.reconstructable_ids[order],
         )
 
     @torch.no_grad()
@@ -247,18 +256,23 @@ class ChannelMemoryBank(torch.nn.Module):
         additions = embeddings.reshape(-1, embeddings.shape[-1])[selected].detach()
         full = full_ids.reshape(-1)[selected].detach()
         reco = reconstructable_ids.reshape(-1)[selected].detach()
-        old_embeddings, old_full, old_reco = self.contents()
-        new_embeddings = torch.cat([old_embeddings, additions], dim=0)[-self.capacity :]
-        new_full = torch.cat([old_full, full], dim=0)[-self.capacity :]
-        new_reco = torch.cat([old_reco, reco], dim=0)[-self.capacity :]
-        count = new_embeddings.shape[0]
-        self.embeddings.zero_()
-        self.full_ids.zero_()
-        self.reconstructable_ids.zero_()
-        self.embeddings[:count].copy_(new_embeddings)
-        self.full_ids[:count].copy_(new_full)
-        self.reconstructable_ids[:count].copy_(new_reco)
-        self.count.fill_(count)
+        if additions.shape[0] == 0:
+            return
+        additions = additions[-self.capacity :]
+        full = full[-self.capacity :]
+        reco = reco[-self.capacity :]
+        positions = (
+            self.cursor
+            + torch.arange(additions.shape[0], device=additions.device)
+        ) % self.capacity
+        self.embeddings[positions] = additions
+        self.full_ids[positions] = full
+        self.reconstructable_ids[positions] = reco
+        self.valid[positions] = True
+        self.cursor.copy_((self.cursor + additions.shape[0]) % self.capacity)
+        self.count.copy_(
+            torch.clamp(self.count + additions.shape[0], max=self.capacity)
+        )
 
 
 def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
@@ -279,6 +293,8 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
         raise ValueError("channel_zero_positive_action must be warn, fail, or ignore")
     if config.channel_zero_positive_validation_window <= 0:
         raise ValueError("channel zero-positive validation window must be positive")
+    if config.objective_gradient_diagnostics_every <= 0:
+        raise ValueError("objective gradient diagnostic cadence must be positive")
     seed_everything(config.seed)
     if config.resume and config.num_workers > 0:
         raise ValueError("exact streaming resume currently requires num_workers=0")
@@ -638,6 +654,41 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 ] = _gradient_cosine(
                     loss_gradients["depth"], loss_gradients["tree_distance"]
                 )
+        if (
+            config.objective_gradient_diagnostics
+            and (
+                (step + 1) % config.objective_gradient_diagnostics_every == 0
+                or step == start_step
+                or step + 1 == config.max_steps
+            )
+        ):
+            objective_report = objective_gradient_diagnostics(
+                {
+                    "lca": loss_output.components["lca"],
+                    "parent": loss_output.components["parent"],
+                    "tree_distance": loss_output.components["tree_distance"],
+                    "radius": loss_output.components["depth"],
+                    "channel": loss_output.components["channel"],
+                    "variance": loss_output.components["var"],
+                    "covariance": loss_output.components["cov"],
+                    "leaf_pid": leaf_pid_loss,
+                },
+                pretraining_projection_parameter_groups(model),
+            )
+            for group_name, values in objective_report["gradient_norms"].items():
+                for objective_name, value in values.items():
+                    gradient_metrics[
+                        f"objective_gradient_norm_{group_name}_{objective_name}"
+                    ] = value
+            for group_name, matrix in objective_report["gradient_cosines"].items():
+                for row_name, row in matrix.items():
+                    for column_name, value in row.items():
+                        gradient_metrics[
+                            f"objective_gradient_cosine_{group_name}_{row_name}_{column_name}"
+                        ] = value
+            gradient_metrics["objective_zero_gradient_count"] = float(
+                len(objective_report["zero_gradient_objectives"])
+            )
         scaler.scale(loss).backward()
         scaler.unscale_(optimizer)
         if should_log_gradients:
@@ -664,6 +715,16 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
             "candidate_correctness_loss": float(correctness_loss.detach().cpu()),
             "hard_negative_loss": float(hard_negative_loss.detach().cpu()),
             "hard_negative_count": float(curriculum.hard_negative_pairs.shape[0]),
+            "active_denominator_leaf_pid": float(
+                (
+                    train_batch["node_mask"]
+                    & (train_batch["level_ids"] == 0)
+                    & train_batch.get(
+                        "truth_pid_available",
+                        torch.ones_like(train_batch["node_mask"]),
+                    )
+                ).sum().detach().cpu()
+            ),
             **{
                 f"loss_{name}": float(value.detach().cpu())
                 for name, value in loss_output.components.items()
@@ -1026,6 +1087,114 @@ def _gradient_cosine(
     return float(F.cosine_similarity(a, b, dim=0, eps=1e-12).cpu())
 
 
+PRINCIPAL_PRETRAINING_OBJECTIVES = (
+    "lca",
+    "parent",
+    "tree_distance",
+    "radius",
+    "channel",
+    "variance",
+    "covariance",
+    "leaf_pid",
+)
+
+
+def pretraining_projection_parameter_groups(
+    model: ContextualPretrainingModel,
+) -> dict[str, tuple[torch.nn.Parameter, ...]]:
+    """Return the five documented gradient-interference parameter groups."""
+
+    excluded = (
+        "tree_head.",
+        "reconstruction_head.",
+        "channel_head.",
+        "hyper_projection.",
+        "tangent_scale.",
+    )
+    shared = tuple(
+        parameter
+        for name, parameter in model.encoder.named_parameters()
+        if not name.startswith(excluded)
+    )
+    return {
+        "shared_encoder": shared,
+        "tree_projection": tuple(model.encoder.tree_head.parameters()),
+        "hyperbolic_projection": tuple(
+            model.encoder.hyper_projection.parameters()
+        )
+        + tuple(model.encoder.tangent_scale.parameters()),
+        "reconstruction_projection": tuple(
+            model.encoder.reconstruction_head.parameters()
+        ),
+        "channel_projection": tuple(model.encoder.channel_head.parameters()),
+    }
+
+
+def objective_gradient_diagnostics(
+    objectives: dict[str, torch.Tensor],
+    parameter_groups: dict[str, tuple[torch.nn.Parameter, ...]],
+) -> dict[str, Any]:
+    """Pairwise objective-gradient cosines without changing optimization."""
+
+    missing = sorted(set(PRINCIPAL_PRETRAINING_OBJECTIVES) - set(objectives))
+    if missing:
+        raise ValueError("missing principal objective(s): " + ", ".join(missing))
+    report: dict[str, Any] = {
+        "objective_order": list(PRINCIPAL_PRETRAINING_OBJECTIVES),
+        "gradient_norms": {},
+        "gradient_cosines": {},
+        "zero_gradient_objectives": [],
+    }
+    zero_pairs: set[str] = set()
+    for group_name, parameters in parameter_groups.items():
+        vectors: dict[str, torch.Tensor] = {}
+        norms: dict[str, float] = {}
+        for objective_name in PRINCIPAL_PRETRAINING_OBJECTIVES:
+            value = objectives[objective_name]
+            gradients = (
+                torch.autograd.grad(
+                    value,
+                    parameters,
+                    retain_graph=True,
+                    allow_unused=True,
+                )
+                if value.requires_grad and parameters
+                else tuple(None for _ in parameters)
+            )
+            vector = torch.cat(
+                [
+                    (
+                        gradient.detach().reshape(-1)
+                        if gradient is not None
+                        else parameter.detach().new_zeros(parameter.numel())
+                    )
+                    for parameter, gradient in zip(parameters, gradients, strict=True)
+                ]
+            ) if parameters else value.detach().new_zeros(1)
+            vectors[objective_name] = vector
+            norm = float(torch.linalg.vector_norm(vector.float()).cpu())
+            norms[objective_name] = norm
+            if norm == 0.0:
+                zero_pairs.add(f"{group_name}:{objective_name}")
+        report["gradient_norms"][group_name] = norms
+        report["gradient_cosines"][group_name] = {
+            left: {
+                right: float(
+                    F.cosine_similarity(
+                        vectors[left].float(),
+                        vectors[right].float(),
+                        dim=0,
+                        eps=1e-12,
+                    ).cpu()
+                )
+                for right in PRINCIPAL_PRETRAINING_OBJECTIVES
+            }
+            for left in PRINCIPAL_PRETRAINING_OBJECTIVES
+        }
+    report["zero_gradient_objectives"] = sorted(zero_pairs)
+    return report
+
+
 def _parameter_gradient_norm(parameters) -> float:
     return _tensor_gradient_norm(
         tuple(parameter.grad for parameter in parameters)
@@ -1270,23 +1439,23 @@ def _hard_negative_tree_loss(
         return z.sum() * 0.0
     from hypertagging.models.hyperbolic import distance
 
-    values = []
-    for batch_index, left, right in pairs.tolist():
-        values.append(
-            distance(
-                z[batch_index, left],
-                z[batch_index, right],
-                curvature=curvature,
-            )
-        )
-    distances = torch.stack(values)
+    indices = pairs.to(device=z.device, dtype=torch.long)
+    distances = distance(
+        z[indices[:, 0], indices[:, 1]],
+        z[indices[:, 0], indices[:, 2]],
+        curvature=curvature,
+    )
     return torch.relu(margin - distances).mean()
 
 
 __all__ = [
+    "ChannelMemoryBank",
     "ContextualPretrainingModel",
+    "PRINCIPAL_PRETRAINING_OBJECTIVES",
     "PretrainConfig",
     "TrainingResult",
+    "objective_gradient_diagnostics",
+    "pretraining_projection_parameter_groups",
     "train_hyperbolic_pretraining",
     "valid_b_root_channel_mask",
 ]

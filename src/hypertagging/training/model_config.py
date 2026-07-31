@@ -28,6 +28,7 @@ class ModelArchitecture:
     tree_distance_contract_version: str = "exact-edge-log-fixed-scale-v2"
     relation_feature_contract_version: str = "physical-relations-overlap-aware-v3"
     hyperbolic_level_encoding: str = "learned_euclidean"
+    type_conditioned_daughter_relation_bias: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

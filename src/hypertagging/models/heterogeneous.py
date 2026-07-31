@@ -10,7 +10,6 @@ from torch import nn
 from hypertagging.models.hyperbolic import (
     BoundedTangentScale,
     expmap0,
-    logmap0,
     initialize_hyper_projection,
 )
 from hypertagging.models.relation_attention import RelationAwareSetTransformer
@@ -167,7 +166,7 @@ class HeterogeneousNodeEncoder(nn.Module):
         self.dropout = float(dropout)
         self.curvature = curvature
         if hyperbolic_level_encoding not in {
-            "learned_euclidean", "hyperbolic_tangent", "none"
+            "learned_euclidean", "bounded_tangent_level_embedding", "none"
         }:
             raise ValueError("unknown hyperbolic_level_encoding")
         self.hyperbolic_level_encoding = hyperbolic_level_encoding
@@ -184,12 +183,14 @@ class HeterogeneousNodeEncoder(nn.Module):
         self.pid_embedding = nn.Embedding(n_pid, d_model)
         self.node_kind_embedding = nn.Embedding(len(NODE_KINDS), d_model)
         self.level_embedding = nn.Embedding(max_level + 2, d_model)
-        if hyperbolic_level_encoding == "hyperbolic_tangent":
-            self.hyperbolic_level_points = nn.Parameter(
+        if hyperbolic_level_encoding == "bounded_tangent_level_embedding":
+            self.tangent_level_directions = nn.Parameter(
                 torch.randn(max_level + 2, d_model) * 0.02
             )
+            self.tangent_level_gaps = nn.Parameter(torch.zeros(max_level + 2))
         else:
-            self.register_parameter("hyperbolic_level_points", None)
+            self.register_parameter("tangent_level_directions", None)
+            self.register_parameter("tangent_level_gaps", None)
         self.active_embedding = nn.Embedding(2, d_model)
         self.copied_embedding = nn.Embedding(2, d_model)
         availability_width = (
@@ -267,14 +268,18 @@ class HeterogeneousNodeEncoder(nn.Module):
         levels = batch["level_ids"].clamp(0, self.level_embedding.num_embeddings - 1)
         if self.hyperbolic_level_encoding == "learned_euclidean":
             level_features = self.level_embedding(levels)
-        elif self.hyperbolic_level_encoding == "hyperbolic_tangent":
-            assert self.hyperbolic_level_points is not None
-            level_points = expmap0(
-                self.hyperbolic_level_points, curvature=self.curvature
+        elif self.hyperbolic_level_encoding == "bounded_tangent_level_embedding":
+            assert self.tangent_level_directions is not None
+            assert self.tangent_level_gaps is not None
+            directions = torch.nn.functional.normalize(
+                self.tangent_level_directions, dim=-1, eps=1e-8
             )
-            level_features = logmap0(
-                level_points, curvature=self.curvature
-            )[levels]
+            gaps = torch.nn.functional.softplus(self.tangent_level_gaps)
+            radii = torch.flip(
+                torch.cumsum(torch.flip(gaps, dims=(0,)), dim=0), dims=(0,)
+            )
+            radii = 0.5 * radii / radii[0].clamp_min(1e-8)
+            level_features = (directions * radii[:, None])[levels]
         else:
             level_features = self.level_embedding(levels) * 0.0
         histogram_available = batch.get(
@@ -404,24 +409,22 @@ class HeterogeneousNodeEncoder(nn.Module):
         )
 
 
-def composite_token_from_daughters(
+def composite_physical_features_from_daughters(
     *,
     daughter_mask: torch.Tensor,
     p4: torch.Tensor,
     charge: torch.Tensor,
     pid_labels: torch.Tensor,
     pid_probabilities: torch.Tensor | None = None,
-    daughter_embeddings: torch.Tensor,
     pointer_confidence: torch.Tensor | None = None,
     copied: torch.Tensor | None = None,
 ) -> dict[str, torch.Tensor]:
-    """Shared truth-guided/predicted composite construction for identical links."""
+    """Build persistent daughter-derived composite state without context."""
 
     weights = daughter_mask.to(p4.dtype)
     summed_p4 = torch.einsum("bn,bnf->bf", weights, p4)
     summed_charge = torch.einsum("bn,bn->b", weights, charge)
     count = weights.sum(dim=-1)
-    pooled = torch.einsum("bn,bnd->bd", weights, daughter_embeddings) / count.unsqueeze(-1).clamp_min(1)
     confidence = (
         torch.where(daughter_mask, pointer_confidence, torch.ones_like(pointer_confidence))
         if pointer_confidence is not None
@@ -476,10 +479,39 @@ def composite_token_from_daughters(
         "charge": summed_charge,
         "features": features,
         "availability": availability,
-        "daughter_summary": pooled,
         "daughter_pid_histogram": histogram,
         "daughter_pid_histogram_available": count > 0,
     }
+
+
+def composite_token_from_daughters(
+    *,
+    daughter_mask: torch.Tensor,
+    p4: torch.Tensor,
+    charge: torch.Tensor,
+    pid_labels: torch.Tensor,
+    pid_probabilities: torch.Tensor | None = None,
+    daughter_embeddings: torch.Tensor,
+    pointer_confidence: torch.Tensor | None = None,
+    copied: torch.Tensor | None = None,
+) -> dict[str, torch.Tensor]:
+    """Build persistent state plus a transient pooled contextual summary."""
+
+    result = composite_physical_features_from_daughters(
+        daughter_mask=daughter_mask,
+        p4=p4,
+        charge=charge,
+        pid_labels=pid_labels,
+        pid_probabilities=pid_probabilities,
+        pointer_confidence=pointer_confidence,
+        copied=copied,
+    )
+    weights = daughter_mask.to(daughter_embeddings.dtype)
+    count = weights.sum(dim=-1, keepdim=True).clamp_min(1)
+    result["daughter_summary"] = (
+        torch.einsum("bn,bnd->bd", weights, daughter_embeddings) / count
+    )
+    return result
 
 
 __all__ = [
@@ -489,6 +521,7 @@ __all__ = [
     "HeterogeneousEncoderOutput",
     "HeterogeneousNodeEncoder",
     "TrackNodeEncoder",
+    "composite_physical_features_from_daughters",
     "composite_token_from_daughters",
     "masked_mean_pool",
 ]

@@ -24,6 +24,7 @@ class AblationConfig:
     canonical_pion_first_level: bool = False
     pid_kinematics_mode: str = "soft_expectation"
     pid_temperature: float = 1.0
+    type_conditioned_daughter_relation_bias: bool = False
 
 
 ABLATIONS: dict[str, AblationConfig] = {
@@ -117,6 +118,24 @@ EXPERIMENT_VARIANTS: dict[str, AblationConfig] = {
         "straight_through_hard_pid", True, True, True, True, True, True,
         True, True, True, True, True, False, "straight_through_hard", 1.0,
     ),
+    "first_level_type_relation_bias": AblationConfig(
+        "first_level_type_relation_bias",
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        False,
+        "soft_expectation",
+        1.0,
+        True,
+    ),
 }
 ALL_ABLATIONS: dict[str, AblationConfig] = ABLATIONS | EXPERIMENT_VARIANTS
 
@@ -140,6 +159,7 @@ def build_ablation_model(
     hyper_projection_init_scale: float = 0.05,
     tangent_scale_mode: str = "fixed",
     hyperbolic_level_encoding: str = "learned_euclidean",
+    type_conditioned_daughter_relation_bias: bool | None = None,
 ) -> LevelAutoregressiveReconstructor:
     config = ALL_ABLATIONS[name]
     return LevelAutoregressiveReconstructor(
@@ -166,6 +186,11 @@ def build_ablation_model(
         hyper_projection_init_scale=hyper_projection_init_scale,
         tangent_scale_mode=tangent_scale_mode,
         hyperbolic_level_encoding=hyperbolic_level_encoding,
+        type_conditioned_daughter_relation_bias=(
+            config.type_conditioned_daughter_relation_bias
+            if type_conditioned_daughter_relation_bias is None
+            else type_conditioned_daughter_relation_bias
+        ),
     )
 
 

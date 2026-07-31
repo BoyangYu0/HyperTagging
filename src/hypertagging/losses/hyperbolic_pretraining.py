@@ -607,11 +607,24 @@ def balanced_tangent_sample(
         group = group + level_ids.clamp_min(0) * 32
     if "node_kind" in group_by and node_kind_ids is not None:
         group = group + node_kind_ids.clamp_min(0)
-    for value in torch.unique(group[mask]).tolist():
-        indices = torch.nonzero(mask & (group == value), as_tuple=False)
-        indices = indices[:max_per_group]
-        if indices.numel():
-            selected[indices[:, 0], indices[:, 1]] = True
+    flat_valid = torch.nonzero(mask.reshape(-1), as_tuple=False).flatten()
+    if flat_valid.numel() == 0:
+        return tangent, selected
+    valid_groups = group.reshape(-1)[flat_valid]
+    order = torch.argsort(valid_groups, stable=True)
+    sorted_groups = valid_groups[order]
+    positions = torch.arange(order.numel(), device=mask.device)
+    group_start = torch.cat(
+        [
+            torch.ones(1, dtype=torch.bool, device=mask.device),
+            sorted_groups[1:] != sorted_groups[:-1],
+        ]
+    )
+    starts = torch.where(group_start, positions, torch.zeros_like(positions))
+    starts = torch.cummax(starts, dim=0).values
+    rank_within_group = positions - starts
+    kept_flat = flat_valid[order[rank_within_group < max_per_group]]
+    selected.reshape(-1)[kept_flat] = True
     return tangent, selected
 
 
@@ -722,6 +735,8 @@ def cross_event_channel_metric_loss(
         return zero, {
             "channel_positive_pairs": zero,
             "channel_negative_pairs": zero,
+            "channel_active_anchors": zero,
+            "channel_total_anchors": valid_indices.numel() + zero,
         }
     embedding = F.normalize(flat_embeddings[valid_indices], dim=-1)
     selected_full = full_ids[valid_indices]
@@ -780,15 +795,20 @@ def cross_event_channel_metric_loss(
         ) & (union > 0)
     positives = (exact_full | exact_reco | structured_pairs) & ~identity
     pairs = ~identity
-    per_anchor: list[torch.Tensor] = []
-    for anchor in range(similarity.shape[0]):
-        if not positives[anchor].any():
-            continue
-        denominator = torch.logsumexp(similarity[anchor][pairs[anchor]], dim=0)
-        per_anchor.append(
-            -(similarity[anchor][positives[anchor]] - denominator).mean()
-        )
-    contrastive = torch.stack(per_anchor).mean() if per_anchor else zero
+    positive_count = positives.sum(dim=-1)
+    active_anchor = positive_count > 0
+    log_denominator = torch.logsumexp(
+        similarity.masked_fill(~pairs, float("-inf")), dim=-1
+    )
+    positive_log_probability = (
+        (similarity - log_denominator[:, None]).masked_fill(~positives, 0.0).sum(dim=-1)
+        / positive_count.clamp_min(1)
+    )
+    contrastive = (
+        -positive_log_probability[active_anchor].mean()
+        if active_anchor.any()
+        else zero
+    )
     current_pairs = (
         ~torch.eye(embedding.shape[0], dtype=torch.bool, device=embedding.device)
         if branch_count_arrays is not None
@@ -810,6 +830,8 @@ def cross_event_channel_metric_loss(
     return loss, {
         "channel_positive_pairs": positives.sum().to(similarity.dtype) / 2,
         "channel_negative_pairs": (pairs & ~positives).sum().to(similarity.dtype) / 2,
+        "channel_active_anchors": active_anchor.sum().to(similarity.dtype),
+        "channel_total_anchors": similarity.new_tensor(similarity.shape[0]),
         "channel_structured_regression": structured_regression,
     }
 
@@ -1145,6 +1167,24 @@ def hyperbolic_pretraining_loss(
         )
     )
     diagnostics.update(channel_pair_diagnostics)
+    active_pairs = (
+        tree_relation_mask
+        if tree_relation_mask is not None
+        else node_mask[:, :, None] & node_mask[:, None, :]
+    )
+    diagnostics.update(
+        {
+            "active_denominator_lca": active_pairs.sum().to(z.dtype),
+            "active_denominator_tree_distance": (
+                active_pairs & (exact_tree_path_distance >= 0)
+            ).sum().to(z.dtype)
+            if exact_tree_path_distance is not None
+            else zero,
+            "active_denominator_radius": node_mask.sum().to(z.dtype),
+            "active_denominator_variance": anti_collapse_mask.sum().to(z.dtype),
+            "active_denominator_covariance": anti_collapse_mask.sum().to(z.dtype),
+        }
+    )
     if tree_relation_targets is not None:
         diagnostics.update(
             relation_distance_diagnostics(

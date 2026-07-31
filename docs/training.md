@@ -139,7 +139,10 @@ manifest; it checks global event UIDs, creates a stable source-aware split,
 fits masked normalization on training only, and raises rather than silently
 dropping node overflow. Pretraining cycles through the configurable
 three-stage curriculum. Reconstruction optimizes every target level in each
-batch and validates teacher-forced, seeded scheduled, and free rollout.
+batch. Teacher-forced validation is batched; seeded scheduled/free checks use
+the bounded `evaluation_reference_rollout`; `batched_level_step` covers one
+full masked level for multiple events. A complete multi-level batched free
+rollout is not production-ready.
 
 Atomic checkpoints include full and encoder-only states, optimizer, scheduler,
 AMP scaler, epoch/step/config, git commit, schema/PID/feature specification,
@@ -165,9 +168,10 @@ Scheduled sampling participates in optimization. At each level a deterministic
 truth/predicted context choice follows the configured constant, linear, cosine,
 or inverse-sigmoid schedule. Predicted contexts are aligned to targets by
 recursive leaf-source overlap; unrepresentable targets are counted and logged.
-The implementation uses per-event micro-rollouts for predicted contexts, which
-keeps alignment explicit at the cost of lower throughput than a fully padded
-variable-state rollout.
+The implementation uses per-event reference micro-rollouts for predicted
+contexts, which keeps alignment explicit at the cost of lower throughput than
+a fully padded variable-state rollout. Weighted set packing and beam search are
+bounded evaluation comparators, never training or production defaults.
 
 The default target policy is `complete_only`; `reconstructable_partial` and
 `diagnostic_all` are explicit alternatives. A versioned static reduced-PID

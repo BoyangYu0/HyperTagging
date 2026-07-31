@@ -50,7 +50,7 @@ class RelationAwareSelfAttention(nn.Module):
 class RelationAwareSetLayer(nn.Module):
     def __init__(self, d_model: int, n_heads: int = 4, feedforward_dim: int | None = None, dropout: float = 0.0) -> None:
         super().__init__()
-        self.attention = RelationAwareSelfAttention(d_model, n_heads)
+        self.attention = RelationAwareSelfAttention(d_model, n_heads, dropout)
         self.norm1 = nn.LayerNorm(d_model)
         self.norm2 = nn.LayerNorm(d_model)
         ff_dim = feedforward_dim or 2 * d_model

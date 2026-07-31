@@ -59,7 +59,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--best-mode", choices=("min", "max"), default="min")
     parser.add_argument("--channel-zero-positive-validation-window", type=int, default=3)
     parser.add_argument("--channel-zero-positive-action", choices=("warn", "fail", "ignore"), default="warn")
-    parser.add_argument("--hyperbolic-level-encoding", choices=("learned_euclidean", "hyperbolic_tangent", "none"), default="learned_euclidean")
+    parser.add_argument("--hyperbolic-level-encoding", choices=("learned_euclidean", "bounded_tangent_level_embedding", "none"), default="learned_euclidean")
+    parser.add_argument("--objective-gradient-diagnostics", action="store_true")
+    parser.add_argument("--objective-gradient-diagnostics-every", type=int, default=100)
     parser.add_argument("--model-preset", choices=sorted(MODEL_PRESETS), default="tiny_cpu")
     parser.add_argument("--d-model", type=int, default=None)
     parser.add_argument("--hyper-dim", type=int, default=None)
@@ -112,6 +114,10 @@ def main(argv: list[str] | None = None) -> int:
                 channel_zero_positive_validation_window=args.channel_zero_positive_validation_window,
                 channel_zero_positive_action=args.channel_zero_positive_action,
                 hyperbolic_level_encoding=args.hyperbolic_level_encoding,
+                objective_gradient_diagnostics=args.objective_gradient_diagnostics,
+                objective_gradient_diagnostics_every=(
+                    args.objective_gradient_diagnostics_every
+                ),
                 num_workers=args.num_workers,
                 prefetch_factor=args.prefetch_factor,
                 shuffle_buffer_size=args.shuffle_buffer_size,

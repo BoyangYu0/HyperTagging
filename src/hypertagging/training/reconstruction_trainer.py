@@ -136,6 +136,7 @@ class ReconstructionConfig:
     pilot_allow_train_validation_fallback: bool = False
     initial_state_policy: str = "unknown"
     hyperbolic_level_encoding: str = "learned_euclidean"
+    type_conditioned_daughter_relation_bias: bool = False
 
 
 @dataclass(frozen=True)
@@ -207,6 +208,12 @@ def train_level_reconstruction(
         target_policy=config.target_policy,
         allow_incomplete_v4_publication=config.allow_incomplete_v4_publication,
     )
+    if config.ablation not in ALL_ABLATIONS:
+        raise ValueError(f"unknown ablation: {config.ablation}")
+    effective_type_relation_bias = (
+        config.type_conditioned_daughter_relation_bias
+        or ALL_ABLATIONS[config.ablation].type_conditioned_daughter_relation_bias
+    )
     architecture = resolve_model_architecture(
         config.model_preset,
         d_model=config.d_model,
@@ -224,6 +231,7 @@ def train_level_reconstruction(
         hyper_projection_init_scale=config.hyper_projection_init_scale,
         tangent_scale_mode=config.tangent_scale_mode,
         hyperbolic_level_encoding=config.hyperbolic_level_encoding,
+        type_conditioned_daughter_relation_bias=effective_type_relation_bias,
     )
     capacity = (
         capacity_statistics_from_index(
@@ -244,8 +252,6 @@ def train_level_reconstruction(
         )
     )
     require_capacity(capacity)
-    if config.ablation not in ALL_ABLATIONS:
-        raise ValueError(f"unknown ablation: {config.ablation}")
     ablation = ALL_ABLATIONS[config.ablation]
     model = build_ablation_model(
         config.ablation,
@@ -265,6 +271,9 @@ def train_level_reconstruction(
         hyper_projection_init_scale=architecture.hyper_projection_init_scale,
         tangent_scale_mode=architecture.tangent_scale_mode,
         hyperbolic_level_encoding=architecture.hyperbolic_level_encoding,
+        type_conditioned_daughter_relation_bias=(
+            architecture.type_conditioned_daughter_relation_bias
+        ),
     ).to(device)
     model.set_runtime_feature_normalizer(
         RuntimeFeatureNormalizer(
@@ -410,16 +419,18 @@ def train_level_reconstruction(
                 raise ValueError("training split produced no batches") from error
         cursor.batch_index += 1
         cursor.events_consumed += int(next_batch["node_mask"].shape[0])
-        batch = {name: value.to(device) for name, value in next_batch.items()}
         valid_levels = sorted(
             {
                 int(level)
-                for level in batch["level_ids"][batch["node_mask"]].tolist()
+                for level in next_batch["level_ids"][next_batch["node_mask"]].tolist()
                 if int(level) > 0
             }
         )
         if not valid_levels:
             raise ValueError("training batch has no reconstruction target levels")
+        # Resolve the small set of target levels before the asynchronous device
+        # transfer so the normal CUDA path does not synchronize via tolist().
+        batch = {name: value.to(device) for name, value in next_batch.items()}
         optimizer.zero_grad(set_to_none=True)
         with torch.autocast(
             device_type=device.type,
@@ -1217,14 +1228,15 @@ def validate_reconstruction(
         batch = data_module.normalize_batch(
             collate_heterogeneous_events(events[start : start + validation_batch_size])
         )
-        batch = {name: value.to(device) for name, value in batch.items()}
-        for target_level in sorted(
+        target_levels = sorted(
             {
                 int(level)
                 for level in batch["level_ids"][batch["node_mask"]].tolist()
                 if int(level) > 0
             }
-        ):
+        )
+        batch = {name: value.to(device) for name, value in batch.items()}
+        for target_level in target_levels:
             level_batch = _with_allowed_types(
                 batch, target_level, data_module.allowed_types_by_level, constraint_policy
             )
@@ -1597,6 +1609,10 @@ def _architecture_contract(config: ReconstructionConfig) -> dict[str, Any]:
         hyper_projection_init_scale=config.hyper_projection_init_scale,
         tangent_scale_mode=config.tangent_scale_mode,
         hyperbolic_level_encoding=config.hyperbolic_level_encoding,
+        type_conditioned_daughter_relation_bias=(
+            config.type_conditioned_daughter_relation_bias
+            or ALL_ABLATIONS[config.ablation].type_conditioned_daughter_relation_bias
+        ),
     ).to_dict()
 
 

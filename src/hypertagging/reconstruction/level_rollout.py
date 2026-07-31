@@ -9,7 +9,7 @@ from typing import Literal
 import torch
 
 from hypertagging.data.tree_geometry import build_exact_tree_geometry
-from hypertagging.models.heterogeneous import composite_token_from_daughters
+from hypertagging.models.heterogeneous import composite_physical_features_from_daughters
 from hypertagging.models.level_autoregressive import (
     LevelAutoregressiveReconstructor,
     LevelReconstructionOutput,
@@ -24,6 +24,7 @@ from hypertagging.reconstruction.pid_state import (
     rebuild_runtime_pid_state,
 )
 from hypertagging.models.mother_pointer import constrained_daughter_decode
+from hypertagging.preprocessing.pid_filter import PDG_TOKENS
 from hypertagging.preprocessing.schema_v4 import LEAF_MODE_TO_ID
 from hypertagging.reconstruction.constraints import ReconstructionConstraintPolicy
 
@@ -588,14 +589,14 @@ def validate_proposals(
     )
 
 
-def level_rollout(
+def evaluation_reference_rollout(
     model: LevelAutoregressiveReconstructor,
     full_batch: dict[str, torch.Tensor],
     *,
     mode: Literal["predicted", "teacher_forced", "scheduled"] = "predicted",
     config: RolloutConfig | None = None,
 ) -> LevelRolloutResult:
-    """Re-encode all current nodes, decode, append composites, and stop safely."""
+    """Bounded batch-size-one correctness reference for complete free rollout."""
 
     config = config or RolloutConfig()
     supported_pid_modes = {
@@ -728,6 +729,20 @@ def level_rollout(
     )
 
 
+def level_rollout(
+    model: LevelAutoregressiveReconstructor,
+    full_batch: dict[str, torch.Tensor],
+    *,
+    mode: Literal["predicted", "teacher_forced", "scheduled"] = "predicted",
+    config: RolloutConfig | None = None,
+) -> LevelRolloutResult:
+    """Compatibility alias for :func:`evaluation_reference_rollout`."""
+
+    return evaluation_reference_rollout(
+        model, full_batch, mode=mode, config=config
+    )
+
+
 def cached_context_for_level(
     result: LevelRolloutResult, target_level: int
 ) -> dict[str, torch.Tensor]:
@@ -809,7 +824,7 @@ def append_composite_proposals(
     )
     for row, proposal in enumerate(proposals):
         pointer_confidence[row, list(proposal.daughter_positions)] = proposal.confidence
-    construction = composite_token_from_daughters(
+    construction = composite_physical_features_from_daughters(
         daughter_mask=daughter_masks,
         p4=batch["p4"].expand(proposal_count, -1, -1),
         charge=batch["charge"].expand(proposal_count, -1),
@@ -819,18 +834,12 @@ def append_composite_proposals(
             if "current_pid_probabilities" in batch
             else None
         ),
-        daughter_embeddings=batch.get(
-            "_last_node_embeddings",
-            torch.zeros(
-                (1, old_count, getattr(batch, "hidden_dim", 1)),
-                device=device,
-            ),
-        ).expand(proposal_count, -1, -1),
         pointer_confidence=pointer_confidence,
         copied=batch["copied"].expand(proposal_count, -1),
     )
-    # Daughter pooling is recomputed by HeterogeneousNodeEncoder after append;
-    # only reco-derived structural values are persisted in the state.
+    # Contextual daughter pooling is intentionally absent at append time.  It
+    # is recomputed from the exact links by HeterogeneousNodeEncoder on the
+    # next pass; only persistent reco-derived state is appended here.
     generated_ids = _next_node_ids(batch["node_ids"][0], proposal_count)
     new_ids = torch.tensor(
         [
@@ -1021,6 +1030,40 @@ def append_composite_proposals(
             (1, proposal_count), target_level, dtype=torch.long, device=device
         ),
     }
+    if "model_input_source_ids" in batch:
+        from hypertagging.data.heterogeneous import (
+            MODEL_INPUT_SOURCE_TO_ID,
+            TRUTH_SUPERVISION_SOURCE_TO_ID,
+        )
+
+        vector_additions.update(
+            {
+                "model_input_source_ids": torch.full(
+                    (1, proposal_count),
+                    MODEL_INPUT_SOURCE_TO_ID["runtime_reconstructed"],
+                    dtype=torch.long,
+                    device=device,
+                ),
+                "daughter_input_pid_source_ids": torch.full(
+                    (1, proposal_count),
+                    MODEL_INPUT_SOURCE_TO_ID["runtime_reconstructed"],
+                    dtype=torch.long,
+                    device=device,
+                ),
+                "truth_supervision_source_ids": torch.full(
+                    (1, proposal_count),
+                    TRUTH_SUPERVISION_SOURCE_TO_ID["retained_mc_truth"],
+                    dtype=torch.long,
+                    device=device,
+                ),
+                "daughter_truth_pid_source_ids": torch.full(
+                    (1, proposal_count),
+                    TRUTH_SUPERVISION_SOURCE_TO_ID["retained_mc_truth"],
+                    dtype=torch.long,
+                    device=device,
+                ),
+            }
+        )
     for optional_pid_field in ("pid_target_labels", "truth_pid_labels"):
         if optional_pid_field in batch:
             vector_additions[optional_pid_field] = vector_additions["pid_labels"].clone()
@@ -1113,6 +1156,285 @@ def append_composite_proposals(
         & ~torch.eye(positions.numel(), dtype=torch.bool)
     ).to(device).unsqueeze(0)
     return result, [int(value) for value in new_ids.tolist()]
+
+
+def batched_level_step(
+    batch: dict[str, torch.Tensor],
+    model_output: LevelReconstructionOutput,
+    *,
+    daughter_mask: torch.Tensor,
+    accepted_query_mask: torch.Tensor,
+    target_level: int,
+    mother_types: torch.Tensor | None = None,
+) -> dict[str, torch.Tensor]:
+    """Vectorized one-level prediction and segmented padded append.
+
+    ``daughter_mask`` is the already decoded, constraint-valid proposal mask
+    ``[B,Q,N]``. Rejected queries receive padded append slots. The normal path
+    contains no conversion of tensor values to Python or CPU geometry rebuild.
+    """
+
+    batch = _upgrade_flat_batch(batch)
+    batch_size, old_count = batch["node_mask"].shape
+    if daughter_mask.shape[:2] != accepted_query_mask.shape:
+        raise ValueError("accepted_query_mask must match daughter_mask [B,Q]")
+    if daughter_mask.shape[0] != batch_size or daughter_mask.shape[2] != old_count:
+        raise ValueError("daughter_mask must have shape [B,Q,N]")
+    query_count = daughter_mask.shape[1]
+    if model_output.pointer.pointer_logits.shape != daughter_mask.shape:
+        raise ValueError("model pointer logits and daughter_mask must have equal shape")
+    device = batch["p4"].device
+    accepted = accepted_query_mask.bool()
+    selected = daughter_mask.bool() & accepted[..., None] & batch["node_mask"][:, None]
+    if mother_types is None:
+        mother_types = model_output.pointer.type_logits.argmax(dim=-1)
+    if mother_types.shape != accepted.shape:
+        raise ValueError("mother_types must have shape [B,Q]")
+    flat_selected = selected.reshape(batch_size * query_count, old_count)
+    proposal_confidence = torch.sigmoid(model_output.pointer.confidence_logits)
+    pointer_confidence = proposal_confidence[..., None].expand_as(
+        model_output.pointer.pointer_logits
+    )
+    flat_probabilities = (
+        batch.get("current_pid_probabilities")
+        if "current_pid_probabilities" in batch
+        else torch.nn.functional.one_hot(
+            batch["pid_labels"], num_classes=len(PDG_TOKENS)
+        ).to(batch["p4"].dtype)
+    )
+    construction = composite_physical_features_from_daughters(
+        daughter_mask=flat_selected,
+        p4=batch["p4"][:, None]
+        .expand(-1, query_count, -1, -1)
+        .reshape(batch_size * query_count, old_count, 4),
+        charge=batch["charge"][:, None]
+        .expand(-1, query_count, -1)
+        .reshape(batch_size * query_count, old_count),
+        pid_labels=batch["pid_labels"][:, None]
+        .expand(-1, query_count, -1)
+        .reshape(batch_size * query_count, old_count),
+        pid_probabilities=flat_probabilities[:, None]
+        .expand(-1, query_count, -1, -1)
+        .reshape(batch_size * query_count, old_count, len(PDG_TOKENS)),
+        pointer_confidence=pointer_confidence.reshape(
+            batch_size * query_count, old_count
+        ),
+        copied=batch["copied"][:, None]
+        .expand(-1, query_count, -1)
+        .reshape(batch_size * query_count, old_count),
+    )
+    construction = {
+        name: value.reshape(batch_size, query_count, *value.shape[1:])
+        for name, value in construction.items()
+    }
+    accepted_float = accepted.to(batch["p4"].dtype)
+    new_p4 = construction["p4"] * accepted_float[..., None]
+    new_charge = construction["charge"] * accepted_float
+    new_histogram = construction["daughter_pid_histogram"] * accepted_float[..., None]
+    new_features = construction["features"] * accepted_float[..., None]
+    new_availability = construction["availability"] & accepted[..., None]
+    result = dict(batch)
+
+    common = batch["common_features"].new_zeros(
+        (batch_size, query_count, batch["common_features"].shape[-1])
+    )
+    common[..., :4] = new_p4
+    common[..., 4] = (
+        new_p4[..., 3].square() - new_p4[..., :3].square().sum(dim=-1)
+    ).clamp_min(0).sqrt()
+    common[..., 5] = new_charge
+    common[..., 6] = mother_types.to(common.dtype) * accepted_float
+    common[..., 7] = float(target_level) * accepted_float
+    common[..., 8] = accepted_float
+    common[..., 10] = selected.sum(dim=-1).to(common.dtype)
+    common[..., 11] = proposal_confidence * accepted_float
+    composite = batch["composite_features"].new_zeros(
+        (batch_size, query_count, batch["composite_features"].shape[-1])
+    )
+    composite_available = torch.zeros_like(composite, dtype=torch.bool)
+    copied_width = min(composite.shape[-1], new_features.shape[-1])
+    composite[..., :copied_width] = new_features[..., :copied_width]
+    composite_available[..., :copied_width] = new_availability[..., :copied_width]
+    tensor_additions = {
+        "common_features": common,
+        "common_availability": accepted[..., None].expand_as(common),
+        "track_features": batch["track_features"].new_zeros(
+            (batch_size, query_count, batch["track_features"].shape[-1])
+        ),
+        "track_availability": torch.zeros(
+            (batch_size, query_count, batch["track_features"].shape[-1]),
+            dtype=torch.bool,
+            device=device,
+        ),
+        "cluster_features": batch["cluster_features"].new_zeros(
+            (batch_size, query_count, batch["cluster_features"].shape[-1])
+        ),
+        "cluster_availability": torch.zeros(
+            (batch_size, query_count, batch["cluster_features"].shape[-1]),
+            dtype=torch.bool,
+            device=device,
+        ),
+        "composite_features": composite,
+        "composite_availability": composite_available,
+        "daughter_pid_histogram": new_histogram,
+        "daughter_input_pid_histogram": new_histogram,
+        "daughter_truth_pid_histogram": torch.zeros_like(new_histogram),
+    }
+    for name, addition in tensor_additions.items():
+        result[name] = torch.cat([batch[name], addition], dim=1)
+
+    max_existing = batch["node_ids"].masked_fill(~batch["node_mask"], -1).amax(
+        dim=1, keepdim=True
+    )
+    new_ids = max_existing + 1 + torch.arange(query_count, device=device)[None]
+    new_ids = torch.where(accepted, new_ids, torch.full_like(new_ids, -1))
+    count = selected.sum(dim=-1).long()
+    side_values = batch["b_side"][:, None].expand(-1, query_count, -1)
+    side_min = side_values.masked_fill(~selected, 2).amin(dim=-1)
+    side_max = side_values.masked_fill(~selected, -2).amax(dim=-1)
+    new_side = torch.where(
+        accepted & (side_min == side_max) & (side_min >= 0),
+        side_min,
+        torch.full_like(side_min, -1),
+    )
+    from hypertagging.data.heterogeneous import (
+        MODEL_INPUT_SOURCE_TO_ID,
+        TRUTH_SUPERVISION_SOURCE_TO_ID,
+    )
+
+    long_zeros = torch.zeros_like(mother_types)
+    bool_zeros = torch.zeros_like(accepted)
+    vector_additions = {
+        "daughter_pid_histogram_available": accepted & (count > 0),
+        "daughter_input_pid_histogram_available": accepted & (count > 0),
+        "daughter_truth_pid_histogram_available": bool_zeros,
+        "node_kind_ids": torch.full_like(mother_types, NODE_KIND_TO_ID["composite"]),
+        "leaf_kinematics_mode_ids": torch.full_like(
+            mother_types, LEAF_MODE_TO_ID["composite"]
+        ),
+        "runtime_composite_type_source_ids": torch.full_like(
+            mother_types, COMPOSITE_TYPE_SOURCE_TO_ID["predicted"]
+        ),
+        "pid_labels": torch.where(accepted, mother_types, long_zeros),
+        "level_ids": torch.where(
+            accepted, torch.full_like(mother_types, target_level), torch.full_like(mother_types, -1)
+        ),
+        "charge": new_charge,
+        "parent_ids": torch.full_like(mother_types, -1),
+        "active": accepted,
+        "copied": bool_zeros,
+        "node_ids": new_ids,
+        "reco_ids": torch.full_like(mother_types, -1),
+        "source_node_ids": new_ids,
+        "copied_from": torch.full_like(mother_types, -1),
+        "b_side": new_side,
+        "full_truth_daughter_count": count,
+        "retained_truth_daughter_count_expected": count,
+        "retained_daughter_count": count,
+        "reconstructed_daughter_count": count,
+        "complete_truth_decay": bool_zeros,
+        "complete_reconstructable_decay": accepted,
+        "recursive_reconstructable_complete": accepted,
+        "partial_missing_daughters": bool_zeros,
+        "contracted_intermediate": bool_zeros,
+        "valid_reconstruction_target": accepted & (count >= 2),
+        "truth_root_distance": long_zeros,
+        "full_event_max_level": torch.where(
+            accepted, torch.full_like(mother_types, target_level), long_zeros
+        ),
+        "model_input_source_ids": torch.full_like(
+            mother_types, MODEL_INPUT_SOURCE_TO_ID["runtime_reconstructed"]
+        ),
+        "daughter_input_pid_source_ids": torch.full_like(
+            mother_types, MODEL_INPUT_SOURCE_TO_ID["runtime_reconstructed"]
+        ),
+        "truth_supervision_source_ids": torch.full_like(
+            mother_types, TRUTH_SUPERVISION_SOURCE_TO_ID["retained_mc_truth"]
+        ),
+        "daughter_truth_pid_source_ids": torch.full_like(
+            mother_types, TRUTH_SUPERVISION_SOURCE_TO_ID["retained_mc_truth"]
+        ),
+    }
+    for optional in ("pid_target_labels", "truth_pid_labels"):
+        if optional in batch:
+            vector_additions[optional] = vector_additions["pid_labels"].clone()
+    if "truth_pid_available" in batch:
+        vector_additions["truth_pid_available"] = bool_zeros
+    for name, addition in vector_additions.items():
+        result[name] = torch.cat([batch[name], addition], dim=1)
+    result["p4"] = torch.cat([batch["p4"], new_p4], dim=1)
+
+    total_count = old_count + query_count
+    adjacency = torch.zeros(
+        (batch_size, total_count, total_count), dtype=torch.bool, device=device
+    )
+    adjacency[:, :old_count, :old_count] = batch["daughter_adjacency"]
+    adjacency[:, old_count:, :old_count] = selected
+    result["daughter_adjacency"] = adjacency
+    membership = selected.transpose(1, 2)
+    owner = membership.to(torch.long).argmax(dim=-1)
+    has_owner = membership.any(dim=-1)
+    assigned_parent = old_count + owner
+    result["parent_ids"][:, :old_count] = torch.where(
+        (batch["parent_ids"] < 0) & has_owner,
+        assigned_parent,
+        batch["parent_ids"],
+    )
+    reach = adjacency.clone()
+    for _ in range(total_count):
+        reach = reach | (torch.matmul(reach.to(torch.float32), reach.to(torch.float32)) > 0)
+    identity = torch.eye(total_count, dtype=torch.bool, device=device)[None]
+    result["ancestor_descendant_relation"] = (reach | reach.transpose(1, 2)) & ~identity
+    for name in (
+        "lca_node_id",
+        "edges_to_lca_from_i",
+        "edges_to_lca_from_j",
+        "exact_tree_path_distance",
+        "lca_depth",
+    ):
+        if name in batch:
+            padded = torch.full(
+                (batch_size, total_count, total_count), -1, dtype=batch[name].dtype, device=device
+            )
+            padded[:, :old_count, :old_count] = batch[name]
+            result[name] = padded
+    for name in ("depth_from_retained_root", "distance_to_nearest_retained_root"):
+        if name in batch:
+            result[name] = torch.cat(
+                [batch[name], torch.full_like(mother_types, -1)], dim=1
+            )
+    if "recursive_leaf_source_mask" in batch:
+        new_sources = torch.einsum(
+            "bqn,bns->bqs", selected.to(torch.float32),
+            batch["recursive_leaf_source_mask"].to(torch.float32),
+        ).bool()
+        result["recursive_leaf_source_mask"] = torch.cat(
+            [batch["recursive_leaf_source_mask"], new_sources], dim=1
+        )
+        overlap = torch.einsum(
+            "bns,bms->bnm",
+            result["recursive_leaf_source_mask"].to(torch.int32),
+            result["recursive_leaf_source_mask"].to(torch.int32),
+        ) > 0
+        result["source_conflict_matrix"] = overlap & ~identity
+    if "current_pid_probabilities" in batch:
+        mother_probability = torch.nn.functional.one_hot(
+            vector_additions["pid_labels"], num_classes=len(PDG_TOKENS)
+        ).to(batch["current_pid_probabilities"].dtype)
+        result["current_pid_probabilities"] = torch.cat(
+            [batch["current_pid_probabilities"], mother_probability], dim=1
+        )
+        result["current_pid_tokens"] = torch.cat(
+            [batch["current_pid_tokens"], vector_additions["pid_labels"]], dim=1
+        )
+        result["current_pid_available"] = torch.cat(
+            [batch["current_pid_available"], accepted], dim=1
+        )
+    result["node_mask"] = result["active"]
+    result["node_features"] = result["common_features"]
+    result.pop("allowed_type_mask", None)
+    result.pop("pointer_validity_mask", None)
+    return result
 
 
 def _select_nodes(
@@ -1238,6 +1560,8 @@ __all__ = [
     "RolloutConfig",
     "RolloutStep",
     "append_composite_proposals",
+    "batched_level_step",
+    "evaluation_reference_rollout",
     "hard_decode_proposals",
     "level_rollout",
     "cached_context_for_level",

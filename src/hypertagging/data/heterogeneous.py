@@ -28,6 +28,36 @@ from hypertagging.preprocessing.schema_v4 import (
 )
 
 
+MODEL_INPUT_SOURCE_TO_ID = {
+    "native_v4_reconstructed": 1,
+    "versioned_compatibility_adapter": 2,
+    "runtime_reconstructed": 3,
+}
+TRUTH_SUPERVISION_SOURCE_TO_ID = {"retained_mc_truth": 101}
+
+
+def _model_input_histogram_from_node(node: dict[str, Any]) -> list[float]:
+    """Read only the explicitly model-input daughter PID summary."""
+
+    return list(
+        node.get(
+            "daughter_input_pid_histogram",
+            node.get("daughter_pid_histogram", [0] * len(PDG_TOKENS)),
+        )
+    )
+
+
+def _truth_supervision_histogram_from_node(node: dict[str, Any]) -> list[float]:
+    """Read only truth-supervision daughter PID state."""
+
+    return list(
+        node.get(
+            "daughter_truth_pid_histogram",
+            node.get("daughter_pid_histogram", [0] * len(PDG_TOKENS)),
+        )
+    )
+
+
 @dataclass(frozen=True)
 class HeterogeneousEvent:
     event_id: int
@@ -207,13 +237,7 @@ def _event_from_record(event: dict[str, Any]) -> HeterogeneousEvent:
             dtype=torch.bool,
         ),
         daughter_input_pid_histogram=torch.tensor(
-            [
-                node.get(
-                    "daughter_input_pid_histogram",
-                    node.get("daughter_pid_histogram", [0] * len(PDG_TOKENS)),
-                )
-                for node in nodes
-            ],
+            [_model_input_histogram_from_node(node) for node in nodes],
             dtype=torch.float32,
         ),
         daughter_input_pid_histogram_available=torch.tensor(
@@ -229,13 +253,7 @@ def _event_from_record(event: dict[str, Any]) -> HeterogeneousEvent:
             dtype=torch.bool,
         ),
         daughter_truth_pid_histogram=torch.tensor(
-            [
-                node.get(
-                    "daughter_truth_pid_histogram",
-                    node.get("daughter_pid_histogram", [0] * len(PDG_TOKENS)),
-                )
-                for node in nodes
-            ],
+            [_truth_supervision_histogram_from_node(node) for node in nodes],
             dtype=torch.float32,
         ),
         daughter_truth_pid_histogram_available=torch.tensor(
@@ -740,6 +758,39 @@ def collate_heterogeneous_events(events: Sequence[HeterogeneousEvent]) -> dict[s
             event.recursive_leaf_source_mask
         )
     output["node_mask"] = output["active"].clone()
+    native_v4 = torch.tensor(
+        [
+            "direct-mdst-tree-v4" in (
+                event.source_schema_version or event.schema_version
+            )
+            for event in events
+        ],
+        dtype=torch.bool,
+    )
+    input_sources = torch.where(
+        native_v4,
+        torch.full(
+            (batch_size,), MODEL_INPUT_SOURCE_TO_ID["native_v4_reconstructed"]
+        ),
+        torch.full(
+            (batch_size,),
+            MODEL_INPUT_SOURCE_TO_ID["versioned_compatibility_adapter"],
+        ),
+    )
+    output["model_input_source_ids"] = input_sources[:, None].expand(
+        batch_size, max_nodes
+    ).clone()
+    output["daughter_input_pid_source_ids"] = output[
+        "model_input_source_ids"
+    ].clone()
+    output["truth_supervision_source_ids"] = torch.full(
+        (batch_size, max_nodes),
+        TRUTH_SUPERVISION_SOURCE_TO_ID["retained_mc_truth"],
+        dtype=torch.long,
+    )
+    output["daughter_truth_pid_source_ids"] = output[
+        "truth_supervision_source_ids"
+    ].clone()
     from hypertagging.reconstruction.pid_state import COMPOSITE_TYPE_SOURCE_TO_ID
 
     output["runtime_composite_type_source_ids"] = torch.full_like(
@@ -864,6 +915,8 @@ def _stable_reco_id(value: str) -> int:
 
 __all__ = [
     "HeterogeneousEvent",
+    "MODEL_INPUT_SOURCE_TO_ID",
+    "TRUTH_SUPERVISION_SOURCE_TO_ID",
     "collate_heterogeneous_events",
     "heterogeneous_from_level_event",
     "heterogeneous_event_from_record",

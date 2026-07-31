@@ -1,62 +1,46 @@
-# Heterogeneous node encoding
+# Schema-v4 heterogeneous node encoding
 
-`direct-mdst-tree-v2` gives every node an explicit kind: `track`,
-`ecl_cluster`, `composite`, `unknown`, or `other`. Every stored numeric block
-has a parallel value-level availability mask. A stored zero is only a
-tensor-safe placeholder and never means that a detector quantity was measured.
+Production schema `direct-mdst-tree-v4` assigns every node an explicit kind:
+`track`, `ecl_cluster`, `composite`, `unknown`, or `other`. Every numeric block
+has value-level availability masks; stored zeros are tensor-safe placeholders,
+never claims that a detector quantity was measured.
 
-## Common block
+## Current input contract
 
-The shared block has identical semantics for every node:
+The common block contains p4, invariant mass, reconstructed charge, current
+input PID token, retained-tree level, active/copied flags, daughter count, and
+candidate confidence. Track blocks include available helix/fit and
+PIDLikelihood-derived quantities. ECL blocks include reconstructed energy,
+direction, shower values, and matching state when available. Unsupported
+accessors remain masked.
 
-`px`, `py`, `pz`, `energy`, invariant `mass`, `charge`, `reduced_pid`,
-`level`, `active`, `copied`, `n_daughters`, and `candidate_confidence`.
+Composite persistent inputs are exact daughter-summed p4 and charge, daughter
+count, prediction-confidence summaries, copied-daughter fraction, and the
+model-input daughter PID histogram. Truth daughter-PID/channel/MC fields have
+separate construction functions and source provenance. They never enter the
+encoder, relation features, pointers, type logits, or leaf-PID inference.
 
-Track-specific fields currently supported when returned by basf2 are fit
-p-value, d0, z0, phi0, omega, and tan-lambda. ECL-specific fields include the
-cluster energy and p4-derived direction, plus available timing, E9/E21,
-crystal count, minimum track distance, photon-hypothesis, and track-match
-state. Unsupported accessors stay unavailable.
+## Architecture and composite lifecycle
 
-Composites contain daughter-summed p4/charge, daughter count, pointer
-confidence statistics when predicted, copied-daughter fraction, and a
-reduced-PID daughter histogram. They never claim track or cluster fields.
+Common, track, cluster, and composite adapters all return `d_model`. Masked
+values are cleaned before projection. The representation combines common and
+kind-specific projections, current PID, node kind, level representation, and
+availability, then enters a shared relation-aware contextual encoder. Tree,
+reconstruction, channel, and hyperbolic projections branch only afterward.
 
-## Architecture
+Append-time construction persists physical daughter sums only. Contextual
+daughter pooling is transient: every subsequent encoder pass recomputes the
+permutation-invariant pooled daughter summary from the current adjacency and
+contextual embeddings. Truth-guided and predicted states with identical links
+therefore follow the same next-pass construction contract.
 
-`CommonNodeEncoder`, `TrackNodeEncoder`, `ClusterNodeEncoder`, and
-`CompositeNodeEncoder` all return `d_model`. Values are cleaned only after
-their masks are applied. The shared initial representation sums:
+`learned_euclidean` is the stable level baseline. The optional
+`bounded_tangent_level_embedding` is accurately a tangent-space mechanism: it
+uses learned directions and ordered bounded radii with leaves outside roots.
+It is not described as literal hyperbolic positional encoding.
 
-- the common projection;
-- the selected type projection;
-- reduced-PID, node-kind, and level embeddings;
-- an explicit availability projection.
+## Historical compatibility
 
-It then applies one shared normalization and MLP. A single shared encoder feeds
-tree, reconstruction, and channel projections. The tree projection is mapped
-to one Poincare ball; tracks, clusters, and composites do not get unrelated
-geometries.
-
-For a composite, masked mean pooling over daughter embeddings is
-permutation-invariant. `composite_token_from_daughters` is the common
-construction routine used by truth-guided and predicted paths. During every
-rollout step, all current nodes are re-encoded, so appended composites receive
-the same pooled-daughter treatment as teacher-forced composites.
-
-## V1 adaptation
-
-A v1 leaf is a track or ECL cluster only when its explicit `reco_id` prefix
-proves that provenance. Other reconstructed leaves are `other`; absent
-provenance is `unknown`. V1 detector blocks are entirely unavailable.
-Reco-derived composite structure is recovered from existing daughter links and
-stored p4 without inventing detector measurements. All original scalar values,
-IDs, links, flags, and diagnostic MC fields remain unchanged.
-# Correctness revision
-
-Schema-v3 track blocks add verified PIDLikelihood log-likelihoods and
-e/mu/pi/K/p energy hypotheses with per-value availability. These are
-data-compatible measurements/derivations; truth PID is a separate target.
-Adapters now enter one physical relation-aware contextualizer before task and
-hyperbolic projections. Optional hyperbolic relation refinement is downstream,
-avoiding circular dependence.
+V1/v2/v3 adapter semantics and schema evolution are preserved in
+[schema migration history](schema_migration_history.md). Compatibility paths
+remain testable but do not redefine the current v4 contract.

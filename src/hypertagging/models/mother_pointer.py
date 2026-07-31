@@ -7,7 +7,9 @@ from dataclasses import dataclass
 import torch
 from torch import nn
 
+from hypertagging.models.first_level_ablations import type_conditioned_relation_bias
 from hypertagging.preprocessing.pid_filter import PDG_TOKENS, STATIC_MOTHER_TOKENS
+from hypertagging.preprocessing.schema_v2 import NODE_KINDS
 
 
 @dataclass(frozen=True)
@@ -18,6 +20,7 @@ class MotherPointerOutput:
     cardinality_logits: torch.Tensor
     confidence_logits: torch.Tensor
     expected_type_embedding: torch.Tensor | None = None
+    query_node_compatibility_bias: torch.Tensor | None = None
 
 
 class MotherPointerDecoder(nn.Module):
@@ -31,12 +34,16 @@ class MotherPointerDecoder(nn.Module):
         max_cardinality: int = 6,
         n_queries: int = 8,
         max_level: int = 32,
+        type_conditioned_daughter_relation_bias: bool = False,
     ) -> None:
         super().__init__()
         if n_types != len(PDG_TOKENS):
             n_types = len(PDG_TOKENS)
         self.n_queries = n_queries
         self.max_cardinality = max_cardinality
+        self.type_conditioned_daughter_relation_bias = bool(
+            type_conditioned_daughter_relation_bias
+        )
         self.query = nn.Parameter(torch.randn(n_queries, hidden_dim) * 0.02)
         self.target_level_embedding = nn.Embedding(max_level + 1, hidden_dim)
         self.type_embedding = nn.Embedding(n_types, hidden_dim)
@@ -58,6 +65,18 @@ class MotherPointerDecoder(nn.Module):
         self.confidence_head = nn.Linear(hidden_dim, 1)
         self.pointer_query = nn.Linear(2 * hidden_dim, hidden_dim)
         self.pointer_key = nn.Linear(hidden_dim, hidden_dim)
+        if self.type_conditioned_daughter_relation_bias:
+            self.type_relation_table = nn.Parameter(torch.zeros(n_types, n_types))
+            self.compatibility_kind_embedding = nn.Embedding(
+                len(NODE_KINDS), hidden_dim
+            )
+            self.compatibility_query = nn.Linear(3 * hidden_dim, hidden_dim)
+            self.compatibility_node = nn.Linear(3 * hidden_dim + 3, hidden_dim)
+        else:
+            self.register_parameter("type_relation_table", None)
+            self.compatibility_kind_embedding = None
+            self.compatibility_query = None
+            self.compatibility_node = None
         static_mask = torch.zeros(n_types, dtype=torch.bool)
         static_mask[list(STATIC_MOTHER_TOKENS)] = True
         self.register_buffer("static_mother_type_mask", static_mask)
@@ -71,6 +90,11 @@ class MotherPointerDecoder(nn.Module):
         allowed_type_mask: torch.Tensor | None = None,
         type_logit_bias: torch.Tensor | None = None,
         pointer_validity_mask: torch.Tensor | None = None,
+        node_pid_probabilities: torch.Tensor | None = None,
+        node_charge: torch.Tensor | None = None,
+        node_kind_ids: torch.Tensor | None = None,
+        node_level_ids: torch.Tensor | None = None,
+        node_relation_summary: torch.Tensor | None = None,
     ) -> MotherPointerOutput:
         if target_level < 0 or target_level >= self.target_level_embedding.num_embeddings:
             raise ValueError(f"target_level={target_level} is outside decoder level capacity")
@@ -107,6 +131,74 @@ class MotherPointerDecoder(nn.Module):
         q = self.pointer_query(torch.cat([attended, expected_type], dim=-1))
         k = self.pointer_key(context)
         pointer_logits = torch.einsum("bqh,bnh->bqn", q, k) / (context.shape[-1] ** 0.5)
+        compatibility_bias = None
+        if self.type_conditioned_daughter_relation_bias:
+            required = {
+                "node_pid_probabilities": node_pid_probabilities,
+                "node_charge": node_charge,
+                "node_kind_ids": node_kind_ids,
+                "node_level_ids": node_level_ids,
+                "node_relation_summary": node_relation_summary,
+            }
+            missing = sorted(name for name, value in required.items() if value is None)
+            if missing:
+                raise ValueError(
+                    "type-conditioned relation bias requires " + ", ".join(missing)
+                )
+            assert node_pid_probabilities is not None
+            assert node_charge is not None
+            assert node_kind_ids is not None
+            assert node_level_ids is not None
+            assert node_relation_summary is not None
+            if node_pid_probabilities.shape != (
+                batch_size, context.shape[1], type_logits.shape[-1]
+            ):
+                raise ValueError("node_pid_probabilities has an invalid shape")
+            assert self.type_relation_table is not None
+            assert self.compatibility_kind_embedding is not None
+            assert self.compatibility_query is not None
+            assert self.compatibility_node is not None
+            type_probabilities = torch.softmax(type_logits, dim=-1)
+            node_type = node_pid_probabilities.to(self.type_embedding.weight.dtype)
+            node_type_embedding = node_type @ self.type_embedding.weight
+            kind_embedding = self.compatibility_kind_embedding(
+                node_kind_ids.clamp(0, len(NODE_KINDS) - 1)
+            )
+            scalar_features = torch.stack(
+                [
+                    torch.tanh(node_charge.to(context.dtype)),
+                    node_level_ids.to(context.dtype)
+                    / float(self.target_level_embedding.num_embeddings - 1),
+                    torch.tanh(node_relation_summary.to(context.dtype)),
+                ],
+                dim=-1,
+            )
+            compatibility_q = self.compatibility_query(
+                torch.cat(
+                    [
+                        attended,
+                        expected_type,
+                        level.view(1, 1, -1).expand(batch_size, attended.shape[1], -1),
+                    ],
+                    dim=-1,
+                )
+            )
+            compatibility_k = self.compatibility_node(
+                torch.cat(
+                    [context, node_type_embedding, kind_embedding, scalar_features],
+                    dim=-1,
+                )
+            )
+            compatibility_bias = (
+                torch.einsum("bqh,bnh->bqn", compatibility_q, compatibility_k)
+                / (context.shape[-1] ** 0.5)
+                + type_conditioned_relation_bias(
+                    type_probabilities,
+                    self.type_relation_table,
+                    node_type,
+                )
+            )
+            pointer_logits = pointer_logits + compatibility_bias
         pointer_logits = pointer_logits.masked_fill(~context_mask[:, None, :], -1e4)
         if pointer_validity_mask is not None:
             if pointer_validity_mask.shape != pointer_logits.shape:
@@ -119,6 +211,7 @@ class MotherPointerDecoder(nn.Module):
             cardinality_logits=self.cardinality_head(attended),
             confidence_logits=self.confidence_head(attended).squeeze(-1),
             expected_type_embedding=expected_type,
+            query_node_compatibility_bias=compatibility_bias,
         )
 
 

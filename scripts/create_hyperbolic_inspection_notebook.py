@@ -343,6 +343,33 @@ def build_notebook() -> nbf.NotebookNode:
             plt.tight_layout(); plt.savefig(FIGURE_DIR/"tree_distance_supervision.png"); plt.show()
             """
         ),
+        md("## Objective-gradient conflict diagnostic"),
+        code(
+            """
+            from hypertagging.losses.hyperbolic_pretraining import hyperbolic_pretraining_loss, build_topology_safe_parent_negative_mask
+            from hypertagging.training.pretrain_trainer import objective_gradient_diagnostics, pretraining_projection_parameter_groups
+            gradient_model=ContextualPretrainingModel(d_model=24,hyper_dim=4,channel_pooling="mean_all")
+            gradient_encoded,gradient_leaf_logits,gradient_batch=gradient_model.encode_runtime(batch,attention_mask=batch["node_mask"][:,:,None]&batch["node_mask"][:,None,:])
+            gradient_relation_logits=gradient_model.relation_head(gradient_encoded.tree_projection)
+            gradient_targets,gradient_relation_mask=build_tree_relation_targets(parent_ids=batch["parent_ids"],lca_depth=batch["lca_depth"],level_ids=batch["level_ids"],node_mask=mask,b_side=batch["b_side"],lca_node_id=batch["lca_node_id"],edges_to_lca_from_i=batch["edges_to_lca_from_i"],edges_to_lca_from_j=batch["edges_to_lca_from_j"])
+            gradient_negative_mask=build_topology_safe_parent_negative_mask(gradient_targets,mask,batch["ancestor_descendant_relation"])
+            gradient_branches,gradient_branch_mask=pool_b_branch_embeddings(gradient_encoded.channel_projection,batch["b_side"],mask,mode="mean_all",level_ids=batch["level_ids"])
+            gradient_loss=hyperbolic_pretraining_loss(z=gradient_encoded.hyperbolic_embeddings,tree_relation_logits=gradient_relation_logits,tree_relation_targets=gradient_targets,tree_relation_mask=gradient_relation_mask,parent_negative_mask=gradient_negative_mask,parent_ids=batch["parent_ids"],level_ids=batch["level_ids"],node_mask=mask,b_side=batch["b_side"],node_kind_ids=batch["node_kind_ids"],event_ids=batch["event_ids"],exact_tree_path_distance=batch["exact_tree_path_distance"],channel_embeddings=gradient_branches,channel_mask=gradient_branch_mask,full_truth_channel_ids=torch.stack([batch["b1_full_truth_channel_ids"],batch["b2_full_truth_channel_ids"]],-1),reconstructable_channel_ids=torch.stack([batch["b1_reconstructable_channel_ids"],batch["b2_reconstructable_channel_ids"]],-1),depth_from_retained_root=batch["depth_from_retained_root"],distance_to_nearest_retained_root=batch["distance_to_nearest_retained_root"])
+            leaf_mask=mask&(batch["level_ids"]==0)&batch["truth_pid_available"]
+            gradient_leaf_loss=torch.nn.functional.cross_entropy(gradient_leaf_logits[leaf_mask],batch["truth_pid_labels"][leaf_mask]) if leaf_mask.any() else gradient_encoded.node_embeddings.sum()*0
+            gradient_objectives={'lca':gradient_loss.components['lca'],'parent':gradient_loss.components['parent'],'tree_distance':gradient_loss.components['tree_distance'],'radius':gradient_loss.components['depth'],'channel':gradient_loss.components['channel'],'variance':gradient_loss.components['var'],'covariance':gradient_loss.components['cov'],'leaf_pid':gradient_leaf_loss}
+            gradient_report=objective_gradient_diagnostics(gradient_objectives,pretraining_projection_parameter_groups(gradient_model))
+            gradient_report['objective_magnitudes']={name:float(value.detach()) for name,value in gradient_objectives.items()}
+            gradient_report['active_denominators']={name:float(value.detach()) for name,value in gradient_loss.diagnostics.items() if name.startswith('active_denominator_') or name in {'channel_active_anchors','channel_total_anchors','channel_positive_pairs'}}
+            gradient_report['active_denominators']['leaf_pid']=int(leaf_mask.sum())
+            gradient_report['channel_batch_without_positive_pairs']=gradient_report['active_denominators'].get('channel_positive_pairs',0)==0
+            gradient_report['pass_fail_status']='PASS'
+            display(pd.DataFrame(gradient_report['gradient_norms']))
+            cosine_frame=pd.DataFrame(gradient_report['gradient_cosines']['shared_encoder'])
+            fig,ax=plt.subplots(figsize=(8,7));image=ax.imshow(cosine_frame.values,vmin=-1,vmax=1,cmap='coolwarm');ax.set_xticks(range(len(cosine_frame)),cosine_frame.columns,rotation=45,ha='right');ax.set_yticks(range(len(cosine_frame)),cosine_frame.index);ax.set_title('Principal-objective gradient cosine: shared encoder');fig.colorbar(image,ax=ax);fig.tight_layout();fig.savefig(FIGURE_DIR/'objective_gradient_cosines.png');plt.show()
+            (FIGURE_DIR/'objective_gradient_report.json').write_text(json.dumps(gradient_report,indent=2))
+            """
+        ),
         md(
             """
             ## Takeaways

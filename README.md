@@ -9,8 +9,9 @@ The current revision adds a production-oriented, CPU-verified implementation
 of hyperbolic-pretrained level-autoregressive set reconstruction while
 preserving versioned compatibility with historical preprocessing:
 
-- `direct-mdst-tree-v2` heterogeneous node blocks and explicit availability;
-- v1-to-v2 in-memory adaptation without fabricated detector fields;
+- production `direct-mdst-tree-v4` event-row data, explicit provenance, and
+  separate model-input versus truth-supervision features;
+- v1/v2/v3 compatibility without fabricated detector fields;
 - canonical structured two-B channels and unordered Upsilon pair identity;
 - track, ECL, and composite adapters in one shared latent/Poincare space;
 - exact retained-tree LCA/path geometry, topology-safe directed-parent,
@@ -18,8 +19,8 @@ preserving versioned compatibility with historical preprocessing:
 - relation bias applied to actual stair-causal attention logits;
 - overlap-aware physical pair relations that expose mass/energy only for
   disjoint recursive sources;
-- teacher-forced, scheduled, and free full-tree rollout with daughter-summed
-  composite p4 and explicit soft/hard PID-kinematics modes;
+- batched teacher-forced validation, a vectorized one-level append step, and a
+  bounded batch-size-one reference free rollout with daughter-summed p4;
 - fixture-executable dataset, geometry, rollout, and QA notebooks.
 
 These additions are software-validated on tiny CPU fixtures. Full-training
@@ -42,7 +43,9 @@ The unified package consolidates reusable code from:
   reconstruction definitions.
 - `graFEI_gpt`: GPT-like/autoregressive GraFEI branch.
 
-See `REPOSITORY_MAP.md` for the current compact mapping.
+See `REPOSITORY_MAP.md` for the current compact mapping. The current audit and
+immutable historical snapshots are indexed in
+[`docs/audits/README.md`](docs/audits/README.md).
 
 ## Data Roots
 
@@ -210,14 +213,12 @@ uv --cache-dir /tmp/uv-cache run python examples/gpt_like_minimal/run_example.py
 - Components listed in `MIGRATION_PLAN.md` under "must not be refactored" should
   remain unchanged until broader equivalence tests exist.
 
-## Historical correctness revision: schema-v3
+## Historical schema compatibility
 
-Schema v3 was the production target of an earlier revision. It remains
-readable, but new production preprocessing uses v4. Raw generic-mDST tracks use a
-data-independent best-p-value fit (pion closest-mass fallback), reconstructed
-charge, canonical pion energy, all e/mu/pi/K/p energy hypotheses, and available
-PIDLikelihood log-likelihoods. MC PID/charge/p4 occupy separate truth or
-diagnostic fields. V1/v2 remain loadable through conservative adapters.
+V1/v2/v3 remain readable through conservative adapters, but they do not define
+the production architecture. Detailed evolution is preserved in
+[`docs/schema_migration_history.md`](docs/schema_migration_history.md); current
+documentation describes schema-v4 first.
 
 Real (non-dry-run) CPU pilots now accept parquet data:
 

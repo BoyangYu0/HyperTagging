@@ -1,5 +1,0 @@
-name: first_level_whole_set_scorer
-whole_set_compatibility_scorer: true
-iterative_within_mother_pointer: false
-type_conditioned_daughter_relation_bias: false
-enabled_by_default: false

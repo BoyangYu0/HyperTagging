@@ -1,85 +1,57 @@
-# Structured two-B channel representation
+# Schema-v4 channel representation
 
-The `direct-mdst-tree-v2` event record keeps topology labels separate from
-reconstructed kinematics and from event membership.
+The production `direct-mdst-tree-v4` event record keeps channel topology,
+reconstructed kinematics, and event membership separate. Channel labels are
+truth-guided supervision and diagnostics; they are not model input features at
+inference.
 
-## Canonical signature
+## Current v4 contract
 
-For a retained node, the signature is a recursively sorted pair of its reduced
-PID token and daughter signatures. It is built after the verified PID
-pruning/contraction step. Node IDs, reconstructed four-vectors, reconstructed
-object IDs, and copy IDs are absent, so changing the identity of a copied node
-does not change the signature.
+A retained node's canonical signature is the recursively sorted pair of its
+reduced PID token and daughter signatures after the verified contraction step.
+Node IDs, copy IDs, reconstructed object IDs, and four-vectors are excluded.
+Canonical compact JSON is assigned a stable 60-bit SHA-256-derived ID; zero
+means unavailable. Optional charge-conjugate normalization selects the
+lexicographically smaller full recursive signature.
 
-The implementation serializes the tuple as canonical compact JSON and assigns a
-stable 60-bit ID from SHA-256. ID zero means unavailable. Charge-conjugate
-normalization is configurable. When enabled, the lexicographically smaller of
-the original and fully conjugated recursive signatures is used.
+V4 stores separate full-retained and reconstructable-retained signatures and
+IDs for both B branches, plus their sorted permutation-invariant Upsilon pair.
+B-side ordering is deterministic and has no tag/signal meaning. Upsilon(4S)
+discovery requires exactly two direct retained B0/B+ daughters; B_s is excluded
+by default and any fallback is flagged.
 
-Each event stores:
+Structured summaries contain dense reduced-PID counts, depth-by-PID and
+relative-depth counts, selected intermediate counts, sorted branch
+multiplicities, node count, and maximum relative depth.
+`structured_channel_similarity` is a symmetric weighted Jaccard score over
+these structures. It is a graded metric-learning target, not a replacement for
+exact IDs.
 
-- `b1_channel_signature`, `b2_channel_signature`;
-- `b1_channel_id`, `b2_channel_id`;
-- `y4s_channel_signature`, the sorted unordered pair;
-- `y4s_channel_id`.
+These labels must not be conflated:
 
-The B-side ordering is deterministic but has no claim of tag/signal semantics.
-The Upsilon representation is explicitly permutation-invariant.
+- `same_event`: branches originate in one event only;
+- B-side membership: a node-to-branch relation;
+- exact full/reconstructable equality: canonical signature equality;
+- structured similarity: graded count/topology similarity;
+- Upsilon pair ID: the unordered pair of B signatures.
 
-## Count arrays and similarity
-
-**Compatibility boundary:** no historical dictionary-array implementation was
-recoverable after searching every reachable commit, branch/tag, migration and
-legacy/archive reference, and unreachable Git object in this repository. The
-current representation is not claimed to be exactly legacy-equivalent. See
-`docs/model_revision_audit.md` and `docs/current_head_gap_audit.md`. V2 therefore implements
-the explicit fallback design:
-
-- dense reduced-PID counts;
-- depth-by-reduced-PID counts;
-- relative depth counts;
-- selected intermediate-particle counts;
-- sorted branch multiplicities;
-- node count and maximum relative depth.
-
-The parquet stores dense PID arrays directly and the complete structured
-summary as JSON. `structured_channel_similarity` is a symmetric weighted
-Jaccard score over PID, depth/PID, and multiplicity components. It supports a
-continuous metric-learning target and does not replace exact IDs.
-
-## Labels that must not be conflated
-
-- `same_event` states only that the two branches came from one event.
-- B-side membership is a node/branch relation.
-- `exact_channel_equal` compares canonical signatures.
-- `structured_channel_similarity` compares count/topology summaries.
-- `y4s_channel_id` identifies the unordered pair of B signatures.
-
-Two B mesons from the same Upsilon event are not automatically the same
-channel. Channel loss pools shared node embeddings within each truth-guided B
-branch and compares branch embeddings. Individual final-state tokens are not
-required to classify the full B decay.
-
-Exact IDs remain useful for diagnostics, rare-channel stratification, and
-seen/unseen evaluation. They are not the only training objective.
+The two B mesons in one event are never positive merely because they share the
+event. Channel training pools shared contextual node embeddings within each
+truth-guided B branch and forms pairs across minibatch branches. The optional
+checkpointed ring buffer extends comparisons across minibatches without
+copying the full bank at every step.
 
 ## Pooling ablations
 
-The current baseline uses the mean of all retained nodes on each truth-guided
-B branch. CPU-testable alternatives are B-root-only, learned within-branch
-attention, and level-weighted pooling. Their configs are
-`configs/ablations/channel_pool_*.yaml`. Fixture execution validates mechanics
-only; a held-out matched-split HTCondor comparison is deferred.
-# Correctness revision
+The baseline is mean pooling over all retained branch nodes. B-root-only,
+final-state-only, learned-attention, and level-weighted alternatives are in
+`configs/ablations/channel_pool_*.yaml`. Fixtures validate mechanics only;
+matched held-out comparison remains external.
 
-Schema-v3 stores full retained generator-decay and reconstructable retained-tree
-signatures separately for both B branches and their unordered Upsilon pair.
-Upsilon(4S) discovery requires exactly two direct B0/B+ daughters of one
-retained resonance; B_s is excluded by default and any fallback is flagged.
+## Historical compatibility
 
-Channel training pools B-branch nodes and forms pairs across all branches in
-the minibatch. Exact full/reconstructable equality creates positives;
-structured count/tree similarity can create graded positives. The two B
-mesons in one event are never positive merely because they share an event.
-`--channel-memory-size N` optionally enables a detached, checkpointed FIFO
-bank so rare positives and hard negatives can be compared across minibatches.
+No exact historical dictionary-array implementation was recoverable from this
+repository, so v4 makes no legacy-equivalence claim. Schema-v2/v3 evolution,
+compatibility boundaries, and the earlier fallback design are preserved in
+[schema migration history](schema_migration_history.md). Historical audit
+claims are indexed under [docs/audits](audits/README.md).

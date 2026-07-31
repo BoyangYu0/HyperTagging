@@ -49,7 +49,7 @@ def build_notebook():
         code(
             """
             from collections import Counter
-            import json, os
+            import json, os, subprocess
             from pathlib import Path
             import numpy as np
             import pandas as pd
@@ -58,6 +58,8 @@ def build_notebook():
 
             requested=os.environ.get("HYPERTAGGING_REAL_PILOT","").strip()
             if not requested:
+                report_path=Path(os.environ.get("HYPERTAGGING_REAL_PILOT_REPORT","/tmp/hypertagging-real-pilot-report.json"))
+                report_path.write_text(json.dumps({"git_sha":subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip(),"schema_version":"direct-mdst-tree-v4","fixture_or_real":"real_only","data_path_or_fixture_name":"HYPERTAGGING_REAL_PILOT not set","checkpoint_path_or_none":"none","seed":int(os.environ.get("HYPERTAGGING_NOTEBOOK_SEED","20260730")),"pass_fail_status":"NOT RUN"},indent=2),encoding="utf-8")
                 raise RuntimeError("Set HYPERTAGGING_REAL_PILOT to a real sub-100-event schema-v4 parquet; fixture substitution is forbidden")
             path=Path(requested)
             if not path.exists() or not Path(str(path)+".complete").exists():
@@ -180,7 +182,7 @@ def build_notebook():
             display(pd.DataFrame({"pid_token":pid_counts.keys(),"count":pid_counts.values()}))
             display(pd.DataFrame({"level":level_counts.keys(),"count":level_counts.values()}))
             display(pd.DataFrame(failure_examples))
-            report={"real_data":True,"events":len(events),"leaf_provenance":dict(provenance),"track_feature_availability":{str(k):v for k,v in track_availability.items()},"ecl_feature_availability":{str(k):v for k,v in ecl_availability.items()},"pidlikelihood_available":pid_available,"pidlikelihood_by_fit_and_hypothesis":{str(k):v for k,v in pid_by_fit_hypothesis.items()},"fit_choice_distribution":dict(fit_choices),"track_energy_sources":dict(energy_sources),"ecl_energy_sources":dict(ecl_energy_sources),"charge_distribution":dict(charge_values),"truth_derived_detector_inputs":len(truth_detector_inputs),"cycles":cycle_failures,"missing_links":missing_links,"level_invariant_failures":level_failures,"maximum_p4_residual":max(closure,default=0.0),"p4_closure_by_level_and_daughter_multiplicity":p4_by_level_mult,"valid_b_root_events":sum(row["valid"] for row in b_root),"strict_b_root_events":sum(row["valid"] and not row["fallback"] for row in b_root),"fallback_b_root_events":sum(row["fallback"] for row in b_root),"complete_only_and_reconstructable_partial_denominators":dict(denominators),"unmatched_reco_examples":unmatched_examples[:20],"truth_topology_only_examples":truth_only_examples[:20],"contracted_intermediate_frequency":dict(contracted),"pid_distribution":dict(pid_counts),"level_distribution":dict(level_counts),"k_l_leaf_count":len(kl_nodes),"k_l_klm_provenance_fields":dict(klm_fields),"klm_collection_contract":"report only; current direct collector declares Tracks and ECLClusters, not KLMClusters","selected_tree_plot":str(tree_plot_path),"failure_examples":failure_examples}
+            report={"git_sha":subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip(),"schema_version":"direct-mdst-tree-v4","fixture_or_real":"real_only","data_path_or_fixture_name":str(path),"checkpoint_path_or_none":"none","seed":int(os.environ.get("HYPERTAGGING_NOTEBOOK_SEED","20260730")),"pass_fail_status":"PASS","real_data":True,"events":len(events),"leaf_provenance":dict(provenance),"track_feature_availability":{str(k):v for k,v in track_availability.items()},"ecl_feature_availability":{str(k):v for k,v in ecl_availability.items()},"pidlikelihood_available":pid_available,"pidlikelihood_by_fit_and_hypothesis":{str(k):v for k,v in pid_by_fit_hypothesis.items()},"fit_choice_distribution":dict(fit_choices),"track_energy_sources":dict(energy_sources),"ecl_energy_sources":dict(ecl_energy_sources),"charge_distribution":dict(charge_values),"truth_derived_detector_inputs":len(truth_detector_inputs),"cycles":cycle_failures,"missing_links":missing_links,"level_invariant_failures":level_failures,"maximum_p4_residual":max(closure,default=0.0),"p4_closure_by_level_and_daughter_multiplicity":p4_by_level_mult,"valid_b_root_events":sum(row["valid"] for row in b_root),"strict_b_root_events":sum(row["valid"] and not row["fallback"] for row in b_root),"fallback_b_root_events":sum(row["fallback"] for row in b_root),"complete_only_and_reconstructable_partial_denominators":dict(denominators),"unmatched_reco_examples":unmatched_examples[:20],"truth_topology_only_examples":truth_only_examples[:20],"contracted_intermediate_frequency":dict(contracted),"pid_distribution":dict(pid_counts),"level_distribution":dict(level_counts),"k_l_leaf_count":len(kl_nodes),"k_l_klm_provenance_fields":dict(klm_fields),"klm_collection_contract":"report only; current direct collector declares Tracks and ECLClusters, not KLMClusters","selected_tree_plot":str(tree_plot_path),"failure_examples":failure_examples}
             report_path=Path(os.environ.get("HYPERTAGGING_REAL_PILOT_REPORT","/tmp/hypertagging-real-pilot-report.json"))
             report_path.write_text(json.dumps(report,indent=2,sort_keys=True),encoding="utf-8")
             print(report_path)

@@ -1,2 +1,6 @@
 model_preset: production_baseline
-
+channel_memory_size: 4096
+channel_zero_positive_validation_window: 3
+channel_zero_positive_action: fail
+objective_gradient_diagnostics: false
+objective_gradient_diagnostics_every: 100

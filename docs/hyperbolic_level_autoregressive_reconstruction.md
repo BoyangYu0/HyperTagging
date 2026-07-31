@@ -154,10 +154,12 @@ bounded weighted set-packing resolver is evaluation-only and does not turn
 greedy decoding into a claim of global ambiguity resolution.
 
 An additional top-K bounded beam preserves competing partial trees for one or
-two levels. It and set packing are evaluation-only. Free rollout is currently
-batch-size one; runtime reporting labels that limitation and records the
-concrete batched design: padded/ragged event and beam axes, segmented append,
-and compaction between levels.
+two levels. It and set packing are evaluation-only. The complete free path is
+named `evaluation_reference_rollout`: it is deliberately bounded and batch
+size one. `batched_level_step` vectorizes one complete masked target-level
+prediction and segmented append for multiple events with exact daughter-sum
+p4. Full multi-level batched free rollout, event stop masks, and compaction are
+future production work.
 
 Each rollout step:
 
@@ -176,8 +178,9 @@ prevented structurally because a new mother may point only to pre-existing
 nodes.
 
 Teacher forcing uses truth links but the same reco-derived construction.
-Scheduled sampling is seeded and reproducible. Evaluation reports both
-teacher-forced next-level metrics and free-rollout edge/tree metrics.
+Scheduled sampling is seeded and reproducible. Production documentation
+distinguishes batched teacher-forced validation, the bounded reference free
+rollout, and the future multi-level batched rollout.
 
 ## Verification boundary
 

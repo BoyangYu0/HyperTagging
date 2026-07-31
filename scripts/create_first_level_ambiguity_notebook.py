@@ -32,7 +32,7 @@ def build_notebook():
         pointer factorization at Level 0 -> 1. It does not promote a more complex
         decoder or make a physics-performance claim.
         """),
-        md("## Context & Methods\n\nAll metrics use proposal-, daughter-, or truth-mother-local denominators. The optional whole-set scorer, iterative pointer decoder, and type-conditioned relation bias remain disabled by default and bounded; no unrestricted enumerator is used."),
+        md("## Context & Methods\n\nAll metrics use proposal-, daughter-, or truth-mother-local denominators. The soft type-conditioned query-to-node relation bias is exercised through the real model pointer path and remains disabled by default. Whole-set and iterative-pointer ideas are deferred designs, not runnable configs; no unrestricted enumerator is used."),
         code("""
         import json,math,os,sys
         from pathlib import Path
@@ -44,8 +44,9 @@ def build_notebook():
         from hypertagging.data.tiny_level_fixtures import tiny_level_events
         from hypertagging.losses.level_reconstruction import level_reconstruction_loss,targets_for_level
         from hypertagging.models.level_autoregressive import LevelAutoregressiveReconstructor
-        torch.manual_seed(20260731);OUT=Path(os.environ.get('HYPERTAGGING_FIGURE_DIR','/tmp/hypertagging_figures/first_level_ambiguity'));OUT.mkdir(parents=True,exist_ok=True)
+        seed=int(os.environ.get('HYPERTAGGING_NOTEBOOK_SEED','20260730'));torch.manual_seed(seed);OUT=Path(os.environ.get('HYPERTAGGING_FIGURE_DIR','/tmp/hypertagging_figures/first_level_ambiguity'));OUT.mkdir(parents=True,exist_ok=True)
         events=tiny_level_events();batch=collate_heterogeneous_events([heterogeneous_from_level_event(event) for event in events]);model=LevelAutoregressiveReconstructor(n_features=12,n_types=41,hidden_dim=24,hyper_dim=8,n_queries=8,n_context_layers=1).eval();output=model(batch,target_level=1)
+        torch.manual_seed(seed);relation_model=LevelAutoregressiveReconstructor(n_features=12,n_types=41,hidden_dim=24,hyper_dim=8,n_queries=8,n_context_layers=1,type_conditioned_daughter_relation_bias=True).train();relation_output=relation_model(batch,target_level=1);relation_change=float((relation_output.pointer.pointer_logits-output.pointer.pointer_logits).abs().mean().detach());relation_output.pointer.pointer_logits[relation_output.context_mask[:,None].expand_as(relation_output.pointer.pointer_logits)].sum().backward();relation_table_gradient=float(relation_model.decoder.type_relation_table.grad.abs().sum());compatibility_gradient=float(relation_model.decoder.compatibility_node.weight.grad.abs().sum())
         """),
         md("## Results"),
         code("""
@@ -69,7 +70,7 @@ def build_notebook():
         """),
         code("""
         fig,axes=plt.subplots(1,2,figsize=(10,4));event_rows.plot.scatter(x='fsp_multiplicity',y='pointer_entropy',ax=axes[0],title='Pointer entropy vs FSP multiplicity');event_rows.plot.scatter(x='target_cardinality',y='exact_daughter_set_match',ax=axes[1],title='Exact set match vs target cardinality');fig.tight_layout();fig.savefig(OUT/'first_level_ambiguity.png');plt.show()
-        report={'factorization':'independent_multi_label_pointer','level_transition':'0_to_1','metrics':event_rows.to_dict('records'),'mother_type_conditioned_daughter_composition':frame[frame['query']>=0].to_dict('records'),'optional_ablations':{'whole_set_compatibility_scorer':{'enabled':False},'iterative_within_mother_pointer':{'enabled':False,'bounded_max_daughters':12},'type_conditioned_daughter_relation_bias':{'enabled':False}},'unrestricted_combinatorial_enumerator':False,'physics_claim':False};(OUT/'first_level_ambiguity_summary.json').write_text(json.dumps(report,indent=2))
+        report={'factorization':'independent_multi_label_pointer','level_transition':'0_to_1','metrics':event_rows.to_dict('records'),'mother_type_conditioned_daughter_composition':frame[frame['query']>=0].to_dict('records'),'optional_ablations':{'whole_set_compatibility_scorer':{'status':'DEFERRED_DESIGN_NO_RUNNABLE_CONFIG'},'iterative_within_mother_pointer':{'status':'DEFERRED_DESIGN_NO_RUNNABLE_CONFIG'},'type_conditioned_daughter_relation_bias':{'enabled':True,'actual_model_pointer_path':relation_output.pointer.query_node_compatibility_bias is not None,'pointer_logit_mean_absolute_change':relation_change,'type_relation_table_gradient':relation_table_gradient,'compatibility_projection_gradient':compatibility_gradient}},'unrestricted_combinatorial_enumerator':False,'physics_claim':False};assert relation_change>0 and relation_table_gradient>0 and compatibility_gradient>0;(OUT/'first_level_ambiguity_summary.json').write_text(json.dumps(report,indent=2))
         """),
         md("## Takeaways\n\nUse the local precision/recall, entropy, overlap, duplication, charge/mass validity, and exact-set diagnostics to decide whether the independent factorization is the bottleneck. Any decoder promotion requires a matched held-out study."),
     ]

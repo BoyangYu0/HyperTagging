@@ -1,30 +1,19 @@
-# Notebooks
+# Notebook evidence suite
 
-The deterministic notebook suite uses CPU fixtures and schema-v4 by default.
-It is software validation, not a physics-performance measurement. Ask the
-runner for the authoritative count with
-`scripts/execute_notebook_smoke_tests.py --list`; the current suite has 15
-groups:
+[`index.yaml`](index.yaml) is the single machine-readable registry used by the
+runner. Fixture notebooks validate software contracts, not physics performance
+or throughput. Every generated report records SHA, schema, fixture/real source,
+data name/path, checkpoint, seed, and pass/NOT RUN status.
 
-| Group | Notebook |
+| Group | Responsibility |
 |---|---|
-| `leaf_composite` | `inspect_leaf_pid_and_composite_inputs.ipynb` |
-| `streaming` | `inspect_streaming_dataset.ipynb` |
-| `leaf_pid` | `inspect_leaf_input_pid_contract.ipynb` |
-| `dataset` | `inspect_preprocessed_dataset.ipynb` |
-| `hyperbolic` | `inspect_hyperbolic_pretraining.ipynb` |
-| `exact_geometry` | `inspect_exact_tree_geometry_and_loss_scales.ipynb` |
-| `rollout_search` | `inspect_rollout_search_and_calibration.ipynb` |
-| `runtime_scaling` | `inspect_runtime_scaling.ipynb` |
-| `capacity` | `inspect_query_capacity_and_losses.ipynb` |
-| `training` | `inspect_training_pipeline.ipynb` |
-| `reconstruction` | `inspect_level_autoregressive_reconstruction.ipynb` |
-| `qa` | `preprocessing_qa_report.ipynb` |
-| `manifest` | `inspect_production_manifest.ipynb` |
-| `four_vector` | `preprocessing_four_momentum_validation.ipynb` |
-| `direct_gpt` | `inspect_preprocessed_parquet_and_gpt_like.ipynb` |
+| `CORE_CONTRACT` | schema/PID inspection, preprocessing QA and p4 closure, geometry/anti-collapse, checkpoint transfer, level reconstruction |
+| `EXTENDED_ENGINEERING` | streaming/index, exact geometry, runtime scaling, capacity, bounded rollout search, manifests |
+| `HISTORICAL_COMPATIBILITY` | direct-GPT and legacy-schema compatibility only |
+| `DIAGNOSTIC` | first-level ambiguity and objective-gradient conflict |
+| `EXTERNAL_SCIENTIFIC` | real mDST pilot and trained held-out physics validation |
 
-Run all groups and retain executed copies outside the repository:
+Run the default deterministic CPU set with:
 
 ```bash
 /data/dust/user/boyangyu/uv_env/bin/python \
@@ -32,28 +21,16 @@ Run all groups and retain executed copies outside the repository:
   --keep-output /tmp/hypertagging-current-head-notebooks
 ```
 
-The runner checks semantic JSON/CSV/checkpoint artifacts in addition to
-figure creation. Use repeated `--only GROUP` flags for a bounded subset.
+`--list` and `--only ID` are derived from the YAML index. The first-level
+diagnostic runs with `--diagnostic-first-level-ambiguity`; its type-relation
+section exercises the actual model switch and gradients. Objective-gradient
+conflict diagnostics are part of the hyperbolic inspection notebook.
 
-`inspect_real_mdst_pilot.ipynb` is separate and deliberately has no fixture
-fallback. It requires a published real schema-v4 pilot containing fewer than
-100 input events and validates actual provenance, PIDLikelihood availability,
-fit/energy selection, reconstructed charge, p4 closure, B-root discovery,
-PID/level distributions, and bounded failure examples. See the first cell for
-the exact basf2 and execution commands.
+The real mDST and trained-physics notebooks are real-only. Missing inputs write
+`NOT RUN` and raise a clear guard; they never substitute fixtures.
 
-`inspect_trained_physics_validation.ipynb` is also outside the fixture runner.
-It requires `HYPERTAGGING_REAL_PARQUET`, `HYPERTAGGING_DATASET_INDEX`, and
-`HYPERTAGGING_TRAINED_CHECKPOINT`, restores checkpoint normalization and
-feature/model contracts, and fails with `REAL INPUT REQUIRED` when they are
-missing. It never substitutes a fixture for efficiency, purity, calibration,
-mass, Mbc/DeltaE, missing-mass, rare-channel, or rollout claims.
-
-`inspect_first_level_ambiguity.ipynb` is a separate diagnostic notebook. Its
-bounded fixture output diagnoses Level-0-to-1 factorization behavior; it is not
-part of the stable 15-group CI contract and makes no trained-performance claim.
-
-Set `HYPERTAGGING_PARQUET` for supported real-data inspection notebooks and
-write figures/executed copies to `/tmp` or the configured data volume. Checked-
-in notebooks are regenerated from `scripts/create_*_notebook.py`; do not treat
-their unexecuted outputs as measurements.
+Overlap is intentional and narrow: dataset inspection owns schema/PID/tree
+inspection; preprocessing QA owns the aggregate closure decision; four-vector
+validation owns detailed closure visualization; direct-GPT inspection owns
+historical compatibility. The index's `scientific_claims_allowed` field is the
+authority for claims from each artifact.

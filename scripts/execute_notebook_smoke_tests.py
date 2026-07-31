@@ -14,103 +14,64 @@ import tempfile
 
 import nbformat
 from nbclient import NotebookClient
+import yaml
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+NOTEBOOK_INDEX_PATH = REPO_ROOT / "notebooks" / "index.yaml"
+
+
+def load_notebook_index() -> list[dict[str, object]]:
+    payload = yaml.safe_load(NOTEBOOK_INDEX_PATH.read_text(encoding="utf-8"))
+    entries = payload.get("notebooks", [])
+    if not isinstance(entries, list) or not entries:
+        raise ValueError(f"{NOTEBOOK_INDEX_PATH} has no notebook entries")
+    identifiers = [str(entry["id"]) for entry in entries]
+    if len(set(identifiers)) != len(identifiers):
+        raise ValueError("notebook index contains duplicate ids")
+    return entries
+
+
+NOTEBOOK_INDEX = load_notebook_index()
 NOTEBOOKS = {
-    "leaf_composite": (
-        REPO_ROOT / "scripts" / "create_leaf_pid_composite_notebook.py",
-        REPO_ROOT / "notebooks" / "inspect_leaf_pid_and_composite_inputs.ipynb",
-        ("input versus truth daughter histograms", "pointer response", "gradient"),
-    ),
-    "streaming": (
-        REPO_ROOT / "scripts" / "create_streaming_dataset_notebook.py",
-        REPO_ROOT / "notebooks" / "inspect_streaming_dataset.ipynb",
-        ("event-row parquet", "bounded iteration", "online normalization"),
-    ),
-    "leaf_pid": (
-        REPO_ROOT / "scripts" / "create_leaf_input_pid_notebook.py",
-        REPO_ROOT / "notebooks" / "inspect_leaf_input_pid_contract.ipynb",
-        ("reduced-PID contract", "energy hypotheses", "leakage check"),
-    ),
-    "dataset": (
-        REPO_ROOT / "scripts" / "create_dataset_inspection_notebook.py",
-        REPO_ROOT / "notebooks" / "inspect_preprocessed_dataset.ipynb",
-        ("Dataset/schema overview", "PID inspection", "Decay-tree visualization", "Channel inspection"),
-    ),
-    "hyperbolic": (
-        REPO_ROOT / "scripts" / "create_hyperbolic_inspection_notebook.py",
-        REPO_ROOT / "notebooks" / "inspect_hyperbolic_pretraining.ipynb",
-        ("Embedding projections", "Radius/depth validation", "Anti-collapse diagnostics", "Channel embeddings"),
-    ),
-    "exact_geometry": (
-        REPO_ROOT / "scripts" / "create_exact_tree_geometry_notebook.py",
-        REPO_ROOT / "notebooks" / "inspect_exact_tree_geometry_and_loss_scales.ipynb",
-        ("Exact tree geometry", "connected two-B", "initialization scale"),
-    ),
-    "rollout_search": (
-        REPO_ROOT / "scripts" / "create_rollout_search_calibration_notebook.py",
-        REPO_ROOT / "notebooks" / "inspect_rollout_search_and_calibration.ipynb",
-        ("Rollout search and calibration", "bounded-beam", "reliability"),
-    ),
-    "runtime_scaling": (
-        REPO_ROOT / "scripts" / "create_runtime_scaling_notebook.py",
-        REPO_ROOT / "notebooks" / "inspect_runtime_scaling.ipynb",
-        ("Runtime scaling", "attention", "rollout"),
-    ),
-    "capacity": (
-        REPO_ROOT / "scripts" / "create_query_capacity_notebook.py",
-        REPO_ROOT / "notebooks" / "inspect_query_capacity_and_losses.ipynb",
-        ("query usage", "focal weighting", "Hungarian"),
-    ),
-    "training": (
-        REPO_ROOT / "scripts" / "create_training_pipeline_notebook.py",
-        REPO_ROOT / "notebooks" / "inspect_training_pipeline.ipynb",
-        ("train-only normalizer", "Encoder transfer", "resume"),
-    ),
-    "reconstruction": (
-        REPO_ROOT / "scripts" / "create_reconstruction_inspection_notebook.py",
-        REPO_ROOT / "notebooks" / "inspect_level_autoregressive_reconstruction.ipynb",
-        ("stair-causal mask", "decoded proposals", "teacher-forced", "forward/loss/backward"),
-    ),
-    "qa": (
-        REPO_ROOT / "scripts" / "create_preprocessing_qa_notebook.py",
-        REPO_ROOT / "notebooks" / "preprocessing_qa_report.ipynb",
-        ("Preprocessing QA report", "Machine-readable", "daughter-summed"),
-    ),
-    "manifest": (
-        REPO_ROOT / "scripts" / "create_production_manifest_notebook.py",
-        REPO_ROOT / "notebooks" / "inspect_production_manifest.ipynb",
-        ("Production manifest inspection", "memory", "global UID"),
-    ),
-    "four_vector": (
-        REPO_ROOT / "scripts" / "create_preprocessing_visualization_notebook.py",
-        REPO_ROOT / "notebooks" / "preprocessing_four_momentum_validation.ipynb",
-        ("four-momentum validation", "truth-comparable", "MC diagnostic"),
-    ),
-    "direct_gpt": (
-        REPO_ROOT / "scripts" / "create_parquet_gpt_inspection_notebook.py",
-        REPO_ROOT / "notebooks" / "inspect_preprocessed_parquet_and_gpt_like.ipynb",
-        ("direct-mDST parquet", "attention mask", "optimizer step"),
-    ),
+    str(entry["id"]): entry for entry in NOTEBOOK_INDEX if entry.get("default_smoke") is True
+}
+DIAGNOSTICS = {
+    str(entry["id"]): entry for entry in NOTEBOOK_INDEX if entry.get("group") == "DIAGNOSTIC"
 }
 
-FIRST_LEVEL_AMBIGUITY = (
-    REPO_ROOT / "scripts" / "create_first_level_ambiguity_notebook.py",
-    REPO_ROOT / "notebooks" / "inspect_first_level_ambiguity.ipynb",
-    ("First-level set ambiguity", "pointer entropy", "disabled by default"),
-)
+
+def _git_sha() -> str:
+    return subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+
+
+def _stamp_json_report(path: Path, provenance: dict[str, object]) -> None:
+    if path.exists():
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(payload, dict):
+            raise AssertionError(f"machine-readable report must be a JSON object: {path}")
+    else:
+        payload = {}
+    payload.update(provenance)
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
 def execute_one(
     name: str,
-    generator: Path,
-    source: Path,
-    expected_sections: tuple[str, ...],
+    entry: dict[str, object],
     *,
     work_root: Path,
     timeout: int,
 ) -> Path:
+    generator = REPO_ROOT / str(entry["generator"])
+    source = REPO_ROOT / str(entry["path"])
+    expected_sections = tuple(str(section) for section in entry.get("expected_sections", []))
     subprocess.run([sys.executable, str(generator)], cwd=REPO_ROOT, check=True)
     notebook_text = source.read_text(encoding="utf-8")
     for section in expected_sections:
@@ -261,6 +222,21 @@ def execute_one(
         qa = json.loads(qa_path.read_text(encoding="utf-8"))
         if not qa.get("p4_closure_pass"):
             raise AssertionError(f"QA JSON did not pass p4 closure: {qa}")
+
+    provenance = {
+        "git_sha": _git_sha(),
+        "schema_version": "direct-mdst-tree-v4",
+        "fixture_or_real": str(entry["fixture_or_real"]),
+        "data_path_or_fixture_name": ",".join(str(value) for value in entry["required_inputs"]),
+        "checkpoint_path_or_none": "none",
+        "seed": int(os.environ.get("HYPERTAGGING_NOTEBOOK_SEED", "20260730")),
+        "pass_fail_status": "PASS",
+    }
+    for report_name in entry.get("machine_readable_outputs", []):
+        report_path = figure_dir / str(report_name)
+        if not report_path.exists() and (work_root / str(report_name)).exists():
+            report_path = work_root / str(report_name)
+        _stamp_json_report(report_path, provenance)
     return executed_path
 
 
@@ -306,27 +282,23 @@ def main(argv: list[str] | None = None) -> int:
         work_root = Path(temporary.name)
     executed = []
     selected = set() if args.diagnostic_only else set(args.only or NOTEBOOKS)
-    for name, (generator, source, sections) in NOTEBOOKS.items():
+    for name, entry in NOTEBOOKS.items():
         if name not in selected:
             continue
         executed.append(
             execute_one(
                 name,
-                generator,
-                source,
-                sections,
+                entry,
                 work_root=work_root,
                 timeout=args.timeout,
             )
         )
     if args.diagnostic_first_level_ambiguity:
-        generator, source, sections = FIRST_LEVEL_AMBIGUITY
+        entry = DIAGNOSTICS["first_level_ambiguity"]
         executed.append(
             execute_one(
                 "first_level_ambiguity",
-                generator,
-                source,
-                sections,
+                entry,
                 work_root=work_root,
                 timeout=args.timeout,
             )
@@ -337,6 +309,13 @@ def main(argv: list[str] | None = None) -> int:
     (work_root / "notebook_execution_summary.json").write_text(
         json.dumps(
             {
+                "git_sha": _git_sha(),
+                "schema_version": "direct-mdst-tree-v4",
+                "fixture_or_real": "fixture",
+                "data_path_or_fixture_name": "notebooks/index.yaml deterministic fixtures",
+                "checkpoint_path_or_none": "none",
+                "seed": 20260730,
+                "pass_fail_status": "PASS",
                 "configured_group_count": len(NOTEBOOKS),
                 "executed_group_count": len(executed),
                 "executed_groups": [name for name in NOTEBOOKS if name in selected]

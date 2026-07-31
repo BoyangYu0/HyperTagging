@@ -199,6 +199,9 @@ def load_trained_evaluation_context(
         hyper_projection_init_scale=architecture.hyper_projection_init_scale,
         tangent_scale_mode=architecture.tangent_scale_mode,
         hyperbolic_level_encoding=architecture.hyperbolic_level_encoding,
+        type_conditioned_daughter_relation_bias=(
+            architecture.type_conditioned_daughter_relation_bias
+        ),
     )
     model.load_state_dict(payload["model_state_dict"], strict=True)
     model.set_runtime_feature_normalizer(

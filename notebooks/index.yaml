@@ -1,0 +1,218 @@
+schema_version: hypertagging-notebook-index-v1
+notebooks:
+  - id: leaf_composite
+    group: CORE_CONTRACT
+    path: notebooks/inspect_leaf_pid_and_composite_inputs.ipynb
+    generator: scripts/create_leaf_pid_composite_notebook.py
+    fixture_or_real: fixture
+    required_inputs: [deterministic_schema_v4_fixture]
+    machine_readable_outputs: [leaf_composite_execution_report.json, leaf_composite_contract.json]
+    scientific_claims_allowed: [software_input_contract_only]
+    CI_frequency: push_and_weekly
+    last_verified_sha: c29342e89237c197850d4d40f6bf25536643de28
+    expected_sections: [input versus truth daughter histograms, pointer response, gradient]
+    default_smoke: true
+  - id: streaming
+    group: EXTENDED_ENGINEERING
+    path: notebooks/inspect_streaming_dataset.ipynb
+    generator: scripts/create_streaming_dataset_notebook.py
+    fixture_or_real: fixture
+    required_inputs: [deterministic_schema_v4_fixture]
+    machine_readable_outputs: [streaming_execution_report.json, streaming_report.json]
+    scientific_claims_allowed: [bounded_fixture_mechanics_only]
+    CI_frequency: push_and_weekly
+    last_verified_sha: c29342e89237c197850d4d40f6bf25536643de28
+    expected_sections: [event-row parquet, bounded iteration, online normalization]
+    default_smoke: true
+  - id: leaf_pid
+    group: CORE_CONTRACT
+    path: notebooks/inspect_leaf_input_pid_contract.ipynb
+    generator: scripts/create_leaf_input_pid_notebook.py
+    fixture_or_real: fixture
+    required_inputs: [deterministic_schema_v4_fixture]
+    machine_readable_outputs: [leaf_pid_execution_report.json, leaf_input_leakage_check.json]
+    scientific_claims_allowed: [software_pid_contract_only]
+    CI_frequency: push_and_weekly
+    last_verified_sha: c29342e89237c197850d4d40f6bf25536643de28
+    expected_sections: [reduced-PID contract, energy hypotheses, leakage check]
+    default_smoke: true
+  - id: dataset
+    group: CORE_CONTRACT
+    path: notebooks/inspect_preprocessed_dataset.ipynb
+    generator: scripts/create_dataset_inspection_notebook.py
+    fixture_or_real: fixture
+    required_inputs: [deterministic_schema_v4_fixture]
+    machine_readable_outputs: [dataset_execution_report.json]
+    scientific_claims_allowed: [schema_and_fixture_distribution_only]
+    CI_frequency: push_and_weekly
+    last_verified_sha: c29342e89237c197850d4d40f6bf25536643de28
+    expected_sections: [Dataset/schema overview, PID inspection, Decay-tree visualization, Channel inspection]
+    default_smoke: true
+  - id: hyperbolic
+    group: CORE_CONTRACT
+    path: notebooks/inspect_hyperbolic_pretraining.ipynb
+    generator: scripts/create_hyperbolic_inspection_notebook.py
+    fixture_or_real: fixture
+    required_inputs: [deterministic_schema_v4_fixture]
+    machine_readable_outputs: [hyperbolic_execution_report.json, curriculum_runtime_report.json, objective_gradient_report.json]
+    scientific_claims_allowed: [geometry_mechanics_and_gradient_diagnostics_only]
+    CI_frequency: push_and_weekly
+    last_verified_sha: c29342e89237c197850d4d40f6bf25536643de28
+    expected_sections: [Embedding projections, Radius/depth validation, Anti-collapse diagnostics, Objective-gradient conflict diagnostic]
+    default_smoke: true
+  - id: exact_geometry
+    group: EXTENDED_ENGINEERING
+    path: notebooks/inspect_exact_tree_geometry_and_loss_scales.ipynb
+    generator: scripts/create_exact_tree_geometry_notebook.py
+    fixture_or_real: fixture
+    required_inputs: [deterministic_unbalanced_tree_fixture]
+    machine_readable_outputs: [exact_geometry_execution_report.json, exact_geometry_scale_summary.json]
+    scientific_claims_allowed: [exact_geometry_contract_only]
+    CI_frequency: weekly
+    last_verified_sha: c29342e89237c197850d4d40f6bf25536643de28
+    expected_sections: [Exact tree geometry, connected two-B, initialization scale]
+    default_smoke: true
+  - id: rollout_search
+    group: EXTENDED_ENGINEERING
+    path: notebooks/inspect_rollout_search_and_calibration.ipynb
+    generator: scripts/create_rollout_search_calibration_notebook.py
+    fixture_or_real: fixture
+    required_inputs: [deterministic_rollout_fixture]
+    machine_readable_outputs: [rollout_search_execution_report.json, rollout_search_calibration_summary.json]
+    scientific_claims_allowed: [bounded_search_mechanics_only]
+    CI_frequency: weekly
+    last_verified_sha: c29342e89237c197850d4d40f6bf25536643de28
+    expected_sections: [Rollout search and calibration, bounded-beam, reliability]
+    default_smoke: true
+  - id: runtime_scaling
+    group: EXTENDED_ENGINEERING
+    path: notebooks/inspect_runtime_scaling.ipynb
+    generator: scripts/create_runtime_scaling_notebook.py
+    fixture_or_real: fixture
+    required_inputs: [deterministic_runtime_fixtures]
+    machine_readable_outputs: [runtime_scaling_execution_report.json, runtime_scaling_summary.json]
+    scientific_claims_allowed: [runtime_mechanics_no_throughput_claim]
+    CI_frequency: weekly
+    last_verified_sha: c29342e89237c197850d4d40f6bf25536643de28
+    expected_sections: [Runtime scaling, attention, rollout]
+    default_smoke: true
+  - id: capacity
+    group: EXTENDED_ENGINEERING
+    path: notebooks/inspect_query_capacity_and_losses.ipynb
+    generator: scripts/create_query_capacity_notebook.py
+    fixture_or_real: fixture
+    required_inputs: [deterministic_schema_v4_fixture]
+    machine_readable_outputs: [capacity_execution_report.json, capacity_report.json]
+    scientific_claims_allowed: [fixture_capacity_contract_only]
+    CI_frequency: push_and_weekly
+    last_verified_sha: c29342e89237c197850d4d40f6bf25536643de28
+    expected_sections: [query usage, focal weighting, Hungarian]
+    default_smoke: true
+  - id: training
+    group: CORE_CONTRACT
+    path: notebooks/inspect_training_pipeline.ipynb
+    generator: scripts/create_training_pipeline_notebook.py
+    fixture_or_real: fixture
+    required_inputs: [deterministic_schema_v4_fixture]
+    machine_readable_outputs: [training_execution_report.json, training_pipeline_pass.json]
+    scientific_claims_allowed: [checkpoint_and_transfer_contract_only]
+    CI_frequency: push_and_weekly
+    last_verified_sha: c29342e89237c197850d4d40f6bf25536643de28
+    expected_sections: [train-only normalizer, Encoder transfer, resume]
+    default_smoke: true
+  - id: reconstruction
+    group: CORE_CONTRACT
+    path: notebooks/inspect_level_autoregressive_reconstruction.ipynb
+    generator: scripts/create_reconstruction_inspection_notebook.py
+    fixture_or_real: fixture
+    required_inputs: [deterministic_level_fixture]
+    machine_readable_outputs: [reconstruction_execution_report.json, scheduled_context_report.json]
+    scientific_claims_allowed: [teacher_forced_and_reference_rollout_contract_only]
+    CI_frequency: push_and_weekly
+    last_verified_sha: c29342e89237c197850d4d40f6bf25536643de28
+    expected_sections: [stair-causal mask, decoded proposals, teacher-forced, forward/loss/backward]
+    default_smoke: true
+  - id: qa
+    group: CORE_CONTRACT
+    path: notebooks/preprocessing_qa_report.ipynb
+    generator: scripts/create_preprocessing_qa_notebook.py
+    fixture_or_real: fixture
+    required_inputs: [deterministic_schema_v4_fixture]
+    machine_readable_outputs: [qa_execution_report.json, preprocessing_qa.json]
+    scientific_claims_allowed: [fixture_p4_closure_only]
+    CI_frequency: push_and_weekly
+    last_verified_sha: c29342e89237c197850d4d40f6bf25536643de28
+    expected_sections: [Preprocessing QA report, Machine-readable, daughter-summed]
+    default_smoke: true
+  - id: manifest
+    group: EXTENDED_ENGINEERING
+    path: notebooks/inspect_production_manifest.ipynb
+    generator: scripts/create_production_manifest_notebook.py
+    fixture_or_real: fixture
+    required_inputs: [deterministic_manifest_fixture]
+    machine_readable_outputs: [manifest_execution_report.json, production_manifest_report.json]
+    scientific_claims_allowed: [manifest_mechanics_only]
+    CI_frequency: push_and_weekly
+    last_verified_sha: c29342e89237c197850d4d40f6bf25536643de28
+    expected_sections: [Production manifest inspection, memory, global UID]
+    default_smoke: true
+  - id: four_vector
+    group: CORE_CONTRACT
+    path: notebooks/preprocessing_four_momentum_validation.ipynb
+    generator: scripts/create_preprocessing_visualization_notebook.py
+    fixture_or_real: fixture
+    required_inputs: [deterministic_schema_v4_fixture]
+    machine_readable_outputs: [four_vector_execution_report.json]
+    scientific_claims_allowed: [fixture_p4_closure_only]
+    CI_frequency: weekly
+    last_verified_sha: c29342e89237c197850d4d40f6bf25536643de28
+    expected_sections: [four-momentum validation, truth-comparable, MC diagnostic]
+    default_smoke: true
+  - id: direct_gpt
+    group: HISTORICAL_COMPATIBILITY
+    path: notebooks/inspect_preprocessed_parquet_and_gpt_like.ipynb
+    generator: scripts/create_parquet_gpt_inspection_notebook.py
+    fixture_or_real: fixture
+    required_inputs: [deterministic_legacy_compatibility_fixture]
+    machine_readable_outputs: [direct_gpt_execution_report.json]
+    scientific_claims_allowed: [historical_compatibility_only]
+    CI_frequency: weekly
+    last_verified_sha: c29342e89237c197850d4d40f6bf25536643de28
+    expected_sections: [direct-mDST parquet, attention mask, optimizer step]
+    default_smoke: true
+  - id: first_level_ambiguity
+    group: DIAGNOSTIC
+    path: notebooks/inspect_first_level_ambiguity.ipynb
+    generator: scripts/create_first_level_ambiguity_notebook.py
+    fixture_or_real: fixture
+    required_inputs: [deterministic_level_fixture]
+    machine_readable_outputs: [first_level_ambiguity_execution_report.json, first_level_ambiguity_summary.json]
+    scientific_claims_allowed: [wired_ablation_mechanics_only]
+    CI_frequency: manual_diagnostic
+    last_verified_sha: c29342e89237c197850d4d40f6bf25536643de28
+    expected_sections: [First-level set ambiguity, pointer entropy, disabled by default]
+    default_smoke: false
+  - id: real_mdst_pilot
+    group: EXTERNAL_SCIENTIFIC
+    path: notebooks/inspect_real_mdst_pilot.ipynb
+    generator: scripts/create_real_mdst_pilot_notebook.py
+    fixture_or_real: real_only
+    required_inputs: [real_sub_100_event_schema_v4_parquet, completion_marker]
+    machine_readable_outputs: [hypertagging-real-pilot-report.json]
+    scientific_claims_allowed: [bounded_real_detector_contract_after_execution]
+    CI_frequency: operator_only
+    last_verified_sha: NOT_RUN
+    expected_sections: [Real mDST pilot]
+    default_smoke: false
+  - id: trained_physics_validation
+    group: EXTERNAL_SCIENTIFIC
+    path: notebooks/inspect_trained_physics_validation.ipynb
+    generator: scripts/create_trained_physics_validation_notebook.py
+    fixture_or_real: real_only
+    required_inputs: [real_schema_v4_parquet, matching_dataset_index, trained_checkpoint]
+    machine_readable_outputs: [trained_physics_validation_summary.json]
+    scientific_claims_allowed: [held_out_physics_only_after_execution]
+    CI_frequency: operator_only
+    last_verified_sha: NOT_RUN
+    expected_sections: [Trained physics validation]
+    default_smoke: false

@@ -76,6 +76,7 @@ class LevelAutoregressiveReconstructor(nn.Module):
         hyper_projection_init_scale: float = 0.05,
         tangent_scale_mode: str = "fixed",
         hyperbolic_level_encoding: str = "learned_euclidean",
+        type_conditioned_daughter_relation_bias: bool = False,
     ) -> None:
         super().__init__()
         self.encoder_mode = encoder_mode
@@ -83,6 +84,9 @@ class LevelAutoregressiveReconstructor(nn.Module):
         self.canonical_pion_first_level = bool(canonical_pion_first_level)
         self.pid_kinematics_mode = str(pid_kinematics_mode)
         self.pid_temperature = float(pid_temperature)
+        self.type_conditioned_daughter_relation_bias = bool(
+            type_conditioned_daughter_relation_bias
+        )
         # The public argument is retained for source compatibility, but the
         # scientific contract has exactly one model vocabulary.
         n_types = len(PDG_TOKENS)
@@ -123,6 +127,9 @@ class LevelAutoregressiveReconstructor(nn.Module):
         self.decoder = MotherPointerDecoder(
             hidden_dim=hidden_dim, n_types=n_types, n_queries=n_queries,
             max_cardinality=max_cardinality,
+            type_conditioned_daughter_relation_bias=(
+                type_conditioned_daughter_relation_bias
+            ),
         )
         query_map = dict(n_queries_by_level)
         cardinality_map = dict(max_cardinality_by_level)
@@ -133,6 +140,9 @@ class LevelAutoregressiveReconstructor(nn.Module):
                     n_types=n_types,
                     n_queries=query_map.get(level, n_queries),
                     max_cardinality=cardinality_map.get(level, max_cardinality),
+                    type_conditioned_daughter_relation_bias=(
+                        type_conditioned_daughter_relation_bias
+                    ),
                 )
                 for level in sorted(set(query_map) | set(cardinality_map))
             }
@@ -282,6 +292,24 @@ class LevelAutoregressiveReconstructor(nn.Module):
             allowed_type_mask=batch.get("allowed_type_mask"),
             type_logit_bias=batch.get("type_logit_bias"),
             pointer_validity_mask=pointer_validity,
+            node_pid_probabilities=(
+                current_probabilities
+                if current_probabilities is not None
+                else torch.nn.functional.one_hot(
+                    current_tokens, num_classes=len(PDG_TOKENS)
+                ).to(reconstruction_h.dtype)
+            ),
+            node_charge=batch["charge"],
+            node_kind_ids=batch.get(
+                "node_kind_ids", torch.zeros_like(batch["level_ids"])
+            ),
+            node_level_ids=batch["level_ids"],
+            node_relation_summary=(
+                relation_bias.masked_fill(
+                    ~batch["node_mask"][:, None, :], 0.0
+                ).sum(dim=-1)
+                / batch["node_mask"].sum(dim=-1, keepdim=True).clamp_min(1)
+            ),
         )
         return LevelReconstructionOutput(
             target_level,
@@ -450,12 +478,24 @@ def _assert_truth_free_model_inputs(batch: dict[str, torch.Tensor]) -> None:
         )
     if "daughter_input_pid_histogram" not in batch:
         raise ValueError("explicit daughter_input_pid_histogram is required")
+    required_provenance = {
+        "model_input_source_ids",
+        "daughter_input_pid_source_ids",
+        "truth_supervision_source_ids",
+        "daughter_truth_pid_source_ids",
+    }
+    missing = sorted(required_provenance - set(batch))
+    if missing:
+        raise ValueError(
+            "explicit feature provenance is required: " + ", ".join(missing)
+        )
     if (
-        "daughter_truth_pid_histogram" in batch
-        and batch["daughter_input_pid_histogram"].data_ptr()
-        == batch["daughter_truth_pid_histogram"].data_ptr()
-    ):
-        raise ValueError("input and truth daughter PID histograms must be distinct tensors")
+        batch["daughter_input_pid_source_ids"]
+        == batch["daughter_truth_pid_source_ids"]
+    )[batch["node_mask"]].any():
+        raise ValueError(
+            "input and truth daughter PID histograms have the same declared provenance"
+        )
 
 
 def construct_mother_p4(pointer_logits: torch.Tensor, p4: torch.Tensor, *, hard: bool = False) -> torch.Tensor:
@@ -469,6 +509,24 @@ def _upgrade_flat_batch(batch: dict[str, torch.Tensor]) -> dict[str, torch.Tenso
     """Upgrade legacy/tiny batches without claiming detector-specific values."""
 
     if "common_features" in batch:
+        from hypertagging.data.heterogeneous import (
+            MODEL_INPUT_SOURCE_TO_ID,
+            TRUTH_SUPERVISION_SOURCE_TO_ID,
+        )
+
+        batch = dict(batch)
+        input_sources = torch.full_like(
+            batch["level_ids"],
+            MODEL_INPUT_SOURCE_TO_ID["versioned_compatibility_adapter"],
+        )
+        truth_sources = torch.full_like(
+            batch["level_ids"],
+            TRUTH_SUPERVISION_SOURCE_TO_ID["retained_mc_truth"],
+        )
+        batch.setdefault("model_input_source_ids", input_sources)
+        batch.setdefault("daughter_input_pid_source_ids", input_sources.clone())
+        batch.setdefault("truth_supervision_source_ids", truth_sources)
+        batch.setdefault("daughter_truth_pid_source_ids", truth_sources.clone())
         if "runtime_composite_type_source_ids" not in batch:
             from hypertagging.reconstruction.pid_state import (
                 COMPOSITE_TYPE_SOURCE_TO_ID,
@@ -513,6 +571,21 @@ def _upgrade_flat_batch(batch: dict[str, torch.Tensor]) -> dict[str, torch.Tenso
     for name in CATEGORICAL_COMMON_FEATURE_NAMES:
         common_availability[..., COMMON_FEATURE_NAMES.index(name)] = False
     batch = dict(batch)
+    from hypertagging.data.heterogeneous import (
+        MODEL_INPUT_SOURCE_TO_ID,
+        TRUTH_SUPERVISION_SOURCE_TO_ID,
+    )
+
+    input_sources = torch.full_like(
+        levels, MODEL_INPUT_SOURCE_TO_ID["versioned_compatibility_adapter"]
+    )
+    truth_sources = torch.full_like(
+        levels, TRUTH_SUPERVISION_SOURCE_TO_ID["retained_mc_truth"]
+    )
+    batch["model_input_source_ids"] = input_sources
+    batch["daughter_input_pid_source_ids"] = input_sources.clone()
+    batch["truth_supervision_source_ids"] = truth_sources
+    batch["daughter_truth_pid_source_ids"] = truth_sources.clone()
     batch["common_features"] = common
     batch["common_availability"] = common_availability
     shape = (*active.shape, len(TRACK_FEATURE_NAMES))
