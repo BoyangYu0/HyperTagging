@@ -17,6 +17,16 @@ from hypertagging.training.pretrain_trainer import PretrainConfig, train_hyperbo
 from hypertagging.models.ablation import ALL_ABLATIONS
 from hypertagging.utils.gpu_safety import assert_full_training_requires_condor
 from hypertagging.training.config import resolve_argparse_namespace
+from hypertagging.training.model_config import MODEL_PRESETS
+
+
+def _level_int_pairs(value: str):
+    if not value:
+        return ()
+    return tuple(
+        (int(level), int(count))
+        for level, count in (item.split(":", 1) for item in value.split(","))
+    )
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -38,6 +48,18 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--log-every", type=int, default=10)
     parser.add_argument("--validate-every", type=int, default=100)
     parser.add_argument("--channel-memory-size", type=int, default=0)
+    parser.add_argument("--model-preset", choices=sorted(MODEL_PRESETS), default="tiny_cpu")
+    parser.add_argument("--d-model", type=int, default=None)
+    parser.add_argument("--hyper-dim", type=int, default=None)
+    parser.add_argument("--n-heads", type=int, default=None)
+    parser.add_argument("--n-context-layers", type=int, default=None)
+    parser.add_argument("--ffn-dim", type=int, default=None)
+    parser.add_argument("--dropout", type=float, default=None)
+    parser.add_argument("--curvature", type=float, default=None)
+    parser.add_argument("--n-queries", type=int, default=None)
+    parser.add_argument("--n-queries-by-level", type=_level_int_pairs, default=())
+    parser.add_argument("--max-cardinality", type=int, default=None)
+    parser.add_argument("--max-cardinality-by-level", type=_level_int_pairs, default=())
     parser.add_argument("--allow-local-tiny-gpu-test", action="store_true")
     parser.add_argument("--prefetch-factor", type=int, default=2)
     parser.add_argument("--shuffle-buffer-size", type=int, default=1024)
@@ -76,6 +98,20 @@ def main(argv: list[str] | None = None) -> int:
                 log_every=args.log_every,
                 dataset_index=args.dataset_index,
                 rescan_dataset=args.rescan_dataset,
+                model_preset=args.model_preset,
+                d_model=args.d_model,
+                hyper_dim=args.hyper_dim,
+                n_heads=args.n_heads,
+                n_context_layers=args.n_context_layers,
+                ffn_dim=args.ffn_dim,
+                dropout=args.dropout,
+                curvature=args.curvature if args.curvature is not None else 1.0,
+                n_queries=args.n_queries,
+                n_queries_by_level=tuple(tuple(value) for value in args.n_queries_by_level),
+                max_cardinality=args.max_cardinality,
+                max_cardinality_by_level=tuple(
+                    tuple(value) for value in args.max_cardinality_by_level
+                ),
             )
         )
         print(

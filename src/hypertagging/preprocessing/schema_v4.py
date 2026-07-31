@@ -34,7 +34,7 @@ from hypertagging.preprocessing.schema_v3 import (
 
 
 SCHEMA_VERSION_V4 = "direct-mdst-tree-v4"
-FEATURE_SPEC_REVISION_V4 = "v4-runtime-normalized-categorical-separated-r2"
+FEATURE_SPEC_REVISION_V4 = "v4-model-composite-target-separated-r3"
 
 # These positions retain their stored compatibility values, but are never
 # interpreted as continuous geometry. Dedicated embeddings/flags own them.
@@ -71,7 +71,64 @@ STATIC_COMMON_FEATURE_NAMES = tuple(
     for name in CONTINUOUS_COMMON_FEATURE_NAMES
     if name not in DYNAMIC_COMMON_FEATURE_NAMES
 )
-DYNAMIC_COMPOSITE_INDICES = tuple(range(len(feature_spec_v3()["composite"])))
+# V3/v4 storage deliberately remains backward compatible.  The final four
+# positions are MC-derived targets/diagnostics and are not model features.
+MODEL_COMPOSITE_FEATURE_NAMES: tuple[str, ...] = (
+    "daughter_sum_px",
+    "daughter_sum_py",
+    "daughter_sum_pz",
+    "daughter_sum_energy",
+    "summed_charge",
+    "daughter_count",
+    "pointer_confidence_mean",
+    "pointer_confidence_min",
+    "copied_daughter_fraction",
+)
+TARGET_COMPOSITE_METADATA_NAMES: tuple[str, ...] = (
+    "full_truth_daughter_count",
+    "retained_daughter_count",
+    "reconstructed_daughter_count",
+    "partial_missing_daughters",
+)
+STORED_COMPOSITE_FEATURE_NAMES = tuple(feature_spec_v3()["composite"])
+MODEL_COMPOSITE_INDICES = tuple(
+    STORED_COMPOSITE_FEATURE_NAMES.index(name)
+    for name in MODEL_COMPOSITE_FEATURE_NAMES
+)
+TARGET_COMPOSITE_METADATA_INDICES = tuple(
+    STORED_COMPOSITE_FEATURE_NAMES.index(name)
+    for name in TARGET_COMPOSITE_METADATA_NAMES
+)
+DYNAMIC_COMPOSITE_INDICES = MODEL_COMPOSITE_INDICES
+
+
+def model_composite_feature_contract_hash() -> str:
+    payload = {
+        "revision": FEATURE_SPEC_REVISION_V4,
+        "model_composite": MODEL_COMPOSITE_FEATURE_NAMES,
+        "target_composite_metadata": TARGET_COMPOSITE_METADATA_NAMES,
+    }
+    return hashlib.sha256(
+        json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+
+
+def adapt_model_composite_features(values, availability):
+    """Select runtime-available composite inputs from a v3/v4 stored block.
+
+    This adapter is intentionally tensor-library agnostic (NumPy and torch
+    both support the indexing used here) and lets existing v4 files remain
+    readable without regeneration.
+    """
+
+    width = values.shape[-1]
+    if width == len(MODEL_COMPOSITE_FEATURE_NAMES):
+        return values, availability
+    if width < max(MODEL_COMPOSITE_INDICES) + 1:
+        raise ValueError(
+            f"composite feature width {width} cannot satisfy model contract"
+        )
+    return values[..., list(MODEL_COMPOSITE_INDICES)], availability[..., list(MODEL_COMPOSITE_INDICES)]
 
 LEAF_KINEMATICS_MODES: tuple[str, ...] = (
     "raw_track_predicted_pid",
@@ -110,6 +167,11 @@ def feature_spec_v4() -> dict[str, Any]:
             "runtime_dynamic_common_features": list(DYNAMIC_COMMON_FEATURE_NAMES),
             "runtime_static_common_features": list(STATIC_COMMON_FEATURE_NAMES),
             "runtime_dynamic_composite_indices": list(DYNAMIC_COMPOSITE_INDICES),
+            "model_composite": list(MODEL_COMPOSITE_FEATURE_NAMES),
+            "target_composite_metadata": list(TARGET_COMPOSITE_METADATA_NAMES),
+            "model_composite_indices": list(MODEL_COMPOSITE_INDICES),
+            "model_feature_adapter": "v4-model-composite-target-separated-r3",
+            "model_feature_contract_hash": model_composite_feature_contract_hash(),
         }
     )
     spec.pop("feature_spec_hash", None)
@@ -148,6 +210,11 @@ class ParquetEventWriter:
         self.sidecar = self.output.with_suffix(self.output.suffix + ".metadata.json")
         self.partial_sidecar = self.sidecar.with_name(f".{self.sidecar.name}.partial")
         self.completion_marker = self.output.with_suffix(self.output.suffix + ".complete")
+        # A marker is the publication commit record.  Invalidate it before an
+        # overwrite starts so a crash can never leave old completion metadata
+        # next to partially replaced payloads.
+        if self.completion_marker.exists():
+            self.completion_marker.unlink()
         self.event_buffer_size = int(event_buffer_size)
         self.row_group_size = int(row_group_size or event_buffer_size)
         self.spec = feature_spec_v4()
@@ -246,6 +313,11 @@ class ParquetEventWriter:
                     sorted(self._completeness.items())
                 ),
                 "aggregate_feature_welford": self._feature_statistics,
+                "model_feature_contract_hash": self.spec["model_feature_contract_hash"],
+                "feature_spec_revision": self.spec["feature_spec_revision"],
+                "policy_capacity_statistics": _policy_capacity_from_counters(
+                    self._completeness
+                ),
                 "requested_collection_mode": self.metadata.get(
                     "leaf_kinematics_mode", "mixed_explicit_per_node"
                 ),
@@ -277,6 +349,9 @@ class ParquetEventWriter:
                         "schema_version": SCHEMA_VERSION_V4,
                         "event_count": self._event_count,
                         "feature_spec_hash": self.spec["feature_spec_hash"],
+                        "model_feature_contract_hash": self.spec["model_feature_contract_hash"],
+                        "parquet_sha256": _sha256_path(self.output),
+                        "sidecar_sha256": _sha256_path(self.sidecar),
                     },
                     sort_keys=True,
                 )
@@ -329,6 +404,9 @@ class ParquetEventWriter:
             self._capacity[f"nodes_level_{level}"] += 1
             self._capacity[f"mothers_level_{level}"] += int(daughters > 0)
             self._capacity[f"daughter_cardinality_{daughters}"] += int(daughters > 0)
+            self._capacity[
+                f"daughter_cardinality_level_{level}_value_{daughters}"
+            ] += int(daughters > 0)
             if daughters > 0 and bool(node.get("valid_reconstruction_target", False)):
                 target_token = int(node.get("pid_target_token", 0))
                 self._capacity[
@@ -341,6 +419,17 @@ class ParquetEventWriter:
             self._completeness["valid_targets"] += int(
                 bool(node.get("valid_reconstruction_target", False))
             )
+            is_mother = daughters > 0 and level > 0
+            is_valid = is_mother and bool(node.get("valid_reconstruction_target", False))
+            is_complete = is_valid and bool(
+                node.get("recursive_reconstructable_complete", False)
+            )
+            self._completeness["diagnostic_all_targets"] += int(is_mother)
+            self._completeness["reconstructable_partial_targets"] += int(is_valid)
+            self._completeness["complete_only_targets"] += int(is_complete)
+            self._completeness[f"diagnostic_all_level_{level}"] += int(is_mother)
+            self._completeness[f"reconstructable_partial_level_{level}"] += int(is_valid)
+            self._completeness[f"complete_only_level_{level}"] += int(is_complete)
             self._completeness["partial_targets"] += int(
                 bool(node.get("partial_missing_daughters", False))
             )
@@ -357,6 +446,8 @@ class ParquetEventWriter:
                 values = node.get(record_key, {})
                 available = node.get(availability_key, {})
                 for index, name in enumerate(names):
+                    if block == "composite" and name in TARGET_COMPOSITE_METADATA_NAMES:
+                        continue
                     if bool(available.get(name, False)):
                         _update_feature_statistic(
                             self._feature_statistics[block], index, float(values[name])
@@ -374,6 +465,28 @@ def _empty_feature_statistics(width: int) -> dict[str, list[float]]:
         "mean": [0.0] * width,
         "m2": [0.0] * width,
     }
+
+
+def _sha256_path(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _policy_capacity_from_counters(completeness: Mapping[str, int]) -> dict[str, dict[str, int]]:
+    output: dict[str, dict[str, int]] = {}
+    for policy in ("complete_only", "reconstructable_partial", "diagnostic_all"):
+        values = {
+            "eligible_targets": int(completeness.get(f"{policy}_targets", 0))
+        }
+        prefix = f"{policy}_level_"
+        for key, value in completeness.items():
+            if key.startswith(prefix):
+                values[f"level_{key.removeprefix(prefix)}"] = int(value)
+        output[policy] = values
+    return output
 
 
 def _actual_collection_mode(distribution: Mapping[str, int]) -> str:
@@ -637,6 +750,12 @@ __all__ = [
     "LEAF_MODE_FROM_ID",
     "LEAF_MODE_TO_ID",
     "ParquetEventWriter",
+    "MODEL_COMPOSITE_FEATURE_NAMES",
+    "TARGET_COMPOSITE_METADATA_NAMES",
+    "MODEL_COMPOSITE_INDICES",
+    "TARGET_COMPOSITE_METADATA_INDICES",
+    "adapt_model_composite_features",
+    "model_composite_feature_contract_hash",
     "SCHEMA_VERSION_V4",
     "export_trees_v4",
     "feature_spec_v4",

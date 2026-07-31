@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter, defaultdict, deque
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 import json
 import os
 from pathlib import Path
@@ -237,6 +237,7 @@ def validate_shard(
     expected_pid_vocabulary_version: str | None = None,
     expected_leaf_kinematics_mode: str | None = None,
     expected_charge_conjugate_normalization: bool | None = None,
+    uid_callback: Callable[[str], None] | None = None,
 ) -> dict[str, object]:
     """Validate schema and event count after one production task."""
 
@@ -306,6 +307,8 @@ def validate_shard(
             if uid in seen_uids:
                 raise ValueError(f"Duplicate event_uid within {path}")
             seen_uids.add(uid)
+            if uid_callback is not None:
+                uid_callback(uid)
             actual_events += 1
         unique_events = len(seen_uids)
     else:
@@ -315,6 +318,9 @@ def validate_shard(
             raise ValueError(f"Missing event_uid in {path}")
         if len(set(event_uids)) != len(event_uids):
             raise ValueError(f"Duplicate event_uid within {path}")
+        if uid_callback is not None:
+            for uid in event_uids:
+                uid_callback(str(uid))
         unique_events = len(set(event_uids))
     if actual_events != expected_events:
         raise ValueError(
@@ -359,6 +365,14 @@ def run_task(
         result["status"] = "already-complete"
         result["task_id"] = task_id
         return result
+
+    # A completed shard is advertised exclusively by its marker.  Invalidate
+    # that publication before doing any overwrite work so a worker failure can
+    # only leave an explicitly incomplete old/new shard, never a stale marker.
+    if overwrite:
+        output_file.with_suffix(output_file.suffix + ".complete").unlink(
+            missing_ok=True
+        )
 
     basf2 = shutil.which("basf2")
     if basf2 is None:
@@ -500,8 +514,7 @@ def validate_production_manifest(manifest: Path) -> dict[str, object]:
     )
     uid_database_file.close()
     uid_database_path = Path(uid_database_file.name)
-    uid_database = sqlite3.connect(uid_database_path)
-    uid_database.execute("CREATE TABLE event_uids (uid TEXT PRIMARY KEY)")
+    uid_database: sqlite3.Connection | None = None
     categories: Counter[str] = Counter()
     completed = 0
     missing: list[int] = []
@@ -514,61 +527,62 @@ def validate_production_manifest(manifest: Path) -> dict[str, object]:
         "leaf_kinematics_mode",
     )
     expected_config = {field: records[0].get(field) for field in config_fields}
-    for record in records:
-        task_id = int(record["task_id"])
-        if task_id in seen_task_ids:
-            raise ValueError(f"duplicate task_id {task_id}")
-        seen_task_ids.add(task_id)
-        for field, expected in expected_config.items():
-            if record.get(field) != expected:
-                raise ValueError(f"manifest scientific config mismatch for {field}")
-        start = int(record["entry_start"])
-        stop = int(record["entry_stop_exclusive"])
-        by_file[str(record["input_file"])].append((start, stop, task_id))
-        categories[str(record["physics_category"])] += int(record["planned_events"])
-        output = Path(str(record["output_file"]))
-        if not output.exists():
-            missing.append(task_id)
-            continue
-        result = validate_shard(
-            output,
-            expected_events=int(record["planned_events"]),
-            expected_schema=str(record["schema_version"]),
-            expected_feature_spec_hash=str(record["feature_spec_hash"]),
-            expected_pid_vocabulary_version=str(record["pid_vocabulary_version"]),
-            expected_leaf_kinematics_mode=str(record["leaf_kinematics_mode"]),
-            expected_charge_conjugate_normalization=bool(
-                record["charge_conjugate_normalization"]
-            ),
-        )
-        events = (
-            iter_event_records_v4(output)
-            if str(record["schema_version"]) == SCHEMA_VERSION_V4
-            else iter(ak.to_list(ak.from_parquet(output))[0]["events"])
-        )
-        for event in events:
-            uid = str(event["event_uid"])
+    uid_digest = hashlib.sha256()
+    try:
+        uid_database = sqlite3.connect(uid_database_path)
+        uid_database.execute("CREATE TABLE event_uids (uid TEXT PRIMARY KEY)")
+
+        def register_uid(uid: str) -> None:
+            assert uid_database is not None
             try:
                 uid_database.execute("INSERT INTO event_uids(uid) VALUES (?)", (uid,))
-            except sqlite3.IntegrityError:
-                raise ValueError(f"duplicate event_uid across shards: {uid}")
-        completed += 1
-        total_events += int(result["events"])
-    for input_file, ranges in by_file.items():
-        ranges.sort()
-        for left, right in zip(ranges, ranges[1:]):
-            if left[1] > right[0]:
-                raise ValueError(
-                    f"overlapping source entry ranges for {input_file}: {left} and {right}"
-                )
-    planned = sum(int(record["planned_events"]) for record in records)
-    if not missing and total_events != planned:
-        raise ValueError(f"global event count mismatch: planned {planned}, found {total_events}")
-    unique_uid_count = int(
-        uid_database.execute("SELECT COUNT(*) FROM event_uids").fetchone()[0]
-    )
-    uid_database.close()
-    uid_database_path.unlink(missing_ok=True)
+            except sqlite3.IntegrityError as error:
+                raise ValueError(f"duplicate event_uid across shards: {uid}") from error
+            uid_digest.update(uid.encode("utf-8") + b"\0")
+
+        for record in records:
+            task_id = int(record["task_id"])
+            if task_id in seen_task_ids:
+                raise ValueError(f"duplicate task_id {task_id}")
+            seen_task_ids.add(task_id)
+            for field, expected in expected_config.items():
+                if record.get(field) != expected:
+                    raise ValueError(f"manifest scientific config mismatch for {field}")
+            start = int(record["entry_start"])
+            stop = int(record["entry_stop_exclusive"])
+            by_file[str(record["input_file"])].append((start, stop, task_id))
+            categories[str(record["physics_category"])] += int(record["planned_events"])
+            output = Path(str(record["output_file"]))
+            if not output.exists():
+                missing.append(task_id)
+                continue
+            result = validate_shard(
+                output,
+                expected_events=int(record["planned_events"]),
+                expected_schema=str(record["schema_version"]),
+                expected_feature_spec_hash=str(record["feature_spec_hash"]),
+                expected_pid_vocabulary_version=str(record["pid_vocabulary_version"]),
+                expected_leaf_kinematics_mode=str(record["leaf_kinematics_mode"]),
+                expected_charge_conjugate_normalization=bool(record["charge_conjugate_normalization"]),
+                uid_callback=register_uid,
+            )
+            completed += 1
+            total_events += int(result["events"])
+        for input_file, ranges in by_file.items():
+            ranges.sort()
+            for left, right in zip(ranges, ranges[1:]):
+                if left[1] > right[0]:
+                    raise ValueError(
+                        f"overlapping source entry ranges for {input_file}: {left} and {right}"
+                    )
+        planned = sum(int(record["planned_events"]) for record in records)
+        if not missing and total_events != planned:
+            raise ValueError(f"global event count mismatch: planned {planned}, found {total_events}")
+        unique_uid_count = int(uid_database.execute("SELECT COUNT(*) FROM event_uids").fetchone()[0])
+    finally:
+        if uid_database is not None:
+            uid_database.close()
+        uid_database_path.unlink(missing_ok=True)
     return {
         "tasks": len(records),
         "completed_shards": completed,
@@ -576,6 +590,8 @@ def validate_production_manifest(manifest: Path) -> dict[str, object]:
         "planned_events": planned,
         "validated_events": total_events,
         "unique_event_uids": unique_uid_count,
+        "event_uid_digest": uid_digest.hexdigest(),
+        "global_uid_validation_passes": 1,
         "category_distribution": dict(sorted(categories.items())),
         **expected_config,
     }

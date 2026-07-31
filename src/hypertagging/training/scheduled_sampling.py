@@ -136,6 +136,37 @@ class AlignedLevelTargets:
     representable_count: int
 
 
+@dataclass(frozen=True)
+class UnrepresentableTargetDecision:
+    use_teacher_context: bool = False
+    skip_event_level: bool = False
+    use_representable_subset: bool = False
+    add_recovery_objective: bool = False
+
+
+def resolve_unrepresentable_target_policy(
+    policy: str,
+    *,
+    truth_target_count: int,
+    representable_target_count: int,
+) -> UnrepresentableTargetDecision:
+    """Resolve missing-context targets without ever inventing no-object labels."""
+
+    if representable_target_count >= truth_target_count:
+        return UnrepresentableTargetDecision(use_representable_subset=True)
+    if policy == "fallback_teacher":
+        return UnrepresentableTargetDecision(use_teacher_context=True)
+    if policy == "skip_event_level":
+        return UnrepresentableTargetDecision(skip_event_level=True)
+    if policy == "masked_representable_only":
+        return UnrepresentableTargetDecision(use_representable_subset=True)
+    if policy == "recovery_objective":
+        return UnrepresentableTargetDecision(
+            use_representable_subset=True, add_recovery_objective=True
+        )
+    raise ValueError(f"unknown unrepresentable target policy: {policy}")
+
+
 def align_context_by_recursive_sources(
     predicted_sources: torch.Tensor,
     truth_sources: torch.Tensor,

@@ -48,7 +48,7 @@ class RelationAwareSelfAttention(nn.Module):
 
 
 class RelationAwareSetLayer(nn.Module):
-    def __init__(self, d_model: int, n_heads: int = 4, feedforward_dim: int | None = None) -> None:
+    def __init__(self, d_model: int, n_heads: int = 4, feedforward_dim: int | None = None, dropout: float = 0.0) -> None:
         super().__init__()
         self.attention = RelationAwareSelfAttention(d_model, n_heads)
         self.norm1 = nn.LayerNorm(d_model)
@@ -59,6 +59,7 @@ class RelationAwareSetLayer(nn.Module):
             nn.GELU(),
             nn.Linear(ff_dim, d_model),
         )
+        self.dropout = nn.Dropout(dropout)
 
     def forward(
         self,
@@ -74,16 +75,16 @@ class RelationAwareSetLayer(nn.Module):
             attention_mask=attention_mask,
             node_mask=node_mask,
         )
-        x = x + update
-        x = x + self.feedforward(self.norm2(x))
+        x = x + self.dropout(update)
+        x = x + self.dropout(self.feedforward(self.norm2(x)))
         return x * node_mask.unsqueeze(-1), weights
 
 
 class RelationAwareSetTransformer(nn.Module):
-    def __init__(self, d_model: int, n_heads: int = 4, n_layers: int = 2) -> None:
+    def __init__(self, d_model: int, n_heads: int = 4, n_layers: int = 2, feedforward_dim: int | None = None, dropout: float = 0.0) -> None:
         super().__init__()
         self.layers = nn.ModuleList(
-            RelationAwareSetLayer(d_model, n_heads)
+            RelationAwareSetLayer(d_model, n_heads, feedforward_dim, dropout)
             for _ in range(n_layers)
         )
 

@@ -63,6 +63,12 @@ class LevelAutoregressiveReconstructor(nn.Module):
         use_relation_bias: bool = True,
         use_hyperbolic_relation_refinement: bool = False,
         canonical_pion_first_level: bool = False,
+        curvature: float = 1.0,
+        ffn_dim: int | None = None,
+        dropout: float = 0.0,
+        max_cardinality: int = 6,
+        n_queries_by_level: tuple[tuple[int, int], ...] = (),
+        max_cardinality_by_level: tuple[tuple[int, int], ...] = (),
     ) -> None:
         super().__init__()
         self.encoder_mode = encoder_mode
@@ -88,6 +94,9 @@ class LevelAutoregressiveReconstructor(nn.Module):
                 use_contextual_encoder=use_contextual_encoder,
                 use_physical_context=use_relation_bias,
                 use_hyperbolic_refinement=use_hyperbolic_relation_refinement,
+                curvature=curvature,
+                ffn_dim=ffn_dim,
+                dropout=dropout,
             )
         else:
             raise ValueError(f"Unknown encoder_mode: {encoder_mode}")
@@ -97,7 +106,23 @@ class LevelAutoregressiveReconstructor(nn.Module):
             n_heads=n_heads,
             n_layers=n_context_layers,
         )
-        self.decoder = MotherPointerDecoder(hidden_dim=hidden_dim, n_types=n_types, n_queries=n_queries)
+        self.decoder = MotherPointerDecoder(
+            hidden_dim=hidden_dim, n_types=n_types, n_queries=n_queries,
+            max_cardinality=max_cardinality,
+        )
+        query_map = dict(n_queries_by_level)
+        cardinality_map = dict(max_cardinality_by_level)
+        self.level_decoders = nn.ModuleDict(
+            {
+                str(level): MotherPointerDecoder(
+                    hidden_dim=hidden_dim,
+                    n_types=n_types,
+                    n_queries=query_map.get(level, n_queries),
+                    max_cardinality=cardinality_map.get(level, max_cardinality),
+                )
+                for level in sorted(set(query_map) | set(cardinality_map))
+            }
+        )
         self.leaf_pid_head = nn.Linear(hidden_dim, len(PDG_TOKENS))
         self.runtime_feature_normalizer = RuntimeFeatureNormalizer.identity(
             len(COMMON_FEATURE_NAMES), len(COMPOSITE_FEATURE_NAMES)
@@ -202,16 +227,22 @@ class LevelAutoregressiveReconstructor(nn.Module):
             current_tokens = batch["pid_labels"]
             current_p4 = batch["p4"]
         context_mask = context_mask_for_level(batch["level_ids"], batch["node_mask"], target_level)
+        decoder = (
+            self.level_decoders[str(target_level)]
+            if str(target_level) in self.level_decoders
+            else self.decoder
+        )
         pointer_validity = batch.get("pointer_validity_mask")
         if pointer_validity is not None and pointer_validity.ndim == 2:
             pointer_validity = pointer_validity[:, None, :].expand(
-                -1, self.decoder.n_queries, -1
+                -1, decoder.n_queries, -1
             )
-        pointer = self.decoder(
+        pointer = decoder(
             h,
             context_mask,
             target_level=target_level,
             allowed_type_mask=batch.get("allowed_type_mask"),
+            type_logit_bias=batch.get("type_logit_bias"),
             pointer_validity_mask=pointer_validity,
         )
         return LevelReconstructionOutput(

@@ -20,6 +20,16 @@ from hypertagging.training.reconstruction_trainer import (
 from hypertagging.models.ablation import ALL_ABLATIONS
 from hypertagging.utils.gpu_safety import assert_full_training_requires_condor
 from hypertagging.training.config import resolve_argparse_namespace
+from hypertagging.training.model_config import MODEL_PRESETS
+
+
+def _level_int_pairs(value: str):
+    if not value:
+        return ()
+    return tuple(
+        (int(level), int(count))
+        for level, count in (item.split(":", 1) for item in value.split(","))
+    )
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -29,8 +39,18 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--pretrained-encoder", default=None)
     parser.add_argument("--freeze-pretrained-encoder-steps", type=int, default=0)
     parser.add_argument("--encoder-lr-multiplier", type=float, default=0.2)
-    parser.add_argument("--n-queries", type=int, default=8)
-    parser.add_argument("--max-cardinality", type=int, default=6)
+    parser.add_argument("--n-queries", type=int, default=None)
+    parser.add_argument("--n-queries-by-level", type=_level_int_pairs, default=())
+    parser.add_argument("--max-cardinality", type=int, default=None)
+    parser.add_argument("--max-cardinality-by-level", type=_level_int_pairs, default=())
+    parser.add_argument("--model-preset", choices=sorted(MODEL_PRESETS), default="tiny_cpu")
+    parser.add_argument("--d-model", type=int, default=None)
+    parser.add_argument("--hyper-dim", type=int, default=None)
+    parser.add_argument("--n-heads", type=int, default=None)
+    parser.add_argument("--n-context-layers", type=int, default=None)
+    parser.add_argument("--ffn-dim", type=int, default=None)
+    parser.add_argument("--dropout", type=float, default=None)
+    parser.add_argument("--curvature", type=float, default=None)
     parser.add_argument("--scheduled-sampling-probability", type=float, default=None)
     parser.add_argument("--ablation", choices=sorted(ALL_ABLATIONS), default="full_revised")
     parser.add_argument("--device", default="cpu")
@@ -66,6 +86,22 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--scheduled-sampling-duration-steps", type=int, default=1000)
     parser.add_argument("--auxiliary-teacher-weight", type=float, default=0.0)
+    parser.add_argument(
+        "--unrepresentable-target-policy",
+        choices=("fallback_teacher", "skip_event_level", "masked_representable_only", "recovery_objective"),
+        default="fallback_teacher",
+    )
+    parser.add_argument(
+        "--level-sampling-mode",
+        choices=("all_levels", "one_level_per_event", "stratified_level_sampling"),
+        default="all_levels",
+    )
+    parser.add_argument(
+        "--empirical-type-prior-mode", choices=("hard", "soft", "off"), default="soft"
+    )
+    parser.add_argument("--minimum-encoder-transfer-coverage", type=float, default=0.9)
+    parser.add_argument("--allow-low-encoder-transfer-coverage", action="store_true")
+    parser.add_argument("--allow-incomplete-v4-publication", action="store_true")
     parser.add_argument("--dataset-index", default=None)
     parser.add_argument("--rescan-dataset", action="store_true")
     parser.add_argument("--max-validation-events", type=int, default=32)
@@ -93,6 +129,16 @@ def main(argv: list[str] | None = None) -> int:
                 resume=args.resume,
                 n_queries=args.n_queries,
                 max_cardinality=args.max_cardinality,
+                n_queries_by_level=tuple(tuple(value) for value in args.n_queries_by_level),
+                max_cardinality_by_level=tuple(tuple(value) for value in args.max_cardinality_by_level),
+                model_preset=args.model_preset,
+                d_model=args.d_model,
+                hyper_dim=args.hyper_dim,
+                n_heads=args.n_heads,
+                n_context_layers=args.n_context_layers,
+                ffn_dim=args.ffn_dim,
+                dropout=args.dropout,
+                curvature=args.curvature,
                 scheduled_sampling_probability=(
                     args.scheduled_sampling_probability
                     if args.scheduled_sampling_probability is not None
@@ -121,6 +167,12 @@ def main(argv: list[str] | None = None) -> int:
                 scheduled_sampling_schedule=args.scheduled_sampling_schedule,
                 scheduled_sampling_duration_steps=args.scheduled_sampling_duration_steps,
                 auxiliary_teacher_weight=args.auxiliary_teacher_weight,
+                unrepresentable_target_policy=args.unrepresentable_target_policy,
+                level_sampling_mode=args.level_sampling_mode,
+                empirical_type_prior_mode=args.empirical_type_prior_mode,
+                minimum_encoder_transfer_coverage=args.minimum_encoder_transfer_coverage,
+                allow_low_encoder_transfer_coverage=args.allow_low_encoder_transfer_coverage,
+                allow_incomplete_v4_publication=args.allow_incomplete_v4_publication,
                 dataset_index=args.dataset_index,
                 rescan_dataset=args.rescan_dataset,
                 max_validation_events=args.max_validation_events,

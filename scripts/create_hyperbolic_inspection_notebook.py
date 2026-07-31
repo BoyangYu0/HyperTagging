@@ -54,6 +54,8 @@ def build_notebook() -> nbf.NotebookNode:
             )
             from hypertagging.models.heterogeneous import HeterogeneousNodeEncoder
             from hypertagging.models.hyperbolic import distance, logmap0, radius
+            from hypertagging.preprocessing.pid_filter import PDG_TOKENS
+            from hypertagging.training.pretrain_trainer import ContextualPretrainingModel
 
             SEED = int(os.environ.get("HYPERTAGGING_NOTEBOOK_SEED", "20260730"))
             torch.manual_seed(SEED); np.random.seed(SEED)
@@ -249,6 +251,7 @@ def build_notebook() -> nbf.NotebookNode:
         code(
             """
             from hypertagging.training.pretraining_curriculum import PretrainingStage, build_curriculum_batch
+            runtime_model=ContextualPretrainingModel(d_model=24,hyper_dim=4).eval()
             representations = {
                 "uncontextualized_adapter": encoded.adapter_embeddings.detach(),
                 "contextual_euclidean": encoded.node_embeddings.detach(),
@@ -261,6 +264,9 @@ def build_notebook() -> nbf.NotebookNode:
             for stage in PretrainingStage:
                 view=build_curriculum_batch(batch,stage,seed=SEED,corruption_probability=1.0)
                 with torch.no_grad(): stage_encoded=model(view.batch,attention_mask=view.batch["curriculum_attention_mask"])
+                with torch.no_grad(): runtime_encoded, leaf_pid_logits, runtime_batch=runtime_model.encode_runtime(
+                    view.batch,attention_mask=view.batch["curriculum_attention_mask"]
+                )
                 curriculum_rows.append({
                     "stage":stage.value,
                     "valid_nodes":int(view.batch["node_mask"].sum()),
@@ -270,6 +276,8 @@ def build_notebook() -> nbf.NotebookNode:
                     "hard_negative_pairs":int(view.hard_negative_pairs.shape[0]),
                     "actual_corruption_codes":sorted(set(view.corruption_code[view.corrupted_node_mask].tolist())),
                     "hard_negative_relation_classes":sorted(set(view.hard_negative_relation_classes.tolist())),
+                    "runtime_pid_probability_width":runtime_batch["current_pid_probabilities"].shape[-1],
+                    "invalid_structural_positives":int((view.corrupted_node_mask&view.structural_positive_mask).sum()),
                     "causal_future_links":int((
                         view.batch["curriculum_attention_mask"]
                         & (view.batch["level_ids"][:,None,:] > view.batch["level_ids"][:,:,None])
@@ -287,6 +295,10 @@ def build_notebook() -> nbf.NotebookNode:
                 "actual_corruption_labels_pass":corruption_contract_pass,
                 "hard_negative_relation_classes":sorted(set(hard_negative_classes)),
                 "hard_negatives_are_explicit_tree_relations":all(code in (1,2) for code in hard_negative_classes),
+                "runtime_two_pass_pid_semantics":all(row["runtime_pid_probability_width"]==len(PDG_TOKENS) for row in curriculum_rows),
+                "invalid_corruptions_excluded_from_positive_structure":all(row["invalid_structural_positives"]==0 for row in curriculum_rows),
+                "depth_pid_channel_shape":list(batch["b_depth_pid_count_arrays"].shape),
+                "branch_multiplicity_summary_shape":list(batch["b_branch_multiplicity_summaries"].shape),
             }
             (FIGURE_DIR/"curriculum_runtime_report.json").write_text(json.dumps(curriculum_report,indent=2))
             print("Corrupted Stage 3 rebuilds p4, charge, input PID histograms, source masks, and structural features.")

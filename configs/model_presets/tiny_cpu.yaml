@@ -1,0 +1,10 @@
+model_preset: tiny_cpu
+d_model: 32
+hyper_dim: 8
+n_heads: 4
+n_context_layers: 2
+ffn_dim: 64
+dropout: 0.0
+curvature: 1.0
+n_queries: 8
+max_cardinality: 6

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
+import json
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -62,6 +63,9 @@ class HeterogeneousEvent:
     copied_from: torch.Tensor
     b_side: torch.Tensor
     b_channel_count_arrays: torch.Tensor
+    b_depth_pid_count_arrays: torch.Tensor
+    b_branch_multiplicity_summaries: torch.Tensor
+    b_intermediate_count_arrays: torch.Tensor
     full_truth_daughter_count: torch.Tensor
     retained_truth_daughter_count_expected: torch.Tensor
     retained_daughter_count: torch.Tensor
@@ -157,6 +161,19 @@ def _event_from_record(event: dict[str, Any]) -> HeterogeneousEvent:
     )
     validate_pid_tokens(truth_tokens, name="parquet truth PID tokens")
     recursive_source_mask = _recursive_source_mask(nodes)
+    channel_summaries = [
+        _channel_summary(event.get("b1_channel_summary_json", "{}")),
+        _channel_summary(event.get("b2_channel_summary_json", "{}")),
+    ]
+    depth_arrays = [
+        event.get("b1_depth_pid_count_array", [[0] * len(PDG_TOKENS)]),
+        event.get("b2_depth_pid_count_array", [[0] * len(PDG_TOKENS)]),
+    ]
+    max_depth = max(1, *(len(values) for values in depth_arrays))
+    padded_depth_arrays = [
+        list(values) + [[0] * len(PDG_TOKENS) for _ in range(max_depth - len(values))]
+        for values in depth_arrays
+    ]
     return HeterogeneousEvent(
         event_id=int(event["event_id"]),
         event_uid=str(event.get("event_uid", event["event_id"])),
@@ -293,6 +310,17 @@ def _event_from_record(event: dict[str, Any]) -> HeterogeneousEvent:
             ],
             dtype=torch.float32,
         ),
+        b_depth_pid_count_arrays=torch.tensor(
+            padded_depth_arrays, dtype=torch.float32
+        ),
+        b_branch_multiplicity_summaries=torch.tensor(
+            [_branch_multiplicity_summary(summary) for summary in channel_summaries],
+            dtype=torch.float32,
+        ),
+        b_intermediate_count_arrays=torch.tensor(
+            [_intermediate_count_array(summary) for summary in channel_summaries],
+            dtype=torch.float32,
+        ),
         full_truth_daughter_count=_node_int_tensor(nodes, "full_truth_daughter_count"),
         retained_truth_daughter_count_expected=_node_int_tensor(
             nodes, "retained_truth_daughter_count_expected"
@@ -373,6 +401,38 @@ def _node_int_tensor(nodes: list[dict[str, Any]], name: str) -> torch.Tensor:
 
 def _node_bool_tensor(nodes: list[dict[str, Any]], name: str) -> torch.Tensor:
     return torch.tensor([bool(node.get(name, False)) for node in nodes], dtype=torch.bool)
+
+
+def _channel_summary(value: Any) -> dict[str, Any]:
+    if isinstance(value, dict):
+        return value
+    try:
+        decoded = json.loads(str(value or "{}"))
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return {}
+    return decoded if isinstance(decoded, dict) else {}
+
+
+def _branch_multiplicity_summary(summary: dict[str, Any]) -> list[float]:
+    values = [float(value) for value in summary.get("branch_multiplicities", [])]
+    if not values:
+        return [0.0] * 5
+    return [
+        float(len(values)),
+        min(values),
+        max(values),
+        sum(values) / len(values),
+        sum(values),
+    ]
+
+
+def _intermediate_count_array(summary: dict[str, Any]) -> list[float]:
+    output = [0.0] * len(PDG_TOKENS)
+    for record in summary.get("selected_intermediate_counts", []):
+        token = int(record.get("token", -1))
+        if 0 <= token < len(output):
+            output[token] += float(record.get("count", 0))
+    return output
 
 
 def _recursive_source_mask(nodes: list[dict[str, Any]]) -> torch.Tensor:
@@ -534,6 +594,9 @@ def heterogeneous_from_level_event(event: LevelEvent) -> HeterogeneousEvent:
         copied_from=event.copied_from,
         b_side=torch.full((count,), -1, dtype=torch.long),
         b_channel_count_arrays=torch.zeros((2, len(PDG_TOKENS))),
+        b_depth_pid_count_arrays=torch.zeros((2, 1, len(PDG_TOKENS))),
+        b_branch_multiplicity_summaries=torch.zeros((2, 5)),
+        b_intermediate_count_arrays=torch.zeros((2, len(PDG_TOKENS))),
         full_truth_daughter_count=event.daughter_adjacency.sum(dim=-1).long(),
         retained_truth_daughter_count_expected=event.daughter_adjacency.sum(dim=-1).long(),
         retained_daughter_count=event.daughter_adjacency.sum(dim=-1).long(),
@@ -719,6 +782,21 @@ def collate_heterogeneous_events(events: Sequence[HeterogeneousEvent]) -> dict[s
     )
     output["b_channel_count_arrays"] = torch.stack(
         [event.b_channel_count_arrays for event in events]
+    )
+    max_channel_depth = max(event.b_depth_pid_count_arrays.shape[1] for event in events)
+    output["b_depth_pid_count_arrays"] = torch.zeros(
+        (batch_size, 2, max_channel_depth, len(PDG_TOKENS)), dtype=torch.float32
+    )
+    for batch_index, event in enumerate(events):
+        depth = event.b_depth_pid_count_arrays.shape[1]
+        output["b_depth_pid_count_arrays"][batch_index, :, :depth] = (
+            event.b_depth_pid_count_arrays
+        )
+    output["b_branch_multiplicity_summaries"] = torch.stack(
+        [event.b_branch_multiplicity_summaries for event in events]
+    )
+    output["b_intermediate_count_arrays"] = torch.stack(
+        [event.b_intermediate_count_arrays for event in events]
     )
     output["legacy_conflated_fraction"] = torch.tensor(
         [event.legacy_conflated_fraction for event in events], dtype=torch.float32

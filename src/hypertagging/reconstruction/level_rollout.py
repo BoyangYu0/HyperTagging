@@ -24,6 +24,7 @@ from hypertagging.reconstruction.pid_state import (
 )
 from hypertagging.models.mother_pointer import constrained_daughter_decode
 from hypertagging.preprocessing.schema_v4 import LEAF_MODE_TO_ID
+from hypertagging.reconstruction.constraints import ReconstructionConstraintPolicy
 
 
 @dataclass(frozen=True)
@@ -49,6 +50,7 @@ class RolloutConfig:
         NODE_KIND_TO_ID["composite"],
         NODE_KIND_TO_ID["other"],
     )
+    constraint_policy: ReconstructionConstraintPolicy | None = None
 
 
 @dataclass(frozen=True)
@@ -78,6 +80,7 @@ class LevelRolloutResult:
     stop_reason: str
     valid: bool
     teacher_forced: bool
+    cached_states: tuple[tuple[int, dict[str, torch.Tensor]], ...] = ()
 
 
 def hard_decode_proposals(
@@ -89,6 +92,16 @@ def hard_decode_proposals(
 
     if output.pointer.object_logits.shape[0] != 1:
         raise ValueError("Tiny rollout currently requires batch size 1")
+    policy = config.constraint_policy or ReconstructionConstraintPolicy(
+        minimum_pointer_probability=config.pointer_threshold,
+        minimum_daughters=config.min_daughters,
+        cardinality_insufficient_policy=config.cardinality_insufficient_policy,
+        valid_leaf_node_kinds=tuple(
+            kind for kind in config.allowed_daughter_node_kinds
+            if kind != NODE_KIND_TO_ID["composite"]
+        ),
+        valid_composite_node_kinds=(NODE_KIND_TO_ID["composite"],),
+    )
     context = output.context_mask[0]
     context_positions = context.nonzero(as_tuple=False).flatten()
     proposals: list[CompositeProposal] = []
@@ -107,13 +120,16 @@ def hard_decode_proposals(
         probabilities = torch.sigmoid(
             output.pointer.pointer_logits[0, query_id, context_positions]
         )
-        if config.use_cardinality:
+        if config.use_cardinality and policy.daughter_cardinality_policy == "predicted":
             cardinality = int(output.pointer.cardinality_logits[0, query_id].argmax())
             if cardinality > context_positions.numel():
                 # This is an invalid prediction, not a training-target
                 # overflow. Training truth overflows raise explicitly.
                 continue
-            conflict = batch.get("source_conflict_matrix")
+            conflict = (
+                batch.get("source_conflict_matrix")
+                if policy.reject_recursive_source_conflicts else None
+            )
             context_conflict = (
                 conflict[0][
                     context_positions[:, None],
@@ -131,35 +147,37 @@ def hard_decode_proposals(
                 cardinality=cardinality,
                 pointer_mask=torch.ones_like(probabilities, dtype=torch.bool),
                 source_conflict=context_conflict,
-                min_probability=config.pointer_threshold,
-                insufficient_policy=config.cardinality_insufficient_policy,
+                min_probability=policy.minimum_pointer_probability,
+                insufficient_policy=policy.cardinality_insufficient_policy,
             )
             if not valid_selection:
                 continue
             selected_local = selected_bool.nonzero(as_tuple=False).flatten()
         else:
-            selected_local = (probabilities >= config.pointer_threshold).nonzero(
+            selected_local = (probabilities >= policy.minimum_pointer_probability).nonzero(
                 as_tuple=False
             ).flatten()
         daughter_positions = tuple(
             sorted(int(context_positions[index]) for index in selected_local.tolist())
         )
-        if len(daughter_positions) < config.min_daughters:
+        if len(daughter_positions) < policy.minimum_daughters:
             continue
-        if any(
-            int(batch["node_kind_ids"][0, position])
-            not in config.allowed_daughter_node_kinds
-            for position in daughter_positions
-        ):
+        policy_valid = policy.pointer_validity_mask(batch, output.target_level)[0]
+        if any(not bool(policy_valid[position]) for position in daughter_positions):
             continue
         mother_type = int(output.pointer.type_logits[0, query_id].argmax())
         charge_contract = dict(config.mother_charge_by_token)
-        if mother_type in charge_contract:
+        expected_charge = charge_contract.get(mother_type, policy.expected_charge(mother_type))
+        if policy.mother_charge_compatibility in {"hard", "soft_train_hard_rollout"}:
             daughter_charge = float(
                 batch["charge"][0, list(daughter_positions)].sum()
             )
-            if abs(daughter_charge - charge_contract[mother_type]) > 1e-6:
+            if abs(daughter_charge - expected_charge) > policy.mother_charge_tolerance:
                 continue
+        if policy.loose_physical_constraints and not policy.rollout_physical_valid(
+            batch["p4"][0, list(daughter_positions)].sum(dim=0)
+        ):
+            continue
         pointer_quality = (
             float(probabilities[selected_local].mean().detach())
             if selected_local.numel()
@@ -262,6 +280,7 @@ def level_rollout(
     state = _select_nodes(full_batch, full_batch["node_mask"][0] & (full_batch["level_ids"][0] == 0))
     generator = torch.Generator(device=state["p4"].device).manual_seed(config.seed)
     seen_states = {_state_fingerprint(state)}
+    cached_states: list[tuple[int, dict[str, torch.Tensor]]] = [(0, state)]
     steps: list[RolloutStep] = []
     stop_reason = "maximum_level"
     valid = True
@@ -329,6 +348,7 @@ def level_rollout(
             accepted,
             target_level=target_level,
         )
+        cached_states.append((target_level, state))
         steps.append(
             RolloutStep(
                 target_level,
@@ -356,7 +376,18 @@ def level_rollout(
         stop_reason=stop_reason,
         valid=valid,
         teacher_forced=mode == "teacher_forced",
+        cached_states=tuple(cached_states),
     )
+
+
+def cached_context_for_level(
+    result: LevelRolloutResult, target_level: int
+) -> dict[str, torch.Tensor]:
+    """Return the cached state after level ``target_level - 1``."""
+
+    desired = max(int(target_level) - 1, 0)
+    candidates = [item for item in result.cached_states if item[0] <= desired]
+    return candidates[-1][1] if candidates else result.batch
 
 
 def _with_hard_predicted_leaf_p4(
@@ -829,6 +860,7 @@ __all__ = [
     "append_composite_proposals",
     "hard_decode_proposals",
     "level_rollout",
+    "cached_context_for_level",
     "resolve_exclusive_proposals",
     "validate_proposals",
 ]

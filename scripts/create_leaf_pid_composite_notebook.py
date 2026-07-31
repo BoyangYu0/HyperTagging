@@ -45,7 +45,7 @@ def build_notebook():
             import torch
             ROOT=Path.cwd(); sys.path.insert(0,str(ROOT/"src"))
             from hypertagging.data.notebook_fixtures import write_notebook_fixture_v4
-            from hypertagging.preprocessing.schema_v4 import load_payload_v4
+            from hypertagging.preprocessing.schema_v4 import load_payload_v4, MODEL_COMPOSITE_FEATURE_NAMES, TARGET_COMPOSITE_METADATA_NAMES, TARGET_COMPOSITE_METADATA_INDICES
             from hypertagging.data.heterogeneous import load_heterogeneous_events, collate_heterogeneous_events
             from hypertagging.models.level_autoregressive import LevelAutoregressiveReconstructor
             SEED=int(os.environ.get("HYPERTAGGING_NOTEBOOK_SEED","20260730")); torch.manual_seed(SEED)
@@ -115,6 +115,28 @@ def build_notebook():
             plt.savefig(OUT/"runtime_dynamic_normalization.png"); plt.show()
             """
         ),
+        md("## Composite model features versus target-only metadata invariance"),
+        code(
+            """
+            model.eval()
+            changed={name:(value.clone() if isinstance(value,torch.Tensor) else value) for name,value in batch.items()}
+            for index in TARGET_COMPOSITE_METADATA_INDICES:
+                changed["composite_features"][...,index]=1e7
+                changed["composite_availability"][...,index]=True
+            with torch.no_grad():
+                original_output=model(batch,target_level=1)
+                changed_output=model(changed,target_level=1)
+            metadata_invariance_pass=all(torch.equal(left,right) for left,right in (
+                (original_output.node_embeddings,changed_output.node_embeddings),
+                (original_output.hyperbolic_embeddings,changed_output.hyperbolic_embeddings),
+                (original_output.relation_bias,changed_output.relation_bias),
+                (original_output.pointer.pointer_logits,changed_output.pointer.pointer_logits),
+                (original_output.pointer.type_logits,changed_output.pointer.type_logits),
+            ))
+            print({"model_composite_features":MODEL_COMPOSITE_FEATURE_NAMES,"target_only_metadata":TARGET_COMPOSITE_METADATA_NAMES,"invariant":metadata_invariance_pass})
+            assert metadata_invariance_pass
+            """
+        ),
         md("## Reconstruction gradient reaches the leaf PID head"),
         code(
             """
@@ -126,9 +148,9 @@ def build_notebook():
                 for node in nodes
                 if node["leaf_kinematics_mode"]=="raw_track_predicted_pid"
             )
-            report={"schema_v4":True,"truth_clean_composite_input":True,"raw_track_unknown_input_pass":leakage_pass,"pointer_gradient_to_leaf_pid":gradient,"pointer_response":pointer_change,"runtime_dynamic_normalization_pass":normalization_pass,"teacher_composite_type_source_pass":type_source_pass}
+            report={"schema_v4":True,"truth_clean_composite_input":True,"target_metadata_invariance":metadata_invariance_pass,"raw_track_unknown_input_pass":leakage_pass,"pointer_gradient_to_leaf_pid":gradient,"pointer_response":pointer_change,"runtime_dynamic_normalization_pass":normalization_pass,"teacher_composite_type_source_pass":type_source_pass}
             (OUT/"leaf_composite_contract.json").write_text(json.dumps(report,indent=2),encoding="utf-8")
-            assert leakage_pass and gradient>0 and normalization_pass and type_source_pass
+            assert leakage_pass and gradient>0 and normalization_pass and type_source_pass and metadata_invariance_pass
             plt.figure(figsize=(6,3)); plt.bar(["pointer→leaf PID gradient"],[gradient]); plt.yscale("log"); plt.tight_layout()
             plt.savefig(OUT/"leaf_pid_gradient.png"); plt.show()
             """

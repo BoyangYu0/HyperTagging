@@ -28,6 +28,8 @@ class CurriculumBatch:
     corruption_code: torch.Tensor
     hard_negative_pairs: torch.Tensor
     hard_negative_relation_classes: torch.Tensor
+    structural_positive_mask: torch.Tensor
+    corruption_objective: str
 
 
 def build_curriculum_batch(
@@ -36,10 +38,13 @@ def build_curriculum_batch(
     *,
     seed: int = 0,
     corruption_probability: float = 0.5,
+    corruption_objective: str = "invalid_candidate",
 ) -> CurriculumBatch:
     """Build one curriculum view without exposing truth composites in Stage 1."""
 
     stage = PretrainingStage(stage)
+    if corruption_objective not in {"denoising", "invalid_candidate"}:
+        raise ValueError("corruption_objective must be denoising or invalid_candidate")
     output = {name: value.clone() for name, value in batch.items()}
     original_mask = output["node_mask"].bool()
     corrupted = torch.zeros_like(original_mask)
@@ -80,6 +85,12 @@ def build_curriculum_batch(
         corruption_code=corruption_code,
         hard_negative_pairs=hard_negatives,
         hard_negative_relation_classes=hard_negative_classes,
+        structural_positive_mask=(
+            output["node_mask"]
+            if corruption_objective == "denoising"
+            else output["node_mask"] & ~corrupted
+        ),
+        corruption_objective=corruption_objective,
     )
 
 

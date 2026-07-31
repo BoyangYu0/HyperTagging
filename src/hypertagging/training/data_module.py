@@ -10,6 +10,7 @@ from typing import Iterator, Sequence
 import warnings
 
 import torch
+import pyarrow.parquet as pq
 from torch.utils.data import DataLoader, IterableDataset
 
 from hypertagging.data.heterogeneous import (
@@ -19,7 +20,10 @@ from hypertagging.data.heterogeneous import (
 )
 from hypertagging.data.splitting import SourceAwareSplitConfig, stable_split_name
 from hypertagging.data.streaming import StreamingMaskedFeatureNormalizer
-from hypertagging.preprocessing.schema_v4 import iter_event_records_v4
+from hypertagging.preprocessing.schema_v4 import (
+    TARGET_COMPOSITE_METADATA_INDICES,
+    iter_event_records_v4,
+)
 
 
 FEATURE_BLOCKS = ("common", "track", "cluster", "composite")
@@ -193,10 +197,14 @@ def build_real_data_module(
     persistent_workers: bool = False,
     dataset_index: str | Path | None = None,
     rescan_dataset: bool = False,
+    target_policy: str = "complete_only",
+    allow_incomplete_v4_publication: bool = False,
 ) -> RealDataModule:
     """Build a restartable streaming data module without retaining event lists."""
 
     paths = resolve_data_paths(data)
+    if not allow_incomplete_v4_publication:
+        _require_complete_v4_publications(paths)
     config = split_config or SourceAwareSplitConfig(seed=seed)
     if dataset_index is not None and not rescan_dataset:
         from hypertagging.data.dataset_index import (
@@ -205,6 +213,16 @@ def build_real_data_module(
         )
 
         index = load_dataset_index(dataset_index)
+        if index.get("target_policy") != target_policy:
+            raise ValueError(
+                "dataset index target policy does not match trainer target policy; "
+                "request an explicit rescan to change policy"
+            )
+        indexed_max_events = index.get("selection_contract", {}).get("max_events")
+        if indexed_max_events != max_events:
+            raise ValueError(
+                "dataset index event-selection/max-events fingerprint mismatch"
+            )
         indexed_paths = {str(Path(path).resolve()) for path in index["paths"]}
         if indexed_paths != {str(path.resolve()) for path in paths}:
             raise ValueError("dataset index shard paths do not match requested data")
@@ -376,6 +394,31 @@ def build_real_data_module(
     return module
 
 
+def _require_complete_v4_publications(paths: Sequence[Path]) -> None:
+    from hypertagging.data.dataset_index import _validated_completion_marker
+
+    for path in paths:
+        try:
+            fields = set(pq.ParquetFile(path).schema_arrow.names)
+        except Exception as error:
+            raise ValueError(f"cannot inspect parquet publication {path}") from error
+        if "event_json" not in fields:
+            # Legacy v1-v3 container compatibility remains available.
+            continue
+        sidecar = path.with_suffix(path.suffix + ".metadata.json")
+        marker = path.with_suffix(path.suffix + ".complete")
+        if not sidecar.is_file() or not marker.is_file():
+            raise ValueError(
+                f"incomplete schema-v4 publication {path}: parquet, metadata sidecar, "
+                "and completion marker are required"
+            )
+        try:
+            metadata = json.loads(sidecar.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as error:
+            raise ValueError(f"invalid schema-v4 metadata sidecar {sidecar}") from error
+        _validated_completion_marker(path, metadata)
+
+
 def fit_training_normalizers(
     events: Iterator[HeterogeneousEvent] | Sequence[HeterogeneousEvent],
 ) -> dict[str, StreamingMaskedFeatureNormalizer]:
@@ -386,9 +429,13 @@ def fit_training_normalizers(
     for event in events:
         count += 1
         for block in FEATURE_BLOCKS:
+            availability = getattr(event, f"{block}_availability")
+            if block == "composite":
+                availability = availability.clone()
+                availability[:, list(TARGET_COMPOSITE_METADATA_INDICES)] = False
             output[block].update(
                 getattr(event, f"{block}_features"),
-                getattr(event, f"{block}_availability"),
+                availability,
             )
     if count == 0:
         raise ValueError("cannot fit feature normalization without training events")

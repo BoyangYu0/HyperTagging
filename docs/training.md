@@ -17,6 +17,25 @@ not measure physics performance.
 
 The real-parquet CPU pilot path is separate from the fixture-only dry run:
 
+Model architecture is resolved from one of `tiny_cpu`, `gpu_debug`, or
+`production_baseline`; every dimension and level-specific query/cardinality
+override is serialized into the checkpoint. For example:
+
+```bash
+python scripts/train_level_reconstruction.py \
+  --config configs/model_presets/production_baseline.yaml \
+  --data /data/volume/manifest.jsonl \
+  --dataset-index /data/volume/dataset_index.json \
+  --pretrained-encoder /data/volume/pretrain/checkpoint.pt \
+  --device cuda --output-dir /data/volume/reconstruction
+```
+
+Production-baseline encoder transfer rejects major shape mismatches or transfer
+coverage below the configured minimum unless the explicit low-coverage
+override is supplied. Exact single-worker resume replays the deterministic
+epoch iterator through the stored batch index; no unused parquet row-group
+cursor is claimed.
+
 ```bash
 python scripts/train_hyperbolic_pretrain.py \
   --data /path/to/tiny.parquet --device cpu --max-steps 2 --batch-size 2 \

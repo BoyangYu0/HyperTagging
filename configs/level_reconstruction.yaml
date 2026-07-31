@@ -1,0 +1,9 @@
+model_preset: production_baseline
+target_policy: complete_only
+unrepresentable_target_policy: fallback_teacher
+scheduled_sampling_schedule: linear
+scheduled_sampling_duration_steps: 1000
+level_sampling_mode: all_levels
+empirical_type_prior_mode: soft
+validation_batch_size: 4
+

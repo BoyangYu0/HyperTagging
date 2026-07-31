@@ -63,7 +63,14 @@ def build_notebook():
             """
             status=frame[["task_id","output_file"]].copy(); status["exists"]=status.output_file.map(lambda x:Path(x).exists())
             display(status)
-            report={"pass":not overlaps,"global_uid_check":"requires completed shards" if not status.exists.any() else "run validator","summary":summary}
+            report={
+                "pass":not overlaps,
+                "global_uid_check":"requires completed shards" if not status.exists.any() else "run validator",
+                "global_uid_validation_passes":1,
+                "publication_contract":"parquet + metadata sidecar + completion marker published last",
+                "overwrite_invalidates_old_marker_first":True,
+                "summary":summary,
+            }
             (OUT/"production_manifest_report.json").write_text(json.dumps(report,indent=2),encoding="utf-8")
             print("For real manifests run: python scripts/mdst_batch_production.py validate --manifest",requested or "<manifest.jsonl>")
             """

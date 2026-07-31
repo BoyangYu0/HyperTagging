@@ -462,8 +462,11 @@ def next_level_metrics(
     *,
     target_level: int,
     pointer_threshold: float = 0.5,
+    target_policy: str = "complete_only",
 ) -> dict[str, float]:
-    target_types, target_masks, _, _ = targets_for_level(batch, target_level)
+    target_types, target_masks, _, _ = targets_for_level(
+        batch, target_level, target_policy=target_policy
+    )
     object_target = torch.zeros_like(output.object_logits, dtype=torch.bool)
     type_correct, pointer_tp, pointer_fp, pointer_fn = 0, 0, 0, 0
     cardinality_correct = 0
@@ -531,6 +534,50 @@ def next_level_metrics(
     }
 
 
+def complete_target_efficiency_counts(
+    predicted: dict[str, torch.Tensor],
+    truth: dict[str, torch.Tensor],
+    *,
+    target_policy: str = "complete_only",
+) -> tuple[int, int]:
+    """Count exactly reconstructed eligible mothers using recursive sources."""
+
+    eligible_total = correct = 0
+    for event_index in range(truth["node_mask"].shape[0]):
+        eligible = truth["node_mask"][event_index] & (truth["level_ids"][event_index] > 0)
+        if target_policy != "diagnostic_all":
+            eligible &= truth["valid_reconstruction_target"][event_index]
+        if target_policy == "complete_only":
+            eligible &= truth["recursive_reconstructable_complete"][event_index]
+        elif target_policy not in {"reconstructable_partial", "diagnostic_all"}:
+            raise ValueError(f"unknown reconstruction target policy: {target_policy}")
+        predicted_nodes = predicted["node_mask"][event_index] & (
+            predicted["level_ids"][event_index] > 0
+        )
+        truth_counter: Counter[tuple[tuple[int, ...], int]] = Counter()
+        for truth_node in eligible.nonzero(as_tuple=False).flatten().tolist():
+            truth_sources = truth["recursive_leaf_source_mask"][event_index, truth_node]
+            truth_type = truth.get("pid_target_labels", truth["pid_labels"])[event_index, truth_node]
+            truth_counter[
+                (
+                    tuple(truth_sources.nonzero(as_tuple=False).flatten().tolist()),
+                    int(truth_type),
+                )
+            ] += 1
+        predicted_counter: Counter[tuple[tuple[int, ...], int]] = Counter()
+        for candidate in predicted_nodes.nonzero(as_tuple=False).flatten().tolist():
+            sources = predicted["recursive_leaf_source_mask"][event_index, candidate]
+            predicted_counter[
+                (
+                    tuple(sources.nonzero(as_tuple=False).flatten().tolist()),
+                    int(predicted["pid_labels"][event_index, candidate]),
+                )
+            ] += 1
+        eligible_total += sum(truth_counter.values())
+        correct += sum((truth_counter & predicted_counter).values())
+    return correct, eligible_total
+
+
 def channel_generalization_slices(
     training_channel_ids: torch.Tensor,
     evaluation_channel_ids: torch.Tensor,
@@ -569,6 +616,7 @@ __all__ = [
     "tree_relation_accuracy",
     "parent_ranking_accuracy",
     "next_level_metrics",
+    "complete_target_efficiency_counts",
     "channel_generalization_slices",
     "summarize_rollout",
     "tree_validity_rate",

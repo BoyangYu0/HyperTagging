@@ -120,6 +120,8 @@ def capacity_statistics_from_index(
     *,
     global_n_queries: int,
     global_max_cardinality: int,
+    n_queries_by_level: Mapping[int, int] | None = None,
+    max_cardinality_by_level: Mapping[int, int] | None = None,
 ) -> CapacityStatistics:
     """Reconstruct bounded capacity statistics from histogram sidecars."""
 
@@ -133,7 +135,12 @@ def capacity_statistics_from_index(
         maxima[level] = max(hist, default=0)
         total = sum(hist.values())
         total_level_events += total
-        query_overflow += sum(v for k, v in hist.items() if k > global_n_queries)
+        query_capacity = (
+            n_queries_by_level[level]
+            if n_queries_by_level is not None and level in n_queries_by_level
+            else global_n_queries
+        )
+        query_overflow += sum(v for k, v in hist.items() if k > query_capacity)
         percentiles[level] = {
             name: _histogram_percentile(hist, quantile)
             for name, quantile in (("p50", 0.50), ("p90", 0.90), ("p95", 0.95), ("p99", 0.99))
@@ -143,9 +150,34 @@ def capacity_statistics_from_index(
         for key, value in dict(index.get("daughter_cardinality_histogram", {})).items()
     }
     total_mothers = sum(cardinality.values())
-    cardinality_overflow = sum(
-        value for count, value in cardinality.items() if count > global_max_cardinality
+    per_level_cardinality = dict(
+        index.get("daughter_cardinality_histograms_by_level", {})
     )
+    if per_level_cardinality:
+        cardinality_overflow = 0
+        for level_text, raw_hist in per_level_cardinality.items():
+            level = int(level_text)
+            capacity = (
+                max_cardinality_by_level[level]
+                if max_cardinality_by_level is not None
+                and level in max_cardinality_by_level
+                else global_max_cardinality
+            )
+            cardinality_overflow += sum(
+                int(value)
+                for count, value in dict(raw_hist).items()
+                if int(count) > capacity
+            )
+    else:
+        # Compatibility indexes lack level-resolved histograms. Conservatively
+        # use the smallest configured limit rather than under-report overflow.
+        effective_cardinality = min(
+            [global_max_cardinality, *(max_cardinality_by_level or {}).values()]
+        )
+        cardinality_overflow = sum(
+            value for count, value in cardinality.items()
+            if count > effective_cardinality
+        )
     return CapacityStatistics(
         maximum_mothers_per_level=maxima,
         percentile_mothers_per_level=percentiles,

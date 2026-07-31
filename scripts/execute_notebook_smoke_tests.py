@@ -161,7 +161,7 @@ def execute_one(
             "raw_track_unknown_input_pass"
         ) or not report.get("runtime_dynamic_normalization_pass") or not report.get(
             "teacher_composite_type_source_pass"
-        ):
+        ) or not report.get("target_metadata_invariance"):
             raise AssertionError(f"leaf/composite contract failed: {report}")
     if name == "streaming":
         import json
@@ -183,7 +183,9 @@ def execute_one(
         )
         if not report.get("level_causal_pass") or not report.get(
             "actual_corruption_labels_pass"
-        ) or not report.get("hard_negatives_are_explicit_tree_relations"):
+        ) or not report.get("hard_negatives_are_explicit_tree_relations") or not report.get(
+            "runtime_two_pass_pid_semantics"
+        ) or not report.get("invalid_corruptions_excluded_from_positive_structure"):
             raise AssertionError(f"curriculum runtime report failed: {report}")
     if name == "reconstruction":
         import json
@@ -193,7 +195,11 @@ def execute_one(
         )
         if report.get("teacher_event_double_counted") or report.get(
             "sampled_context"
-        ) != "predicted":
+        ) != "predicted" or not report.get(
+            "fallback_teacher_on_unrepresentable"
+        ) or not report.get("schedule_not_at_endpoint") or not report.get(
+            "constraint_policy_round_trip"
+        ):
             raise AssertionError(f"scheduled context report failed: {report}")
     if name == "qa":
         qa_path = work_root / "preprocessing_qa.json"

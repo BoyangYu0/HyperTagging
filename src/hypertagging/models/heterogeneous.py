@@ -18,7 +18,11 @@ from hypertagging.preprocessing.schema_v3 import (
     V3_TRACK_FEATURE_NAMES as TRACK_FEATURE_NAMES,
 )
 from hypertagging.preprocessing.pid_filter import PDG_TOKENS, validate_pid_tokens
-from hypertagging.preprocessing.schema_v4 import CATEGORICAL_COMMON_FEATURE_NAMES
+from hypertagging.preprocessing.schema_v4 import (
+    CATEGORICAL_COMMON_FEATURE_NAMES,
+    MODEL_COMPOSITE_FEATURE_NAMES,
+    adapt_model_composite_features,
+)
 
 
 def masked_mean_pool(
@@ -78,7 +82,7 @@ class CompositeNodeEncoder(nn.Module):
 
     def __init__(self, d_model: int, n_pid: int = len(PDG_TOKENS)) -> None:
         super().__init__()
-        self.structural = _MaskedBlockEncoder(len(COMPOSITE_FEATURE_NAMES), d_model)
+        self.structural = _MaskedBlockEncoder(len(MODEL_COMPOSITE_FEATURE_NAMES), d_model)
         self.pid_histogram = nn.Sequential(
             nn.Linear(n_pid + 1, d_model),
             nn.GELU(),
@@ -98,6 +102,7 @@ class CompositeNodeEncoder(nn.Module):
         daughter_pid_histogram: torch.Tensor,
         histogram_available: torch.Tensor,
     ) -> torch.Tensor:
+        features, availability = adapt_model_composite_features(features, availability)
         structural = self.structural(features, availability)
         histogram = torch.nan_to_num(daughter_pid_histogram)
         histogram = torch.where(
@@ -142,9 +147,16 @@ class HeterogeneousNodeEncoder(nn.Module):
         use_contextual_encoder: bool = True,
         use_physical_context: bool = True,
         use_hyperbolic_refinement: bool = False,
+        ffn_dim: int | None = None,
+        dropout: float = 0.0,
     ) -> None:
         super().__init__()
         self.d_model = d_model
+        self.hyper_dim = hyper_dim
+        self.n_heads = n_heads
+        self.n_context_layers = n_context_layers
+        self.ffn_dim = ffn_dim or 2 * d_model
+        self.dropout = float(dropout)
         self.curvature = curvature
         self.use_contextual_encoder = use_contextual_encoder
         self.use_physical_context = use_physical_context
@@ -165,7 +177,7 @@ class HeterogeneousNodeEncoder(nn.Module):
             len(COMMON_FEATURE_NAMES)
             + len(TRACK_FEATURE_NAMES)
             + len(CLUSTER_FEATURE_NAMES)
-            + len(COMPOSITE_FEATURE_NAMES)
+            + len(MODEL_COMPOSITE_FEATURE_NAMES)
             + 1
         )
         self.availability_encoder = nn.Linear(availability_width, d_model)
@@ -183,6 +195,8 @@ class HeterogeneousNodeEncoder(nn.Module):
             d_model,
             n_heads=n_heads,
             n_layers=n_context_layers,
+            feedforward_dim=ffn_dim,
+            dropout=dropout,
         )
         self.hyperbolic_relation_bias = HyperbolicRelationBias(
             d_model,
@@ -193,6 +207,8 @@ class HeterogeneousNodeEncoder(nn.Module):
             d_model,
             n_heads=n_heads,
             n_layers=1,
+            feedforward_dim=ffn_dim,
+            dropout=dropout,
         )
         self.tree_head = nn.Linear(d_model, d_model)
         self.reconstruction_head = nn.Linear(d_model, d_model)
@@ -230,12 +246,15 @@ class HeterogeneousNodeEncoder(nn.Module):
             "daughter_input_pid_histogram_available",
             batch["daughter_pid_histogram_available"],
         )
+        model_composite_features, model_composite_availability = adapt_model_composite_features(
+            batch["composite_features"], batch["composite_availability"]
+        )
         availability = torch.cat(
             [
                 common_availability,
                 batch["track_availability"],
                 batch["cluster_availability"],
-                batch["composite_availability"],
+                model_composite_availability,
                 histogram_available.unsqueeze(-1),
             ],
             dim=-1,
@@ -263,8 +282,8 @@ class HeterogeneousNodeEncoder(nn.Module):
         )
         daughter_summary = masked_mean_pool(pre_composite, batch["daughter_adjacency"])
         composite = self.composite_encoder(
-            batch["composite_features"],
-            batch["composite_availability"],
+            model_composite_features,
+            model_composite_availability,
             daughter_summary,
             batch.get(
                 "daughter_input_pid_histogram",

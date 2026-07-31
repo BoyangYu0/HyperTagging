@@ -55,6 +55,7 @@ class MotherPointerDecoder(nn.Module):
         *,
         target_level: int,
         allowed_type_mask: torch.Tensor | None = None,
+        type_logit_bias: torch.Tensor | None = None,
         pointer_validity_mask: torch.Tensor | None = None,
     ) -> MotherPointerOutput:
         if target_level < 0 or target_level >= self.target_level_embedding.num_embeddings:
@@ -70,6 +71,10 @@ class MotherPointerDecoder(nn.Module):
             need_weights=False,
         )
         type_logits = self.type_head(attended)
+        if type_logit_bias is not None:
+            if type_logit_bias.shape != (type_logits.shape[-1],):
+                raise ValueError("type_logit_bias must have one entry per reduced PID token")
+            type_logits = type_logits + type_logit_bias[None, None, :]
         if allowed_type_mask is not None:
             if allowed_type_mask.shape != (type_logits.shape[-1],):
                 raise ValueError("allowed_type_mask must have one entry per reduced PID token")

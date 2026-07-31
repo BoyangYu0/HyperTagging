@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 import torch
 import torch.nn.functional as F
+from hypertagging.reconstruction.constraints import ReconstructionConstraintPolicy
 
 from hypertagging.losses.physics import charge_consistency_loss, p4_sum_consistency_loss
 from hypertagging.losses.set_matching import hungarian_assignment, matching_cost
@@ -91,6 +92,8 @@ def level_reconstruction_loss(
         list[torch.Tensor],
     ]
     | None = None,
+    constraint_policy: ReconstructionConstraintPolicy | None = None,
+    unrepresentable_target_counts: list[int] | None = None,
 ) -> LevelLossOutput:
     weights = {
         "object": 1.0,
@@ -100,6 +103,7 @@ def level_reconstruction_loss(
         "confidence": 0.2,
         "physics": 0.1,
         "source_conflict": 0.1,
+        "mother_charge": 1.0,
         **(weights or {}),
     }
     if target_override is None:
@@ -118,12 +122,14 @@ def level_reconstruction_loss(
                 f"mothers but decoder has {output.object_logits.shape[1]} queries"
             )
     object_targets = torch.zeros_like(output.object_logits)
+    object_loss_mask = torch.ones_like(output.object_logits, dtype=torch.bool)
     confidence_targets = torch.zeros_like(output.confidence_logits)
     type_losses = []
     pointer_losses = []
     cardinality_losses = []
     p4_losses = []
     charge_losses = []
+    mother_charge_losses = []
     all_matches: list[list[tuple[int, int]]] = []
     for batch_index, types in enumerate(target_types):
         context = batch["node_mask"][batch_index] & (batch["level_ids"][batch_index] < target_level)
@@ -210,13 +216,41 @@ def level_reconstruction_loss(
                     target_charge[batch_index][target_id][None, None],
                 )
             )
+            if constraint_policy is not None and constraint_policy.mother_charge_compatibility in {
+                "soft", "soft_train_hard_rollout"
+            }:
+                expected = context_charge.new_tensor(
+                    constraint_policy.expected_charge(int(types[target_id]))
+                )
+                predicted_charge = (
+                    torch.sigmoid(output.pointer_logits[batch_index, query_id, context])
+                    * context_charge
+                ).sum()
+                mother_charge_losses.append(
+                    (predicted_charge - expected).abs()
+                    * float(constraint_policy.mother_charge_soft_weight)
+                )
     zero = output.object_logits.sum() * 0.0
+    if unrepresentable_target_counts is not None:
+        if len(unrepresentable_target_counts) != output.object_logits.shape[0]:
+            raise ValueError("one unrepresentable target count is required per event")
+        for batch_index, missing in enumerate(unrepresentable_target_counts):
+            if missing <= 0:
+                continue
+            unmatched = (~object_targets[batch_index].bool()).nonzero(
+                as_tuple=False
+            ).flatten()
+            count = min(int(missing), int(unmatched.numel()))
+            if count:
+                uncertain = output.object_logits[batch_index, unmatched].topk(count).indices
+                object_loss_mask[batch_index, unmatched[uncertain]] = False
     components = {
         "object": focal_binary_cross_entropy_with_logits(
             output.object_logits,
             object_targets,
             positive_weight=object_positive_weight,
             gamma=object_focal_gamma,
+            mask=object_loss_mask,
         ),
         "type": torch.stack(type_losses).mean() if type_losses else zero,
         "pointer": torch.stack(pointer_losses).mean() if pointer_losses else zero,
@@ -232,7 +266,14 @@ def level_reconstruction_loss(
                 batch["source_conflict_matrix"],
             )
             if "source_conflict_matrix" in batch
+            and (
+                constraint_policy is None
+                or constraint_policy.reject_recursive_source_conflicts
+            )
             else zero
+        ),
+        "mother_charge": (
+            torch.stack(mother_charge_losses).mean() if mother_charge_losses else zero
         ),
     }
     total = sum(components[name] * weights[name] for name in components)
@@ -250,6 +291,7 @@ def focal_binary_cross_entropy_with_logits(
     *,
     positive_weight: float = 1.0,
     gamma: float = 0.0,
+    mask: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Weighted focal BCE normalized per proposal/mother collection."""
 
@@ -259,7 +301,10 @@ def focal_binary_cross_entropy_with_logits(
     p_t = probability * targets + (1 - probability) * (1 - targets)
     class_weight = 1 + (positive_weight - 1) * targets
     loss = base * (1 - p_t).pow(gamma) * class_weight
-    return loss.mean()
+    if mask is None:
+        return loss.mean()
+    selected = mask.bool()
+    return loss[selected].mean() if selected.any() else logits.sum() * 0.0
 
 
 def confidence_calibration_metrics(

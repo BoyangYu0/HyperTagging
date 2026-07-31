@@ -55,7 +55,8 @@ def build_notebook() -> nbf.NotebookNode:
             from hypertagging.models.level_autoregressive import LevelAutoregressiveReconstructor
             from hypertagging.models.stair_masks import stair_attention_mask
             from hypertagging.preprocessing.pid_filter import PDG_TOKENS
-            from hypertagging.reconstruction.level_rollout import RolloutConfig, hard_decode_proposals, level_rollout
+            from hypertagging.reconstruction.level_rollout import RolloutConfig, cached_context_for_level, hard_decode_proposals, level_rollout
+            from hypertagging.reconstruction.constraints import ReconstructionConstraintPolicy
 
             SEED = int(os.environ.get("HYPERTAGGING_NOTEBOOK_SEED", "20260730"))
             torch.manual_seed(SEED); np.random.seed(SEED)
@@ -239,7 +240,7 @@ def build_notebook() -> nbf.NotebookNode:
             from hypertagging.evaluation.hierarchical_metrics import canonical_tree_metrics
             from hypertagging.training.scheduled_sampling import (
                 TeacherForcingSchedule, aligned_level_targets,
-                combine_sampled_context_losses,
+                combine_sampled_context_losses, resolve_unrepresentable_target_policy,
             )
             with torch.no_grad():
                 level1=model(batch,target_level=1)
@@ -255,8 +256,17 @@ def build_notebook() -> nbf.NotebookNode:
                   not torch.allclose(level1.pointer.pointer_logits,level2.pointer.pointer_logits))
             scheduled=level_rollout(model,batch,mode="scheduled",config=RolloutConfig(max_level=4,root_types=(),scheduled_sampling_probability=.5))
             canonical=canonical_tree_metrics(teacher.batch,batch)
-            schedule=TeacherForcingSchedule(kind="linear",start_probability=1.0,end_probability=.2,duration_steps=100)
+            schedule=TeacherForcingSchedule(kind="linear",start_probability=1.0,end_probability=.2,duration_steps=1000)
             aligned=aligned_level_targets(batch, predicted.batch, target_level=1)
+            fallback=resolve_unrepresentable_target_policy(
+                "fallback_teacher", truth_target_count=1, representable_target_count=0
+            )
+            constraint_policy=ReconstructionConstraintPolicy(
+                empirical_type_prior_mode="soft", mother_charge_compatibility="soft_train_hard_rollout"
+            )
+            constraint_round_trip=(
+                ReconstructionConstraintPolicy.from_dict(constraint_policy.to_dict()) == constraint_policy
+            )
             primary, primary_metrics=combine_sampled_context_losses(
                 torch.tensor([1.0]),torch.tensor([3.0]),
                 choose_teacher=torch.tensor([False]),auxiliary_teacher_weight=0.0,
@@ -268,6 +278,12 @@ def build_notebook() -> nbf.NotebookNode:
                 "auxiliary_teacher_weight":0.0,
                 "representable_targets":aligned.representable_count,
                 "unrepresentable_targets":aligned.truth_target_count-aligned.representable_count,
+                "fallback_teacher_on_unrepresentable":fallback.use_teacher_context,
+                "optimizer_step_10_teacher_probability":schedule.probability(10),
+                "schedule_not_at_endpoint":schedule.probability(10)>schedule.end_probability,
+                "constraint_policy_round_trip":constraint_round_trip,
+                "cached_state_count":len(teacher.cached_states),
+                "rollout_forward_count":len(teacher.steps),
                 **primary_metrics,
             }
             (FIGURE_DIR/"scheduled_context_report.json").write_text(json.dumps(scheduled_report,indent=2))
@@ -277,7 +293,8 @@ def build_notebook() -> nbf.NotebookNode:
                 "canonical_teacher_exact":canonical.full_tree_exact_match,
                 "scheduled_stop":scheduled.stop_reason,
                 "partial_target_policy":"complete/reconstructable targets with min_daughters=2",
-                "scheduled_teacher_probability":schedule.probability(50),
+                "scheduled_teacher_probability_at_optimizer_step_10":schedule.probability(10),
+                "cached_context_max_level_for_target_3":int(cached_context_for_level(teacher,3)["level_ids"].max()),
                 "representable_targets":aligned.representable_count,
                 "unrepresentable_targets":aligned.truth_target_count-aligned.representable_count,
                 "first_context_divergence_level":canonical.first_divergence_level,

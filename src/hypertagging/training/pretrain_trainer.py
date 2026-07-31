@@ -36,6 +36,9 @@ from hypertagging.training.pretraining_curriculum import (
 from hypertagging.training.validation import validate_contextual_geometry
 from hypertagging.data.streaming import RuntimeFeatureNormalizer, StreamingCursor
 from hypertagging.utils.seeds import seed_everything
+from hypertagging.reconstruction.pid_state import rebuild_runtime_pid_state
+from hypertagging.models.level_autoregressive import _runtime_reconstruction_batch
+from hypertagging.training.model_config import resolve_model_architecture
 
 
 @dataclass(frozen=True)
@@ -71,6 +74,18 @@ class PretrainConfig:
     log_every: int = 10
     dataset_index: str | None = None
     rescan_dataset: bool = False
+    corruption_objective: str = "invalid_candidate"
+    model_preset: str = "tiny_cpu"
+    d_model: int | None = None
+    hyper_dim: int | None = None
+    n_heads: int | None = None
+    n_context_layers: int | None = None
+    ffn_dim: int | None = None
+    dropout: float | None = None
+    n_queries: int | None = None
+    n_queries_by_level: tuple[tuple[int, int], ...] = ()
+    max_cardinality: int | None = None
+    max_cardinality_by_level: tuple[tuple[int, int], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -94,12 +109,20 @@ class ContextualPretrainingModel(torch.nn.Module):
         use_physical_relations: bool = True,
         use_hyperbolic_relations: bool = True,
         channel_memory_size: int = 0,
+        n_heads: int = 4,
+        n_context_layers: int = 2,
+        ffn_dim: int | None = None,
+        dropout: float = 0.0,
     ) -> None:
         super().__init__()
         self.encoder = HeterogeneousNodeEncoder(
             d_model=d_model,
             hyper_dim=hyper_dim,
             curvature=curvature,
+            n_heads=n_heads,
+            n_context_layers=n_context_layers,
+            ffn_dim=ffn_dim,
+            dropout=dropout,
             use_contextual_encoder=use_contextual_encoder,
             use_physical_context=use_physical_relations,
             use_hyperbolic_refinement=use_hyperbolic_relations,
@@ -134,6 +157,29 @@ class ContextualPretrainingModel(torch.nn.Module):
         result["composite_availability"] = composite_mask
         result["node_features"] = common
         return result
+
+    def encode_runtime(
+        self,
+        batch: dict[str, torch.Tensor],
+        *,
+        attention_mask: torch.Tensor,
+    ):
+        """Run the same detector-PID then PID-conditioned context as reconstruction."""
+
+        first_batch = self.normalize_batch(batch)
+        first = self.encoder(first_batch, attention_mask=attention_mask)
+        leaf_pid_logits = self.leaf_pid_head(first.node_embeddings)
+        runtime = rebuild_runtime_pid_state(batch, leaf_pid_logits, hard=False)
+        second_batch = _runtime_reconstruction_batch(
+            batch,
+            runtime,
+            normalizer=self.runtime_feature_normalizer,
+            canonical_batch=first_batch,
+            use_canonical=False,
+        )
+        second_batch["curriculum_attention_mask"] = attention_mask
+        second = self.encoder(second_batch, attention_mask=attention_mask)
+        return second, leaf_pid_logits, second_batch
 
 
 class ChannelMemoryBank(torch.nn.Module):
@@ -221,8 +267,28 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
     if config.ablation not in ALL_ABLATIONS:
         raise ValueError(f"unknown ablation: {config.ablation}")
     ablation = ALL_ABLATIONS[config.ablation]
-    model = ContextualPretrainingModel(
+    architecture = resolve_model_architecture(
+        config.model_preset,
+        d_model=config.d_model,
+        hyper_dim=config.hyper_dim,
+        n_heads=config.n_heads,
+        n_context_layers=config.n_context_layers,
+        ffn_dim=config.ffn_dim,
+        dropout=config.dropout,
         curvature=config.curvature,
+        n_queries=config.n_queries,
+        n_queries_by_level=config.n_queries_by_level,
+        max_cardinality=config.max_cardinality,
+        max_cardinality_by_level=config.max_cardinality_by_level,
+    )
+    model = ContextualPretrainingModel(
+        d_model=architecture.d_model,
+        hyper_dim=architecture.hyper_dim,
+        curvature=architecture.curvature,
+        n_heads=architecture.n_heads,
+        n_context_layers=architecture.n_context_layers,
+        ffn_dim=architecture.ffn_dim,
+        dropout=architecture.dropout,
         use_contextual_encoder=ablation.contextual_euclidean,
         use_physical_relations=ablation.relation_attention,
         use_hyperbolic_relations=ablation.hyperbolic_relation_attention,
@@ -262,6 +328,10 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
             ),
             expected_split_manifest_hash=data_module.split_manifest_hash,
             expected_feature_spec_hash=feature_spec_v4()["feature_spec_hash"],
+            expected_data_order_contract=_pretrain_data_order_contract(
+                config, data_module
+            ),
+            expected_architecture=architecture.to_dict(),
         )
         start_step = int(payload.get("step", 0))
     (output_dir / "split_manifest.json").write_text(
@@ -300,23 +370,26 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
         batch = _to_device(next_batch, device)
         _add_topology_labels(batch)
         stage = PretrainingStage(config.curriculum[step % len(config.curriculum)])
-        curriculum = build_curriculum_batch(batch, stage, seed=config.seed + step)
-        train_batch = model.normalize_batch(curriculum.batch)
+        curriculum = build_curriculum_batch(
+            batch, stage, seed=config.seed + step,
+            corruption_objective=config.corruption_objective,
+        )
         optimizer.zero_grad(set_to_none=True)
         with torch.autocast(
             device_type=device.type,
             enabled=device.type == "cuda" and config.mixed_precision,
         ):
-            encoded = model.encoder(
-                train_batch,
-                attention_mask=train_batch["curriculum_attention_mask"],
+            encoded, leaf_pid_logits, train_batch = model.encode_runtime(
+                curriculum.batch,
+                attention_mask=curriculum.batch["curriculum_attention_mask"],
             )
+            structural_mask = curriculum.structural_positive_mask
             relation_logits = model.relation_head(encoded.tree_projection)
             targets, relation_mask = build_tree_relation_targets(
                 parent_ids=train_batch["parent_ids"],
                 lca_depth=train_batch["lca_depth"],
                 level_ids=train_batch["level_ids"],
-                node_mask=train_batch["node_mask"],
+                node_mask=structural_mask,
                 b_side=train_batch["b_side"],
             )
             branch_embeddings, branch_mask = pool_b_branch_embeddings(
@@ -324,8 +397,23 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 train_batch["b_side"],
                 train_batch["node_mask"],
             )
+            valid_channel_event = valid_b_root_channel_mask(
+                train_batch,
+                corrupted_node_mask=curriculum.corrupted_node_mask,
+                corruption_objective=config.corruption_objective,
+            )
+            branch_mask = branch_mask & valid_channel_event[:, None]
             memory_embeddings, memory_full_ids, memory_reco_ids = (
                 model.channel_memory.contents()
+            )
+            channel_structural_features = torch.cat(
+                [
+                    train_batch["b_channel_count_arrays"],
+                    train_batch["b_depth_pid_count_arrays"].flatten(start_dim=2),
+                    train_batch["b_branch_multiplicity_summaries"],
+                    train_batch["b_intermediate_count_arrays"],
+                ],
+                dim=-1,
             )
             loss_output = hyperbolic_pretraining_loss(
                 z=encoded.hyperbolic_embeddings,
@@ -335,7 +423,7 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 lca_depth=train_batch["lca_depth"],
                 parent_ids=train_batch["parent_ids"],
                 level_ids=train_batch["level_ids"],
-                node_mask=train_batch["node_mask"],
+                node_mask=structural_mask,
                 b_side=train_batch["b_side"],
                 node_kind_ids=train_batch["node_kind_ids"],
                 event_ids=train_batch["event_ids"],
@@ -355,7 +443,7 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                     ],
                     dim=-1,
                 ),
-                channel_branch_count_arrays=train_batch["b_channel_count_arrays"],
+                channel_branch_count_arrays=channel_structural_features,
                 channel_memory_embeddings=memory_embeddings,
                 channel_memory_full_truth_ids=memory_full_ids,
                 channel_memory_reconstructable_ids=memory_reco_ids,
@@ -364,7 +452,7 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 full_event_max_level=train_batch.get("full_event_max_level"),
             )
             leaf_pid_loss = (
-                _leaf_pid_loss(model, encoded.node_embeddings, train_batch)
+                _leaf_pid_loss(leaf_pid_logits, train_batch)
                 if ablation.leaf_pid
                 else encoded.node_embeddings.sum() * 0.0
             )
@@ -526,8 +614,7 @@ def _pretraining_weights(ablation_name: str) -> dict[str, float]:
 
 
 def _leaf_pid_loss(
-    model: ContextualPretrainingModel,
-    embeddings: torch.Tensor,
+    leaf_pid_logits: torch.Tensor,
     batch: dict[str, torch.Tensor],
 ) -> torch.Tensor:
     raw_tracks = (
@@ -539,9 +626,9 @@ def _leaf_pid_loss(
         & batch["truth_pid_available"]
     )
     if not raw_tracks.any():
-        return embeddings.sum() * 0.0
+        return leaf_pid_logits.sum() * 0.0
     return F.cross_entropy(
-        model.leaf_pid_head(embeddings)[raw_tracks],
+        leaf_pid_logits[raw_tracks],
         batch["truth_pid_labels"][raw_tracks],
     )
 
@@ -567,6 +654,26 @@ def _to_device(
     device: torch.device,
 ) -> dict[str, torch.Tensor]:
     return {name: value.to(device) for name, value in batch.items()}
+
+
+def valid_b_root_channel_mask(
+    batch: dict[str, torch.Tensor],
+    *,
+    corrupted_node_mask: torch.Tensor | None = None,
+    corruption_objective: str = "denoising",
+) -> torch.Tensor:
+    """Exclude invalid/fallback B assignments from current-batch channel loss."""
+
+    reference = batch["node_mask"][:, 0]
+    valid = batch.get(
+        "b_root_discovery_valid", torch.ones_like(reference)
+    ).bool().clone()
+    valid &= ~batch.get(
+        "b_root_discovery_fallback", torch.zeros_like(reference)
+    ).bool()
+    if corruption_objective == "invalid_candidate" and corrupted_node_mask is not None:
+        valid &= ~corrupted_node_mask.any(dim=-1)
+    return valid
 
 
 def _save_pretrain_checkpoint(
@@ -601,7 +708,49 @@ def _save_pretrain_checkpoint(
             else "mixed"
         ),
         streaming_cursor=streaming_cursor,
+        epoch=int(streaming_cursor.get("epoch", 0)),
+        data_order_contract={
+            **_pretrain_data_order_contract(config, data_module),
+            "epoch": int(streaming_cursor.get("epoch", 0)),
+            "batch_index": int(streaming_cursor.get("batch_index", 0)),
+        },
+        architecture=resolve_model_architecture(
+            config.model_preset,
+            d_model=config.d_model,
+            hyper_dim=config.hyper_dim,
+            n_heads=config.n_heads,
+            n_context_layers=config.n_context_layers,
+            ffn_dim=config.ffn_dim,
+            dropout=config.dropout,
+            curvature=config.curvature,
+            n_queries=config.n_queries,
+            n_queries_by_level=config.n_queries_by_level,
+            max_cardinality=config.max_cardinality,
+            max_cardinality_by_level=config.max_cardinality_by_level,
+        ).to_dict(),
     )
+
+
+def _pretrain_data_order_contract(
+    config: PretrainConfig, data_module: RealDataModule
+) -> dict[str, Any]:
+    return {
+        "batch_size": config.batch_size,
+        "shuffle_buffer_size": config.shuffle_buffer_size,
+        "seed": config.seed,
+        "max_events": config.max_events,
+        "dataset_index_hash": (
+            data_module.dataset_index.get("index_hash", "")
+            if data_module.dataset_index else ""
+        ),
+        "split_hash": data_module.split_manifest_hash,
+        "target_policy": "complete_only",
+        "curriculum_order": list(config.curriculum),
+        "teacher_forcing_schedule": None,
+        "level_sampling_mode": "curriculum_stage",
+        "gradient_accumulation": 1,
+        "num_workers": config.num_workers,
+    }
 
 
 def _hard_negative_tree_loss(
@@ -633,4 +782,5 @@ __all__ = [
     "PretrainConfig",
     "TrainingResult",
     "train_hyperbolic_pretraining",
+    "valid_b_root_channel_mask",
 ]

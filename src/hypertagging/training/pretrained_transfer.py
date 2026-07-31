@@ -20,6 +20,11 @@ class EncoderTransferReport:
     leaf_pid_shape_mismatches: tuple[str, ...] = ()
     leaf_pid_frozen: bool = False
 
+    @property
+    def coverage(self) -> float:
+        total = len(self.loaded_keys) + len(self.missing_keys)
+        return len(self.loaded_keys) / max(total, 1)
+
 
 def load_pretrained_encoder(
     encoder: torch.nn.Module,
@@ -30,6 +35,8 @@ def load_pretrained_encoder(
     leaf_pid_head: torch.nn.Module | None = None,
     transfer_leaf_pid_head: bool = False,
     freeze_leaf_pid_head: bool = False,
+    minimum_coverage: float = 0.0,
+    allow_low_coverage: bool = False,
 ) -> EncoderTransferReport:
     # Training checkpoints include audited metadata/RNG states and are trusted
     # local/HTCondor artifacts, not arbitrary downloads.
@@ -82,7 +89,7 @@ def load_pretrained_encoder(
         leaf_missing.extend(leaf_result.missing_keys)
         for parameter in leaf_pid_head.parameters():
             parameter.requires_grad_(not freeze_leaf_pid_head)
-    return EncoderTransferReport(
+    report = EncoderTransferReport(
         loaded_keys=tuple(sorted(compatible)),
         missing_keys=tuple(sorted(result.missing_keys)),
         unexpected_keys=tuple(sorted(set(unexpected) | set(result.unexpected_keys))),
@@ -93,6 +100,21 @@ def load_pretrained_encoder(
         leaf_pid_shape_mismatches=tuple(sorted(leaf_mismatch)),
         leaf_pid_frozen=bool(transfer_leaf_pid_head and freeze_leaf_pid_head),
     )
+    if (
+        (
+            report.coverage < float(minimum_coverage)
+            or report.shape_mismatches
+            or (minimum_coverage > 0 and report.unexpected_keys)
+        )
+        and not allow_low_coverage
+    ):
+        raise ValueError(
+            "pretrained encoder transfer contract failed: "
+            f"coverage={report.coverage:.3f}, required={minimum_coverage:.3f}, "
+            f"shape_mismatches={len(report.shape_mismatches)}, "
+            f"unexpected_keys={len(report.unexpected_keys)}"
+        )
+    return report
 
 
 def unfreeze_encoder(encoder: torch.nn.Module) -> None:

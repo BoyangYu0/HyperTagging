@@ -10,6 +10,7 @@ from collections import Counter
 import hashlib
 import json
 from typing import Any, Iterable
+from dataclasses import dataclass
 
 from hypertagging.preprocessing.mdst_tree_builder import EventTree
 from hypertagging.preprocessing.pid_filter import tokenize_pdg
@@ -219,11 +220,31 @@ def _counter_records(counter: Counter[Any], names: tuple[str, ...]) -> list[dict
     return records
 
 
-def structured_channel_similarity(left: dict[str, Any], right: dict[str, Any]) -> float:
-    """Weighted-Jaccard similarity of depth/PID counts and multiplicities."""
+@dataclass(frozen=True)
+class ChannelSimilarityWeights:
+    w_pid: float = 1.0
+    w_depth_pid: float = 1.0
+    w_multiplicity: float = 0.5
+    w_intermediate: float = 0.5
+    w_exact_channel: float = 1.0
 
-    left_counts = _count_vector(left)
-    right_counts = _count_vector(right)
+
+def structured_channel_similarity(
+    left: dict[str, Any],
+    right: dict[str, Any],
+    *,
+    weights: ChannelSimilarityWeights | None = None,
+    left_signature: str | None = None,
+    right_signature: str | None = None,
+) -> float:
+    """Configurable weighted Jaccard over retained truth-tree structure."""
+
+    weights = weights or ChannelSimilarityWeights()
+    left_counts = _count_vector(left, weights)
+    right_counts = _count_vector(right, weights)
+    if left_signature and right_signature and left_signature == right_signature:
+        left_counts[("exact_channel",)] = weights.w_exact_channel
+        right_counts[("exact_channel",)] = weights.w_exact_channel
     keys = left_counts.keys() | right_counts.keys()
     if not keys:
         return 1.0
@@ -232,14 +253,20 @@ def structured_channel_similarity(left: dict[str, Any], right: dict[str, Any]) -
     return float(intersection / union) if union else 1.0
 
 
-def _count_vector(channel: dict[str, Any]) -> dict[tuple[Any, ...], float]:
+def _count_vector(
+    channel: dict[str, Any], weights: ChannelSimilarityWeights
+) -> dict[tuple[Any, ...], float]:
     output: dict[tuple[Any, ...], float] = {}
     for record in channel.get("pid_counts", []):
-        output[("pid", int(record["token"]))] = float(record["count"])
+        output[("pid", int(record["token"]))] = weights.w_pid * float(record["count"])
     for record in channel.get("depth_pid_counts", []):
-        output[("depth_pid", int(record["depth"]), int(record["token"]))] = float(record["count"])
+        output[("depth_pid", int(record["depth"]), int(record["token"]))] = weights.w_depth_pid * float(record["count"])
     for index, value in enumerate(channel.get("branch_multiplicities", [])):
-        output[("multiplicity", index, int(value))] = 0.5
+        output[("multiplicity", index, int(value))] = weights.w_multiplicity
+    for record in channel.get("selected_intermediate_counts", []):
+        output[("intermediate", int(record["token"]))] = (
+            weights.w_intermediate * float(record["count"])
+        )
     return output
 
 
@@ -360,6 +387,7 @@ def _empty_count_array() -> dict[str, Any]:
 
 
 __all__ = [
+    "ChannelSimilarityWeights",
     "branch_node_ids",
     "canonical_decay_signature",
     "channel_count_array",

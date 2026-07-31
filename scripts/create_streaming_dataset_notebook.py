@@ -49,7 +49,7 @@ def build_notebook():
             from hypertagging.data.dataset_index import build_dataset_index, load_dataset_index
             from hypertagging.data.splitting import SourceAwareSplitConfig
             from hypertagging.preprocessing.schema_v4 import iter_event_records_v4
-            from hypertagging.preprocessing.schema_v5 import benchmark_storage_formats
+            from hypertagging.preprocessing.schema_v5 import benchmark_storage_formats, native_nested_schema_v5
             from hypertagging.training.data_module import resolve_data_paths, build_real_data_module
             requested=os.environ.get("HYPERTAGGING_PARQUET","").strip(); FIXTURE_MODE=not bool(requested)
             path=Path(requested) if requested else Path("/tmp/hypertagging_streaming_v4.parquet")
@@ -116,13 +116,18 @@ def build_notebook():
                 split_config=SourceAwareSplitConfig(train_fraction=1.0,validation_fraction=0.0,test_fraction=0.0,seed=7),
             )
             index_pass=indexed.dataset_index is not None and index["event_count"]==len(records)
-            print({"index_version":index["index_version"],"event_count":index["event_count"],"startup_rescan":False})
+            publication_state=path.with_suffix(path.suffix+".metadata.json").exists() and path.with_suffix(path.suffix+".complete").exists()
+            stale_detection_contract=bool(index["shards"][0]["source_digest"] and index["shards"][0]["completion_marker_hash"])
+            print({"index_version":index["index_version"],"event_count":index["event_count"],"startup_rescan":False,"hash_verified":True,"stale_detection_contract":stale_detection_contract,"publication_complete":publication_state})
+            assert stale_detection_contract and publication_state
             """
         ),
         md("## JSON-v4 versus native nested Arrow storage benchmark"),
         code(
             """
             benchmark=benchmark_storage_formats([path],OUT/"storage_benchmark",max_events=2)
+            explicit_v5_schema=native_nested_schema_v5()
+            assert explicit_v5_schema.metadata[b"experimental_default_off"]==b"true"
             print(json.dumps(benchmark,indent=2))
             plt.figure(figsize=(6,3))
             plt.bar(["JSON v4","native nested"],[benchmark["json_file_size_bytes"],benchmark["native_file_size_bytes"]])

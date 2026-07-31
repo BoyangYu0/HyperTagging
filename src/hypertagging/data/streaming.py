@@ -44,13 +44,15 @@ class BoundedShuffleBuffer(Generic[T]):
 
 @dataclass
 class StreamingCursor:
-    """Serializable exact cursor for deterministic single-worker iteration."""
+    """Deterministic cursor using epoch replay and batch/event skipping.
+
+    No physical parquet row-group cursor is claimed: exact trainer resume
+    reconstructs the same single-worker shuffled iterator and replays through
+    ``batch_index``; direct dataset iteration can replay ``events_consumed``.
+    """
 
     epoch: int = 0
     events_consumed: int = 0
-    shard_index: int = 0
-    row_group_index: int = 0
-    event_offset: int = 0
     batch_index: int = 0
 
     def state_dict(self) -> dict[str, int]:
@@ -290,6 +292,7 @@ class RuntimeFeatureNormalizer(nn.Module):
             CATEGORICAL_COMMON_FEATURE_NAMES,
             CONTINUOUS_COMMON_INDICES,
             DYNAMIC_COMPOSITE_INDICES,
+            TARGET_COMPOSITE_METADATA_INDICES,
             feature_spec_v4,
         )
 
@@ -315,10 +318,17 @@ class RuntimeFeatureNormalizer(nn.Module):
                 composite_out[..., index] = (
                     composite[..., index] - self.composite_mean[index].to(composite)
                 ) / self.composite_std[index].to(composite)
+        composite_mask = composite_availability.clone()
+        # Defense in depth: target-only compatibility slots are unavailable
+        # even before the encoder's versioned selection adapter.
+        for index in TARGET_COMPOSITE_METADATA_INDICES:
+            if index < composite_out.shape[-1]:
+                composite_out[..., index] = 0
+                composite_mask[..., index] = False
         composite_out = torch.where(
-            composite_availability, composite_out, torch.zeros_like(composite_out)
+            composite_mask, composite_out, torch.zeros_like(composite_out)
         )
-        return common_out, common_mask, composite_out, composite_availability
+        return common_out, common_mask, composite_out, composite_mask
 
 
 __all__ = [

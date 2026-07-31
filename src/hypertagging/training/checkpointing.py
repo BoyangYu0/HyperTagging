@@ -35,6 +35,9 @@ def save_training_checkpoint(
     schedule_state: dict[str, Any] | None = None,
     legacy_conflated_fraction: float = 0.0,
     streaming_cursor: dict[str, Any] | None = None,
+    feature_contract: dict[str, Any] | None = None,
+    data_order_contract: dict[str, Any] | None = None,
+    architecture: dict[str, Any] | None = None,
 ) -> Path:
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -66,6 +69,9 @@ def save_training_checkpoint(
         "schedule_state": schedule_state or {},
         "legacy_conflated_fraction": float(legacy_conflated_fraction),
         "streaming_cursor": streaming_cursor or {},
+        "feature_contract": feature_contract or {},
+        "data_order_contract": data_order_contract or {},
+        "architecture": architecture or {},
         "data_compatible_performance": not bool(legacy_conflated_fraction),
         "random_states": {
             "python": random.getstate(),
@@ -110,6 +116,8 @@ def restore_training_checkpoint(
     expected_feature_spec_hash: str | None = None,
     expected_split_manifest_hash: str | None = None,
     allow_contract_mismatch: bool = False,
+    expected_data_order_contract: dict[str, Any] | None = None,
+    expected_architecture: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Restore model/training state and return the complete checkpoint metadata."""
 
@@ -130,6 +138,14 @@ def restore_training_checkpoint(
         mismatches.append("split manifest")
     if payload.get("pid_vocabulary_version") != PID_VOCABULARY_VERSION:
         mismatches.append("PID vocabulary")
+    for label, expected, stored in (
+        ("data-order", expected_data_order_contract, payload.get("data_order_contract", {})),
+        ("architecture", expected_architecture, payload.get("architecture", {})),
+    ):
+        if expected is not None:
+            changed = [key for key, value in expected.items() if stored.get(key) != value]
+            if changed:
+                mismatches.append(f"{label} ({', '.join(sorted(changed))})")
     if mismatches and not allow_contract_mismatch:
         raise ValueError(f"checkpoint contract mismatch: {', '.join(mismatches)}")
     model.load_state_dict(payload["model_state_dict"], strict=strict)

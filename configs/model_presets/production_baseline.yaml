@@ -1,0 +1,18 @@
+model_preset: production_baseline
+d_model: 256
+hyper_dim: 64
+n_heads: 8
+n_context_layers: 6
+ffn_dim: 1024
+dropout: 0.1
+curvature: 1.0
+n_queries: 32
+n_queries_by_level:
+  - [1, 32]
+  - [2, 24]
+  - [3, 16]
+max_cardinality: 12
+max_cardinality_by_level:
+  - [1, 8]
+  - [2, 10]
+  - [3, 12]

@@ -67,6 +67,22 @@ def build_notebook():
             (OUT/"training_pipeline_pass.json").write_text(json.dumps({"pass":True,"checkpoint":str(reco.checkpoint),"resume_step":resumed.steps},indent=2),encoding="utf-8")
             """
         ),
+        md("## Optimizer-step schedule, fallback policy, resume contract, and macro versus micro validation"),
+        code(
+            """
+            from hypertagging.training.scheduled_sampling import TeacherForcingSchedule
+            from hypertagging.training.checkpointing import load_training_checkpoint
+            schedule=TeacherForcingSchedule(duration_steps=1000,start_probability=1.0,end_probability=0.2)
+            assert schedule.probability(10)>schedule.end_probability
+            checkpoint_payload=load_training_checkpoint(reco.checkpoint)
+            data_order=checkpoint_payload["data_order_contract"]
+            architecture=checkpoint_payload["architecture"]
+            assert data_order["batch_size"]==2 and data_order["target_policy"]=="complete_only"
+            assert architecture["d_model"]==32
+            print({"optimizer_step_10_teacher_probability":schedule.probability(10),"unrepresentable_target_policy":"fallback_teacher","data_order_contract":data_order,"architecture":architecture})
+            print({key:value for key,value in reco.metrics.items() if key.startswith(("macro_","micro_"))})
+            """
+        ),
     ])
     notebook.metadata.kernelspec={"display_name":"Python 3","language":"python","name":"python3"}
     return notebook
