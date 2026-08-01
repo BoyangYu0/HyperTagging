@@ -74,6 +74,7 @@ def build_notebook() -> nbf.NotebookNode:
                 n_features=batch["node_features"].shape[-1], n_types=len(PDG_TOKENS),
                 hidden_dim=24, hyper_dim=6, n_queries=6, n_heads=4, n_context_layers=2,
                 use_hyperbolic_relation_refinement=True,
+                type_conditioned_daughter_relation_bias=True,
             )
             checkpoint = os.environ.get("HYPERTAGGING_CHECKPOINT", "").strip()
             if checkpoint:
@@ -119,6 +120,46 @@ def build_notebook() -> nbf.NotebookNode:
                 fig.colorbar(image, ax=axis)
             fig.tight_layout(); fig.savefig(FIGURE_DIR / "mask_bias_attention.png"); plt.show()
             assert not stair[0, batch["level_ids"][0].argmax()], "A leaf query leaked a higher-level target"
+            """
+        ),
+        md("## Target-level future-invariance boundary"),
+        code(
+            """
+            visible_context = output.context_mask.clone()
+            future_nodes = batch["node_mask"] & (batch["level_ids"] >= 1)
+            relation_summary_mask = (
+                visible_context[:, :, None] & visible_context[:, None, :]
+            )
+            perturbed = {name: value.clone() for name, value in batch.items()}
+            perturbed["p4"][future_nodes] += 17.0
+            perturbed["common_features"][future_nodes] -= 9.0
+            perturbed["pid_labels"][future_nodes] = (
+                perturbed["pid_labels"][future_nodes] + 5
+            ) % len(PDG_TOKENS)
+            future_pairs = future_nodes[:, :, None] | future_nodes[:, None, :]
+            perturbed["daughter_adjacency"][future_pairs] ^= True
+            perturbed["ancestor_descendant_relation"][future_pairs] ^= True
+            with torch.no_grad():
+                future_changed = model(perturbed, target_level=1)
+            pointer_visible = visible_context[:, None, :].expand_as(
+                output.pointer.pointer_logits
+            )
+            logit_differences = {
+                "object": float((output.pointer.object_logits - future_changed.pointer.object_logits).abs().max()),
+                "type": float((output.pointer.type_logits - future_changed.pointer.type_logits).abs().max()),
+                "pointer_visible": float((output.pointer.pointer_logits[pointer_visible] - future_changed.pointer.pointer_logits[pointer_visible]).abs().max()),
+                "cardinality": float((output.pointer.cardinality_logits - future_changed.pointer.cardinality_logits).abs().max()),
+                "confidence": float((output.pointer.confidence_logits - future_changed.pointer.confidence_logits).abs().max()),
+            }
+            display(pd.DataFrame({
+                "node": range(batch["node_mask"].shape[1]),
+                "level": batch["level_ids"][0].tolist(),
+                "visible_context": visible_context[0].tolist(),
+                "future_node": future_nodes[0].tolist(),
+                "relation_summary_row_visible": relation_summary_mask[0].any(-1).tolist(),
+            }))
+            print({"target_level": 1, "maximum_logit_differences": logit_differences})
+            assert max(logit_differences.values()) < 1e-6
             """
         ),
         md("## Steps 5–7: mother queries, types, and daughter pointers"),

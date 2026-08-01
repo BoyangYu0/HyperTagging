@@ -40,7 +40,7 @@ def build_notebook(default_input: Path) -> nbf.NotebookNode:
             """
             ## Context & Methods
 
-            This notebook validates `direct-mdst-tree-v1` or `direct-mdst-tree-v2` output produced by
+            This notebook validates the production `direct-mdst-tree-v4` contract produced by
             `scripts/preprocess_mdst.py`. Reconstructed/computed four-vectors and diagnostic
             MC four-vectors remain separate throughout.
 
@@ -78,8 +78,8 @@ def build_notebook(default_input: Path) -> nbf.NotebookNode:
             if not (REPO_ROOT / "src").exists():
                 REPO_ROOT = Path("..").resolve()
             sys.path.insert(0, str(REPO_ROOT / "src"))
-            from hypertagging.data.notebook_fixtures import write_notebook_fixture
-            from hypertagging.preprocessing.schema_v2 import load_payload_v2
+            from hypertagging.data.notebook_fixtures import write_notebook_fixture_v4
+            from hypertagging.preprocessing.schema_v4 import load_payload_v4
 
             configured_path = (
                 os.environ.get("HYPERTAGGING_PARQUET")
@@ -92,13 +92,13 @@ def build_notebook(default_input: Path) -> nbf.NotebookNode:
                 FIXTURE_MODE = False
             else:
                 INPUT_PATH = Path("/tmp/hypertagging-four-vector-fixture.parquet")
-                write_notebook_fixture(INPUT_PATH)
+                write_notebook_fixture_v4(INPUT_PATH)
                 FIXTURE_MODE = True
             FIGURE_DIR = Path(os.environ.get("HYPERTAGGING_FIGURE_DIR", "/tmp/hypertagging-four-vector-figures"))
             FIGURE_DIR.mkdir(parents=True, exist_ok=True)
             np.random.seed(int(os.environ.get("HYPERTAGGING_NOTEBOOK_SEED", "20260730")))
 
-            payload = load_payload_v2(INPUT_PATH)
+            payload = load_payload_v4(INPUT_PATH)
             required = {{"schema_version", "events", "summary_json", "feature_spec_json"}}
             missing = sorted(required - set(payload))
             if missing:

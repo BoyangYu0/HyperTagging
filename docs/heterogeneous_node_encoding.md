@@ -13,9 +13,11 @@ candidate confidence. Track blocks include available helix/fit and
 PIDLikelihood-derived quantities. ECL blocks include reconstructed energy,
 direction, shower values, and matching state when available. KLM nodes retain
 their reconstructed cluster p4 plus an explicit optional KLM feature block;
-unsupported accessors remain masked. The current tensor adapter treats KLM as
-its own node kind with the shared common-p4 path, without fabricating ECL or
-track features.
+unsupported accessors remain masked. `KlmNodeEncoder` consumes that optional
+block after the versioned fixed-unit scaling contract together with its
+availability mask; it never fabricates ECL or track
+features. Older records without the block remain readable as an all-unavailable
+KLM tensor.
 
 Attention matrices are diagnostic outputs. Model forward paths default to
 `return_attention=False`; notebooks opt in and label physical Stage-A and
@@ -43,6 +45,11 @@ Stage-A contextual attention. This avoids circular dependence and target-level
 leakage. Truth-guided and predicted states with identical links therefore
 follow the same next-pass construction contract. A lower-level contextual
 two-pass pool is not silently enabled; it remains a named future ablation.
+
+An associated ECL/KLM pair remains two modality-specific nodes, but schema-v4
+propagates the ECL reconstructed-object identifier into the KLM leaf's
+recursive source identity. The resulting source-conflict edge prevents both
+representations from being selected for one mother without consulting MC.
 
 `learned_euclidean` is the stable level baseline. The optional
 `bounded_tangent_level_embedding` is accurately a tangent-space mechanism: it

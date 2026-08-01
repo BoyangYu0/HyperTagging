@@ -93,7 +93,9 @@ class TreeNode:
     track_fit_selection_method: str = "not_applicable"
     track_fit_available: bool = False
     track_fit_fallback_reason: str | None = None
+    track_fit_policy_diagnostics: dict[str, float | str | bool] = field(default_factory=dict)
     reco_object_id: str | None = None
+    associated_reco_id: str | None = None
     recursive_leaf_source_ids: list[str] = field(default_factory=list)
     full_truth_daughter_count: int = 0
     retained_daughter_count: int = 0
@@ -200,9 +202,11 @@ class RecoRecord:
     track_fit_selection_method: str = "not_applicable"
     track_fit_available: bool = False
     track_fit_fallback_reason: str | None = None
+    track_fit_policy_diagnostics: dict[str, float | str | bool] = field(default_factory=dict)
     reco_quality_score: float | None = None
     relation_class: str = "unclassified"
     underlying_reco_id: str | None = None
+    associated_reco_id: str | None = None
 
     def __post_init__(self) -> None:
         raw_pdg = self.pdg if self.raw_pdg is None else self.raw_pdg
@@ -373,7 +377,11 @@ def build_truth_guided_tree(
             track_fit_fallback_reason=(
                 primary.track_fit_fallback_reason if primary is not None else None
             ),
+            track_fit_policy_diagnostics=(
+                dict(primary.track_fit_policy_diagnostics) if primary is not None else {}
+            ),
             reco_object_id=primary.underlying_reco_id if primary is not None else None,
+            associated_reco_id=primary.associated_reco_id if primary is not None else None,
         )
         tree.add_node(node)
         retained_by_mc[mc.mc_id] = node.node_id
@@ -441,7 +449,9 @@ def build_truth_guided_tree(
                 track_fit_selection_method=reco.track_fit_selection_method,
                 track_fit_available=reco.track_fit_available,
                 track_fit_fallback_reason=reco.track_fit_fallback_reason,
+                track_fit_policy_diagnostics=dict(reco.track_fit_policy_diagnostics),
                 reco_object_id=reco.underlying_reco_id,
+                associated_reco_id=reco.associated_reco_id,
             )
             tree.add_node(node)
             tree.root_ids.append(node.node_id)
@@ -524,6 +534,8 @@ def _annotate_reconstruction_contract(tree: EventTree, mc_records: Sequence[MCRe
         else:
             source = node.reco_object_id or node.reco_id
             sources = {source} if source else set()
+            if node.associated_reco_id:
+                sources.add(node.associated_reco_id)
         node.recursive_leaf_source_ids = sorted(sources)
 
 
@@ -658,7 +670,9 @@ def _clone_subtree(tree: EventTree, node_id: int) -> int:
         track_fit_selection_method=source.track_fit_selection_method,
         track_fit_available=source.track_fit_available,
         track_fit_fallback_reason=source.track_fit_fallback_reason,
+        track_fit_policy_diagnostics=dict(source.track_fit_policy_diagnostics),
         reco_object_id=source.reco_object_id,
+        associated_reco_id=source.associated_reco_id,
         recursive_leaf_source_ids=list(source.recursive_leaf_source_ids),
         full_truth_daughter_count=source.full_truth_daughter_count,
         retained_daughter_count=source.retained_daughter_count,

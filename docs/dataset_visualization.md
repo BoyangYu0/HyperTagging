@@ -3,8 +3,8 @@
 All revised notebooks are generated deterministically and run on CPU without
 basf2. If `HYPERTAGGING_PARQUET` is unset they create a tiny schema-v4 fixture
 under `/tmp` and label every result as a software fixture. Set the variable to
-inspect a real v1 or v2 shard. V1 is adapted in memory; the source parquet is
-never modified.
+inspect a real schema-v4 shard; legacy v1-v3 inputs are adapted explicitly and
+the source parquet is never modified.
 
 Common parameters:
 
@@ -36,8 +36,8 @@ done
 
 ## Notebooks
 
-The authoritative 12-group inventory is in `notebooks/README.md` and
-`scripts/execute_notebook_smoke_tests.py`.
+The authoritative notebook inventory and groups are in `notebooks/index.yaml`;
+the runner reads that registry rather than maintaining a second list.
 
 - `inspect_preprocessed_dataset.ipynb`: schemas, duplicate IDs, complete PID
   vocabulary, heterogeneous missingness, all level violations, representative
@@ -51,7 +51,7 @@ The authoritative 12-group inventory is in `notebooks/README.md` and
 - `preprocessing_qa_report.ipynb`: compact closure/level/finite-value checks and
   a machine-readable JSON report.
 - `preprocessing_four_momentum_validation.ipynb`: detailed reco-versus-MC
-  diagnostics for real samples; it accepts v1 and v2. MC mother p4 remains a
+  diagnostics for schema-v4 fixtures or real samples. MC mother p4 remains a
   diagnostic, never a reconstructed target.
 
 Regenerate and execute the fixture suite:
@@ -67,11 +67,11 @@ python scripts/execute_notebook_smoke_tests.py --keep-output /tmp/hypertagging-n
 Jupyter kernels use local loopback ports. On a restricted sandbox the execution
 command may need to run in the normal login-node environment. It is CPU-only
 and does not inspect the Condor queue or use a GPU.
-# Schema-v3 correctness notebooks
+# Schema-v4 correctness notebooks
 
 The deterministic suite also generates leaf PID/input-contract, query-capacity
 and sparse-loss, real training-pipeline, and production-manifest notebooks.
 Their smoke tests require structured CSV/JSON/checkpoint artifacts in addition
-to figures. All default to a generated v3 fixture and accept real data through
+to figures. All default to a generated v4 fixture and accept real data through
 `HYPERTAGGING_PARQUET`; the manifest notebook uses
 `HYPERTAGGING_MANIFEST`.

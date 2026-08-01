@@ -26,6 +26,18 @@ def test_manifest_records_are_exact_non_overlapping_ranges(monkeypatch, tmp_path
     assert sum(record["planned_events"] for record in records) == 17
     assert categories == {"ccbar": 12, "charged": 5}
     assert len({record["output_file"] for record in records}) == len(records)
+    assert {
+        record["track_fit_policy"] for record in records
+    } == {production.TRACK_FIT_POLICY_MAX_P_VALUE_V1}
+
+    with pytest.raises(ValueError, match="unknown track_fit_policy"):
+        production.build_manifest_records(
+            files,
+            output_root=tmp_path / "invalid",
+            target_events=1,
+            events_per_task=1,
+            track_fit_policy="truth_best",
+        )
 
 
 def test_manifest_refuses_insufficient_input(monkeypatch, tmp_path):

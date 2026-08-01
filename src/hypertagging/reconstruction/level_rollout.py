@@ -894,6 +894,8 @@ def append_composite_proposals(
         "track_availability",
         "cluster_features",
         "cluster_availability",
+        "klm_features",
+        "klm_availability",
         "composite_features",
         "composite_availability",
         "daughter_pid_histogram",
@@ -935,6 +937,14 @@ def append_composite_proposals(
         ),
         "cluster_availability": torch.zeros(
             (1, proposal_count, batch["cluster_features"].shape[-1]),
+            dtype=torch.bool,
+            device=device,
+        ),
+        "klm_features": batch["klm_features"].new_zeros(
+            (1, proposal_count, batch["klm_features"].shape[-1])
+        ),
+        "klm_availability": torch.zeros(
+            (1, proposal_count, batch["klm_features"].shape[-1]),
             dtype=torch.bool,
             device=device,
         ),
@@ -1325,6 +1335,14 @@ def batched_level_step(
         ),
         "cluster_availability": torch.zeros(
             (batch_size, query_count, batch["cluster_features"].shape[-1]),
+            dtype=torch.bool,
+            device=device,
+        ),
+        "klm_features": batch["klm_features"].new_zeros(
+            (batch_size, query_count, batch["klm_features"].shape[-1])
+        ),
+        "klm_availability": torch.zeros(
+            (batch_size, query_count, batch["klm_features"].shape[-1]),
             dtype=torch.bool,
             device=device,
         ),

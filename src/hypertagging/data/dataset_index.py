@@ -25,6 +25,7 @@ from hypertagging.preprocessing.pid_filter import PID_VOCABULARY_VERSION
 DATASET_INDEX_VERSION = "hypertagging-dataset-index-v2"
 SUPPORTED_SCHEMAS = {SCHEMA_VERSION_V1, SCHEMA_VERSION_V2, SCHEMA_VERSION_V3, SCHEMA_VERSION_V4}
 FEATURE_BLOCKS = ("common", "track", "cluster", "composite")
+MAX_CHANNEL_FREQUENCY_SLICE_SIGNATURES = 4096
 
 
 def build_dataset_index(
@@ -62,6 +63,10 @@ def build_dataset_index(
             "complete_only", "reconstructable_partial", "diagnostic_all"
         )
     }
+    capacity_slices: dict[int, dict[str, dict[str, dict[str, int]]]] = {}
+    channel_frequency: Counter[str] = Counter()
+    channel_capacity: dict[int, dict[str, dict[str, int]]] = {}
+    channel_frequency_slice_overflow_events = 0
     resolved = [Path(path).resolve() for path in paths]
     for path in resolved:
         sidecar = path.with_suffix(path.suffix + ".metadata.json")
@@ -92,6 +97,25 @@ def build_dataset_index(
                 str(record.get("source_schema_version", record.get("schema_version", "")))
             )
             event = heterogeneous_event_from_record(record)
+            channel_key = ":".join(
+                map(
+                    str,
+                    sorted(
+                        (
+                            int(event.b1_reconstructable_channel_id),
+                            int(event.b2_reconstructable_channel_id),
+                        )
+                    ),
+                )
+            )
+            retain_channel_slice = (
+                channel_key in channel_frequency
+                or len(channel_frequency) < MAX_CHANNEL_FREQUENCY_SLICE_SIGNATURES
+            )
+            if retain_channel_slice:
+                channel_frequency[channel_key] += 1
+            else:
+                channel_frequency_slice_overflow_events += 1
             total_nodes += int(event.active.sum())
             legacy_nodes += int(
                 (
@@ -128,6 +152,47 @@ def build_dataset_index(
                 if target_policy == "complete_only":
                     eligible &= event.recursive_reconstructable_complete
                 mothers = eligible.nonzero(as_tuple=False).flatten()
+                cardinalities = [
+                    int(event.daughter_adjacency[mother].sum())
+                    for mother in mothers.tolist()
+                ]
+                neutral_multiplicity = int(
+                    (
+                        event.active
+                        & (event.level_ids == 0)
+                        & (event.charge == 0)
+                    ).sum()
+                )
+                for dimension, value in (
+                    ("source_category", str(record.get("source_category", "")) or "unknown"),
+                    ("event_multiplicity", str(int(event.active.sum()))),
+                    ("neutral_multiplicity", str(neutral_multiplicity)),
+                ):
+                    _update_capacity_slice(
+                        capacity_slices,
+                        level=level,
+                        dimension=dimension,
+                        value=value,
+                        mother_count=int(mothers.numel()),
+                        maximum_cardinality=max(cardinalities, default=0),
+                    )
+                if retain_channel_slice:
+                    row = channel_capacity.setdefault(level, {}).setdefault(
+                        channel_key,
+                        {
+                            "event_count": 0,
+                            "maximum_mothers": 0,
+                            "maximum_daughter_cardinality": 0,
+                        },
+                    )
+                    row["event_count"] += 1
+                    row["maximum_mothers"] = max(
+                        row["maximum_mothers"], int(mothers.numel())
+                    )
+                    row["maximum_daughter_cardinality"] = max(
+                        row["maximum_daughter_cardinality"],
+                        max(cardinalities, default=0),
+                    )
                 mother_count_histograms.setdefault(level, Counter())[int(mothers.numel())] += 1
                 for mother in mothers.tolist():
                     daughter_cardinality[int(event.daughter_adjacency[mother].sum())] += 1
@@ -185,6 +250,27 @@ def build_dataset_index(
         }
         for block, normalizer in fitted_normalizers.items()
     }
+    for level, signatures in channel_capacity.items():
+        for signature, row in signatures.items():
+            frequency = str(channel_frequency[signature])
+            aggregate = capacity_slices.setdefault(level, {}).setdefault(
+                "channel_frequency", {}
+            ).setdefault(
+                frequency,
+                {
+                    "event_count": 0,
+                    "maximum_mothers": 0,
+                    "maximum_daughter_cardinality": 0,
+                },
+            )
+            aggregate["event_count"] += row["event_count"]
+            aggregate["maximum_mothers"] = max(
+                aggregate["maximum_mothers"], row["maximum_mothers"]
+            )
+            aggregate["maximum_daughter_cardinality"] = max(
+                aggregate["maximum_daughter_cardinality"],
+                row["maximum_daughter_cardinality"],
+            )
     payload = {
         "index_version": DATASET_INDEX_VERSION,
         "paths": [str(path) for path in resolved],
@@ -219,6 +305,20 @@ def build_dataset_index(
         "target_policy_counts": dict(target_counts),
         "policy_capacity_statistics": {
             policy: dict(counts) for policy, counts in policy_capacity.items()
+        },
+        "capacity_slices_by_level": {
+            str(level): dimensions
+            for level, dimensions in sorted(capacity_slices.items())
+        },
+        "channel_frequency_histogram": {
+            str(frequency): count
+            for frequency, count in sorted(Counter(channel_frequency.values()).items())
+        },
+        "channel_frequency_slice_coverage": {
+            "maximum_tracked_signatures": MAX_CHANNEL_FREQUENCY_SLICE_SIGNATURES,
+            "tracked_signatures": len(channel_frequency),
+            "overflow_events": channel_frequency_slice_overflow_events,
+            "exact": channel_frequency_slice_overflow_events == 0,
         },
         "shards": shards,
         "feature_spec_revision": FEATURE_SPEC_REVISION_V4,
@@ -265,6 +365,26 @@ def load_dataset_index(path: str | Path, *, verify_sources: bool = True) -> dict
     if verify_sources:
         _verify_indexed_shards(payload)
     return payload
+
+
+def _update_capacity_slice(
+    slices: dict[int, dict[str, dict[str, dict[str, int]]]],
+    *,
+    level: int,
+    dimension: str,
+    value: str,
+    mother_count: int,
+    maximum_cardinality: int,
+) -> None:
+    row = slices.setdefault(level, {}).setdefault(dimension, {}).setdefault(
+        value,
+        {"event_count": 0, "maximum_mothers": 0, "maximum_daughter_cardinality": 0},
+    )
+    row["event_count"] += 1
+    row["maximum_mothers"] = max(row["maximum_mothers"], mother_count)
+    row["maximum_daughter_cardinality"] = max(
+        row["maximum_daughter_cardinality"], maximum_cardinality
+    )
 
 
 def build_dataset_index_from_sidecars(

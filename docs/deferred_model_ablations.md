@@ -32,6 +32,15 @@ have been decorative. They remain deferred designs:
 
 Neither field is accepted silently by the CLI.
 
+## Structural relation-input compatibility ablation
+
+Exact truth parent/ancestor indicators are loss targets by default and do not
+enter FSP-only or truth-guided multilevel contextual attention. The explicit
+`truth_guided_structural_relation_inputs` pretraining switch restores exact
+known-link inputs only as a compatibility ablation. Validation reports that
+view separately from FSP-only and target-only multilevel geometry; fixture
+results cannot select it for production.
+
 ## Future MoE study
 
 A later matched held-out ablation may compare level/topology-specialist FFNs or

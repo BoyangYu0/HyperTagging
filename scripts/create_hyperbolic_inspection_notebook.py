@@ -57,6 +57,7 @@ def build_notebook() -> nbf.NotebookNode:
             from hypertagging.models.hyperbolic import distance, logmap0, radius
             from hypertagging.preprocessing.pid_filter import PDG_TOKENS
             from hypertagging.training.pretrain_trainer import ContextualPretrainingModel
+            from hypertagging.training.pretraining_curriculum import PretrainingStage, build_curriculum_batch
 
             SEED = int(os.environ.get("HYPERTAGGING_NOTEBOOK_SEED", "20260730"))
             torch.manual_seed(SEED); np.random.seed(SEED)
@@ -101,6 +102,40 @@ def build_notebook() -> nbf.NotebookNode:
                 axis.set_title(title); axis.set_xlabel("key"); axis.set_ylabel("query")
                 fig.colorbar(image, ax=axis)
             fig.tight_layout(); fig.savefig(FIGURE_DIR / "separate_attention_stages.png"); plt.show()
+            """
+        ),
+        md("## Stage-aware relation provenance: FSP, target-only multilevel, compatibility ablation"),
+        code(
+            """
+            stage_rows = []
+            stage_outputs = {}
+            for label, stage, expose_structure in (
+                ("fsp_only", PretrainingStage.FSP_ONLY, False),
+                ("multilevel_target_only", PretrainingStage.TRUTH_GUIDED_MULTILEVEL, False),
+                ("multilevel_exact_link_compatibility_ablation", PretrainingStage.TRUTH_GUIDED_MULTILEVEL, True),
+            ):
+                curriculum = build_curriculum_batch(
+                    batch,
+                    stage,
+                    truth_guided_structural_relation_inputs=expose_structure,
+                )
+                with torch.no_grad():
+                    stage_output = model(
+                        curriculum.batch,
+                        attention_mask=curriculum.batch["curriculum_attention_mask"],
+                    )
+                stage_outputs[label] = stage_output
+                stage_rows.append({
+                    "view": label,
+                    "relation_input_policy": curriculum.relation_input_policy,
+                    "visible_nodes": int(curriculum.batch["node_mask"].sum()),
+                    "explicit_structural_relation_pairs": int(curriculum.batch["current_reconstructed_ancestor_descendant_relation"].sum()),
+                    "mean_hyperbolic_radius": float(radius(stage_output.hyperbolic_embeddings)[curriculum.batch["node_mask"]].mean()),
+                })
+            display(pd.DataFrame(stage_rows))
+            assert stage_rows[0]["explicit_structural_relation_pairs"] == 0
+            assert stage_rows[1]["explicit_structural_relation_pairs"] == 0
+            print("These views are reported separately; fixture geometry does not rank scientific choices.")
             """
         ),
         md("## Embedding projections"),

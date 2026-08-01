@@ -13,7 +13,7 @@ preserving versioned compatibility with historical preprocessing:
   separate model-input versus truth-supervision features;
 - v1/v2/v3 compatibility without fabricated detector fields;
 - canonical structured two-B channels and unordered Upsilon pair identity;
-- track, ECL, and composite adapters in one shared latent/Poincare space;
+- track, ECL, masked KLM, and composite adapters in one shared latent/Poincare space;
 - exact retained-tree LCA/path geometry, topology-safe directed-parent,
   radius-depth, channel, dimension-aware variance, and covariance pretraining;
 - relation bias applied to actual stair-causal attention logits;
@@ -29,6 +29,10 @@ These additions are software-validated on tiny CPU fixtures. A bounded
 strict B roots, and KLM collection, while incomplete KLM-to-K_L coverage
 remains explicit. Full-training physics performance remains unverified and
 HTCondor-only.
+
+The current audit boundary, exact local verification counts, and remote CI
+state live only in [`docs/audits/current_status.md`](docs/audits/current_status.md);
+this overview does not duplicate mutable audit claims.
 
 Scientific behavior is preserved by keeping historical variants separate and by
 adding equivalence or smoke tests before each migrated component is treated as

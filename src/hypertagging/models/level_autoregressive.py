@@ -20,6 +20,7 @@ from hypertagging.preprocessing.schema_v3 import (
     V3_COMPOSITE_FEATURE_NAMES as COMPOSITE_FEATURE_NAMES,
     V3_TRACK_FEATURE_NAMES as TRACK_FEATURE_NAMES,
 )
+from hypertagging.preprocessing.schema_v4 import KLM_FEATURE_NAMES
 from hypertagging.preprocessing.pid_filter import PDG_TOKENS, validate_pid_tokens
 from hypertagging.reconstruction.pid_state import rebuild_runtime_pid_state
 from hypertagging.data.streaming import RuntimeFeatureNormalizer
@@ -189,11 +190,17 @@ class LevelAutoregressiveReconstructor(nn.Module):
             if pid_temperature_override is None
             else float(pid_temperature_override)
         )
+        visible_context = context_mask_for_level(
+            batch["level_ids"], batch["node_mask"], target_level
+        )
         if self.encoder_mode == "heterogeneous":
             batch = _upgrade_flat_batch(batch)
             _assert_truth_free_model_inputs(batch)
+            context_batch = _with_current_reconstructed_relations(
+                batch, visible_context
+            )
             first_pass_batch = _normalize_runtime_feature_blocks(
-                batch, self.runtime_feature_normalizer
+                context_batch, self.runtime_feature_normalizer
             )
             first_pass = self.encoder(
                 first_pass_batch,
@@ -204,13 +211,13 @@ class LevelAutoregressiveReconstructor(nn.Module):
             )
             leaf_pid_logits = self.leaf_pid_head(first_pass.reconstruction_projection)
             runtime = rebuild_runtime_pid_state(
-                batch,
+                context_batch,
                 leaf_pid_logits,
                 mode=pid_mode,
                 temperature=pid_temperature,
             )
             reconstruction_batch = _runtime_reconstruction_batch(
-                batch,
+                context_batch,
                 runtime,
                 normalizer=self.runtime_feature_normalizer,
                 canonical_batch=first_pass_batch,
@@ -246,6 +253,10 @@ class LevelAutoregressiveReconstructor(nn.Module):
             current_tokens = runtime.current_tokens
             current_p4 = runtime.p4
         else:
+            flat_context_batch = _with_current_reconstructed_relations(
+                batch, visible_context
+            )
+            encoding_node_mask = flat_context_batch["node_mask"]
             h, z = self.encoder(
                 batch["node_features"],
                 batch["pid_labels"],
@@ -260,21 +271,25 @@ class LevelAutoregressiveReconstructor(nn.Module):
                 charge=batch["charge"],
                 level_ids=batch["level_ids"],
                 z_hyperbolic=z,
-                node_mask=batch["node_mask"],
+                node_mask=encoding_node_mask,
                 node_kind_ids=batch.get("node_kind_ids"),
                 copied=batch.get("copied"),
                 source_node_ids=batch.get("source_node_ids"),
                 recursive_leaf_source_mask=batch.get("recursive_leaf_source_mask"),
-                parent_ids=batch.get("parent_ids"),
-                ancestor_descendant_relation=batch.get("ancestor_descendant_relation"),
+                parent_ids=None,
+                ancestor_descendant_relation=flat_context_batch.get(
+                    "current_reconstructed_ancestor_descendant_relation"
+                ),
                 reco_ids=batch.get("reco_ids"),
             )
             if self.use_contextual_encoder:
                 h, attention_weights = self.flat_contextualizer(
                     reconstruction_projection,
                     relation_bias=relation_bias,
-                    attention_mask=stair_attention_mask(batch["level_ids"], batch["node_mask"]),
-                    node_mask=batch["node_mask"],
+                    attention_mask=stair_attention_mask(
+                        batch["level_ids"], encoding_node_mask
+                    ),
+                    node_mask=encoding_node_mask,
                     return_attention=return_attention,
                 )
             else:
@@ -291,7 +306,7 @@ class LevelAutoregressiveReconstructor(nn.Module):
             current_probabilities = None
             current_tokens = batch["pid_labels"]
             current_p4 = batch["p4"]
-        context_mask = context_mask_for_level(batch["level_ids"], batch["node_mask"], target_level)
+        context_mask = visible_context
         decoder = (
             self.level_decoders[str(target_level)]
             if str(target_level) in self.level_decoders
@@ -322,10 +337,7 @@ class LevelAutoregressiveReconstructor(nn.Module):
             ),
             node_level_ids=batch["level_ids"],
             node_relation_summary=(
-                relation_bias.masked_fill(
-                    ~batch["node_mask"][:, None, :], 0.0
-                ).sum(dim=-1)
-                / batch["node_mask"].sum(dim=-1, keepdim=True).clamp_min(1)
+                context_only_relation_summary(relation_bias, context_mask)
             ),
         )
         return LevelReconstructionOutput(
@@ -365,6 +377,57 @@ class LevelAutoregressiveReconstructor(nn.Module):
                 pid_mode if self.encoder_mode == "heterogeneous" else "input"
             ),
         )
+
+
+def context_only_relation_summary(
+    relation_bias: torch.Tensor,
+    context_mask: torch.Tensor,
+) -> torch.Tensor:
+    """Summarize only relations whose two endpoints are visible context.
+
+    This is intentionally stricter than masking pointer logits after scoring:
+    future truth nodes must not influence a feature supplied to a current
+    target-level query.
+    """
+
+    if relation_bias.shape != (
+        context_mask.shape[0], context_mask.shape[1], context_mask.shape[1]
+    ):
+        raise ValueError("relation_bias and context_mask shapes are inconsistent")
+    visible_pairs = context_mask[:, :, None] & context_mask[:, None, :]
+    clean = torch.where(visible_pairs, relation_bias, torch.zeros_like(relation_bias))
+    denominator = context_mask.sum(dim=-1, keepdim=True).clamp_min(1)
+    summary = clean.sum(dim=-1) / denominator
+    return torch.where(context_mask, summary, torch.zeros_like(summary))
+
+
+def _with_current_reconstructed_relations(
+    batch: dict[str, torch.Tensor],
+    visible_context: torch.Tensor,
+) -> dict[str, torch.Tensor]:
+    """Expose exact structural indicators only for already-created nodes."""
+
+    result = dict(batch)
+    # Target-level reconstruction is an inference problem over S_{<t}.  Future
+    # truth nodes are not merely forbidden as attention keys: they are absent
+    # from both contextual encoder stages.  This makes the information
+    # boundary explicit and robust to additions/removals of padded future
+    # records.
+    result["node_mask"] = batch["node_mask"].bool() & visible_context
+    visible_pairs = visible_context[:, :, None] & visible_context[:, None, :]
+    if "daughter_adjacency" in batch:
+        result["daughter_adjacency"] = batch["daughter_adjacency"].bool() & visible_pairs
+    target = batch.get("ancestor_descendant_relation")
+    if target is None:
+        current = torch.zeros(
+            (*visible_context.shape, visible_context.shape[-1]),
+            dtype=torch.bool,
+            device=visible_context.device,
+        )
+    else:
+        current = target.bool() & visible_pairs
+    result["current_reconstructed_ancestor_descendant_relation"] = current
+    return result
 
 
 @torch.no_grad()
@@ -553,6 +616,12 @@ def _upgrade_flat_batch(batch: dict[str, torch.Tensor]) -> dict[str, torch.Tenso
         batch.setdefault("daughter_input_pid_source_ids", input_sources.clone())
         batch.setdefault("truth_supervision_source_ids", truth_sources)
         batch.setdefault("daughter_truth_pid_source_ids", truth_sources.clone())
+        if "klm_features" not in batch:
+            klm_shape = (*batch["level_ids"].shape, len(KLM_FEATURE_NAMES))
+            batch["klm_features"] = batch["common_features"].new_zeros(klm_shape)
+            batch["klm_availability"] = torch.zeros(
+                klm_shape, dtype=torch.bool, device=batch["level_ids"].device
+            )
         if "runtime_composite_type_source_ids" not in batch:
             from hypertagging.reconstruction.pid_state import (
                 COMPOSITE_TYPE_SOURCE_TO_ID,
@@ -620,6 +689,9 @@ def _upgrade_flat_batch(batch: dict[str, torch.Tensor]) -> dict[str, torch.Tenso
     shape = (*active.shape, len(CLUSTER_FEATURE_NAMES))
     batch["cluster_features"] = p4.new_zeros(shape)
     batch["cluster_availability"] = torch.zeros(shape, dtype=torch.bool, device=p4.device)
+    shape = (*active.shape, len(KLM_FEATURE_NAMES))
+    batch["klm_features"] = p4.new_zeros(shape)
+    batch["klm_availability"] = torch.zeros(shape, dtype=torch.bool, device=p4.device)
     shape = (*active.shape, len(COMPOSITE_FEATURE_NAMES))
     composite = p4.new_zeros(shape)
     composite[..., :4] = torch.einsum("bmn,bnf->bmf", adjacency.float(), p4)

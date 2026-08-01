@@ -144,6 +144,15 @@ collision-free symmetric pair embedding. Hyperbolic angular alignment uses
 The overall attention relation is directed because level difference and the
 ordered pair of node radii are directed features.
 
+Relation provenance is explicit. `inference_physical_relation_features`
+contain reconstructed p4/charge/kind/source state.
+`current_reconstructed_tree_state_features` may contain links only among nodes
+already present in the rollout. Exact `parent_ids`, LCA geometry, B side, and
+truth ancestor matrices are `truth_target_only_relation_features` and remain
+loss targets. FSP-only and the default truth-guided multilevel pretraining view
+therefore do not receive exact ancestor/parent indicators. A named compatibility
+ablation can expose known truth-guided links and is reported separately.
+
 ## Decoder and full rollout
 
 Learned query slots predict object/no-object, mother token, daughter pointers,
@@ -185,8 +194,9 @@ nodes.
 
 Teacher forcing uses truth links but the same reco-derived construction.
 Scheduled sampling is seeded and reproducible. Production documentation
-distinguishes batched teacher-forced validation, the bounded reference free
-rollout, and the future multi-level batched rollout.
+distinguishes batched teacher-forced validation, the implemented CPU-tested
+multi-level padded rollout, and the bounded reference oracle. Guarded CUDA
+profiling remains future evidence, not future functionality.
 
 ## Verification boundary
 
@@ -223,6 +233,12 @@ trained on matched pointer Jaccard times a hard correct-type and structural
 validity indicator; it never depends on the model's own type-confidence
 magnitude. It reports Brier/ECE. Exclusive rollout compares recursive
 leaf-source sets.
+
+Target-level query inputs are bounded again at the decoder boundary. The
+type-conditioned node relation summary averages only pairs whose two endpoints
+have `level < target_level`; future truth nodes are neither averaged nor merely
+masked after scoring. Focused perturbation and removal tests cover levels one
+and two.
 
 The production reconstructor uses two contextual passes. Pass A uses only
 detector-compatible inputs and predicts charge-compatible leaf PID. Its soft

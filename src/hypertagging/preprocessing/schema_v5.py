@@ -126,6 +126,7 @@ def native_nested_schema_v5() -> pa.Schema:
         "reco_object_id", "reco_id", "node_kind", "leaf_kinematics_mode", "energy_source",
         "track_fit_hypothesis", "track_fit_selection_method",
         "track_fit_fallback_reason",
+        "associated_reco_id",
     }
     for name in sorted(integer_names): node_fields.append(pa.field(name, pa.int64()))
     for name in sorted(float_names): node_fields.append(pa.field(name, pa.float64()))
@@ -145,6 +146,28 @@ def native_nested_schema_v5() -> pa.Schema:
     )
     node_fields.append(
         pa.field("klm_availability", feature_struct(KLM_FEATURE_NAMES, pa.bool_()))
+    )
+    node_fields.append(
+        pa.field(
+            "track_fit_policy_diagnostics",
+            pa.struct(
+                [
+                    pa.field("policy", pa.string()),
+                    pa.field("selected_hypothesis", pa.string()),
+                    pa.field("selected_available", pa.bool_()),
+                    pa.field("hypothesis_independent_alternative", pa.string()),
+                    pa.field("pion_comparison_available", pa.bool_()),
+                    *[
+                        pa.field(name, pa.float64())
+                        for name in (
+                            "pion_px", "pion_py", "pion_pz",
+                            "delta_px", "delta_py", "delta_pz",
+                            "delta_momentum_magnitude",
+                        )
+                    ],
+                ]
+            ),
+        )
     )
     for name in ("daughter_input_pid_histogram", "daughter_truth_pid_histogram"):
         node_fields.append(pa.field(name, pa.list_(pa.float64())))
@@ -230,6 +253,7 @@ def _validate_native_record(record: Mapping[str, Any], schema: pa.Schema) -> Non
             "pid_likelihood_availability", "mass_hypothesis_energies",
             "mass_hypothesis_availability", "pid_likelihood_status",
             "pid_detector_availability", "klm_features", "klm_availability",
+            "track_fit_policy_diagnostics",
         ):
             values = node.get(field_name)
             if values is None:

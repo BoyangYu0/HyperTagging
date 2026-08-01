@@ -67,6 +67,12 @@ radius-depth, pooled-channel, variance, covariance, per-loss gradient norms to
 the hyperbolic projection, per-projection gradient norms, and
 the collapse diagnostics documented in
 `docs/hyperbolic_level_autoregressive_reconstruction.md`.
+Validation prefixes the main principal/relation metrics by its curriculum
+stage and always emits separate FSP-only and truth-guided-multilevel relation
+accuracy/denominator diagnostics, even for a one-batch bounded validation.
+Exact structural relation inputs are target-only
+by default; `truth_guided_structural_relation_inputs` is a compatibility
+ablation and is serialized with the training configuration.
 
 `validate_every` triggers bounded held-out validation over
 `validation_batches`. It aggregates total/component losses, relation accuracy,
@@ -189,7 +195,9 @@ or other missing daughters. Explicit policy configs live under
 be merged. Run `scripts/report_reconstruction_capacity.py` against the exact
 policy-specific dataset index before production training. It reports every
 retained level, distributions, configured limits, overflow, and margin and
-refuses any overflow.
+refuses any overflow. Source/event/neutral multiplicity slices are exact;
+channel-frequency slices are exact up to the explicit tracked-signature cap and
+publish an overflow/coverage field rather than growing without bound.
 
 Resume restores model/encoder/leaf-PID head, optimizer, scheduler, AMP scaler,
 Python/NumPy/Torch/CUDA RNG, step/epoch, scheduling state, channel memory bank,
@@ -200,7 +208,8 @@ arguments.
 
 ## Runtime transform, index, and exact cursor
 
-The streaming data module normalizes static detector-specific track/ECL blocks.
+The streaming data module normalizes static detector-specific track/ECL blocks;
+the optional KLM adapter applies its versioned fixed unit scales and masks.
 Common and composite values stay in physical units until the model-owned
 runtime transform. The same checkpointed buffers normalize the initial context
 and every PID/composite-rebuilt context. Categorical compatibility slots are
@@ -208,7 +217,7 @@ masked and dedicated embeddings carry their meaning. Pretraining uses this
 same transform before contextual encoding.
 
 `scripts/build_dataset_index.py` writes
-`hypertagging-dataset-index-v1`: source-safe split inputs, Welford
+`hypertagging-dataset-index-v2`: source-safe split inputs, Welford
 count/mean/M2, allowed types, bounded capacity/cardinality histograms,
 depth/completeness/category counts, and schema/PID/feature contracts.
 `--dataset-index` initializes training from those sufficient statistics;

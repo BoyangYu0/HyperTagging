@@ -266,16 +266,43 @@ def production_capacity_report(
                 "cardinality_overflow_count": cardinality_overflow,
                 "query_capacity_margin": queries - maximum_mothers,
                 "cardinality_capacity_margin": max_cardinality - maximum_cardinality,
+                "mother_count_quantiles": {
+                    name: _histogram_percentile(mother_hist, quantile)
+                    for name, quantile in (
+                        ("p50", 0.50),
+                        ("p90", 0.90),
+                        ("p95", 0.95),
+                        ("p99", 0.99),
+                    )
+                },
+                "daughter_cardinality_quantiles": {
+                    name: _histogram_percentile(cardinality_hist, quantile)
+                    for name, quantile in (
+                        ("p50", 0.50),
+                        ("p90", 0.90),
+                        ("p95", 0.95),
+                        ("p99", 0.99),
+                    )
+                },
+                "representative_slices": dict(
+                    index.get("capacity_slices_by_level", {})
+                ).get(str(level), {}),
             }
         )
     return {
-        "report_version": "hypertagging-capacity-report-v1",
+        "report_version": "hypertagging-capacity-report-v2",
         "target_policy": target_policy,
         "levels": rows,
         "query_overflow_count": total_query_overflow,
         "cardinality_overflow_count": total_cardinality_overflow,
         "production_training_allowed": not (
             total_query_overflow or total_cardinality_overflow
+        ),
+        "channel_frequency_histogram": dict(
+            index.get("channel_frequency_histogram", {})
+        ),
+        "channel_frequency_slice_coverage": dict(
+            index.get("channel_frequency_slice_coverage", {})
         ),
     }
 

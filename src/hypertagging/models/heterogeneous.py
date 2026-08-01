@@ -24,6 +24,8 @@ from hypertagging.preprocessing.schema_v3 import (
 from hypertagging.preprocessing.pid_filter import PDG_TOKENS, validate_pid_tokens
 from hypertagging.preprocessing.schema_v4 import (
     CATEGORICAL_COMMON_FEATURE_NAMES,
+    KLM_FEATURE_NAMES,
+    KLM_MODEL_INPUT_SCALES,
     MODEL_COMPOSITE_FEATURE_NAMES,
     adapt_model_composite_features,
 )
@@ -79,6 +81,20 @@ class TrackNodeEncoder(_MaskedBlockEncoder):
 class ClusterNodeEncoder(_MaskedBlockEncoder):
     def __init__(self, d_model: int) -> None:
         super().__init__(len(CLUSTER_FEATURE_NAMES), d_model)
+
+
+class KlmNodeEncoder(_MaskedBlockEncoder):
+    """Masked, fixed-scale adapter for schema-v4 reconstructed KLM inputs."""
+
+    def __init__(self, d_model: int) -> None:
+        super().__init__(len(KLM_FEATURE_NAMES), d_model)
+        self.register_buffer(
+            "input_scales", torch.tensor(KLM_MODEL_INPUT_SCALES, dtype=torch.float32)
+        )
+
+    def forward(self, values: torch.Tensor, availability: torch.Tensor) -> torch.Tensor:
+        scales = self.input_scales.to(dtype=values.dtype, device=values.device)
+        return super().forward(values / scales, availability)
 
 
 class CompositeNodeEncoder(nn.Module):
@@ -191,6 +207,7 @@ class HeterogeneousNodeEncoder(nn.Module):
         self.common_encoder = CommonNodeEncoder(d_model)
         self.track_encoder = TrackNodeEncoder(d_model)
         self.cluster_encoder = ClusterNodeEncoder(d_model)
+        self.klm_encoder = KlmNodeEncoder(d_model)
         self.composite_encoder = CompositeNodeEncoder(d_model)
         self.other_encoder = nn.Parameter(torch.zeros(d_model))
         self.pid_embedding = nn.Embedding(n_pid, d_model)
@@ -210,6 +227,7 @@ class HeterogeneousNodeEncoder(nn.Module):
             len(COMMON_FEATURE_NAMES)
             + len(TRACK_FEATURE_NAMES)
             + len(CLUSTER_FEATURE_NAMES)
+            + len(KLM_FEATURE_NAMES)
             + len(MODEL_COMPOSITE_FEATURE_NAMES)
             + 1
         )
@@ -265,6 +283,7 @@ class HeterogeneousNodeEncoder(nn.Module):
         common = self.common_encoder(batch["common_features"], common_availability)
         track = self.track_encoder(batch["track_features"], batch["track_availability"])
         cluster = self.cluster_encoder(batch["cluster_features"], batch["cluster_availability"])
+        klm = self.klm_encoder(batch["klm_features"], batch["klm_availability"])
         kinds = batch["node_kind_ids"]
         active_kinds = kinds[batch["node_mask"]]
         if active_kinds.numel() and (
@@ -308,6 +327,7 @@ class HeterogeneousNodeEncoder(nn.Module):
                 common_availability,
                 batch["track_availability"],
                 batch["cluster_availability"],
+                batch["klm_availability"],
                 model_composite_availability,
                 histogram_available.unsqueeze(-1),
             ],
@@ -317,6 +337,11 @@ class HeterogeneousNodeEncoder(nn.Module):
         specific = self.other_encoder.view(1, 1, -1).expand_as(common).clone()
         specific = torch.where((kinds == 1).unsqueeze(-1), track, specific)
         specific = torch.where((kinds == 2).unsqueeze(-1), cluster, specific)
+        specific = torch.where(
+            (kinds == NODE_KINDS.index("klm_cluster")).unsqueeze(-1),
+            klm,
+            specific,
+        )
         if "current_pid_probabilities" in batch:
             probabilities = batch["current_pid_probabilities"]
             if probabilities.shape != (*pid.shape, len(PDG_TOKENS)):
@@ -369,8 +394,13 @@ class HeterogeneousNodeEncoder(nn.Module):
             copied=batch.get("copied"),
             source_node_ids=batch.get("source_node_ids"),
             recursive_leaf_source_mask=batch.get("recursive_leaf_source_mask"),
-            parent_ids=batch.get("parent_ids"),
-            ancestor_descendant_relation=batch.get("ancestor_descendant_relation"),
+            # Truth topology remains available to losses under its original
+            # names.  Context consumes only this explicit, stage-built view
+            # of links among nodes that already exist at inference time.
+            parent_ids=None,
+            ancestor_descendant_relation=batch.get(
+                "current_reconstructed_ancestor_descendant_relation"
+            ),
             reco_ids=batch.get("reco_ids"),
         )
         if self.use_contextual_encoder:

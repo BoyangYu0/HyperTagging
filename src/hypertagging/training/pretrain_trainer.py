@@ -113,6 +113,7 @@ class PretrainConfig:
     corruption_class_weight: float = 0.1
     candidate_correctness_weight: float = 0.1
     hard_negative_weight: float = 0.1
+    truth_guided_structural_relation_inputs: bool = False
 
 
 @dataclass(frozen=True)
@@ -474,6 +475,9 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
         curriculum = build_curriculum_batch(
             batch, stage, seed=config.seed + step,
             corruption_objective=config.corruption_objective,
+            truth_guided_structural_relation_inputs=(
+                config.truth_guided_structural_relation_inputs
+            ),
         )
         optimizer.zero_grad(set_to_none=True)
         with torch.autocast(
@@ -928,6 +932,9 @@ def _validate_pretraining(
             batch, validation_stage,
             seed=config.seed + batch_count,
             corruption_objective=config.corruption_objective,
+            truth_guided_structural_relation_inputs=(
+                config.truth_guided_structural_relation_inputs
+            ),
         )
         encoded, leaf_pid_logits, validation_batch = model.encode_runtime(
             curriculum.batch,
@@ -1058,6 +1065,40 @@ def _validate_pretraining(
             + config.hard_negative_weight * hard_negative_loss
         )
         totals.setdefault("validation_principal_loss", []).append(float(principal_loss))
+        stage_prefix = f"validation_{validation_stage.value}"
+        totals.setdefault(f"{stage_prefix}_principal_loss", []).append(
+            float(principal_loss)
+        )
+        totals.setdefault(f"{stage_prefix}_relation_accuracy", []).append(
+            float(
+                (relation_logits.argmax(dim=-1)[relation_mask] == targets[relation_mask])
+                .float()
+                .mean()
+            )
+            if relation_mask.any()
+            else 0.0
+        )
+        # Always evaluate the two scientifically distinct representation
+        # views, even when a bounded validation loader contains fewer batches
+        # than the training curriculum has stages.
+        for diagnostic_stage in (
+            PretrainingStage.FSP_ONLY,
+            PretrainingStage.TRUTH_GUIDED_MULTILEVEL,
+        ):
+            accuracy, denominator = _stage_relation_validation(
+                model,
+                batch,
+                stage=diagnostic_stage,
+                config=config,
+                seed=config.seed + 10_000 + batch_count,
+            )
+            diagnostic_prefix = f"validation_{diagnostic_stage.value}"
+            totals.setdefault(
+                f"{diagnostic_prefix}_relation_accuracy_separate", []
+            ).append(accuracy)
+            totals.setdefault(
+                f"{diagnostic_prefix}_relation_denominator_separate", []
+            ).append(denominator)
         totals.setdefault("validation_full_training_objective", []).append(
             float(full_objective)
         )
@@ -1150,6 +1191,54 @@ def _pretraining_weights(config: PretrainConfig) -> dict[str, float]:
         "var": config.variance_weight * float(ablation.variance_covariance),
         "cov": config.covariance_weight * float(ablation.variance_covariance),
     }
+
+
+@torch.no_grad()
+def _stage_relation_validation(
+    model: ContextualPretrainingModel,
+    batch: dict[str, torch.Tensor],
+    *,
+    stage: PretrainingStage,
+    config: PretrainConfig,
+    seed: int,
+) -> tuple[float, float]:
+    """Evaluate relation classification under one explicit information view."""
+
+    curriculum = build_curriculum_batch(
+        batch,
+        stage,
+        seed=seed,
+        corruption_objective=config.corruption_objective,
+        truth_guided_structural_relation_inputs=(
+            config.truth_guided_structural_relation_inputs
+        ),
+    )
+    encoded, _leaf_pid_logits, diagnostic_batch = model.encode_runtime(
+        curriculum.batch,
+        attention_mask=curriculum.batch["curriculum_attention_mask"],
+    )
+    logits = model.relation_head(encoded.tree_projection)
+    targets, relation_mask = build_tree_relation_targets(
+        parent_ids=diagnostic_batch["parent_ids"],
+        lca_depth=diagnostic_batch["lca_depth"],
+        level_ids=diagnostic_batch["level_ids"],
+        node_mask=curriculum.structural_positive_mask,
+        b_side=diagnostic_batch["b_side"],
+        lca_node_id=diagnostic_batch["lca_node_id"],
+        edges_to_lca_from_i=diagnostic_batch["edges_to_lca_from_i"],
+        edges_to_lca_from_j=diagnostic_batch["edges_to_lca_from_j"],
+    )
+    denominator = float(relation_mask.sum())
+    accuracy = (
+        float(
+            (logits.argmax(dim=-1)[relation_mask] == targets[relation_mask])
+            .float()
+            .mean()
+        )
+        if relation_mask.any()
+        else 0.0
+    )
+    return accuracy, denominator
 
 
 def _tensor_gradient_norm(

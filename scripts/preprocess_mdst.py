@@ -74,6 +74,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         choices=("raw_track_predicted_pid", "fixed_hypothesis_candidate"),
     )
     parser.add_argument(
+        "--track-fit-policy",
+        default="max_p_value_then_pion_fallback-v1",
+        choices=("max_p_value_then_pion_fallback-v1",),
+        help="Versioned, data-independent TrackFitResult selection contract.",
+    )
+    parser.add_argument(
         "--particle-array",
         action="append",
         default=None,
@@ -112,6 +118,7 @@ def main(argv: list[str] | None = None) -> int:
                 "event_index": args.event_index,
                 "config": args.config,
                 "schema_version": args.schema_version,
+                "track_fit_policy": args.track_fit_policy,
             }
         )
         return 0
@@ -137,6 +144,7 @@ def main(argv: list[str] | None = None) -> int:
         event_buffer_size=args.event_buffer_size,
         row_group_size=args.row_group_size,
         leaf_kinematics_mode=args.leaf_kinematics_mode,
+        track_fit_policy=args.track_fit_policy,
     )
     output = run_basf2_preprocessing(config)
     print(f"Wrote {output}")

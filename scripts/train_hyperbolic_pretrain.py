@@ -77,6 +77,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--corruption-class-weight", type=float, default=0.1)
     parser.add_argument("--candidate-correctness-weight", type=float, default=0.1)
     parser.add_argument("--hard-negative-weight", type=float, default=0.1)
+    parser.add_argument(
+        "--truth-guided-structural-relation-inputs",
+        action="store_true",
+        help=(
+            "compatibility ablation: expose exact known truth-guided links to "
+            "contextual attention; default keeps them target-only"
+        ),
+    )
     parser.add_argument("--model-preset", choices=sorted(MODEL_PRESETS), default="tiny_cpu")
     parser.add_argument("--d-model", type=int, default=None)
     parser.add_argument("--hyper-dim", type=int, default=None)
@@ -144,6 +152,9 @@ def main(argv: list[str] | None = None) -> int:
                 corruption_class_weight=args.corruption_class_weight,
                 candidate_correctness_weight=args.candidate_correctness_weight,
                 hard_negative_weight=args.hard_negative_weight,
+                truth_guided_structural_relation_inputs=(
+                    args.truth_guided_structural_relation_inputs
+                ),
                 num_workers=args.num_workers,
                 prefetch_factor=args.prefetch_factor,
                 shuffle_buffer_size=args.shuffle_buffer_size,

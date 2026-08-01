@@ -370,10 +370,14 @@ def _node_record_v3(
                 "track_fit_selection_method": node.track_fit_selection_method,
                 "track_fit_available": bool(node.track_fit_available),
                 "track_fit_fallback_reason": node.track_fit_fallback_reason,
+                "track_fit_policy_diagnostics": dict(
+                    node.track_fit_policy_diagnostics
+                ),
                 "klm_features": dict(node.klm_features),
                 "klm_availability": {
                     name: True for name in node.klm_features
                 },
+                "associated_reco_id": node.associated_reco_id,
             }
         )
     return record

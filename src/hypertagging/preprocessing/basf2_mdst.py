@@ -37,6 +37,10 @@ from hypertagging.reconstruction.kinematics import (
 )
 
 
+TRACK_FIT_POLICY_MAX_P_VALUE_V1 = "max_p_value_then_pion_fallback-v1"
+SUPPORTED_TRACK_FIT_POLICIES = (TRACK_FIT_POLICY_MAX_P_VALUE_V1,)
+
+
 @dataclass(frozen=True)
 class Basf2PreprocessConfig:
     """Configuration for the basf2 direct-mDST steering module."""
@@ -56,6 +60,11 @@ class Basf2PreprocessConfig:
     event_buffer_size: int = 128
     row_group_size: int = 128
     leaf_kinematics_mode: str = "raw_track_predicted_pid"
+    track_fit_policy: str = TRACK_FIT_POLICY_MAX_P_VALUE_V1
+
+    def __post_init__(self) -> None:
+        if self.track_fit_policy not in SUPPORTED_TRACK_FIT_POLICIES:
+            raise ValueError(f"unknown track_fit_policy: {self.track_fit_policy}")
 
 
 @dataclass(frozen=True)
@@ -228,6 +237,7 @@ class _DirectMdstCollector:
                 ),
                 "event_buffer_size": self.config.event_buffer_size,
                 "row_group_size": self.config.row_group_size,
+                "track_fit_policy": self.config.track_fit_policy,
             }
             return self._v4_writer.close()
         pid_filter = PidFilter()
@@ -348,6 +358,7 @@ class _DirectMdstCollector:
                 fit_selection = _select_data_independent_track_fit(
                     track,
                     pion_hypothesis=self._charged_stable(211),
+                    policy=self.config.track_fit_policy,
                 )
                 fit = fit_selection.fit
                 if not fit:
@@ -369,6 +380,11 @@ class _DirectMdstCollector:
                 ) = self._track_pid_likelihoods(track)
                 truth_pdg, truth_charge = _mc_truth_fields(mc)
                 fit_quality = _optional_float(fit, ("getPValue",))
+                fit_policy_diagnostics = _track_fit_policy_diagnostics(
+                    track,
+                    selected=fit_selection,
+                    pion_hypothesis=self._charged_stable(211),
+                )
                 records.append(
                     RecoRecord(
                         reco_id=f"Track:{track.getArrayIndex()}",
@@ -409,6 +425,7 @@ class _DirectMdstCollector:
                         track_fit_selection_method=fit_selection.method,
                         track_fit_available=fit_selection.available,
                         track_fit_fallback_reason=fit_selection.fallback_reason,
+                        track_fit_policy_diagnostics=fit_policy_diagnostics,
                         reco_quality_score=fit_quality,
                         underlying_reco_id=f"Track:{track.getArrayIndex()}",
                     )
@@ -561,6 +578,15 @@ class _DirectMdstCollector:
                 mc = _related_mc(cluster)
                 truth_pdg, truth_charge = _mc_truth_fields(mc)
                 position = cluster.getClusterPosition()
+                associated_ecl = _first_related_named(
+                    cluster, ("ECLClusters", "ECLCluster")
+                )
+                associated_ecl_id = (
+                    f"ECLCluster:{int(associated_ecl.getArrayIndex())}"
+                    if associated_ecl is not None
+                    and hasattr(associated_ecl, "getArrayIndex")
+                    else None
+                )
                 records.append(
                     RecoRecord(
                         reco_id=f"KLMCluster:{cluster.getArrayIndex()}",
@@ -602,6 +628,7 @@ class _DirectMdstCollector:
                             }
                         ),
                         underlying_reco_id=f"KLMCluster:{cluster.getArrayIndex()}",
+                        associated_reco_id=associated_ecl_id,
                     )
                 )
             except Exception as exc:
@@ -659,6 +686,31 @@ def _related_named(obj: object, relation_name: str) -> object | None:
     return None
 
 
+def _first_related_named(
+    obj: object, relation_names: Sequence[str]
+) -> object | None:
+    """Return the first reconstructed relation across release API variants."""
+
+    for relation_name in relation_names:
+        direct = _related_named(obj, relation_name)
+        if direct is not None:
+            return direct
+        for method_name in ("getRelationsWith", "getRelationsTo", "getRelationsFrom"):
+            method = getattr(obj, method_name, None)
+            if method is None:
+                continue
+            try:
+                related = method(relation_name)
+            except (TypeError, RuntimeError):
+                continue
+            try:
+                for candidate in related:
+                    return candidate
+            except TypeError:
+                continue
+    return None
+
+
 def _mc_truth_fields(mc: object | None) -> tuple[int | None, float | None]:
     if mc is None:
         return None, None
@@ -674,7 +726,10 @@ def _mc_truth_fields(mc: object | None) -> tuple[int | None, float | None]:
 
 
 def _select_data_independent_track_fit(
-    track: object, *, pion_hypothesis: object
+    track: object,
+    *,
+    pion_hypothesis: object,
+    policy: str = TRACK_FIT_POLICY_MAX_P_VALUE_V1,
 ) -> TrackFitSelection:
     """Select the maximum-p-value reconstructed fit without consulting MC.
 
@@ -684,6 +739,8 @@ def _select_data_independent_track_fit(
     fallback.
     """
 
+    if policy not in SUPPORTED_TRACK_FIT_POLICIES:
+        raise ValueError(f"unknown track fit policy: {policy}")
     fit_results = getattr(track, "getTrackFitResults", None)
     collection_failure: str | None = None
     if fit_results is not None:
@@ -777,6 +834,63 @@ def _data_independent_track_fit(
     return _select_data_independent_track_fit(
         track, pion_hypothesis=pion_hypothesis
     ).fit
+
+
+def _track_fit_policy_diagnostics(
+    track: object,
+    *,
+    selected: TrackFitSelection,
+    pion_hypothesis: object,
+) -> dict[str, float | str | bool]:
+    """Bounded max-p-value versus pion-closest-mass momentum diagnostic."""
+
+    output: dict[str, float | str | bool] = {
+        "policy": TRACK_FIT_POLICY_MAX_P_VALUE_V1,
+        "selected_hypothesis": selected.hypothesis or "unavailable",
+        "selected_available": bool(selected.available),
+        "hypothesis_independent_alternative": "unavailable_in_release_08_03_00",
+    }
+    closest = getattr(track, "getTrackFitResultWithClosestMass", None)
+    if selected.fit is None or closest is None:
+        output["pion_comparison_available"] = False
+        return output
+    try:
+        pion_fit = closest(pion_hypothesis)
+    except Exception:
+        pion_fit = None
+    if not pion_fit:
+        output["pion_comparison_available"] = False
+        return output
+    selected_p = _fit_momentum_components(selected.fit)
+    pion_p = _fit_momentum_components(pion_fit)
+    if selected_p is None or pion_p is None:
+        output["pion_comparison_available"] = False
+        return output
+    output["pion_comparison_available"] = True
+    for name, value in zip(("px", "py", "pz"), pion_p):
+        output[f"pion_{name}"] = value
+    for name, left, right in zip(("px", "py", "pz"), selected_p, pion_p):
+        output[f"delta_{name}"] = left - right
+    selected_norm = math.sqrt(sum(value * value for value in selected_p))
+    pion_norm = math.sqrt(sum(value * value for value in pion_p))
+    output["delta_momentum_magnitude"] = selected_norm - pion_norm
+    return output
+
+
+def _fit_momentum_components(fit: object) -> tuple[float, float, float] | None:
+    try:
+        momentum = fit.getMomentum()
+        getters = (
+            ("X", "Px"),
+            ("Y", "Py"),
+            ("Z", "Pz"),
+        )
+        return tuple(
+            float(getattr(momentum, first)() if hasattr(momentum, first) else getattr(momentum, second)())
+            for first, second in getters
+        )  # type: ignore[return-value]
+    except Exception:
+        return None
 
 
 def _charged_hypothesis_name(hypothesis: object | None) -> str:

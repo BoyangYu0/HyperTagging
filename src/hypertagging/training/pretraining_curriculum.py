@@ -30,6 +30,7 @@ class CurriculumBatch:
     hard_negative_relation_classes: torch.Tensor
     structural_positive_mask: torch.Tensor
     corruption_objective: str
+    relation_input_policy: str
 
 
 def build_curriculum_batch(
@@ -39,6 +40,7 @@ def build_curriculum_batch(
     seed: int = 0,
     corruption_probability: float = 0.5,
     corruption_objective: str = "invalid_candidate",
+    truth_guided_structural_relation_inputs: bool = False,
 ) -> CurriculumBatch:
     """Build one curriculum view without exposing truth composites in Stage 1."""
 
@@ -77,6 +79,25 @@ def build_curriculum_batch(
         )
         _rebuild_corrupted_derived_fields(output)
     output["curriculum_attention_mask"] = curriculum_attention_mask(output, stage)
+    relation_input_policy = "inference_physical_relation_features"
+    if (
+        truth_guided_structural_relation_inputs
+        and stage is PretrainingStage.TRUTH_GUIDED_MULTILEVEL
+    ):
+        visible = output["node_mask"].bool()
+        output["current_reconstructed_ancestor_descendant_relation"] = (
+            output["ancestor_descendant_relation"].bool()
+            & visible[:, :, None]
+            & visible[:, None, :]
+        )
+        relation_input_policy = "current_reconstructed_tree_state_features"
+    else:
+        count = output["node_mask"].shape[1]
+        output["current_reconstructed_ancestor_descendant_relation"] = torch.zeros(
+            (output["node_mask"].shape[0], count, count),
+            dtype=torch.bool,
+            device=output["node_mask"].device,
+        )
     hard_negatives, hard_negative_classes = hard_negative_pairs_with_classes(output)
     return CurriculumBatch(
         batch=output,
@@ -91,6 +112,7 @@ def build_curriculum_batch(
             else output["node_mask"] & ~corrupted
         ),
         corruption_objective=corruption_objective,
+        relation_input_policy=relation_input_policy,
     )
 
 

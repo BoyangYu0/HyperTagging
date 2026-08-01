@@ -37,8 +37,9 @@ def build_notebook(default_input: Path, manifest_summary: Path) -> nbf.NotebookN
 
             ## Goal
 
-            This notebook is an executable tour of the `direct-mdst-tree-v1` parquet
-            produced by `scripts/preprocess_mdst.py`. It:
+            This historical-compatibility notebook is an executable tour of the
+            retired `direct-mdst-tree-v1` parquet contract. It does not describe
+            the production schema-v4 path. It:
 
             1. demonstrates the top-level, event, level, node, legacy, and summary records;
             2. checks tree links, provenance IDs, numerical fields, and four-vector closure;

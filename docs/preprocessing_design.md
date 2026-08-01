@@ -1,6 +1,17 @@
 # Direct mDST Preprocessing Design
 
-## Legacy Semantics Preserved
+## Current production contract
+
+Production uses the one-event-per-row `direct-mdst-tree-v4` contract described
+in [the schema-v4 section](#production-schema-v4-reconstructed-leaf-contract).
+It separates reconstructed model inputs from MC topology/targets, preserves
+exact recursive reconstructed daughter-sum p4, and records detector-feature
+availability and provenance. Version strings used by checkpoints and data
+sidecars come from `schema_v4.py`, not from this prose. Detailed v1-v3
+evolution is historical compatibility context; see
+[schema migration history](schema_migration_history.md).
+
+## Historical semantics preserved
 
 - The reduced HyperTagging PID vocabulary is preserved from `HyperTagging/__init__.py`.
 - The legacy pruning rule from `HyperTagging/DataProd.py` is centralized in
@@ -14,7 +25,7 @@
   copied nodes carry a unique `node_id`, the same reco-level features, and a
   `copied_from` source.
 
-## Verified v1 behavior
+## Historical verified v1 behavior
 
 - The new path avoids scanning many prebuilt basf2 `ParticleList`s. The basf2
   steering script reads DataStore arrays from generic mDST input using
@@ -32,7 +43,7 @@
 `export_trees()` remains the `direct-mdst-tree-v1` compatibility exporter. Its
 fields and legacy-level semantics are unchanged.
 
-## Versioned heterogeneous v2
+## Historical heterogeneous v2
 
 `export_trees_v2()` writes `direct-mdst-tree-v2`. It retains every flat v1 node
 field and adds:
@@ -237,7 +248,20 @@ ECL and KLM StoreArray objects have distinct node kinds. KLM clusters use only
 reconstructed cluster momentum/energy/position/time/layer information; no MC
 quantity fills a detector input. A cluster may be collected without matching a
 truth K_L leaf, so KLM/K_L coverage is reported as a denominator rather than
-assumed complete.
+assumed complete. Available KLM values are collated with per-value masks and
+fixed unit scales (GeV, 100 cm, 10 ns, and 16-layer reference scales) before
+the dedicated `KlmNodeEncoder`; older v4 shards produce an all-unavailable
+block.
+
+The versioned track-fit policy is
+`max_p_value_then_pion_fallback-v1`: maximum finite reconstructed p-value from
+`getTrackFitResults`, followed only by release-compatible best-p-value/pion
+fallbacks. Unknown policy names fail. Schema metadata records the policy, and
+per-track diagnostics compare selected momentum with the pion closest-mass fit
+when both exist. Release 08-03-00 exposes no documented hypothesis-independent
+TrackFitResult alternative. ECL relations discovered through the release's
+`getRelationsWith/To/From` API are propagated as reconstructed shared-source
+conflicts for associated KLM nodes.
 
 The canonical pion value is only the tensor-compatible encoder baseline.
 Reconstruction training substitutes the differentiable, charge-compatible

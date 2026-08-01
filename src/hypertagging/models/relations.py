@@ -31,6 +31,33 @@ PHYSICAL_RELATION_FEATURE_NAMES = (
     "pair_mass_energy_available",
 )
 
+# Versioned provenance categories.  Only the first two may enter contextual
+# attention, and the second must be built from nodes that already exist in the
+# current reconstruction state.  The third category remains loss/diagnostic
+# supervision only.
+RELATION_FEATURE_PROVENANCE = {
+    "inference_physical_relation_features": (
+        "p4",
+        "charge",
+        "level_ids",
+        "node_kind_ids",
+        "reco_ids",
+    ),
+    "current_reconstructed_tree_state_features": (
+        "copied",
+        "source_node_ids",
+        "recursive_leaf_source_mask",
+        "current_reconstructed_ancestor_descendant_relation",
+    ),
+    "truth_target_only_relation_features": (
+        "parent_ids",
+        "ancestor_descendant_relation",
+        "lca_node_id",
+        "exact_tree_path_distance",
+        "b_side",
+    ),
+}
+
 
 def _signed_log_scale(value: torch.Tensor, scale: float) -> torch.Tensor:
     """Compress dimensional physical values under an explicit fixed contract."""
@@ -291,5 +318,6 @@ __all__ = [
     "PHYSICAL_RELATION_SCALING_VERSION",
     "PHYSICAL_RELATION_FEATURE_NAMES",
     "PhysicalRelationBias",
+    "RELATION_FEATURE_PROVENANCE",
     "RelationBias",
 ]

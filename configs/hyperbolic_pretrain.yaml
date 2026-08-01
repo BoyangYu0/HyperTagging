@@ -16,3 +16,6 @@ leaf_pid_weight: 1.0
 corruption_class_weight: 0.1
 candidate_correctness_weight: 0.1
 hard_negative_weight: 0.1
+# Compatibility ablation only. False keeps exact truth parent/ancestor state
+# out of contextual attention while retaining it as supervision.
+truth_guided_structural_relation_inputs: false

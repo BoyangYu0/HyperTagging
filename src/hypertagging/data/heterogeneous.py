@@ -23,6 +23,7 @@ from hypertagging.preprocessing.schema_v3 import (
 )
 from hypertagging.preprocessing.pid_filter import PDG_TOKENS, validate_pid_tokens
 from hypertagging.preprocessing.schema_v4 import (
+    KLM_FEATURE_NAMES,
     LEAF_MODE_TO_ID,
     iter_event_records_v4,
 )
@@ -71,6 +72,8 @@ class HeterogeneousEvent:
     track_availability: torch.Tensor
     cluster_features: torch.Tensor
     cluster_availability: torch.Tensor
+    klm_features: torch.Tensor
+    klm_availability: torch.Tensor
     composite_features: torch.Tensor
     composite_availability: torch.Tensor
     daughter_input_pid_histogram: torch.Tensor
@@ -208,6 +211,9 @@ def _event_from_record(event: dict[str, Any]) -> HeterogeneousEvent:
         list(values) + [[0] * len(PDG_TOKENS) for _ in range(max_depth - len(values))]
         for values in depth_arrays
     ]
+    klm_features, klm_availability = _optional_records_tensor(
+        nodes, "klm_features", KLM_FEATURE_NAMES
+    )
     return HeterogeneousEvent(
         event_id=int(event["event_id"]),
         event_uid=str(event.get("event_uid", event["event_id"])),
@@ -232,6 +238,8 @@ def _event_from_record(event: dict[str, Any]) -> HeterogeneousEvent:
             CLUSTER_FEATURE_NAMES,
             dtype=torch.bool,
         ),
+        klm_features=klm_features,
+        klm_availability=klm_availability,
         composite_features=_records_tensor(nodes, "composite_features", COMPOSITE_FEATURE_NAMES),
         composite_availability=_records_tensor(
             nodes,
@@ -490,6 +498,29 @@ def _records_tensor(
     )
 
 
+def _optional_records_tensor(
+    nodes: list[dict[str, Any]],
+    block: str,
+    names: tuple[str, ...],
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Read a release-dependent numeric block without changing old schemas."""
+
+    values = torch.zeros((len(nodes), len(names)), dtype=torch.float32)
+    available = torch.zeros_like(values, dtype=torch.bool)
+    for node_index, node in enumerate(nodes):
+        record = node.get(block, {})
+        declared = node.get(block.replace("features", "availability"), {})
+        if not isinstance(record, dict):
+            continue
+        for feature_index, name in enumerate(names):
+            is_available = bool(declared.get(name, name in record))
+            value = record.get(name)
+            if is_available and value is not None:
+                values[node_index, feature_index] = float(value)
+                available[node_index, feature_index] = True
+    return values, available
+
+
 def _b_side_labels(
     nodes: list[dict[str, Any]],
     id_to_position: dict[int, int],
@@ -549,6 +580,8 @@ def heterogeneous_from_level_event(event: LevelEvent) -> HeterogeneousEvent:
     track_mask = torch.zeros_like(track, dtype=torch.bool)
     cluster = torch.zeros((count, len(CLUSTER_FEATURE_NAMES)))
     cluster_mask = torch.zeros_like(cluster, dtype=torch.bool)
+    klm = torch.zeros((count, len(KLM_FEATURE_NAMES)))
+    klm_mask = torch.zeros_like(klm, dtype=torch.bool)
     composite = torch.zeros((count, len(COMPOSITE_FEATURE_NAMES)))
     composite_mask = torch.zeros_like(composite, dtype=torch.bool)
     pid_hist = torch.zeros((count, len(PDG_TOKENS)))
@@ -578,6 +611,8 @@ def heterogeneous_from_level_event(event: LevelEvent) -> HeterogeneousEvent:
         track_availability=track_mask,
         cluster_features=cluster,
         cluster_availability=cluster_mask,
+        klm_features=klm,
+        klm_availability=klm_mask,
         composite_features=composite,
         composite_availability=composite_mask,
         daughter_input_pid_histogram=pid_hist,
@@ -674,6 +709,8 @@ def collate_heterogeneous_events(events: Sequence[HeterogeneousEvent]) -> dict[s
         "track_availability": events[0].track_availability.shape[-1],
         "cluster_features": events[0].cluster_features.shape[-1],
         "cluster_availability": events[0].cluster_availability.shape[-1],
+        "klm_features": events[0].klm_features.shape[-1],
+        "klm_availability": events[0].klm_availability.shape[-1],
         "composite_features": events[0].composite_features.shape[-1],
         "composite_availability": events[0].composite_availability.shape[-1],
         "daughter_input_pid_histogram": events[0].daughter_input_pid_histogram.shape[-1],
@@ -683,6 +720,7 @@ def collate_heterogeneous_events(events: Sequence[HeterogeneousEvent]) -> dict[s
         "common_availability",
         "track_availability",
         "cluster_availability",
+        "klm_availability",
         "composite_availability",
     }
     for field, width in feature_fields.items():

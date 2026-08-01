@@ -16,13 +16,13 @@ history maps onto the migrated package surface through Phase 13.
 
 ## Unified Package Surface
 
-- `hypertagging.data`: contracts, reduced-token tiny fixtures, v1/v2/v3 heterogeneous parquet
+- `hypertagging.data`: contracts, reduced-token tiny fixtures, schema-v4-first heterogeneous parquet
   loading, source-aware splitting, train-only normalization, historical
   preprocessing command builders, and GPT-like adapters.
 - `hypertagging.utils`: padding, checkpoint loading, device, seed, and I/O
   helpers.
 - `hypertagging.preprocessing`: verified legacy exports plus corrected
-  truth-separated v3, full/reconstructable channel signatures, recursive
+  truth-separated v4, full/reconstructable channel signatures, recursive
   provenance, and v1/v2 compatibility adapters.
 - `hypertagging.losses`: historical losses plus balanced LCA relations, true
   Poincare parent ranking, corrected radius depth, and VICReg variance/covariance.
@@ -43,7 +43,8 @@ history maps onto the migrated package surface through Phase 13.
 
 ## Revised inspection artifacts
 
-- `docs/model_revision_audit.md`: pre-edit schema/model/history audit.
+- `docs/audits/current_status.md`: sole current audit; immutable history is in
+  `docs/audits/archive/`.
 - `docs/channel_representation.md`: exact and structured two-B semantics.
 - `docs/heterogeneous_node_encoding.md`: feature blocks and shared encoder.
 - `docs/dataset_visualization.md`: fixture and real-data notebook execution.

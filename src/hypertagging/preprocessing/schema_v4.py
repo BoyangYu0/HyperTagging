@@ -40,12 +40,12 @@ RUNTIME_MODEL_CONTRACTS_V4 = {
     "tree_distance": "exact-edge-log-fixed-scale-v2",
     "hyperbolic_scale": "dimension-aware-tangent-radius-v2",
     "physical_relation_features": "physical-relations-overlap-aware-v3",
+    "klm_model_input": "masked-klm-adapter-fixed-scale-v1",
 }
 
 # Optional release-dependent reconstructed-object blocks stored in the event
-# JSON. They do not enter the fixed-width model tensor unless an explicit
-# adapter consumes them, so adding them does not change the persisted v4
-# feature hash or invalidate existing shards.
+# JSON.  The KLM block is consumed by the masked KLM adapter when present; old
+# v4 shards remain readable and supply an all-unavailable block.
 PID_DETECTOR_NAMES: tuple[str, ...] = ("svd", "cdc", "top", "arich", "ecl", "klm")
 KLM_FEATURE_NAMES: tuple[str, ...] = (
     "energy",
@@ -57,6 +57,14 @@ KLM_FEATURE_NAMES: tuple[str, ...] = (
     "layers",
     "innermost_layer",
     "associated_ecl_cluster",
+)
+KLM_MODEL_INPUT_SCALES: tuple[float, ...] = (
+    1.0,  # energy [GeV]
+    1.0,  # momentum magnitude [GeV]
+    100.0, 100.0, 100.0,  # reconstructed position [cm]
+    10.0,  # time [ns]
+    16.0, 16.0,  # layer indices
+    1.0,  # associated-ECL indicator
 )
 
 # These positions retain their stored compatibility values, but are never
@@ -780,6 +788,7 @@ def _git_commit() -> str:
 __all__ = [
     "FEATURE_SPEC_REVISION_V4",
     "KLM_FEATURE_NAMES",
+    "KLM_MODEL_INPUT_SCALES",
     "LEAF_KINEMATICS_MODES",
     "LEAF_MODE_FROM_ID",
     "LEAF_MODE_TO_ID",

@@ -14,13 +14,16 @@ import sqlite3
 import subprocess
 import sys
 import tempfile
-import tempfile
 import hashlib
 
 import awkward as ak
 import uproot
 
 from hypertagging.preprocessing.pid_filter import PID_VOCABULARY_VERSION
+from hypertagging.preprocessing.basf2_mdst import (
+    SUPPORTED_TRACK_FIT_POLICIES,
+    TRACK_FIT_POLICY_MAX_P_VALUE_V1,
+)
 from hypertagging.preprocessing.schema_v3 import (
     SCHEMA_VERSION_V3,
     feature_spec_v3,
@@ -87,6 +90,7 @@ def build_manifest_records(
     schema_version: str = SCHEMA_VERSION_V4,
     charge_conjugate_normalization: bool = False,
     leaf_kinematics_mode: str = "raw_track_predicted_pid",
+    track_fit_policy: str = TRACK_FIT_POLICY_MAX_P_VALUE_V1,
     git_commit: str = "unknown",
     event_buffer_size: int = 128,
     row_group_size: int = 128,
@@ -97,6 +101,8 @@ def build_manifest_records(
         raise ValueError("target_events must be positive")
     if events_per_task <= 0:
         raise ValueError("events_per_task must be positive")
+    if track_fit_policy not in SUPPORTED_TRACK_FIT_POLICIES:
+        raise ValueError(f"unknown track_fit_policy: {track_fit_policy}")
 
     records: list[dict[str, object]] = []
     category_events: Counter[str] = Counter()
@@ -137,6 +143,7 @@ def build_manifest_records(
                         charge_conjugate_normalization
                     ),
                     "leaf_kinematics_mode": leaf_kinematics_mode,
+                    "track_fit_policy": track_fit_policy,
                     "feature_spec_hash": feature_hash,
                     "git_commit": git_commit,
                     "event_buffer_size": int(event_buffer_size),
@@ -175,6 +182,7 @@ def write_manifest(
         "pid_vocabulary_version": PID_VOCABULARY_VERSION,
         "charge_conjugate_normalization": False,
         "leaf_kinematics_mode": "raw_track_predicted_pid",
+        "track_fit_policy": TRACK_FIT_POLICY_MAX_P_VALUE_V1,
         "feature_spec_hash": feature_spec_v4()["feature_spec_hash"],
         "git_commit": "unknown",
     }
@@ -224,6 +232,9 @@ def read_manifest_record(manifest: Path, task_id: int) -> dict[str, object]:
         for line in stream:
             record = json.loads(line)
             if int(record["task_id"]) == task_id:
+                record.setdefault(
+                    "track_fit_policy", TRACK_FIT_POLICY_MAX_P_VALUE_V1
+                )
                 return record
     raise IndexError(f"task_id {task_id} is not present in {manifest}")
 
@@ -236,6 +247,7 @@ def validate_shard(
     expected_feature_spec_hash: str | None = None,
     expected_pid_vocabulary_version: str | None = None,
     expected_leaf_kinematics_mode: str | None = None,
+    expected_track_fit_policy: str | None = None,
     expected_charge_conjugate_normalization: bool | None = None,
     uid_callback: Callable[[str], None] | None = None,
 ) -> dict[str, object]:
@@ -286,6 +298,12 @@ def validate_shard(
                 raise ValueError(
                     f"Requested fixed-hypothesis candidates but output contains none in {path}"
                 )
+    if expected_schema == SCHEMA_VERSION_V4 and expected_track_fit_policy:
+        actual_policy = payload.get("preprocessing_configuration", {}).get(
+            "track_fit_policy"
+        )
+        if actual_policy != expected_track_fit_policy:
+            raise ValueError(f"Track-fit-policy mismatch in {path}")
             if actual_modes.get("raw_track_predicted_pid", 0) > 0:
                 raise ValueError(
                     f"Fixed-hypothesis production unexpectedly contains raw Tracks in {path}"
@@ -358,6 +376,7 @@ def run_task(
             expected_feature_spec_hash=str(record["feature_spec_hash"]),
             expected_pid_vocabulary_version=str(record["pid_vocabulary_version"]),
             expected_leaf_kinematics_mode=str(record["leaf_kinematics_mode"]),
+            expected_track_fit_policy=str(record["track_fit_policy"]),
             expected_charge_conjugate_normalization=bool(
                 record["charge_conjugate_normalization"]
             ),
@@ -404,6 +423,8 @@ def run_task(
         [
             "--leaf-kinematics-mode",
             str(record["leaf_kinematics_mode"]),
+            "--track-fit-policy",
+            str(record["track_fit_policy"]),
             "--event-buffer-size",
             str(record.get("event_buffer_size", 128)),
             "--row-group-size",
@@ -452,6 +473,7 @@ def run_task(
             expected_feature_spec_hash=str(record["feature_spec_hash"]),
             expected_pid_vocabulary_version=str(record["pid_vocabulary_version"]),
             expected_leaf_kinematics_mode=str(record["leaf_kinematics_mode"]),
+            expected_track_fit_policy=str(record["track_fit_policy"]),
             expected_charge_conjugate_normalization=bool(
                 record["charge_conjugate_normalization"]
             ),
@@ -507,6 +529,8 @@ def validate_production_manifest(manifest: Path) -> dict[str, object]:
     ]
     if not records:
         raise ValueError("production manifest is empty")
+    for record in records:
+        record.setdefault("track_fit_policy", TRACK_FIT_POLICY_MAX_P_VALUE_V1)
     by_file: dict[str, list[tuple[int, int, int]]] = defaultdict(list)
     seen_task_ids: set[int] = set()
     uid_database_file = tempfile.NamedTemporaryFile(
@@ -525,6 +549,7 @@ def validate_production_manifest(manifest: Path) -> dict[str, object]:
         "feature_spec_hash",
         "charge_conjugate_normalization",
         "leaf_kinematics_mode",
+        "track_fit_policy",
     )
     expected_config = {field: records[0].get(field) for field in config_fields}
     uid_digest = hashlib.sha256()
@@ -563,6 +588,7 @@ def validate_production_manifest(manifest: Path) -> dict[str, object]:
                 expected_feature_spec_hash=str(record["feature_spec_hash"]),
                 expected_pid_vocabulary_version=str(record["pid_vocabulary_version"]),
                 expected_leaf_kinematics_mode=str(record["leaf_kinematics_mode"]),
+                expected_track_fit_policy=str(record["track_fit_policy"]),
                 expected_charge_conjugate_normalization=bool(record["charge_conjugate_normalization"]),
                 uid_callback=register_uid,
             )
@@ -611,6 +637,11 @@ def build_parser() -> argparse.ArgumentParser:
     plan.add_argument("--schema-version", default=SCHEMA_VERSION_V4)
     plan.add_argument("--charge-conjugate-normalization", action="store_true")
     plan.add_argument("--leaf-kinematics-mode", default="raw_track_predicted_pid")
+    plan.add_argument(
+        "--track-fit-policy",
+        choices=SUPPORTED_TRACK_FIT_POLICIES,
+        default=TRACK_FIT_POLICY_MAX_P_VALUE_V1,
+    )
     plan.add_argument("--event-buffer-size", type=int, default=128)
     plan.add_argument("--row-group-size", type=int, default=128)
 
@@ -642,6 +673,7 @@ def main(argv: list[str] | None = None) -> int:
             schema_version=args.schema_version,
             charge_conjugate_normalization=args.charge_conjugate_normalization,
             leaf_kinematics_mode=args.leaf_kinematics_mode,
+            track_fit_policy=args.track_fit_policy,
             git_commit=git_commit,
             event_buffer_size=args.event_buffer_size,
             row_group_size=args.row_group_size,
