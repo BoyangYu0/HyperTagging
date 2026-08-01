@@ -24,6 +24,9 @@ def test_index_and_native_storage_benchmark(tmp_path):
     index = load_dataset_index(index_path)
     assert index["event_count"] == 2
     assert index["schema_versions"] == ["direct-mdst-tree-v4"]
+    collision = index["full_truth_to_reconstructable_channel_collisions"]
+    assert collision["collision_group_count"] >= 0
+    assert "co-occurrence only" in collision["mechanism_scope"]
     result = benchmark_storage_formats([shard], tmp_path / "benchmark", max_events=3)
     assert result["event_count"] == 2
     assert result["json_write_events_per_second"] > 0

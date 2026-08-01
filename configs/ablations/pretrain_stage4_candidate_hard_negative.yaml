@@ -1,0 +1,11 @@
+lca_relation_weight: 1.0
+parent_ranking_weight: 1.0
+exact_tree_distance_weight: 1.0
+radius_depth_weight: 0.2
+channel_weight: 0.2
+variance_weight: 0.1
+covariance_weight: 0.01
+leaf_pid_weight: 1.0
+corruption_class_weight: 0.1
+candidate_correctness_weight: 0.1
+hard_negative_weight: 0.1

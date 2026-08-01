@@ -57,6 +57,7 @@ def build_dataset_index(
     source_groups: dict[str, str] = {}
     schema_versions = set()
     feature_spec_hashes = set()
+    track_fit_policies = set()
     shards: list[dict[str, Any]] = []
     policy_capacity = {
         policy: Counter() for policy in (
@@ -67,6 +68,9 @@ def build_dataset_index(
     channel_frequency: Counter[str] = Counter()
     channel_capacity: dict[int, dict[str, dict[str, int]]] = {}
     channel_frequency_slice_overflow_events = 0
+    channel_projection_groups: dict[int, set[int]] = {}
+    channel_projection_event_counts: Counter[int] = Counter()
+    channel_projection_mechanisms: dict[int, Counter[str]] = {}
     resolved = [Path(path).resolve() for path in paths]
     for path in resolved:
         sidecar = path.with_suffix(path.suffix + ".metadata.json")
@@ -80,6 +84,8 @@ def build_dataset_index(
             shard_metadata = json.loads(sidecar.read_text(encoding="utf-8"))
             if shard_metadata.get("feature_spec_hash"):
                 feature_spec_hashes.add(str(shard_metadata["feature_spec_hash"]))
+            if shard_metadata.get("track_fit_policy"):
+                track_fit_policies.add(str(shard_metadata["track_fit_policy"]))
             if shard_metadata.get("schema_version") == SCHEMA_VERSION_V4:
                 marker_payload = _validated_completion_marker(path, shard_metadata)
         for record in iter_event_records_v4(path):
@@ -97,6 +103,24 @@ def build_dataset_index(
                 str(record.get("source_schema_version", record.get("schema_version", "")))
             )
             event = heterogeneous_event_from_record(record)
+            for side in ("b1", "b2"):
+                full_id = int(getattr(event, f"{side}_full_truth_channel_id"))
+                reconstructable_id = int(
+                    getattr(event, f"{side}_reconstructable_channel_id")
+                )
+                if full_id > 0 and reconstructable_id > 0:
+                    channel_projection_groups.setdefault(reconstructable_id, set()).add(full_id)
+                    channel_projection_event_counts[reconstructable_id] += 1
+                    mechanism_counts = channel_projection_mechanisms.setdefault(
+                        reconstructable_id, Counter()
+                    )
+                    nodes = record.get("nodes", [])
+                    if any(bool(node.get("contracted_intermediate")) for node in nodes):
+                        mechanism_counts["contracted_intermediate_present"] += 1
+                    if any(bool(node.get("copied")) for node in nodes):
+                        mechanism_counts["copied_node_present"] += 1
+                    if bool(record.get("charge_conjugate_normalization")):
+                        mechanism_counts["charge_conjugate_normalization"] += 1
             channel_key = ":".join(
                 map(
                     str,
@@ -230,6 +254,7 @@ def build_dataset_index(
                 "schema": str(shard_metadata.get("schema_version", "")),
                 "feature_hash": str(shard_metadata.get("feature_spec_hash", "")),
                 "pid_vocabulary": str(shard_metadata.get("pid_vocabulary_version", "")),
+                "track_fit_policy": str(shard_metadata.get("track_fit_policy", "")),
                 "source_entry_range": [
                     shard_metadata.get("entry_start"),
                     shard_metadata.get("entry_stop_exclusive"),
@@ -278,6 +303,7 @@ def build_dataset_index(
         "node_count": total_nodes,
         "schema_versions": sorted(schema_versions),
         "feature_spec_hashes": sorted(feature_spec_hashes),
+        "track_fit_policies": sorted(track_fit_policies),
         "pid_vocabulary_version": PID_VOCABULARY_VERSION,
         "split_config": config.__dict__,
         "split_counts": dict(split_counts),
@@ -319,6 +345,31 @@ def build_dataset_index(
             "tracked_signatures": len(channel_frequency),
             "overflow_events": channel_frequency_slice_overflow_events,
             "exact": channel_frequency_slice_overflow_events == 0,
+        },
+        "full_truth_to_reconstructable_channel_collisions": {
+            "distinct_reconstructable_channels": len(channel_projection_groups),
+            "collision_group_count": sum(
+                len(full_ids) > 1 for full_ids in channel_projection_groups.values()
+            ),
+            "groups": [
+                {
+                    "reconstructable_channel_id": reconstructable_id,
+                    "full_truth_channel_ids": sorted(full_ids),
+                    "distinct_full_truth_channels": len(full_ids),
+                    "event_branch_count": channel_projection_event_counts[reconstructable_id],
+                    # These are co-occurrence diagnostics, not causal labels.
+                    "possible_mechanism_event_counts": dict(
+                        channel_projection_mechanisms.get(reconstructable_id, {})
+                    ),
+                }
+                for reconstructable_id, full_ids in sorted(channel_projection_groups.items())
+                if len(full_ids) > 1
+            ],
+            "mechanism_scope": (
+                "co-occurrence only: PID reduction, skipped topology, charge-conjugate "
+                "normalization, and copied-node deduplication require signature-level "
+                "follow-up before causal attribution"
+            ),
         },
         "shards": shards,
         "feature_spec_revision": FEATURE_SPEC_REVISION_V4,

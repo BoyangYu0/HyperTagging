@@ -23,7 +23,9 @@ from hypertagging.reconstruction.level_rollout import (
     CompositeProposal,
     append_composite_proposals,
     batched_level_step,
+    batched_free_rollout,
     batched_rollout_level_transition,
+    RolloutConfig,
 )
 from hypertagging.training.model_config import ModelArchitecture, resolve_model_architecture
 from hypertagging.training.reconstruction_trainer import (
@@ -75,6 +77,26 @@ def _model(**overrides) -> LevelAutoregressiveReconstructor:
     )
     values.update(overrides)
     return LevelAutoregressiveReconstructor(**values)
+
+
+def test_batched_rollout_optional_host_phase_profile_is_explicitly_unsynchronized():
+    state = _leaf_state(0)
+    batched = {
+        name: torch.cat([value, value.clone()], dim=0)
+        if value.ndim > 0 and value.shape[0] == 1
+        else value
+        for name, value in state.items()
+    }
+    result = batched_free_rollout(
+        _model(),
+        batched,
+        config=RolloutConfig(max_level=1, object_threshold=1.1, profile_phases=True),
+    )
+    assert result.host_phase_seconds is not None
+    assert result.host_phase_seconds["first_encoder_pass"] >= 0
+    assert result.host_phase_seconds["second_encoder_and_pair_relations"] >= 0
+    assert result.host_phase_seconds["proposal_validation_and_exclusive_resolution"] >= 0
+    assert result.host_phase_seconds["composite_append_and_transitive_updates"] >= 0
 
 
 def test_attention_dropout_is_propagated_and_train_eval_behavior_is_deterministic():

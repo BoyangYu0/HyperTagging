@@ -38,7 +38,11 @@ from hypertagging.reconstruction.kinematics import (
 
 
 TRACK_FIT_POLICY_MAX_P_VALUE_V1 = "max_p_value_then_pion_fallback-v1"
-SUPPORTED_TRACK_FIT_POLICIES = (TRACK_FIT_POLICY_MAX_P_VALUE_V1,)
+TRACK_FIT_POLICY_CANONICAL_PION_V1 = "canonical_pion_closest_mass-v1"
+SUPPORTED_TRACK_FIT_POLICIES = (
+    TRACK_FIT_POLICY_MAX_P_VALUE_V1,
+    TRACK_FIT_POLICY_CANONICAL_PION_V1,
+)
 
 
 @dataclass(frozen=True)
@@ -384,6 +388,7 @@ class _DirectMdstCollector:
                     track,
                     selected=fit_selection,
                     pion_hypothesis=self._charged_stable(211),
+                    policy=self.config.track_fit_policy,
                 )
                 records.append(
                     RecoRecord(
@@ -741,6 +746,36 @@ def _select_data_independent_track_fit(
 
     if policy not in SUPPORTED_TRACK_FIT_POLICIES:
         raise ValueError(f"unknown track fit policy: {policy}")
+    if policy == TRACK_FIT_POLICY_CANONICAL_PION_V1:
+        closest = getattr(track, "getTrackFitResultWithClosestMass", None)
+        if closest is None:
+            return TrackFitSelection(
+                fit=None,
+                hypothesis=None,
+                method="unavailable",
+                available=False,
+                fallback_reason="getTrackFitResultWithClosestMass_unavailable",
+            )
+        try:
+            result = closest(pion_hypothesis)
+        except Exception as exc:
+            return TrackFitSelection(
+                fit=None,
+                hypothesis=None,
+                method="unavailable",
+                available=False,
+                fallback_reason=f"closest_mass_accessor_error:{type(exc).__name__}",
+            )
+        return TrackFitSelection(
+            fit=result,
+            hypothesis="pion" if result else None,
+            method=(
+                "getTrackFitResultWithClosestMass_pion"
+                if result else "unavailable"
+            ),
+            available=bool(result),
+            fallback_reason=None if result else "pion_closest_mass_fit_unavailable",
+        )
     fit_results = getattr(track, "getTrackFitResults", None)
     collection_failure: str | None = None
     if fit_results is not None:
@@ -841,11 +876,12 @@ def _track_fit_policy_diagnostics(
     *,
     selected: TrackFitSelection,
     pion_hypothesis: object,
+    policy: str = TRACK_FIT_POLICY_MAX_P_VALUE_V1,
 ) -> dict[str, float | str | bool]:
     """Bounded max-p-value versus pion-closest-mass momentum diagnostic."""
 
     output: dict[str, float | str | bool] = {
-        "policy": TRACK_FIT_POLICY_MAX_P_VALUE_V1,
+        "policy": policy,
         "selected_hypothesis": selected.hypothesis or "unavailable",
         "selected_available": bool(selected.available),
         "hypothesis_independent_alternative": "unavailable_in_release_08_03_00",

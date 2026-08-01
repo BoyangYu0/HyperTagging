@@ -111,7 +111,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--max-validation-events", type=int, default=32)
     parser.add_argument("--rollout-validation-events", type=int, default=8)
     parser.add_argument("--validation-batch-size", type=int, default=4)
-    parser.add_argument("--best-metric", default="validation_loss_total")
+    parser.add_argument(
+        "--best-metric",
+        choices=(
+            "validation_loss_total",
+            "predicted_edge_f1",
+            "predicted_tree_validity_rate",
+        ),
+        default="validation_loss_total",
+    )
     parser.add_argument("--best-mode", choices=("min", "max"), default="min")
     parser.add_argument("--early-stopping-patience", type=int, default=None)
     parser.add_argument("--pilot-allow-train-validation-fallback", action="store_true")
@@ -125,6 +133,17 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--pid-temperature-start", type=float, default=1.0)
     parser.add_argument("--pid-temperature-end", type=float, default=0.2)
     parser.add_argument("--pid-temperature-duration-steps", type=int, default=1000)
+    parser.add_argument(
+        "--pid-kinematics-mode",
+        choices=(
+            "soft_expectation",
+            "temperature_softmax",
+            "straight_through_hard",
+            "hard",
+        ),
+        default=None,
+    )
+    parser.add_argument("--pid-temperature", type=float, default=1.0)
     parser.add_argument("--rollout-pid-kinematics-mode", choices=("soft_decision_hard_construction", "hard", "temperature_softmax", "straight_through_hard"), default="soft_decision_hard_construction")
     parser.add_argument("--rollout-pid-temperature", type=float, default=0.5)
     parser.add_argument("--query-repulsion-weight", type=float, default=0.0)
@@ -216,6 +235,8 @@ def main(argv: list[str] | None = None) -> int:
                 pid_temperature_start=args.pid_temperature_start,
                 pid_temperature_end=args.pid_temperature_end,
                 pid_temperature_duration_steps=args.pid_temperature_duration_steps,
+                pid_kinematics_mode=args.pid_kinematics_mode,
+                pid_temperature=args.pid_temperature,
                 rollout_pid_kinematics_mode=args.rollout_pid_kinematics_mode,
                 rollout_pid_temperature=args.rollout_pid_temperature,
                 query_repulsion_weight=args.query_repulsion_weight,

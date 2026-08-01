@@ -82,6 +82,41 @@ def test_every_ledger_issue_has_exactly_one_allowed_status():
     assert all(item["current_status"] in allowed for item in ledger["items"])
 
 
+def test_generated_backlog_matrix_counts_and_archive_metadata_are_authoritative():
+    ledger = yaml.safe_load((ROOT / "docs/audits/issue_ledger.yaml").read_text())
+    backlog = (ROOT / "docs/audits/current_backlog.md").read_text()
+    matrix = (ROOT / "docs/audits/evidence_matrix.md").read_text()
+    current = (ROOT / "docs/audits/current_status.md").read_text()
+    unresolved = {
+        "IMPLEMENTED_NOT_REAL_VERIFIED", "PARTIAL", "OPEN",
+        "INTENTIONALLY_DEFERRED_SCIENCE",
+    }
+    for item in ledger["items"]:
+        assert f"| {item['id']} |" in matrix
+        if item["current_status"] in unresolved:
+            assert f"### {item['id']}:" in backlog
+        else:
+            assert f"### {item['id']}:" not in backlog
+    for status in {item["current_status"] for item in ledger["items"]}:
+        count = sum(item["current_status"] == status for item in ledger["items"])
+        assert f"| `{status}` | {count} |" in current
+    metadata = yaml.safe_load((ROOT / "docs/audits/archive/metadata.yaml").read_text())
+    assert metadata["schema_version"].endswith("v1")
+    assert all(entry["worktree_state"] in {"clean", "dirty", "not_recorded"} for entry in metadata["reports"])
+    assert all(len(entry["sha256"]) == 64 for entry in metadata["reports"])
+
+
+def test_generated_audit_views_are_current():
+    completed = subprocess.run(
+        [sys.executable, "scripts/generate_audit_views.py", "--check"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert "PASS" in completed.stdout
+
+
 def test_notebook_index_has_complete_nonduplicated_responsibilities():
     index = yaml.safe_load((ROOT / "notebooks/index.yaml").read_text())
     ledger = yaml.safe_load((ROOT / "docs/audits/issue_ledger.yaml").read_text())
@@ -115,9 +150,12 @@ def test_notebook_index_has_complete_nonduplicated_responsibilities():
         "trained_physics_validation",
     }
     real_status = {entry["id"]: entry["last_verified_sha"] for entry in real_only}
-    assert real_status["real_mdst_pilot"] in {
-        "NOT_RUN", ledger["audited_code_sha"]
-    }
+    pilot_sha = real_status["real_mdst_pilot"]
+    assert pilot_sha == "NOT_RUN" or subprocess.run(
+        ["git", "merge-base", "--is-ancestor", pilot_sha, ledger["audited_code_sha"]],
+        cwd=ROOT,
+        check=False,
+    ).returncode == 0
     assert real_status["trained_physics_validation"] == "NOT_RUN"
 
 
@@ -143,6 +181,21 @@ def test_generated_notebook_cell_ids_are_deterministic():
     module._stabilize_notebook_cell_ids(second, "contract.ipynb")
     assert [cell.id for cell in first.cells] == [cell.id for cell in second.cells]
     assert len({cell.id for cell in first.cells}) == len(first.cells)
+
+
+def test_validation_overview_preserves_real_only_not_run(tmp_path):
+    module_path = ROOT / "scripts/execute_notebook_smoke_tests.py"
+    spec = importlib.util.spec_from_file_location("notebook_overview_runner", module_path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    module._write_validation_overview(tmp_path, ["dataset"], [])
+    payload = json.loads((tmp_path / "validation_overview.json").read_text())
+    by_id = {row["notebook_id"]: row for row in payload["rows"]}
+    assert by_id["dataset"]["status"] == "PASS"
+    assert by_id["real_mdst_pilot"]["status"] == "NOT_RUN"
+    assert by_id["trained_physics_validation"]["status"] == "NOT_RUN"
+    assert payload["visual_review_status"] == "NOT_REVIEWED"
 
 
 def test_audited_code_sha_equal_to_head_passes(tmp_path):

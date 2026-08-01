@@ -1,4 +1,2 @@
-name: straight_through_hard_pid
 pid_kinematics_mode: straight_through_hard
 pid_temperature: 1.0
-note: Hard forward mass hypothesis with softmax straight-through gradients.

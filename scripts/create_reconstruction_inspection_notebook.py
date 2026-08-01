@@ -309,6 +309,7 @@ def build_notebook() -> nbf.NotebookNode:
         code(
             """
             from hypertagging.evaluation.hierarchical_metrics import canonical_tree_metrics
+            from hypertagging.preprocessing.schema_v2 import NODE_KIND_TO_ID
             from hypertagging.training.scheduled_sampling import (
                 TeacherForcingSchedule, aligned_level_targets,
                 combine_sampled_context_losses, resolve_unrepresentable_target_policy,
@@ -316,7 +317,7 @@ def build_notebook() -> nbf.NotebookNode:
             with torch.no_grad():
                 level1=model(batch,target_level=1)
                 level2=model(batch,target_level=2)
-            leaf_mask=batch["node_mask"]&(batch["node_kind_ids"]==1)
+            leaf_mask=batch["node_mask"]&(batch["node_kind_ids"]==NODE_KIND_TO_ID["track"])
             leaf_pid_prediction=level1.leaf_pid_logits.softmax(-1).argmax(-1)
             display(pd.DataFrame({
                 "position":leaf_mask[0].nonzero().flatten().tolist(),

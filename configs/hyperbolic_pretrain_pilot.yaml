@@ -1,10 +1,10 @@
 model_preset: production_baseline
 channel_memory_size: 4096
-channel_zero_positive_validation_window: 3
-channel_zero_positive_action: fail
-objective_gradient_diagnostics: false
-objective_gradient_diagnostics_every: 100
-pilot_objective_preflight: false
+channel_zero_positive_validation_window: 1
+channel_zero_positive_action: warn
+objective_gradient_diagnostics: true
+objective_gradient_diagnostics_every: 1
+pilot_objective_preflight: true
 objective_dominance_ratio: 100.0
 pilot_objective_violation_action: warn
 best_metric: validation_full_training_objective
@@ -19,6 +19,4 @@ leaf_pid_weight: 1.0
 corruption_class_weight: 0.1
 candidate_correctness_weight: 0.1
 hard_negative_weight: 0.1
-# Compatibility ablation only. False keeps exact truth parent/ancestor state
-# out of contextual attention while retaining it as supervision.
 truth_guided_structural_relation_inputs: false

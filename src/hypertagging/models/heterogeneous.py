@@ -14,7 +14,7 @@ from hypertagging.models.hyperbolic import (
 )
 from hypertagging.models.relation_attention import RelationAwareSetTransformer
 from hypertagging.models.relations import HyperbolicRelationBias, PhysicalRelationBias
-from hypertagging.preprocessing.schema_v2 import NODE_KINDS
+from hypertagging.preprocessing.schema_v2 import NODE_KIND_TO_ID, NODE_KINDS
 from hypertagging.preprocessing.schema_v3 import (
     V3_CLUSTER_FEATURE_NAMES as CLUSTER_FEATURE_NAMES,
     V3_COMMON_FEATURE_NAMES as COMMON_FEATURE_NAMES,
@@ -40,6 +40,32 @@ def masked_mean_pool(
     weights = daughter_adjacency.to(embeddings.dtype)
     denominator = weights.sum(dim=-1, keepdim=True).clamp_min(1.0)
     return torch.einsum("bmn,bnd->bmd", weights, embeddings) / denominator
+
+
+def dispatch_node_kind_adapters(
+    kinds: torch.Tensor,
+    *,
+    track: torch.Tensor,
+    ecl_cluster: torch.Tensor,
+    klm_cluster: torch.Tensor,
+    composite: torch.Tensor,
+    other: torch.Tensor,
+    node_kind_to_id: dict[str, int] | None = None,
+) -> torch.Tensor:
+    """Dispatch by vocabulary name rather than incidental declaration order."""
+
+    mapping = NODE_KIND_TO_ID if node_kind_to_id is None else node_kind_to_id
+    output = other
+    for name, values in (
+        ("track", track),
+        ("ecl_cluster", ecl_cluster),
+        ("klm_cluster", klm_cluster),
+        ("composite", composite),
+    ):
+        output = torch.where(
+            (kinds == mapping[name]).unsqueeze(-1), values, output
+        )
+    return output
 
 
 class _MaskedBlockEncoder(nn.Module):
@@ -334,13 +360,18 @@ class HeterogeneousNodeEncoder(nn.Module):
             dim=-1,
         ).to(common.dtype)
 
-        specific = self.other_encoder.view(1, 1, -1).expand_as(common).clone()
-        specific = torch.where((kinds == 1).unsqueeze(-1), track, specific)
-        specific = torch.where((kinds == 2).unsqueeze(-1), cluster, specific)
-        specific = torch.where(
-            (kinds == NODE_KINDS.index("klm_cluster")).unsqueeze(-1),
-            klm,
-            specific,
+        other = self.other_encoder.view(1, 1, -1).expand_as(common).clone()
+        # Composite inputs need the pooled pre-context daughter summary, so the
+        # first dispatch intentionally leaves composites on the neutral
+        # ``other`` adapter.  The completed composite adapter is dispatched in
+        # the second pass below.
+        specific = dispatch_node_kind_adapters(
+            kinds,
+            track=track,
+            ecl_cluster=cluster,
+            klm_cluster=klm,
+            composite=other,
+            other=other,
         )
         if "current_pid_probabilities" in batch:
             probabilities = batch["current_pid_probabilities"]
@@ -370,7 +401,22 @@ class HeterogeneousNodeEncoder(nn.Module):
             ),
             histogram_available,
         )
-        specific = torch.where((kinds == 3).unsqueeze(-1), composite, specific)
+        specific = dispatch_node_kind_adapters(
+            kinds,
+            track=track,
+            ecl_cluster=cluster,
+            klm_cluster=klm,
+            composite=composite,
+            other=other,
+        )
+        specific = dispatch_node_kind_adapters(
+            kinds,
+            track=track,
+            ecl_cluster=cluster,
+            klm_cluster=klm,
+            composite=composite,
+            other=other,
+        )
         h0 = self.shared_norm(
             common
             + specific
@@ -571,5 +617,6 @@ __all__ = [
     "TrackNodeEncoder",
     "composite_physical_features_from_daughters",
     "composite_token_from_daughters",
+    "dispatch_node_kind_adapters",
     "masked_mean_pool",
 ]

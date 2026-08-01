@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 import json
+import math
 from pathlib import Path
 from typing import Any
 import warnings
@@ -28,6 +29,12 @@ from hypertagging.training.checkpointing import (
     load_training_checkpoint,
     restore_training_checkpoint,
     save_training_checkpoint,
+)
+from hypertagging.training.checkpoint_selection import (
+    PRETRAIN_CHECKPOINT_TRACKS,
+    checkpoint_track_decisions,
+    initial_track_values,
+    selection_reason,
 )
 from hypertagging.training.data_module import RealDataModule, build_real_data_module
 from hypertagging.training.hyperbolic_pretrain import TreeRelationHead
@@ -102,6 +109,9 @@ class PretrainConfig:
     hyperbolic_level_encoding: str = "learned_euclidean"
     objective_gradient_diagnostics: bool = False
     objective_gradient_diagnostics_every: int = 100
+    pilot_objective_preflight: bool = False
+    objective_dominance_ratio: float = 100.0
+    pilot_objective_violation_action: str = "warn"
     lca_relation_weight: float = 1.0
     parent_ranking_weight: float = 1.0
     exact_tree_distance_weight: float = 1.0
@@ -315,6 +325,12 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
         raise ValueError("channel zero-positive validation window must be positive")
     if config.objective_gradient_diagnostics_every <= 0:
         raise ValueError("objective gradient diagnostic cadence must be positive")
+    if config.pilot_objective_preflight and not config.objective_gradient_diagnostics:
+        raise ValueError("pilot objective preflight requires gradient diagnostics")
+    if config.objective_dominance_ratio <= 1:
+        raise ValueError("objective dominance ratio must exceed one")
+    if config.pilot_objective_violation_action not in {"warn", "fail"}:
+        raise ValueError("pilot objective violation action must be warn or fail")
     seed_everything(config.seed)
     if config.resume and config.num_workers > 0:
         raise ValueError("exact streaming resume currently requires num_workers=0")
@@ -448,6 +464,15 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
         "best_metric_value",
         float("inf") if config.best_mode == "min" else float("-inf"),
     ))
+    diagnostic_track_values = {
+        **initial_track_values(PRETRAIN_CHECKPOINT_TRACKS),
+        **{
+            str(key): float(value)
+            for key, value in restored_training_state.get(
+                "diagnostic_checkpoint_track_values", {}
+            ).items()
+        },
+    }
     last_validation_step = int(restored_training_state.get("last_validation_step", 0))
     zero_positive_windows = int(restored_training_state.get(
         "channel_zero_positive_validation_windows", 0
@@ -685,20 +710,21 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 or step + 1 == config.max_steps
             )
         ):
+            objective_values = {
+                "lca": loss_output.components["lca"],
+                "parent": loss_output.components["parent"],
+                "tree_distance": loss_output.components["tree_distance"],
+                "radius": loss_output.components["depth"],
+                "channel": loss_output.components["channel"],
+                "variance": loss_output.components["var"],
+                "covariance": loss_output.components["cov"],
+                "leaf_pid": leaf_pid_loss,
+                "corruption_class": corruption_loss,
+                "candidate_correctness": correctness_loss,
+                "hard_negative": hard_negative_loss,
+            }
             objective_report = objective_gradient_diagnostics(
-                {
-                    "lca": loss_output.components["lca"],
-                    "parent": loss_output.components["parent"],
-                    "tree_distance": loss_output.components["tree_distance"],
-                    "radius": loss_output.components["depth"],
-                    "channel": loss_output.components["channel"],
-                    "variance": loss_output.components["var"],
-                    "covariance": loss_output.components["cov"],
-                    "leaf_pid": leaf_pid_loss,
-                    "corruption_class": corruption_loss,
-                    "candidate_correctness": correctness_loss,
-                    "hard_negative": hard_negative_loss,
-                },
+                objective_values,
                 pretraining_projection_parameter_groups(model),
             )
             for group_name, values in objective_report["gradient_norms"].items():
@@ -715,6 +741,69 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
             gradient_metrics["objective_zero_gradient_count"] = float(
                 len(objective_report["zero_gradient_objectives"])
             )
+            if config.pilot_objective_preflight:
+                component_weights = _pretraining_weights(config)
+                objective_weights = {
+                    "lca": component_weights["lca"],
+                    "parent": component_weights["parent"],
+                    "tree_distance": component_weights["tree_distance"],
+                    "radius": component_weights["depth"],
+                    "channel": component_weights["channel"],
+                    "variance": component_weights["var"],
+                    "covariance": component_weights["cov"],
+                    "leaf_pid": config.leaf_pid_weight,
+                    "corruption_class": config.corruption_class_weight,
+                    "candidate_correctness": config.candidate_correctness_weight,
+                    "hard_negative": config.hard_negative_weight,
+                }
+                diagnostic = loss_output.diagnostics
+                objective_denominators = {
+                    "lca": float(diagnostic["active_denominator_lca"].detach().cpu()),
+                    "parent": float(
+                        diagnostic["parent_ranking_accuracy_denominator"].detach().cpu()
+                    ),
+                    "tree_distance": float(
+                        diagnostic["active_denominator_tree_distance"].detach().cpu()
+                    ),
+                    "radius": float(diagnostic["active_denominator_radius"].detach().cpu()),
+                    "channel": float(diagnostic["channel_active_anchors"].detach().cpu()),
+                    "variance": float(
+                        diagnostic["active_denominator_variance"].detach().cpu()
+                    ),
+                    "covariance": float(
+                        diagnostic["active_denominator_covariance"].detach().cpu()
+                    ),
+                    "leaf_pid": float(
+                        (
+                            train_batch["node_mask"]
+                            & (train_batch["level_ids"] == 0)
+                            & train_batch["truth_pid_available"]
+                        ).sum().detach().cpu()
+                    ),
+                    "corruption_class": float(corruption_nodes.sum().detach().cpu()),
+                    "candidate_correctness": float(corruption_nodes.sum().detach().cpu()),
+                    "hard_negative": float(curriculum.hard_negative_pairs.shape[0]),
+                }
+                preflight = objective_preflight_report(
+                    objective_values,
+                    objective_weights,
+                    objective_denominators,
+                    objective_report,
+                    dominance_ratio=config.objective_dominance_ratio,
+                    action=config.pilot_objective_violation_action,
+                )
+                gradient_metrics["objective_preflight_pass"] = float(preflight["pass"])
+                gradient_metrics["objective_weighted_dominance_ratio"] = float(
+                    preflight["weighted_dominance_ratio"]
+                )
+                gradient_metrics["objective_preflight_violation_count"] = float(
+                    len(preflight["violations"])
+                )
+                for objective_name, row in preflight["objectives"].items():
+                    for field, value in row.items():
+                        gradient_metrics[
+                            f"objective_preflight_{objective_name}_{field}"
+                        ] = float(value)
         scaler.scale(loss).backward()
         scaler.unscale_(optimizer)
         if should_log_gradients:
@@ -776,6 +865,27 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
             zero_positive_windows = _check_channel_positive_window(
                 validation_metrics, zero_positive_windows, config
             )
+            diagnostic_track_values, selected_diagnostic_tracks = (
+                checkpoint_track_decisions(
+                    validation_metrics,
+                    diagnostic_track_values,
+                    PRETRAIN_CHECKPOINT_TRACKS,
+                )
+            )
+            for track in selected_diagnostic_tracks:
+                _save_pretrain_checkpoint(
+                    output_dir / track.filename,
+                    model=model, optimizer=optimizer, scheduler=scheduler, scaler=scaler,
+                    config=config, data_module=data_module, step=step + 1,
+                    metrics=final_metrics, streaming_cursor=cursor.state_dict(),
+                    best_metric_value=best_validation_loss,
+                    last_validation_step=last_validation_step,
+                    zero_positive_windows=zero_positive_windows,
+                    diagnostic_track_values=diagnostic_track_values,
+                    checkpoint_selection_reason=selection_reason(
+                        track, validation_metrics
+                    ),
+                )
             if config.best_metric not in validation_metrics:
                 raise ValueError(
                     f"best_metric {config.best_metric!r} is absent from validation metrics"
@@ -796,6 +906,15 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                     best_metric_value=best_validation_loss,
                     last_validation_step=last_validation_step,
                     zero_positive_windows=zero_positive_windows,
+                    diagnostic_track_values=diagnostic_track_values,
+                    checkpoint_selection_reason={
+                        "metric_name": config.best_metric,
+                        "mode": config.best_mode,
+                        "value": validation_loss,
+                        "denominator_name": "validation_batches",
+                        "denominator": validation_metrics["validation_batches"],
+                        "reason": "new_principal_configured_checkpoint",
+                    },
                 )
             _save_pretrain_checkpoint(
                 output_dir / "latest.pt",
@@ -805,6 +924,7 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 best_metric_value=best_validation_loss,
                 last_validation_step=last_validation_step,
                 zero_positive_windows=zero_positive_windows,
+                diagnostic_track_values=diagnostic_track_values,
             )
         if (step + 1) % config.checkpoint_every == 0:
             _save_pretrain_checkpoint(
@@ -821,6 +941,7 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 best_metric_value=best_validation_loss,
                 last_validation_step=last_validation_step,
                 zero_positive_windows=zero_positive_windows,
+                diagnostic_track_values=diagnostic_track_values,
             )
     if last_validation_step != config.max_steps:
         validation_metrics = _validate_pretraining(
@@ -832,6 +953,25 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
         zero_positive_windows = _check_channel_positive_window(
             validation_metrics, zero_positive_windows, config
         )
+        diagnostic_track_values, selected_diagnostic_tracks = checkpoint_track_decisions(
+            validation_metrics,
+            diagnostic_track_values,
+            PRETRAIN_CHECKPOINT_TRACKS,
+        )
+        for track in selected_diagnostic_tracks:
+            _save_pretrain_checkpoint(
+                output_dir / track.filename,
+                model=model, optimizer=optimizer, scheduler=scheduler, scaler=scaler,
+                config=config, data_module=data_module, step=config.max_steps,
+                metrics=final_metrics, streaming_cursor=cursor.state_dict(),
+                best_metric_value=best_validation_loss,
+                last_validation_step=last_validation_step,
+                zero_positive_windows=zero_positive_windows,
+                diagnostic_track_values=diagnostic_track_values,
+                checkpoint_selection_reason=selection_reason(
+                    track, validation_metrics
+                ),
+            )
         validation_loss = float(validation_metrics[config.best_metric])
         improved = (
             validation_loss < best_validation_loss
@@ -847,6 +987,15 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 best_metric_value=best_validation_loss,
                 last_validation_step=last_validation_step,
                 zero_positive_windows=zero_positive_windows,
+                diagnostic_track_values=diagnostic_track_values,
+                checkpoint_selection_reason={
+                    "metric_name": config.best_metric,
+                    "mode": config.best_mode,
+                    "value": validation_loss,
+                    "denominator_name": "validation_batches",
+                    "denominator": validation_metrics["validation_batches"],
+                    "reason": "new_principal_configured_checkpoint",
+                },
             )
     _save_pretrain_checkpoint(
         output_dir / "latest.pt",
@@ -856,6 +1005,7 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
         best_metric_value=best_validation_loss,
         last_validation_step=last_validation_step,
         zero_positive_windows=zero_positive_windows,
+        diagnostic_track_values=diagnostic_track_values,
     )
     checkpoint = _save_pretrain_checkpoint(
         output_dir / "checkpoint.pt",
@@ -871,6 +1021,7 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
         best_metric_value=best_validation_loss,
         last_validation_step=last_validation_step,
         zero_positive_windows=zero_positive_windows,
+        diagnostic_track_values=diagnostic_track_values,
     )
     return TrainingResult(
         checkpoint=checkpoint,
@@ -1381,6 +1532,88 @@ def objective_gradient_diagnostics(
     return report
 
 
+def objective_preflight_report(
+    objectives: dict[str, torch.Tensor],
+    weights: dict[str, float],
+    denominators: dict[str, float],
+    gradient_report: dict[str, Any],
+    *,
+    dominance_ratio: float = 100.0,
+    action: str = "warn",
+) -> dict[str, Any]:
+    """Validate intended pilot objectives without changing optimization."""
+
+    if action not in {"warn", "fail"}:
+        raise ValueError("objective preflight action must be warn or fail")
+    rows: dict[str, dict[str, float]] = {}
+    violations: list[str] = []
+    all_projection_norms = gradient_report.get("gradient_norms", {})
+    shared_norms = all_projection_norms.get(
+        "shared_encoder", {}
+    )
+    weighted_nonzero: list[tuple[str, float]] = []
+    for name, value in objectives.items():
+        raw = float(value.detach().cpu())
+        weight = float(weights.get(name, 0.0))
+        weighted = raw * weight
+        denominator = float(denominators.get(name, 0.0))
+        gradient_norm = float(shared_norms.get(name, 0.0))
+        rows[name] = {
+            "raw_loss": raw,
+            "configured_weight": weight,
+            "weighted_magnitude": weighted,
+            "active_denominator": denominator,
+            "shared_encoder_gradient_norm": gradient_norm,
+        }
+        if weight == 0:
+            continue
+        if not all(math.isfinite(number) for number in (raw, weighted, gradient_norm)):
+            violations.append(f"{name}:non_finite")
+        if denominator <= 0:
+            violations.append(f"{name}:zero_denominator")
+        if gradient_norm <= 0:
+            violations.append(f"{name}:zero_shared_encoder_gradient")
+        if abs(weighted) > 0:
+            weighted_nonzero.append((name, abs(weighted)))
+    if len(weighted_nonzero) >= 2:
+        largest_name, largest = max(weighted_nonzero, key=lambda item: item[1])
+        smallest_name, smallest = min(weighted_nonzero, key=lambda item: item[1])
+        ratio = largest / max(smallest, 1e-30)
+        if ratio > dominance_ratio:
+            violations.append(
+                f"weighted_dominance:{largest_name}/{smallest_name}={ratio:.6g}"
+            )
+    else:
+        ratio = 1.0
+    for name in ("variance", "covariance"):
+        if weights.get(name, 0.0) and denominators.get(name, 0.0) < 2:
+            violations.append(f"{name}:insufficient_samples")
+    if weights.get("channel", 0.0) and denominators.get("channel", 0.0) <= 0:
+        violations.append("channel:no_positive_pairs")
+    report = {
+        "objectives": rows,
+        "projection_gradient_norms": {
+            projection: {
+                name: float(values.get(name, 0.0)) for name in objectives
+            }
+            for projection, values in all_projection_norms.items()
+        },
+        "pairwise_gradient_cosines": gradient_report.get(
+            "pairwise_cosines", gradient_report.get("gradient_cosines", {})
+        ),
+        "weighted_dominance_ratio": ratio,
+        "dominance_threshold": float(dominance_ratio),
+        "violations": sorted(set(violations)),
+        "pass": not violations,
+    }
+    if violations:
+        message = "objective pilot preflight: " + ", ".join(report["violations"])
+        if action == "fail":
+            raise RuntimeError(message)
+        warnings.warn(message, RuntimeWarning, stacklevel=2)
+    return report
+
+
 def _parameter_gradient_norm(parameters) -> float:
     return _tensor_gradient_norm(
         tuple(parameter.grad for parameter in parameters)
@@ -1516,6 +1749,8 @@ def _save_pretrain_checkpoint(
     best_metric_value: float = float("inf"),
     last_validation_step: int = 0,
     zero_positive_windows: int = 0,
+    diagnostic_track_values: dict[str, float] | None = None,
+    checkpoint_selection_reason: dict[str, object] | None = None,
 ) -> Path:
     return save_training_checkpoint(
         path,
@@ -1529,6 +1764,14 @@ def _save_pretrain_checkpoint(
         metrics=metrics,
         normalizer_state=data_module.normalization_state(),
         split_manifest_hash=data_module.split_manifest_hash,
+        feature_contract={
+            "feature_spec_revision": feature_spec_v4()["feature_spec_revision"],
+            "feature_spec_hash": feature_spec_v4()["feature_spec_hash"],
+            "model_feature_contract_hash": feature_spec_v4()["model_feature_contract_hash"],
+            "track_fit_policies": list(
+                (data_module.dataset_index or {}).get("track_fit_policies", [])
+            ),
+        },
         legacy_conflated_fraction=data_module.legacy_conflated_fraction,
         schema_version=(
             data_module.source_schema_versions[0]
@@ -1567,6 +1810,17 @@ def _save_pretrain_checkpoint(
             "last_validation_step": int(last_validation_step),
             "channel_zero_positive_validation_windows": int(
                 zero_positive_windows
+            ),
+            "diagnostic_checkpoint_track_values": dict(
+                diagnostic_track_values or {}
+            ),
+            "checkpoint_selection_reason": dict(
+                checkpoint_selection_reason
+                or {
+                    "reason": "latest_or_periodic_state",
+                    "metric_name": config.best_metric,
+                    "mode": config.best_mode,
+                }
             ),
         },
     )
@@ -1641,6 +1895,7 @@ __all__ = [
     "PretrainConfig",
     "TrainingResult",
     "objective_gradient_diagnostics",
+    "objective_preflight_report",
     "pretraining_projection_parameter_groups",
     "train_hyperbolic_pretraining",
     "valid_b_root_channel_mask",

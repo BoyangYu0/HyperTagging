@@ -60,3 +60,6 @@ jobs:
             /tmp/hypertagging-notebook-smoke/notebook_execution_summary.json
             /tmp/hypertagging-notebook-smoke/visual_review_index.html
             /tmp/hypertagging-notebook-smoke/visual_review_index.json
+            /tmp/hypertagging-notebook-smoke/validation_overview.html
+            /tmp/hypertagging-notebook-smoke/validation_overview.md
+            /tmp/hypertagging-notebook-smoke/validation_overview.json

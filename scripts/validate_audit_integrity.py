@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import fnmatch
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -17,8 +18,11 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 AUDIT_ROOT = REPO_ROOT / "docs" / "audits"
 ARCHIVE_ROOT = AUDIT_ROOT / "archive"
 ARCHIVE_MANIFEST = ARCHIVE_ROOT / "manifest.yaml"
+ARCHIVE_METADATA = ARCHIVE_ROOT / "metadata.yaml"
+ARCHIVE_INDEX = ARCHIVE_ROOT / "index.md"
 README = AUDIT_ROOT / "README.md"
 LEDGER = AUDIT_ROOT / "issue_ledger.yaml"
+VERIFICATION_RUNS = AUDIT_ROOT / "verification_runs.yaml"
 NOTEBOOK_INDEX = REPO_ROOT / "notebooks" / "index.yaml"
 ALLOWED_STATUSES = {
     "FIXED_AND_TESTED",
@@ -108,10 +112,13 @@ def validate() -> list[str]:
         target
         for target in _markdown_targets(readme_text)
         if target.startswith("archive/")
+        and target.endswith(".md")
+        and target != "archive/index.md"
     }
-    actual_archives = {
-        path.relative_to(AUDIT_ROOT).as_posix() for path in ARCHIVE_ROOT.glob("*.md")
-    }
+    actual_archive_paths = [
+        path for path in ARCHIVE_ROOT.glob("*.md") if path.name != "index.md"
+    ]
+    actual_archives = {path.relative_to(AUDIT_ROOT).as_posix() for path in actual_archive_paths}
     if listed_archives != actual_archives:
         errors.append(
             "archive index mismatch: "
@@ -119,26 +126,31 @@ def validate() -> list[str]:
             f"stale={sorted(listed_archives - actual_archives)}"
         )
 
-    if not ARCHIVE_MANIFEST.exists():
-        errors.append("archive manifest is missing")
+    if not ARCHIVE_METADATA.exists():
+        errors.append("explicit archive metadata is missing")
     else:
-        manifest = yaml.safe_load(ARCHIVE_MANIFEST.read_text(encoding="utf-8"))
-        manifest_files = {
+        metadata = yaml.safe_load(ARCHIVE_METADATA.read_text(encoding="utf-8"))
+        metadata_files = {
             f"archive/{entry.get('historical_filename')}"
-            for entry in manifest.get("reports", [])
+            for entry in metadata.get("reports", [])
         }
-        if manifest_files != actual_archives:
+        if metadata_files != actual_archives:
             errors.append(
-                "archive manifest mismatch: "
-                f"missing={sorted(actual_archives - manifest_files)}, "
-                f"stale={sorted(manifest_files - actual_archives)}"
+                "archive metadata mismatch: "
+                f"missing={sorted(actual_archives - metadata_files)}, "
+                f"stale={sorted(metadata_files - actual_archives)}"
             )
-        for entry in manifest.get("reports", []):
+        for entry in metadata.get("reports", []):
             if entry.get("audit_type") not in {
                 "gap", "verification", "completion", "definition"
             }:
                 errors.append(
                     "archive manifest has invalid audit type: "
+                    + str(entry.get("historical_filename"))
+                )
+            if entry.get("worktree_state") not in {"clean", "dirty", "not_recorded"}:
+                errors.append(
+                    "archive metadata has invalid explicit worktree state: "
                     + str(entry.get("historical_filename"))
                 )
             target = ARCHIVE_ROOT / str(entry.get("superseded_by", ""))
@@ -147,6 +159,20 @@ def validate() -> list[str]:
                     "archive manifest has invalid superseded-by link: "
                     + str(entry.get("historical_filename"))
                 )
+            report = ARCHIVE_ROOT / str(entry.get("historical_filename", ""))
+            if report.exists():
+                digest = hashlib.sha256(report.read_bytes()).hexdigest()
+                if digest != entry.get("sha256"):
+                    errors.append(f"immutable archive digest mismatch: {report.name}")
+        for alias in metadata.get("legacy_path_aliases", []):
+            if alias.get("status") not in {"historical", "resolved"}:
+                errors.append("legacy path alias lacks explicit historical/resolved status")
+            target = alias.get("target")
+            if alias.get("status") == "resolved" and target and not (REPO_ROOT / str(target)).exists():
+                errors.append(f"resolved legacy path alias has missing target: {target}")
+
+    if not ARCHIVE_MANIFEST.exists() or not ARCHIVE_INDEX.exists():
+        errors.append("generated archive manifest/index is missing")
 
     for target in _markdown_targets(readme_text):
         if "://" in target:
@@ -170,7 +196,12 @@ def validate() -> list[str]:
         if path.is_file() and path.suffix in {".md", ".yaml", ".yml"}
     }
     expected_active_files = {
-        "README.md", "current_status.md", "current_backlog.md", "issue_ledger.yaml"
+        "README.md",
+        "current_status.md",
+        "current_backlog.md",
+        "evidence_matrix.md",
+        "issue_ledger.yaml",
+        "verification_runs.yaml",
     }
     if active_files != expected_active_files:
         errors.append(
@@ -216,6 +247,45 @@ def validate() -> list[str]:
             for value in values:
                 if not (REPO_ROOT / str(value)).exists():
                     errors.append(f"{identifier} has missing {field} path: {value}")
+        if item["current_status"] == "FIXED_AND_TESTED":
+            if not item.get("current_evidence_files") or not item.get("current_tests"):
+                errors.append(f"{identifier} is fixed without source and focused-test evidence")
+            if item.get("external_evidence_required") and item.get(
+                "external_evidence_disposition"
+            ) != "separate_unresolved":
+                errors.append(
+                    f"{identifier} is fixed while external evidence remains required "
+                    "without a separate_unresolved disposition"
+                )
+        canonical = item.get("canonical_issue_id")
+        if canonical is not None and canonical == identifier:
+            errors.append(f"{identifier} cannot name itself as canonical_issue_id")
+
+    for item in ledger.get("items", []):
+        for relation in ("canonical_issue_id", "superseded_by"):
+            target = item.get(relation)
+            if target and target not in identifiers:
+                errors.append(f"{item['id']} has unknown {relation}: {target}")
+        for relation in ("aliases", "supersedes"):
+            values = item.get(relation, [])
+            if not isinstance(values, list):
+                errors.append(f"{item['id']} {relation} must be a list")
+
+    if not VERIFICATION_RUNS.exists():
+        errors.append("verification_runs.yaml is missing")
+    else:
+        run_data = yaml.safe_load(VERIFICATION_RUNS.read_text(encoding="utf-8"))
+        required_run_fields = {
+            "source_sha", "metadata_head", "worktree_state", "date", "commands",
+            "pytest", "notebooks", "real_data_inputs", "checkpoint", "ci_run",
+            "human_visual_review_status", "evidence_limitations",
+        }
+        for index, run in enumerate(run_data.get("runs", [])):
+            missing = required_run_fields - set(run)
+            if missing:
+                errors.append(f"verification run {index} misses fields: {sorted(missing)}")
+            if run.get("human_visual_review_status") not in {"NOT_REVIEWED", "PASS", "FAIL"}:
+                errors.append(f"verification run {index} has invalid visual review status")
 
     active_documents = [
         REPO_ROOT / "docs" / "audit_index.md",
@@ -284,7 +354,7 @@ def main() -> int:
         return 1
     ledger = yaml.safe_load(LEDGER.read_text(encoding="utf-8"))
     print(
-        f"audit integrity PASS: {len(list(ARCHIVE_ROOT.glob('*.md')))} archives, "
+        f"audit integrity PASS: {len([p for p in ARCHIVE_ROOT.glob('*.md') if p.name != 'index.md'])} archives, "
         f"{len(ledger['items'])} ledger items, one current status"
     )
     return 0
