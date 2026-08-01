@@ -47,13 +47,19 @@ superseded by the [current status](current_status.md); none is current truth.
 - Verification: [historical verification](archive/2026-07-31_f064f49_current_head_verification.md)
 - Completion: [historical completion report](archive/2026-07-31_f064f49_current_head_completion_report.md)
 
+## `77707eb181b0ec011663f9fff5f0e0a454dc1758` — 2026-08-01
+
+- Gap analysis: [current-boundary gap audit](archive/2026-08-01_77707eb_current_head_gap_audit.md)
+
 ## Current evidence boundary
 
 The focused pass began from clean `master` HEAD
-`70e99ae489e30ce9c131c6a2228ce3e5d517f584`. The committed source boundary
-recorded by the ledger is
-`6f24a7a1729d50a7f98ea62e3c3ffe5e68562eec`; the only committed changes after
-that boundary are audit/generated-notebook/test-infrastructure files, and the
-18 notebook changes are cell-ID-only after normalization. Source edits in the
-present uncommitted worktree require a new source commit followed by a separate
-audit-metadata commit before this ancestry boundary can advance.
+`77707eb181b0ec011663f9fff5f0e0a454dc1758`. The independently tested source
+boundary is `554a553f465d7fe3056e1e1ba95ad71b37530816`. The commit after that boundary
+contains only the exact audit/index paths listed in `issue_ledger.yaml`; the
+validator rejects any later source, model, loss, preprocessing, training,
+reconstruction, config, runtime, or non-allowlisted change.
+
+The generated `archive/manifest.yaml` records date, audited SHA, report type,
+supersession target, evidence scope, and historical worktree state for every
+immutable snapshot.
