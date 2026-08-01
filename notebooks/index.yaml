@@ -1,7 +1,7 @@
 schema_version: hypertagging-notebook-index-v2
 visual_review_status: NOT_REVIEWED
-verification_base_head: 70e99ae489e30ce9c131c6a2228ce3e5d517f584
-verification_worktree: dirty_uncommitted_audit_corrections
+verification_base_head: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+verification_worktree: clean_committed_audited_source
 notebooks:
   - id: leaf_composite
     group: CORE_CONTRACT
@@ -12,7 +12,7 @@ notebooks:
     machine_readable_outputs: [leaf_composite_execution_report.json, leaf_composite_contract.json]
     scientific_claims_allowed: [software_input_contract_only]
     CI_frequency: push_and_weekly
-    last_verified_sha: 554a553f465d7fe3056e1e1ba95ad71b37530816
+    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
     expected_sections: [input versus truth daughter histograms, pointer response, gradient]
     default_smoke: true
   - id: streaming
@@ -24,7 +24,7 @@ notebooks:
     machine_readable_outputs: [streaming_execution_report.json, streaming_report.json]
     scientific_claims_allowed: [bounded_fixture_mechanics_only]
     CI_frequency: push_and_weekly
-    last_verified_sha: 554a553f465d7fe3056e1e1ba95ad71b37530816
+    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
     expected_sections: [event-row parquet, bounded iteration, online normalization]
     default_smoke: true
   - id: leaf_pid
@@ -36,7 +36,7 @@ notebooks:
     machine_readable_outputs: [leaf_pid_execution_report.json, leaf_input_leakage_check.json]
     scientific_claims_allowed: [software_pid_contract_only]
     CI_frequency: push_and_weekly
-    last_verified_sha: 554a553f465d7fe3056e1e1ba95ad71b37530816
+    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
     expected_sections: [reduced-PID contract, energy hypotheses, leakage check]
     default_smoke: true
   - id: dataset
@@ -48,7 +48,7 @@ notebooks:
     machine_readable_outputs: [dataset_execution_report.json]
     scientific_claims_allowed: [schema_and_fixture_distribution_only]
     CI_frequency: push_and_weekly
-    last_verified_sha: 554a553f465d7fe3056e1e1ba95ad71b37530816
+    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
     expected_sections: [Dataset/schema overview, PID inspection, Decay-tree visualization, Channel inspection]
     default_smoke: true
   - id: hyperbolic
@@ -61,7 +61,7 @@ notebooks:
     scientific_claims_allowed: [geometry_mechanics_and_gradient_diagnostics_only]
     diagnostic_sections: [objective_gradient_conflict]
     CI_frequency: push_and_weekly
-    last_verified_sha: 554a553f465d7fe3056e1e1ba95ad71b37530816
+    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
     expected_sections: [Embedding projections, Radius/depth validation, Anti-collapse diagnostics, Objective-gradient conflict diagnostic]
     default_smoke: true
   - id: exact_geometry
@@ -73,7 +73,7 @@ notebooks:
     machine_readable_outputs: [exact_geometry_execution_report.json, exact_geometry_scale_summary.json]
     scientific_claims_allowed: [exact_geometry_contract_only]
     CI_frequency: weekly
-    last_verified_sha: 554a553f465d7fe3056e1e1ba95ad71b37530816
+    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
     expected_sections: [Exact tree geometry, connected two-B, initialization scale]
     default_smoke: true
   - id: rollout_search
@@ -85,7 +85,7 @@ notebooks:
     machine_readable_outputs: [rollout_search_execution_report.json, rollout_search_calibration_summary.json]
     scientific_claims_allowed: [bounded_search_mechanics_only]
     CI_frequency: weekly
-    last_verified_sha: 554a553f465d7fe3056e1e1ba95ad71b37530816
+    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
     expected_sections: [Rollout search and calibration, bounded-beam, reliability]
     default_smoke: true
   - id: runtime_scaling
@@ -97,7 +97,7 @@ notebooks:
     machine_readable_outputs: [runtime_scaling_execution_report.json, runtime_scaling_summary.json]
     scientific_claims_allowed: [runtime_mechanics_no_throughput_claim]
     CI_frequency: weekly
-    last_verified_sha: 554a553f465d7fe3056e1e1ba95ad71b37530816
+    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
     expected_sections: [Runtime scaling, attention, rollout]
     default_smoke: true
   - id: capacity
@@ -109,7 +109,7 @@ notebooks:
     machine_readable_outputs: [capacity_execution_report.json, capacity_report.json]
     scientific_claims_allowed: [fixture_capacity_contract_only]
     CI_frequency: push_and_weekly
-    last_verified_sha: 554a553f465d7fe3056e1e1ba95ad71b37530816
+    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
     expected_sections: [query usage, focal weighting, Hungarian]
     default_smoke: true
   - id: training
@@ -121,7 +121,7 @@ notebooks:
     machine_readable_outputs: [training_execution_report.json, training_pipeline_pass.json]
     scientific_claims_allowed: [checkpoint_and_transfer_contract_only]
     CI_frequency: push_and_weekly
-    last_verified_sha: 554a553f465d7fe3056e1e1ba95ad71b37530816
+    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
     expected_sections: [train-only normalizer, Encoder transfer, resume]
     default_smoke: true
   - id: reconstruction
@@ -133,7 +133,7 @@ notebooks:
     machine_readable_outputs: [reconstruction_execution_report.json, scheduled_context_report.json]
     scientific_claims_allowed: [teacher_forced_and_reference_rollout_contract_only]
     CI_frequency: push_and_weekly
-    last_verified_sha: 554a553f465d7fe3056e1e1ba95ad71b37530816
+    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
     expected_sections: [stair-causal mask, decoded proposals, teacher-forced, forward/loss/backward]
     default_smoke: true
   - id: qa
@@ -145,7 +145,7 @@ notebooks:
     machine_readable_outputs: [qa_execution_report.json, preprocessing_qa.json]
     scientific_claims_allowed: [fixture_p4_closure_only]
     CI_frequency: push_and_weekly
-    last_verified_sha: 554a553f465d7fe3056e1e1ba95ad71b37530816
+    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
     expected_sections: [Preprocessing QA report, Machine-readable, daughter-summed]
     default_smoke: true
   - id: manifest
@@ -157,7 +157,7 @@ notebooks:
     machine_readable_outputs: [manifest_execution_report.json, production_manifest_report.json]
     scientific_claims_allowed: [manifest_mechanics_only]
     CI_frequency: push_and_weekly
-    last_verified_sha: 554a553f465d7fe3056e1e1ba95ad71b37530816
+    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
     expected_sections: [Production manifest inspection, memory, global UID]
     default_smoke: true
   - id: four_vector
@@ -169,7 +169,7 @@ notebooks:
     machine_readable_outputs: [four_vector_execution_report.json]
     scientific_claims_allowed: [fixture_p4_closure_only]
     CI_frequency: weekly
-    last_verified_sha: 554a553f465d7fe3056e1e1ba95ad71b37530816
+    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
     expected_sections: [four-momentum validation, truth-comparable, MC diagnostic]
     default_smoke: true
   - id: direct_gpt
@@ -181,7 +181,7 @@ notebooks:
     machine_readable_outputs: [direct_gpt_execution_report.json]
     scientific_claims_allowed: [historical_compatibility_only]
     CI_frequency: weekly
-    last_verified_sha: 554a553f465d7fe3056e1e1ba95ad71b37530816
+    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
     expected_sections: [direct-mDST parquet, attention mask, optimizer step]
     default_smoke: true
   - id: first_level_ambiguity
@@ -193,7 +193,7 @@ notebooks:
     machine_readable_outputs: [first_level_ambiguity_execution_report.json, first_level_ambiguity_summary.json]
     scientific_claims_allowed: [wired_ablation_mechanics_only]
     CI_frequency: manual_diagnostic
-    last_verified_sha: 554a553f465d7fe3056e1e1ba95ad71b37530816
+    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
     expected_sections: [First-level set ambiguity, pointer entropy, disabled by default]
     default_smoke: false
   - id: real_mdst_pilot
@@ -205,7 +205,7 @@ notebooks:
     machine_readable_outputs: [hypertagging-real-pilot-report.json]
     scientific_claims_allowed: [bounded_real_detector_contract_after_execution]
     CI_frequency: operator_only
-    last_verified_sha: 554a553f465d7fe3056e1e1ba95ad71b37530816
+    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
     last_verified_result: PASS_REAL_50_EVENT
     last_verified_artifact: /tmp/hypertagging-real-pilot-554a553.json
     expected_sections: [Real mDST pilot]

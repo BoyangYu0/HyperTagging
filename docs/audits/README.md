@@ -53,12 +53,14 @@ superseded by the [current status](current_status.md); none is current truth.
 
 ## Current evidence boundary
 
-The focused pass began from clean `master` HEAD
-`77707eb181b0ec011663f9fff5f0e0a454dc1758`. The independently tested source
-boundary is `554a553f465d7fe3056e1e1ba95ad71b37530816`. The commit after that boundary
+The focused post-audit pass began from clean `master` commit
+`e9b828c45c9c26bf4dcd2b76e96fb788ee6d3f1b`. The independently tested source
+boundary is `88270d00fb5c9fc6311daab2f9443832ebe7c3bf`. The commit after that boundary
 contains only the exact audit/index paths listed in `issue_ledger.yaml`; the
 validator rejects any later source, model, loss, preprocessing, training,
-reconstruction, config, runtime, or non-allowlisted change.
+reconstruction, config, runtime, workflow, test, notebook-source, or other
+non-allowlisted change. The audit-metadata commit is identified dynamically by
+`git rev-parse HEAD`, avoiding a self-referential SHA requirement.
 
 The generated `archive/manifest.yaml` records date, audited SHA, report type,
 supersession target, evidence scope, and historical worktree state for every
