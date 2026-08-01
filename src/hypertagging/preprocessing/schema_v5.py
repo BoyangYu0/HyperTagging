@@ -14,6 +14,8 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 from hypertagging.preprocessing.schema_v4 import (
+    KLM_FEATURE_NAMES,
+    PID_DETECTOR_NAMES,
     ParquetEventWriter,
     feature_spec_v4,
     iter_event_records_v4,
@@ -118,9 +120,12 @@ def native_nested_schema_v5() -> pa.Schema:
         "complete_reconstructable_decay", "recursive_reconstructable_complete",
         "partial_missing_daughters", "contracted_intermediate",
         "valid_reconstruction_target",
+        "track_fit_available",
     }
     string_names = {
         "reco_object_id", "reco_id", "node_kind", "leaf_kinematics_mode", "energy_source",
+        "track_fit_hypothesis", "track_fit_selection_method",
+        "track_fit_fallback_reason",
     }
     for name in sorted(integer_names): node_fields.append(pa.field(name, pa.int64()))
     for name in sorted(float_names): node_fields.append(pa.field(name, pa.float64()))
@@ -135,6 +140,12 @@ def native_nested_schema_v5() -> pa.Schema:
     ):
         node_fields.append(pa.field(f"{prefix}_features", feature_struct(spec[block], pa.float64())))
         node_fields.append(pa.field(f"{prefix}_availability", feature_struct(spec[block], pa.bool_())))
+    node_fields.append(
+        pa.field("klm_features", feature_struct(KLM_FEATURE_NAMES, pa.float64()))
+    )
+    node_fields.append(
+        pa.field("klm_availability", feature_struct(KLM_FEATURE_NAMES, pa.bool_()))
+    )
     for name in ("daughter_input_pid_histogram", "daughter_truth_pid_histogram"):
         node_fields.append(pa.field(name, pa.list_(pa.float64())))
     for name, value_type in (
@@ -142,12 +153,20 @@ def native_nested_schema_v5() -> pa.Schema:
         ("pid_likelihood_availability", pa.bool_()),
         ("mass_hypothesis_energies", pa.float64()),
         ("mass_hypothesis_availability", pa.bool_()),
+        ("pid_likelihood_status", pa.string()),
     ):
         node_fields.append(pa.field(name, feature_struct(CHARGED_STABLE_NAMES, value_type)))
+    node_fields.append(
+        pa.field(
+            "pid_detector_availability",
+            feature_struct(PID_DETECTOR_NAMES, pa.bool_()),
+        )
+    )
     top_fields: list[pa.Field] = [
         pa.field("event_id", pa.int64()), pa.field("event_uid", pa.string()),
         pa.field("schema_version", pa.string()), pa.field("source_schema_version", pa.string()),
         pa.field("source_file", pa.string()), pa.field("source_category", pa.string()),
+        pa.field("b_root_missing_reason", pa.string()),
         pa.field("experiment", pa.int64()), pa.field("run", pa.int64()),
         pa.field("production", pa.int64()), pa.field("feature_spec_hash", pa.string()),
         pa.field("pid_vocabulary_version", pa.string()), pa.field("leaf_kinematics_mode", pa.string()),
@@ -156,6 +175,13 @@ def native_nested_schema_v5() -> pa.Schema:
         pa.field("levels", pa.list_(pa.struct([pa.field("level", pa.int64()), pa.field("node_ids", pa.list_(pa.int64()))]))),
         pa.field("root_ids", pa.list_(pa.int64())),
     ]
+    for name in (
+        "strict_b_root_count",
+        "fallback_b_root_count",
+        "valid_b_side_label_count",
+        "active_channel_loss_branch_count",
+    ):
+        top_fields.append(pa.field(name, pa.int64()))
     for side in ("b1", "b2"):
         top_fields.extend([
             pa.field(f"{side}_channel_count_array", pa.list_(pa.int64())),
@@ -202,7 +228,8 @@ def _validate_native_record(record: Mapping[str, Any], schema: pa.Schema) -> Non
             "track_availability", "cluster_features", "cluster_availability",
             "composite_features", "composite_availability", "pid_likelihoods",
             "pid_likelihood_availability", "mass_hypothesis_energies",
-            "mass_hypothesis_availability",
+            "mass_hypothesis_availability", "pid_likelihood_status",
+            "pid_detector_availability", "klm_features", "klm_availability",
         ):
             values = node.get(field_name)
             if values is None:

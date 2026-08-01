@@ -388,11 +388,43 @@ def main(argv: list[str] | None = None) -> int:
     for path in executed:
         print(path)
     figure_paths = sorted(work_root.glob("*_figures/*.png"))
-    html = ["<html><body><h1>Notebook figures</h1>", "<p>Visual review: NOT_REVIEWED</p>"]
-    for figure in figure_paths:
-        html.append(f'<h2>{figure.name}</h2><img src="{figure.relative_to(work_root)}" style="max-width:900px">')
+    visual_rows = [
+        {
+            "notebook": figure.parent.name.removesuffix("_figures"),
+            "figure_path": str(figure.relative_to(work_root)),
+            "section": figure.stem.replace("_", " "),
+            "caption": figure.stem.replace("_", " "),
+            "review_status": "NOT_REVIEWED",
+            "reviewer": "",
+            "comments": "",
+        }
+        for figure in figure_paths
+    ]
+    html = [
+        "<html><body><h1>Notebook figures</h1>",
+        "<p>Visual review: NOT_REVIEWED</p>",
+    ]
+    for row in visual_rows:
+        html.append(
+            f'<h2>{row["notebook"]}: {row["caption"]}</h2>'
+            f'<p>Section: {row["section"]}; status: {row["review_status"]}; '
+            f'reviewer: {row["reviewer"] or "(unassigned)"}; '
+            f'comments: {row["comments"] or "(none)"}</p>'
+            f'<img src="{row["figure_path"]}" style="max-width:900px">'
+        )
     html.append("</body></html>")
     (work_root / "visual_review_index.html").write_text("\n".join(html) + "\n", encoding="utf-8")
+    (work_root / "visual_review_index.json").write_text(
+        json.dumps(
+            {
+                "visual_review_status": "NOT_REVIEWED",
+                "figures": visual_rows,
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     (work_root / "notebook_execution_summary.json").write_text(
         json.dumps(
             {

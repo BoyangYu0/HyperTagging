@@ -50,7 +50,7 @@ def build_notebook() -> nbf.NotebookNode:
             from hypertagging.data.heterogeneous import load_heterogeneous_events, collate_heterogeneous_events
             from hypertagging.data.notebook_fixtures import write_notebook_fixture_v4
             from hypertagging.losses.hyperbolic_pretraining import (
-                build_tree_relation_targets, collapse_diagnostics, pool_b_branch_embeddings,
+                build_tree_relation_targets, channel_nearest_neighbor_diagnostics, collapse_diagnostics, pool_b_branch_embeddings,
                 topology_safe_parent_negative_mask,
             )
             from hypertagging.models.heterogeneous import HeterogeneousNodeEncoder
@@ -78,7 +78,7 @@ def build_notebook() -> nbf.NotebookNode:
                 state = torch.load(checkpoint, map_location="cpu")
                 model.load_state_dict(state.get("model_state_dict", state), strict=False)
             model.eval()
-            with torch.no_grad(): encoded = model(batch)
+            with torch.no_grad(): encoded = model(batch, return_attention=True)
             h, z, tangent = encoded.node_embeddings, encoded.hyperbolic_embeddings, logmap0(encoded.hyperbolic_embeddings)
             mask = batch["node_mask"]
             print("TINY SOFTWARE FIXTURE — UNTRAINED MODEL" if FIXTURE_MODE and not checkpoint else "SUPPLIED DATA/CHECKPOINT INSPECTION")
@@ -367,7 +367,8 @@ def build_notebook() -> nbf.NotebookNode:
         code(
             """
             from hypertagging.losses.hyperbolic_pretraining import hyperbolic_pretraining_loss, build_topology_safe_parent_negative_mask
-            from hypertagging.training.pretrain_trainer import objective_gradient_diagnostics, pretraining_projection_parameter_groups
+            from hypertagging.training.pretrain_trainer import objective_gradient_diagnostics, pretraining_projection_parameter_groups, _hard_negative_tree_loss
+            from hypertagging.training.pretraining_curriculum import relation_aware_hard_negative_pairs
             gradient_model=ContextualPretrainingModel(d_model=24,hyper_dim=4,channel_pooling="mean_all")
             gradient_encoded,gradient_leaf_logits,gradient_batch=gradient_model.encode_runtime(batch,attention_mask=batch["node_mask"][:,:,None]&batch["node_mask"][:,None,:])
             gradient_relation_logits=gradient_model.relation_head(gradient_encoded.tree_projection)
@@ -377,12 +378,23 @@ def build_notebook() -> nbf.NotebookNode:
             gradient_loss=hyperbolic_pretraining_loss(z=gradient_encoded.hyperbolic_embeddings,tree_relation_logits=gradient_relation_logits,tree_relation_targets=gradient_targets,tree_relation_mask=gradient_relation_mask,parent_negative_mask=gradient_negative_mask,parent_ids=batch["parent_ids"],level_ids=batch["level_ids"],node_mask=mask,b_side=batch["b_side"],node_kind_ids=batch["node_kind_ids"],event_ids=batch["event_ids"],exact_tree_path_distance=batch["exact_tree_path_distance"],channel_embeddings=gradient_branches,channel_mask=gradient_branch_mask,full_truth_channel_ids=torch.stack([batch["b1_full_truth_channel_ids"],batch["b2_full_truth_channel_ids"]],-1),reconstructable_channel_ids=torch.stack([batch["b1_reconstructable_channel_ids"],batch["b2_reconstructable_channel_ids"]],-1),depth_from_retained_root=batch["depth_from_retained_root"],distance_to_nearest_retained_root=batch["distance_to_nearest_retained_root"])
             leaf_mask=mask&(batch["level_ids"]==0)&batch["truth_pid_available"]
             gradient_leaf_loss=torch.nn.functional.cross_entropy(gradient_leaf_logits[leaf_mask],batch["truth_pid_labels"][leaf_mask]) if leaf_mask.any() else gradient_encoded.node_embeddings.sum()*0
-            gradient_objectives={'lca':gradient_loss.components['lca'],'parent':gradient_loss.components['parent'],'tree_distance':gradient_loss.components['tree_distance'],'radius':gradient_loss.components['depth'],'channel':gradient_loss.components['channel'],'variance':gradient_loss.components['var'],'covariance':gradient_loss.components['cov'],'leaf_pid':gradient_leaf_loss}
+            gradient_corruption_nodes=mask&(batch['level_ids']>0)
+            gradient_corruption_logits=gradient_model.corruption_type_head(gradient_encoded.node_embeddings)
+            gradient_corruption_loss=torch.nn.functional.cross_entropy(gradient_corruption_logits[gradient_corruption_nodes],torch.zeros_like(batch['level_ids'][gradient_corruption_nodes])) if gradient_corruption_nodes.any() else gradient_encoded.node_embeddings.sum()*0
+            gradient_correctness_logits=gradient_model.candidate_correctness_head(gradient_encoded.node_embeddings).squeeze(-1)
+            gradient_correctness_loss=torch.nn.functional.binary_cross_entropy_with_logits(gradient_correctness_logits[gradient_corruption_nodes],torch.ones_like(gradient_correctness_logits[gradient_corruption_nodes])) if gradient_corruption_nodes.any() else gradient_encoded.node_embeddings.sum()*0
+            gradient_hard_negative_pairs=relation_aware_hard_negative_pairs(gradient_batch)
+            gradient_hard_negative_loss=_hard_negative_tree_loss(gradient_encoded.hyperbolic_embeddings,gradient_hard_negative_pairs)
+            gradient_objectives={'lca':gradient_loss.components['lca'],'parent':gradient_loss.components['parent'],'tree_distance':gradient_loss.components['tree_distance'],'radius':gradient_loss.components['depth'],'channel':gradient_loss.components['channel'],'variance':gradient_loss.components['var'],'covariance':gradient_loss.components['cov'],'leaf_pid':gradient_leaf_loss,'corruption_class':gradient_corruption_loss,'candidate_correctness':gradient_correctness_loss,'hard_negative':gradient_hard_negative_loss}
             gradient_report=objective_gradient_diagnostics(gradient_objectives,pretraining_projection_parameter_groups(gradient_model))
             gradient_report['objective_magnitudes']={name:float(value.detach()) for name,value in gradient_objectives.items()}
             gradient_report['active_denominators']={name:float(value.detach()) for name,value in gradient_loss.diagnostics.items() if name.startswith('active_denominator_') or name in {'channel_active_anchors','channel_total_anchors','channel_positive_pairs'}}
             gradient_report['active_denominators']['leaf_pid']=int(leaf_mask.sum())
+            gradient_report['active_denominators']['corruption_class']=int(gradient_corruption_nodes.sum())
+            gradient_report['active_denominators']['candidate_correctness']=int(gradient_corruption_nodes.sum())
+            gradient_report['active_denominators']['hard_negative']=int(gradient_hard_negative_pairs.shape[0])
             gradient_report['channel_batch_without_positive_pairs']=gradient_report['active_denominators'].get('channel_positive_pairs',0)==0
+            gradient_report['channel_nearest_neighbor_diagnostics']={name:float(value.detach()) for name,value in channel_nearest_neighbor_diagnostics(gradient_branches,gradient_branch_mask,torch.stack([batch['b1_full_truth_channel_ids'],batch['b2_full_truth_channel_ids']],-1)).items()}
             gradient_report['pass_fail_status']='PASS'
             display(pd.DataFrame(gradient_report['gradient_norms']))
             cosine_frame=pd.DataFrame(gradient_report['gradient_cosines']['shared_encoder'])

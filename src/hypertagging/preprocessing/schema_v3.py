@@ -167,6 +167,7 @@ def _event_record_v3(
     *,
     charge_conjugate_normalize: bool,
     feature_spec_hash: str,
+    include_v4_runtime_fields: bool = False,
 ) -> dict[str, Any]:
     reconstructable = event_channel_record(
         tree,
@@ -198,7 +199,14 @@ def _event_record_v3(
         ),
         "root_ids": list(tree.root_ids),
         "levels": [{"level": level, "node_ids": ids} for level, ids in grouped.items()],
-        "nodes": [_node_record_v3(tree, tree.nodes[node_id]) for node_id in sorted(tree.nodes)],
+        "nodes": [
+            _node_record_v3(
+                tree,
+                tree.nodes[node_id],
+                include_v4_runtime_fields=include_v4_runtime_fields,
+            )
+            for node_id in sorted(tree.nodes)
+        ],
         **reconstructable,
         **channel_fields,
         "b1_channel_count_array": _dense_pid_counts(b1_counts),
@@ -211,7 +219,12 @@ def _event_record_v3(
     }
 
 
-def _node_record_v3(tree: EventTree, node: TreeNode) -> dict[str, Any]:
+def _node_record_v3(
+    tree: EventTree,
+    node: TreeNode,
+    *,
+    include_v4_runtime_fields: bool = False,
+) -> dict[str, Any]:
     kind = "composite" if node.daughter_ids else (
         node.node_kind if node.node_kind in NODE_KIND_TO_ID else infer_node_kind(
             {"reco_id": node.reco_id or "", "daughter_ids": []}
@@ -259,7 +272,7 @@ def _node_record_v3(tree: EventTree, node: TreeNode) -> dict[str, Any]:
         for daughter_id in node.daughter_ids:
             daughter_token = tree.nodes[daughter_id].pid_target_token
             histogram[validate_pid_token(int(daughter_token or 0))] += 1
-    return {
+    record = {
         # Explicit legacy display aliases. Model loading uses the unambiguous
         # fields below and never infers token semantics from these aliases.
         "pdg": int(node.truth_pdg if node.truth_pdg is not None else (node.raw_pdg or 0)),
@@ -341,6 +354,29 @@ def _node_record_v3(tree: EventTree, node: TreeNode) -> dict[str, Any]:
         "mc_pz": None if node.mc_p4 is None else node.mc_p4.pz,
         "mc_energy": None if node.mc_p4 is None else node.mc_p4.energy,
     }
+    if include_v4_runtime_fields:
+        record.update(
+            {
+                "pid_likelihood_status": {
+                    name: str(
+                        node.pid_likelihood_status.get(name, "not_applicable")
+                    )
+                    for name in CHARGED_STABLE_NAMES
+                },
+                "pid_detector_availability": dict(
+                    node.pid_detector_availability
+                ),
+                "track_fit_hypothesis": node.track_fit_hypothesis,
+                "track_fit_selection_method": node.track_fit_selection_method,
+                "track_fit_available": bool(node.track_fit_available),
+                "track_fit_fallback_reason": node.track_fit_fallback_reason,
+                "klm_features": dict(node.klm_features),
+                "klm_availability": {
+                    name: True for name in node.klm_features
+                },
+            }
+        )
+    return record
 
 
 def _track_mask(

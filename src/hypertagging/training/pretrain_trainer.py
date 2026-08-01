@@ -691,6 +691,9 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                     "variance": loss_output.components["var"],
                     "covariance": loss_output.components["cov"],
                     "leaf_pid": leaf_pid_loss,
+                    "corruption_class": corruption_loss,
+                    "candidate_correctness": correctness_loss,
+                    "hard_negative": hard_negative_loss,
                 },
                 pretraining_projection_parameter_groups(model),
             )
@@ -1183,6 +1186,12 @@ PRINCIPAL_PRETRAINING_OBJECTIVES = (
     "leaf_pid",
 )
 
+OPTIONAL_PRETRAINING_OBJECTIVES = (
+    "corruption_class",
+    "candidate_correctness",
+    "hard_negative",
+)
+
 
 def pretraining_projection_parameter_groups(
     model: ContextualPretrainingModel,
@@ -1224,8 +1233,11 @@ def objective_gradient_diagnostics(
     missing = sorted(set(PRINCIPAL_PRETRAINING_OBJECTIVES) - set(objectives))
     if missing:
         raise ValueError("missing principal objective(s): " + ", ".join(missing))
+    objective_order = PRINCIPAL_PRETRAINING_OBJECTIVES + tuple(
+        name for name in OPTIONAL_PRETRAINING_OBJECTIVES if name in objectives
+    )
     report: dict[str, Any] = {
-        "objective_order": list(PRINCIPAL_PRETRAINING_OBJECTIVES),
+        "objective_order": list(objective_order),
         "gradient_norms": {},
         "gradient_cosines": {},
         "zero_gradient_objectives": [],
@@ -1234,7 +1246,7 @@ def objective_gradient_diagnostics(
     for group_name, parameters in parameter_groups.items():
         vectors: dict[str, torch.Tensor] = {}
         norms: dict[str, float] = {}
-        for objective_name in PRINCIPAL_PRETRAINING_OBJECTIVES:
+        for objective_name in objective_order:
             value = objectives[objective_name]
             gradients = (
                 torch.autograd.grad(
@@ -1272,9 +1284,9 @@ def objective_gradient_diagnostics(
                         eps=1e-12,
                     ).cpu()
                 )
-                for right in PRINCIPAL_PRETRAINING_OBJECTIVES
+                for right in objective_order
             }
-            for left in PRINCIPAL_PRETRAINING_OBJECTIVES
+            for left in objective_order
         }
     report["zero_gradient_objectives"] = sorted(zero_pairs)
     return report

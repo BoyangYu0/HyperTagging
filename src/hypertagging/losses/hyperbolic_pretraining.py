@@ -929,6 +929,7 @@ def collapse_diagnostics(
             "effective_rank": zero,
             "within_level_effective_rank": zero,
             "within_node_kind_effective_rank": zero,
+            "within_b_side_effective_rank": zero,
             "boundary_fraction": zero,
             "radius_level_correlation": zero,
             "angular_separation_by_branch": zero,
@@ -984,6 +985,7 @@ def collapse_diagnostics(
         "effective_rank": effective_rank,
         "within_level_effective_rank": grouped_effective_rank(level_ids),
         "within_node_kind_effective_rank": grouped_effective_rank(node_kind_ids),
+        "within_b_side_effective_rank": grouped_effective_rank(b_side),
         "boundary_fraction": (
             curvature**0.5 * norm >= boundary_threshold
         ).float().mean(),
@@ -1009,6 +1011,45 @@ def relation_distance_diagnostics(
     return {
         "mean_positive_relation_distance": distances[positive].mean() if positive.any() else zero,
         "mean_negative_relation_distance": distances[negative].mean() if negative.any() else zero,
+    }
+
+
+def channel_nearest_neighbor_diagnostics(
+    embeddings: torch.Tensor,
+    mask: torch.Tensor,
+    channel_ids: torch.Tensor,
+) -> dict[str, torch.Tensor]:
+    """Describe nearest-neighbor coverage without treating fixtures as quality."""
+
+    valid = embeddings[mask]
+    labels = channel_ids[mask]
+    zero = embeddings.sum() * 0.0
+    if valid.shape[0] < 2:
+        return {
+            "channel_nearest_neighbor_anchor_count": mask.sum().to(embeddings.dtype),
+            "channel_nearest_neighbor_unique_fraction": zero,
+            "channel_nearest_neighbor_same_label_fraction": zero,
+            "channel_nearest_neighbor_mean_cosine": zero,
+        }
+    normalized = F.normalize(valid, dim=-1, eps=1e-8)
+    similarity = normalized @ normalized.T
+    similarity = similarity.masked_fill(
+        torch.eye(valid.shape[0], dtype=torch.bool, device=valid.device),
+        float("-inf"),
+    )
+    nearest = similarity.argmax(dim=-1)
+    anchor_count = valid.shape[0]
+    return {
+        "channel_nearest_neighbor_anchor_count": mask.sum().to(embeddings.dtype),
+        "channel_nearest_neighbor_unique_fraction": (
+            torch.unique(nearest).numel() / anchor_count
+        ) * torch.ones((), dtype=embeddings.dtype, device=embeddings.device),
+        "channel_nearest_neighbor_same_label_fraction": (
+            labels[nearest] == labels
+        ).to(embeddings.dtype).mean(),
+        "channel_nearest_neighbor_mean_cosine": similarity[
+            torch.arange(anchor_count, device=embeddings.device), nearest
+        ].mean(),
     }
 
 
@@ -1237,6 +1278,7 @@ __all__ = [
     "channel_metric_loss",
     "cross_event_channel_metric_loss",
     "collapse_diagnostics",
+    "channel_nearest_neighbor_diagnostics",
     "covariance_regularization",
     "dimension_aware_tangent_variance_target",
     "parent_negative_coverage_statistics",

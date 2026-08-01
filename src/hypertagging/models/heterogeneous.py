@@ -137,7 +137,7 @@ class HeterogeneousEncoderOutput:
     final_contextual_embeddings: torch.Tensor
 
     @property
-    def attention_weights(self) -> torch.Tensor:
+    def attention_weights(self) -> torch.Tensor | None:
         """Compatibility view of the final active stage, never a bias-sum softmax."""
 
         weights = (
@@ -145,10 +145,6 @@ class HeterogeneousEncoderOutput:
             if self.hyperbolic_attention_weights is not None
             else self.physical_attention_weights
         )
-        if weights is None:
-            return self.physical_relation_bias.new_zeros(
-                (*self.physical_relation_bias.shape[:1], 1, *self.physical_relation_bias.shape[-2:])
-            )
         return weights
 
 
@@ -261,6 +257,7 @@ class HeterogeneousNodeEncoder(nn.Module):
         batch: dict[str, torch.Tensor],
         *,
         attention_mask: torch.Tensor | None = None,
+        return_attention: bool = False,
     ) -> HeterogeneousEncoderOutput:
         common_availability = batch["common_availability"].clone()
         for name in CATEGORICAL_COMMON_FEATURE_NAMES:
@@ -382,6 +379,7 @@ class HeterogeneousNodeEncoder(nn.Module):
                 relation_bias=physical_bias,
                 attention_mask=attention_mask,
                 node_mask=batch["node_mask"],
+                return_attention=return_attention,
             )
         else:
             h = adapter_h
@@ -401,6 +399,7 @@ class HeterogeneousNodeEncoder(nn.Module):
                 relation_bias=hyper_bias,
                 attention_mask=attention_mask,
                 node_mask=batch["node_mask"],
+                return_attention=return_attention,
             )
         else:
             hyperbolic_attention_weights = None

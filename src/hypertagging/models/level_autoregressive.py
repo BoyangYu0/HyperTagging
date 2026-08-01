@@ -33,7 +33,7 @@ class LevelReconstructionOutput:
     hyperbolic_embeddings: torch.Tensor
     context_mask: torch.Tensor
     relation_bias: torch.Tensor
-    attention_weights: torch.Tensor
+    attention_weights: torch.Tensor | None
     physical_relation_bias: torch.Tensor
     physical_attention_weights: torch.Tensor | None
     hyperbolic_relation_bias: torch.Tensor | None
@@ -177,6 +177,7 @@ class LevelAutoregressiveReconstructor(nn.Module):
         target_level: int = 1,
         pid_kinematics_mode_override: str | None = None,
         pid_temperature_override: float | None = None,
+        return_attention: bool = False,
     ) -> LevelReconstructionOutput:
         pid_mode = (
             self.pid_kinematics_mode
@@ -199,6 +200,7 @@ class LevelAutoregressiveReconstructor(nn.Module):
                 attention_mask=stair_attention_mask(
                     first_pass_batch["level_ids"], first_pass_batch["node_mask"]
                 ),
+                return_attention=False,
             )
             leaf_pid_logits = self.leaf_pid_head(first_pass.reconstruction_projection)
             runtime = rebuild_runtime_pid_state(
@@ -222,6 +224,7 @@ class LevelAutoregressiveReconstructor(nn.Module):
                     reconstruction_batch["level_ids"],
                     reconstruction_batch["node_mask"],
                 ),
+                return_attention=return_attention,
             )
             h = encoded.node_embeddings
             reconstruction_h = encoded.reconstruction_projection
@@ -272,12 +275,11 @@ class LevelAutoregressiveReconstructor(nn.Module):
                     relation_bias=relation_bias,
                     attention_mask=stair_attention_mask(batch["level_ids"], batch["node_mask"]),
                     node_mask=batch["node_mask"],
+                    return_attention=return_attention,
                 )
             else:
                 h = reconstruction_projection
-                attention_weights = relation_bias.new_zeros(
-                    (*relation_bias.shape[:1], 1, *relation_bias.shape[-2:])
-                )
+                attention_weights = None
             physical_relation_bias = relation_bias
             physical_attention_weights = (
                 attention_weights if self.use_contextual_encoder else None

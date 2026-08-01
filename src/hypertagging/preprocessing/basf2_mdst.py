@@ -49,12 +49,24 @@ class Basf2PreprocessConfig:
     particle_arrays: tuple[str, ...] = ()
     include_tracks: bool = True
     include_ecl_clusters: bool = True
+    include_klm_clusters: bool = True
     allow_mc_leaf_kinematics_for_debug: bool = False
     schema_version: str = SCHEMA_VERSION_V4
     charge_conjugate_normalize: bool = False
     event_buffer_size: int = 128
     row_group_size: int = 128
     leaf_kinematics_mode: str = "raw_track_predicted_pid"
+
+
+@dataclass(frozen=True)
+class TrackFitSelection:
+    """Data-independent fit choice and its auditable provenance."""
+
+    fit: object | None
+    hypothesis: str | None
+    method: str
+    available: bool
+    fallback_reason: str | None = None
 
 
 def run_basf2_preprocessing(config: Basf2PreprocessConfig) -> Path:
@@ -122,9 +134,14 @@ class _DirectMdstCollector:
         self.particle_arrays = [Belle2.PyStoreArray(name) for name in self.config.particle_arrays]
         self.tracks = Belle2.PyStoreArray("Tracks")
         self.ecl_clusters = Belle2.PyStoreArray("ECLClusters")
+        self.klm_clusters = Belle2.PyStoreArray("KLMClusters")
         self._charged_stable = Belle2.Const.ChargedStable
         self._cluster_utils = Belle2.ClusterUtils()
         self._photon_hypothesis = Belle2.ECLCluster.EHypothesisBit.c_nPhotons
+        self._pid_detector_sets = {
+            name.lower(): Belle2.Const.PIDDetectorSet(getattr(Belle2.Const, name))
+            for name in ("SVD", "CDC", "TOP", "ARICH", "ECL", "KLM")
+        }
         if self.config.schema_version == SCHEMA_VERSION_V4:
             self._v4_pid_filter = PidFilter()
             self._v4_writer = ParquetEventWriter(
@@ -272,6 +289,8 @@ class _DirectMdstCollector:
             records.extend(self._collect_tracks())
         if self.config.include_ecl_clusters:
             records.extend(self._collect_ecl_clusters())
+        if self.config.include_klm_clusters:
+            records.extend(self._collect_klm_clusters())
         dedup: dict[str, RecoRecord] = {}
         for record in records:
             # Particle candidates and raw Tracks can refer to the same
@@ -326,10 +345,11 @@ class _DirectMdstCollector:
         for track in self.tracks:
             try:
                 mc = _related_mc(track)
-                fit = _data_independent_track_fit(
+                fit_selection = _select_data_independent_track_fit(
                     track,
                     pion_hypothesis=self._charged_stable(211),
                 )
+                fit = fit_selection.fit
                 if not fit:
                     self.collection_stats["tracks_without_fit"] += 1
                     continue
@@ -341,7 +361,12 @@ class _DirectMdstCollector:
                     name: math.sqrt(p2 + PARTICLE_MASSES_GEV[pdg] ** 2)
                     for name, pdg in zip(CHARGED_STABLE_NAMES, CHARGED_STABLE_PDGS)
                 }
-                likelihoods, likelihood_availability = self._track_pid_likelihoods(track)
+                (
+                    likelihoods,
+                    likelihood_availability,
+                    likelihood_status,
+                    detector_availability,
+                ) = self._track_pid_likelihoods(track)
                 truth_pdg, truth_charge = _mc_truth_fields(mc)
                 fit_quality = _optional_float(fit, ("getPValue",))
                 records.append(
@@ -378,6 +403,12 @@ class _DirectMdstCollector:
                         },
                         pid_likelihoods=likelihoods,
                         pid_likelihood_availability=likelihood_availability,
+                        pid_likelihood_status=likelihood_status,
+                        pid_detector_availability=detector_availability,
+                        track_fit_hypothesis=fit_selection.hypothesis,
+                        track_fit_selection_method=fit_selection.method,
+                        track_fit_available=fit_selection.available,
+                        track_fit_fallback_reason=fit_selection.fallback_reason,
                         reco_quality_score=fit_quality,
                         underlying_reco_id=f"Track:{track.getArrayIndex()}",
                     )
@@ -388,34 +419,59 @@ class _DirectMdstCollector:
         self.collection_stats["track_records"] += len(records)
         return records
 
-    def _track_pid_likelihoods(self, track: object) -> tuple[dict[str, float], dict[str, bool]]:
+    def _track_pid_likelihoods(
+        self, track: object
+    ) -> tuple[
+        dict[str, float],
+        dict[str, bool],
+        dict[str, str],
+        dict[str, bool],
+    ]:
         """Read only verified generic-mDST PIDLikelihood relations/accessors."""
 
-        pid_likelihood = _related_named(track, "PIDLikelihood")
+        pid_likelihood = _related_named(track, "PIDLikelihoods") or _related_named(
+            track, "PIDLikelihood"
+        )
         values: dict[str, float] = {}
         availability: dict[str, bool] = {}
+        status: dict[str, str] = {}
+        detector_availability: dict[str, bool] = {}
+        detector_sets = getattr(self, "_pid_detector_sets", {})
+        if pid_likelihood:
+            is_available = getattr(pid_likelihood, "isAvailable", None)
+            for detector_name, detector_set in detector_sets.items():
+                try:
+                    detector_availability[detector_name] = bool(
+                        is_available(detector_set)
+                    )
+                except Exception:
+                    detector_availability[detector_name] = False
         for name, pdg in zip(CHARGED_STABLE_NAMES, CHARGED_STABLE_PDGS):
             hypothesis = self._charged_stable(pdg)
             available = False
             value: float | None = None
-            if pid_likelihood:
+            if not pid_likelihood:
+                status[name] = "relation_missing"
+            elif getattr(pid_likelihood, "getLogL", None) is None:
+                status[name] = "method_unavailable_in_release"
+            elif detector_sets and not any(detector_availability.values()):
+                status[name] = "detector_likelihood_unavailable"
+            else:
                 try:
-                    available = bool(pid_likelihood.isAvailable(hypothesis))
+                    candidate = float(pid_likelihood.getLogL(hypothesis))
                 except Exception:
-                    available = False
-                if available:
-                    try:
-                        candidate = float(pid_likelihood.getLogL(hypothesis))
-                    except Exception:
-                        candidate = math.nan
-                    if math.isfinite(candidate):
-                        value = candidate
-                    else:
-                        available = False
+                    candidate = math.nan
+                    status[name] = "method_unavailable_in_release"
+                if math.isfinite(candidate):
+                    value = candidate
+                    available = True
+                    status[name] = "valid_likelihood_value"
+                elif name not in status:
+                    status[name] = "detector_likelihood_unavailable"
             availability[name] = available
             if value is not None:
                 values[name] = value
-        return values, availability
+        return values, availability, status, detector_availability
 
     def _collect_ecl_clusters(self) -> list[RecoRecord]:
         records: list[RecoRecord] = []
@@ -487,6 +543,73 @@ class _DirectMdstCollector:
         self.collection_stats["ecl_records"] += len(records)
         return records
 
+    def _collect_klm_clusters(self) -> list[RecoRecord]:
+        """Collect reconstructed KLM clusters with an explicit KLM node kind."""
+
+        records: list[RecoRecord] = []
+        for cluster in self.klm_clusters:
+            try:
+                momentum = cluster.getMomentum()
+                px = float(momentum.Px())
+                py = float(momentum.Py())
+                pz = float(momentum.Pz())
+                energy = float(
+                    momentum.E()
+                    if hasattr(momentum, "E")
+                    else cluster.getEnergy()
+                )
+                mc = _related_mc(cluster)
+                truth_pdg, truth_charge = _mc_truth_fields(mc)
+                position = cluster.getClusterPosition()
+                records.append(
+                    RecoRecord(
+                        reco_id=f"KLMCluster:{cluster.getArrayIndex()}",
+                        pdg=130,
+                        charge=0.0,
+                        p4=FourVector(px, py, pz, energy),
+                        mc_id=None if mc is None else int(mc.getArrayIndex()),
+                        node_kind="klm_cluster",
+                        raw_pdg=130,
+                        input_pid_token=tokenize_pdg(130),
+                        pid_target_token=tokenize_pdg(
+                            130 if truth_pdg is None else truth_pdg
+                        ),
+                        truth_pdg=truth_pdg,
+                        truth_pid_token=(
+                            None if truth_pdg is None else tokenize_pdg(truth_pdg)
+                        ),
+                        reco_charge=0.0,
+                        truth_charge=truth_charge,
+                        energy_source="klm_cluster_reconstructed_momentum",
+                        leaf_kinematics_mode="klm_cluster",
+                        klm_features=_available_values(
+                            {
+                                "energy": _optional_float(cluster, ("getEnergy",)),
+                                "momentum_magnitude": _optional_float(
+                                    cluster, ("getMomentumMag",)
+                                ),
+                                "x": float(position.X()),
+                                "y": float(position.Y()),
+                                "z": float(position.Z()),
+                                "time": _optional_float(cluster, ("getTime",)),
+                                "layers": _optional_float(cluster, ("getLayers",)),
+                                "innermost_layer": _optional_float(
+                                    cluster, ("getInnermostLayer",)
+                                ),
+                                "associated_ecl_cluster": _optional_float(
+                                    cluster, ("getAssociatedEclClusterFlag",)
+                                ),
+                            }
+                        ),
+                        underlying_reco_id=f"KLMCluster:{cluster.getArrayIndex()}",
+                    )
+                )
+            except Exception as exc:
+                self.collection_stats[f"klm_errors:{type(exc).__name__}"] += 1
+                continue
+        self.collection_stats["klm_records"] += len(records)
+        return records
+
     def _debug_reco_from_truth_leaves(self, mc_records: Sequence[MCRecord]) -> list[RecoRecord]:
         mother_ids = {record.mother_id for record in mc_records if record.mother_id is not None}
         records: list[RecoRecord] = []
@@ -523,7 +646,7 @@ def _related_mc(obj: object) -> object | None:
 
 
 def _related_named(obj: object, relation_name: str) -> object | None:
-    for method_name in ("getRelatedTo", "getRelated"):
+    for method_name in ("getRelatedTo", "getRelatedFrom", "getRelated"):
         method = getattr(obj, method_name, None)
         if method is None:
             continue
@@ -550,25 +673,135 @@ def _mc_truth_fields(mc: object | None) -> tuple[int | None, float | None]:
     return pdg, charge
 
 
-def _data_independent_track_fit(track: object, *, pion_hypothesis: object) -> object | None:
-    """Choose a track fit without inspecting MC identity.
+def _select_data_independent_track_fit(
+    track: object, *, pion_hypothesis: object
+) -> TrackFitSelection:
+    """Select the maximum-p-value reconstructed fit without consulting MC.
 
-    Belle II's best-p-value accessor is preferred.  Older releases fall back
-    deterministically to the pion closest-mass fit.
+    Release 08-03-00 exposes getTrackFitResults as charged-hypothesis/fit
+    pairs but has no getTrackFitResultWithBestPValue method. Newer API
+    variants are supported explicitly, with a deterministic pion closest-mass
+    fallback.
     """
+
+    fit_results = getattr(track, "getTrackFitResults", None)
+    collection_failure: str | None = None
+    if fit_results is not None:
+        try:
+            candidates: list[tuple[float, str, object]] = []
+            for pair in fit_results():
+                hypothesis = getattr(
+                    pair,
+                    "first",
+                    pair[0] if isinstance(pair, tuple) else None,
+                )
+                fit = getattr(
+                    pair,
+                    "second",
+                    pair[1] if isinstance(pair, tuple) else None,
+                )
+                if not fit:
+                    continue
+                p_value = _optional_float(fit, ("getPValue",))
+                if p_value is None:
+                    continue
+                candidates.append(
+                    (p_value, _charged_hypothesis_name(hypothesis), fit)
+                )
+            if candidates:
+                _p_value, hypothesis, fit = max(
+                    candidates, key=lambda item: (item[0], item[1])
+                )
+                return TrackFitSelection(
+                    fit=fit,
+                    hypothesis=hypothesis,
+                    method="getTrackFitResults_max_p_value",
+                    available=True,
+                )
+            collection_failure = "no_finite_pvalue_fit_in_collection"
+        except Exception as exc:
+            collection_failure = f"fit_collection_error:{type(exc).__name__}"
+    else:
+        collection_failure = "getTrackFitResults_unavailable"
 
     best = getattr(track, "getTrackFitResultWithBestPValue", None)
     if best is not None:
         try:
             result = best()
-        except Exception:
+        except Exception as exc:
             result = None
+            collection_failure = f"best_pvalue_accessor_error:{type(exc).__name__}"
         if result:
-            return result
+            return TrackFitSelection(
+                fit=result,
+                hypothesis=_fit_result_hypothesis_name(result),
+                method="getTrackFitResultWithBestPValue",
+                available=True,
+                fallback_reason=collection_failure,
+            )
+
     closest = getattr(track, "getTrackFitResultWithClosestMass", None)
-    if closest is None:
-        return None
-    return closest(pion_hypothesis)
+    if closest is not None:
+        try:
+            result = closest(pion_hypothesis)
+        except Exception as exc:
+            return TrackFitSelection(
+                fit=None,
+                hypothesis=None,
+                method="unavailable",
+                available=False,
+                fallback_reason=f"closest_mass_accessor_error:{type(exc).__name__}",
+            )
+        if result:
+            return TrackFitSelection(
+                fit=result,
+                hypothesis="pion",
+                method="getTrackFitResultWithClosestMass_pion",
+                available=True,
+                fallback_reason=collection_failure,
+            )
+    return TrackFitSelection(
+        fit=None,
+        hypothesis=None,
+        method="unavailable",
+        available=False,
+        fallback_reason=collection_failure or "no_supported_fit_accessor",
+    )
+
+
+def _data_independent_track_fit(
+    track: object, *, pion_hypothesis: object
+) -> object | None:
+    """Compatibility wrapper returning only the selected fit object."""
+
+    return _select_data_independent_track_fit(
+        track, pion_hypothesis=pion_hypothesis
+    ).fit
+
+
+def _charged_hypothesis_name(hypothesis: object | None) -> str:
+    if hypothesis is None:
+        return "unknown"
+    pdg_method = getattr(hypothesis, "getPDGCode", None)
+    if pdg_method is not None:
+        try:
+            pdg = abs(int(pdg_method()))
+            return dict(
+                zip(map(abs, CHARGED_STABLE_PDGS), CHARGED_STABLE_NAMES)
+            ).get(pdg, f"pdg_{pdg}")
+        except Exception:
+            pass
+    return str(hypothesis)
+
+
+def _fit_result_hypothesis_name(fit: object) -> str:
+    particle_type = getattr(fit, "getParticleType", None)
+    if particle_type is None:
+        return "unknown"
+    try:
+        return _charged_hypothesis_name(particle_type())
+    except Exception:
+        return "unknown"
 
 
 def _particle_underlying_reco_id(particle: object) -> str:

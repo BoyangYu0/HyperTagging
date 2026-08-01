@@ -73,6 +73,7 @@ class TreeNode:
     candidate_confidence: float | None = None
     track_features: dict[str, float] = field(default_factory=dict)
     cluster_features: dict[str, float] = field(default_factory=dict)
+    klm_features: dict[str, float] = field(default_factory=dict)
     raw_pdg: int | None = None
     input_pid_token: int | None = None
     pid_target_token: int | None = None
@@ -86,6 +87,12 @@ class TreeNode:
     track_energy_availability: dict[str, bool] = field(default_factory=dict)
     pid_likelihoods: dict[str, float] = field(default_factory=dict)
     pid_likelihood_availability: dict[str, bool] = field(default_factory=dict)
+    pid_likelihood_status: dict[str, str] = field(default_factory=dict)
+    pid_detector_availability: dict[str, bool] = field(default_factory=dict)
+    track_fit_hypothesis: str | None = None
+    track_fit_selection_method: str = "not_applicable"
+    track_fit_available: bool = False
+    track_fit_fallback_reason: str | None = None
     reco_object_id: str | None = None
     recursive_leaf_source_ids: list[str] = field(default_factory=list)
     full_truth_daughter_count: int = 0
@@ -173,6 +180,7 @@ class RecoRecord:
     candidate_confidence: float | None = None
     track_features: dict[str, float] = field(default_factory=dict)
     cluster_features: dict[str, float] = field(default_factory=dict)
+    klm_features: dict[str, float] = field(default_factory=dict)
     raw_pdg: int | None = None
     input_pid_token: int | None = None
     pid_target_token: int | None = None
@@ -186,6 +194,12 @@ class RecoRecord:
     track_energy_availability: dict[str, bool] = field(default_factory=dict)
     pid_likelihoods: dict[str, float] = field(default_factory=dict)
     pid_likelihood_availability: dict[str, bool] = field(default_factory=dict)
+    pid_likelihood_status: dict[str, str] = field(default_factory=dict)
+    pid_detector_availability: dict[str, bool] = field(default_factory=dict)
+    track_fit_hypothesis: str | None = None
+    track_fit_selection_method: str = "not_applicable"
+    track_fit_available: bool = False
+    track_fit_fallback_reason: str | None = None
     reco_quality_score: float | None = None
     relation_class: str = "unclassified"
     underlying_reco_id: str | None = None
@@ -315,6 +329,9 @@ def build_truth_guided_tree(
             cluster_features=(
                 dict(primary.cluster_features) if primary is not None else {}
             ),
+            klm_features=(
+                dict(primary.klm_features) if primary is not None else {}
+            ),
             raw_pdg=primary.raw_pdg if primary is not None else mc.pdg,
             input_pid_token=primary.input_pid_token if primary is not None else 0,
             pid_target_token=tokenize_pdg(mc.pdg),
@@ -335,6 +352,26 @@ def build_truth_guided_tree(
             pid_likelihoods=dict(primary.pid_likelihoods) if primary is not None else {},
             pid_likelihood_availability=(
                 dict(primary.pid_likelihood_availability) if primary is not None else {}
+            ),
+            pid_likelihood_status=(
+                dict(primary.pid_likelihood_status) if primary is not None else {}
+            ),
+            pid_detector_availability=(
+                dict(primary.pid_detector_availability) if primary is not None else {}
+            ),
+            track_fit_hypothesis=(
+                primary.track_fit_hypothesis if primary is not None else None
+            ),
+            track_fit_selection_method=(
+                primary.track_fit_selection_method
+                if primary is not None
+                else "not_applicable"
+            ),
+            track_fit_available=(
+                primary.track_fit_available if primary is not None else False
+            ),
+            track_fit_fallback_reason=(
+                primary.track_fit_fallback_reason if primary is not None else None
             ),
             reco_object_id=primary.underlying_reco_id if primary is not None else None,
         )
@@ -384,6 +421,7 @@ def build_truth_guided_tree(
                 candidate_confidence=reco.candidate_confidence,
                 track_features=dict(reco.track_features),
                 cluster_features=dict(reco.cluster_features),
+                klm_features=dict(reco.klm_features),
                 raw_pdg=reco.raw_pdg,
                 input_pid_token=reco.input_pid_token,
                 pid_target_token=reco.pid_target_token,
@@ -397,6 +435,12 @@ def build_truth_guided_tree(
                 track_energy_availability=dict(reco.track_energy_availability),
                 pid_likelihoods=dict(reco.pid_likelihoods),
                 pid_likelihood_availability=dict(reco.pid_likelihood_availability),
+                pid_likelihood_status=dict(reco.pid_likelihood_status),
+                pid_detector_availability=dict(reco.pid_detector_availability),
+                track_fit_hypothesis=reco.track_fit_hypothesis,
+                track_fit_selection_method=reco.track_fit_selection_method,
+                track_fit_available=reco.track_fit_available,
+                track_fit_fallback_reason=reco.track_fit_fallback_reason,
                 reco_object_id=reco.underlying_reco_id,
             )
             tree.add_node(node)
@@ -594,6 +638,7 @@ def _clone_subtree(tree: EventTree, node_id: int) -> int:
         candidate_confidence=source.candidate_confidence,
         track_features=dict(source.track_features),
         cluster_features=dict(source.cluster_features),
+        klm_features=dict(source.klm_features),
         raw_pdg=source.raw_pdg,
         input_pid_token=source.input_pid_token,
         pid_target_token=source.pid_target_token,
@@ -607,6 +652,12 @@ def _clone_subtree(tree: EventTree, node_id: int) -> int:
         track_energy_availability=dict(source.track_energy_availability),
         pid_likelihoods=dict(source.pid_likelihoods),
         pid_likelihood_availability=dict(source.pid_likelihood_availability),
+        pid_likelihood_status=dict(source.pid_likelihood_status),
+        pid_detector_availability=dict(source.pid_detector_availability),
+        track_fit_hypothesis=source.track_fit_hypothesis,
+        track_fit_selection_method=source.track_fit_selection_method,
+        track_fit_available=source.track_fit_available,
+        track_fit_fallback_reason=source.track_fit_fallback_reason,
         reco_object_id=source.reco_object_id,
         recursive_leaf_source_ids=list(source.recursive_leaf_source_ids),
         full_truth_daughter_count=source.full_truth_daughter_count,

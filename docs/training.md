@@ -140,9 +140,10 @@ fits masked normalization on training only, and raises rather than silently
 dropping node overflow. Pretraining cycles through the configurable
 three-stage curriculum. Reconstruction optimizes every target level in each
 batch. Teacher-forced validation is batched; seeded scheduled/free checks use
-the bounded `evaluation_reference_rollout`; `batched_level_step` covers one
-full masked level for multiple events. A complete multi-level batched free
-rollout is not production-ready.
+the bounded `evaluation_reference_rollout`. `batched_free_rollout` performs
+multi-event, multi-level padded decoding and append with per-event stopping and
+CPU reference equivalence. It is not production-ready until the guarded CUDA
+smoke and representative memory/throughput profile have run.
 
 Atomic checkpoints include full and encoder-only states, optimizer, scheduler,
 AMP scaler, epoch/step/config, git commit, schema/PID/feature specification,

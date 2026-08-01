@@ -142,6 +142,54 @@ def find_resonance_b_branches(
     return branches
 
 
+def b_root_discovery_diagnostics(
+    tree: EventTree,
+    *,
+    resonance_pdg: int = 300553,
+) -> dict[str, Any]:
+    """Explain strict/fallback B-root coverage without altering selection."""
+
+    resonance_ids = [
+        node_id
+        for node_id, node in tree.nodes.items()
+        if abs(node.pdg) == abs(resonance_pdg)
+    ]
+    b_ids = [
+        node_id
+        for node_id, node in tree.nodes.items()
+        if abs(node.pdg) in Y4S_B_PDGS
+    ]
+    strict = find_b_branches(
+        tree, resonance_pdg=resonance_pdg, allow_fallback=False
+    )
+    fallback = (
+        []
+        if strict
+        else find_b_branches(
+            tree, resonance_pdg=resonance_pdg, allow_fallback=True
+        )
+    )
+    if len(strict) == 2:
+        reason = "strict_resonance_daughters"
+    elif not resonance_ids and not b_ids:
+        reason = "no_retained_resonance_or_b"
+    elif not resonance_ids:
+        reason = "resonance_missing_b_candidates_present"
+    elif not b_ids:
+        reason = "resonance_present_b_candidates_missing"
+    elif len(fallback) == 2:
+        reason = "fallback_top_level_b_candidates"
+    else:
+        reason = "incompatible_or_incomplete_resonance_daughters"
+    return {
+        "reason": reason,
+        "resonance_count": len(resonance_ids),
+        "b_candidate_count": len(b_ids),
+        "strict_root_count": len(strict),
+        "fallback_root_count": len(fallback),
+    }
+
+
 def branch_node_ids(tree: EventTree, root_id: int) -> list[int]:
     """Return unique branch nodes; copied subtrees are represented once per node."""
 
@@ -284,8 +332,13 @@ def event_channel_record(
 ) -> dict[str, Any]:
     """Build separate B-side and unordered event-level channel fields."""
 
+    diagnostics = b_root_discovery_diagnostics(tree)
     strict_b_ids = find_b_branches(tree, allow_fallback=False)
-    b_ids = strict_b_ids or find_b_branches(tree, allow_fallback=True)
+    fallback_b_ids = (
+        [] if strict_b_ids else find_b_branches(tree, allow_fallback=True)
+    )
+    b_ids = list(strict_b_ids or fallback_b_ids)
+    selected_root_count = len(b_ids)
     signatures = [
         canonical_decay_signature(
             tree,
@@ -325,7 +378,16 @@ def event_channel_record(
         "structured_channel_similarity": structured_channel_similarity(arrays[0], arrays[1]),
         "same_event": True,
         "b_root_discovery_valid": len(strict_b_ids) == 2,
-        "b_root_discovery_fallback": len(strict_b_ids) != 2 and len(b_ids) == 2,
+        "b_root_discovery_fallback": (
+            len(strict_b_ids) != 2 and selected_root_count == 2
+        ),
+        "b_root_missing_reason": diagnostics["reason"],
+        "strict_b_root_count": diagnostics["strict_root_count"],
+        "fallback_b_root_count": diagnostics["fallback_root_count"],
+        "valid_b_side_label_count": selected_root_count,
+        "active_channel_loss_branch_count": (
+            2 if len(strict_b_ids) == 2 else 0
+        ),
         "y4s_channel_signature": pair_signature,
         "y4s_channel_id": deterministic_channel_id(pair_signature),
     }
@@ -389,6 +451,7 @@ def _empty_count_array() -> dict[str, Any]:
 __all__ = [
     "ChannelSimilarityWeights",
     "branch_node_ids",
+    "b_root_discovery_diagnostics",
     "canonical_decay_signature",
     "channel_count_array",
     "conjugate_pdg",

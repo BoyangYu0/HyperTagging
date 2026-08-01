@@ -1,7 +1,7 @@
 # Schema-v4 heterogeneous node encoding
 
 Production schema `direct-mdst-tree-v4` assigns every node an explicit kind:
-`track`, `ecl_cluster`, `composite`, `unknown`, or `other`. Every numeric block
+`track`, `ecl_cluster`, `klm_cluster`, `composite`, `unknown`, or `other`. Every numeric block
 has value-level availability masks; stored zeros are tensor-safe placeholders,
 never claims that a detector quantity was measured.
 
@@ -11,8 +11,15 @@ The common block contains p4, invariant mass, reconstructed charge, current
 input PID token, retained-tree level, active/copied flags, daughter count, and
 candidate confidence. Track blocks include available helix/fit and
 PIDLikelihood-derived quantities. ECL blocks include reconstructed energy,
-direction, shower values, and matching state when available. Unsupported
-accessors remain masked.
+direction, shower values, and matching state when available. KLM nodes retain
+their reconstructed cluster p4 plus an explicit optional KLM feature block;
+unsupported accessors remain masked. The current tensor adapter treats KLM as
+its own node kind with the shared common-p4 path, without fabricating ECL or
+track features.
+
+Attention matrices are diagnostic outputs. Model forward paths default to
+`return_attention=False`; notebooks opt in and label physical Stage-A and
+hyperbolic Stage-B matrices separately.
 
 Composite persistent inputs are exact daughter-summed p4 and charge, daughter
 count, prediction-confidence summaries, copied-daughter fraction, and the

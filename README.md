@@ -19,12 +19,16 @@ preserving versioned compatibility with historical preprocessing:
 - relation bias applied to actual stair-causal attention logits;
 - overlap-aware physical pair relations that expose mass/energy only for
   disjoint recursive sources;
-- batched teacher-forced validation, a vectorized one-level append step, and a
-  bounded batch-size-one reference free rollout with daughter-summed p4;
+- batched teacher-forced validation, a CPU-reference-equivalent padded
+  multi-event free rollout, and a bounded batch-size-one correctness oracle,
+  all with daughter-summed p4;
 - fixture-executable dataset, geometry, rollout, and QA notebooks.
 
-These additions are software-validated on tiny CPU fixtures. Full-training
-physics performance remains unverified and HTCondor-only.
+These additions are software-validated on tiny CPU fixtures. A bounded
+50-event charged-B mDST pilot validates the release-08-03-00 fit/PID API path,
+strict B roots, and KLM collection, while incomplete KLM-to-K_L coverage
+remains explicit. Full-training physics performance remains unverified and
+HTCondor-only.
 
 Scientific behavior is preserved by keeping historical variants separate and by
 adding equivalence or smoke tests before each migrated component is treated as

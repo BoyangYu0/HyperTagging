@@ -47,3 +47,4 @@ jobs:
           path: |
             /tmp/hypertagging-notebook-smoke/notebook_execution_summary.json
             /tmp/hypertagging-notebook-smoke/visual_review_index.html
+            /tmp/hypertagging-notebook-smoke/visual_review_index.json

@@ -18,7 +18,14 @@ from hypertagging.preprocessing.pid_filter import PDG_TOKENS
 SCHEMA_VERSION_V1 = "direct-mdst-tree-v1"
 SCHEMA_VERSION_V2 = "direct-mdst-tree-v2"
 
-NODE_KINDS = ("unknown", "track", "ecl_cluster", "composite", "other")
+NODE_KINDS = (
+    "unknown",
+    "track",
+    "ecl_cluster",
+    "composite",
+    "other",
+    "klm_cluster",
+)
 NODE_KIND_TO_ID = {name: index for index, name in enumerate(NODE_KINDS)}
 
 COMMON_FEATURE_NAMES = (

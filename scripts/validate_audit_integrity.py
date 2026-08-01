@@ -16,6 +16,7 @@ import yaml
 REPO_ROOT = Path(__file__).resolve().parents[1]
 AUDIT_ROOT = REPO_ROOT / "docs" / "audits"
 ARCHIVE_ROOT = AUDIT_ROOT / "archive"
+ARCHIVE_MANIFEST = ARCHIVE_ROOT / "manifest.yaml"
 README = AUDIT_ROOT / "README.md"
 LEDGER = AUDIT_ROOT / "issue_ledger.yaml"
 NOTEBOOK_INDEX = REPO_ROOT / "notebooks" / "index.yaml"
@@ -118,6 +119,35 @@ def validate() -> list[str]:
             f"stale={sorted(listed_archives - actual_archives)}"
         )
 
+    if not ARCHIVE_MANIFEST.exists():
+        errors.append("archive manifest is missing")
+    else:
+        manifest = yaml.safe_load(ARCHIVE_MANIFEST.read_text(encoding="utf-8"))
+        manifest_files = {
+            f"archive/{entry.get('historical_filename')}"
+            for entry in manifest.get("reports", [])
+        }
+        if manifest_files != actual_archives:
+            errors.append(
+                "archive manifest mismatch: "
+                f"missing={sorted(actual_archives - manifest_files)}, "
+                f"stale={sorted(manifest_files - actual_archives)}"
+            )
+        for entry in manifest.get("reports", []):
+            if entry.get("audit_type") not in {
+                "gap", "verification", "completion", "definition"
+            }:
+                errors.append(
+                    "archive manifest has invalid audit type: "
+                    + str(entry.get("historical_filename"))
+                )
+            target = ARCHIVE_ROOT / str(entry.get("superseded_by", ""))
+            if not target.resolve().exists():
+                errors.append(
+                    "archive manifest has invalid superseded-by link: "
+                    + str(entry.get("historical_filename"))
+                )
+
     for target in _markdown_targets(readme_text):
         if "://" in target:
             continue
@@ -134,6 +164,23 @@ def validate() -> list[str]:
             "expected exactly one current-status document, found "
             + ", ".join(path.name for path in current_documents)
         )
+    active_files = {
+        path.name
+        for path in AUDIT_ROOT.iterdir()
+        if path.is_file() and path.suffix in {".md", ".yaml", ".yml"}
+    }
+    expected_active_files = {
+        "README.md", "current_status.md", "current_backlog.md", "issue_ledger.yaml"
+    }
+    if active_files != expected_active_files:
+        errors.append(
+            "active audit views mismatch: "
+            f"unexpected={sorted(active_files - expected_active_files)}, "
+            f"missing={sorted(expected_active_files - active_files)}"
+        )
+    work_root = AUDIT_ROOT / "work"
+    if work_root.exists() and any(work_root.iterdir()):
+        errors.append("temporary audit work reports must be archived before final validation")
 
     ledger = yaml.safe_load(LEDGER.read_text(encoding="utf-8"))
     audited_code_sha = str(ledger.get("audited_code_sha", ""))
@@ -188,8 +235,10 @@ def validate() -> list[str]:
     current_text = (AUDIT_ROOT / "current_status.md").read_text(encoding="utf-8")
     if audited_code_sha not in current_text:
         errors.append("current_status.md does not name the ledger audited_code_sha")
-    if actual_head not in current_text:
-        errors.append("current_status.md does not name the actual Git HEAD")
+    if "git rev-parse HEAD" not in current_text:
+        errors.append(
+            "current_status.md must identify metadata HEAD dynamically with git rev-parse HEAD"
+        )
     if "sole authoritative current audit report" not in current_text:
         errors.append("current_status.md lacks the single-current-document declaration")
 
@@ -212,9 +261,9 @@ def validate() -> list[str]:
                     f"real notebook {entry.get('id')} has invalid last_verified_sha"
                 )
             continue
-        if verified != actual_head:
+        if verified != audited_code_sha:
             errors.append(
-                f"notebook {entry.get('id')} last_verified_sha must be {actual_head}"
+                f"notebook {entry.get('id')} last_verified_sha must be audited_code_sha {audited_code_sha}"
             )
     generated_views = subprocess.run(
         [sys.executable, "scripts/generate_audit_views.py", "--check"],

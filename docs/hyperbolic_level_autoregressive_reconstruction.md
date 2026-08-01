@@ -160,10 +160,12 @@ greedy decoding into a claim of global ambiguity resolution.
 An additional top-K bounded beam preserves competing partial trees for one or
 two levels. It and set packing are evaluation-only. The complete free path is
 named `evaluation_reference_rollout`: it is deliberately bounded and batch
-size one. `batched_level_step` vectorizes one complete masked target-level
-prediction and segmented append for multiple events with exact daughter-sum
-p4. Full multi-level batched free rollout, event stop masks, and compaction are
-future production work.
+size one. `batched_free_rollout` performs padded multi-event, multi-level
+decoding and segmented append with exact daughter-sum p4, recursive
+source-conflict propagation, deterministic IDs, and event-specific stop masks.
+CPU fixtures match independent batch-size-one reference rollouts. Optional
+compaction, guarded CUDA execution, and representative profiling remain
+required before a production-readiness claim.
 
 Each rollout step:
 

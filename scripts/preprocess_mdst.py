@@ -85,6 +85,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--no-tracks", action="store_true", help="Do not read Tracks StoreArray.")
     parser.add_argument("--no-ecl-clusters", action="store_true", help="Do not read ECLClusters StoreArray.")
     parser.add_argument(
+        "--no-klm-clusters",
+        action="store_true",
+        help="Do not read KLMClusters StoreArray.",
+    )
+    parser.add_argument(
         "--allow-mc-leaf-kinematics-for-debug",
         action="store_true",
         help="Use MC leaf p4 only for debug when no reco objects are present. Never use this for training.",
@@ -125,6 +130,7 @@ def main(argv: list[str] | None = None) -> int:
         particle_arrays=tuple(args.particle_array or ()),
         include_tracks=not args.no_tracks,
         include_ecl_clusters=not args.no_ecl_clusters,
+        include_klm_clusters=not args.no_klm_clusters,
         allow_mc_leaf_kinematics_for_debug=args.allow_mc_leaf_kinematics_for_debug,
         schema_version=args.schema_version,
         charge_conjugate_normalize=args.charge_conjugate_normalize_channels,

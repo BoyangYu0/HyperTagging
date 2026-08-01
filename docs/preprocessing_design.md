@@ -218,15 +218,26 @@ concurrent materialized tasks. Override with `TARGET_EVENTS`, `EVENTS_PER_TASK`,
 `scripts/condor/README.md`. Run a small pilot before the
 full array because the current exporter buffers a shard in memory.
 
-## Corrected v3 leaf contract
+## Production schema-v4 reconstructed-leaf contract
 
-V3 never uses related MC PDG to select a TrackFitResult, reconstructed charge,
-or an input energy. The fit policy is best reconstructed p-value with a
-deterministic pion closest-mass fallback. Raw tracks store reconstructed p3,
-charge, e/mu/pi/K/p energy hypotheses, availability, PIDLikelihood logL values
-and availability, canonical pion energy, `input_pid_token=0`, and the separate
+V4 never uses related MC PDG to select a TrackFitResult, reconstructed charge,
+or an input energy. In basf2 release 08-03-00, the selector enumerates
+`Track.getTrackFitResults()` and chooses the available fit with maximum
+reconstructed p-value; later best-p-value APIs and then a deterministic pion
+closest-mass lookup are explicit fallbacks. The selected hypothesis, API,
+availability, p-value, and fallback reason are stored. Raw tracks store
+reconstructed p3, charge, e/mu/pi/K/p energy hypotheses, explicit availability,
+and PIDLikelihood logL values obtained through the `PIDLikelihoods` relation.
+Relation absence, detector unavailability, missing release methods, and valid
+values are distinct statuses. `input_pid_token=0` remains separate from the
 truth-only target. Fixed basf2 Particle candidates are explicitly tagged
 `fixed_hypothesis_candidate`.
+
+ECL and KLM StoreArray objects have distinct node kinds. KLM clusters use only
+reconstructed cluster momentum/energy/position/time/layer information; no MC
+quantity fills a detector input. A cluster may be collected without matching a
+truth K_L leaf, so KLM/K_L coverage is reported as a denominator rather than
+assumed complete.
 
 The canonical pion value is only the tensor-compatible encoder baseline.
 Reconstruction training substitutes the differentiable, charge-compatible

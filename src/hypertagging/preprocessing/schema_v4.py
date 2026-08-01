@@ -34,13 +34,30 @@ from hypertagging.preprocessing.schema_v3 import (
 
 
 SCHEMA_VERSION_V4 = "direct-mdst-tree-v4"
-FEATURE_SPEC_REVISION_V4 = "v4-model-composite-target-separated-r3"
+FEATURE_SPEC_REVISION_V4 = "v4-klm-reconstructed-leaf-r4"
 RUNTIME_MODEL_CONTRACTS_V4 = {
     "tree_geometry": "retained-tree-exact-edges-v2",
     "tree_distance": "exact-edge-log-fixed-scale-v2",
     "hyperbolic_scale": "dimension-aware-tangent-radius-v2",
     "physical_relation_features": "physical-relations-overlap-aware-v3",
 }
+
+# Optional release-dependent reconstructed-object blocks stored in the event
+# JSON. They do not enter the fixed-width model tensor unless an explicit
+# adapter consumes them, so adding them does not change the persisted v4
+# feature hash or invalidate existing shards.
+PID_DETECTOR_NAMES: tuple[str, ...] = ("svd", "cdc", "top", "arich", "ecl", "klm")
+KLM_FEATURE_NAMES: tuple[str, ...] = (
+    "energy",
+    "momentum_magnitude",
+    "x",
+    "y",
+    "z",
+    "time",
+    "layers",
+    "innermost_layer",
+    "associated_ecl_cluster",
+)
 
 # These positions retain their stored compatibility values, but are never
 # interpreted as continuous geometry. Dedicated embeddings/flags own them.
@@ -140,6 +157,7 @@ LEAF_KINEMATICS_MODES: tuple[str, ...] = (
     "raw_track_predicted_pid",
     "fixed_hypothesis_candidate",
     "ecl_cluster",
+    "klm_cluster",
     "composite",
     "truth_topology_only",
     "legacy_conflated",
@@ -299,6 +317,7 @@ class ParquetEventWriter:
             tree,
             charge_conjugate_normalize=charge_conjugate_normalize,
             feature_spec_hash=str(self.spec["feature_spec_hash"]),
+            include_v4_runtime_fields=True,
         )
         self.write_event(_native_v4_event(event))
 
@@ -705,6 +724,8 @@ def _leaf_mode_id(node: Mapping[str, Any]) -> int:
         mode = "composite"
     elif str(node.get("node_kind")) == "ecl_cluster":
         mode = "ecl_cluster"
+    elif str(node.get("node_kind")) == "klm_cluster":
+        mode = "klm_cluster"
     else:
         mode = str(node.get("leaf_kinematics_mode", "truth_topology_only"))
     if mode not in LEAF_MODE_TO_ID:
@@ -730,7 +751,7 @@ def _annotate_recursive_completeness(nodes: list[dict[str, Any]]) -> None:
             result = bool(
                 node.get("reco_object_id")
                 or node.get("reco_id")
-                or str(node.get("node_kind")) == "ecl_cluster"
+                or str(node.get("node_kind")) in {"ecl_cluster", "klm_cluster"}
             )
         else:
             result = bool(node.get("complete_reconstructable_decay", False)) and all(
@@ -758,10 +779,12 @@ def _git_commit() -> str:
 
 __all__ = [
     "FEATURE_SPEC_REVISION_V4",
+    "KLM_FEATURE_NAMES",
     "LEAF_KINEMATICS_MODES",
     "LEAF_MODE_FROM_ID",
     "LEAF_MODE_TO_ID",
     "ParquetEventWriter",
+    "PID_DETECTOR_NAMES",
     "MODEL_COMPOSITE_FEATURE_NAMES",
     "TARGET_COMPOSITE_METADATA_NAMES",
     "MODEL_COMPOSITE_INDICES",

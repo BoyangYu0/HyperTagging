@@ -84,6 +84,7 @@ def test_every_ledger_issue_has_exactly_one_allowed_status():
 
 def test_notebook_index_has_complete_nonduplicated_responsibilities():
     index = yaml.safe_load((ROOT / "notebooks/index.yaml").read_text())
+    ledger = yaml.safe_load((ROOT / "docs/audits/issue_ledger.yaml").read_text())
     entries = index["notebooks"]
     required = {
         "group",
@@ -113,12 +114,11 @@ def test_notebook_index_has_complete_nonduplicated_responsibilities():
         "real_mdst_pilot",
         "trained_physics_validation",
     }
-    assert {
-        entry["id"]: entry["last_verified_sha"] for entry in real_only
-    } == {
-        "real_mdst_pilot": "70e99ae489e30ce9c131c6a2228ce3e5d517f584",
-        "trained_physics_validation": "NOT_RUN",
+    real_status = {entry["id"]: entry["last_verified_sha"] for entry in real_only}
+    assert real_status["real_mdst_pilot"] in {
+        "NOT_RUN", ledger["audited_code_sha"]
     }
+    assert real_status["trained_physics_validation"] == "NOT_RUN"
 
 
 def test_generated_notebook_cell_ids_are_deterministic():

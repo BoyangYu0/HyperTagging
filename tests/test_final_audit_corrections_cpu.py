@@ -104,7 +104,7 @@ def test_physical_and_hyperbolic_attention_stages_are_exposed_separately():
         n_context_layers=1,
         use_hyperbolic_refinement=True,
     ).eval()
-    first = encoder(batch)
+    first = encoder(batch, return_attention=True)
     assert first.physical_attention_weights is not None
     assert first.hyperbolic_attention_weights is not None
     torch.testing.assert_close(first.final_contextual_embeddings, first.node_embeddings)
@@ -113,7 +113,7 @@ def test_physical_and_hyperbolic_attention_stages_are_exposed_separately():
     changed_physical["charge"] = changed_physical["charge"] + torch.tensor(
         [[2.0, -1.0]], dtype=changed_physical["charge"].dtype
     )
-    second = encoder(changed_physical)
+    second = encoder(changed_physical, return_attention=True)
     assert not torch.allclose(
         first.physical_attention_weights, second.physical_attention_weights
     )
@@ -122,7 +122,7 @@ def test_physical_and_hyperbolic_attention_stages_are_exposed_separately():
         encoder.hyper_projection.weight.add_(
             3.0 * torch.randn_like(encoder.hyper_projection.weight)
         )
-    geometry_changed = encoder(batch)
+    geometry_changed = encoder(batch, return_attention=True)
     torch.testing.assert_close(
         first.physical_attention_weights,
         geometry_changed.physical_attention_weights,
@@ -138,7 +138,7 @@ def test_physical_and_hyperbolic_attention_stages_are_exposed_separately():
         n_heads=2,
         n_context_layers=1,
         use_hyperbolic_refinement=False,
-    ).eval()(batch)
+    ).eval()(batch, return_attention=True)
     assert disabled.hyperbolic_attention_weights is None
 
 
@@ -155,7 +155,7 @@ def test_both_attention_stages_respect_padding_and_stair_masks():
         n_context_layers=1,
         use_hyperbolic_refinement=True,
     ).eval()
-    output = encoder(padded, attention_mask=mask)
+    output = encoder(padded, attention_mask=mask, return_attention=True)
     assert output.physical_attention_weights is not None
     assert output.hyperbolic_attention_weights is not None
     for weights in (

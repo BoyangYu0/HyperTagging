@@ -25,6 +25,7 @@ def validate_contextual_geometry(
         encoded.hyperbolic_embeddings,
         device_batch["node_mask"],
         level_ids=device_batch["level_ids"],
+        node_kind_ids=device_batch.get("node_kind_ids"),
         b_side=device_batch.get("b_side"),
         curvature=curvature,
     )

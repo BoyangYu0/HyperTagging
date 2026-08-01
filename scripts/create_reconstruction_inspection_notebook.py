@@ -101,7 +101,9 @@ def build_notebook() -> nbf.NotebookNode:
         code(
             """
             model.eval()
-            with torch.no_grad(): output = model(batch, target_level=1)
+            with torch.no_grad(): output = model(
+                batch, target_level=1, return_attention=True
+            )
             stair = stair_attention_mask(batch["level_ids"], batch["node_mask"])[0].numpy()
             physical_bias = output.physical_relation_bias[0].numpy()
             physical_attention = output.physical_attention_weights[0].mean(0).numpy()
@@ -317,6 +319,10 @@ def build_notebook() -> nbf.NotebookNode:
             pid_mismatch=compare_pid_kinematics_modes(model,batch,target_level=1,temperature=.5)
             scheduled_report.update(pid_mismatch)
             scheduled_report["duplicate_metrics_by_level"]=ambiguity_rows
+            query_proposals=torch.nn.functional.normalize(torch.sigmoid(level1.pointer.pointer_logits),dim=-1)
+            query_cosine=torch.einsum('bqn,bkn->bqk',query_proposals,query_proposals)
+            query_off_diagonal=~torch.eye(query_cosine.shape[-1],dtype=torch.bool).unsqueeze(0)
+            scheduled_report["query_slot_cosine_similarity"]=float(query_cosine[query_off_diagonal].mean())
             scheduled_report["greedy_rollout"]=summarize_rollout(predicted.batch,batch)
             scheduled_report["bounded_set_packing_rollout"]=summarize_rollout(bounded.batch,batch)
             scheduled_report["evaluation_slices"]={

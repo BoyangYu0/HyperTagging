@@ -27,6 +27,7 @@ from hypertagging.models.mother_pointer import constrained_daughter_decode
 from hypertagging.preprocessing.pid_filter import PDG_TOKENS
 from hypertagging.preprocessing.schema_v4 import LEAF_MODE_TO_ID
 from hypertagging.reconstruction.constraints import ReconstructionConstraintPolicy
+from hypertagging.reconstruction.constraints import REDUCED_TOKEN_CHARGE
 
 
 @dataclass(frozen=True)
@@ -100,6 +101,20 @@ class BatchedRolloutState:
     stopped_event_mask: torch.Tensor
     levels_completed: torch.Tensor
     stop_code: torch.Tensor
+
+
+@dataclass(frozen=True)
+class BatchedRolloutResult:
+    """Padded multi-event, multi-level free-rollout result."""
+
+    batch: dict[str, torch.Tensor]
+    levels_completed: torch.Tensor
+    stopped_event_mask: torch.Tensor
+    root_completed_mask: torch.Tensor
+    event_valid_mask: torch.Tensor
+    stop_code: torch.Tensor
+    accepted_query_masks: tuple[torch.Tensor, ...]
+    daughter_masks: tuple[torch.Tensor, ...]
 
 
 @dataclass(frozen=True)
@@ -1533,6 +1548,387 @@ def batched_rollout_level_transition(
     )
 
 
+def _batched_initial_leaf_state(
+    full_batch: dict[str, torch.Tensor],
+) -> dict[str, torch.Tensor]:
+    """Mask a truth batch down to reconstructed level-zero runtime inputs."""
+
+    batch = {
+        name: value.clone() if isinstance(value, torch.Tensor) else value
+        for name, value in _upgrade_flat_batch(full_batch).items()
+    }
+    leaves = batch["node_mask"].bool() & (batch["level_ids"] == 0)
+    node_count = leaves.shape[1]
+    for name, value in tuple(batch.items()):
+        if not isinstance(value, torch.Tensor):
+            continue
+        if value.ndim >= 3 and value.shape[1:3] == (node_count, node_count):
+            pair_mask = leaves[:, :, None] & leaves[:, None, :]
+            batch[name] = torch.where(
+                pair_mask[(...,) + (None,) * (value.ndim - 3)],
+                value,
+                torch.zeros_like(value),
+            )
+        elif value.ndim >= 2 and value.shape[1] == node_count:
+            expanded = leaves[(...,) + (None,) * (value.ndim - 2)]
+            batch[name] = torch.where(expanded, value, torch.zeros_like(value))
+    batch["node_mask"] = leaves
+    batch["active"] = leaves
+    batch["level_ids"] = torch.where(
+        leaves, torch.zeros_like(batch["level_ids"]), -torch.ones_like(batch["level_ids"])
+    )
+    batch["parent_ids"] = torch.full_like(batch["parent_ids"], -1)
+    batch["node_ids"] = torch.where(
+        leaves, batch["node_ids"], torch.full_like(batch["node_ids"], -1)
+    )
+    for name in ("reco_ids", "source_node_ids", "copied_from"):
+        if name in batch:
+            batch[name] = torch.where(
+                leaves, batch[name], torch.full_like(batch[name], -1)
+            )
+    batch["daughter_adjacency"] = torch.zeros_like(batch["daughter_adjacency"])
+    if "ancestor_descendant_relation" in batch:
+        batch["ancestor_descendant_relation"] = torch.zeros_like(
+            batch["ancestor_descendant_relation"]
+        )
+    if "recursive_leaf_source_mask" in batch:
+        sources = batch["recursive_leaf_source_mask"] & leaves[..., None]
+        batch["recursive_leaf_source_mask"] = sources
+        overlap = torch.einsum(
+            "bns,bms->bnm", sources.to(torch.int32), sources.to(torch.int32)
+        ) > 0
+        identity = torch.eye(
+            node_count, dtype=torch.bool, device=leaves.device
+        ).unsqueeze(0)
+        batch["source_conflict_matrix"] = overlap & ~identity
+    batch["runtime_structurally_valid"] = torch.zeros_like(leaves)
+    batch["node_features"] = batch["common_features"]
+    batch.pop("allowed_type_mask", None)
+    batch.pop("pointer_validity_mask", None)
+    return batch
+
+
+def _batched_allowed_mother_types(
+    policy: ReconstructionConstraintPolicy,
+    target_level: int,
+    *,
+    device: torch.device,
+) -> torch.Tensor:
+    allowed = torch.zeros(len(PDG_TOKENS), dtype=torch.bool, device=device)
+    allowed[list(policy.static_allowed_mother_tokens)] = True
+    if policy.initial_state_policy == "upsilon4s":
+        allowed[23] = False
+        allowed[40] = False
+    observed = policy.observed_types(target_level)
+    if observed and policy.empirical_type_prior_mode == "hard":
+        observed_mask = torch.zeros_like(allowed)
+        observed_mask[list(observed)] = True
+        allowed &= observed_mask
+    return allowed
+
+
+def batched_decode_level(
+    output: LevelReconstructionOutput,
+    batch: dict[str, torch.Tensor],
+    *,
+    active_event_mask: torch.Tensor,
+    config: RolloutConfig,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Tensorized constrained daughter and proposal decoding for one level."""
+
+    policy = config.constraint_policy or ReconstructionConstraintPolicy(
+        minimum_pointer_probability=config.pointer_threshold,
+        minimum_daughters=config.min_daughters,
+        cardinality_insufficient_policy=config.cardinality_insufficient_policy,
+        valid_leaf_node_kinds=tuple(
+            kind
+            for kind in config.allowed_daughter_node_kinds
+            if kind != NODE_KIND_TO_ID["composite"]
+        ),
+        valid_composite_node_kinds=(NODE_KIND_TO_ID["composite"],),
+    )
+    pointer_probabilities = torch.sigmoid(output.pointer.pointer_logits)
+    batch_size, query_count, node_count = pointer_probabilities.shape
+    valid_nodes = (
+        output.context_mask
+        & policy.pointer_validity_mask(batch, output.target_level)
+    )
+    candidates = (
+        valid_nodes[:, None]
+        & torch.isfinite(pointer_probabilities)
+        & (pointer_probabilities >= float(config.pointer_threshold))
+    )
+    cardinality = output.pointer.cardinality_logits.argmax(dim=-1)
+    if config.use_cardinality and policy.daughter_cardinality_policy == "predicted":
+        order = torch.argsort(
+            pointer_probabilities.masked_fill(~candidates, float("-inf")),
+            dim=-1,
+            descending=True,
+            stable=True,
+        )
+        selected = torch.zeros_like(candidates)
+        selected_count = torch.zeros_like(cardinality)
+        conflicts = batch.get(
+            "source_conflict_matrix",
+            torch.zeros(
+                (batch_size, node_count, node_count),
+                dtype=torch.bool,
+                device=pointer_probabilities.device,
+            ),
+        )
+        batch_indices = torch.arange(
+            batch_size, device=pointer_probabilities.device
+        )[:, None].expand(batch_size, query_count)
+        for rank in range(node_count):
+            candidate_index = order[..., rank]
+            candidate_available = candidates.gather(
+                -1, candidate_index[..., None]
+            ).squeeze(-1)
+            candidate_conflicts = conflicts[
+                batch_indices, candidate_index
+            ]
+            can_select = (
+                candidate_available
+                & (selected_count < cardinality)
+                & ~(candidate_conflicts & selected).any(dim=-1)
+            )
+            selected.scatter_(
+                -1, candidate_index[..., None], can_select[..., None]
+            )
+            selected_count = selected_count + can_select.to(selected_count.dtype)
+        if policy.cardinality_insufficient_policy == "invalid":
+            cardinality_valid = selected_count == cardinality
+        else:
+            cardinality_valid = selected_count >= int(policy.minimum_daughters)
+    else:
+        selected = candidates
+        selected_count = selected.sum(dim=-1)
+        cardinality_valid = selected_count >= int(policy.minimum_daughters)
+
+    mother_types = output.pointer.type_logits.argmax(dim=-1)
+    allowed_types = _batched_allowed_mother_types(
+        policy, output.target_level, device=mother_types.device
+    )
+    type_valid = allowed_types[mother_types]
+    type_probability = torch.softmax(
+        output.pointer.type_logits, dim=-1
+    ).amax(dim=-1)
+    if config.type_probability_threshold is not None:
+        type_valid &= type_probability >= float(config.type_probability_threshold)
+
+    daughter_charge = torch.einsum(
+        "bqn,bn->bq", selected.to(batch["charge"].dtype), batch["charge"]
+    )
+    expected_charge_table = torch.tensor(
+        REDUCED_TOKEN_CHARGE,
+        dtype=batch["charge"].dtype,
+        device=batch["charge"].device,
+    )
+    expected_charge = expected_charge_table[mother_types]
+    if config.mother_charge_by_token:
+        for token, charge in config.mother_charge_by_token:
+            expected_charge = torch.where(
+                mother_types == int(token),
+                torch.full_like(expected_charge, float(charge)),
+                expected_charge,
+            )
+    charge_valid = torch.ones_like(type_valid)
+    if policy.mother_charge_compatibility in {"hard", "soft_train_hard_rollout"}:
+        charge_valid = (
+            daughter_charge - expected_charge
+        ).abs() <= float(policy.mother_charge_tolerance)
+
+    physical_valid = torch.ones_like(type_valid)
+    if policy.loose_physical_constraints:
+        mother_p4 = torch.einsum(
+            "bqn,bnf->bqf", selected.to(batch["p4"].dtype), batch["p4"]
+        )
+        momentum = mother_p4[..., :3].square().sum(dim=-1).sqrt()
+        mass = (
+            mother_p4[..., 3].square() - momentum.square()
+        ).clamp_min(0).sqrt()
+        configured = dict(policy.loose_physical_constraints)
+        if "minimum_mother_energy" in configured:
+            physical_valid &= mother_p4[..., 3] >= configured["minimum_mother_energy"]
+        if "minimum_mother_mass" in configured:
+            physical_valid &= mass >= configured["minimum_mother_mass"]
+        if "maximum_mother_mass" in configured:
+            physical_valid &= mass <= configured["maximum_mother_mass"]
+        if "maximum_mother_momentum" in configured:
+            physical_valid &= momentum <= configured["maximum_mother_momentum"]
+
+    object_score = torch.sigmoid(output.pointer.object_logits)
+    pointer_quality = (
+        pointer_probabilities * selected.to(pointer_probabilities.dtype)
+    ).sum(dim=-1) / selected_count.clamp_min(1).to(pointer_probabilities.dtype)
+    learned_confidence = torch.sigmoid(output.pointer.confidence_logits)
+    confidence = (
+        learned_confidence
+        if config.use_learned_confidence
+        else object_score * type_probability * pointer_quality
+    )
+    proposal_valid = (
+        active_event_mask[:, None]
+        & (object_score >= float(config.object_threshold))
+        & cardinality_valid
+        & (selected_count >= int(policy.minimum_daughters))
+        & type_valid
+        & charge_valid
+        & physical_valid
+        & (confidence >= float(config.confidence_threshold))
+    )
+
+    if config.exclusive_final:
+        source_mask = batch.get("recursive_leaf_source_mask")
+        if source_mask is None:
+            source_mask = torch.nn.functional.one_hot(
+                torch.arange(node_count, device=selected.device),
+                num_classes=node_count,
+            ).bool()[None].expand(batch_size, -1, -1)
+        proposal_sources = torch.einsum(
+            "bqn,bns->bqs",
+            selected.to(torch.float32),
+            source_mask.to(torch.float32),
+        ).bool()
+        order = torch.argsort(
+            confidence.masked_fill(~proposal_valid, float("-inf")),
+            dim=-1,
+            descending=True,
+            stable=True,
+        )
+        accepted = torch.zeros_like(proposal_valid)
+        used_sources = torch.zeros(
+            (batch_size, source_mask.shape[-1]),
+            dtype=torch.bool,
+            device=selected.device,
+        )
+        batch_indices = torch.arange(
+            batch_size, device=selected.device
+        )
+        for rank in range(query_count):
+            query_index = order[:, rank]
+            candidate_valid = proposal_valid[
+                batch_indices, query_index
+            ]
+            candidate_sources = proposal_sources[
+                batch_indices, query_index
+            ]
+            can_accept = candidate_valid & ~(
+                candidate_sources & used_sources
+            ).any(dim=-1)
+            accepted.scatter_(1, query_index[:, None], can_accept[:, None])
+            used_sources |= candidate_sources & can_accept[:, None]
+    else:
+        accepted = proposal_valid
+    return selected & accepted[..., None], accepted, mother_types
+
+
+@torch.no_grad()
+def batched_free_rollout(
+    model: LevelAutoregressiveReconstructor,
+    full_batch: dict[str, torch.Tensor],
+    *,
+    config: RolloutConfig | None = None,
+) -> BatchedRolloutResult:
+    """Run padded multi-event free rollout with event-specific termination."""
+
+    config = config or RolloutConfig()
+    if config.use_learned_confidence and not config.confidence_trained:
+        raise RuntimeError(
+            "learned confidence was requested but is not marked trained"
+        )
+    batch = _batched_initial_leaf_state(full_batch)
+    batch_size = batch["node_mask"].shape[0]
+    device = batch["node_mask"].device
+    active = batch["node_mask"].any(dim=-1)
+    stopped = ~active
+    root_completed = torch.zeros(batch_size, dtype=torch.bool, device=device)
+    event_valid = active.clone()
+    levels_completed = torch.zeros(batch_size, dtype=torch.long, device=device)
+    stop_code = torch.where(
+        active,
+        torch.zeros(batch_size, dtype=torch.long, device=device),
+        torch.ones(batch_size, dtype=torch.long, device=device),
+    )
+    accepted_history: list[torch.Tensor] = []
+    daughter_history: list[torch.Tensor] = []
+    root_tokens = torch.tensor(
+        config.root_types, dtype=torch.long, device=device
+    )
+    forward_pid_mode = (
+        "temperature_softmax"
+        if config.rollout_pid_kinematics_mode
+        == "soft_decision_hard_construction"
+        else config.rollout_pid_kinematics_mode
+    )
+    construction_pid_mode = (
+        "hard"
+        if config.rollout_pid_kinematics_mode
+        == "soft_decision_hard_construction"
+        else forward_pid_mode
+    )
+    for target_level in range(1, config.max_level + 1):
+        output = model(
+            batch,
+            target_level=target_level,
+            pid_kinematics_mode_override=forward_pid_mode,
+            pid_temperature_override=config.rollout_pid_temperature,
+            return_attention=False,
+        )
+        if output.leaf_pid_logits is not None:
+            batch = _with_predicted_leaf_p4(
+                batch,
+                output.leaf_pid_logits,
+                mode=construction_pid_mode,
+                temperature=config.rollout_pid_temperature,
+            )
+        daughters, accepted, mother_types = batched_decode_level(
+            output,
+            batch,
+            active_event_mask=active,
+            config=config,
+        )
+        batch = batched_level_step(
+            batch,
+            output,
+            daughter_mask=daughters,
+            accepted_query_mask=accepted,
+            target_level=target_level,
+            mother_types=mother_types,
+        )
+        accepted_history.append(accepted)
+        daughter_history.append(daughters)
+        appended = accepted.any(dim=-1)
+        root_now = (
+            accepted
+            & (
+                (mother_types[..., None] == root_tokens).any(dim=-1)
+                if root_tokens.numel()
+                else torch.zeros_like(accepted)
+            )
+        ).any(dim=-1)
+        no_object = active & ~appended
+        completed = active & root_now
+        levels_completed = levels_completed + active.to(torch.long)
+        stop_code = torch.where(no_object, torch.ones_like(stop_code), stop_code)
+        stop_code = torch.where(completed, torch.full_like(stop_code, 2), stop_code)
+        stopped |= no_object | completed
+        root_completed |= completed
+        active = active & appended & ~completed
+    stop_code = torch.where(active, torch.full_like(stop_code, 3), stop_code)
+    stopped |= active
+    return BatchedRolloutResult(
+        batch=batch,
+        levels_completed=levels_completed,
+        stopped_event_mask=stopped,
+        root_completed_mask=root_completed,
+        event_valid_mask=event_valid,
+        stop_code=stop_code,
+        accepted_query_masks=tuple(accepted_history),
+        daughter_masks=tuple(daughter_history),
+    )
+
+
 def _select_nodes(
     batch: dict[str, torch.Tensor],
     selection: torch.Tensor,
@@ -1653,11 +2049,14 @@ __all__ = [
     "CompositeProposal",
     "BeamRolloutHypothesis",
     "BatchedRolloutState",
+    "BatchedRolloutResult",
     "LevelRolloutResult",
     "RolloutConfig",
     "RolloutStep",
     "append_composite_proposals",
     "batched_level_step",
+    "batched_decode_level",
+    "batched_free_rollout",
     "batched_rollout_level_transition",
     "evaluation_reference_rollout",
     "hard_decode_proposals",

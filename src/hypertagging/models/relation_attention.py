@@ -28,7 +28,8 @@ class RelationAwareSelfAttention(nn.Module):
         relation_bias: torch.Tensor,
         attention_mask: torch.Tensor,
         node_mask: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+        return_attention: bool = True,
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         batch_size, n_nodes, _ = x.shape
         qkv = self.qkv(x).view(batch_size, n_nodes, 3, self.n_heads, self.head_dim)
         q, k, v = qkv.unbind(dim=2)
@@ -44,7 +45,7 @@ class RelationAwareSelfAttention(nn.Module):
         weights = F.dropout(weights, p=self.dropout, training=self.training)
         attended = torch.matmul(weights, v).transpose(1, 2).reshape(batch_size, n_nodes, self.d_model)
         output = self.output(attended) * node_mask.unsqueeze(-1)
-        return output, weights
+        return output, weights if return_attention else None
 
 
 class RelationAwareSetLayer(nn.Module):
@@ -68,12 +69,14 @@ class RelationAwareSetLayer(nn.Module):
         relation_bias: torch.Tensor,
         attention_mask: torch.Tensor,
         node_mask: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+        return_attention: bool = True,
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         update, weights = self.attention(
             self.norm1(x),
             relation_bias=relation_bias,
             attention_mask=attention_mask,
             node_mask=node_mask,
+            return_attention=return_attention,
         )
         x = x + self.dropout(update)
         x = x + self.dropout(self.feedforward(self.norm2(x)))
@@ -95,7 +98,8 @@ class RelationAwareSetTransformer(nn.Module):
         relation_bias: torch.Tensor,
         attention_mask: torch.Tensor,
         node_mask: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+        return_attention: bool = True,
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         weights: torch.Tensor | None = None
         for layer in self.layers:
             x, weights = layer(
@@ -103,8 +107,8 @@ class RelationAwareSetTransformer(nn.Module):
                 relation_bias=relation_bias,
                 attention_mask=attention_mask,
                 node_mask=node_mask,
+                return_attention=return_attention,
             )
-        assert weights is not None
         return x, weights
 
 
