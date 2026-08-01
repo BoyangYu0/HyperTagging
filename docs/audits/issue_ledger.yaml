@@ -1,32 +1,38 @@
-schema_version: hypertagging-audit-ledger-v3
-audited_branch: master
-audited_code_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
-audit_generated_at: '2026-08-01T15:38:58+02:00'
-audit_scope: committed source, tests, generated notebooks, bounded CPU fixtures, and a 50-event charged-B mDST pilot at audited_code_sha; later commits are restricted to the listed audit metadata paths
+schema_version: hypertagging-audit-ledger-v4
+audited_branch: post-audit-correction-20260801
+audited_code_sha: 56e0323a22195457fb69aad35925538219a95c0b
+audit_generated_at: '2026-08-01T17:42:09+02:00'
+audit_scope: committed source, tests, generated notebooks, and bounded CPU fixtures at audited_code_sha; real-mDST evidence remains the previously verified ancestor pilot and later commits are restricted to listed audit metadata paths
 allowed_post_audit_paths:
   - docs/audit_index.md
   - docs/audits/README.md
   - docs/audits/current_backlog.md
   - docs/audits/current_status.md
+  - docs/audits/evidence_matrix.md
   - docs/audits/issue_ledger.yaml
+  - docs/audits/verification_runs.yaml
+  - docs/audits/archive/index.md
   - docs/audits/archive/manifest.yaml
+  - docs/audits/archive/metadata.yaml
+  - docs/audits/archive/2026-08-01_56e0323_post_audit_correction_report.md
   - notebooks/index.yaml
-audit_tool_version: hypertagging-audit-integrity-v3
+audit_tool_version: hypertagging-audit-integrity-v4
 verification_commands:
   - /data/dust/user/boyangyu/uv_env/bin/python -m pytest -q
   - /data/dust/user/boyangyu/uv_env/bin/python scripts/validate_audit_integrity.py
   - /data/dust/user/boyangyu/uv_env/bin/python scripts/execute_notebook_smoke_tests.py --check-generated
-  - /data/dust/user/boyangyu/uv_env/bin/python scripts/execute_notebook_smoke_tests.py --keep-output /tmp/hypertagging-notebook-post-audit-88270d0
-  - /data/dust/user/boyangyu/uv_env/bin/python scripts/execute_notebook_smoke_tests.py --diagnostic-only --diagnostic-first-level-ambiguity --keep-output /tmp/hypertagging-first-level-post-audit-88270d0
+  - /data/dust/user/boyangyu/uv_env/bin/python scripts/generate_audit_views.py --check
+  - /data/dust/user/boyangyu/uv_env/bin/python scripts/execute_notebook_smoke_tests.py --keep-output /tmp/hypertagging-post-audit-final
+  - /data/dust/user/boyangyu/uv_env/bin/python scripts/execute_notebook_smoke_tests.py --diagnostic-only --diagnostic-first-level-ambiguity --keep-output /tmp/hypertagging-first-level-final
 verification_result_summary:
   exact_sha_ci: SOURCE_SHA_HAS_NO_REMOTE_RUN
-  exact_sha_ci_run: 'starting HEAD e9b828c: https://github.com/BoyangYu0/HyperTagging/actions/runs/30698801983 failed at audit integrity after unit tests passed; source 88270d0 is local-only'
+  exact_sha_ci_run: 'starting SHA ab9feb1 had successful CPU correctness run 30703389232; source 56e0323 is local-only and has no remote run'
   post_audit_commit_classification: audit_metadata_only
-  cpu_pytest: 'exact source boundary: 292 passed, 8 skipped, 19 warnings with the deliberately stale audit-metadata integration module excluded; complete metadata tree: 301 passed, 8 skipped, 19 warnings in 404.16 seconds'
+  cpu_pytest: 'source boundary before audit metadata advance: 313 passed, 8 skipped, 20 warnings plus the expected stale-boundary audit-integrity failure; final committed metadata-tree result recorded in verification_runs.yaml'
   fixture_notebooks: 15 passed
   first_level_diagnostic: 1 passed
   generated_notebook_consistency: 18 passed
-  bounded_real_mdst_pilot: '50 charged-B events, notebook PASS; 578 tracks with fit/PID vectors, 50 strict roots, 92 KLM clusters, 37 ECL associations (10 retained pairs, all source-conflicted), 16 of 48 K_L-like leaves with KLM provenance, zero query/cardinality overflow'
+  bounded_real_mdst_pilot: 'NOT RUN in this pass; previous 50 charged-B event evidence at verified ancestor 88270d0 remains historical external evidence, not refreshed source evidence'
 items:
   - id: DATA-001
     title: MC-derived track fit, charge, input PID, or energy
@@ -37,7 +43,7 @@ items:
     current_tests: [tests/test_production_schema_v4_cpu.py, tests/test_no_truth_leakage_cpu.py]
     notebook_evidence: [notebooks/inspect_leaf_input_pid_contract.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Reconstructed input and target-only truth remain separate.
   - id: DATA-002
     title: Target-derived daughter PID histogram consumed by composites
@@ -48,7 +54,7 @@ items:
     current_tests: [tests/test_final_audit_corrections_cpu.py, tests/test_no_truth_leakage_cpu.py]
     notebook_evidence: [notebooks/inspect_leaf_pid_and_composite_inputs.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Explicit provenance and cloned-truth perturbation invariance are tested.
   - id: DATA-003
     title: Composite mother p4 not recursively daughter-summed
@@ -59,7 +65,7 @@ items:
     current_tests: [tests/test_final_audit_corrections_cpu.py, tests/test_revised_rollout_cpu.py]
     notebook_evidence: [notebooks/preprocessing_qa_report.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Persistent composite p4 is an exact daughter sum.
   - id: DATA-004
     title: Ambiguous feature missingness and node kinds
@@ -70,7 +76,7 @@ items:
     current_tests: [tests/test_data_contracts_cpu.py, tests/test_revised_model_cpu.py]
     notebook_evidence: [notebooks/inspect_preprocessed_dataset.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Values, masks, node kinds, and leaf-mode identifiers are explicit.
   - id: DATA-005
     title: Multiple reconstructed matches and provenance deduplication
@@ -81,7 +87,7 @@ items:
     current_tests: [tests/test_preprocessing_adapters_cpu.py]
     notebook_evidence: []
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Deterministic adapter fixtures verify provenance-key deduplication.
   - id: DATA-006
     title: Missing source and category metadata for multi-input production
@@ -92,7 +98,7 @@ items:
     current_tests: [tests/test_streaming_data_pipeline_cpu.py, tests/test_production_manifest_training_integration_cpu.py]
     notebook_evidence: [notebooks/inspect_production_manifest.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Sidecars, indexes, and manifests retain provenance and ranges.
   - id: DATA-007
     title: Partial-topology completeness not propagated
@@ -103,7 +109,7 @@ items:
     current_tests: [tests/test_partial_target_policy_cpu.py]
     notebook_evidence: [notebooks/inspect_query_capacity_and_losses.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Local and recursive completeness reach targets and denominators.
   - id: DATA-008
     title: Real PIDLikelihood availability and fit selection on basf2 data
@@ -114,7 +120,7 @@ items:
     current_tests: [tests/test_preprocessing_adapters_cpu.py, tests/test_current_source_boundary_cpu.py]
     notebook_evidence: [notebooks/inspect_real_mdst_pilot.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: The repeated 50-event charged-B pilot selected a finite maximum-p-value fit and all five PIDLikelihood values for all 578 tracks; detector inputs remained truth-clean.
   - id: DATA-009
     title: Schema-v3 shard-wide JSON buffering
@@ -125,7 +131,7 @@ items:
     current_tests: [tests/test_production_schema_v4_cpu.py, tests/test_streaming_data_pipeline_cpu.py]
     notebook_evidence: [notebooks/inspect_streaming_dataset.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Event-row v4 with bounded writer is the production default.
   - id: DATA-010
     title: Publication marker ordering, UID scale, and worker I/O partitioning
@@ -136,7 +142,7 @@ items:
     current_tests: [tests/test_atomic_overwrite_marker_cpu.py, tests/test_streaming_data_pipeline_cpu.py]
     notebook_evidence: [notebooks/inspect_production_manifest.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Marker-last publication and disjoint work units are fixture-tested.
   - id: DATA-011
     title: Native nested v5 promoted without measurement
@@ -147,7 +153,7 @@ items:
     current_tests: [tests/test_native_v5_schema_stability_cpu.py]
     notebook_evidence: [notebooks/inspect_runtime_scaling.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: V5 remains experimental and default-off; v4 is production.
   - id: DATA-012
     title: Ten-million-event throughput and memory readiness
@@ -158,7 +164,7 @@ items:
     current_tests: [tests/test_streaming_data_pipeline_cpu.py]
     notebook_evidence: [notebooks/inspect_runtime_scaling.ipynb]
     external_evidence_required: [representative ten-million-event production run]
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Fixture timings are explicitly not throughput evidence.
   - id: MODEL-001
     title: Flat detector/composite projection and separate latent spaces
@@ -169,7 +175,7 @@ items:
     current_tests: [tests/test_contextual_hyperbolic_encoder_cpu.py]
     notebook_evidence: [notebooks/inspect_hyperbolic_pretraining.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Heterogeneous adapters feed a shared contextual state.
   - id: MODEL-002
     title: Geometry before physical context or circular relation dependency
@@ -180,7 +186,7 @@ items:
     current_tests: [tests/test_contextual_hyperbolic_encoder_cpu.py]
     notebook_evidence: [notebooks/inspect_hyperbolic_pretraining.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Stage-A physical context precedes geometric projections.
   - id: MODEL-003
     title: Relation bias computed but discarded
@@ -191,7 +197,7 @@ items:
     current_tests: [tests/test_revised_model_cpu.py]
     notebook_evidence: [notebooks/inspect_leaf_pid_and_composite_inputs.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Relation terms enter attention logits and receive gradients.
   - id: MODEL-004
     title: Euclidean parent ranking, reversed radius, missing tree distance and anti-collapse
@@ -202,7 +208,7 @@ items:
     current_tests: [tests/test_post_audit_geometry_rollout_cpu.py, tests/test_losses_cpu.py]
     notebook_evidence: [notebooks/inspect_exact_tree_geometry_and_loss_scales.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Leaves-outside convention and anti-collapse objectives are explicit.
   - id: MODEL-005
     title: Unsafe generic negatives in directed parent objective
@@ -213,7 +219,7 @@ items:
     current_tests: [tests/test_current_head_reconstruction_corrections_cpu.py]
     notebook_evidence: [notebooks/inspect_exact_tree_geometry_and_loss_scales.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Principal negatives now obey the intended topology relation.
   - id: MODEL-006
     title: Dead reconstruction projection
@@ -224,7 +230,7 @@ items:
     current_tests: [tests/test_current_head_reconstruction_corrections_cpu.py]
     notebook_evidence: [notebooks/inspect_level_autoregressive_reconstruction.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Reconstruction heads consume the reconstruction projection.
   - id: MODEL-007
     title: Decoder queries lacked target-level and type conditioning
@@ -235,7 +241,7 @@ items:
     current_tests: [tests/test_level_autoregressive_cpu.py]
     notebook_evidence: [notebooks/inspect_level_autoregressive_reconstruction.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Level slots and expected mother type affect decoding.
   - id: MODEL-008
     title: Query duplication and collapse observability
@@ -246,7 +252,7 @@ items:
     current_tests: [tests/test_current_head_reconstruction_corrections_cpu.py]
     notebook_evidence: [notebooks/inspect_first_level_ambiguity.ipynb]
     external_evidence_required: [trained held-out duplicate and unused-query rates]
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Mechanics and metrics exist; scientific collapse frequency is unmeasured.
   - id: MODEL-009
     title: Greedy exclusive resolution presented as a global solution
@@ -257,7 +263,7 @@ items:
     current_tests: [tests/test_revised_rollout_cpu.py]
     notebook_evidence: [notebooks/inspect_rollout_search_and_calibration.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Claims are bounded; weighted packing and beam remain evaluation-only.
   - id: MODEL-010
     title: Query or cardinality target overflow silently truncated
@@ -268,7 +274,7 @@ items:
     current_tests: [tests/test_query_capacity_cpu.py]
     notebook_evidence: [notebooks/inspect_query_capacity_and_losses.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Overflow is rejected rather than truncated.
   - id: MODEL-011
     title: Capacity reporting limited to levels one through three
@@ -279,7 +285,7 @@ items:
     current_tests: [tests/test_query_capacity_cpu.py]
     notebook_evidence: [notebooks/inspect_query_capacity_and_losses.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Every indexed retained level is checked against policy capacity.
   - id: MODEL-012
     title: Unknown or leaf-only mother tokens can be emitted
@@ -290,7 +296,7 @@ items:
     current_tests: [tests/test_current_head_reconstruction_corrections_cpu.py]
     notebook_evidence: [notebooks/inspect_level_autoregressive_reconstruction.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: A versioned static reconstructed-mother ontology masks invalid types.
   - id: MODEL-013
     title: Confidence target was self-referential and untrained
@@ -301,7 +307,7 @@ items:
     current_tests: [tests/test_confidence_calibration_cpu.py]
     notebook_evidence: [notebooks/inspect_rollout_search_and_calibration.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Structural correctness targets and Brier/ECE diagnostics are present.
   - id: MODEL-014
     title: Recursive source reuse insufficiently constrained
@@ -312,7 +318,7 @@ items:
     current_tests: [tests/test_recursive_source_exclusivity_cpu.py]
     notebook_evidence: [notebooks/inspect_rollout_search_and_calibration.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Proposal and selected-set source exclusivity are tested.
   - id: MODEL-015
     title: Raw node IDs used for exact-tree evaluation
@@ -323,7 +329,7 @@ items:
     current_tests: [tests/test_non_tautological_tree_metrics_cpu.py]
     notebook_evidence: [notebooks/inspect_level_autoregressive_reconstruction.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Canonical source/topology alignment is type-independent.
   - id: MODEL-016
     title: Rollout was not truly level-autoregressive
@@ -334,7 +340,7 @@ items:
     current_tests: [tests/test_revised_rollout_cpu.py]
     notebook_evidence: [notebooks/inspect_level_autoregressive_reconstruction.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Each level re-encodes the accumulated symbolic state.
   - id: MODEL-017
     title: Scheduled fallback could create false all-no-object supervision
@@ -345,7 +351,7 @@ items:
     current_tests: [tests/test_unrepresentable_scheduled_targets_cpu.py]
     notebook_evidence: [notebooks/inspect_level_autoregressive_reconstruction.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Default fallback_teacher and explicit alternatives are tested.
   - id: MODEL-018
     title: Leaf PID loss repeated at every selected level
@@ -356,7 +362,7 @@ items:
     current_tests: [tests/test_two_pass_leaf_pid_reconstruction_cpu.py]
     notebook_evidence: [notebooks/inspect_level_autoregressive_reconstruction.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Loss is applied once at the first selected event level.
   - id: MODEL-019
     title: Soft training PID versus hard rollout PID mismatch invisible
@@ -367,7 +373,7 @@ items:
     current_tests: [tests/test_two_pass_leaf_pid_reconstruction_cpu.py]
     notebook_evidence: [notebooks/inspect_leaf_pid_and_composite_inputs.ipynb]
     external_evidence_required: [trained held-out comparison of PID construction modes]
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Modes and diagnostics work; the best physics mode is unknown.
   - id: MODEL-020
     title: Relation feature tangent_dot was not tangent geometry
@@ -378,7 +384,7 @@ items:
     current_tests: [tests/test_post_audit_geometry_rollout_cpu.py]
     notebook_evidence: [notebooks/inspect_exact_tree_geometry_and_loss_scales.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: The feature uses origin log maps.
   - id: MODEL-021
     title: Physical relation features mixed incompatible raw scales
@@ -389,7 +395,7 @@ items:
     current_tests: [tests/test_post_audit_geometry_rollout_cpu.py]
     notebook_evidence: [notebooks/inspect_exact_tree_geometry_and_loss_scales.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: A named normalization contract is applied before relation MLPs.
   - id: MODEL-022
     title: Lossy summed node-kind pair code
@@ -400,7 +406,7 @@ items:
     current_tests: [tests/test_post_audit_geometry_rollout_cpu.py]
     notebook_evidence: [notebooks/inspect_exact_tree_geometry_and_loss_scales.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Ordered pair-kind encoding is non-aliasing.
   - id: MODEL-023
     title: Level information called literal hyperbolic positional encoding
@@ -411,7 +417,7 @@ items:
     current_tests: [tests/test_final_audit_corrections_cpu.py]
     notebook_evidence: [notebooks/inspect_hyperbolic_pretraining.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Alternative is accurately named bounded_tangent_level_embedding.
   - id: TRAIN-001
     title: Fixture-only training CLIs
@@ -422,7 +428,7 @@ items:
     current_tests: [tests/test_real_training_pipeline_cpu.py, tests/test_training_dry_run_cpu.py]
     notebook_evidence: [notebooks/inspect_training_pipeline.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Real parquet and manifest-backed dry-run plumbing is tested.
   - id: TRAIN-002
     title: Eager full-dataset loading and repeated startup scans
@@ -433,7 +439,7 @@ items:
     current_tests: [tests/test_streaming_data_pipeline_cpu.py]
     notebook_evidence: [notebooks/inspect_streaming_dataset.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Bounded shuffle, indexes, and online statistics avoid eager loading.
   - id: TRAIN-003
     title: Resume omitted optimizer, scaler, RNG, or data-order state
@@ -444,7 +450,7 @@ items:
     current_tests: [tests/test_exact_resume_cpu.py, tests/test_resume_data_order_contract_cpu.py]
     notebook_evidence: [notebooks/inspect_training_pipeline.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Exact single-worker state and compatibility checks round-trip.
   - id: TRAIN-004
     title: Scheduled training double-counted teacher and predicted events
@@ -455,7 +461,7 @@ items:
     current_tests: [tests/test_scheduled_sampling_forward_count_cpu.py]
     notebook_evidence: [notebooks/inspect_level_autoregressive_reconstruction.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: One sampled primary context is optimized by default.
   - id: TRAIN-005
     title: Reconstruction validation bounds and macro/micro denominators
@@ -466,7 +472,7 @@ items:
     current_tests: [tests/test_validation_batch_size_cpu.py, tests/test_validation_micro_aggregation_cpu.py]
     notebook_evidence: [notebooks/inspect_level_autoregressive_reconstruction.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Bounds and sufficient-statistic micro metrics are explicit.
   - id: TRAIN-006
     title: Pretraining validate_every was ignored
@@ -477,7 +483,7 @@ items:
     current_tests: [tests/test_current_head_acceptance_cpu.py]
     notebook_evidence: [notebooks/inspect_training_pipeline.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Periodic validation cadence is active.
   - id: TRAIN-007
     title: Pretraining log_every was ignored
@@ -488,7 +494,7 @@ items:
     current_tests: [tests/test_current_head_acceptance_cpu.py]
     notebook_evidence: [notebooks/inspect_training_pipeline.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Logging cadence is honored.
   - id: TRAIN-008
     title: Pretraining lacked aggregate metrics and best/latest checkpoints
@@ -499,7 +505,7 @@ items:
     current_tests: [tests/test_current_head_acceptance_cpu.py]
     notebook_evidence: [notebooks/inspect_training_pipeline.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Aggregate components and distinct checkpoint roles are implemented.
   - id: TRAIN-009
     title: Corruption labels, derived fields, and hard negatives did not train
@@ -510,7 +516,7 @@ items:
     current_tests: [tests/test_curriculum_runtime_semantics_cpu.py, tests/test_corrupted_structural_loss_mask_cpu.py]
     notebook_evidence: [notebooks/inspect_hyperbolic_pretraining.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Applied corruptions and topology-safe negatives enter optimized losses.
   - id: TRAIN-010
     title: Exact historical channel dictionary equivalence claimed
@@ -521,7 +527,7 @@ items:
     current_tests: [tests/test_channel_representation_round_trip_cpu.py]
     notebook_evidence: []
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: No exact historical implementation was found and no equivalence claim remains.
   - id: TRAIN-011
     title: Current channel representation lacked explicit semantics
@@ -532,7 +538,7 @@ items:
     current_tests: [tests/test_channel_representation_round_trip_cpu.py]
     notebook_evidence: [notebooks/inspect_preprocessed_dataset.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Signatures, counts, IDs, depth, and multiplicity semantics are explicit.
   - id: TRAIN-012
     title: Channel pooling had only one untested choice
@@ -543,7 +549,7 @@ items:
     current_tests: [tests/test_channel_cross_event_cpu.py]
     notebook_evidence: [notebooks/inspect_hyperbolic_pretraining.ipynb]
     external_evidence_required: [matched held-out channel-pooling ablations]
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Modes execute; scientific ranking is deferred.
   - id: TRAIN-013
     title: complete_only described as complete full-event reconstruction
@@ -554,7 +560,7 @@ items:
     current_tests: [tests/test_complete_target_efficiency_cpu.py]
     notebook_evidence: [notebooks/inspect_query_capacity_and_losses.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: It is a target policy with separate partial-topology denominators.
   - id: TRAIN-014
     title: Production model implicitly described as mixture of experts
@@ -565,7 +571,7 @@ items:
     current_tests: [tests/test_model_config_round_trip_cpu.py]
     notebook_evidence: []
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Current model is explicitly not MoE.
   - id: TRAIN-015
     title: HTCondor safety and accidental submission
@@ -576,7 +582,7 @@ items:
     current_tests: [tests/test_htcondor_training_safety_cpu.py]
     notebook_evidence: []
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Rendering and explicit submission remain separate; this audit submitted nothing.
   - id: TRAIN-016
     title: Scientific performance, calibration, rare-channel quality, and optimal decoding
@@ -587,7 +593,7 @@ items:
     current_tests: [tests/test_trained_evaluation_context_cpu.py]
     notebook_evidence: [notebooks/inspect_trained_physics_validation.ipynb]
     external_evidence_required: [trained checkpoint, matched held-out real schema-v4 data]
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: No physics-improvement claim is permitted from fixtures.
   - id: TRAIN-017
     title: KLM and K_L detector completeness
@@ -598,7 +604,7 @@ items:
     current_tests: [tests/test_preprocessing_adapters_cpu.py, tests/test_current_source_boundary_cpu.py]
     notebook_evidence: [notebooks/inspect_real_mdst_pilot.ipynb]
     external_evidence_required: [representative study of unmatched KLM clusters and K_L reconstructability across generic categories]
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: The charged-B pilot collected 92 explicit KLM nodes, but only 16 of 48 K_L-like leaves carried KLM provenance; detector completeness therefore remains partial.
   - id: NB-001
     title: Notebook suite not executable or machine-readable
@@ -609,7 +615,7 @@ items:
     current_tests: [tests/test_revised_notebooks_cpu.py]
     notebook_evidence: [notebooks/inspect_preprocessed_dataset.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: The YAML index is the single registry and reports carry provenance.
   - id: NB-002
     title: Notebook README described an obsolete schema and notebook set
@@ -620,7 +626,7 @@ items:
     current_tests: [tests/test_revised_notebooks_cpu.py]
     notebook_evidence: []
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Responsibilities and fixture/real boundaries follow the index.
   - id: NB-003
     title: Normal push CI did not run every notebook
@@ -631,8 +637,8 @@ items:
     current_tests: [tests/test_revised_notebooks_cpu.py]
     notebook_evidence: []
     external_evidence_required: [remote workflow execution for a committed final SHA]
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
-    notes: Local full suite is executable; CI cadence is indexed, but the working tree has no run.
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
+    notes: Local full suite is executable and CI cadence is indexed, but the audited local source has no exact-SHA remote run.
   - id: NB-004
     title: Notebook assertions only proved a figure existed
     originating_audit: docs/audits/archive/2026-07-31_d8be636_current_head_gap_audit.md
@@ -642,7 +648,7 @@ items:
     current_tests: [tests/test_revised_notebooks_cpu.py]
     notebook_evidence: [notebooks/preprocessing_four_momentum_validation.ipynb]
     external_evidence_required: [human visual review for plot legibility]
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Core JSON semantics are asserted; visual interpretation remains human review.
   - id: NB-005
     title: Real sub-100-event mDST pilot inspection artifact missing
@@ -653,7 +659,7 @@ items:
     current_tests: [tests/test_revised_notebooks_cpu.py]
     notebook_evidence: [notebooks/inspect_real_mdst_pilot.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Executed on the 50-event real pilot; report /tmp/hypertagging-real-pilot-report-20260801.json and executed notebook /tmp/inspect_real_mdst_pilot.executed.ipynb contain real-only evidence with no fixture fallback.
   - id: NB-006
     title: Trained rollout notebook lacked divergence, ambiguity, slices, and PID diagnostics
@@ -664,7 +670,7 @@ items:
     current_tests: [tests/test_trained_evaluation_context_cpu.py]
     notebook_evidence: [notebooks/inspect_trained_physics_validation.ipynb]
     external_evidence_required: [trained checkpoint, held-out real schema-v4 data]
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Required diagnostics are implemented but deliberately NOT RUN here.
   - id: FINAL-001
     title: Relation-aware attention ignored configured dropout
@@ -675,7 +681,7 @@ items:
     current_tests: [tests/test_final_audit_corrections_cpu.py]
     notebook_evidence: []
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Train/eval determinism and dropout propagation are tested.
   - id: FINAL-002
     title: Whole-set compatibility scorer appeared runnable but was disconnected
@@ -686,7 +692,7 @@ items:
     current_tests: [tests/test_final_audit_corrections_cpu.py]
     notebook_evidence: [notebooks/inspect_first_level_ambiguity.ipynb]
     external_evidence_required: [scientifically coherent proposal-ranking and training design]
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Runnable YAML was removed; CLI cannot silently accept the old field.
   - id: FINAL-003
     title: Iterative pointer mask appeared runnable but was disconnected
@@ -697,7 +703,7 @@ items:
     current_tests: [tests/test_final_audit_corrections_cpu.py]
     notebook_evidence: [notebooks/inspect_first_level_ambiguity.ipynb]
     external_evidence_required: [scientifically coherent differentiable decoding design]
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Runnable YAML was removed; bounded iterative decoding remains a design only.
   - id: FINAL-004
     title: Type-conditioned query-node relation bias was disconnected
@@ -708,7 +714,7 @@ items:
     current_tests: [tests/test_final_audit_corrections_cpu.py, tests/test_model_config_round_trip_cpu.py]
     notebook_evidence: [notebooks/inspect_first_level_ambiguity.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: The soft bias changes logits and receives gradients; disabled by default.
   - id: FINAL-005
     title: Truth leakage guard relied on storage-pointer inequality
@@ -719,7 +725,7 @@ items:
     current_tests: [tests/test_final_audit_corrections_cpu.py]
     notebook_evidence: [notebooks/inspect_leaf_input_pid_contract.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Separate builders and explicit source IDs protect cloned tensors too.
   - id: FINAL-006
     title: Append-time daughter summary was computed from zeros then discarded
@@ -730,7 +736,7 @@ items:
     current_tests: [tests/test_final_audit_corrections_cpu.py]
     notebook_evidence: [notebooks/inspect_level_autoregressive_reconstruction.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Append persists physical sums; next encoder pass owns contextual pooling.
   - id: FINAL-007
     title: Free rollout lacked a batched validation step
@@ -741,7 +747,7 @@ items:
     current_tests: [tests/test_final_audit_corrections_cpu.py, tests/test_current_source_boundary_cpu.py]
     notebook_evidence: [notebooks/inspect_level_autoregressive_reconstruction.ipynb]
     external_evidence_required: [guarded CUDA smoke, representative memory and throughput profiling]
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: batched_free_rollout now completes multiple levels with per-event stopping and matches independent batch-size-one references on deterministic CPU fixtures; GPU readiness remains unverified.
   - id: FINAL-008
     title: Channel memory recopied the full bank and synchronized count
@@ -752,7 +758,7 @@ items:
     current_tests: [tests/test_final_audit_corrections_cpu.py, tests/test_channel_cross_event_cpu.py]
     notebook_evidence: [notebooks/inspect_hyperbolic_pretraining.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Cursor, count, and contents are checkpointed ring-buffer state.
   - id: FINAL-009
     title: Channel loss looped anchors and hid active denominators
@@ -763,7 +769,7 @@ items:
     current_tests: [tests/test_channel_cross_event_cpu.py]
     notebook_evidence: [notebooks/inspect_hyperbolic_pretraining.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Valid anchors are vectorized and active/total denominators are reported.
   - id: FINAL-010
     title: Multi-objective gradient interference was not observable
@@ -774,7 +780,7 @@ items:
     current_tests: [tests/test_final_audit_corrections_cpu.py]
     notebook_evidence: [notebooks/inspect_hyperbolic_pretraining.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Configurable magnitudes, norms, cosines, zero gradients, and denominators are diagnostic-only.
   - id: FINAL-011
     title: Audit history described an older dirty patch as current
@@ -785,7 +791,7 @@ items:
     current_tests: [tests/test_audit_integrity_cpu.py]
     notebook_evidence: []
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Archive snapshots are immutable and only current_status is authoritative.
   - id: FINAL-012
     title: Notebook registry duplicated runner configuration
@@ -796,7 +802,7 @@ items:
     current_tests: [tests/test_revised_notebooks_cpu.py]
     notebook_evidence: []
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Runner derives execution selection and expected sections from YAML.
   - id: FINAL-013
     title: GPU throughput and remaining scalar synchronization
@@ -807,7 +813,7 @@ items:
     current_tests: [tests/test_final_audit_corrections_cpu.py, tests/test_current_source_boundary_cpu.py]
     notebook_evidence: [notebooks/inspect_runtime_scaling.ipynb]
     external_evidence_required: [guarded CUDA run, representative GPU profiling]
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: The padded batched free path avoids tensor-scalar extraction during level traversal; the bounded reference rollout and optional diagnostics retain Python work, and no CUDA profile exists.
   - id: FINAL-014
     title: Generated notebook cell IDs changed on every smoke run
@@ -818,7 +824,7 @@ items:
     current_tests: [tests/test_audit_integrity_cpu.py, tests/test_revised_notebooks_cpu.py]
     notebook_evidence: []
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: The runner assigns content-derived stable cell IDs after generation, so repeated validation does not create random-ID-only source diffs.
   - id: AUDIT-001
     title: Audit SHA validation was self-referential and failed after an audit-only commit
@@ -829,7 +835,7 @@ items:
     current_tests: [tests/test_audit_integrity_cpu.py]
     notebook_evidence: []
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: audited_code_sha is an ancestor boundary; the final commit may change only exact audit metadata paths. Literal self-SHA embedding is neither required nor permitted as the validity mechanism.
   - id: TRAIN-018
     title: Training and validation optimized different pretraining objectives
@@ -840,7 +846,8 @@ items:
     current_tests: [tests/test_final_audit_corrections_cpu.py, tests/test_real_training_pipeline_cpu.py]
     notebook_evidence: [notebooks/inspect_hyperbolic_pretraining.ipynb]
     external_evidence_required: [trained held-out comparison before selecting scientific weights]
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    external_evidence_disposition: separate_unresolved
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Independent weights are checkpointed; validation logs principal and full training objectives including active corruption/correctness/hard-negative terms.
   - id: ROLLOUT-006
     title: Predicted runtime nodes claimed retained-truth provenance and completeness
@@ -851,7 +858,7 @@ items:
     current_tests: [tests/test_final_audit_corrections_cpu.py]
     notebook_evidence: [notebooks/inspect_level_autoregressive_reconstruction.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Runtime nodes use runtime_reconstructed input provenance, unavailable truth supervision/targets/counts, and a separate runtime_structurally_valid flag.
   - id: DOC-001
     title: Active documentation and implementation contracts drifted
@@ -862,7 +869,7 @@ items:
     current_tests: [tests/test_final_audit_corrections_cpu.py]
     notebook_evidence: []
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Active docs name relation contract v3, include tree-distance loss, and specify the precontext_daughter_pool baseline.
   - id: NB-007
     title: Generated notebook sources could drift from their generators
@@ -873,7 +880,8 @@ items:
     current_tests: [tests/test_audit_integrity_cpu.py]
     notebook_evidence: []
     external_evidence_required: [human figure review remains NOT_REVIEWED]
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    external_evidence_disposition: separate_unresolved
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: --check-generated builds in temporary storage, normalizes cell IDs, and byte-compares normalized notebook sources.
   - id: MODEL-025
     title: Physical and hyperbolic attention diagnostics were conflated
@@ -884,7 +892,7 @@ items:
     current_tests: [tests/test_final_audit_corrections_cpu.py]
     notebook_evidence: [notebooks/inspect_hyperbolic_pretraining.ipynb, notebooks/inspect_level_autoregressive_reconstruction.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Outputs expose both stage biases and attentions independently; disabled Stage B returns no matrix, and production forwards default to return_attention=False.
   - id: DATA-013
     title: Strict B-root discovery had zero coverage in the bounded real pilot
@@ -895,7 +903,7 @@ items:
     current_tests: [tests/test_final_audit_corrections_cpu.py, tests/test_current_source_boundary_cpu.py]
     notebook_evidence: [notebooks/inspect_real_mdst_pilot.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: The prior zero coverage came from a continuum ccbar file without B/Y(4S) truth. The charged-B pilot found 50 of 50 strict resonance-daughter roots, zero fallback roots, 100 valid B-side labels, and 100 active channel branches.
   - id: DATA-014
     title: Schema-v4 finalization used a Python API absent from Belle II release 08-03-00
@@ -906,7 +914,7 @@ items:
     current_tests: [tests/test_final_audit_corrections_cpu.py]
     notebook_evidence: [notebooks/inspect_real_mdst_pilot.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Replaced str.removeprefix with equivalent slicing; the repeated 50-event real run completed and published parquet, sidecar, and completion marker.
   - id: MODEL-026
     title: Target-level relation summary and contextual encoder admitted future truth nodes
@@ -917,7 +925,7 @@ items:
     current_tests: [tests/test_post_audit_information_boundaries_cpu.py]
     notebook_evidence: [notebooks/inspect_level_autoregressive_reconstruction.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Both contextual stages and the type-conditioned relation summary are restricted to S_<t; perturbation and complete-removal invariance pass at target levels 1 and 2, and the context path retains finite nonzero gradients.
   - id: TRAIN-019
     title: Truth-guided pretraining could use exact structural targets as contextual shortcuts
@@ -928,7 +936,8 @@ items:
     current_tests: [tests/test_post_audit_information_boundaries_cpu.py, tests/test_current_source_boundary_cpu.py]
     notebook_evidence: [notebooks/inspect_hyperbolic_pretraining.ipynb]
     external_evidence_required: [matched HTCondor training before selecting the structural-input compatibility ablation]
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    external_evidence_disposition: separate_unresolved
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Exact parent/ancestor targets are excluded by default, the compatibility input is named and checkpointed, and validation emits separate FSP-only and truth-guided relation denominators and accuracy.
   - id: DATA-015
     title: Schema-v4 KLM features were exported but not consumed by the model
@@ -939,7 +948,7 @@ items:
     current_tests: [tests/test_post_audit_information_boundaries_cpu.py, tests/test_current_source_boundary_cpu.py]
     notebook_evidence: [notebooks/inspect_real_mdst_pilot.ipynb]
     external_evidence_required: []
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: A masked fixed-scale KlmNodeEncoder consumes the optional block, old shards map to all-unavailable values, gradients reach the adapter, and the real pilot found all nine accessor fields available on 92 KLM nodes.
   - id: DATA-016
     title: Associated ECL and KLM clusters could be selected as independent sources
@@ -950,7 +959,8 @@ items:
     current_tests: [tests/test_post_audit_information_boundaries_cpu.py, tests/test_current_source_boundary_cpu.py]
     notebook_evidence: [notebooks/inspect_real_mdst_pilot.ipynb]
     external_evidence_required: [broader data-category coverage for association rates]
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    external_evidence_disposition: separate_unresolved
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Release relations propagate the ECL reconstructed ID into KLM recursive source identity; the charged-B pilot found 37 associations and all 10 pairs retained together had source-conflict protection.
   - id: DATA-017
     title: TrackFitResult selection policy was implicit and absent from production manifests
@@ -961,7 +971,8 @@ items:
     current_tests: [tests/test_post_audit_information_boundaries_cpu.py, tests/test_mdst_batch_production_cpu.py, tests/test_current_source_boundary_cpu.py]
     notebook_evidence: [notebooks/inspect_real_mdst_pilot.ipynb]
     external_evidence_required: [trained held-out comparison before changing the default fit policy]
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    external_evidence_disposition: separate_unresolved
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: max_p_value_then_pion_fallback-v1 is validated, serialized, propagated through production manifests, and compared with the pion closest-mass momentum on all 578 pilot tracks without MC selection.
   - id: DATA-018
     title: Production query and cardinality capacities lacked representative slices
@@ -972,7 +983,7 @@ items:
     current_tests: [tests/test_post_audit_information_boundaries_cpu.py, tests/test_query_capacity_cpu.py]
     notebook_evidence: [notebooks/inspect_real_mdst_pilot.ipynb, notebooks/inspect_query_capacity_and_losses.ipynb]
     external_evidence_required: [representative multi-category production dataset index]
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: The index reports per-level quantiles and source/event/neutral/channel-frequency slices with bounded coverage; the 50-event charged-B pilot had zero overflow, but it is not representative of production.
   - id: NB-008
     title: Core four-vector notebook claimed an obsolete schema while its registry claimed v4
@@ -983,7 +994,8 @@ items:
     current_tests: [tests/test_revised_notebooks_cpu.py]
     notebook_evidence: [notebooks/preprocessing_four_momentum_validation.ipynb]
     external_evidence_required: [human figure review remains NOT_REVIEWED]
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    external_evidence_disposition: separate_unresolved
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: The core notebook now generates and loads schema-v4; the v1 GPT notebook is explicitly historical compatibility.
   - id: AUDIT-002
     title: Exact starting-HEAD CI failed because audit ancestry was unavailable in a shallow checkout
@@ -994,5 +1006,108 @@ items:
     current_tests: [tests/test_audit_integrity_cpu.py]
     notebook_evidence: []
     external_evidence_required: [successful workflow_dispatch or push run at the audited source or audit commit]
-    last_verified_sha: 88270d00fb5c9fc6311daab2f9443832ebe7c3bf
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: Run 30698801983 passed unit tests and notebook smoke but failed audit integrity; checkout now fetches full history and workflow_dispatch accepts an explicit SHA, but no post-fix remote run exists.
+  - id: TRAIN-020
+    title: Reconstruction checkpoint selection conflated teacher-forced and rollout evidence
+    originating_audit: docs/audits/archive/2026-08-01_56e0323_post_audit_correction_report.md
+    first_reported_sha: ab9feb1da0942e7b9cd06205aa73dd65690821c3
+    current_status: FIXED_AND_TESTED
+    current_evidence_files: [src/hypertagging/training/checkpoint_selection.py, src/hypertagging/training/reconstruction_trainer.py]
+    current_tests: [tests/test_campaign_readiness_cpu.py, tests/test_real_training_pipeline_cpu.py]
+    notebook_evidence: [notebooks/inspect_training_pipeline.ipynb]
+    external_evidence_required: []
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
+    notes: Independent teacher-forced, rollout-edge-F1, and rollout-validity tracks record denominators, event UIDs, policies, thresholds, and reasons; rollout tracks update only when rollout ran and resume rejects changed semantics.
+  - id: TRAIN-021
+    title: Multi-objective pretraining pilot lacked mandatory gradient preflight and staged configs
+    originating_audit: docs/audits/archive/2026-08-01_56e0323_post_audit_correction_report.md
+    first_reported_sha: ab9feb1da0942e7b9cd06205aa73dd65690821c3
+    current_status: FIXED_AND_TESTED
+    current_evidence_files: [src/hypertagging/training/pretrain_trainer.py, configs/hyperbolic_pretrain_pilot.yaml, configs/ablations/pretrain_stage1_topology_parent_anticollapse.yaml]
+    current_tests: [tests/test_campaign_readiness_cpu.py, tests/test_real_training_pipeline_cpu.py]
+    notebook_evidence: [notebooks/inspect_hyperbolic_pretraining.ipynb]
+    external_evidence_required: [HTCondor pilot gradients and held-out comparison before changing production weights]
+    external_evidence_disposition: separate_unresolved
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
+    notes: The software preflight reports magnitudes, denominators, projection norms, gradient cosines, zero/non-finite and dominance violations; it does not select scientific weights.
+  - id: MODEL-027
+    title: Query-repulsion ablation lacked no-object and competing-hypothesis semantics
+    originating_audit: docs/audits/archive/2026-08-01_56e0323_post_audit_correction_report.md
+    first_reported_sha: ab9feb1da0942e7b9cd06205aa73dd65690821c3
+    current_status: FIXED_AND_TESTED
+    current_evidence_files: [src/hypertagging/losses/level_reconstruction.py, configs/ablations/weak_query_repulsion.yaml, configs/ablations/stronger_query_repulsion.yaml]
+    current_tests: [tests/test_campaign_readiness_cpu.py]
+    notebook_evidence: [notebooks/inspect_first_level_ambiguity.ipynb]
+    external_evidence_required: [trained duplicate-query evidence before enabling repulsion by default]
+    external_evidence_disposition: separate_unresolved
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
+    notes: Repulsion ignores no-object slots and overlapping matched hypotheses, shares one mask, is query-order invariant, and remains disabled by default.
+  - id: DATA-019
+    title: Track-fit policy had no runnable MC-independent comparison ablation
+    originating_audit: docs/audits/archive/2026-08-01_56e0323_post_audit_correction_report.md
+    first_reported_sha: ab9feb1da0942e7b9cd06205aa73dd65690821c3
+    current_status: FIXED_AND_TESTED
+    current_evidence_files: [src/hypertagging/preprocessing/basf2_mdst.py, scripts/preprocess_mdst.py, src/hypertagging/data/dataset_index.py]
+    current_tests: [tests/test_campaign_readiness_cpu.py, tests/test_dataset_index_and_storage_cpu.py]
+    notebook_evidence: [notebooks/inspect_real_mdst_pilot.ipynb]
+    external_evidence_required: [bounded multi-category real pilot and matched trained comparison before changing the default]
+    external_evidence_disposition: separate_unresolved
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
+    notes: max-p-value remains default; canonical-pion-closest-mass is implemented and unknown values fail. This pass did not rerun real mDST.
+  - id: MODEL-028
+    title: Node-kind adapter and PID dispatch depended on incidental numeric IDs
+    originating_audit: docs/audits/archive/2026-08-01_56e0323_post_audit_correction_report.md
+    first_reported_sha: ab9feb1da0942e7b9cd06205aa73dd65690821c3
+    current_status: FIXED_AND_TESTED
+    current_evidence_files: [src/hypertagging/models/heterogeneous.py, src/hypertagging/reconstruction/kinematics.py, src/hypertagging/reconstruction/level_rollout.py]
+    current_tests: [tests/test_campaign_readiness_cpu.py, tests/test_final_audit_corrections_cpu.py]
+    notebook_evidence: [notebooks/inspect_level_autoregressive_reconstruction.ipynb]
+    external_evidence_required: []
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
+    notes: Dispatch is keyed by NODE_KIND_TO_ID names, reordered-vocabulary behavior is tested, and KLM clusters are valid rollout daughters.
+  - id: DATA-020
+    title: Full-truth to reconstructable-channel collisions lacked indexed diagnostics
+    originating_audit: docs/audits/archive/2026-08-01_56e0323_post_audit_correction_report.md
+    first_reported_sha: ab9feb1da0942e7b9cd06205aa73dd65690821c3
+    current_status: PARTIAL
+    current_evidence_files: [src/hypertagging/data/dataset_index.py, src/hypertagging/preprocessing/channels.py]
+    current_tests: [tests/test_dataset_index_and_storage_cpu.py, tests/test_schema_v2_cpu.py]
+    notebook_evidence: [notebooks/inspect_preprocessed_dataset.ipynb]
+    external_evidence_required: [representative multi-category index and signature-level causal attribution of PID reduction, contraction, charge conjugation, and copied-node deduplication]
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
+    notes: The index now counts distinct full channels per reconstructable ID and co-occurring mechanisms; it deliberately does not call co-occurrence causal attribution.
+  - id: ROLLOUT-007
+    title: Batched rollout lacked phase-level profiling instrumentation
+    originating_audit: docs/audits/archive/2026-08-01_56e0323_post_audit_correction_report.md
+    first_reported_sha: ab9feb1da0942e7b9cd06205aa73dd65690821c3
+    current_status: IMPLEMENTED_NOT_REAL_VERIFIED
+    current_evidence_files: [src/hypertagging/models/level_autoregressive.py, src/hypertagging/reconstruction/level_rollout.py]
+    current_tests: [tests/test_final_audit_corrections_cpu.py, tests/test_current_source_boundary_cpu.py]
+    notebook_evidence: [notebooks/inspect_runtime_scaling.ipynb]
+    external_evidence_required: [guarded representative CUDA memory and throughput profile]
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
+    notes: Optional host-phase intervals exist without forcing synchronization; they are not CUDA timing evidence.
+  - id: NB-009
+    title: Notebook reports lacked one consolidated PASS FAIL NOT RUN evidence overview
+    originating_audit: docs/audits/archive/2026-08-01_56e0323_post_audit_correction_report.md
+    first_reported_sha: ab9feb1da0942e7b9cd06205aa73dd65690821c3
+    current_status: FIXED_AND_TESTED
+    current_evidence_files: [scripts/execute_notebook_smoke_tests.py, .github/workflows/cpu-tests.yml]
+    current_tests: [tests/test_audit_integrity_cpu.py]
+    notebook_evidence: []
+    external_evidence_required: [human visual review remains NOT_REVIEWED]
+    external_evidence_disposition: separate_unresolved
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
+    notes: Each run emits JSON, Markdown, and HTML over all registry entries; unexecuted real-only notebooks remain NOT_RUN.
+  - id: AUDIT-003
+    title: Backlog duplicated the full matrix and archive worktree state was inferred from prose
+    originating_audit: docs/audits/archive/2026-08-01_56e0323_post_audit_correction_report.md
+    first_reported_sha: ab9feb1da0942e7b9cd06205aa73dd65690821c3
+    current_status: FIXED_AND_TESTED
+    current_evidence_files: [scripts/generate_audit_views.py, scripts/validate_audit_integrity.py, docs/audits/archive/metadata.yaml]
+    current_tests: [tests/test_audit_integrity_cpu.py]
+    notebook_evidence: []
+    external_evidence_required: []
+    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
+    notes: The unresolved-only backlog, all-issue matrix, archive manifest/index/README, and status counts are generated; explicit worktree metadata and SHA-256 digests protect immutable reports.

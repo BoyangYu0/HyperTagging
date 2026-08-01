@@ -1,113 +1,108 @@
 # Current repository audit status
 
-This is the sole authoritative current audit report. Historical numerical
-results and old worktree descriptions remain immutable under `archive/`.
-Status counts and the issue-evidence matrix are generated from
-`issue_ledger.yaml` into `current_backlog.md`.
+This is the sole authoritative current audit report. Historical reports under
+`archive/` are immutable evidence snapshots and are not current truth.
 
-## Evidence boundary
+<!-- GENERATED_STATUS_SUMMARY_START -->
+## Generated authoritative summary
 
-The focused pass began from clean `master` commit
-`e9b828c45c9c26bf4dcd2b76e96fb788ee6d3f1b`. Source, tests, deterministic
-notebook sources, workflows, configs, and implementation documentation were
-corrected in the separate audited-code commit
-`88270d00fb5c9fc6311daab2f9443832ebe7c3bf`.
+- Audited source SHA: `56e0323a22195457fb69aad35925538219a95c0b`
+- Audit metadata HEAD: resolved dynamically with `git rev-parse HEAD`
+- Canonical complete CPU pytest result: 314 passed, 8 skipped, 20 warnings
+- Human visual review: `NOT_REVIEWED`
 
-The audit-metadata commit is intentionally identified dynamically by
-`git rev-parse HEAD`; a tracked file cannot truthfully contain the SHA of the
-commit that contains that same file. The validator instead proves that the
-audited code SHA is an ancestor and that every later changed path is an exact
-audit/index path allowed by the ledger. Any later source, model, loss,
-preprocessing, training, reconstruction, runtime, config, test, workflow, or
-notebook-source change invalidates this report.
+| Ledger status | Count |
+|---|---:|
+| `FIXED_AND_TESTED` | 79 |
+| `IMPLEMENTED_NOT_REAL_VERIFIED` | 5 |
+| `INTENTIONALLY_DEFERRED_SCIENCE` | 4 |
+| `OBSOLETE_OR_DUPLICATE` | 1 |
+| `PARTIAL` | 8 |
+<!-- GENERATED_STATUS_SUMMARY_END -->
+## Evidence boundary and CI
 
-The exact starting SHA has a GitHub Actions run, but it is a failure rather
-than positive CI evidence: run 30698801983 passed its unit suite and notebook
-smoke job, then failed audit integrity because the workflow checkout did not
-contain the audited ancestor. Both workflows now fetch full history and CPU
-correctness supports `workflow_dispatch` with an explicit source SHA. The
-audited source commit is local-only, so no post-fix exact-SHA remote run exists.
+The pass began from clean `master` commit
+`ab9feb1da0942e7b9cd06205aa73dd65690821c3`. Implementation, tests, configs,
+notebook sources, workflows, and implementation documentation were committed
+separately as `56e0323a22195457fb69aad35925538219a95c0b`.
+
+The metadata commit is intentionally identified with `git rev-parse HEAD`; a
+tracked file cannot contain its own commit SHA. The validator requires the
+audited source to be an ancestor and rejects every later path not explicitly
+listed in the ledger. The later commit is audit/index metadata only.
+
+The public Actions page shows successful CPU correctness run
+`30703389232` for starting SHA `ab9feb1`. The `gh` client is unavailable here,
+and the new local source commit has not been pushed, so no exact-`56e0323`
+remote run exists. `workflow_dispatch` accepts an explicit SHA and both
+workflows fetch full history; this is runnable infrastructure, not successful
+current-SHA CI evidence.
 
 ## Independently executable CPU evidence
 
-- At the exact audited source commit, the source suite excluding the
-  deliberately stale audit-metadata integration module passed `292 passed,
-  8 skipped, 19 warnings` in 397.00 seconds.
-- After applying only audit/index metadata, the complete suite passed `301
-  passed, 8 skipped, 19 warnings`; this is the canonical final pytest count.
-- All 15 default deterministic fixture notebooks passed at the audited source
-  SHA under `/tmp/hypertagging-notebook-post-audit-88270d0`.
+- Baseline: `301 passed, 8 skipped, 19 warnings in 445.23s`.
+- Source-boundary run before metadata advance: `313 passed, 8 skipped, 20
+  warnings`; the only failure was the expected stale audit boundary rejecting
+  the new source commit.
+- Final complete committed-tree result: `314 passed, 8 skipped, 20 warnings`.
+- Generated source consistency passed for all 18 tracked notebooks.
+- All 15 default fixture notebooks passed under
+  `/tmp/hypertagging-post-audit-final`.
 - The first-level ambiguity diagnostic passed separately under
-  `/tmp/hypertagging-first-level-post-audit-88270d0` and exercised the actual
-  model ablation path.
-- Generated-notebook consistency passed for all 18 tracked notebooks.
-- Compile-all and `git diff --check` passed. Fixture output proves software
-  mechanics only. The visual-review index remains `NOT_REVIEWED`; successful
-  execution is not human visual review.
+  `/tmp/hypertagging-first-level-final`.
+- Validation overview artifacts keep both real-only notebooks `NOT_RUN` for
+  this pass and visual review `NOT_REVIEWED`.
 
-## Corrected software contracts
+These are CPU software and fixture-mechanics results. They are not trained
+physics evidence or representative throughput measurements.
 
-- For target level `t`, both contextual stages, runtime PID reconstruction,
-  and the type-conditioned relation summary now consume only `S_<t`.
-  Perturbing or removing every future node leaves every target-level decoder
-  output invariant at levels 1 and 2; the corrected relation path retains
-  finite nonzero gradients.
-- Physical-relation features have explicit provenance. Exact parent and
-  ancestor targets are excluded from contextual pretraining by default and
-  remain loss targets. A named, checkpointed compatibility ablation can restore
-  those inputs for matched HTCondor studies; FSP-only and truth-guided
-  multilevel validation denominators are reported separately.
-- KLM values and availability masks are collated and normalized by a dedicated
-  `KlmNodeEncoder`; old shards remain readable with unavailable masks.
-  Associated ECL reconstructed IDs become shared recursive source identity, so
-  retained ECL/KLM representations of one neutral object conflict rather than
-  being selected together.
-- Track-fit selection is the versioned, MC-independent
-  `max_p_value_then_pion_fallback-v1` policy. Unknown policies fail, and the
-  value is serialized through parquet metadata and production manifests.
-- Dataset indexes now report per-level mother/cardinality quantiles and bounded
-  source, event-multiplicity, neutral-multiplicity, and channel-frequency
-  slices. Training preflight rejects architectures that cannot represent an
-  indexed target.
-- Batched multi-event, multi-level rollout remains implemented and CPU
-  reference-equivalent. It is not GPU-production-ready without the guarded
-  CUDA smoke and representative profile already retained in the backlog.
+## Corrected contracts
 
-## Bounded real-mDST evidence
+- Reconstruction checkpoint selection distinguishes teacher-forced loss,
+  rollout edge F1, and rollout tree validity. Rollout tracks require executed
+  rollout, and checkpoints record deterministic validation UIDs, denominators,
+  policy/threshold contracts, and selection reasons. Resume rejects semantic
+  mismatch.
+- Pretraining preserves the full-objective principal checkpoint and may save
+  diagnostic topology/parent/distance/non-collapse/channel tracks. The bounded
+  pilot config requires objective-gradient preflight and staged configs remain
+  optional HTCondor ablations.
+- Query repulsion is mask-correct, query-order invariant, differentiable, and
+  disabled by default. No fixture result enables it scientifically.
+- Track-fit selection now has two implemented MC-independent policies. The
+  max-p-value policy remains default; canonical-pion closest-mass is an
+  ablation. Policy names are validated and serialized.
+- Node-kind adapter and PID dispatch use named vocabulary constants. KLM has a
+  dedicated masked adapter and is an allowed reconstruction daughter.
+- Dataset indexes report full-truth-to-reconstructable channel collision
+  groups without mislabeling mechanism co-occurrence as causality.
+- Batched rollout exposes optional unsynchronized host-phase instrumentation.
+  Reference equivalence remains CPU-tested, but CUDA production readiness is
+  not claimed.
+- Notebook runs generate one consolidated JSON/Markdown/HTML overview and a
+  separate visual-review checklist. Real `NOT_RUN` is never promoted to PASS.
+- The active backlog is unresolved-only; the all-issue mapping is generated in
+  `evidence_matrix.md`. Archive inventory, worktree state, and immutable hashes
+  come from explicit `archive/metadata.yaml`, not prose regexes.
 
-A fresh charged-B pilot processed events 0--49 with basf2 release 08-03-00 and
-the exact audited source. It wrote a new, non-production parquet output and the
-real-only notebook report `/tmp/hypertagging-real-pilot-88270d0.json`.
+All previous truth-topology/reconstructed-kinematics invariants, future-level
+invariance tests, exact daughter-summed mother p4, separate detector adapters,
+and source-conflict protections continue to pass.
 
-- all 578 tracks had a selected fit and all five PIDLikelihood values;
-- fit hypotheses were 158 kaon, 163 pion, and 257 proton; comparison with the
-  pion closest-mass fit covered all 578 tracks, and 3,351 two-body comparisons
-  had a 0.00714 GeV median and 0.0789 GeV 95th-percentile absolute mass shift;
-- all 50 events had strict B roots, zero fallback roots, 100 valid B-side
-  labels, and 100 active channel branches;
-- 92 KLM nodes exposed all nine configured accessors; 37 ECL associations were
-  observed, and all 10 associations retained on both sides had source-conflict
-  protection;
-- only 16 of 48 K_L-like leaves had KLM provenance, so neutral completeness
-  remains partial;
-- truth-derived detector inputs, p4-closure failures, cycles, missing links,
-  and level failures were all zero;
-- the bounded index had no query/cardinality overflow under the production
-  baseline, but one charged-B file is not representative production evidence.
+## Real and scientific boundaries
 
-This is a bounded contract pilot, not production-scale or physics-performance
-evidence.
+No real mDST preprocessing was run in this pass. The previous 50-event
+charged-B pilot at ancestor `88270d0` remains historical bounded evidence; it
+was not silently refreshed. The real pilot notebook now supports several
+explicit bounded category inputs, but remains real-only.
 
-## External and scientific boundaries
+No trained checkpoint, held-out physics validation, representative KLM/K_L
+completeness study, multi-category capacity scan, CUDA profile, ten-million
+event run, or human visual review was produced. Level encoding, radius target,
+channel pooling, PID mode, track-fit policy, loss staging/weights, query
+repulsion, and decoding thresholds remain ablations. Whole-set scoring and the
+iterative pointer decoder remain deferred designs with no runnable decorative
+config.
 
-The generated [current backlog](current_backlog.md) is the authoritative list
-of partial, deferred, open, and externally bounded items. There is no trained
-held-out physics result, no normal local CUDA training, no guarded CUDA rollout
-profile, no ten-million-event throughput result, no human figure review, and
-no successful exact-SHA post-fix remote CI run. Radius target, channel pooling,
-PID rollout mode, objective weights, structural-input compatibility, whole-set
-scoring, and iterative pointer decoding remain ablations or deferred designs;
-fixture results did not select a scientific default.
-
-No HTCondor job was submitted and no production readiness or physics
-improvement is claimed.
+No HTCondor job was submitted. No production-readiness or physics-improvement
+claim is made.

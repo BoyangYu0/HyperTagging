@@ -1,0 +1,57 @@
+schema_version: hypertagging-audit-verification-runs-v1
+runs:
+  - source_sha: ab9feb1da0942e7b9cd06205aa73dd65690821c3
+    metadata_head: ab9feb1da0942e7b9cd06205aa73dd65690821c3
+    worktree_state: clean
+    date: '2026-08-01T00:00:00+02:00'
+    commands:
+      - /data/dust/user/boyangyu/uv_env/bin/python -m pytest -q
+      - /data/dust/user/boyangyu/uv_env/bin/python scripts/validate_audit_integrity.py
+      - /data/dust/user/boyangyu/uv_env/bin/python scripts/execute_notebook_smoke_tests.py --check-generated
+      - /data/dust/user/boyangyu/uv_env/bin/python scripts/execute_notebook_smoke_tests.py --keep-output /tmp/hypertagging-post-audit-baseline
+      - /data/dust/user/boyangyu/uv_env/bin/python scripts/execute_notebook_smoke_tests.py --diagnostic-only --diagnostic-first-level-ambiguity --keep-output /tmp/hypertagging-first-level-baseline
+    pytest:
+      result: PASS
+      passed: 301
+      skipped: 8
+      warnings: 19
+      duration_seconds: 445.23
+    notebooks:
+      generated_consistency: {result: PASS, count: 18}
+      default_fixture: {result: PASS, count: 15}
+      first_level_diagnostic: {result: PASS, count: 1}
+    real_data_inputs: NOT_RUN
+    checkpoint: none
+    ci_run: NOT_RUN
+    human_visual_review_status: NOT_REVIEWED
+    evidence_limitations: Baseline CPU fixtures only; no real pilot, checkpoint evaluation, CUDA profile, or human figure review was run in this pass.
+  - source_sha: 56e0323a22195457fb69aad35925538219a95c0b
+    metadata_head: resolved_by_git_rev_parse_HEAD
+    worktree_state: clean_committed_metadata_tree
+    date: '2026-08-01T17:42:09+02:00'
+    commands:
+      - /data/dust/user/boyangyu/uv_env/bin/python -m pytest -q
+      - /data/dust/user/boyangyu/uv_env/bin/python scripts/validate_audit_integrity.py
+      - /data/dust/user/boyangyu/uv_env/bin/python scripts/generate_audit_views.py --check
+      - /data/dust/user/boyangyu/uv_env/bin/python scripts/execute_notebook_smoke_tests.py --check-generated
+      - /data/dust/user/boyangyu/uv_env/bin/python scripts/execute_notebook_smoke_tests.py --keep-output /tmp/hypertagging-post-audit-final
+      - /data/dust/user/boyangyu/uv_env/bin/python scripts/execute_notebook_smoke_tests.py --diagnostic-only --diagnostic-first-level-ambiguity --keep-output /tmp/hypertagging-first-level-final
+      - /data/dust/user/boyangyu/uv_env/bin/python -m compileall -q src scripts tests
+      - git diff --check
+    pytest:
+      result: PASS
+      passed: 314
+      skipped: 8
+      warnings: 20
+      duration_seconds: 425.11
+    notebooks:
+      generated_consistency: {result: PASS, count: 18}
+      default_fixture: {result: PASS, count: 15}
+      first_level_diagnostic: {result: PASS, count: 1}
+      real_mdst_pilot: {result: NOT_RUN, count: 0}
+      trained_physics_validation: {result: NOT_RUN, count: 0}
+    real_data_inputs: NOT_RUN_IN_THIS_PASS
+    checkpoint: none
+    ci_run: 'NOT_RUN_FOR_D2F3801; starting ab9feb1 succeeded at https://github.com/BoyangYu0/HyperTagging/actions/runs/30703389232'
+    human_visual_review_status: NOT_REVIEWED
+    evidence_limitations: CPU fixtures only in this pass; no real mDST refresh, trained checkpoint, representative CUDA profile, ten-million-event run, or human visual review.
