@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Generate the schema-v1/v2/v3 dataset inspection notebook."""
+"""Generate the schema-v4-first dataset inspection notebook."""
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ def build_notebook() -> nbf.NotebookNode:
 
             ## Goal
 
-            Inspect a `direct-mdst-tree-v1`, v2, or corrected v3 parquet as a
+            Inspect a production `direct-mdst-tree-v4` parquet as a
             physicist-facing artifact: schema, PIDs, heterogeneous features, levels,
             retained decay trees, reconstructed four-vector closure, and two-B channel
             representations. Fixture output is explicitly labelled and is not a
@@ -59,7 +59,7 @@ def build_notebook() -> nbf.NotebookNode:
             np.random.seed(SEED)
             requested = os.environ.get("HYPERTAGGING_PARQUET", "").strip()
             FIXTURE_MODE = not bool(requested)
-            INPUT_PATH = Path(requested) if requested else Path("/tmp/hypertagging_notebook_fixture_v3.parquet")
+            INPUT_PATH = Path(requested) if requested else Path("/tmp/hypertagging_notebook_fixture_v4.parquet")
             if FIXTURE_MODE:
                 write_notebook_fixture_v4(INPUT_PATH)
             if not INPUT_PATH.exists():

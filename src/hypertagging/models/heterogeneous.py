@@ -131,8 +131,25 @@ class HeterogeneousEncoderOutput:
     channel_projection: torch.Tensor
     daughter_summary: torch.Tensor
     physical_relation_bias: torch.Tensor
+    physical_attention_weights: torch.Tensor | None
     hyperbolic_relation_bias: torch.Tensor
-    attention_weights: torch.Tensor
+    hyperbolic_attention_weights: torch.Tensor | None
+    final_contextual_embeddings: torch.Tensor
+
+    @property
+    def attention_weights(self) -> torch.Tensor:
+        """Compatibility view of the final active stage, never a bias-sum softmax."""
+
+        weights = (
+            self.hyperbolic_attention_weights
+            if self.hyperbolic_attention_weights is not None
+            else self.physical_attention_weights
+        )
+        if weights is None:
+            return self.physical_relation_bias.new_zeros(
+                (*self.physical_relation_bias.shape[:1], 1, *self.physical_relation_bias.shape[-2:])
+            )
+        return weights
 
 
 class HeterogeneousNodeEncoder(nn.Module):
@@ -360,7 +377,7 @@ class HeterogeneousNodeEncoder(nn.Module):
             reco_ids=batch.get("reco_ids"),
         )
         if self.use_contextual_encoder:
-            h, attention_weights = self.physical_contextualizer(
+            h, physical_attention_weights = self.physical_contextualizer(
                 adapter_h,
                 relation_bias=physical_bias,
                 attention_mask=attention_mask,
@@ -368,9 +385,7 @@ class HeterogeneousNodeEncoder(nn.Module):
             )
         else:
             h = adapter_h
-            attention_weights = physical_bias.new_zeros(
-                (*physical_bias.shape[:1], 1, *physical_bias.shape[-2:])
-            )
+            physical_attention_weights = None
         preliminary_tree = self.tree_head(h)
         preliminary_z = expmap0(
             self.tangent_scale(self.hyper_projection(preliminary_tree)),
@@ -381,12 +396,14 @@ class HeterogeneousNodeEncoder(nn.Module):
             node_mask=batch["node_mask"],
         )
         if self.use_hyperbolic_refinement:
-            h, attention_weights = self.hyperbolic_contextualizer(
+            h, hyperbolic_attention_weights = self.hyperbolic_contextualizer(
                 h,
                 relation_bias=hyper_bias,
                 attention_mask=attention_mask,
                 node_mask=batch["node_mask"],
             )
+        else:
+            hyperbolic_attention_weights = None
         tree = self.tree_head(h)
         reconstruction = self.reconstruction_head(h)
         channel = self.channel_head(h)
@@ -404,8 +421,10 @@ class HeterogeneousNodeEncoder(nn.Module):
             channel,
             daughter_summary,
             physical_bias,
+            physical_attention_weights,
             hyper_bias,
-            attention_weights,
+            hyperbolic_attention_weights,
+            h,
         )
 
 

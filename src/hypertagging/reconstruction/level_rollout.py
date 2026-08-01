@@ -92,6 +92,17 @@ class LevelRolloutResult:
 
 
 @dataclass(frozen=True)
+class BatchedRolloutState:
+    """Tensor-only control state for incremental multi-event rollout."""
+
+    batch: dict[str, torch.Tensor]
+    active_event_mask: torch.Tensor
+    stopped_event_mask: torch.Tensor
+    levels_completed: torch.Tensor
+    stop_code: torch.Tensor
+
+
+@dataclass(frozen=True)
 class BeamRolloutHypothesis:
     """One evaluation-only partial-tree hypothesis retained by bounded beam."""
 
@@ -810,6 +821,11 @@ def append_composite_proposals(
     old_count = batch["node_mask"].shape[1]
     proposal_count = len(proposals)
     device = batch["p4"].device
+    truth_guided = torch.tensor(
+        [[proposal.truth_node_id is not None for proposal in proposals]],
+        dtype=torch.bool,
+        device=device,
+    )
     daughter_masks = torch.zeros(
         (proposal_count, old_count),
         dtype=torch.bool,
@@ -1001,33 +1017,36 @@ def append_composite_proposals(
                 for proposal in proposals
             ]
         ).unsqueeze(0),
-        "full_truth_daughter_count": daughter_masks.sum(dim=-1).unsqueeze(0),
-        "retained_truth_daughter_count_expected": daughter_masks.sum(
-            dim=-1
-        ).unsqueeze(0),
-        "retained_daughter_count": daughter_masks.sum(dim=-1).unsqueeze(0),
+        "full_truth_daughter_count": torch.where(
+            truth_guided, daughter_masks.sum(dim=-1).unsqueeze(0), -1
+        ),
+        "retained_truth_daughter_count_expected": torch.where(
+            truth_guided, daughter_masks.sum(dim=-1).unsqueeze(0), -1
+        ),
+        "retained_daughter_count": torch.where(
+            truth_guided, daughter_masks.sum(dim=-1).unsqueeze(0), -1
+        ),
         "reconstructed_daughter_count": daughter_masks.sum(dim=-1).unsqueeze(0),
         "complete_truth_decay": torch.zeros(
             (1, proposal_count), dtype=torch.bool, device=device
         ),
-        "complete_reconstructable_decay": torch.ones(
-            (1, proposal_count), dtype=torch.bool, device=device
-        ),
-        "recursive_reconstructable_complete": torch.ones(
-            (1, proposal_count), dtype=torch.bool, device=device
-        ),
+        "complete_reconstructable_decay": truth_guided,
+        "recursive_reconstructable_complete": truth_guided,
         "partial_missing_daughters": torch.zeros(
             (1, proposal_count), dtype=torch.bool, device=device
         ),
         "contracted_intermediate": torch.zeros(
             (1, proposal_count), dtype=torch.bool, device=device
         ),
-        "valid_reconstruction_target": daughter_masks.sum(dim=-1).ge(2).unsqueeze(0),
-        "truth_root_distance": torch.zeros(
-            (1, proposal_count), dtype=torch.long, device=device
+        "valid_reconstruction_target": truth_guided
+        & daughter_masks.sum(dim=-1).ge(2).unsqueeze(0),
+        "truth_root_distance": torch.full(
+            (1, proposal_count), -1, dtype=torch.long, device=device
         ),
-        "full_event_max_level": torch.full(
-            (1, proposal_count), target_level, dtype=torch.long, device=device
+        "full_event_max_level": torch.where(
+            truth_guided,
+            torch.full((1, proposal_count), target_level, dtype=torch.long, device=device),
+            torch.full((1, proposal_count), -1, dtype=torch.long, device=device),
         ),
     }
     if "model_input_source_ids" in batch:
@@ -1050,31 +1069,51 @@ def append_composite_proposals(
                     dtype=torch.long,
                     device=device,
                 ),
-                "truth_supervision_source_ids": torch.full(
-                    (1, proposal_count),
-                    TRUTH_SUPERVISION_SOURCE_TO_ID["retained_mc_truth"],
-                    dtype=torch.long,
-                    device=device,
+                "truth_supervision_source_ids": torch.where(
+                    truth_guided,
+                    torch.full_like(
+                        vector_additions["pid_labels"],
+                        TRUTH_SUPERVISION_SOURCE_TO_ID["retained_mc_truth"],
+                    ),
+                    torch.full_like(
+                        vector_additions["pid_labels"],
+                        TRUTH_SUPERVISION_SOURCE_TO_ID["unavailable"],
+                    ),
                 ),
-                "daughter_truth_pid_source_ids": torch.full(
-                    (1, proposal_count),
-                    TRUTH_SUPERVISION_SOURCE_TO_ID["retained_mc_truth"],
-                    dtype=torch.long,
-                    device=device,
+                "daughter_truth_pid_source_ids": torch.where(
+                    truth_guided,
+                    torch.full_like(
+                        vector_additions["pid_labels"],
+                        TRUTH_SUPERVISION_SOURCE_TO_ID["retained_mc_truth"],
+                    ),
+                    torch.full_like(
+                        vector_additions["pid_labels"],
+                        TRUTH_SUPERVISION_SOURCE_TO_ID["unavailable"],
+                    ),
                 ),
             }
         )
     for optional_pid_field in ("pid_target_labels", "truth_pid_labels"):
         if optional_pid_field in batch:
-            vector_additions[optional_pid_field] = vector_additions["pid_labels"].clone()
+            vector_additions[optional_pid_field] = torch.where(
+                truth_guided,
+                vector_additions["pid_labels"],
+                torch.zeros_like(vector_additions["pid_labels"]),
+            )
     if "truth_pid_available" in batch:
-        vector_additions["truth_pid_available"] = torch.zeros(
-            (1, proposal_count),
-            dtype=torch.bool,
-            device=device,
-        )
+        vector_additions["truth_pid_available"] = truth_guided
     for field, addition in vector_additions.items():
         result[field] = torch.cat([batch[field], addition], dim=1)
+    result["runtime_structurally_valid"] = torch.cat(
+        [
+            batch.get(
+                "runtime_structurally_valid",
+                torch.zeros_like(batch["node_mask"]),
+            ),
+            ~truth_guided & daughter_masks.sum(dim=-1).ge(2).unsqueeze(0),
+        ],
+        dim=1,
+    )
     result["p4"] = torch.cat([batch["p4"], construction["p4"].unsqueeze(0)], dim=1)
     old_adjacency = batch["daughter_adjacency"]
     adjacency = torch.zeros(
@@ -1328,20 +1367,18 @@ def batched_level_step(
         "source_node_ids": new_ids,
         "copied_from": torch.full_like(mother_types, -1),
         "b_side": new_side,
-        "full_truth_daughter_count": count,
-        "retained_truth_daughter_count_expected": count,
-        "retained_daughter_count": count,
+        "full_truth_daughter_count": torch.full_like(count, -1),
+        "retained_truth_daughter_count_expected": torch.full_like(count, -1),
+        "retained_daughter_count": torch.full_like(count, -1),
         "reconstructed_daughter_count": count,
         "complete_truth_decay": bool_zeros,
-        "complete_reconstructable_decay": accepted,
-        "recursive_reconstructable_complete": accepted,
+        "complete_reconstructable_decay": bool_zeros,
+        "recursive_reconstructable_complete": bool_zeros,
         "partial_missing_daughters": bool_zeros,
         "contracted_intermediate": bool_zeros,
-        "valid_reconstruction_target": accepted & (count >= 2),
-        "truth_root_distance": long_zeros,
-        "full_event_max_level": torch.where(
-            accepted, torch.full_like(mother_types, target_level), long_zeros
-        ),
+        "valid_reconstruction_target": bool_zeros,
+        "truth_root_distance": torch.full_like(mother_types, -1),
+        "full_event_max_level": torch.full_like(mother_types, -1),
         "model_input_source_ids": torch.full_like(
             mother_types, MODEL_INPUT_SOURCE_TO_ID["runtime_reconstructed"]
         ),
@@ -1349,19 +1386,31 @@ def batched_level_step(
             mother_types, MODEL_INPUT_SOURCE_TO_ID["runtime_reconstructed"]
         ),
         "truth_supervision_source_ids": torch.full_like(
-            mother_types, TRUTH_SUPERVISION_SOURCE_TO_ID["retained_mc_truth"]
+            mother_types, TRUTH_SUPERVISION_SOURCE_TO_ID["unavailable"]
         ),
         "daughter_truth_pid_source_ids": torch.full_like(
-            mother_types, TRUTH_SUPERVISION_SOURCE_TO_ID["retained_mc_truth"]
+            mother_types, TRUTH_SUPERVISION_SOURCE_TO_ID["unavailable"]
         ),
     }
     for optional in ("pid_target_labels", "truth_pid_labels"):
         if optional in batch:
-            vector_additions[optional] = vector_additions["pid_labels"].clone()
+            vector_additions[optional] = torch.zeros_like(
+                vector_additions["pid_labels"]
+            )
     if "truth_pid_available" in batch:
         vector_additions["truth_pid_available"] = bool_zeros
     for name, addition in vector_additions.items():
         result[name] = torch.cat([batch[name], addition], dim=1)
+    result["runtime_structurally_valid"] = torch.cat(
+        [
+            batch.get(
+                "runtime_structurally_valid",
+                torch.zeros_like(batch["node_mask"]),
+            ),
+            accepted & (count >= 2),
+        ],
+        dim=1,
+    )
     result["p4"] = torch.cat([batch["p4"], new_p4], dim=1)
 
     total_count = old_count + query_count
@@ -1435,6 +1484,53 @@ def batched_level_step(
     result.pop("allowed_type_mask", None)
     result.pop("pointer_validity_mask", None)
     return result
+
+
+def batched_rollout_level_transition(
+    state: BatchedRolloutState,
+    model_output: LevelReconstructionOutput,
+    *,
+    daughter_mask: torch.Tensor,
+    accepted_query_mask: torch.Tensor,
+    target_level: int,
+    mother_types: torch.Tensor | None = None,
+) -> BatchedRolloutState:
+    """Advance one level with event-specific stop masks and padded append.
+
+    This tensor-only transition is the reviewed building block for a future
+    full CUDA rollout. Events with no accepted proposal stop independently;
+    inactive events cannot append nodes. Proposal decoding and multi-level
+    compaction remain outside this function, so it is not production-ready.
+    """
+
+    active = state.active_event_mask.bool()
+    if active.shape != accepted_query_mask.shape[:1]:
+        raise ValueError("active_event_mask must have shape [B]")
+    accepted = accepted_query_mask.bool() & active[:, None]
+    batch = batched_level_step(
+        state.batch,
+        model_output,
+        daughter_mask=daughter_mask,
+        accepted_query_mask=accepted,
+        target_level=target_level,
+        mother_types=mother_types,
+    )
+    appended = accepted.any(dim=-1)
+    stopped_now = active & ~appended
+    next_active = active & appended
+    # 1 is the tensorized "no valid new mother" code; zero means active.
+    stop_code = torch.where(
+        stopped_now,
+        torch.ones_like(state.stop_code),
+        state.stop_code,
+    )
+    return BatchedRolloutState(
+        batch=batch,
+        active_event_mask=next_active,
+        stopped_event_mask=state.stopped_event_mask | stopped_now,
+        levels_completed=state.levels_completed + active.to(state.levels_completed.dtype),
+        stop_code=stop_code,
+    )
 
 
 def _select_nodes(
@@ -1556,11 +1652,13 @@ def _state_fingerprint(batch: dict[str, torch.Tensor]) -> str:
 __all__ = [
     "CompositeProposal",
     "BeamRolloutHypothesis",
+    "BatchedRolloutState",
     "LevelRolloutResult",
     "RolloutConfig",
     "RolloutStep",
     "append_composite_proposals",
     "batched_level_step",
+    "batched_rollout_level_transition",
     "evaluation_reference_rollout",
     "hard_decode_proposals",
     "level_rollout",

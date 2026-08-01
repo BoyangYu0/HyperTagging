@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+import fnmatch
+import json
 import re
 from pathlib import Path
 import subprocess
@@ -44,6 +46,60 @@ def _markdown_targets(text: str) -> list[str]:
     return re.findall(r"\[[^]]+\]\(([^)#]+)(?:#[^)]+)?\)", text)
 
 
+def _git(repo_root: Path, *args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", *args], cwd=repo_root, check=check, capture_output=True, text=True
+    )
+
+
+def _notebook_diff_is_cell_ids_only(
+    repo_root: Path, audited_code_sha: str, path: str
+) -> bool:
+    try:
+        old = json.loads(_git(repo_root, "show", f"{audited_code_sha}:{path}").stdout)
+        new = json.loads(_git(repo_root, "show", f"HEAD:{path}").stdout)
+    except (subprocess.CalledProcessError, FileNotFoundError, json.JSONDecodeError):
+        return False
+    for notebook in (old, new):
+        for cell in notebook.get("cells", []):
+            cell.pop("id", None)
+    return old == new
+
+
+def validate_audited_code_ancestry(
+    ledger: dict[str, object], repo_root: Path
+) -> list[str]:
+    """Validate the non-self-referential audited-code commit boundary."""
+
+    audited_code_sha = str(ledger.get("audited_code_sha", ""))
+    if not re.fullmatch(r"[0-9a-f]{40}", audited_code_sha):
+        return [f"invalid audited_code_sha: {audited_code_sha!r}"]
+    if _git(
+        repo_root, "cat-file", "-e", f"{audited_code_sha}^{{commit}}", check=False
+    ).returncode:
+        return [f"audited_code_sha does not identify a commit: {audited_code_sha}"]
+    if _git(
+        repo_root, "merge-base", "--is-ancestor", audited_code_sha, "HEAD", check=False
+    ).returncode:
+        return [f"audited_code_sha is not an ancestor of HEAD: {audited_code_sha}"]
+
+    allowed = ledger.get("allowed_post_audit_paths", [])
+    if not isinstance(allowed, list) or not all(isinstance(value, str) for value in allowed):
+        return ["allowed_post_audit_paths must be a list of path patterns"]
+    errors: list[str] = []
+    changed = _git(
+        repo_root, "diff", "--name-only", f"{audited_code_sha}..HEAD"
+    ).stdout.splitlines()
+    for path in changed:
+        if not any(fnmatch.fnmatchcase(path, pattern) for pattern in allowed):
+            errors.append(f"post-audit path is outside the allowlist: {path}")
+            continue
+        if path.startswith("notebooks/") and path.endswith(".ipynb"):
+            if not _notebook_diff_is_cell_ids_only(repo_root, audited_code_sha, path):
+                errors.append("post-audit notebook change is not cell-ID-only: " + path)
+    return errors
+
+
 def validate() -> list[str]:
     errors: list[str] = []
     readme_text = README.read_text(encoding="utf-8")
@@ -80,20 +136,17 @@ def validate() -> list[str]:
         )
 
     ledger = yaml.safe_load(LEDGER.read_text(encoding="utf-8"))
-    audited_head = str(ledger.get("audited_head", ""))
-    if not re.fullmatch(r"[0-9a-f]{40}", audited_head):
-        errors.append(f"invalid audited_head: {audited_head!r}")
-    actual_head = subprocess.run(
-        ["git", "rev-parse", "HEAD"],
-        cwd=REPO_ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout.strip()
-    if audited_head != actual_head:
-        errors.append(
-            f"ledger audited_head {audited_head!r} does not match Git HEAD {actual_head!r}"
-        )
+    audited_code_sha = str(ledger.get("audited_code_sha", ""))
+    errors.extend(validate_audited_code_ancestry(ledger, REPO_ROOT))
+    for field in (
+        "audit_generated_at",
+        "audit_scope",
+        "audit_tool_version",
+        "verification_commands",
+        "verification_result_summary",
+    ):
+        if field not in ledger:
+            errors.append(f"ledger misses audit metadata field: {field}")
     identifiers: set[str] = set()
     for index, item in enumerate(ledger.get("items", [])):
         missing = REQUIRED_FIELDS - set(item)
@@ -122,9 +175,10 @@ def validate() -> list[str]:
         README,
         AUDIT_ROOT / "current_status.md",
     ]
+    actual_head = _git(REPO_ROOT, "rev-parse", "HEAD").stdout.strip()
     old_current_pattern = re.compile(
-        r"(?:current|audited)\s+(?:HEAD|SHA|revision)\s*[:=` ]+"
-        r"(?!" + re.escape(audited_head) + r")[0-9a-f]{7,40}",
+        r"(?:current|starting)\s+HEAD\s*[:=` ]+"
+        r"(?!" + re.escape(actual_head) + r")[0-9a-f]{7,40}",
         re.IGNORECASE,
     )
     for path in active_documents:
@@ -132,22 +186,44 @@ def validate() -> list[str]:
         if old_current_pattern.search(text):
             errors.append(f"active audit describes an older SHA as current: {path}")
     current_text = (AUDIT_ROOT / "current_status.md").read_text(encoding="utf-8")
-    if audited_head not in current_text:
-        errors.append("current_status.md does not name the ledger audited_head")
+    if audited_code_sha not in current_text:
+        errors.append("current_status.md does not name the ledger audited_code_sha")
+    if actual_head not in current_text:
+        errors.append("current_status.md does not name the actual Git HEAD")
     if "sole authoritative current audit report" not in current_text:
         errors.append("current_status.md lacks the single-current-document declaration")
 
     notebook_index = yaml.safe_load(NOTEBOOK_INDEX.read_text(encoding="utf-8"))
+    if notebook_index.get("visual_review_status") not in {
+        "NOT_REVIEWED", "PASS", "FAIL"
+    }:
+        errors.append("notebook visual_review_status is invalid")
     for entry in notebook_index.get("notebooks", []):
-        expected = (
-            "NOT_RUN"
-            if entry.get("fixture_or_real") == "real_only"
-            else audited_head
-        )
-        if str(entry.get("last_verified_sha")) != expected:
-            errors.append(
-                f"notebook {entry.get('id')} last_verified_sha must be {expected}"
+        verified = str(entry.get("last_verified_sha"))
+        if entry.get("fixture_or_real") == "real_only":
+            valid = verified == "NOT_RUN" or (
+                bool(re.fullmatch(r"[0-9a-f]{40}", verified))
+                and not _git(
+                    REPO_ROOT, "merge-base", "--is-ancestor", verified, "HEAD", check=False
+                ).returncode
             )
+            if not valid:
+                errors.append(
+                    f"real notebook {entry.get('id')} has invalid last_verified_sha"
+                )
+            continue
+        if verified != actual_head:
+            errors.append(
+                f"notebook {entry.get('id')} last_verified_sha must be {actual_head}"
+            )
+    generated_views = subprocess.run(
+        [sys.executable, "scripts/generate_audit_views.py", "--check"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+    )
+    if generated_views.returncode:
+        errors.append("generated audit views are stale")
     return errors
 
 

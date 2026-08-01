@@ -34,7 +34,7 @@ def build_notebook():
 
             ```bash
             source /cvmfs/belle.cern.ch/tools/b2setup release-08-03-00
-            basf2 scripts/preprocess_mdst.py -- \\
+            python3 scripts/preprocess_mdst.py \\
               --input /path/to/generic_mdst.root \\
               --output /data/dust/user/boyangyu/hypertagging/pilot-v4.parquet \\
               --schema-version direct-mdst-tree-v4 --entry-sequence 0:49 \\
@@ -53,8 +53,12 @@ def build_notebook():
             from pathlib import Path
             import numpy as np
             import pandas as pd
+            import hypertagging
             from hypertagging.preprocessing.schema_v4 import load_payload_v4
             from hypertagging.preprocessing.pid_filter import PDG_TOKENS
+
+            REPO_ROOT=Path(hypertagging.__file__).resolve().parents[2]
+            os.chdir(REPO_ROOT)
 
             requested=os.environ.get("HYPERTAGGING_REAL_PILOT","").strip()
             if not requested:

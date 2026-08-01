@@ -62,7 +62,7 @@ def build_notebook() -> nbf.NotebookNode:
             torch.manual_seed(SEED); np.random.seed(SEED)
             requested = os.environ.get("HYPERTAGGING_PARQUET", "").strip()
             FIXTURE_MODE = not bool(requested)
-            INPUT_PATH = Path(requested) if requested else Path("/tmp/hypertagging_notebook_fixture_v3.parquet")
+            INPUT_PATH = Path(requested) if requested else Path("/tmp/hypertagging_notebook_fixture_v4.parquet")
             if FIXTURE_MODE: write_notebook_fixture_v4(INPUT_PATH)
             if not INPUT_PATH.exists(): raise FileNotFoundError(INPUT_PATH)
             FIGURE_DIR = Path(os.environ.get("HYPERTAGGING_FIGURE_DIR", "/tmp/hypertagging_figures/reconstruction"))
@@ -73,6 +73,7 @@ def build_notebook() -> nbf.NotebookNode:
             model = LevelAutoregressiveReconstructor(
                 n_features=batch["node_features"].shape[-1], n_types=len(PDG_TOKENS),
                 hidden_dim=24, hyper_dim=6, n_queries=6, n_heads=4, n_context_layers=2,
+                use_hyperbolic_relation_refinement=True,
             )
             checkpoint = os.environ.get("HYPERTAGGING_CHECKPOINT", "").strip()
             if checkpoint:
@@ -96,18 +97,20 @@ def build_notebook() -> nbf.NotebookNode:
             display(input_table)
             """
         ),
-        md("## Steps 2–4: stair-causal mask, relation bias, and contextual attention"),
+        md("## Steps 2–4: stair-causal mask and separate Stage-A/Stage-B attention"),
         code(
             """
             model.eval()
             with torch.no_grad(): output = model(batch, target_level=1)
             stair = stair_attention_mask(batch["level_ids"], batch["node_mask"])[0].numpy()
-            relation = output.relation_bias[0].numpy()
-            attention = output.attention_weights[0].mean(0).numpy()
-            fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+            physical_bias = output.physical_relation_bias[0].numpy()
+            physical_attention = output.physical_attention_weights[0].mean(0).numpy()
+            hyperbolic_bias = output.hyperbolic_relation_bias[0].numpy()
+            hyperbolic_attention = output.hyperbolic_attention_weights[0].mean(0).numpy()
+            fig, axes = plt.subplots(1, 5, figsize=(24, 4))
             for axis, matrix, title in zip(
-                axes, [stair, relation, attention],
-                ["Stair-causal allowed mask", "Learned physical/hyperbolic relation bias", "Contextual attention (head mean)"],
+                axes, [stair, physical_bias, physical_attention, hyperbolic_bias, hyperbolic_attention],
+                ["Stair-causal allowed mask", "Stage-A physical bias", "Stage-A attention", "Stage-B hyperbolic bias", "Stage-B attention"],
             ):
                 image = axis.imshow(matrix, aspect="auto", cmap="coolwarm")
                 axis.set_title(title); axis.set_xlabel("key"); axis.set_ylabel("query")

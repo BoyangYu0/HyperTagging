@@ -55,13 +55,28 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--channel-memory-size", type=int, default=0)
     parser.add_argument("--radius-target-mode", choices=("generation_height_radius", "exact_root_depth_radius", "weak_or_learned_radius"), default="generation_height_radius")
-    parser.add_argument("--best-metric", default="validation_loss_total")
+    parser.add_argument(
+        "--best-metric",
+        choices=("validation_principal_loss", "validation_full_training_objective"),
+        default="validation_full_training_objective",
+    )
     parser.add_argument("--best-mode", choices=("min", "max"), default="min")
     parser.add_argument("--channel-zero-positive-validation-window", type=int, default=3)
     parser.add_argument("--channel-zero-positive-action", choices=("warn", "fail", "ignore"), default="warn")
     parser.add_argument("--hyperbolic-level-encoding", choices=("learned_euclidean", "bounded_tangent_level_embedding", "none"), default="learned_euclidean")
     parser.add_argument("--objective-gradient-diagnostics", action="store_true")
     parser.add_argument("--objective-gradient-diagnostics-every", type=int, default=100)
+    parser.add_argument("--lca-relation-weight", type=float, default=1.0)
+    parser.add_argument("--parent-ranking-weight", type=float, default=1.0)
+    parser.add_argument("--exact-tree-distance-weight", type=float, default=1.0)
+    parser.add_argument("--radius-depth-weight", type=float, default=0.2)
+    parser.add_argument("--channel-weight", type=float, default=0.2)
+    parser.add_argument("--variance-weight", type=float, default=0.1)
+    parser.add_argument("--covariance-weight", type=float, default=0.01)
+    parser.add_argument("--leaf-pid-weight", type=float, default=1.0)
+    parser.add_argument("--corruption-class-weight", type=float, default=0.1)
+    parser.add_argument("--candidate-correctness-weight", type=float, default=0.1)
+    parser.add_argument("--hard-negative-weight", type=float, default=0.1)
     parser.add_argument("--model-preset", choices=sorted(MODEL_PRESETS), default="tiny_cpu")
     parser.add_argument("--d-model", type=int, default=None)
     parser.add_argument("--hyper-dim", type=int, default=None)
@@ -118,6 +133,17 @@ def main(argv: list[str] | None = None) -> int:
                 objective_gradient_diagnostics_every=(
                     args.objective_gradient_diagnostics_every
                 ),
+                lca_relation_weight=args.lca_relation_weight,
+                parent_ranking_weight=args.parent_ranking_weight,
+                exact_tree_distance_weight=args.exact_tree_distance_weight,
+                radius_depth_weight=args.radius_depth_weight,
+                channel_weight=args.channel_weight,
+                variance_weight=args.variance_weight,
+                covariance_weight=args.covariance_weight,
+                leaf_pid_weight=args.leaf_pid_weight,
+                corruption_class_weight=args.corruption_class_weight,
+                candidate_correctness_weight=args.candidate_correctness_weight,
+                hard_negative_weight=args.hard_negative_weight,
                 num_workers=args.num_workers,
                 prefetch_factor=args.prefetch_factor,
                 shuffle_buffer_size=args.shuffle_buffer_size,

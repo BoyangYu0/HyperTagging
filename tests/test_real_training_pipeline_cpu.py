@@ -24,10 +24,34 @@ def test_real_parquet_train_transfer_validate_and_resume(tmp_path):
     checkpoint = load_training_checkpoint(pretrain.checkpoint)
     assert checkpoint["encoder_state_dict"]
     assert checkpoint["normalizer_state"]
+    for name in (
+        "lca_relation_weight",
+        "parent_ranking_weight",
+        "exact_tree_distance_weight",
+        "radius_depth_weight",
+        "channel_weight",
+        "variance_weight",
+        "covariance_weight",
+        "leaf_pid_weight",
+        "corruption_class_weight",
+        "candidate_correctness_weight",
+        "hard_negative_weight",
+        "radius_target_mode",
+        "channel_pooling",
+    ):
+        assert name in checkpoint["config"]
     assert (tmp_path / "pretrain" / "best.pt").exists()
     assert (tmp_path / "pretrain" / "latest.pt").exists()
+    assert checkpoint["training_state"]["best_metric"] == (
+        "validation_full_training_objective"
+    )
     assert pretrain.metrics["validation_batches"] == 1
     assert "validation_loss_total" in pretrain.metrics
+    assert "validation_principal_loss" in pretrain.metrics
+    assert "validation_full_training_objective" in pretrain.metrics
+    assert "validation_loss_corruption_class" in pretrain.metrics
+    assert "validation_loss_candidate_correctness" in pretrain.metrics
+    assert "validation_loss_hard_negative" in pretrain.metrics
     assert "validation_relation_accuracy" in pretrain.metrics
     assert "validation_parent_ranking_accuracy" in pretrain.metrics
     reconstruction = train_level_reconstruction(

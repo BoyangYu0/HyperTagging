@@ -1,7 +1,31 @@
-schema_version: hypertagging-audit-ledger-v1
+schema_version: hypertagging-audit-ledger-v2
 audited_branch: master
-audited_head: 6f24a7a1729d50a7f98ea62e3c3ffe5e68562eec
-verification_scope: current working tree on top of audited_head
+audited_code_sha: 6f24a7a1729d50a7f98ea62e3c3ffe5e68562eec
+audit_generated_at: '2026-08-01T00:00:00+02:00'
+audit_scope: committed source at audited_code_sha plus explicitly classified audit artifacts through HEAD
+allowed_post_audit_paths:
+  - docs/audits/README.md
+  - docs/audits/current_status.md
+  - docs/audits/issue_ledger.yaml
+  - notebooks/index.yaml
+  - notebooks/*.ipynb
+  - scripts/execute_notebook_smoke_tests.py
+  - scripts/validate_audit_integrity.py
+  - tests/test_audit_integrity_cpu.py
+audit_tool_version: hypertagging-audit-integrity-v2
+verification_commands:
+  - /data/dust/user/boyangyu/uv_env/bin/python -m pytest -q
+  - /data/dust/user/boyangyu/uv_env/bin/python scripts/validate_audit_integrity.py
+  - /data/dust/user/boyangyu/uv_env/bin/python scripts/execute_notebook_smoke_tests.py --check-generated
+verification_result_summary:
+  exact_sha_ci: PASS
+  exact_sha_ci_run: https://github.com/BoyangYu0/HyperTagging/actions/runs/30692052350
+  post_audit_commit_classification: audit_generated_notebook_and_test_infrastructure_only
+  cpu_pytest: 278 passed, 8 skipped, 19 warnings in 393.66s
+  fixture_notebooks: 15 passed
+  first_level_diagnostic: 1 passed
+  generated_notebook_consistency: 18 passed
+  bounded_real_mdst_pilot: 50 events, notebook PASS with partial detector/root coverage
 items:
   - id: DATA-001
     title: MC-derived track fit, charge, input PID, or energy
@@ -84,13 +108,13 @@ items:
     title: Real PIDLikelihood availability and fit selection on basf2 data
     originating_audit: docs/audits/archive/2026-07-30_da8f357_correctness_revision_audit.md
     first_reported_sha: da8f35796ae81835645ac12721a5287829c02c31
-    current_status: IMPLEMENTED_NOT_REAL_VERIFIED
+    current_status: PARTIAL
     current_evidence_files: [src/hypertagging/preprocessing/basf2_mdst.py, notebooks/inspect_real_mdst_pilot.ipynb]
     current_tests: [tests/test_preprocessing_adapters_cpu.py]
     notebook_evidence: [notebooks/inspect_real_mdst_pilot.ipynb]
-    external_evidence_required: [basf2 runtime, real sub-100-event mDST]
-    last_verified_sha: 6f24a7a1729d50a7f98ea62e3c3ffe5e68562eec
-    notes: Real-only notebook reports NOT RUN when inputs are absent.
+    external_evidence_required: [fix real TrackFitResult selection and PIDLikelihood access, rerun bounded pilot]
+    last_verified_sha: 70e99ae489e30ce9c131c6a2228ce3e5d517f584
+    notes: The 50-event real pilot ran, but all 392 tracks reported fit choice missing and all five PIDLikelihood features unavailable; truth-derived detector inputs remained zero.
   - id: DATA-009
     title: Schema-v3 shard-wide JSON buffering
     originating_audit: docs/audits/archive/2026-07-30_9d37fde_final_correctness_and_scalability_audit.md
@@ -572,9 +596,9 @@ items:
     current_evidence_files: [src/hypertagging/preprocessing/basf2_mdst.py, notebooks/inspect_real_mdst_pilot.ipynb]
     current_tests: [tests/test_preprocessing_adapters_cpu.py]
     notebook_evidence: [notebooks/inspect_real_mdst_pilot.ipynb]
-    external_evidence_required: [real KLMClusters collection and basf2 pilot]
-    last_verified_sha: 6f24a7a1729d50a7f98ea62e3c3ffe5e68562eec
-    notes: Current direct collector declares Tracks and ECLClusters, not complete KLM input.
+    external_evidence_required: [real KLMClusters collection and a repeated bounded pilot]
+    last_verified_sha: 70e99ae489e30ce9c131c6a2228ce3e5d517f584
+    notes: The real pilot found 52 K_L-like leaves and no KLM provenance fields; current direct collection remains Tracks plus ECLClusters only.
   - id: NB-001
     title: Notebook suite not executable or machine-readable
     originating_audit: docs/audits/archive/2026-07-30_da8f357_correctness_revision_audit.md
@@ -623,13 +647,13 @@ items:
     title: Real sub-100-event mDST pilot inspection artifact missing
     originating_audit: docs/audits/archive/2026-07-31_d8be636_current_head_gap_audit.md
     first_reported_sha: d8be6363fce7faaf7b86a1e6edd8c1175a8fac60
-    current_status: IMPLEMENTED_NOT_REAL_VERIFIED
+    current_status: FIXED_AND_TESTED
     current_evidence_files: [notebooks/inspect_real_mdst_pilot.ipynb, scripts/create_real_mdst_pilot_notebook.py]
     current_tests: [tests/test_revised_notebooks_cpu.py]
     notebook_evidence: [notebooks/inspect_real_mdst_pilot.ipynb]
-    external_evidence_required: [basf2 runtime, real schema-v4 pilot parquet]
-    last_verified_sha: 6f24a7a1729d50a7f98ea62e3c3ffe5e68562eec
-    notes: Guarded real-only artifact exists and never substitutes fixtures.
+    external_evidence_required: []
+    last_verified_sha: 70e99ae489e30ce9c131c6a2228ce3e5d517f584
+    notes: Executed on the 50-event real pilot; report /tmp/hypertagging-real-pilot-report-20260801.json and executed notebook /tmp/inspect_real_mdst_pilot.executed.ipynb contain real-only evidence with no fixture fallback.
   - id: NB-006
     title: Trained rollout notebook lacked divergence, ambiguity, slices, and PID diagnostics
     originating_audit: docs/audits/archive/2026-07-31_d8be636_current_head_gap_audit.md
@@ -795,3 +819,91 @@ items:
     external_evidence_required: []
     last_verified_sha: 6f24a7a1729d50a7f98ea62e3c3ffe5e68562eec
     notes: The runner assigns content-derived stable cell IDs after generation, so repeated validation does not create random-ID-only source diffs.
+  - id: AUDIT-001
+    title: Audit SHA validation was self-referential and failed after an audit-only commit
+    originating_audit: docs/audits/current_status.md
+    first_reported_sha: 70e99ae489e30ce9c131c6a2228ce3e5d517f584
+    current_status: FIXED_AND_TESTED
+    current_evidence_files: [scripts/validate_audit_integrity.py, docs/audits/issue_ledger.yaml]
+    current_tests: [tests/test_audit_integrity_cpu.py]
+    notebook_evidence: []
+    external_evidence_required: []
+    last_verified_sha: 70e99ae489e30ce9c131c6a2228ce3e5d517f584
+    notes: audited_code_sha is an ancestor boundary; only explicit audit/generated paths may follow it, and notebook changes must be cell-ID-only.
+  - id: TRAIN-018
+    title: Training and validation optimized different pretraining objectives
+    originating_audit: docs/audits/current_status.md
+    first_reported_sha: 70e99ae489e30ce9c131c6a2228ce3e5d517f584
+    current_status: FIXED_AND_TESTED
+    current_evidence_files: [src/hypertagging/training/pretrain_trainer.py, scripts/train_hyperbolic_pretrain.py, configs/hyperbolic_pretrain.yaml]
+    current_tests: [tests/test_final_audit_corrections_cpu.py, tests/test_real_training_pipeline_cpu.py]
+    notebook_evidence: [notebooks/inspect_hyperbolic_pretraining.ipynb]
+    external_evidence_required: [trained held-out comparison before selecting scientific weights]
+    last_verified_sha: 70e99ae489e30ce9c131c6a2228ce3e5d517f584
+    notes: Independent weights are checkpointed; validation logs principal and full training objectives including active corruption/correctness/hard-negative terms.
+  - id: ROLLOUT-006
+    title: Predicted runtime nodes claimed retained-truth provenance and completeness
+    originating_audit: docs/audits/current_status.md
+    first_reported_sha: 70e99ae489e30ce9c131c6a2228ce3e5d517f584
+    current_status: FIXED_AND_TESTED
+    current_evidence_files: [src/hypertagging/reconstruction/level_rollout.py, src/hypertagging/data/heterogeneous.py]
+    current_tests: [tests/test_final_audit_corrections_cpu.py]
+    notebook_evidence: [notebooks/inspect_level_autoregressive_reconstruction.ipynb]
+    external_evidence_required: []
+    last_verified_sha: 70e99ae489e30ce9c131c6a2228ce3e5d517f584
+    notes: Runtime nodes use runtime_reconstructed input provenance, unavailable truth supervision/targets/counts, and a separate runtime_structurally_valid flag.
+  - id: DOC-001
+    title: Active documentation and implementation contracts drifted
+    originating_audit: docs/audits/current_status.md
+    first_reported_sha: 70e99ae489e30ce9c131c6a2228ce3e5d517f584
+    current_status: FIXED_AND_TESTED
+    current_evidence_files: [docs/hyperbolic_level_autoregressive_reconstruction.md, docs/heterogeneous_node_encoding.md, src/hypertagging/models/relations.py]
+    current_tests: [tests/test_final_audit_corrections_cpu.py]
+    notebook_evidence: []
+    external_evidence_required: []
+    last_verified_sha: 70e99ae489e30ce9c131c6a2228ce3e5d517f584
+    notes: Active docs name relation contract v3, include tree-distance loss, and specify the precontext_daughter_pool baseline.
+  - id: NB-007
+    title: Generated notebook sources could drift from their generators
+    originating_audit: docs/audits/current_status.md
+    first_reported_sha: 70e99ae489e30ce9c131c6a2228ce3e5d517f584
+    current_status: FIXED_AND_TESTED
+    current_evidence_files: [scripts/execute_notebook_smoke_tests.py, notebooks/index.yaml, .github/workflows/cpu-tests.yml]
+    current_tests: [tests/test_audit_integrity_cpu.py]
+    notebook_evidence: []
+    external_evidence_required: [human figure review remains NOT_REVIEWED]
+    last_verified_sha: 70e99ae489e30ce9c131c6a2228ce3e5d517f584
+    notes: --check-generated builds in temporary storage, normalizes cell IDs, and byte-compares normalized notebook sources.
+  - id: MODEL-025
+    title: Physical and hyperbolic attention diagnostics were conflated
+    originating_audit: docs/audits/current_status.md
+    first_reported_sha: 70e99ae489e30ce9c131c6a2228ce3e5d517f584
+    current_status: FIXED_AND_TESTED
+    current_evidence_files: [src/hypertagging/models/heterogeneous.py, src/hypertagging/models/level_autoregressive.py]
+    current_tests: [tests/test_final_audit_corrections_cpu.py]
+    notebook_evidence: [notebooks/inspect_hyperbolic_pretraining.ipynb, notebooks/inspect_level_autoregressive_reconstruction.ipynb]
+    external_evidence_required: []
+    last_verified_sha: 70e99ae489e30ce9c131c6a2228ce3e5d517f584
+    notes: Outputs expose both stage biases and attentions independently; disabled Stage B returns no matrix.
+  - id: DATA-013
+    title: Strict B-root discovery had zero coverage in the bounded real pilot
+    originating_audit: docs/audits/current_status.md
+    first_reported_sha: 70e99ae489e30ce9c131c6a2228ce3e5d517f584
+    current_status: PARTIAL
+    current_evidence_files: [src/hypertagging/preprocessing/basf2_mdst.py, scripts/create_real_mdst_pilot_notebook.py]
+    current_tests: [tests/test_final_audit_corrections_cpu.py]
+    notebook_evidence: [notebooks/inspect_real_mdst_pilot.ipynb]
+    external_evidence_required: [diagnose strict-root matching on representative generic mDST and rerun]
+    last_verified_sha: 70e99ae489e30ce9c131c6a2228ce3e5d517f584
+    notes: All 50 real events used fallback B-root discovery; zero events satisfied the strict path.
+  - id: DATA-014
+    title: Schema-v4 finalization used a Python API absent from Belle II release 08-03-00
+    originating_audit: docs/audits/current_status.md
+    first_reported_sha: 70e99ae489e30ce9c131c6a2228ce3e5d517f584
+    current_status: FIXED_AND_TESTED
+    current_evidence_files: [src/hypertagging/preprocessing/schema_v4.py, scripts/preprocess_mdst.py]
+    current_tests: [tests/test_final_audit_corrections_cpu.py]
+    notebook_evidence: [notebooks/inspect_real_mdst_pilot.ipynb]
+    external_evidence_required: []
+    last_verified_sha: 70e99ae489e30ce9c131c6a2228ce3e5d517f584
+    notes: Replaced str.removeprefix with equivalent slicing; the repeated 50-event real run completed and published parquet, sidecar, and completion marker.

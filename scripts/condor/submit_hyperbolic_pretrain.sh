@@ -3,7 +3,7 @@ set -euo pipefail
 DATA_MANIFEST="${DATA_MANIFEST:-}"
 OUTPUT_DIR="${OUTPUT_DIR:-/data/dust/user/boyangyu/hypertagging/hyperbolic_pretrain}"
 if [[ -z "${DATA_MANIFEST}" ]]; then
-  echo "Set DATA_MANIFEST to a v1/v2/v3 parquet, shard directory, or JSONL manifest." >&2
+  echo "Set DATA_MANIFEST to a schema-v4 parquet, shard directory, or JSONL manifest (legacy adapters are diagnostic only)." >&2
   exit 2
 fi
 printf -v DATA_ARG '%q' "${DATA_MANIFEST}"

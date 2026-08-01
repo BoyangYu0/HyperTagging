@@ -28,11 +28,14 @@ kind-specific projections, current PID, node kind, level representation, and
 availability, then enters a shared relation-aware contextual encoder. Tree,
 reconstruction, channel, and hyperbolic projections branch only afterward.
 
-Append-time construction persists physical daughter sums only. Contextual
-daughter pooling is transient: every subsequent encoder pass recomputes the
-permutation-invariant pooled daughter summary from the current adjacency and
-contextual embeddings. Truth-guided and predicted states with identical links
-therefore follow the same next-pass construction contract.
+Append-time construction persists physical daughter sums only. The current
+baseline is `precontext_daughter_pool`: every subsequent encoder pass
+recomputes a permutation-invariant summary from the current adjacency and the
+pre-context daughter representations, then builds composite inputs before
+Stage-A contextual attention. This avoids circular dependence and target-level
+leakage. Truth-guided and predicted states with identical links therefore
+follow the same next-pass construction contract. A lower-level contextual
+two-pass pool is not silently enabled; it remains a named future ablation.
 
 `learned_euclidean` is the stable level baseline. The optional
 `bounded_tangent_level_embedding` is accurately a tangent-space mechanism: it

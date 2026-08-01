@@ -34,6 +34,11 @@ class LevelReconstructionOutput:
     context_mask: torch.Tensor
     relation_bias: torch.Tensor
     attention_weights: torch.Tensor
+    physical_relation_bias: torch.Tensor
+    physical_attention_weights: torch.Tensor | None
+    hyperbolic_relation_bias: torch.Tensor | None
+    hyperbolic_attention_weights: torch.Tensor | None
+    final_contextual_embeddings: torch.Tensor
     tree_projection: torch.Tensor
     reconstruction_projection: torch.Tensor
     channel_projection: torch.Tensor
@@ -230,6 +235,10 @@ class LevelAutoregressiveReconstructor(nn.Module):
                 else torch.zeros_like(encoded.physical_relation_bias)
             )
             attention_weights = encoded.attention_weights
+            physical_relation_bias = encoded.physical_relation_bias
+            physical_attention_weights = encoded.physical_attention_weights
+            hyperbolic_relation_bias = encoded.hyperbolic_relation_bias
+            hyperbolic_attention_weights = encoded.hyperbolic_attention_weights
             current_probabilities = runtime.probabilities
             current_tokens = runtime.current_tokens
             current_p4 = runtime.p4
@@ -269,6 +278,12 @@ class LevelAutoregressiveReconstructor(nn.Module):
                 attention_weights = relation_bias.new_zeros(
                     (*relation_bias.shape[:1], 1, *relation_bias.shape[-2:])
                 )
+            physical_relation_bias = relation_bias
+            physical_attention_weights = (
+                attention_weights if self.use_contextual_encoder else None
+            )
+            hyperbolic_relation_bias = None
+            hyperbolic_attention_weights = None
             reconstruction_h = reconstruction_projection
             leaf_pid_logits = self.leaf_pid_head(reconstruction_h)
             current_probabilities = None
@@ -312,32 +327,41 @@ class LevelAutoregressiveReconstructor(nn.Module):
             ),
         )
         return LevelReconstructionOutput(
-            target_level,
-            pointer,
-            h,
-            z,
-            context_mask,
-            relation_bias,
-            attention_weights,
-            tree_projection,
-            reconstruction_projection,
-            channel_projection,
-            leaf_pid_logits,
-            current_probabilities,
-            current_tokens,
-            current_p4,
-            (
+            target_level=target_level,
+            pointer=pointer,
+            node_embeddings=h,
+            hyperbolic_embeddings=z,
+            context_mask=context_mask,
+            relation_bias=relation_bias,
+            attention_weights=attention_weights,
+            physical_relation_bias=physical_relation_bias,
+            physical_attention_weights=physical_attention_weights,
+            hyperbolic_relation_bias=hyperbolic_relation_bias,
+            hyperbolic_attention_weights=hyperbolic_attention_weights,
+            final_contextual_embeddings=h,
+            tree_projection=tree_projection,
+            reconstruction_projection=reconstruction_projection,
+            channel_projection=channel_projection,
+            leaf_pid_logits=leaf_pid_logits,
+            current_pid_probabilities=current_probabilities,
+            current_pid_tokens=current_tokens,
+            current_p4=current_p4,
+            second_pass_common_features=(
                 reconstruction_batch["common_features"]
                 if self.encoder_mode == "heterogeneous"
                 else None
             ),
-            (
+            second_pass_common_availability=(
                 reconstruction_batch["common_availability"]
                 if self.encoder_mode == "heterogeneous"
                 else None
             ),
-            pid_mode if self.encoder_mode == "heterogeneous" else "input",
-            pid_mode if self.encoder_mode == "heterogeneous" else "input",
+            relation_pid_kinematics_mode=(
+                pid_mode if self.encoder_mode == "heterogeneous" else "input"
+            ),
+            decision_pid_kinematics_mode=(
+                pid_mode if self.encoder_mode == "heterogeneous" else "input"
+            ),
         )
 
 

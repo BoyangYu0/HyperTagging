@@ -333,13 +333,13 @@ class ParquetEventWriter:
                     "leaf_kinematics_mode", "mixed_explicit_per_node"
                 ),
                 "actual_leaf_mode_distribution": {
-                    key.removeprefix("leaf_mode_"): value
+                    key[len("leaf_mode_") :]: value
                     for key, value in sorted(self._capacity.items())
                     if key.startswith("leaf_mode_")
                 },
                 "actual_collection_mode": _actual_collection_mode(
                     {
-                        key.removeprefix("leaf_mode_"): value
+                        key[len("leaf_mode_") :]: value
                         for key, value in self._capacity.items()
                         if key.startswith("leaf_mode_")
                     }
@@ -495,7 +495,7 @@ def _policy_capacity_from_counters(completeness: Mapping[str, int]) -> dict[str,
         prefix = f"{policy}_level_"
         for key, value in completeness.items():
             if key.startswith(prefix):
-                values[f"level_{key.removeprefix(prefix)}"] = int(value)
+                values[f"level_{key[len(prefix) :]}"] = int(value)
         output[policy] = values
     return output
 

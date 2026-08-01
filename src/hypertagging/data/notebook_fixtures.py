@@ -1,4 +1,4 @@
-"""Deterministic schema-v2 fixture used by notebook smoke tests."""
+"""Deterministic schema-v4-first fixtures used by notebook smoke tests."""
 
 from __future__ import annotations
 

@@ -108,8 +108,9 @@ def run_hyperbolic_pretrain_dry_run(
         )
     ablation_config = ALL_ABLATIONS[ablation]
     weights = {
-        "lca": float(ablation_config.lca_parent),
-        "parent": float(ablation_config.lca_parent),
+        "lca": float(ablation_config.lca_relation),
+        "parent": float(ablation_config.parent_ranking),
+        "tree_distance": float(ablation_config.exact_tree_distance),
         "depth": 0.2 * float(ablation_config.radius_depth),
         "channel": 0.2 * float(ablation_config.channel_supervision),
         "var": 0.1 * float(ablation_config.variance_covariance),

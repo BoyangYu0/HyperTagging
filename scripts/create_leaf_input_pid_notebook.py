@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Generate the schema-v3 leaf-input/PID-contract inspection notebook."""
+"""Generate the schema-v4 leaf-input/PID-contract inspection notebook."""
 
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ def build_notebook():
             supervision. Fixture results test software behavior only.
             """
         ),
-        md("## Setup and schema-v3 validation"),
+        md("## Setup and schema-v4 validation"),
         code(
             """
             from pathlib import Path

@@ -913,6 +913,7 @@ def collapse_diagnostics(
     mask: torch.Tensor,
     *,
     level_ids: torch.Tensor | None = None,
+    node_kind_ids: torch.Tensor | None = None,
     b_side: torch.Tensor | None = None,
     boundary_threshold: float = 0.95,
     curvature: float = 1.0,
@@ -926,6 +927,8 @@ def collapse_diagnostics(
             "min_dimension_std": zero,
             "covariance_off_diagonal_norm": zero,
             "effective_rank": zero,
+            "within_level_effective_rank": zero,
+            "within_node_kind_effective_rank": zero,
             "boundary_fraction": zero,
             "radius_level_correlation": zero,
             "angular_separation_by_branch": zero,
@@ -937,6 +940,25 @@ def collapse_diagnostics(
     singular_values = torch.linalg.svdvals(centered)
     probabilities = singular_values / singular_values.sum().clamp_min(1e-8)
     effective_rank = torch.exp(-(probabilities * probabilities.clamp_min(1e-8).log()).sum())
+
+    def grouped_effective_rank(labels: torch.Tensor | None) -> torch.Tensor:
+        if labels is None:
+            return zero
+        ranks = []
+        selected_labels = labels[mask]
+        for label in torch.unique(selected_labels):
+            group = valid[selected_labels == label]
+            if group.shape[0] < 2:
+                continue
+            group = group - group.mean(dim=0)
+            values = torch.linalg.svdvals(group)
+            probabilities = values / values.sum().clamp_min(1e-8)
+            ranks.append(
+                torch.exp(
+                    -(probabilities * probabilities.clamp_min(1e-8).log()).sum()
+                )
+            )
+        return torch.stack(ranks).mean() if ranks else zero
     norm = torch.linalg.norm(z[mask], dim=-1)
     radius_values = radius(z, curvature=curvature)[mask]
     correlation = zero
@@ -960,6 +982,8 @@ def collapse_diagnostics(
         "min_dimension_std": std.min(),
         "covariance_off_diagonal_norm": torch.linalg.matrix_norm(off_diagonal),
         "effective_rank": effective_rank,
+        "within_level_effective_rank": grouped_effective_rank(level_ids),
+        "within_node_kind_effective_rank": grouped_effective_rank(node_kind_ids),
         "boundary_fraction": (
             curvature**0.5 * norm >= boundary_threshold
         ).float().mean(),
@@ -1153,6 +1177,7 @@ def hyperbolic_pretraining_loss(
         z,
         node_mask,
         level_ids=level_ids,
+        node_kind_ids=node_kind_ids,
         b_side=b_side,
         curvature=curvature,
     )

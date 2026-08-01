@@ -11,7 +11,7 @@ from hypertagging.models.level_autoregressive import LevelAutoregressiveReconstr
 class AblationConfig:
     name: str
     heterogeneous_adapters: bool
-    lca_parent: bool
+    legacy_lca_parent_bundle: bool
     radius_depth: bool
     variance_covariance: bool
     channel_supervision: bool
@@ -25,6 +25,18 @@ class AblationConfig:
     pid_kinematics_mode: str = "soft_expectation"
     pid_temperature: float = 1.0
     type_conditioned_daughter_relation_bias: bool = False
+
+    @property
+    def lca_relation(self) -> bool:
+        return self.legacy_lca_parent_bundle
+
+    @property
+    def parent_ranking(self) -> bool:
+        return self.legacy_lca_parent_bundle
+
+    @property
+    def exact_tree_distance(self) -> bool:
+        return self.legacy_lca_parent_bundle
 
 
 ABLATIONS: dict[str, AblationConfig] = {

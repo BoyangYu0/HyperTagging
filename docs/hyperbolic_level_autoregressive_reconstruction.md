@@ -29,8 +29,11 @@ p4(mother) = sum p4(selected reconstructed daughters)
 ```
 
 No head regresses an arbitrary mother p4. Composite p4, charge, daughter
-histogram, confidence summaries, and pooled daughter embedding are all created
-by the common composite-construction path.
+histogram, and confidence summaries are created by the common persistent
+construction path. The baseline daughter embedding is the named
+`precontext_daughter_pool`: it permutation-invariantly pools pre-context node
+representations on the next encoder pass, avoiding a circular context
+dependency. Event context enters only after that composite input exists.
 
 ## Shared encoder and task projections
 
@@ -46,6 +49,7 @@ The configurable base loss is:
 ```text
 L = lambda_LCA L_LCA
   + lambda_parent L_parent
+  + lambda_tree_distance L_tree_distance
   + lambda_depth L_depth
   + lambda_channel L_channel
   + lambda_var L_var
@@ -128,7 +132,7 @@ softmax. Tests verify that changing only this bias changes outputs and that its
 parameters receive finite gradients. `use_relation_bias=False` is the ablation.
 
 Physical continuous relations follow the versioned overlap-aware contract
-`physical-relations-overlap-aware-v2`: level/charge use fixed divisors and
+`physical-relations-overlap-aware-v3`: level/charge use fixed divisors and
 GeV-valued quantities use signed log compression. Pair mass and energy are
 available only for disjoint recursive leaf-source pairs. Explicit channels mark
 recursive overlap, ancestor/descendant relations, disjointness, same reco
@@ -193,7 +197,9 @@ training and evaluation remain HTCondor-only.
 The corrected order is heterogeneous adapters → Stage-A physical relation
 attention → contextual Euclidean nodes → task projections → shared Poincaré
 projection. Stage A has no hyperbolic inputs. Optional Stage B then uses
-Poincaré distance/radius features and is a separate ablation.
+Poincaré distance/radius features and is a separate ablation. Diagnostics
+expose the physical bias/attention and hyperbolic bias/attention independently;
+no reported matrix is a fictitious softmax of the sum of the two stage biases.
 
 The principal loss is LCA classification, true Poincaré parent ranking, direct
 normalized tree-distance regression, leaves-outside radius-depth regression,

@@ -136,7 +136,7 @@ The unified repo now includes a direct-mDST preprocessing path under
 
 ```bash
 source /cvmfs/belle.cern.ch/tools/b2setup release-08-03-00
-basf2 scripts/preprocess_mdst.py -- \
+python3 scripts/preprocess_mdst.py \
   --input /path/to/generic_mdst.root \
   --output /data/dust/user/boyangyu/hypertagging/processed.parquet \
   --schema-version direct-mdst-tree-v4 \
@@ -258,7 +258,7 @@ For a schema-v4 pilot:
 
 ```bash
 source /cvmfs/belle.cern.ch/tools/b2setup release-08-03-00
-basf2 scripts/preprocess_mdst.py -- \
+python3 scripts/preprocess_mdst.py \
   --input /path/to/input.root --output /data/path/pilot-v4.parquet \
   --schema-version direct-mdst-tree-v4 --max-events 50 \
   --event-buffer-size 32 --row-group-size 16

@@ -62,7 +62,7 @@ def build_notebook() -> nbf.NotebookNode:
             torch.manual_seed(SEED); np.random.seed(SEED)
             requested = os.environ.get("HYPERTAGGING_PARQUET", "").strip()
             FIXTURE_MODE = not bool(requested)
-            INPUT_PATH = Path(requested) if requested else Path("/tmp/hypertagging_notebook_fixture_v3.parquet")
+            INPUT_PATH = Path(requested) if requested else Path("/tmp/hypertagging_notebook_fixture_v4.parquet")
             if FIXTURE_MODE: write_notebook_fixture_v4(INPUT_PATH)
             if not INPUT_PATH.exists(): raise FileNotFoundError(INPUT_PATH)
             FIGURE_DIR = Path(os.environ.get("HYPERTAGGING_FIGURE_DIR", "/tmp/hypertagging_figures/hyperbolic"))
@@ -70,7 +70,9 @@ def build_notebook() -> nbf.NotebookNode:
             events = load_heterogeneous_events(INPUT_PATH, limit=8, max_nodes=128)
             if not events: raise ValueError("No usable events")
             batch = collate_heterogeneous_events(events)
-            model = HeterogeneousNodeEncoder(d_model=24, hyper_dim=4)
+            model = HeterogeneousNodeEncoder(
+                d_model=24, hyper_dim=4, use_hyperbolic_refinement=True
+            )
             checkpoint = os.environ.get("HYPERTAGGING_CHECKPOINT", "").strip()
             if checkpoint:
                 state = torch.load(checkpoint, map_location="cpu")
@@ -81,6 +83,24 @@ def build_notebook() -> nbf.NotebookNode:
             mask = batch["node_mask"]
             print("TINY SOFTWARE FIXTURE — UNTRAINED MODEL" if FIXTURE_MODE and not checkpoint else "SUPPLIED DATA/CHECKPOINT INSPECTION")
             print("Events/nodes:", len(events), int(mask.sum()))
+            """
+        ),
+        md("## Separate physical and hyperbolic attention stages"),
+        code(
+            """
+            physical_attention = encoded.physical_attention_weights[0].mean(0).numpy()
+            hyperbolic_attention = encoded.hyperbolic_attention_weights[0].mean(0).numpy()
+            fig, axes = plt.subplots(1, 4, figsize=(18, 4))
+            matrices = [
+                encoded.physical_relation_bias[0].numpy(), physical_attention,
+                encoded.hyperbolic_relation_bias[0].numpy(), hyperbolic_attention,
+            ]
+            titles = ["Stage-A physical bias", "Stage-A attention", "Stage-B hyperbolic bias", "Stage-B attention"]
+            for axis, matrix, title in zip(axes, matrices, titles):
+                image = axis.imshow(matrix, aspect="auto", cmap="coolwarm")
+                axis.set_title(title); axis.set_xlabel("key"); axis.set_ylabel("query")
+                fig.colorbar(image, ax=axis)
+            fig.tight_layout(); fig.savefig(FIGURE_DIR / "separate_attention_stages.png"); plt.show()
             """
         ),
         md("## Embedding projections"),

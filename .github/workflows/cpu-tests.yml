@@ -16,6 +16,10 @@ jobs:
       - run: python -m pip install -e ".[dev,notebook]"
       - name: Unit suite
         run: python -m pytest -q | tee pytest-summary.txt
+      - name: Audit integrity
+        run: python scripts/validate_audit_integrity.py
+      - name: Generated notebook consistency
+        run: python scripts/execute_notebook_smoke_tests.py --check-generated
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -31,20 +35,15 @@ jobs:
           python-version: "3.11"
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -e ".[dev,notebook]"
-      - name: Selected deterministic CPU notebooks
+      - name: Core push/PR notebooks selected from index
         run: >-
           python scripts/execute_notebook_smoke_tests.py
           --keep-output /tmp/hypertagging-notebook-smoke
-          --only dataset
-          --only leaf_pid
-          --only leaf_composite
-          --only streaming
-          --only hyperbolic
-          --only training
-          --only reconstruction
-          --only qa
+          --ci-frequency push_and_weekly
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: bounded-notebook-summary
-          path: /tmp/hypertagging-notebook-smoke/notebook_execution_summary.json
+          path: |
+            /tmp/hypertagging-notebook-smoke/notebook_execution_summary.json
+            /tmp/hypertagging-notebook-smoke/visual_review_index.html

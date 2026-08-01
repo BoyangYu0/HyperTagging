@@ -1,5 +1,6 @@
 from pathlib import Path
 import importlib.util
+import json
 import subprocess
 import sys
 
@@ -8,6 +9,51 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def _load_validator():
+    path = ROOT / "scripts/validate_audit_integrity.py"
+    spec = importlib.util.spec_from_file_location("audit_integrity", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _git(repo: Path, *args: str) -> str:
+    return subprocess.run(
+        ["git", *args], cwd=repo, check=True, capture_output=True, text=True
+    ).stdout.strip()
+
+
+def _commit(repo: Path, message: str) -> str:
+    _git(repo, "add", ".")
+    _git(repo, "commit", "-m", message)
+    return _git(repo, "rev-parse", "HEAD")
+
+
+def _audit_history_fixture(tmp_path: Path) -> tuple[Path, str, dict[str, object]]:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git(repo, "init", "-q")
+    _git(repo, "config", "user.name", "Audit Test")
+    _git(repo, "config", "user.email", "audit@example.invalid")
+    (repo / "src").mkdir()
+    (repo / "notebooks").mkdir()
+    (repo / "docs").mkdir()
+    (repo / "src/model.py").write_text("VALUE = 1\n", encoding="utf-8")
+    notebook = {
+        "cells": [{"cell_type": "markdown", "id": "old", "metadata": {}, "source": ["# x"]}],
+        "metadata": {}, "nbformat": 4, "nbformat_minor": 5,
+    }
+    (repo / "notebooks/example.ipynb").write_text(json.dumps(notebook), encoding="utf-8")
+    (repo / "docs/audit.md").write_text("audit\n", encoding="utf-8")
+    audited = _commit(repo, "audited source")
+    ledger: dict[str, object] = {
+        "audited_code_sha": audited,
+        "allowed_post_audit_paths": ["docs/**", "notebooks/*.ipynb"],
+    }
+    return repo, audited, ledger
 
 
 def test_audit_archive_and_issue_ledger_integrity():
@@ -67,7 +113,12 @@ def test_notebook_index_has_complete_nonduplicated_responsibilities():
         "real_mdst_pilot",
         "trained_physics_validation",
     }
-    assert all(entry["last_verified_sha"] == "NOT_RUN" for entry in real_only)
+    assert {
+        entry["id"]: entry["last_verified_sha"] for entry in real_only
+    } == {
+        "real_mdst_pilot": "70e99ae489e30ce9c131c6a2228ce3e5d517f584",
+        "trained_physics_validation": "NOT_RUN",
+    }
 
 
 def test_generated_notebook_cell_ids_are_deterministic():
@@ -92,3 +143,49 @@ def test_generated_notebook_cell_ids_are_deterministic():
     module._stabilize_notebook_cell_ids(second, "contract.ipynb")
     assert [cell.id for cell in first.cells] == [cell.id for cell in second.cells]
     assert len({cell.id for cell in first.cells}) == len(first.cells)
+
+
+def test_audited_code_sha_equal_to_head_passes(tmp_path):
+    repo, _, ledger = _audit_history_fixture(tmp_path)
+    assert _load_validator().validate_audited_code_ancestry(ledger, repo) == []
+
+
+def test_audit_only_commit_after_audited_code_passes(tmp_path):
+    repo, _, ledger = _audit_history_fixture(tmp_path)
+    (repo / "docs/audit.md").write_text("updated audit\n", encoding="utf-8")
+    _commit(repo, "audit only")
+    assert _load_validator().validate_audited_code_ancestry(ledger, repo) == []
+
+
+def test_notebook_cell_id_only_commit_after_audited_code_passes(tmp_path):
+    repo, _, ledger = _audit_history_fixture(tmp_path)
+    path = repo / "notebooks/example.ipynb"
+    notebook = json.loads(path.read_text(encoding="utf-8"))
+    notebook["cells"][0]["id"] = "stable"
+    path.write_text(json.dumps(notebook), encoding="utf-8")
+    _commit(repo, "normalize notebook cell id")
+    assert _load_validator().validate_audited_code_ancestry(ledger, repo) == []
+
+
+def test_source_commit_after_audited_code_fails(tmp_path):
+    repo, _, ledger = _audit_history_fixture(tmp_path)
+    (repo / "src/model.py").write_text("VALUE = 2\n", encoding="utf-8")
+    _commit(repo, "source change")
+    errors = _load_validator().validate_audited_code_ancestry(ledger, repo)
+    assert errors == ["post-audit path is outside the allowlist: src/model.py"]
+
+
+def test_missing_or_nonancestor_audited_code_sha_fails(tmp_path):
+    repo, _, ledger = _audit_history_fixture(tmp_path)
+    missing = dict(ledger, audited_code_sha="f" * 40)
+    assert "does not identify a commit" in _load_validator().validate_audited_code_ancestry(
+        missing, repo
+    )[0]
+    _git(repo, "checkout", "--orphan", "unrelated")
+    (repo / "src/model.py").write_text("VALUE = 3\n", encoding="utf-8")
+    unrelated = _commit(repo, "unrelated history")
+    nonancestor = dict(ledger, audited_code_sha=unrelated)
+    _git(repo, "checkout", "master")
+    assert "not an ancestor" in _load_validator().validate_audited_code_ancestry(
+        nonancestor, repo
+    )[0]

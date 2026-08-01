@@ -1,4 +1,4 @@
-"""V1/v2 parquet loading and dense heterogeneous model batches."""
+"""Schema-v4-first parquet loading and dense heterogeneous model batches."""
 
 from __future__ import annotations
 
@@ -33,7 +33,10 @@ MODEL_INPUT_SOURCE_TO_ID = {
     "versioned_compatibility_adapter": 2,
     "runtime_reconstructed": 3,
 }
-TRUTH_SUPERVISION_SOURCE_TO_ID = {"retained_mc_truth": 101}
+TRUTH_SUPERVISION_SOURCE_TO_ID = {
+    "unavailable": 0,
+    "retained_mc_truth": 101,
+}
 
 
 def _model_input_histogram_from_node(node: dict[str, Any]) -> list[float]:
@@ -142,7 +145,7 @@ def load_heterogeneous_events(
     max_nodes: int | None = None,
     overflow_strategy: str = "raise",
 ) -> list[HeterogeneousEvent]:
-    """Load any direct-mDST schema into the corrected v3 model contract."""
+    """Load direct-mDST data into the production schema-v4 model contract."""
 
     output: list[HeterogeneousEvent] = []
     for event_index, event in enumerate(iter_event_records_v4(path)):

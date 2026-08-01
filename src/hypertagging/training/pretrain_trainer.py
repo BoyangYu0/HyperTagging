@@ -95,13 +95,24 @@ class PretrainConfig:
     hyper_projection_init_scale: float | None = None
     tangent_scale_mode: str | None = None
     radius_target_mode: str = "generation_height_radius"
-    best_metric: str = "validation_loss_total"
+    best_metric: str = "validation_full_training_objective"
     best_mode: str = "min"
     channel_zero_positive_validation_window: int = 3
     channel_zero_positive_action: str = "warn"
     hyperbolic_level_encoding: str = "learned_euclidean"
     objective_gradient_diagnostics: bool = False
     objective_gradient_diagnostics_every: int = 100
+    lca_relation_weight: float = 1.0
+    parent_ranking_weight: float = 1.0
+    exact_tree_distance_weight: float = 1.0
+    radius_depth_weight: float = 0.2
+    channel_weight: float = 0.2
+    variance_weight: float = 0.1
+    covariance_weight: float = 0.01
+    leaf_pid_weight: float = 1.0
+    corruption_class_weight: float = 0.1
+    candidate_correctness_weight: float = 0.1
+    hard_negative_weight: float = 0.1
 
 
 @dataclass(frozen=True)
@@ -284,6 +295,14 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
         raise ValueError("log_every must be positive")
     if config.best_mode not in {"min", "max"}:
         raise ValueError("best_mode must be 'min' or 'max'")
+    if config.best_metric not in {
+        "validation_principal_loss",
+        "validation_full_training_objective",
+    }:
+        raise ValueError(
+            "best_metric must explicitly select validation_principal_loss or "
+            "validation_full_training_objective"
+        )
     if config.radius_target_mode not in {
         "generation_height_radius", "exact_root_depth_radius",
         "weak_or_learned_radius",
@@ -544,7 +563,7 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 channel_memory_embeddings=memory_embeddings,
                 channel_memory_full_truth_ids=memory_full_ids,
                 channel_memory_reconstructable_ids=memory_reco_ids,
-                weights=_pretraining_weights(config.ablation),
+                weights=_pretraining_weights(config),
                 curvature=config.curvature,
                 full_event_max_level=train_batch.get("full_event_max_level"),
                 tangent_variance_target=architecture.tangent_variance_target,
@@ -590,10 +609,10 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
             )
             loss = (
                 loss_output.total
-                + leaf_pid_loss
-                + 0.1 * corruption_loss
-                + 0.1 * correctness_loss
-                + 0.1 * hard_negative_loss
+                + config.leaf_pid_weight * leaf_pid_loss
+                + config.corruption_class_weight * corruption_loss
+                + config.candidate_correctness_weight * correctness_loss
+                + config.hard_negative_weight * hard_negative_loss
             )
         enqueue_mask = (
             branch_mask
@@ -899,8 +918,11 @@ def _validate_pretraining(
         event_count += int(raw_batch["node_mask"].shape[0])
         batch = _to_device(raw_batch, device)
         _add_topology_labels(batch)
+        validation_stage = PretrainingStage(
+            config.curriculum[(batch_count - 1) % len(config.curriculum)]
+        )
         curriculum = build_curriculum_batch(
-            batch, PretrainingStage.TRUTH_GUIDED_MULTILEVEL,
+            batch, validation_stage,
             seed=config.seed + batch_count,
             corruption_objective=config.corruption_objective,
         )
@@ -913,14 +935,14 @@ def _validate_pretraining(
             parent_ids=validation_batch["parent_ids"],
             lca_depth=validation_batch["lca_depth"],
             level_ids=validation_batch["level_ids"],
-            node_mask=validation_batch["node_mask"],
+            node_mask=curriculum.structural_positive_mask,
             b_side=validation_batch["b_side"],
             lca_node_id=validation_batch["lca_node_id"],
             edges_to_lca_from_i=validation_batch["edges_to_lca_from_i"],
             edges_to_lca_from_j=validation_batch["edges_to_lca_from_j"],
         )
         parent_negative_mask = build_topology_safe_parent_negative_mask(
-            targets, validation_batch["node_mask"],
+            targets, curriculum.structural_positive_mask,
             validation_batch["ancestor_descendant_relation"],
         )
         attention_logits = (
@@ -935,7 +957,11 @@ def _validate_pretraining(
             level_ids=validation_batch["level_ids"],
             attention_logits=attention_logits,
         )
-        valid_channel = valid_b_root_channel_mask(validation_batch)
+        valid_channel = valid_b_root_channel_mask(
+            validation_batch,
+            corrupted_node_mask=curriculum.corrupted_node_mask,
+            corruption_objective=config.corruption_objective,
+        )
         branch_mask &= valid_channel[:, None]
         full_channel_ids = torch.stack(
             [
@@ -963,7 +989,7 @@ def _validate_pretraining(
             parent_negative_mask=parent_negative_mask,
             parent_ids=validation_batch["parent_ids"],
             level_ids=validation_batch["level_ids"],
-            node_mask=validation_batch["node_mask"],
+            node_mask=curriculum.structural_positive_mask,
             b_side=validation_batch["b_side"],
             node_kind_ids=validation_batch["node_kind_ids"],
             event_ids=validation_batch["event_ids"],
@@ -977,7 +1003,7 @@ def _validate_pretraining(
                 ], dim=-1,
             ),
             channel_branch_count_arrays=structural_features,
-            weights=_pretraining_weights(config.ablation),
+            weights=_pretraining_weights(config),
             curvature=config.curvature,
             full_event_max_level=validation_batch.get("full_event_max_level"),
             tangent_variance_target=architecture.tangent_variance_target,
@@ -987,10 +1013,67 @@ def _validate_pretraining(
                 "distance_to_nearest_retained_root"
             ],
         )
-        leaf_loss = _leaf_pid_loss(leaf_pid_logits, validation_batch)
-        total_loss = loss_output.total + leaf_loss
-        totals.setdefault("validation_loss_total", []).append(float(total_loss))
+        ablation = ALL_ABLATIONS[config.ablation]
+        leaf_loss = (
+            _leaf_pid_loss(leaf_pid_logits, validation_batch)
+            if ablation.leaf_pid
+            else encoded.node_embeddings.sum() * 0.0
+        )
+        corruption_nodes = validation_batch["node_mask"] & (
+            validation_batch["level_ids"] > 0
+        )
+        corruption_logits = model.corruption_type_head(encoded.node_embeddings)
+        correctness_logits = model.candidate_correctness_head(
+            encoded.node_embeddings
+        ).squeeze(-1)
+        corruption_loss = (
+            F.cross_entropy(
+                corruption_logits[corruption_nodes],
+                curriculum.corruption_code[corruption_nodes],
+            )
+            if corruption_nodes.any()
+            else encoded.node_embeddings.sum() * 0.0
+        )
+        correctness_loss = (
+            F.binary_cross_entropy_with_logits(
+                correctness_logits[corruption_nodes],
+                (~curriculum.corrupted_node_mask)[corruption_nodes].float(),
+            )
+            if corruption_nodes.any()
+            else encoded.node_embeddings.sum() * 0.0
+        )
+        hard_negative_loss = _hard_negative_tree_loss(
+            encoded.hyperbolic_embeddings,
+            curriculum.hard_negative_pairs,
+            curvature=config.curvature,
+        )
+        principal_loss = loss_output.total + config.leaf_pid_weight * leaf_loss
+        full_objective = (
+            principal_loss
+            + config.corruption_class_weight * corruption_loss
+            + config.candidate_correctness_weight * correctness_loss
+            + config.hard_negative_weight * hard_negative_loss
+        )
+        totals.setdefault("validation_principal_loss", []).append(float(principal_loss))
+        totals.setdefault("validation_full_training_objective", []).append(
+            float(full_objective)
+        )
+        # Compatibility alias; checkpoint selection must use one of the two
+        # explicitly named metrics above.
+        totals.setdefault("validation_loss_total", []).append(float(full_objective))
         totals.setdefault("validation_loss_leaf_pid", []).append(float(leaf_loss))
+        totals.setdefault("validation_loss_corruption_class", []).append(
+            float(corruption_loss)
+        )
+        totals.setdefault("validation_loss_candidate_correctness", []).append(
+            float(correctness_loss)
+        )
+        totals.setdefault("validation_loss_hard_negative", []).append(
+            float(hard_negative_loss)
+        )
+        totals.setdefault("validation_hard_negative_count", []).append(
+            float(curriculum.hard_negative_pairs.shape[0])
+        )
         for name, value in loss_output.components.items():
             totals.setdefault(f"validation_loss_{name}", []).append(float(value))
         for name, value in loss_output.diagnostics.items():
@@ -1051,16 +1134,18 @@ def _validate_pretraining(
     return metrics
 
 
-def _pretraining_weights(ablation_name: str) -> dict[str, float]:
-    config = ALL_ABLATIONS[ablation_name]
+def _pretraining_weights(config: PretrainConfig) -> dict[str, float]:
+    ablation = ALL_ABLATIONS[config.ablation]
     return {
-        "lca": float(config.lca_parent),
-        "parent": float(config.lca_parent),
-        "tree_distance": float(config.lca_parent),
-        "depth": 0.2 * float(config.radius_depth),
-        "channel": 0.2 * float(config.channel_supervision),
-        "var": 0.1 * float(config.variance_covariance),
-        "cov": 0.01 * float(config.variance_covariance),
+        "lca": config.lca_relation_weight * float(ablation.lca_relation),
+        "parent": config.parent_ranking_weight * float(ablation.parent_ranking),
+        "tree_distance": config.exact_tree_distance_weight * float(
+            ablation.exact_tree_distance
+        ),
+        "depth": config.radius_depth_weight * float(ablation.radius_depth),
+        "channel": config.channel_weight * float(ablation.channel_supervision),
+        "var": config.variance_weight * float(ablation.variance_covariance),
+        "cov": config.covariance_weight * float(ablation.variance_covariance),
     }
 
 

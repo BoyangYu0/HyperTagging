@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Generate a compact schema-v1/v2 preprocessing QA report notebook."""
+"""Generate a compact schema-v4 preprocessing QA report notebook."""
 
 from __future__ import annotations
 
@@ -51,7 +51,7 @@ def build_notebook() -> nbf.NotebookNode:
 
                 requested = os.environ.get("HYPERTAGGING_PARQUET", "").strip()
                 FIXTURE_MODE = not bool(requested)
-                INPUT_PATH = Path(requested) if requested else Path("/tmp/hypertagging_notebook_fixture_v3.parquet")
+                INPUT_PATH = Path(requested) if requested else Path("/tmp/hypertagging_notebook_fixture_v4.parquet")
                 if FIXTURE_MODE: write_notebook_fixture_v4(INPUT_PATH)
                 if not INPUT_PATH.exists(): raise FileNotFoundError(INPUT_PATH)
                 FIGURE_DIR = Path(os.environ.get("HYPERTAGGING_FIGURE_DIR", "/tmp/hypertagging_figures/qa"))

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import json
 import os
@@ -64,6 +65,40 @@ def _normalize_generated_notebook(path: Path) -> None:
     nbformat.write(notebook, path)
 
 
+def _generate_notebook(entry: dict[str, object], destination: Path) -> Path:
+    generator = REPO_ROOT / str(entry["generator"])
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    subprocess.run(
+        [sys.executable, str(generator), "--output", str(destination)],
+        cwd=REPO_ROOT,
+        check=True,
+        stdout=subprocess.DEVNULL,
+    )
+    _normalize_generated_notebook(destination)
+    return destination
+
+
+def check_generated_notebooks(work_root: Path) -> list[str]:
+    """Return tracked notebook paths whose normalized generated source is stale."""
+
+    stale: list[str] = []
+    generated_root = work_root / "generated"
+    def compare(entry: dict[str, object]) -> str | None:
+        tracked = REPO_ROOT / str(entry["path"])
+        generated = _generate_notebook(entry, generated_root / tracked.name)
+        tracked_notebook = nbformat.read(tracked, as_version=4)
+        _stabilize_notebook_cell_ids(tracked_notebook, tracked.name)
+        generated_notebook = nbformat.read(generated, as_version=4)
+        _stabilize_notebook_cell_ids(generated_notebook, generated.name)
+        if nbformat.writes(tracked_notebook) != nbformat.writes(generated_notebook):
+            return str(entry["path"])
+        return None
+
+    with ThreadPoolExecutor(max_workers=min(4, len(NOTEBOOK_INDEX))) as executor:
+        stale.extend(path for path in executor.map(compare, NOTEBOOK_INDEX) if path)
+    return stale
+
+
 def _git_sha() -> str:
     return subprocess.run(
         ["git", "rev-parse", "HEAD"],
@@ -92,16 +127,14 @@ def execute_one(
     work_root: Path,
     timeout: int,
 ) -> Path:
-    generator = REPO_ROOT / str(entry["generator"])
-    source = REPO_ROOT / str(entry["path"])
+    tracked_source = REPO_ROOT / str(entry["path"])
+    source = _generate_notebook(entry, work_root / "generated" / tracked_source.name)
     expected_sections = tuple(str(section) for section in entry.get("expected_sections", []))
-    subprocess.run([sys.executable, str(generator)], cwd=REPO_ROOT, check=True)
-    _normalize_generated_notebook(source)
     notebook_text = source.read_text(encoding="utf-8")
     for section in expected_sections:
         if section.lower() not in notebook_text.lower():
             raise AssertionError(f"{source.name} misses expected section text: {section}")
-    executed_path = work_root / source.name
+    executed_path = work_root / tracked_source.name
     shutil.copy2(source, executed_path)
     notebook = nbformat.read(executed_path, as_version=4)
     figure_dir = work_root / f"{name}_figures"
@@ -274,6 +307,16 @@ def main(argv: list[str] | None = None) -> int:
         help="Print the runner-derived group count and names without executing them.",
     )
     parser.add_argument(
+        "--check-generated",
+        action="store_true",
+        help="Regenerate in a temporary directory and compare normalized source bytes.",
+    )
+    parser.add_argument(
+        "--ci-frequency",
+        choices=tuple(sorted({str(entry["CI_frequency"]) for entry in NOTEBOOK_INDEX})),
+        help="Select default notebooks from the authoritative index by CI frequency.",
+    )
+    parser.add_argument(
         "--only",
         action="append",
         choices=tuple(NOTEBOOKS),
@@ -297,6 +340,15 @@ def main(argv: list[str] | None = None) -> int:
         for name in NOTEBOOKS:
             print(name)
         return 0
+    if args.check_generated:
+        with tempfile.TemporaryDirectory(prefix="hypertagging-generated-check-") as directory:
+            stale = check_generated_notebooks(Path(directory))
+        if stale:
+            for path in stale:
+                print(f"STALE: {path}", file=sys.stderr)
+            return 1
+        print(f"generated notebook consistency PASS: {len(NOTEBOOK_INDEX)} notebooks")
+        return 0
     if args.keep_output:
         work_root = args.keep_output.resolve()
         work_root.mkdir(parents=True, exist_ok=True)
@@ -306,6 +358,11 @@ def main(argv: list[str] | None = None) -> int:
         work_root = Path(temporary.name)
     executed = []
     selected = set() if args.diagnostic_only else set(args.only or NOTEBOOKS)
+    if args.ci_frequency:
+        selected = {
+            name for name, entry in NOTEBOOKS.items()
+            if entry.get("CI_frequency") == args.ci_frequency
+        }
     for name, entry in NOTEBOOKS.items():
         if name not in selected:
             continue
@@ -330,6 +387,12 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Executed {len(executed)} notebooks on CPU fixtures")
     for path in executed:
         print(path)
+    figure_paths = sorted(work_root.glob("*_figures/*.png"))
+    html = ["<html><body><h1>Notebook figures</h1>", "<p>Visual review: NOT_REVIEWED</p>"]
+    for figure in figure_paths:
+        html.append(f'<h2>{figure.name}</h2><img src="{figure.relative_to(work_root)}" style="max-width:900px">')
+    html.append("</body></html>")
+    (work_root / "visual_review_index.html").write_text("\n".join(html) + "\n", encoding="utf-8")
     (work_root / "notebook_execution_summary.json").write_text(
         json.dumps(
             {
@@ -349,6 +412,8 @@ def main(argv: list[str] | None = None) -> int:
                     else []
                 ),
                 "fixture_only": True,
+                "visual_review_status": "NOT_REVIEWED",
+                "figure_count": len(figure_paths),
             },
             indent=2,
         ),

@@ -7,6 +7,10 @@ import torch
 
 from hypertagging.data.level_collate import collate_level_events
 from hypertagging.data.tiny_level_fixtures import tiny_level_events
+from hypertagging.data.heterogeneous import (
+    MODEL_INPUT_SOURCE_TO_ID,
+    TRUTH_SUPERVISION_SOURCE_TO_ID,
+)
 from hypertagging.models.heterogeneous import HeterogeneousNodeEncoder
 from hypertagging.models.level_autoregressive import (
     LevelAutoregressiveReconstructor,
@@ -15,9 +19,11 @@ from hypertagging.models.level_autoregressive import (
 from hypertagging.models.relation_attention import RelationAwareSetLayer
 from hypertagging.preprocessing.pid_filter import PDG_TOKENS
 from hypertagging.reconstruction.level_rollout import (
+    BatchedRolloutState,
     CompositeProposal,
     append_composite_proposals,
     batched_level_step,
+    batched_rollout_level_transition,
 )
 from hypertagging.training.model_config import ModelArchitecture, resolve_model_architecture
 from hypertagging.training.reconstruction_trainer import (
@@ -27,6 +33,8 @@ from hypertagging.training.reconstruction_trainer import (
 from hypertagging.training.pretrain_trainer import ChannelMemoryBank
 from hypertagging.training.pretrain_trainer import (
     PRINCIPAL_PRETRAINING_OBJECTIVES,
+    PretrainConfig,
+    _pretraining_weights,
     objective_gradient_diagnostics,
 )
 
@@ -85,6 +93,77 @@ def test_attention_dropout_is_propagated_and_train_eval_behavior_is_deterministi
     torch.manual_seed(2)
     second = layer(values, relation_bias=relation, attention_mask=mask[:, :, None] & mask[:, None], node_mask=mask)[0]
     assert not torch.allclose(first, second)
+
+
+def test_physical_and_hyperbolic_attention_stages_are_exposed_separately():
+    batch = _leaf_state()
+    encoder = HeterogeneousNodeEncoder(
+        d_model=16,
+        hyper_dim=4,
+        n_heads=2,
+        n_context_layers=1,
+        use_hyperbolic_refinement=True,
+    ).eval()
+    first = encoder(batch)
+    assert first.physical_attention_weights is not None
+    assert first.hyperbolic_attention_weights is not None
+    torch.testing.assert_close(first.final_contextual_embeddings, first.node_embeddings)
+
+    changed_physical = {name: value.clone() for name, value in batch.items()}
+    changed_physical["charge"] = changed_physical["charge"] + torch.tensor(
+        [[2.0, -1.0]], dtype=changed_physical["charge"].dtype
+    )
+    second = encoder(changed_physical)
+    assert not torch.allclose(
+        first.physical_attention_weights, second.physical_attention_weights
+    )
+
+    with torch.no_grad():
+        encoder.hyper_projection.weight.add_(
+            3.0 * torch.randn_like(encoder.hyper_projection.weight)
+        )
+    geometry_changed = encoder(batch)
+    torch.testing.assert_close(
+        first.physical_attention_weights,
+        geometry_changed.physical_attention_weights,
+    )
+    assert not torch.allclose(
+        first.hyperbolic_attention_weights,
+        geometry_changed.hyperbolic_attention_weights,
+    )
+
+    disabled = HeterogeneousNodeEncoder(
+        d_model=16,
+        hyper_dim=4,
+        n_heads=2,
+        n_context_layers=1,
+        use_hyperbolic_refinement=False,
+    ).eval()(batch)
+    assert disabled.hyperbolic_attention_weights is None
+
+
+def test_both_attention_stages_respect_padding_and_stair_masks():
+    batch = _leaf_state()
+    padded = {name: value.clone() for name, value in batch.items()}
+    padded["node_mask"][0, -1] = False
+    padded["active"][0, -1] = False
+    mask = padded["node_mask"][:, :, None] & padded["node_mask"][:, None, :]
+    encoder = HeterogeneousNodeEncoder(
+        d_model=16,
+        hyper_dim=4,
+        n_heads=2,
+        n_context_layers=1,
+        use_hyperbolic_refinement=True,
+    ).eval()
+    output = encoder(padded, attention_mask=mask)
+    assert output.physical_attention_weights is not None
+    assert output.hyperbolic_attention_weights is not None
+    for weights in (
+        output.physical_attention_weights,
+        output.hyperbolic_attention_weights,
+    ):
+        assert torch.count_nonzero(weights[..., -1]) == 0
+        assert torch.count_nonzero(weights[..., -1, :]) == 0
 
 
 def test_type_conditioned_query_node_bias_changes_logits_and_receives_gradients():
@@ -251,6 +330,98 @@ def test_identical_links_have_identical_next_pass_composite_embeddings():
     torch.testing.assert_close(truth_output.node_embeddings, predicted_output.node_embeddings)
 
 
+def test_predicted_runtime_nodes_have_no_truth_provenance_or_targets():
+    state = _leaf_state()
+    proposal = CompositeProposal(
+        0, 4, tuple(range(state["node_mask"].shape[1])), 1.0, 1.0
+    )
+    predicted, _ = append_composite_proposals(state, [proposal], target_level=1)
+    position = predicted["node_mask"].shape[1] - 1
+    assert predicted["model_input_source_ids"][0, position] == MODEL_INPUT_SOURCE_TO_ID[
+        "runtime_reconstructed"
+    ]
+    assert predicted["truth_supervision_source_ids"][0, position] == (
+        TRUTH_SUPERVISION_SOURCE_TO_ID["unavailable"]
+    )
+    assert not predicted["truth_pid_available"][0, position]
+    assert predicted["pid_target_labels"][0, position] == 0
+    assert predicted["truth_pid_labels"][0, position] == 0
+    assert predicted["full_truth_daughter_count"][0, position] == -1
+    assert predicted["retained_truth_daughter_count_expected"][0, position] == -1
+    assert not predicted["valid_reconstruction_target"][0, position]
+    assert predicted["runtime_structurally_valid"][0, position]
+
+
+def test_predicted_runtime_truth_fields_cannot_change_subsequent_outputs():
+    model = _model(type_conditioned_daughter_relation_bias=True).eval()
+    state = _leaf_state()
+    proposal = CompositeProposal(
+        0, 4, tuple(range(state["node_mask"].shape[1])), 1.0, 1.0
+    )
+    predicted, _ = append_composite_proposals(state, [proposal], target_level=1)
+    changed = {name: value.clone() for name, value in predicted.items()}
+    position = changed["node_mask"].shape[1] - 1
+    for name in (
+        "pid_target_labels",
+        "truth_pid_labels",
+        "full_truth_daughter_count",
+        "retained_truth_daughter_count_expected",
+        "truth_root_distance",
+        "full_event_max_level",
+    ):
+        changed[name][0, position] = 37
+    changed["daughter_truth_pid_histogram"][0, position] = torch.randn_like(
+        changed["daughter_truth_pid_histogram"][0, position]
+    )
+    changed["truth_pid_available"][0, position] = True
+    changed["daughter_truth_pid_histogram_available"][0, position] = True
+    changed["complete_truth_decay"][0, position] = True
+    original_output = model(predicted, target_level=2)
+    changed_output = model(changed, target_level=2)
+    for left, right in (
+        (original_output.node_embeddings, changed_output.node_embeddings),
+        (original_output.relation_bias, changed_output.relation_bias),
+        (original_output.pointer.pointer_logits, changed_output.pointer.pointer_logits),
+        (original_output.pointer.type_logits, changed_output.pointer.type_logits),
+        (original_output.leaf_pid_logits, changed_output.leaf_pid_logits),
+    ):
+        torch.testing.assert_close(left, right)
+
+
+def test_free_rollout_never_marks_predicted_nodes_truth_available(monkeypatch):
+    import importlib
+
+    rollout_module = importlib.import_module(
+        "hypertagging.reconstruction.level_rollout"
+    )
+    state = _leaf_state()
+    proposal = CompositeProposal(
+        0, 4, tuple(range(state["node_mask"].shape[1])), 1.0, 1.0
+    )
+    monkeypatch.setattr(
+        rollout_module,
+        "hard_decode_proposals",
+        lambda output, batch, config: [proposal],
+    )
+    result = rollout_module.level_rollout(
+        _model(),
+        state,
+        mode="predicted",
+        config=rollout_module.RolloutConfig(
+            max_level=1, root_types=(), exclusive_final=False
+        ),
+    )
+    predicted = result.batch["model_input_source_ids"] == MODEL_INPUT_SOURCE_TO_ID[
+        "runtime_reconstructed"
+    ]
+    assert predicted.any()
+    assert not result.batch["truth_pid_available"][predicted].any()
+    assert torch.all(
+        result.batch["truth_supervision_source_ids"][predicted]
+        == TRUTH_SUPERVISION_SOURCE_TO_ID["unavailable"]
+    )
+
+
 def test_batched_level_step_matches_reference_for_two_events():
     model = _model()
     first = _leaf_state(0)
@@ -304,6 +475,42 @@ def test_batched_level_step_matches_reference_for_two_events():
         )
 
 
+def test_batched_rollout_transition_stops_events_independently():
+    first = _leaf_state(0)
+    batched = {
+        name: torch.cat([value, value.clone()], dim=0)
+        if value.ndim > 0 and value.shape[0] == 1
+        else value
+        for name, value in first.items()
+    }
+    model = _model()
+    output = model(batched, target_level=1)
+    daughters = torch.zeros_like(output.pointer.pointer_logits, dtype=torch.bool)
+    daughters[0, 0] = batched["node_mask"][0]
+    accepted = torch.zeros_like(output.pointer.object_logits, dtype=torch.bool)
+    accepted[0, 0] = True
+    control = BatchedRolloutState(
+        batch=batched,
+        active_event_mask=torch.ones(2, dtype=torch.bool),
+        stopped_event_mask=torch.zeros(2, dtype=torch.bool),
+        levels_completed=torch.zeros(2, dtype=torch.long),
+        stop_code=torch.zeros(2, dtype=torch.long),
+    )
+    transitioned = batched_rollout_level_transition(
+        control,
+        output,
+        daughter_mask=daughters,
+        accepted_query_mask=accepted,
+        target_level=1,
+    )
+    assert transitioned.active_event_mask.tolist() == [True, False]
+    assert transitioned.stopped_event_mask.tolist() == [False, True]
+    assert transitioned.stop_code.tolist() == [0, 1]
+    old_count = batched["node_mask"].shape[1]
+    assert transitioned.batch["node_mask"][0, old_count:].any()
+    assert not transitioned.batch["node_mask"][1, old_count:].any()
+
+
 def test_channel_memory_ring_buffer_wraps_and_serializes_cursor():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     bank = ChannelMemoryBank(3, 2).to(device)
@@ -350,3 +557,64 @@ def test_objective_gradient_diagnostics_reports_all_objectives_and_groups():
     }
     assert not report["zero_gradient_objectives"]
     assert report["gradient_cosines"]["shared_encoder"]["lca"]["leaf_pid"] == pytest.approx(1.0)
+
+
+def test_pretraining_objective_weights_are_independent_and_yaml_consumed():
+    from scripts.train_hyperbolic_pretrain import parse_args
+
+    args = parse_args(["--config", "configs/hyperbolic_pretrain.yaml", "--dry-run"])
+    names = (
+        "lca_relation_weight",
+        "parent_ranking_weight",
+        "exact_tree_distance_weight",
+        "radius_depth_weight",
+        "channel_weight",
+        "variance_weight",
+        "covariance_weight",
+        "leaf_pid_weight",
+        "corruption_class_weight",
+        "candidate_correctness_weight",
+        "hard_negative_weight",
+    )
+    assert all(hasattr(args, name) for name in names)
+    config = PretrainConfig(
+        data="unused",
+        output_dir="unused",
+        lca_relation_weight=1.1,
+        parent_ranking_weight=2.2,
+        exact_tree_distance_weight=3.3,
+    )
+    weights = _pretraining_weights(config)
+    assert weights["lca"] == pytest.approx(1.1)
+    assert weights["parent"] == pytest.approx(2.2)
+    assert weights["tree_distance"] == pytest.approx(3.3)
+
+
+def test_active_contract_docs_and_generators_have_no_known_stale_versions():
+    active_paths = [
+        Path("docs/hyperbolic_level_autoregressive_reconstruction.md"),
+        Path("docs/heterogeneous_node_encoding.md"),
+        Path("scripts/create_leaf_input_pid_notebook.py"),
+        Path("scripts/create_dataset_inspection_notebook.py"),
+        Path("scripts/create_hyperbolic_inspection_notebook.py"),
+        Path("scripts/create_reconstruction_inspection_notebook.py"),
+        Path("scripts/create_preprocessing_qa_notebook.py"),
+    ]
+    text = "\n".join(path.read_text(encoding="utf-8") for path in active_paths)
+    for stale in (
+        "physical-relations-overlap-aware-v2",
+        "notebook_fixture_v3",
+        "schema-v3 validation",
+        "schema-v1/v2/v3 dataset",
+    ):
+        assert stale not in text
+    assert "physical-relations-overlap-aware-v3" in text
+    assert "precontext_daughter_pool" in text
+
+
+def test_schema_v4_writer_avoids_post_basf2_python_string_apis():
+    source = Path("src/hypertagging/preprocessing/schema_v4.py").read_text(
+        encoding="utf-8"
+    )
+    assert ".removeprefix(" not in source
+    assert ".removesuffix(" not in source

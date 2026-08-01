@@ -20,9 +20,10 @@ jobs:
       - name: Execute every deterministic CPU notebook group
         run: >-
           python scripts/execute_notebook_smoke_tests.py
+          --diagnostic-first-level-ambiguity
           --keep-output /tmp/hypertagging-all-notebooks
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: all-notebook-summary
-          path: /tmp/hypertagging-all-notebooks/notebook_execution_summary.json
+          path: /tmp/hypertagging-all-notebooks
