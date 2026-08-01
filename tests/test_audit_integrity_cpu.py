@@ -1,7 +1,9 @@
 from pathlib import Path
+import importlib.util
 import subprocess
 import sys
 
+import nbformat
 import yaml
 
 
@@ -66,3 +68,27 @@ def test_notebook_index_has_complete_nonduplicated_responsibilities():
         "trained_physics_validation",
     }
     assert all(entry["last_verified_sha"] == "NOT_RUN" for entry in real_only)
+
+
+def test_generated_notebook_cell_ids_are_deterministic():
+    module_path = ROOT / "scripts/execute_notebook_smoke_tests.py"
+    spec = importlib.util.spec_from_file_location("notebook_smoke_runner", module_path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    first = nbformat.v4.new_notebook(
+        cells=[
+            nbformat.v4.new_markdown_cell("# Contract"),
+            nbformat.v4.new_code_cell("answer = 42"),
+        ]
+    )
+    second = nbformat.v4.new_notebook(
+        cells=[
+            nbformat.v4.new_markdown_cell("# Contract"),
+            nbformat.v4.new_code_cell("answer = 42"),
+        ]
+    )
+    module._stabilize_notebook_cell_ids(first, "contract.ipynb")
+    module._stabilize_notebook_cell_ids(second, "contract.ipynb")
+    assert [cell.id for cell in first.cells] == [cell.id for cell in second.cells]
+    assert len({cell.id for cell in first.cells}) == len(first.cells)

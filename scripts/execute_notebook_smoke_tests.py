@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -41,6 +42,28 @@ DIAGNOSTICS = {
 }
 
 
+def _stabilize_notebook_cell_ids(notebook: nbformat.NotebookNode, name: str) -> None:
+    """Assign content-derived cell IDs so regeneration is byte-stable.
+
+    ``nbformat.v4.new_*_cell`` creates random IDs.  Without this normalization,
+    a smoke run dirties every generated source notebook even when no cell
+    content changed, which makes audit diffs and review evidence unreliable.
+    The cell position is included so repeated boilerplate cells remain unique.
+    """
+
+    for index, cell in enumerate(notebook.cells):
+        identity = "\0".join(
+            (name, str(index), str(cell.cell_type), str(cell.get("source", "")))
+        )
+        cell["id"] = hashlib.sha256(identity.encode("utf-8")).hexdigest()[:16]
+
+
+def _normalize_generated_notebook(path: Path) -> None:
+    notebook = nbformat.read(path, as_version=4)
+    _stabilize_notebook_cell_ids(notebook, path.name)
+    nbformat.write(notebook, path)
+
+
 def _git_sha() -> str:
     return subprocess.run(
         ["git", "rev-parse", "HEAD"],
@@ -73,6 +96,7 @@ def execute_one(
     source = REPO_ROOT / str(entry["path"])
     expected_sections = tuple(str(section) for section in entry.get("expected_sections", []))
     subprocess.run([sys.executable, str(generator)], cwd=REPO_ROOT, check=True)
+    _normalize_generated_notebook(source)
     notebook_text = source.read_text(encoding="utf-8")
     for section in expected_sections:
         if section.lower() not in notebook_text.lower():

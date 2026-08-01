@@ -22,7 +22,8 @@ time. They must not be read as current truth.
 | 2026-07-31 | [Current-head verification](archive/2026-07-31_f064f49_current_head_verification.md) | `f064f49985da98b69c99fb02764d854f76c12e3c` | yes | [current status](current_status.md) |
 | 2026-07-31 | [Current-head completion report](archive/2026-07-31_f064f49_current_head_completion_report.md) | `f064f49985da98b69c99fb02764d854f76c12e3c` | yes | [current status](current_status.md) |
 
-The current audit began at committed HEAD
-`c29342e89237c197850d4d40f6bf25536643de28`. New corrections described in the
-current report are working-tree changes on top of that SHA until committed by
-the repository owner.
+The current audit began from a clean `master` worktree at committed HEAD
+`6f24a7a1729d50a7f98ea62e3c3ffe5e68562eec`. The model, rollout, notebook,
+and audit-consolidation corrections described by the previous pass are part of
+that commit; they are not an uncommitted patch. Any newer working-tree changes
+are identified separately in the authoritative current report.

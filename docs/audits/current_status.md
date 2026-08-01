@@ -1,25 +1,27 @@
 # Current repository audit status
 
 This is the sole authoritative current audit report. It was prepared on
-2026-07-31 against starting HEAD
-`c29342e89237c197850d4d40f6bf25536643de28` on branch `master`. The starting
-worktree was clean. The earlier `f064f49` reports describe an older state; the
-patch they called uncommitted was subsequently committed in `c29342e` and is
-not an uncommitted patch at this starting revision.
+2026-08-01 against starting HEAD
+`6f24a7a1729d50a7f98ea62e3c3ffe5e68562eec` on branch `master`. The starting
+worktree was clean. The earlier `f064f49` and `c29342e` reports describe older
+states. Their correction patches were subsequently committed, culminating in
+`6f24a7a`; those source, test, notebook-index, and audit-consolidation changes
+are not an uncommitted patch at this starting revision.
 
 ## Evidence boundary
 
 The literal system `python -m pytest -q` could not run because `/usr/bin/python`
-has no `pytest`. The repository environment
+has no `pytest`. The literal notebook list and execution commands also failed
+before execution because that interpreter has no `nbformat`. The repository environment
 `/data/dust/user/boyangyu/uv_env/bin/python` was therefore used for executable
-evidence. Before this audit's edits it produced `248 passed, 8 skipped, 19
-warnings in 401.83s`; all 15 indexed default fixture notebooks also passed and
+evidence. Before this audit's edits it produced `263 passed, 8 skipped, 19
+warnings in 449.58s`; all 15 indexed default fixture notebooks also passed and
 were retained under `/tmp/hypertagging-pre-fix-notebooks`.
 
 GitHub has one exact-starting-SHA run: workflow `CPU correctness`, run
-`30656603435`, completed successfully for `c29342e89237c197850d4d40f6bf25536643de28`.
-That is historical evidence for the starting SHA only. No CI result can exist
-for the current uncommitted worktree.
+`30664577968`, completed successfully for
+`6f24a7a1729d50a7f98ea62e3c3ffe5e68562eec`. That run is evidence for the
+committed starting SHA only; it cannot represent newer uncommitted audit edits.
 
 ## Current implementation disposition
 
@@ -44,6 +46,11 @@ The authoritative item-by-item classification is
 - uses a checkpointed channel-memory ring buffer, vectorized channel anchors,
   and configurable multi-objective gradient diagnostics.
 
+This pass additionally found that notebook generators assigned random Jupyter
+cell IDs. The smoke runner now normalizes generated source notebooks to stable,
+content-derived IDs, preventing a no-content validation run from dirtying all
+notebook sources.
+
 This does not make free rollout production-ready. Teacher-forced validation is
 batched; the reference free rollout remains bounded and batch-size one; a full
 multi-level batched production rollout remains open. Weighted set packing and
@@ -52,15 +59,15 @@ beam search are evaluation-only and bounded.
 ## Final verification
 
 The final committed SHA remains
-`c29342e89237c197850d4d40f6bf25536643de28`; this audit did not commit. The
-worktree is intentionally dirty with the audit corrections and generated
-notebook updates. Exact results:
+`6f24a7a1729d50a7f98ea62e3c3ffe5e68562eec`; this audit did not commit. The
+worktree contains this pass's reproducibility and current-evidence updates, not
+the older correction patch. Exact results:
 
 - `/data/dust/user/boyangyu/uv_env/bin/python -m pytest -q`:
-  `263 passed, 8 skipped, 19 warnings in 367.96s (0:06:07)`;
+  `264 passed, 8 skipped, 19 warnings in 392.59s (0:06:32)`;
 - focused audit/config/model/checkpoint/leakage/composite/rollout/channel tests:
-  `34 passed in 11.39s`;
-- `scripts/validate_audit_integrity.py`: `PASS`, 13 archives, 71 ledger
+  `24 passed in 17.08s`;
+- `scripts/validate_audit_integrity.py`: `PASS`, 13 archives, 72 ledger
   items, and one current-status document;
 - `scripts/execute_notebook_smoke_tests.py --list`: 15 default deterministic
   CPU groups, derived from `notebooks/index.yaml`;
@@ -70,14 +77,13 @@ notebook updates. Exact results:
   `/tmp/hypertagging-first-level-final`;
 - 28 declared JSON reports in the post-fix suite were checked for all seven
   required provenance fields with no missing fields;
-- `python -m compileall -q src scripts tests`, `git diff --check`, and staged
-  rename diff checks pass.
+- `python -m compileall -q src scripts tests` and `git diff --check` pass.
 
 No fixture timing is a throughput claim. Real-only notebooks were not executed.
 
 ## Ledger summary and remaining gaps
 
-The 71-item ledger contains 55 `FIXED_AND_TESTED`, 6
+The 72-item ledger contains 56 `FIXED_AND_TESTED`, 6
 `IMPLEMENTED_NOT_REAL_VERIFIED`, 5 `PARTIAL`, 4
 `INTENTIONALLY_DEFERRED_SCIENCE`, 1 `OBSOLETE_OR_DUPLICATE`, and no `OPEN`
 items. The principal partial items are full multi-level batched free rollout,
@@ -94,14 +100,15 @@ keys are rejected.
 
 ## Changed source surface
 
-Core source changes are in `data/heterogeneous.py`,
+The implementation verified at committed HEAD includes changes in `data/heterogeneous.py`,
 `models/{ablation,first_level_ablations,heterogeneous,level_autoregressive,mother_pointer,relation_attention}.py`,
 `losses/hyperbolic_pretraining.py`, `reconstruction/level_rollout.py`,
 `training/{model_config,pretrain_trainer,reconstruction_trainer}.py`, and
 `evaluation/trained_context.py`. CLI/notebook execution changes are in the two
 training CLIs, four notebook generators, the indexed notebook runner, and the
-audit-integrity validator. The tracked notebooks were regenerated from their
-generators.
+audit-integrity validator. This pass changes the notebook runner to stabilize
+generated cell IDs, strengthens audit integrity checks, regenerates the indexed
+notebooks deterministically, and refreshes only active audit/index metadata.
 
 ## Bounded real-mDST pilot commands
 

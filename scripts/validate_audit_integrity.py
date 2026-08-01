@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
+import subprocess
 import sys
 
 import yaml
@@ -15,6 +16,7 @@ AUDIT_ROOT = REPO_ROOT / "docs" / "audits"
 ARCHIVE_ROOT = AUDIT_ROOT / "archive"
 README = AUDIT_ROOT / "README.md"
 LEDGER = AUDIT_ROOT / "issue_ledger.yaml"
+NOTEBOOK_INDEX = REPO_ROOT / "notebooks" / "index.yaml"
 ALLOWED_STATUSES = {
     "FIXED_AND_TESTED",
     "IMPLEMENTED_NOT_REAL_VERIFIED",
@@ -81,6 +83,17 @@ def validate() -> list[str]:
     audited_head = str(ledger.get("audited_head", ""))
     if not re.fullmatch(r"[0-9a-f]{40}", audited_head):
         errors.append(f"invalid audited_head: {audited_head!r}")
+    actual_head = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    if audited_head != actual_head:
+        errors.append(
+            f"ledger audited_head {audited_head!r} does not match Git HEAD {actual_head!r}"
+        )
     identifiers: set[str] = set()
     for index, item in enumerate(ledger.get("items", [])):
         missing = REQUIRED_FIELDS - set(item)
@@ -123,6 +136,18 @@ def validate() -> list[str]:
         errors.append("current_status.md does not name the ledger audited_head")
     if "sole authoritative current audit report" not in current_text:
         errors.append("current_status.md lacks the single-current-document declaration")
+
+    notebook_index = yaml.safe_load(NOTEBOOK_INDEX.read_text(encoding="utf-8"))
+    for entry in notebook_index.get("notebooks", []):
+        expected = (
+            "NOT_RUN"
+            if entry.get("fixture_or_real") == "real_only"
+            else audited_head
+        )
+        if str(entry.get("last_verified_sha")) != expected:
+            errors.append(
+                f"notebook {entry.get('id')} last_verified_sha must be {expected}"
+            )
     return errors
 
 
