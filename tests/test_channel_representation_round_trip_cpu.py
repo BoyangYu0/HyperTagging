@@ -11,4 +11,7 @@ def test_channel_representation_json_round_trip_preserves_depth_and_multiplicity
     assert restored == representation
     assert restored["depth_pid_counts"]
     assert restored["branch_multiplicities"]
-
+    assert restored["branch_multiplicity_counts"]
+    assert sum(
+        record["count"] for record in restored["branch_multiplicity_counts"]
+    ) == len(restored["branch_multiplicities"])

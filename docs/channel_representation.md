@@ -21,8 +21,11 @@ discovery requires exactly two direct retained B0/B+ daughters; B_s is excluded
 by default and any fallback is flagged.
 
 Structured summaries contain dense reduced-PID counts, depth-by-PID and
-relative-depth counts, selected intermediate counts, sorted branch
-multiplicities, node count, and maximum relative depth.
+relative-depth counts, selected intermediate counts, canonical branch-
+multiplicity histograms, node count, and maximum relative depth. The sorted
+`branch_multiplicities` list remains serialized for compatibility, but
+similarity uses `(multiplicity, count)` records and never traversal or list
+position.
 `structured_channel_similarity` is a symmetric weighted Jaccard score over
 these structures. It is a graded metric-learning target, not a replacement for
 exact IDs.

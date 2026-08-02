@@ -1633,7 +1633,7 @@ def _save_reconstruction_checkpoint(
             "feature_spec_hash": feature_spec_v4()["feature_spec_hash"],
             "model_feature_contract_hash": feature_spec_v4()["model_feature_contract_hash"],
             "track_fit_policies": list(
-                (data_module.dataset_index or {}).get("track_fit_policies", [])
+                data_module.track_fit_policies
             ),
             "pid_reconstruction_mode": model.pid_kinematics_mode,
             "pid_temperature": float(model.pid_temperature),
@@ -1695,6 +1695,12 @@ def _save_reconstruction_checkpoint(
                 else "validation"
             ),
             "event_uids": list(validation_uids or []),
+            "rollout_event_uids": list(validation_uids or [])[
+                : int(metrics.get("rollout_validation_events", 0.0))
+            ],
+            "rollout_was_run": bool(
+                metrics.get("rollout_validation_events", 0.0) > 0
+            ),
             "deterministic": True,
             "max_validation_events": int(config.max_validation_events),
             "rollout_validation_events": int(config.rollout_validation_events),

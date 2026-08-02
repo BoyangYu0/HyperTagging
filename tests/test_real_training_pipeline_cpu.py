@@ -44,7 +44,11 @@ def test_real_parquet_train_transfer_validate_and_resume(tmp_path):
         assert name in checkpoint["config"]
     assert (tmp_path / "pretrain" / "best.pt").exists()
     assert (tmp_path / "pretrain" / "best_principal_topology.pt").exists()
-    assert (tmp_path / "pretrain" / "best_parent_ranking.pt").exists()
+    parent_checkpoint = tmp_path / "pretrain" / "best_parent_ranking.pt"
+    if pretrain.metrics["validation_parent_ranking_accuracy_denominator"] > 0:
+        assert parent_checkpoint.exists()
+    else:
+        assert not parent_checkpoint.exists()
     assert (tmp_path / "pretrain" / "best_tree_distance.pt").exists()
     assert (tmp_path / "pretrain" / "latest.pt").exists()
     assert checkpoint["training_state"]["best_metric"] == (
@@ -88,10 +92,23 @@ def test_real_parquet_train_transfer_validate_and_resume(tmp_path):
         "checkpoint_selection_contract"
     ]
     assert selection["primary_metric"] == "validation_loss_total"
+    assert selection["thresholds"] == {
+        "object_probability": 0.5,
+        "daughter_pointer_probability": 0.5,
+        "confidence": 0.0,
+        "type_probability": None,
+    }
     assert "track_fit_policies" in reconstruction_payload["feature_contract"]
     assert reconstruction_payload["feature_contract"]["pid_reconstruction_mode"]
     assert reconstruction_payload["feature_contract"]["exclusive_resolver"]["production"] == "greedy"
     assert reconstruction_payload["validation_selection"]["event_uids"]
+    assert reconstruction_payload["validation_selection"]["rollout_was_run"]
+    assert reconstruction_payload["validation_selection"]["rollout_event_uids"]
+    assert reconstruction_payload["validation_selection"]["rollout_event_uids"] == (
+        reconstruction_payload["validation_selection"]["event_uids"][
+            : int(reconstruction.metrics["rollout_validation_events"])
+        ]
+    )
     resumed_without_new_steps = train_level_reconstruction(
         ReconstructionConfig(
             data=str(data),

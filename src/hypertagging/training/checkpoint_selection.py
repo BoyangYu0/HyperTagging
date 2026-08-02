@@ -46,33 +46,33 @@ RECONSTRUCTION_TRACK_BY_METRIC = {
 PRETRAIN_CHECKPOINT_TRACKS: tuple[CheckpointTrack, ...] = (
     CheckpointTrack(
         "best_principal_topology.pt",
-        "validation_principal_loss",
+        "validation_loss_lca",
         "min",
-        "validation_batches",
+        "validation_active_denominator_lca",
     ),
     CheckpointTrack(
         "best_parent_ranking.pt",
         "validation_parent_ranking_accuracy",
         "max",
-        "validation_batches",
+        "validation_parent_ranking_accuracy_denominator",
     ),
     CheckpointTrack(
         "best_tree_distance.pt",
         "validation_loss_tree_distance",
         "min",
-        "validation_batches",
+        "validation_active_denominator_tree_distance",
     ),
     CheckpointTrack(
         "best_non_collapse_effective_rank.pt",
         "validation_effective_rank",
         "max",
-        "validation_batches",
+        "validation_active_denominator_variance",
     ),
     CheckpointTrack(
         "best_channel_retrieval.pt",
         "validation_channel_retrieval_accuracy",
         "max",
-        "validation_batches",
+        "validation_channel_retrieval_queries",
     ),
 )
 
@@ -127,7 +127,7 @@ def reconstruction_selection_contract(
     """Fields whose change makes checkpoint ranking incomparable on resume."""
 
     return {
-        "version": "reconstruction-checkpoint-selection-v2",
+        "version": "reconstruction-checkpoint-selection-v3",
         "primary_metric": best_metric,
         "primary_mode": best_mode,
         "tracks": [
@@ -147,13 +147,16 @@ def reconstruction_selection_contract(
             "max_level": 8,
             "exclusive_resolution": "greedy",
             "bounded_weighted_set_packing": "diagnostic_only",
+            "learned_confidence": True,
         },
         "constraint_policy": dict(constraint_policy),
         "pid_mode": rollout_pid_kinematics_mode,
         "pid_temperature": float(rollout_pid_temperature),
         "thresholds": {
+            "object_probability": 0.5,
             "daughter_pointer_probability": 0.5,
-            "confidence": 0.5,
+            "confidence": 0.0,
+            "type_probability": None,
         },
         "target_policy": target_policy,
     }

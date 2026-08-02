@@ -155,6 +155,39 @@ def test_structured_similarity_and_unordered_pair_are_symmetric():
     assert first == second == json.dumps(["a", "b"], separators=(",", ":"))
 
 
+def test_channel_multiplicity_similarity_uses_canonical_counts_not_list_positions():
+    common = {
+        "pid_counts": [],
+        "depth_pid_counts": [],
+        "selected_intermediate_counts": [],
+    }
+    left = {
+        **common,
+        "branch_multiplicities": [2, 3],
+        "branch_multiplicity_counts": [
+            {"multiplicity": 2, "count": 1},
+            {"multiplicity": 3, "count": 1},
+        ],
+    }
+    reordered = {
+        **common,
+        "branch_multiplicities": [3, 2],
+        "branch_multiplicity_counts": list(
+            reversed(left["branch_multiplicity_counts"])
+        ),
+    }
+    extra_two_body = {
+        **common,
+        "branch_multiplicities": [2, 2, 3],
+        "branch_multiplicity_counts": [
+            {"multiplicity": 2, "count": 2},
+            {"multiplicity": 3, "count": 1},
+        ],
+    }
+    assert structured_channel_similarity(left, reordered) == 1.0
+    assert 0.0 < structured_channel_similarity(left, extra_two_body) < 1.0
+
+
 def test_same_event_is_not_the_same_as_same_channel():
     record = event_channel_record(_two_b_tree(conjugate=False))
     assert record["same_event"]

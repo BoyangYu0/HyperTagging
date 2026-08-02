@@ -1318,6 +1318,9 @@ def _validate_pretraining(
             totals["validation_channel_retrieval_accuracy"] = [
                 float((ids[nearest[has_peer]] == ids[has_peer]).float().mean())
             ]
+            totals["validation_channel_retrieval_queries"] = [
+                float(has_peer.sum())
+            ]
     model.train()
     metrics = {
         name: sum(values) / len(values)
@@ -1548,8 +1551,10 @@ def objective_preflight_report(
     rows: dict[str, dict[str, float]] = {}
     violations: list[str] = []
     all_projection_norms = gradient_report.get("gradient_norms", {})
-    shared_norms = all_projection_norms.get(
-        "shared_encoder", {}
+    monitored_groups = (
+        "shared_encoder",
+        "tree_projection",
+        "hyperbolic_projection",
     )
     weighted_nonzero: list[tuple[str, float]] = []
     for name, value in objectives.items():
@@ -1557,22 +1562,31 @@ def objective_preflight_report(
         weight = float(weights.get(name, 0.0))
         weighted = raw * weight
         denominator = float(denominators.get(name, 0.0))
-        gradient_norm = float(shared_norms.get(name, 0.0))
+        group_norms = {
+            group: float(all_projection_norms.get(group, {}).get(name, 0.0))
+            for group in monitored_groups
+        }
         rows[name] = {
             "raw_loss": raw,
             "configured_weight": weight,
             "weighted_magnitude": weighted,
             "active_denominator": denominator,
-            "shared_encoder_gradient_norm": gradient_norm,
+            **{
+                f"{group}_gradient_norm": norm
+                for group, norm in group_norms.items()
+            },
         }
         if weight == 0:
             continue
-        if not all(math.isfinite(number) for number in (raw, weighted, gradient_norm)):
+        if not all(
+            math.isfinite(number)
+            for number in (raw, weighted, *group_norms.values())
+        ):
             violations.append(f"{name}:non_finite")
         if denominator <= 0:
             violations.append(f"{name}:zero_denominator")
-        if gradient_norm <= 0:
-            violations.append(f"{name}:zero_shared_encoder_gradient")
+        if not any(norm > 0 for norm in group_norms.values()):
+            violations.append(f"{name}:zero_gradient")
         if abs(weighted) > 0:
             weighted_nonzero.append((name, abs(weighted)))
     if len(weighted_nonzero) >= 2:
@@ -1769,7 +1783,7 @@ def _save_pretrain_checkpoint(
             "feature_spec_hash": feature_spec_v4()["feature_spec_hash"],
             "model_feature_contract_hash": feature_spec_v4()["model_feature_contract_hash"],
             "track_fit_policies": list(
-                (data_module.dataset_index or {}).get("track_fit_policies", [])
+                data_module.track_fit_policies
             ),
         },
         legacy_conflated_fraction=data_module.legacy_conflated_fraction,

@@ -15,11 +15,14 @@ from hypertagging.preprocessing.basf2_mdst import (
     _select_data_independent_track_fit,
 )
 from hypertagging.preprocessing.schema_v2 import NODE_KIND_TO_ID
+from hypertagging.reconstruction.constraints import ReconstructionConstraintPolicy
 from hypertagging.reconstruction.level_rollout import RolloutConfig
 from hypertagging.training.checkpoint_selection import (
+    PRETRAIN_CHECKPOINT_TRACKS,
     checkpoint_track_decisions,
     initial_track_values,
 )
+from hypertagging.training.data_module import _track_fit_policies_from_publications
 from hypertagging.training.pretrain_trainer import objective_preflight_report
 from scripts.train_level_reconstruction import parse_args as parse_reconstruction_args
 
@@ -111,6 +114,39 @@ def test_node_kind_adapter_dispatch_is_name_based_under_reordered_ids():
     assert NODE_KIND_TO_ID["klm_cluster"] in RolloutConfig().allowed_daughter_node_kinds
 
 
+def test_default_constraint_policy_admits_klm_daughters_by_name():
+    policy = ReconstructionConstraintPolicy()
+    batch = {
+        "node_mask": torch.tensor([[True, True]]),
+        "level_ids": torch.tensor([[0, 1]]),
+        "node_kind_ids": torch.tensor(
+            [[NODE_KIND_TO_ID["klm_cluster"], NODE_KIND_TO_ID["composite"]]]
+        ),
+    }
+    assert policy.pointer_validity_mask(batch, target_level=1).tolist() == [
+        [True, False]
+    ]
+
+
+def test_pretrain_diagnostic_tracks_require_objective_denominators():
+    metrics = {
+        "validation_loss_lca": 0.2,
+        "validation_active_denominator_lca": 4.0,
+        "validation_parent_ranking_accuracy": 0.9,
+        "validation_parent_ranking_accuracy_denominator": 0.0,
+        "validation_channel_retrieval_accuracy": 1.0,
+        "validation_channel_retrieval_queries": 0.0,
+    }
+    _state, selected = checkpoint_track_decisions(
+        metrics,
+        initial_track_values(PRETRAIN_CHECKPOINT_TRACKS),
+        PRETRAIN_CHECKPOINT_TRACKS,
+    )
+    assert [track.filename for track in selected] == [
+        "best_principal_topology.pt"
+    ]
+
+
 def test_track_fit_policy_ablation_is_mc_independent_and_unknown_fails(tmp_path: Path):
     class Fit:
         def __init__(self, pvalue): self.pvalue = pvalue
@@ -138,6 +174,17 @@ def test_track_fit_policy_ablation_is_mc_independent_and_unknown_fails(tmp_path:
         Basf2PreprocessConfig(
             ("input.root",), tmp_path / "bad.parquet", track_fit_policy="unknown-v1"
         )
+
+
+def test_track_fit_policy_is_read_without_requiring_a_dataset_index(tmp_path: Path):
+    shard = tmp_path / "pilot.parquet"
+    shard.with_suffix(shard.suffix + ".metadata.json").write_text(
+        '{"track_fit_policy":"canonical_pion_closest_mass-v1"}\n',
+        encoding="utf-8",
+    )
+    assert _track_fit_policies_from_publications([shard]) == (
+        TRACK_FIT_POLICY_CANONICAL_PION_V1,
+    )
 
 
 @pytest.mark.parametrize(
@@ -169,6 +216,36 @@ def test_pilot_objective_config_and_preflight_report_fail_on_inactive_objective(
             {"lca": 4.0, "channel": 0.0},
             gradients,
             action="fail",
+        )
+
+
+def test_objective_preflight_checks_all_documented_projection_norms():
+    objectives = {"lca": torch.tensor(1.0)}
+    weights = {"lca": 1.0}
+    denominators = {"lca": 2.0}
+    tree_only = {
+        "gradient_norms": {
+            "shared_encoder": {"lca": 0.0},
+            "tree_projection": {"lca": 2.0},
+            "hyperbolic_projection": {"lca": 0.0},
+        }
+    }
+    report = objective_preflight_report(
+        objectives, weights, denominators, tree_only, action="fail"
+    )
+    assert report["pass"]
+    assert report["objectives"]["lca"]["tree_projection_gradient_norm"] == 2.0
+
+    non_finite = {
+        "gradient_norms": {
+            "shared_encoder": {"lca": 1.0},
+            "tree_projection": {"lca": float("nan")},
+            "hyperbolic_projection": {"lca": 0.0},
+        }
+    }
+    with pytest.raises(RuntimeError, match="non_finite"):
+        objective_preflight_report(
+            objectives, weights, denominators, non_finite, action="fail"
         )
 
 
