@@ -58,6 +58,10 @@ inspected at the time. Archive inventory and worktree state come only from expli
 
 - 2026-08-01 · gap · [historical report](archive/2026-08-01_77707eb_current_head_gap_audit.md) · superseded by [current status](current_status.md)
 
+### `ede387e195caabf41b7da0350de15eb4b90b4417`
+
+- 2026-08-02 · verification · [historical report](archive/2026-08-02_ede387e_focused_post_audit_consolidation.md) · superseded by [current status](current_status.md)
+
 ## Evidence boundary
 
 The current non-self-referential source boundary and exact post-boundary

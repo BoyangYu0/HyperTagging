@@ -55,3 +55,60 @@ runs:
     ci_run: 'NOT_RUN_FOR_D2F3801; starting ab9feb1 succeeded at https://github.com/BoyangYu0/HyperTagging/actions/runs/30703389232'
     human_visual_review_status: NOT_REVIEWED
     evidence_limitations: CPU fixtures only in this pass; no real mDST refresh, trained checkpoint, representative CUDA profile, ten-million-event run, or human visual review.
+  - source_sha: 9399425394eeaaf8a09c5398ad95bfd5519ed229
+    metadata_head: 9399425394eeaaf8a09c5398ad95bfd5519ed229
+    worktree_state: clean
+    date: '2026-08-02T09:00:00+02:00'
+    commands:
+      - /data/dust/user/boyangyu/uv_env/bin/python -m pytest -q
+      - /data/dust/user/boyangyu/uv_env/bin/python scripts/validate_audit_integrity.py
+      - /data/dust/user/boyangyu/uv_env/bin/python scripts/execute_notebook_smoke_tests.py --check-generated
+      - /data/dust/user/boyangyu/uv_env/bin/python scripts/execute_notebook_smoke_tests.py --keep-output /tmp/hypertagging-post-audit-baseline
+      - /data/dust/user/boyangyu/uv_env/bin/python scripts/execute_notebook_smoke_tests.py --diagnostic-only --diagnostic-first-level-ambiguity --keep-output /tmp/hypertagging-first-level-baseline
+    pytest:
+      result: PASS
+      passed: 314
+      skipped: 8
+      warnings: 20
+      duration_seconds: 342.92
+    notebooks:
+      generated_consistency: {result: PASS, count: 18}
+      default_fixture: {result: PASS, count: 15}
+      first_level_diagnostic: {result: PASS, count: 1}
+      real_mdst_pilot: {result: NOT_RUN, count: 0}
+      trained_physics_validation: {result: NOT_RUN, count: 0}
+    real_data_inputs: NOT_RUN_IN_THIS_PASS
+    checkpoint: none
+    ci_run: NOT_RUN
+    human_visual_review_status: NOT_REVIEWED
+    evidence_limitations: Baseline CPU fixtures only; no real mDST refresh, trained checkpoint, representative CUDA profile, ten-million-event run, remote CI, or human visual review.
+  - source_sha: ede387e195caabf41b7da0350de15eb4b90b4417
+    metadata_head: resolved_by_git_rev_parse_HEAD
+    worktree_state: clean_committed_source
+    date: '2026-08-02T10:59:52+02:00'
+    commands:
+      - /data/dust/user/boyangyu/uv_env/bin/python -m pytest -q
+      - /data/dust/user/boyangyu/uv_env/bin/python scripts/validate_audit_integrity.py
+      - /data/dust/user/boyangyu/uv_env/bin/python scripts/generate_audit_views.py --check
+      - /data/dust/user/boyangyu/uv_env/bin/python scripts/execute_notebook_smoke_tests.py --check-generated
+      - /data/dust/user/boyangyu/uv_env/bin/python scripts/execute_notebook_smoke_tests.py --keep-output /tmp/hypertagging-post-audit-final
+      - /data/dust/user/boyangyu/uv_env/bin/python scripts/execute_notebook_smoke_tests.py --diagnostic-only --diagnostic-first-level-ambiguity --keep-output /tmp/hypertagging-first-level-final
+      - /data/dust/user/boyangyu/uv_env/bin/python -m compileall -q src scripts tests
+      - git diff --check
+    pytest:
+      result: PASS
+      passed: 321
+      skipped: 8
+      warnings: 20
+      duration_seconds: 333.72
+    notebooks:
+      generated_consistency: {result: PASS, count: 18}
+      default_fixture: {result: PASS, count: 15}
+      first_level_diagnostic: {result: PASS, count: 1}
+      real_mdst_pilot: {result: NOT_RUN, count: 0}
+      trained_physics_validation: {result: NOT_RUN, count: 0}
+    real_data_inputs: NOT_RUN_IN_THIS_PASS
+    checkpoint: none
+    ci_run: NOT_RUN_FOR_EDE387E
+    human_visual_review_status: NOT_REVIEWED
+    evidence_limitations: CPU fixtures only; no real mDST refresh, trained checkpoint, representative multi-category KLM/capacity study, CUDA profile, ten-million-event run, remote exact-SHA CI, HTCondor submission, or human visual review.

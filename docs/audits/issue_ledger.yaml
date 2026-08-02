@@ -1,7 +1,7 @@
 schema_version: hypertagging-audit-ledger-v4
-audited_branch: post-audit-correction-20260801
-audited_code_sha: 56e0323a22195457fb69aad35925538219a95c0b
-audit_generated_at: '2026-08-01T17:42:09+02:00'
+audited_branch: focused-post-audit-consolidation-20260802
+audited_code_sha: ede387e195caabf41b7da0350de15eb4b90b4417
+audit_generated_at: '2026-08-02T10:59:52+02:00'
 audit_scope: committed source, tests, generated notebooks, and bounded CPU fixtures at audited_code_sha; real-mDST evidence remains the previously verified ancestor pilot and later commits are restricted to listed audit metadata paths
 allowed_post_audit_paths:
   - docs/audit_index.md
@@ -15,6 +15,7 @@ allowed_post_audit_paths:
   - docs/audits/archive/manifest.yaml
   - docs/audits/archive/metadata.yaml
   - docs/audits/archive/2026-08-01_56e0323_post_audit_correction_report.md
+  - docs/audits/archive/2026-08-02_ede387e_focused_post_audit_consolidation.md
   - notebooks/index.yaml
 audit_tool_version: hypertagging-audit-integrity-v4
 verification_commands:
@@ -26,9 +27,9 @@ verification_commands:
   - /data/dust/user/boyangyu/uv_env/bin/python scripts/execute_notebook_smoke_tests.py --diagnostic-only --diagnostic-first-level-ambiguity --keep-output /tmp/hypertagging-first-level-final
 verification_result_summary:
   exact_sha_ci: SOURCE_SHA_HAS_NO_REMOTE_RUN
-  exact_sha_ci_run: 'starting SHA ab9feb1 had successful CPU correctness run 30703389232; source 56e0323 is local-only and has no remote run'
+  exact_sha_ci_run: 'audited source ede387e is local-only and has no remote run; no prior remote run is promoted to exact-source evidence'
   post_audit_commit_classification: audit_metadata_only
-  cpu_pytest: 'source boundary before audit metadata advance: 313 passed, 8 skipped, 20 warnings plus the expected stale-boundary audit-integrity failure; final committed metadata-tree result recorded in verification_runs.yaml'
+  cpu_pytest: '321 passed, 8 skipped, 20 warnings in 333.72s at the audited source boundary'
   fixture_notebooks: 15 passed
   first_level_diagnostic: 1 passed
   generated_notebook_consistency: 18 passed
@@ -524,7 +525,7 @@ items:
     first_reported_sha: cf63b90
     current_status: OBSOLETE_OR_DUPLICATE
     current_evidence_files: [docs/channel_representation.md]
-    current_tests: [tests/test_channel_representation_round_trip_cpu.py]
+    current_tests: [tests/test_channel_representation_round_trip_cpu.py, tests/test_schema_v2_cpu.py]
     notebook_evidence: []
     external_evidence_required: []
     last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
@@ -535,11 +536,11 @@ items:
     first_reported_sha: cf63b90
     current_status: FIXED_AND_TESTED
     current_evidence_files: [src/hypertagging/preprocessing/channels.py, docs/channel_representation.md]
-    current_tests: [tests/test_channel_representation_round_trip_cpu.py]
+    current_tests: [tests/test_channel_representation_round_trip_cpu.py, tests/test_schema_v2_cpu.py]
     notebook_evidence: [notebooks/inspect_preprocessed_dataset.ipynb]
     external_evidence_required: []
-    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
-    notes: Signatures, counts, IDs, depth, and multiplicity semantics are explicit.
+    last_verified_sha: ede387e195caabf41b7da0350de15eb4b90b4417
+    notes: Signatures, counts, IDs, and depth are explicit; multiplicity similarity uses canonical count records rather than traversal or list position.
   - id: TRAIN-012
     title: Channel pooling had only one untested choice
     originating_audit: docs/audits/archive/2026-07-31_d8be636_current_head_gap_audit.md
@@ -967,13 +968,13 @@ items:
     originating_audit: docs/audits/current_status.md
     first_reported_sha: e9b828c45c9c26bf4dcd2b76e96fb788ee6d3f1b
     current_status: FIXED_AND_TESTED
-    current_evidence_files: [src/hypertagging/preprocessing/basf2_mdst.py, scripts/preprocess_mdst.py, scripts/mdst_batch_production.py]
-    current_tests: [tests/test_post_audit_information_boundaries_cpu.py, tests/test_mdst_batch_production_cpu.py, tests/test_current_source_boundary_cpu.py]
+    current_evidence_files: [src/hypertagging/preprocessing/basf2_mdst.py, scripts/preprocess_mdst.py, scripts/mdst_batch_production.py, src/hypertagging/training/data_module.py, src/hypertagging/training/reconstruction_trainer.py]
+    current_tests: [tests/test_post_audit_information_boundaries_cpu.py, tests/test_mdst_batch_production_cpu.py, tests/test_current_source_boundary_cpu.py, tests/test_campaign_readiness_cpu.py, tests/test_real_training_pipeline_cpu.py]
     notebook_evidence: [notebooks/inspect_real_mdst_pilot.ipynb]
     external_evidence_required: [trained held-out comparison before changing the default fit policy]
     external_evidence_disposition: separate_unresolved
-    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
-    notes: max_p_value_then_pion_fallback-v1 is validated, serialized, propagated through production manifests, and compared with the pion closest-mass momentum on all 578 pilot tracks without MC selection.
+    last_verified_sha: ede387e195caabf41b7da0350de15eb4b90b4417
+    notes: max_p_value_then_pion_fallback-v1 is validated and propagated through manifests, dataset indexes or sidecar-only trainer scans, and checkpoints; the historical 578-track comparison remains ancestor evidence.
   - id: DATA-018
     title: Production query and cardinality capacities lacked representative slices
     originating_audit: docs/audits/current_status.md
@@ -1017,20 +1018,20 @@ items:
     current_tests: [tests/test_campaign_readiness_cpu.py, tests/test_real_training_pipeline_cpu.py]
     notebook_evidence: [notebooks/inspect_training_pipeline.ipynb]
     external_evidence_required: []
-    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
-    notes: Independent teacher-forced, rollout-edge-F1, and rollout-validity tracks record denominators, event UIDs, policies, thresholds, and reasons; rollout tracks update only when rollout ran and resume rejects changed semantics.
+    last_verified_sha: ede387e195caabf41b7da0350de15eb4b90b4417
+    notes: Independent teacher-forced, rollout-edge-F1, and rollout-validity tracks record objective denominators, full and rollout UID selections, actual policies/thresholds, and reasons; rollout tracks update only when rollout ran and resume rejects changed semantics.
   - id: TRAIN-021
     title: Multi-objective pretraining pilot lacked mandatory gradient preflight and staged configs
     originating_audit: docs/audits/archive/2026-08-01_56e0323_post_audit_correction_report.md
     first_reported_sha: ab9feb1da0942e7b9cd06205aa73dd65690821c3
     current_status: FIXED_AND_TESTED
-    current_evidence_files: [src/hypertagging/training/pretrain_trainer.py, configs/hyperbolic_pretrain_pilot.yaml, configs/ablations/pretrain_stage1_topology_parent_anticollapse.yaml]
+    current_evidence_files: [src/hypertagging/training/pretrain_trainer.py, src/hypertagging/training/checkpoint_selection.py, configs/hyperbolic_pretrain_pilot.yaml, configs/ablations/pretrain_stage1_topology_parent_anticollapse.yaml]
     current_tests: [tests/test_campaign_readiness_cpu.py, tests/test_real_training_pipeline_cpu.py]
     notebook_evidence: [notebooks/inspect_hyperbolic_pretraining.ipynb]
     external_evidence_required: [HTCondor pilot gradients and held-out comparison before changing production weights]
     external_evidence_disposition: separate_unresolved
-    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
-    notes: The software preflight reports magnitudes, denominators, projection norms, gradient cosines, zero/non-finite and dominance violations; it does not select scientific weights.
+    last_verified_sha: ede387e195caabf41b7da0350de15eb4b90b4417
+    notes: The software preflight reports magnitudes, denominators, shared/tree/hyperbolic projection norms, gradient cosines, zero/non-finite and dominance violations; diagnostic best checkpoints require objective-specific denominators and do not select scientific weights.
   - id: MODEL-027
     title: Query-repulsion ablation lacked no-object and competing-hypothesis semantics
     originating_audit: docs/audits/archive/2026-08-01_56e0323_post_audit_correction_report.md
@@ -1048,24 +1049,24 @@ items:
     originating_audit: docs/audits/archive/2026-08-01_56e0323_post_audit_correction_report.md
     first_reported_sha: ab9feb1da0942e7b9cd06205aa73dd65690821c3
     current_status: FIXED_AND_TESTED
-    current_evidence_files: [src/hypertagging/preprocessing/basf2_mdst.py, scripts/preprocess_mdst.py, src/hypertagging/data/dataset_index.py]
-    current_tests: [tests/test_campaign_readiness_cpu.py, tests/test_dataset_index_and_storage_cpu.py]
+    current_evidence_files: [src/hypertagging/preprocessing/basf2_mdst.py, scripts/preprocess_mdst.py, src/hypertagging/data/dataset_index.py, scripts/create_real_mdst_pilot_notebook.py]
+    current_tests: [tests/test_campaign_readiness_cpu.py, tests/test_dataset_index_and_storage_cpu.py, tests/test_revised_notebooks_cpu.py]
     notebook_evidence: [notebooks/inspect_real_mdst_pilot.ipynb]
     external_evidence_required: [bounded multi-category real pilot and matched trained comparison before changing the default]
     external_evidence_disposition: separate_unresolved
-    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
-    notes: max-p-value remains default; canonical-pion-closest-mass is implemented and unknown values fail. This pass did not rerun real mDST.
+    last_verified_sha: ede387e195caabf41b7da0350de15eb4b90b4417
+    notes: max-p-value remains default; canonical-pion-closest-mass is implemented and the guarded pilot reports momentum, PID-energy, composite-mass, fit-frequency, and unavailable-fit fields. Real mDST and matched trained pointer-logit comparison were not run.
   - id: MODEL-028
     title: Node-kind adapter and PID dispatch depended on incidental numeric IDs
     originating_audit: docs/audits/archive/2026-08-01_56e0323_post_audit_correction_report.md
     first_reported_sha: ab9feb1da0942e7b9cd06205aa73dd65690821c3
     current_status: FIXED_AND_TESTED
-    current_evidence_files: [src/hypertagging/models/heterogeneous.py, src/hypertagging/reconstruction/kinematics.py, src/hypertagging/reconstruction/level_rollout.py]
+    current_evidence_files: [src/hypertagging/models/heterogeneous.py, src/hypertagging/reconstruction/kinematics.py, src/hypertagging/reconstruction/constraints.py, src/hypertagging/reconstruction/level_rollout.py]
     current_tests: [tests/test_campaign_readiness_cpu.py, tests/test_final_audit_corrections_cpu.py]
     notebook_evidence: [notebooks/inspect_level_autoregressive_reconstruction.ipynb]
     external_evidence_required: []
-    last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
-    notes: Dispatch is keyed by NODE_KIND_TO_ID names, reordered-vocabulary behavior is tested, and KLM clusters are valid rollout daughters.
+    last_verified_sha: ede387e195caabf41b7da0350de15eb4b90b4417
+    notes: Dispatch is keyed by NODE_KIND_TO_ID names, reordered-vocabulary behavior is tested, and KLM clusters are admitted by both rollout and the trainer's default constraint policy.
   - id: DATA-020
     title: Full-truth to reconstructable-channel collisions lacked indexed diagnostics
     originating_audit: docs/audits/archive/2026-08-01_56e0323_post_audit_correction_report.md
