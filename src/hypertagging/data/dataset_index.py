@@ -14,6 +14,7 @@ from hypertagging.data.heterogeneous import heterogeneous_event_from_record
 from hypertagging.data.splitting import SourceAwareSplitConfig, stable_split_name
 from hypertagging.data.streaming import StreamingMaskedFeatureNormalizer
 from hypertagging.preprocessing.schema_v4 import (
+    COMPLETION_MARKER_VERSION,
     FEATURE_SPEC_REVISION_V4, LEAF_MODE_TO_ID, SCHEMA_VERSION_V4,
     TARGET_COMPOSITE_METADATA_INDICES, feature_spec_v4, iter_event_records_v4,
 )
@@ -676,20 +677,35 @@ def _validated_completion_marker(path: Path, metadata: dict[str, Any]) -> dict[s
         payload = json.loads(marker.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
         raise ValueError(f"invalid completion marker for {path}") from error
+    if payload.get("marker_schema_version") != COMPLETION_MARKER_VERSION:
+        raise ValueError(f"unsupported completion marker schema for {path}")
     for marker_key, metadata_key in (
         ("schema_version", "schema_version"),
         ("event_count", "event_count"),
         ("feature_spec_hash", "feature_spec_hash"),
+        ("model_feature_contract_hash", "model_feature_contract_hash"),
     ):
         if payload.get(marker_key) != metadata.get(metadata_key):
             raise ValueError(
                 f"completion marker {marker_key} disagrees with sidecar for {path}"
             )
-    if payload.get("parquet_sha256") and payload["parquet_sha256"] != _sha256_file(path):
+    if payload.get("parquet_sha256") != _sha256_file(path):
         raise ValueError(f"completion marker parquet digest mismatch for {path}")
     sidecar = path.with_suffix(path.suffix + ".metadata.json")
-    if payload.get("sidecar_sha256") and payload["sidecar_sha256"] != _sha256_file(sidecar):
+    if payload.get("sidecar_sha256") != _sha256_file(sidecar):
         raise ValueError(f"completion marker sidecar digest mismatch for {path}")
+    for key in (
+        "campaign_id", "campaign_config_digest", "source_git_commit",
+        "source_git_tree", "source_state", "task_record_hash", "task_id",
+        "source_file", "source_file_size", "source_file_mtime_ns",
+        "source_file_identity", "source_file_sha256", "entry_start", "entry_stop_exclusive",
+        "planned_events", "campaign_stage", "klm_training_scope",
+        "production_readiness_report_sha256", "physics_category", "output_file",
+        "leaf_kinematics_mode", "track_fit_policy",
+        "charge_conjugate_normalization", "event_buffer_size", "row_group_size",
+    ):
+        if key in payload and payload.get(key) != metadata.get(key):
+            raise ValueError(f"completion marker {key} disagrees with sidecar for {path}")
     return payload
 
 

@@ -121,6 +121,15 @@ reports:
   worktree_state: clean
   sha256: 98efe3f9955df62a208bed81a743ad63f9b9536998e05d6e6e951cfe380b332a
 - date: '2026-08-02'
+  audited_sha: 6e46423e5ed4553aae1fccdce33db6e03f9cb4c8
+  audit_type: verification
+  historical_filename: 2026-08-02_6e46423_production_integrity_correction.md
+  superseded_by: ../current_status.md
+  evidence_scope: focused production-integrity correction on a dirty worktree atop
+    the recorded base HEAD
+  worktree_state: dirty
+  sha256: 0f80d69ebe0efcc3d26bb584e1908c8d51d6e496105f3af007d59c6477ff6b55
+- date: '2026-08-02'
   audited_sha: ede387e195caabf41b7da0350de15eb4b90b4417
   audit_type: verification
   historical_filename: 2026-08-02_ede387e_focused_post_audit_consolidation.md

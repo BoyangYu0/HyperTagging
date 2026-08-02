@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 import sys
 
@@ -105,6 +106,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Use MC leaf p4 only for debug when no reco objects are present. Never use this for training.",
     )
+    parser.add_argument(
+        "--production-provenance-json",
+        type=Path,
+        default=None,
+        help=(
+            "Worker-generated immutable campaign/task provenance JSON. "
+            "Ordinary interactive preprocessing may omit it."
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -133,6 +143,12 @@ def main(argv: list[str] | None = None) -> int:
         raise ValueError("--entry-sequence must be repeated exactly once per --input file")
     from hypertagging.preprocessing.basf2_mdst import Basf2PreprocessConfig, run_basf2_preprocessing
 
+    production_provenance = None
+    if args.production_provenance_json is not None:
+        production_provenance = json.loads(
+            args.production_provenance_json.read_text(encoding="utf-8")
+        )
+
     config = Basf2PreprocessConfig(
         input_files=tuple(args.input),
         output=output_path,
@@ -150,6 +166,7 @@ def main(argv: list[str] | None = None) -> int:
         row_group_size=args.row_group_size,
         leaf_kinematics_mode=args.leaf_kinematics_mode,
         track_fit_policy=args.track_fit_policy,
+        production_provenance=production_provenance,
     )
     output = run_basf2_preprocessing(config)
     print(f"Wrote {output}")

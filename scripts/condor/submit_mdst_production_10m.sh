@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_ROOT="/afs/desy.de/user/b/boyangyu/HyperTagging"
+REPO_ROOT="${REPO_ROOT:-/afs/desy.de/user/b/boyangyu/HyperTagging}"
 VENV_ROOT="/data/dust/user/boyangyu/uv_env"
 BASF2_PYTHON_SITE="${BASF2_PYTHON_SITE:-/data/dust/user/boyangyu/basf2_py38}"
 INPUT_ROOT="${INPUT_ROOT:-/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2}"
@@ -13,6 +13,8 @@ MAX_CONCURRENT="${MAX_CONCURRENT:-50}"
 CONDOR_RUNTIME="${CONDOR_RUNTIME:-7200}"
 CONDOR_MEMORY="${CONDOR_MEMORY:-8GB}"
 CONDOR_CPUS="${CONDOR_CPUS:-2}"
+KLM_TRAINING_SCOPE="${KLM_TRAINING_SCOPE:-unresolved}"
+PRODUCTION_READINESS_REPORT="${PRODUCTION_READINESS_REPORT:-}"
 
 MODE="dry-run"
 REPLAN=0
@@ -80,9 +82,14 @@ if [[ ! -f "${MANIFEST}" || "${REPLAN}" -eq 1 ]]; then
     --manifest "${MANIFEST}"
     --target-events "${TARGET_EVENTS}"
     --events-per-task "${EVENTS_PER_TASK}"
+    --campaign-profile production
+    --klm-training-scope "${KLM_TRAINING_SCOPE}"
   )
+  if [[ -n "${PRODUCTION_READINESS_REPORT}" ]]; then
+    PLAN_ARGS+=(--production-readiness-report "${PRODUCTION_READINESS_REPORT}")
+  fi
   if [[ "${REPLAN}" -eq 1 ]]; then
-    PLAN_ARGS+=(--overwrite)
+    PLAN_ARGS+=(--replan)
   fi
   "${PLAN_ARGS[@]}"
 fi

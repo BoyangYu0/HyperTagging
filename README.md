@@ -190,18 +190,30 @@ authoritative group count with `--list`):
 For real data, set `HYPERTAGGING_PARQUET` and a data-volume
 `HYPERTAGGING_FIGURE_DIR`; see `docs/dataset_visualization.md`.
 
-Plan a balanced, exactly sharded 10-million-input-event production and print the
-HTCondor submit description without submitting:
+Render the prerequisite 5k pilot and 100k canary manifests without submitting:
+
+```bash
+python scripts/mdst_batch_production.py plan --campaign-profile pilot \
+  --input-root /path/to/MC --output-root /data/volume/hypertagging \
+  --manifest /data/volume/pilot.jsonl
+python scripts/mdst_batch_production.py plan --campaign-profile canary \
+  --input-root /path/to/MC --output-root /data/volume/hypertagging \
+  --manifest /data/volume/canary.jsonl
+```
+
+The campaign/task hashes, exact clean source commit/tree, input identities,
+source ranges, and marker payload/sidecar digests are enforced by every worker.
+Interrupted shards are quarantined and retried. Plan a 10-million-input-event
+production and print the HTCondor description without submitting only after a
+representative canary report exists:
 
 ```bash
 scripts/condor/submit_mdst_production_10m.sh --dry-run
 ```
 
-After reviewing the manifest, resources, and a small pilot, submit explicitly:
-
-```bash
-scripts/condor/submit_mdst_production_10m.sh --submit
-```
+Submission is deliberately separate and is not authorized by fixture tests or
+a tiny pilot. The current recommendation and external evidence gate live only
+in `docs/audits/current_status.md`.
 
 Run minimal examples:
 

@@ -6,111 +6,105 @@ This is the sole authoritative current audit report. Historical reports under
 <!-- GENERATED_STATUS_SUMMARY_START -->
 ## Generated authoritative summary
 
-- Audited source SHA: `ede387e195caabf41b7da0350de15eb4b90b4417`
+- Audited source SHA: `6e46423e5ed4553aae1fccdce33db6e03f9cb4c8`
 - Audit metadata HEAD: resolved dynamically with `git rev-parse HEAD`
-- Canonical complete CPU pytest result: 321 passed, 8 skipped, 20 warnings
+- Canonical complete CPU pytest result: 334 passed, 8 skipped, 20 warnings
 - Human visual review: `NOT_REVIEWED`
 
 | Ledger status | Count |
 |---|---:|
-| `FIXED_AND_TESTED` | 79 |
-| `IMPLEMENTED_NOT_REAL_VERIFIED` | 5 |
+| `FIXED_AND_TESTED` | 82 |
+| `IMPLEMENTED_NOT_REAL_VERIFIED` | 6 |
 | `INTENTIONALLY_DEFERRED_SCIENCE` | 4 |
 | `OBSOLETE_OR_DUPLICATE` | 1 |
-| `PARTIAL` | 8 |
+| `PARTIAL` | 9 |
 <!-- GENERATED_STATUS_SUMMARY_END -->
-## Evidence boundary and CI
+## Recommendation: NO-GO
 
-This focused pass began from clean commit
-`9399425394eeaaf8a09c5398ad95bfd5519ed229` and used the isolated branch
-`focused-post-audit-consolidation-20260802`. Corrections, focused tests, the
-guarded real-pilot notebook source, and implementation documentation were
-committed across source commits `91dd17143356c17c9272c6e232b9f6adc3946f3b`
-and `ede387e195caabf41b7da0350de15eb4b90b4417`.
+The production-integrity software is fixed and CPU/fixture tested, but a clean
+committed current-HEAD multi-category real pilot has not run. Therefore the
+100k HTCondor canary is not yet authorized, and there is explicitly no GO for
+10M. The next operator action is to commit the focused worktree, render a new
+1k–10k pilot campaign from that clean source, run only its bounded shards,
+validate it globally, and review the consolidated report and figures.
 
-The metadata commit is intentionally identified with `git rev-parse HEAD`; a
-tracked file cannot contain its own commit SHA. The validator requires the
-audited source to be an ancestor and rejects every later path not explicitly
-listed in the ledger. The later commit is audit/index metadata only.
+## Software fixed and tested
 
-The audited source is local-only and has no exact-SHA remote run.
-`workflow_dispatch` accepts an explicit SHA and both workflows fetch full
-history; this is runnable infrastructure, not successful current-SHA CI
-evidence. `NB-003` and `AUDIT-002` therefore remain `PARTIAL`.
+- Manifest v2 binds every task to a deterministic campaign-config digest,
+  campaign ID/output namespace, exact clean source commit/tree, input size/
+  mtime/stable identity, category, half-open source range, event count,
+  schema/PID/feature/model-feature contracts, leaf/track/charge policies,
+  buffers, campaign stage, KLM scope, and canonical task-record hash.
+- Workers recompute the task hash and verify the exact clean checkout and input
+  identity before basf2. They never silently use a moving branch tip.
+- Parquet metadata, sidecar, completion marker, and worker result carry the
+  campaign/source/task provenance. Completion-marker JSON is parsed; its
+  schema/count/feature/model/provenance/range fields and mandatory parquet and
+  sidecar SHA-256 values are verified.
+- Shard state is classified as `COMPLETE_VALID`, `MISSING`,
+  `INCOMPLETE_NO_MARKER`, `CORRUPT_HASH`, `METADATA_MISMATCH`,
+  `PROVENANCE_MISMATCH`, or `EVENT_COUNT_MISMATCH`. Invalid publications are
+  moved into recoverable per-task quarantine before retry; failures write
+  structured `.failure.json`. Complete valid shards refuse implicit overwrite.
+- The unreachable fixed-hypothesis/raw-track validation is restored and tested.
+  Global validation checks unique task IDs/hashes, non-overlapping exact ranges,
+  exact planned/produced count, global UIDs, common source/config provenance,
+  and all completion markers.
+- `status`, `validate`, `list-missing`, and non-submitting `render-resubmit`
+  commands exist. Pilot (default 5k) and canary (100k) profiles render without
+  submission. A 10M worker refuses unresolved KLM scope or absent representative
+  canary readiness-report digest.
 
-## Independently executable CPU evidence
+All preserved physics/data invariants continue to pass: MC truth supervises
+topology only; reconstructed composite p4 is the exact recursive daughter sum;
+MC mother p4 does not enter model inputs; schema-v4 compatibility remains; PID
+pruning and channel semantics were not migrated.
 
-- Baseline: `314 passed, 8 skipped, 20 warnings in 342.92s`.
-- Focused changed-module verification: `89 passed, 1 deselected, 5 warnings`.
-- Final complete audited-source result: `321 passed, 8 skipped, 20 warnings in
-  333.72s`.
-- Generated source consistency passed for all 18 tracked notebooks.
+## Verification
+
+- Complete CPU suite: `334 passed, 8 skipped, 20 warnings in 324.47s`.
+- Focused campaign/marker/retry/validator tests passed, including each requested
+  interruption window, stale/corrupt marker, cross-task sidecar, valid rerun,
+  retry quarantine, and destructive-overwrite refusal.
+- Generated source consistency passed for all 18 registered notebooks.
 - All 15 default fixture notebooks passed under
-  `/tmp/hypertagging-post-audit-final`.
-- The first-level ambiguity diagnostic passed separately under
-  `/tmp/hypertagging-first-level-final`.
-- Validation overview artifacts keep both real-only notebooks `NOT_RUN` for
-  this pass and visual review `NOT_REVIEWED`.
+  `/tmp/hypertagging-production-integrity-full`.
+- The modified dataset, QA, and manifest notebooks also passed as a focused
+  three-notebook run. Consolidated production-readiness JSON, Markdown, and
+  HTML were generated. Automated fixture PASS remains separate from human
+  visual status `NOT_REVIEWED`.
+- `compileall`, audit integrity, generated audit view consistency, and
+  `git diff --check` are required final checks and are recorded in
+  `verification_runs.yaml` after completion.
 
-These are CPU software and fixture-mechanics results. They are not trained
-physics evidence or representative throughput measurements.
+## Real pilot, KLM, and resource boundary
 
-## Corrected contracts
+No real mDST preprocessing ran in this pass. The checkout contains the focused
+changes but is dirty, which the new immutable worker gate correctly refuses;
+no campaign-bound 1k–10k multi-category paths were supplied. The old 50-event
+charged-B run remains historical ancestor evidence only and is not promoted to
+current verification.
 
-- Reconstruction checkpoint selection distinguishes teacher-forced loss,
-  rollout edge F1, and rollout tree validity. Rollout tracks require executed
-  rollout, and checkpoints record deterministic validation and rollout UID
-  selections, objective-specific denominators, actual policy/threshold
-  contracts, and selection reasons. Resume rejects semantic mismatch.
-- Pretraining preserves the full-objective principal checkpoint and may save
-  diagnostic topology/parent/distance/non-collapse/channel tracks only when
-  their own denominators are active. The bounded pilot preflight checks shared,
-  tree, and hyperbolic projection norms and staged configs remain optional
-  HTCondor ablations.
-- Query repulsion is mask-correct, query-order invariant, differentiable, and
-  disabled by default. No fixture result enables it scientifically.
-- Track-fit selection has two implemented MC-independent policies. The
-  max-p-value policy remains default; canonical-pion closest-mass is an
-  ablation. Policy names propagate from sidecar or dataset index into
-  checkpoints.
-- Node-kind adapter and PID dispatch use named vocabulary constants. KLM has a
-  dedicated masked adapter and the trainer's default constraint policy now
-  admits it as a reconstruction daughter.
-- Channel multiplicities are compared through canonical count records rather
-  than traversal or list positions; the legacy sorted list remains serialized.
-- Dataset indexes report full-truth-to-reconstructable channel collision
-  groups without mislabeling mechanism co-occurrence as causality.
-- Batched rollout exposes optional unsynchronized host-phase instrumentation.
-  Reference equivalence remains CPU-tested, but CUDA production readiness is
-  not claimed.
-- Notebook runs generate one consolidated JSON/Markdown/HTML overview and a
-  separate visual-review checklist. Real `NOT_RUN` is never promoted to PASS.
-- The active backlog is unresolved-only; the all-issue mapping is generated in
-  `evidence_matrix.md`. Archive inventory, worktree state, and immutable hashes
-  come from explicit `archive/metadata.yaml`, not prose regexes.
+The updated real-only pilot notebook verifies campaign/source/task provenance,
+completion hashes, categories, levels/multiplicities, the full PID vocabulary,
+node/availability distributions, trees, B roots, channels/shared nodes, p4
+closure, K_L/KLM denominators, query capacity, worker resources, dataset-index
+time, and JSON-v4/native-v5 storage measurements. Because it was not run,
+`klm_training_scope` remains `unresolved`; detector completeness is not claimed.
+If KLM is included, a representative canary is required before 10M. If it is
+excluded, the campaign must use `excluded_by_policy`, which disables collection
+and persists the exclusion.
 
-All previous truth-topology/reconstructed-kinematics invariants, future-level
-invariance tests, exact daughter-summed mother p4, separate detector adapters,
-and source-conflict protections continue to pass.
+There are no current real events/s, peak worker RSS, bytes/event, finalization,
+validation, index-build, or row-group findings. Fixture storage benchmarks do
+not justify migration, so schema-v4 remains the production format and native-v5
+remains optional/experimental.
 
-## Real and scientific boundaries
+## Deliberately deferred scientific issues
 
-No real mDST preprocessing was run in this pass. The previous 50-event
-charged-B pilot at ancestor `88270d0` remains historical bounded evidence; it
-was not silently refreshed. The real-only pilot source now supports bounded
-category maps and reports charged/mixed/continuum, multiplicity/depth, KLM,
-copied/shared-source, incomplete-branch, fit-policy momentum/PID-energy, and
-daughter-summed mother-mass diagnostics. Trained Level-1 pointer-logit
-comparison remains explicitly `NOT_RUN` without matched policy datasets,
-indexes, and a checkpoint.
-
-No trained checkpoint, held-out physics validation, representative KLM/K_L
-completeness study, multi-category capacity scan, CUDA profile, ten-million
-event run, or human visual review was produced. Level encoding, radius target,
-channel pooling, PID mode, track-fit policy, loss staging/weights, query
-repulsion, and decoding thresholds remain ablations. Whole-set scoring and the
-iterative pointer decoder remain deferred designs with no runnable decorative
-config.
-
-No HTCondor job was submitted. No production-readiness or physics-improvement
-claim is made.
+No HyperTagging model redesign was performed. Trained physics performance,
+calibration, rare-channel quality, PID/fit-policy/channel-pooling ablations,
+query collapse, GPU throughput, rollout profiling, whole-set scoring, and
+iterative pointer decoding remain separate scientific or CUDA/HTCondor work.
+No HTCondor job, 100k canary, 10M campaign, long training, or CUDA job was run
+or submitted.

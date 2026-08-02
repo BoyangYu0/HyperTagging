@@ -39,7 +39,8 @@ def build_notebook() -> nbf.NotebookNode:
             code(
                 """
                 from pathlib import Path
-                import json, os, sys
+                import hashlib, json, os, sys
+                from collections import Counter
                 import matplotlib.pyplot as plt
                 import numpy as np
 
@@ -59,6 +60,11 @@ def build_notebook() -> nbf.NotebookNode:
                 QA_JSON = Path(os.environ.get("HYPERTAGGING_QA_JSON", str(FIGURE_DIR / "preprocessing_qa.json")))
                 payload = load_payload_v4(INPUT_PATH)
                 events = payload["events"]
+                sidecar_path=INPUT_PATH.with_suffix(INPUT_PATH.suffix+".metadata.json")
+                marker_path=INPUT_PATH.with_suffix(INPUT_PATH.suffix+".complete")
+                sidecar=json.loads(sidecar_path.read_text()); marker=json.loads(marker_path.read_text())
+                sha256=lambda path:hashlib.sha256(path.read_bytes()).hexdigest()
+                marker_hashes_pass=marker.get("parquet_sha256")==sha256(INPUT_PATH) and marker.get("sidecar_sha256")==sha256(sidecar_path)
                 print("TINY FIXTURE QA — NOT REAL DATA" if FIXTURE_MODE else "REAL-DATA SAMPLE QA")
                 """
             ),
@@ -98,7 +104,7 @@ def build_notebook() -> nbf.NotebookNode:
                     for node in all_nodes
                 )
                 node_kind_pass = all(
-                    node["node_kind"] in {"unknown","track","ecl_cluster","composite","other"}
+                    node["node_kind"] in {"unknown","track","ecl_cluster","klm_cluster","composite","other"}
                     for node in all_nodes
                 )
                 partial_rate = float(np.mean([node["partial_missing_daughters"] for node in all_nodes]))
@@ -108,6 +114,10 @@ def build_notebook() -> nbf.NotebookNode:
                     for level in set(node["level"] for node in event["nodes"] if node["level"] > 0)
                 ]
                 cardinalities = [len(node["daughter_ids"]) for node in all_nodes if node["daughter_ids"]]
+                pid_vocabulary=sorted(set(int(node["input_pid_token"]) for node in all_nodes)|set(int(node["pid_target_token"]) for node in all_nodes))
+                node_kind_distribution=Counter(str(node["node_kind"]) for node in all_nodes)
+                availability_distribution=Counter(f"{block}:{name}:{bool(value)}" for node in all_nodes for block,key in (("track","track_availability"),("ecl","cluster_availability"),("klm","klm_availability")) for name,value in node.get(key,{}).items())
+                klm_nodes=[node for node in all_nodes if node.get("node_kind")=="klm_cluster"]
                 report = {
                     "mode": "fixture" if FIXTURE_MODE else "real_sample",
                     "schema_version": payload["schema_version"],
@@ -129,6 +139,16 @@ def build_notebook() -> nbf.NotebookNode:
                     "query_overflow_rate_at_capacity_8": float(np.mean([value > 8 for value in query_counts])) if query_counts else 0.0,
                     "cardinality_overflow_rate_at_capacity_6": float(np.mean([value > 6 for value in cardinalities])) if cardinalities else 0.0,
                     "schema_config_consistency_pass": payload["schema_version"] == "direct-mdst-tree-v4",
+                    "completion_marker_hashes_pass":marker_hashes_pass,
+                    "campaign_provenance_status":"PASS" if sidecar.get("campaign_id") and all(sidecar.get(key)==marker.get(key) for key in ("campaign_id","source_git_commit","task_record_hash")) else ("NOT_APPLICABLE_FIXTURE" if FIXTURE_MODE else "FAIL"),
+                    "campaign_id":sidecar.get("campaign_id"),"source_git_commit":sidecar.get("source_git_commit"),"task_record_hash":sidecar.get("task_record_hash"),
+                    "complete_available_pid_vocabulary":pid_vocabulary,
+                    "node_kind_distribution":dict(node_kind_distribution),
+                    "availability_distribution":dict(availability_distribution),
+                    "level_distribution":dict(Counter(int(node["level"]) for node in all_nodes)),
+                    "node_multiplicity_by_event":[len(event["nodes"]) for event in events],
+                    "klm_diagnostics":{"retained_nodes":len(klm_nodes),"associated_with_ecl":sum(bool(node.get("associated_reco_id")) for node in klm_nodes),"feature_availability":dict(Counter(f"{name}:{bool(value)}" for node in klm_nodes for name,value in node.get("klm_availability",{}).items()))},
+                    "query_cardinality_capacity":{"maximum_queries":max(query_counts,default=0),"maximum_daughter_cardinality":max(cardinalities,default=0)},
                     "composite_pid_input_truth_separated_pass": all(
                         "daughter_input_pid_histogram" in node
                         and "daughter_truth_pid_histogram" in node
@@ -152,6 +172,7 @@ def build_notebook() -> nbf.NotebookNode:
                 assert invalid_values == 0
                 assert maximum_closure < 1e-8
                 assert token_range_pass and no_truth_leakage_contract_pass and node_kind_pass
+                assert marker_hashes_pass
                 print("Machine-readable summary:", QA_JSON)
                 """
             ),

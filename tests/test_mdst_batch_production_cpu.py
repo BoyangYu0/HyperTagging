@@ -21,10 +21,10 @@ def test_manifest_records_are_exact_non_overlapping_ranges(monkeypatch, tmp_path
         events_per_task=5,
     )
 
-    assert [record["entry_sequence"] for record in records] == ["0:4", "5:9", "10:11", "0:4"]
-    assert [record["planned_events"] for record in records] == [5, 5, 2, 5]
+    assert [record["entry_sequence"] for record in records] == ["0:4", "0:4", "5:9", "5:6"]
+    assert [record["planned_events"] for record in records] == [5, 5, 5, 2]
     assert sum(record["planned_events"] for record in records) == 17
-    assert categories == {"ccbar": 12, "charged": 5}
+    assert categories == {"ccbar": 10, "charged": 7}
     assert len({record["output_file"] for record in records}) == len(records)
     assert {
         record["track_fit_policy"] for record in records

@@ -11,7 +11,7 @@ from collections import Counter
 from dataclasses import dataclass
 import math
 from pathlib import Path
-from typing import Sequence
+from typing import Any, Mapping, Sequence
 
 from hypertagging.preprocessing.export_dataset import export_trees
 from hypertagging.preprocessing.schema_v2 import SCHEMA_VERSION_V1, SCHEMA_VERSION_V2, export_trees_v2
@@ -65,6 +65,7 @@ class Basf2PreprocessConfig:
     row_group_size: int = 128
     leaf_kinematics_mode: str = "raw_track_predicted_pid"
     track_fit_policy: str = TRACK_FIT_POLICY_MAX_P_VALUE_V1
+    production_provenance: Mapping[str, Any] | None = None
 
     def __post_init__(self) -> None:
         if self.track_fit_policy not in SUPPORTED_TRACK_FIT_POLICIES:
@@ -173,6 +174,7 @@ class _DirectMdstCollector:
                     "charge_conjugate_normalization": (
                         self.config.charge_conjugate_normalize
                     ),
+                    **dict(self.config.production_provenance or {}),
                 },
             )
 

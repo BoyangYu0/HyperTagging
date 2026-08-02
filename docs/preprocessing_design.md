@@ -194,13 +194,21 @@ a claim of final training quality. Production training should add feature
 normalization, source-aware train/validation/test splits, checkpointing, and
 physics performance metrics.
 
-## Ten-Million-Event Production
+## Campaign-gated production
 
-The planner reads ROOT tree metadata only, interleaves physics categories,
-creates exact non-overlapping inclusive entry ranges, and writes an atomic
-JSONL manifest. Each array task writes a temporary parquet, validates its
-schema, event count, and `event_uid` uniqueness, then publishes atomically.
-Completed valid shards are resumable.
+The planner reads ROOT tree metadata only, round-robins bounded ranges across
+independent files/categories, and writes an atomic JSONL manifest. A campaign
+is identified by a deterministic scientific/configuration digest and a
+campaign ID; shards live below that campaign namespace. Every task hashes its
+complete record, including the input stat identity, exact half-open range,
+schema/PID/model-feature contracts, leaf and fit policies, charge-conjugation
+setting, buffers, source commit/tree, and clean/dirty planning state.
+
+Before basf2 starts, a worker verifies that its checkout is clean and exactly at
+the recorded commit/tree, verifies the input identity, and recomputes the task
+hash. A dirty or moved shared checkout fails closed. Operators should use a
+detached campaign worktree or other read-only checkout at that commit; workers
+never fall back to the current branch tip.
 
 The project venv is Python 3.11, while release-08-03-00 embeds Python 3.8.
 Compiled packages cannot be shared. A small basf2-compatible dependency target
@@ -217,7 +225,39 @@ unset PYTHONPATH
 The submitted worker still activates
 `/data/dust/user/boyangyu/uv_env`; it isolates the embedded basf2 subprocess
 from that Python-3.11 interpreter and injects the compatible dependency target.
-To inspect the existing default 10M manifest and submission command:
+Render the current-HEAD multi-category pilot and 100k canary manifests without
+submission:
+
+```bash
+python scripts/mdst_batch_production.py plan \
+  --campaign-profile pilot --input-root /path/to/MC16ri_run2 \
+  --output-root /data/volume/hypertagging --manifest /data/volume/pilot.jsonl
+python scripts/mdst_batch_production.py plan \
+  --campaign-profile canary --input-root /path/to/MC16ri_run2 \
+  --output-root /data/volume/hypertagging --manifest /data/volume/canary.jsonl
+```
+
+The pilot defaults to 5,000 events and automatically reduces its per-file
+slice so several independent files/categories contribute. The canary defaults
+to 100,000 events with the intended 5,000-event task size. Use the same schema,
+PID policy, leaf mode, fit policy, charge-conjugation setting, buffer, and row
+group planned for the eventual 10M campaign. `--replan` is the explicit
+operator acknowledgement required to replace a manifest; changed configuration
+gets a different digest/namespace, so an old `mdst_00000.parquet` cannot match.
+
+Inspect task state and render a targeted resubmit description (still without
+submission):
+
+```bash
+python scripts/mdst_batch_production.py status --manifest /data/volume/pilot.jsonl
+python scripts/mdst_batch_production.py validate --manifest /data/volume/pilot.jsonl
+python scripts/mdst_batch_production.py list-missing --manifest /data/volume/pilot.jsonl
+python scripts/mdst_batch_production.py render-resubmit \
+  --manifest /data/volume/pilot.jsonl --output /data/volume/pilot-resubmit.sub
+```
+
+`render-resubmit` calls `condor_submit` only with explicit `--submit`. To
+inspect the default 10M rendering surface:
 
 ```bash
 scripts/condor/submit_mdst_production_10m.sh --dry-run
@@ -226,8 +266,9 @@ scripts/condor/submit_mdst_production_10m.sh --dry-run
 Defaults are 10,000,000 input events, 5,000 events per task, and at most 50
 concurrent materialized tasks. Override with `TARGET_EVENTS`, `EVENTS_PER_TASK`,
 `MAX_CONCURRENT`, and the resource variables documented in
-`scripts/condor/README.md`. Run a small pilot before the
-full array because the current exporter buffers a shard in memory.
+`scripts/condor/README.md`. A 10M worker additionally refuses an unresolved KLM
+scope or a campaign not bound to a representative canary readiness-report
+digest. Rendering is not launch authorization.
 
 ## Production schema-v4 reconstructed-leaf contract
 
@@ -286,9 +327,8 @@ sources. Partial targets expose truth/retained/reconstructed daughter counts and
 are invalid by default below two daughters. V1/v2 files are adapted without
 inventing missing detector values.
 
-Production planning now defaults to 5,000-event bounded shards and writes
-schema, PID vocabulary, feature hash, charge-conjugation mode, leaf mode, and
-git commit into every manifest row. The worker explicitly passes
+Production planning defaults to 5,000-event bounded shards and writes the full
+immutable campaign/task contract into every manifest row. The worker explicitly passes
 `--schema-version direct-mdst-tree-v4`. Run the cross-shard validator with:
 
 ```bash
@@ -319,8 +359,11 @@ policy.
 ## Runtime-scale publication contract
 
 V4 buffers only a configured event window and publishes the parquet and
-metadata sidecar followed by an atomic completion marker. Failed basf2
-processing aborts and removes unpublished partial files. The sidecar includes
+metadata sidecar followed by an atomic JSON completion marker. The marker is
+parsed and its schema, count, feature/model hashes, campaign/source/task/range
+fields, and required parquet/sidecar SHA-256 digests are verified. Marker
+existence alone is never completion. Failed basf2 processing aborts and removes
+unpublished partial files. The sidecar includes
 mergeable feature Welford state as well as capacity, PID, completeness, and
 actual per-node leaf-mode distributions.
 
@@ -329,6 +372,22 @@ fixed-hypothesis request requires explicit Particle arrays and rejects raw
 Tracks; validation checks the actual distribution rather than trusting the
 manifest label. Mixed raw-track, ECL, and composite events are marked
 `mixed_explicit_per_node`.
+
+Status uses stable classifications: `COMPLETE_VALID`, `MISSING`,
+`INCOMPLETE_NO_MARKER`, `CORRUPT_HASH`, `METADATA_MISMATCH`,
+`PROVENANCE_MISMATCH`, and `EVENT_COUNT_MISMATCH`. An incomplete or inconsistent
+publication is moved, with diagnostics, below the campaign's task-specific
+`quarantine/` directory and the task is retried. A `.failure.json` records the
+task/source/range, event UID/index when available, exception, source commit,
+task hash, and timestamp. A complete valid shard is never overwritten unless
+`--destructive-overwrite` is explicitly supplied.
+
+The KLM decision is always explicit as `klm_training_scope: included`,
+`excluded_by_policy`, or `unresolved`. Exclusion disables KLM collection and is
+persisted. Inclusion still requires representative canary evidence before 10M;
+the pilot reports truth K_L-like leaves, matched/unmatched KLM clusters,
+ECL associations, category/availability/retention distributions, and branch
+completeness with and without KLM without claiming detector completeness.
 
 V4 retains JSON event payloads for compatibility. Experimental
 `schema_v5.py` writes native nested Arrow events, and

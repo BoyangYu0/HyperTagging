@@ -514,9 +514,26 @@ def _write_validation_overview(
     payload = {
         "git_sha": _git_sha(),
         "visual_review_status": "NOT_REVIEWED",
+        "automated_status": "PASS" if executed else "NOT_RUN",
+        "recommendation": "NO_GO",
+        "recommendation_reason": (
+            "Fixture notebook execution cannot authorize a 100k or 10M production launch; "
+            "a current-HEAD multi-category pilot is required."
+        ),
+        "human_visual_review_checklist": [
+            "tree legibility",
+            "level layout",
+            "PID labels",
+            "unexpected distributions",
+            "KLM behavior",
+            "representative high-multiplicity events",
+        ],
         "rows": rows,
     }
     (work_root / "validation_overview.json").write_text(
+        json.dumps(payload, indent=2) + "\n", encoding="utf-8"
+    )
+    (work_root / "production_readiness_report.json").write_text(
         json.dumps(payload, indent=2) + "\n", encoding="utf-8"
     )
     md = [
@@ -536,6 +553,21 @@ def _write_validation_overview(
             f"{row['fixture_or_real']} | `{row['status']}` | {claims} | {issues} | {links} |"
         )
     (work_root / "validation_overview.md").write_text("\n".join(md) + "\n", encoding="utf-8")
+    readiness_md = [
+        "# Production readiness report",
+        "",
+        "- Automated notebook status: `" + str(payload["automated_status"]) + "`",
+        "- Human visual review: `NOT_REVIEWED`",
+        "- Recommendation: `NO_GO`",
+        "- Reason: " + str(payload["recommendation_reason"]),
+        "",
+        "## Human visual-review checklist",
+        "",
+    ] + [f"- [ ] {item}" for item in payload["human_visual_review_checklist"]]
+    readiness_md.extend(["", *md[4:]])
+    (work_root / "production_readiness_report.md").write_text(
+        "\n".join(readiness_md) + "\n", encoding="utf-8"
+    )
     html_rows = "".join(
         "<tr>" + "".join(
             f"<td>{row[key]}</td>" for key in
@@ -547,6 +579,19 @@ def _write_validation_overview(
         "<html><body><h1>Validation overview</h1><p>Human visual review: NOT_REVIEWED</p>"
         "<table><tr><th>Notebook</th><th>Group</th><th>Source</th><th>Input</th>"
         "<th>Status</th><th>Required human action</th></tr>" + html_rows + "</table></body></html>\n",
+        encoding="utf-8",
+    )
+    checklist_html = "".join(
+        f"<li>&#9744; {item}</li>" for item in payload["human_visual_review_checklist"]
+    )
+    (work_root / "production_readiness_report.html").write_text(
+        "<html><body><h1>Production readiness report</h1>"
+        "<p>Automated notebook status: PASS</p><p>Human visual review: NOT_REVIEWED</p>"
+        "<p>Recommendation: NO_GO</p><p>" + str(payload["recommendation_reason"]) + "</p>"
+        "<h2>Human visual-review checklist</h2><ul>" + checklist_html + "</ul>"
+        "<table><tr><th>Notebook</th><th>Group</th><th>Source</th><th>Input</th>"
+        "<th>Status</th><th>Required human action</th></tr>" + html_rows
+        + "</table></body></html>\n",
         encoding="utf-8",
     )
 

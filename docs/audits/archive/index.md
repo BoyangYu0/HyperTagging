@@ -48,6 +48,10 @@ recorded digests are immutable evidence; historical claims are not current truth
 
 - 2026-08-01 · gap · clean · [2026-08-01_77707eb_current_head_gap_audit.md](2026-08-01_77707eb_current_head_gap_audit.md)
 
+## `6e46423e5ed4553aae1fccdce33db6e03f9cb4c8`
+
+- 2026-08-02 · verification · dirty · [2026-08-02_6e46423_production_integrity_correction.md](2026-08-02_6e46423_production_integrity_correction.md)
+
 ## `ede387e195caabf41b7da0350de15eb4b90b4417`
 
 - 2026-08-02 · verification · clean · [2026-08-02_ede387e_focused_post_audit_consolidation.md](2026-08-02_ede387e_focused_post_audit_consolidation.md)

@@ -112,3 +112,32 @@ runs:
     ci_run: NOT_RUN_FOR_EDE387E
     human_visual_review_status: NOT_REVIEWED
     evidence_limitations: CPU fixtures only; no real mDST refresh, trained checkpoint, representative multi-category KLM/capacity study, CUDA profile, ten-million-event run, remote exact-SHA CI, HTCondor submission, or human visual review.
+  - source_sha: 6e46423e5ed4553aae1fccdce33db6e03f9cb4c8
+    metadata_head: resolved_by_git_rev_parse_HEAD
+    worktree_state: dirty_focused_production_integrity_corrections
+    date: '2026-08-02T18:30:00+02:00'
+    commands:
+      - /data/dust/user/boyangyu/uv_env/bin/python -m pytest -q
+      - /data/dust/user/boyangyu/uv_env/bin/python scripts/execute_notebook_smoke_tests.py --check-generated
+      - /data/dust/user/boyangyu/uv_env/bin/python scripts/execute_notebook_smoke_tests.py --keep-output /tmp/hypertagging-production-integrity-full
+      - /data/dust/user/boyangyu/uv_env/bin/python scripts/validate_audit_integrity.py
+      - /data/dust/user/boyangyu/uv_env/bin/python scripts/generate_audit_views.py --check
+      - /data/dust/user/boyangyu/uv_env/bin/python -m compileall -q src scripts tests
+      - git diff --check
+    pytest:
+      result: PASS
+      passed: 334
+      skipped: 8
+      warnings: 20
+      duration_seconds: 324.47
+    notebooks:
+      generated_consistency: {result: PASS, count: 18}
+      default_fixture: {result: PASS, count: 15}
+      focused_production_notebooks: {result: PASS, count: 3}
+      real_mdst_pilot: {result: NOT_RUN, count: 0}
+      trained_physics_validation: {result: NOT_RUN, count: 0}
+    real_data_inputs: NOT_RUN_IN_THIS_PASS
+    checkpoint: none
+    ci_run: NOT_RUN_FOR_DIRTY_WORKTREE
+    human_visual_review_status: NOT_REVIEWED
+    evidence_limitations: No clean committed campaign source, current-HEAD real multi-category pilot, KLM scope decision, representative resource measurement, 100k canary, 10M run, remote CI, CUDA profile, or human visual review; schema-v4 is retained.

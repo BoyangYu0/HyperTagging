@@ -13,6 +13,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import time
 from typing import Any, Iterable, Iterator, Mapping
 
 import pyarrow as pa
@@ -34,6 +35,7 @@ from hypertagging.preprocessing.schema_v3 import (
 
 
 SCHEMA_VERSION_V4 = "direct-mdst-tree-v4"
+COMPLETION_MARKER_VERSION = "hypertagging-shard-completion-v2"
 FEATURE_SPEC_REVISION_V4 = "v4-klm-reconstructed-leaf-r4"
 RUNTIME_MODEL_CONTRACTS_V4 = {
     "tree_geometry": "retained-tree-exact-edges-v2",
@@ -341,7 +343,10 @@ class ParquetEventWriter:
             return self.output
         try:
             self.flush()
+            finalization_started = time.perf_counter()
             self._writer.close()
+            parquet_finalization_seconds = time.perf_counter() - finalization_started
+            parquet_file = pq.ParquetFile(self.partial)
             final_metadata = {
                 **self.metadata,
                 "event_count": self._event_count,
@@ -371,6 +376,13 @@ class ParquetEventWriter:
                         if key.startswith("leaf_mode_")
                     }
                 ),
+                "parquet_finalization_seconds": parquet_finalization_seconds,
+                "row_group_count": parquet_file.num_row_groups,
+                "configured_row_group_size": self.row_group_size,
+                "row_group_rows": [
+                    parquet_file.metadata.row_group(index).num_rows
+                    for index in range(parquet_file.num_row_groups)
+                ],
             }
             self.partial_sidecar.write_text(
                 json.dumps(final_metadata, indent=2, sort_keys=True) + "\n",
@@ -384,12 +396,44 @@ class ParquetEventWriter:
             marker_partial.write_text(
                 json.dumps(
                     {
+                        "marker_schema_version": COMPLETION_MARKER_VERSION,
                         "schema_version": SCHEMA_VERSION_V4,
                         "event_count": self._event_count,
                         "feature_spec_hash": self.spec["feature_spec_hash"],
                         "model_feature_contract_hash": self.spec["model_feature_contract_hash"],
                         "parquet_sha256": _sha256_path(self.output),
                         "sidecar_sha256": _sha256_path(self.sidecar),
+                        **{
+                            key: self.metadata.get(key)
+                            for key in (
+                                "campaign_id",
+                                "campaign_config_digest",
+                                "source_git_commit",
+                                "source_git_tree",
+                                "source_state",
+                                "task_record_hash",
+                                "task_id",
+                                "source_file",
+                                "source_file_size",
+                                "source_file_mtime_ns",
+                                "source_file_identity",
+                                "source_file_sha256",
+                                "entry_start",
+                                "entry_stop_exclusive",
+                                "planned_events",
+                                "physics_category",
+                                "output_file",
+                                "leaf_kinematics_mode",
+                                "track_fit_policy",
+                                "charge_conjugate_normalization",
+                                "event_buffer_size",
+                                "row_group_size",
+                                "campaign_stage",
+                                "klm_training_scope",
+                                "production_readiness_report_sha256",
+                            )
+                            if key in self.metadata
+                        },
                     },
                     sort_keys=True,
                 )
@@ -786,6 +830,7 @@ def _git_commit() -> str:
 
 
 __all__ = [
+    "COMPLETION_MARKER_VERSION",
     "FEATURE_SPEC_REVISION_V4",
     "KLM_FEATURE_NAMES",
     "KLM_MODEL_INPUT_SCALES",

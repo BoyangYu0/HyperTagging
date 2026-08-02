@@ -60,10 +60,28 @@ reconstruction jobs pass it through `--pretrained-encoder`. Rendering is
 read-only. `condor_submit` remains a separate, explicit operator action.
 
 Schema-v4 production manifests are authoritative. The rendered preprocessing
-worker passes schema version, leaf kinematics mode, charge-conjugate channel
-normalization, buffer size, and row-group size explicitly, then compares the
-published sidecar metadata with the manifest. Training consumes the exact
+worker verifies a clean exact-commit/tree checkout and task hash before basf2,
+then passes the full campaign provenance plus schema, leaf mode,
+charge-conjugation, track-fit, buffer, row-group, and KLM-scope settings. It
+parses the completion marker and compares hashes, sidecar, Parquet metadata,
+source identity, and exact source range with the manifest. Training consumes the exact
 `output_file` JSONL format emitted by `mdst_batch_production.py`.
+
+Render the prerequisite gates without submission:
+
+```bash
+python scripts/mdst_batch_production.py plan --campaign-profile pilot \
+  --input-root /path/to/MC --output-root /data/volume/hypertagging \
+  --manifest /data/volume/pilot.jsonl
+python scripts/mdst_batch_production.py plan --campaign-profile canary \
+  --input-root /path/to/MC --output-root /data/volume/hypertagging \
+  --manifest /data/volume/canary.jsonl
+```
+
+Use a detached campaign worktree at the manifest commit as `REPO_ROOT` for
+workers. A moving shared branch will fail closed rather than silently process
+with newer code. The 100k canary is rendered only; submission remains a
+separate operator decision after pilot validation.
 
 Recommended first matched-split ablations are
 `canonical_pion_first_level`, `contextual_euclidean`,
