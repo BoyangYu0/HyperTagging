@@ -8,9 +8,9 @@ by hand. The complete source/test/notebook mapping is in
 
 | Status | Count |
 |---|---:|
-| `IMPLEMENTED_NOT_REAL_VERIFIED` | 5 |
+| `IMPLEMENTED_NOT_REAL_VERIFIED` | 6 |
 | `INTENTIONALLY_DEFERRED_SCIENCE` | 4 |
-| `PARTIAL` | 8 |
+| `PARTIAL` | 9 |
 
 ## Items
 
@@ -115,3 +115,15 @@ by hand. The complete source/test/notebook mapping is in
 - Status: `IMPLEMENTED_NOT_REAL_VERIFIED`
 - Next external evidence: guarded representative CUDA memory and throughput profile
 - Current boundary: Optional host-phase intervals exist without forcing synchronization; they are not CUDA timing evidence.
+
+### PROD-004: Pilot and canary gates lacked immutable profiles and current real evidence
+
+- Status: `IMPLEMENTED_NOT_REAL_VERIFIED`
+- Next external evidence: clean committed current-HEAD 1k-10k multi-category pilot and validated consolidated readiness report
+- Current boundary: Pilot and 100k profiles render without submission and 10M fails closed without canary evidence; no current-worktree real pilot was run.
+
+### PROD-005: KLM training scope and production resource decision remain unresolved
+
+- Status: `PARTIAL`
+- Next external evidence: representative multi-category KLM/K_L pilot denominators, 100k canary if KLM is included, and real worker/storage/index timings
+- Current boundary: The required fields and explicit included/excluded_by_policy/unresolved decision are implemented; current scope is unresolved, resource results are fixture-only, and schema-v4 remains selected.

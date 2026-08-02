@@ -40,7 +40,7 @@ def build_notebook() -> nbf.NotebookNode:
         _code(
             """
             from pathlib import Path
-            import json, os, sys
+            import hashlib, json, os, sys
 
             import matplotlib.pyplot as plt
             import numpy as np
@@ -67,6 +67,10 @@ def build_notebook() -> nbf.NotebookNode:
             FIGURE_DIR = Path(os.environ.get("HYPERTAGGING_FIGURE_DIR", "/tmp/hypertagging_figures/dataset"))
             FIGURE_DIR.mkdir(parents=True, exist_ok=True)
             payload = load_payload_v4(INPUT_PATH)
+            SIDECAR=INPUT_PATH.with_suffix(INPUT_PATH.suffix+".metadata.json")
+            MARKER=INPUT_PATH.with_suffix(INPUT_PATH.suffix+".complete")
+            sidecar=json.loads(SIDECAR.read_text()); marker=json.loads(MARKER.read_text())
+            marker_hashes_pass=(marker.get("parquet_sha256")==hashlib.sha256(INPUT_PATH.read_bytes()).hexdigest() and marker.get("sidecar_sha256")==hashlib.sha256(SIDECAR.read_bytes()).hexdigest())
             required_top = {"schema_version", "events", "summary_json", "feature_spec_json"}
             missing_top = required_top - payload.keys()
             if missing_top:
@@ -104,6 +108,10 @@ def build_notebook() -> nbf.NotebookNode:
                 "nodes": sum(len(event["nodes"]) for event in events),
                 "edges": sum(len(node["daughter_ids"]) for event in events for node in event["nodes"]),
                 "legacy_level_rows": len(payload.get("legacy_levels", [])),
+                "completion_marker_hashes_pass":marker_hashes_pass,
+                "campaign_id":sidecar.get("campaign_id","fixture-unbound"),
+                "source_git_commit":sidecar.get("source_git_commit",sidecar.get("git_commit","unknown")),
+                "task_record_hash":sidecar.get("task_record_hash","fixture-unbound"),
             }, name="value")
             display(schema_overview.to_frame())
             display(pd.DataFrame({
@@ -119,6 +127,7 @@ def build_notebook() -> nbf.NotebookNode:
                 "production": event.get("production", -1),
             } for event in events]).head(20))
             assert schema_overview["duplicate_event_uid"] == 0, "Duplicate event_uid values detected"
+            assert marker_hashes_pass
             """
         ),
         _md("## PID inspection"),

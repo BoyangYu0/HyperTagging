@@ -1,8 +1,8 @@
 schema_version: hypertagging-audit-ledger-v4
 audited_branch: focused-post-audit-consolidation-20260802
-audited_code_sha: ede387e195caabf41b7da0350de15eb4b90b4417
-audit_generated_at: '2026-08-02T10:59:52+02:00'
-audit_scope: committed source, tests, generated notebooks, and bounded CPU fixtures at audited_code_sha; real-mDST evidence remains the previously verified ancestor pilot and later commits are restricted to listed audit metadata paths
+audited_code_sha: 6e46423e5ed4553aae1fccdce33db6e03f9cb4c8
+audit_generated_at: '2026-08-02T18:30:00+02:00'
+audit_scope: focused production-integrity corrections in a dirty worktree atop audited_code_sha, complete CPU tests, and fixture notebooks; no current-worktree real pilot, HTCondor submission, CUDA job, or 100k/10M production
 allowed_post_audit_paths:
   - docs/audit_index.md
   - docs/audits/README.md
@@ -16,6 +16,7 @@ allowed_post_audit_paths:
   - docs/audits/archive/metadata.yaml
   - docs/audits/archive/2026-08-01_56e0323_post_audit_correction_report.md
   - docs/audits/archive/2026-08-02_ede387e_focused_post_audit_consolidation.md
+  - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 audit_tool_version: hypertagging-audit-integrity-v4
 verification_commands:
@@ -29,11 +30,17 @@ verification_result_summary:
   exact_sha_ci: SOURCE_SHA_HAS_NO_REMOTE_RUN
   exact_sha_ci_run: 'audited source ede387e is local-only and has no remote run; no prior remote run is promoted to exact-source evidence'
   post_audit_commit_classification: audit_metadata_only
-  cpu_pytest: '321 passed, 8 skipped, 20 warnings in 333.72s at the audited source boundary'
+  cpu_pytest: '334 passed, 8 skipped, 20 warnings in 324.47s on the focused dirty worktree atop audited_code_sha'
   fixture_notebooks: 15 passed
   first_level_diagnostic: 1 passed
   generated_notebook_consistency: 18 passed
-  bounded_real_mdst_pilot: 'NOT RUN in this pass; previous 50 charged-B event evidence at verified ancestor 88270d0 remains historical external evidence, not refreshed source evidence'
+  bounded_real_mdst_pilot: 'NOT RUN; immutable worker source requires a clean committed checkout and no campaign-bound 1k-10k multi-category pilot input was supplied'
+production_readiness:
+  recommendation: NO_GO
+  blocker: current-HEAD multi-category pilot has not run from a clean immutable campaign source; KLM scope and representative resources remain unresolved
+  external_evidence_required: clean committed 1k-10k multi-category pilot with valid markers/provenance, KLM decision, storage/resource report, and human visual review
+  current_result: software fixed and CPU/fixture tested; real pilot NOT_RUN; 100k canary and 10M NOT_SUBMITTED
+  owner_operator_action: commit the focused corrections, render a new pilot campaign, execute bounded shards, validate globally, inspect the consolidated report, then decide whether to submit the 100k canary
 items:
   - id: DATA-001
     title: MC-derived track fit, charge, input PID, or energy
@@ -1112,3 +1119,58 @@ items:
     external_evidence_required: []
     last_verified_sha: 56e0323a22195457fb69aad35925538219a95c0b
     notes: The unresolved-only backlog, all-issue matrix, archive manifest/index/README, and status counts are generated; explicit worktree metadata and SHA-256 digests protect immutable reports.
+  - id: PROD-001
+    title: Mutable shared checkout and unbound task records could change campaign source
+    originating_audit: docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
+    first_reported_sha: 6e46423e5ed4553aae1fccdce33db6e03f9cb4c8
+    current_status: FIXED_AND_TESTED
+    current_evidence_files: [scripts/mdst_batch_production.py, scripts/preprocess_mdst.py, src/hypertagging/preprocessing/basf2_mdst.py, src/hypertagging/preprocessing/schema_v4.py]
+    current_tests: [tests/test_production_integrity_campaign_cpu.py, tests/test_mdst_batch_production_cpu.py]
+    notebook_evidence: [notebooks/inspect_production_manifest.ipynb]
+    external_evidence_required: []
+    last_verified_sha: 6e46423e5ed4553aae1fccdce33db6e03f9cb4c8
+    notes: Manifest v2 binds campaign/config, exact clean source commit/tree, input identity, scientific contract, output namespace, and canonical task hash; workers fail closed on source, input, or task drift.
+  - id: PROD-002
+    title: Marker existence and interrupted shard publications were treated as completion
+    originating_audit: docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
+    first_reported_sha: 6e46423e5ed4553aae1fccdce33db6e03f9cb4c8
+    current_status: FIXED_AND_TESTED
+    current_evidence_files: [scripts/mdst_batch_production.py, src/hypertagging/preprocessing/schema_v4.py, src/hypertagging/data/dataset_index.py]
+    current_tests: [tests/test_production_integrity_campaign_cpu.py, tests/test_dataset_index_completion_marker_cpu.py, tests/test_atomic_overwrite_marker_cpu.py]
+    notebook_evidence: [notebooks/inspect_production_manifest.ipynb, notebooks/preprocessing_qa_report.ipynb]
+    external_evidence_required: []
+    last_verified_sha: 6e46423e5ed4553aae1fccdce33db6e03f9cb4c8
+    notes: Versioned marker JSON, required hashes and provenance are verified; invalid publications are classified/quarantined, retries are safe, failures are structured, and complete shards require explicit destructive overwrite.
+  - id: PROD-003
+    title: Fixed-hypothesis raw-track exclusion was unreachable in shard validation
+    originating_audit: docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
+    first_reported_sha: 6e46423e5ed4553aae1fccdce33db6e03f9cb4c8
+    current_status: FIXED_AND_TESTED
+    current_evidence_files: [scripts/mdst_batch_production.py]
+    current_tests: [tests/test_production_integrity_campaign_cpu.py]
+    notebook_evidence: [notebooks/inspect_production_manifest.ipynb]
+    external_evidence_required: []
+    last_verified_sha: 6e46423e5ed4553aae1fccdce33db6e03f9cb4c8
+    notes: Raw mode requires raw leaves; fixed mode requires fixed candidates and rejects raw leaves; track-policy and campaign/source/task/range mismatches fail.
+  - id: PROD-004
+    title: Pilot and canary gates lacked immutable profiles and current real evidence
+    originating_audit: docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
+    first_reported_sha: 6e46423e5ed4553aae1fccdce33db6e03f9cb4c8
+    current_status: IMPLEMENTED_NOT_REAL_VERIFIED
+    current_evidence_files: [scripts/mdst_batch_production.py, docs/preprocessing_design.md, docs/condor.md]
+    current_tests: [tests/test_production_integrity_campaign_cpu.py, tests/test_mdst_batch_production_cpu.py]
+    notebook_evidence: [notebooks/inspect_real_mdst_pilot.ipynb, notebooks/inspect_production_manifest.ipynb]
+    external_evidence_required: [clean committed current-HEAD 1k-10k multi-category pilot and validated consolidated readiness report]
+    last_verified_sha: 6e46423e5ed4553aae1fccdce33db6e03f9cb4c8
+    notes: Pilot and 100k profiles render without submission and 10M fails closed without canary evidence; no current-worktree real pilot was run.
+  - id: PROD-005
+    title: KLM training scope and production resource decision remain unresolved
+    originating_audit: docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
+    first_reported_sha: 6e46423e5ed4553aae1fccdce33db6e03f9cb4c8
+    current_status: PARTIAL
+    current_evidence_files: [scripts/mdst_batch_production.py, scripts/create_real_mdst_pilot_notebook.py, scripts/benchmark_parquet_storage.py, scripts/build_dataset_index.py]
+    current_tests: [tests/test_production_integrity_campaign_cpu.py, tests/test_revised_notebooks_cpu.py]
+    notebook_evidence: [notebooks/inspect_real_mdst_pilot.ipynb, notebooks/preprocessing_qa_report.ipynb]
+    external_evidence_required: [representative multi-category KLM/K_L pilot denominators, 100k canary if KLM is included, and real worker/storage/index timings]
+    last_verified_sha: 6e46423e5ed4553aae1fccdce33db6e03f9cb4c8
+    notes: The required fields and explicit included/excluded_by_policy/unresolved decision are implemented; current scope is unresolved, resource results are fixture-only, and schema-v4 remains selected.

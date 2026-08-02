@@ -39,6 +39,13 @@ done
 The authoritative notebook inventory and groups are in `notebooks/index.yaml`;
 the runner reads that registry rather than maintaining a second list.
 
+Each smoke run now writes `production_readiness_report.json`, `.md`, and `.html`
+beside the generic validation overview. Fixture execution may be automated
+`PASS` while the launch recommendation remains `NO_GO`; the separate human
+checklist retains `NOT_REVIEWED` until an operator inspects tree legibility,
+level layout, PID labels, unexpected distributions, KLM behavior, and
+representative high-multiplicity events.
+
 - `inspect_preprocessed_dataset.ipynb`: schemas, duplicate IDs, complete PID
   vocabulary, heterogeneous missingness, all level violations, representative
   trees and B branches, p4 closure, and structured channels.
@@ -49,7 +56,9 @@ the runner reads that registry rather than maintaining a second list.
   relation logits, attention, mother queries, pointers, teacher forcing, free
   rollout, edge errors, and a CPU optimizer step.
 - `preprocessing_qa_report.ipynb`: compact closure/level/finite-value checks and
-  a machine-readable JSON report.
+  a machine-readable JSON report, including parsed completion hashes,
+  campaign/source/task fields, full PID vocabulary, node/availability/KLM
+  distributions, and capacity checks.
 - `preprocessing_four_momentum_validation.ipynb`: detailed reco-versus-MC
   diagnostics for schema-v4 fixtures or real samples. MC mother p4 remains a
   diagnostic, never a reconstructed target.
