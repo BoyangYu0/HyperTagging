@@ -43,7 +43,7 @@ evidence. `NB-003` and `AUDIT-002` therefore remain `PARTIAL`.
 - Baseline: `314 passed, 8 skipped, 20 warnings in 342.92s`.
 - Focused changed-module verification: `89 passed, 1 deselected, 5 warnings`.
 - Final complete audited-source result: `321 passed, 8 skipped, 20 warnings in
-  320.96s`.
+  333.72s`.
 - Generated source consistency passed for all 18 tracked notebooks.
 - All 15 default fixture notebooks passed under
   `/tmp/hypertagging-post-audit-final`.
