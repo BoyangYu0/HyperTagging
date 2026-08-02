@@ -1,0 +1,2 @@
+rollout_pid_kinematics_mode: soft_decision_hard_construction
+rollout_pid_temperature: 0.5

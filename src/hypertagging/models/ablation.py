@@ -172,6 +172,8 @@ def build_ablation_model(
     tangent_scale_mode: str = "fixed",
     hyperbolic_level_encoding: str = "learned_euclidean",
     type_conditioned_daughter_relation_bias: bool | None = None,
+    pid_kinematics_mode: str | None = None,
+    pid_temperature: float | None = None,
 ) -> LevelAutoregressiveReconstructor:
     config = ALL_ABLATIONS[name]
     return LevelAutoregressiveReconstructor(
@@ -193,8 +195,13 @@ def build_ablation_model(
         use_relation_bias=config.relation_attention,
         use_hyperbolic_relation_refinement=config.hyperbolic_relation_attention,
         canonical_pion_first_level=config.canonical_pion_first_level,
-        pid_kinematics_mode=config.pid_kinematics_mode,
-        pid_temperature=config.pid_temperature,
+        pid_kinematics_mode=(
+            config.pid_kinematics_mode
+            if pid_kinematics_mode is None else pid_kinematics_mode
+        ),
+        pid_temperature=(
+            config.pid_temperature if pid_temperature is None else pid_temperature
+        ),
         hyper_projection_init_scale=hyper_projection_init_scale,
         tangent_scale_mode=tangent_scale_mode,
         hyperbolic_level_encoding=hyperbolic_level_encoding,

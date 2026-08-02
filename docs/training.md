@@ -78,8 +78,10 @@ ablation and is serialized with the training configuration.
 `validation_batches`. It aggregates total/component losses, relation accuracy,
 topology-safe parent ranking, tree distance, radius monotonicity,
 variance/covariance/effective rank/boundary fraction, channel retrieval, and
-leaf PID accuracy/entropy. `latest.pt` and validation-selected `best.pt` are
-separate; `checkpoint.pt` remains the final compatibility checkpoint.
+leaf PID accuracy/entropy. Pretraining preserves its configured full-objective
+`best.pt`; optional diagnostic best tracks cover principal topology, parent
+ranking, tree distance, non-collapse, and channel retrieval without replacing
+that principal selection rule. `latest.pt` and `checkpoint.pt` remain separate.
 `log_every` controls training-log cadence.
 
 Reconstruction runs log object/no-object and mother-type accuracy, Level-1
@@ -88,6 +90,20 @@ teacher-forced/free-rollout results. Full evaluation helpers report exact tree
 match, edge precision/recall/F1, validity, p4 closure, node count, and maximum
 depth. Production reporting should additionally group reconstruction
 efficiency by channel, multiplicity, and depth.
+
+Reconstruction writes independent `best_teacher_forced.pt`,
+`best_rollout_edge_f1.pt`, and `best_rollout_tree_validity.pt` tracks, plus
+`latest.pt` and `checkpoint.pt`. A rollout track can update only on a validation
+step that actually ran rollout. The configurable `best.pt` compatibility alias
+records its metric, mode, denominator, validation event UIDs, rollout/constraint
+policy, PID mode, thresholds, and selection reason. Resume rejects changed
+checkpoint-selection semantics.
+
+`configs/hyperbolic_pretrain_pilot.yaml` requires bounded objective-gradient
+preflight evidence. It reports raw and weighted magnitudes, active denominators,
+projection-specific norms, and pairwise cosines, and checks zero/non-finite or
+grossly dominant objectives. The four `pretrain_stage*` configurations are
+campaign ablations, not a replacement production default.
 
 JSONL logging is available through `hypertagging.training.logging`.
 Checkpoints contain model, optimizer, scheduler, step, epoch, config, metrics,

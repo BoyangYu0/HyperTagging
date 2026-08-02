@@ -255,6 +255,10 @@ def channel_count_array(
             ("token",),
         ),
         "branch_multiplicities": sorted(branch_multiplicities),
+        "branch_multiplicity_counts": _counter_records(
+            Counter(branch_multiplicities),
+            ("multiplicity",),
+        ),
         "n_nodes": sum(token_counts.values()),
         "max_relative_depth": max(depth_counts, default=0),
     }
@@ -309,8 +313,16 @@ def _count_vector(
         output[("pid", int(record["token"]))] = weights.w_pid * float(record["count"])
     for record in channel.get("depth_pid_counts", []):
         output[("depth_pid", int(record["depth"]), int(record["token"]))] = weights.w_depth_pid * float(record["count"])
-    for index, value in enumerate(channel.get("branch_multiplicities", [])):
-        output[("multiplicity", index, int(value))] = weights.w_multiplicity
+    multiplicity_records = channel.get("branch_multiplicity_counts")
+    if multiplicity_records is None:
+        multiplicity_records = _counter_records(
+            Counter(int(value) for value in channel.get("branch_multiplicities", [])),
+            ("multiplicity",),
+        )
+    for record in multiplicity_records:
+        output[("multiplicity", int(record["multiplicity"]))] = (
+            weights.w_multiplicity * float(record["count"])
+        )
     for record in channel.get("selected_intermediate_counts", []):
         output[("intermediate", int(record["token"]))] = (
             weights.w_intermediate * float(record["count"])
@@ -443,6 +455,7 @@ def _empty_count_array() -> dict[str, Any]:
         "depth_counts": [],
         "selected_intermediate_counts": [],
         "branch_multiplicities": [],
+        "branch_multiplicity_counts": [],
         "n_nodes": 0,
         "max_relative_depth": 0,
     }

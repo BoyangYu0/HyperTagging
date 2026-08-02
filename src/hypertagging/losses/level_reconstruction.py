@@ -123,6 +123,9 @@ def level_reconstruction_loss(
                 f"mothers but decoder has {output.object_logits.shape[1]} queries"
             )
     object_targets = torch.zeros_like(output.object_logits)
+    matched_pointer_targets = torch.zeros_like(
+        output.pointer_logits, dtype=torch.bool
+    )
     object_loss_mask = torch.ones_like(output.object_logits, dtype=torch.bool)
     confidence_targets = torch.zeros_like(output.confidence_logits)
     type_losses = []
@@ -155,6 +158,9 @@ def level_reconstruction_loss(
         all_matches.append(matches)
         for query_id, target_id in matches:
             object_targets[batch_index, query_id] = 1.0
+            matched_pointer_targets[batch_index, query_id, context] = (
+                target_masks[batch_index][target_id].bool()
+            )
             type_losses.append(F.cross_entropy(output.type_logits[batch_index, query_id][None], types[target_id][None]))
             pointer_losses.append(
                 focal_binary_cross_entropy_with_logits(
@@ -280,7 +286,8 @@ def level_reconstruction_loss(
         ),
         "query_repulsion": query_proposal_repulsion_loss(
             output.pointer_logits,
-            output.object_logits,
+            active_query_mask=object_targets.bool(),
+            matched_pointer_targets=matched_pointer_targets,
         ),
     }
     total = sum(components[name] * weights[name] for name in components)
@@ -294,22 +301,45 @@ def level_reconstruction_loss(
 
 def query_proposal_repulsion_loss(
     pointer_logits: torch.Tensor,
-    object_logits: torch.Tensor,
+    *,
+    active_query_mask: torch.Tensor,
+    matched_pointer_targets: torch.Tensor | None = None,
 ) -> torch.Tensor:
-    """Penalize identical active query proposals without imposing an ordering."""
+    """Penalize duplicate disjoint proposals without imposing slot ordering."""
 
     if pointer_logits.shape[1] < 2:
         return pointer_logits.sum() * 0.0
+    if active_query_mask.shape != pointer_logits.shape[:2]:
+        raise ValueError("active_query_mask must have shape [batch, queries]")
     proposals = torch.sigmoid(pointer_logits)
     normalized = F.normalize(proposals, dim=-1, eps=1e-8)
     similarity = torch.einsum("bqn,bkn->bqk", normalized, normalized)
-    active = torch.sigmoid(object_logits)
-    weights = active[:, :, None] * active[:, None, :]
     off_diagonal = ~torch.eye(
         pointer_logits.shape[1], dtype=torch.bool, device=pointer_logits.device
     ).unsqueeze(0)
-    selected = off_diagonal.expand_as(similarity)
-    return (similarity[selected] * weights[selected]).mean()
+    selected = (
+        off_diagonal
+        & active_query_mask[:, :, None]
+        & active_query_mask[:, None, :]
+    )
+    if matched_pointer_targets is not None:
+        if matched_pointer_targets.shape != pointer_logits.shape:
+            raise ValueError("matched_pointer_targets must match pointer_logits")
+        target_overlap = torch.einsum(
+            "bqn,bkn->bqk",
+            matched_pointer_targets.to(pointer_logits.dtype),
+            matched_pointer_targets.to(pointer_logits.dtype),
+        ) > 0
+        selected &= ~target_overlap
+    denominator = selected.sum()
+    normalized_loss = similarity.masked_select(selected).sum() / denominator.clamp_min(1).to(
+        similarity.dtype
+    )
+    return torch.where(
+        denominator > 0,
+        normalized_loss,
+        pointer_logits.sum() * 0.0,
+    )
 
 
 def focal_binary_cross_entropy_with_logits(

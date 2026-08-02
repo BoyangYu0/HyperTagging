@@ -66,6 +66,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--hyperbolic-level-encoding", choices=("learned_euclidean", "bounded_tangent_level_embedding", "none"), default="learned_euclidean")
     parser.add_argument("--objective-gradient-diagnostics", action="store_true")
     parser.add_argument("--objective-gradient-diagnostics-every", type=int, default=100)
+    parser.add_argument("--pilot-objective-preflight", action="store_true")
+    parser.add_argument("--objective-dominance-ratio", type=float, default=100.0)
+    parser.add_argument(
+        "--pilot-objective-violation-action",
+        choices=("warn", "fail"),
+        default="warn",
+    )
     parser.add_argument("--lca-relation-weight", type=float, default=1.0)
     parser.add_argument("--parent-ranking-weight", type=float, default=1.0)
     parser.add_argument("--exact-tree-distance-weight", type=float, default=1.0)
@@ -140,6 +147,11 @@ def main(argv: list[str] | None = None) -> int:
                 objective_gradient_diagnostics=args.objective_gradient_diagnostics,
                 objective_gradient_diagnostics_every=(
                     args.objective_gradient_diagnostics_every
+                ),
+                pilot_objective_preflight=args.pilot_objective_preflight,
+                objective_dominance_ratio=args.objective_dominance_ratio,
+                pilot_objective_violation_action=(
+                    args.pilot_objective_violation_action
                 ),
                 lca_relation_weight=args.lca_relation_weight,
                 parent_ranking_weight=args.parent_ranking_weight,

@@ -42,6 +42,7 @@ class ReconstructionConstraintPolicy:
     valid_leaf_node_kinds: tuple[int, ...] = (
         NODE_KIND_TO_ID["track"],
         NODE_KIND_TO_ID["ecl_cluster"],
+        NODE_KIND_TO_ID["klm_cluster"],
         NODE_KIND_TO_ID["other"],
     )
     valid_composite_node_kinds: tuple[int, ...] = (NODE_KIND_TO_ID["composite"],)

@@ -253,7 +253,7 @@ fixed unit scales (GeV, 100 cm, 10 ns, and 16-layer reference scales) before
 the dedicated `KlmNodeEncoder`; older v4 shards produce an all-unavailable
 block.
 
-The versioned track-fit policy is
+The default versioned track-fit policy is
 `max_p_value_then_pion_fallback-v1`: maximum finite reconstructed p-value from
 `getTrackFitResults`, followed only by release-compatible best-p-value/pion
 fallbacks. Unknown policy names fail. Schema metadata records the policy, and
@@ -262,6 +262,12 @@ when both exist. Release 08-03-00 exposes no documented hypothesis-independent
 TrackFitResult alternative. ECL relations discovered through the release's
 `getRelationsWith/To/From` API are propagated as reconstructed shared-source
 conflicts for associated KLM nodes.
+
+`canonical_pion_closest_mass-v1` is an implemented MC-independent ablation
+using the release closest-mass accessor. Unknown policy values fail. The
+selected policy is recorded in parquet metadata, dataset indexes, checkpoint
+feature contracts, notebook reports, and production manifests. Neither policy
+is claimed optimal without a matched real-data training campaign.
 
 The canonical pion value is only the tensor-compatible encoder baseline.
 Reconstruction training substitutes the differentiable, charge-compatible

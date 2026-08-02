@@ -1,4 +1,2 @@
-name: soft_pid_expectation
 pid_kinematics_mode: soft_expectation
 pid_temperature: 1.0
-note: Current differentiable training default; rollout remains hard discrete PID.

@@ -35,6 +35,7 @@ def load_notebook_index() -> list[dict[str, object]]:
 
 
 NOTEBOOK_INDEX = load_notebook_index()
+NOTEBOOK_INDEX_BY_ID = {str(entry["id"]): entry for entry in NOTEBOOK_INDEX}
 NOTEBOOKS = {
     str(entry["id"]): entry for entry in NOTEBOOK_INDEX if entry.get("default_smoke") is True
 }
@@ -425,6 +426,10 @@ def main(argv: list[str] | None = None) -> int:
         + "\n",
         encoding="utf-8",
     )
+    executed_ids = [name for name in NOTEBOOKS if name in selected]
+    if args.diagnostic_first_level_ambiguity:
+        executed_ids.append("first_level_ambiguity")
+    _write_validation_overview(work_root, executed_ids, visual_rows)
     (work_root / "notebook_execution_summary.json").write_text(
         json.dumps(
             {
@@ -454,6 +459,96 @@ def main(argv: list[str] | None = None) -> int:
     if temporary is not None:
         temporary.cleanup()
     return 0
+
+
+AUDIT_LEDGER = REPO_ROOT / "docs" / "audits" / "issue_ledger.yaml"
+
+
+def _covered_ledger_items(notebook_path: str) -> list[str]:
+    """Return ledger IDs that explicitly cite this notebook as evidence."""
+
+    if not AUDIT_LEDGER.exists():
+        return []
+    ledger = yaml.safe_load(AUDIT_LEDGER.read_text(encoding="utf-8"))
+    return [
+        str(item["id"])
+        for item in ledger.get("items", [])
+        if notebook_path in item.get("notebook_evidence", [])
+    ]
+
+
+def _write_validation_overview(
+    work_root: Path,
+    executed_ids: list[str],
+    visual_rows: list[dict[str, str]],
+) -> None:
+    """Aggregate registry contracts and run artifacts without promoting NOT RUN."""
+
+    rows: list[dict[str, object]] = []
+    executed = set(executed_ids)
+    for notebook_id, entry in NOTEBOOK_INDEX_BY_ID.items():
+        ran = notebook_id in executed
+        figure_dir = work_root / f"{notebook_id}_figures"
+        artifacts = [
+            str((figure_dir / str(name)).relative_to(work_root))
+            for name in entry.get("machine_readable_outputs", [])
+            if (figure_dir / str(name)).exists()
+        ]
+        rows.append(
+            {
+                "notebook_id": notebook_id,
+                "group": entry["group"],
+                "source_sha": _git_sha() if ran else str(entry.get("last_verified_sha", "NOT_RUN")),
+                "fixture_or_real": entry["fixture_or_real"],
+                "dataset": ", ".join(str(value) for value in entry.get("required_inputs", [])),
+                "checkpoint": "required" if "trained_checkpoint" in entry.get("required_inputs", []) else "none",
+                "schema_and_feature_contract": "direct-mdst-tree-v4 / registry-declared inputs",
+                "status": "PASS" if ran else "NOT_RUN",
+                "scientific_claims_allowed": entry.get("scientific_claims_allowed", []),
+                "required_human_action": "human figure review" if ran else "supply required real inputs and execute",
+                "ledger_items_covered": _covered_ledger_items(str(entry["path"])),
+                "figures": [row["figure_path"] for row in visual_rows if row["notebook"] == notebook_id],
+                "machine_readable_artifacts": artifacts,
+            }
+        )
+    payload = {
+        "git_sha": _git_sha(),
+        "visual_review_status": "NOT_REVIEWED",
+        "rows": rows,
+    }
+    (work_root / "validation_overview.json").write_text(
+        json.dumps(payload, indent=2) + "\n", encoding="utf-8"
+    )
+    md = [
+        "# Validation overview",
+        "",
+        "Machine execution and human visual review are separate. Visual review: `NOT_REVIEWED`.",
+        "",
+        "| Notebook | Group | Source | Input | Status | Allowed claim | Ledger items | Artifacts |",
+        "|---|---|---|---|---|---|---|---|",
+    ]
+    for row in rows:
+        links = "<br>".join(f"[{Path(path).name}]({path})" for path in row["machine_readable_artifacts"]) or "none"
+        claims = ", ".join(row["scientific_claims_allowed"])
+        issues = ", ".join(row["ledger_items_covered"]) or "none"
+        md.append(
+            f"| {row['notebook_id']} | {row['group']} | `{row['source_sha']}` | "
+            f"{row['fixture_or_real']} | `{row['status']}` | {claims} | {issues} | {links} |"
+        )
+    (work_root / "validation_overview.md").write_text("\n".join(md) + "\n", encoding="utf-8")
+    html_rows = "".join(
+        "<tr>" + "".join(
+            f"<td>{row[key]}</td>" for key in
+            ("notebook_id", "group", "source_sha", "fixture_or_real", "status", "required_human_action")
+        ) + "</tr>"
+        for row in rows
+    )
+    (work_root / "validation_overview.html").write_text(
+        "<html><body><h1>Validation overview</h1><p>Human visual review: NOT_REVIEWED</p>"
+        "<table><tr><th>Notebook</th><th>Group</th><th>Source</th><th>Input</th>"
+        "<th>Status</th><th>Required human action</th></tr>" + html_rows + "</table></body></html>\n",
+        encoding="utf-8",
+    )
 
 
 if __name__ == "__main__":

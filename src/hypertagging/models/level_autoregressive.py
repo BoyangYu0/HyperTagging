@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import time
 
 import torch
 from torch import nn
@@ -51,6 +52,7 @@ class LevelReconstructionOutput:
     second_pass_common_availability: torch.Tensor | None = None
     relation_pid_kinematics_mode: str = "input"
     decision_pid_kinematics_mode: str = "input"
+    host_phase_seconds: dict[str, float] | None = None
 
 
 class LevelAutoregressiveReconstructor(nn.Module):
@@ -179,7 +181,9 @@ class LevelAutoregressiveReconstructor(nn.Module):
         pid_kinematics_mode_override: str | None = None,
         pid_temperature_override: float | None = None,
         return_attention: bool = False,
+        profile_phases: bool = False,
     ) -> LevelReconstructionOutput:
+        host_phase_seconds: dict[str, float] = {}
         pid_mode = (
             self.pid_kinematics_mode
             if pid_kinematics_mode_override is None
@@ -194,6 +198,7 @@ class LevelAutoregressiveReconstructor(nn.Module):
             batch["level_ids"], batch["node_mask"], target_level
         )
         if self.encoder_mode == "heterogeneous":
+            phase_start = time.perf_counter()
             batch = _upgrade_flat_batch(batch)
             _assert_truth_free_model_inputs(batch)
             context_batch = _with_current_reconstructed_relations(
@@ -209,6 +214,9 @@ class LevelAutoregressiveReconstructor(nn.Module):
                 ),
                 return_attention=False,
             )
+            if profile_phases:
+                host_phase_seconds["first_encoder_pass"] = time.perf_counter() - phase_start
+            phase_start = time.perf_counter()
             leaf_pid_logits = self.leaf_pid_head(first_pass.reconstruction_projection)
             runtime = rebuild_runtime_pid_state(
                 context_batch,
@@ -216,6 +224,9 @@ class LevelAutoregressiveReconstructor(nn.Module):
                 mode=pid_mode,
                 temperature=pid_temperature,
             )
+            if profile_phases:
+                host_phase_seconds["pid_state_rebuild"] = time.perf_counter() - phase_start
+            phase_start = time.perf_counter()
             reconstruction_batch = _runtime_reconstruction_batch(
                 context_batch,
                 runtime,
@@ -233,6 +244,12 @@ class LevelAutoregressiveReconstructor(nn.Module):
                 ),
                 return_attention=return_attention,
             )
+            if profile_phases:
+                # Pairwise physical/hyperbolic relation construction is owned
+                # by the encoder and is included in this host-launch interval.
+                host_phase_seconds["second_encoder_and_pair_relations"] = (
+                    time.perf_counter() - phase_start
+                )
             h = encoded.node_embeddings
             reconstruction_h = encoded.reconstruction_projection
             z = encoded.hyperbolic_embeddings
@@ -317,6 +334,7 @@ class LevelAutoregressiveReconstructor(nn.Module):
             pointer_validity = pointer_validity[:, None, :].expand(
                 -1, decoder.n_queries, -1
             )
+        phase_start = time.perf_counter()
         pointer = decoder(
             reconstruction_h,
             context_mask,
@@ -340,6 +358,8 @@ class LevelAutoregressiveReconstructor(nn.Module):
                 context_only_relation_summary(relation_bias, context_mask)
             ),
         )
+        if profile_phases:
+            host_phase_seconds["query_and_daughter_decoding"] = time.perf_counter() - phase_start
         return LevelReconstructionOutput(
             target_level=target_level,
             pointer=pointer,
@@ -376,6 +396,7 @@ class LevelAutoregressiveReconstructor(nn.Module):
             decision_pid_kinematics_mode=(
                 pid_mode if self.encoder_mode == "heterogeneous" else "input"
             ),
+            host_phase_seconds=host_phase_seconds if profile_phases else None,
         )
 
 

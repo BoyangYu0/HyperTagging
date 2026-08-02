@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
+import time
 from typing import Literal
 
 import torch
@@ -51,6 +52,7 @@ class RolloutConfig:
     allowed_daughter_node_kinds: tuple[int, ...] = (
         NODE_KIND_TO_ID["track"],
         NODE_KIND_TO_ID["ecl_cluster"],
+        NODE_KIND_TO_ID["klm_cluster"],
         NODE_KIND_TO_ID["composite"],
         NODE_KIND_TO_ID["other"],
     )
@@ -59,6 +61,7 @@ class RolloutConfig:
     max_resolution_proposals: int = 12
     rollout_pid_kinematics_mode: str = "soft_decision_hard_construction"
     rollout_pid_temperature: float = 0.5
+    profile_phases: bool = False
 
 
 @dataclass(frozen=True)
@@ -115,6 +118,7 @@ class BatchedRolloutResult:
     stop_code: torch.Tensor
     accepted_query_masks: tuple[torch.Tensor, ...]
     daughter_masks: tuple[torch.Tensor, ...]
+    host_phase_seconds: dict[str, float] | None = None
 
 
 @dataclass(frozen=True)
@@ -1870,6 +1874,7 @@ def batched_free_rollout(
     )
     accepted_history: list[torch.Tensor] = []
     daughter_history: list[torch.Tensor] = []
+    profile_totals: dict[str, float] = {}
     root_tokens = torch.tensor(
         config.root_types, dtype=torch.long, device=device
     )
@@ -1886,13 +1891,22 @@ def batched_free_rollout(
         else forward_pid_mode
     )
     for target_level in range(1, config.max_level + 1):
-        output = model(
-            batch,
-            target_level=target_level,
-            pid_kinematics_mode_override=forward_pid_mode,
-            pid_temperature_override=config.rollout_pid_temperature,
-            return_attention=False,
-        )
+        level_start = time.perf_counter()
+        model_kwargs = {
+            "target_level": target_level,
+            "pid_kinematics_mode_override": forward_pid_mode,
+            "pid_temperature_override": config.rollout_pid_temperature,
+            "return_attention": False,
+        }
+        # Keep the correctness-oracle/scripted model protocol minimal. Profiling
+        # is an optional production-model extension, not a required mock kwarg.
+        if config.profile_phases:
+            model_kwargs["profile_phases"] = True
+        output = model(batch, **model_kwargs)
+        if config.profile_phases and output.host_phase_seconds:
+            for name, seconds in output.host_phase_seconds.items():
+                profile_totals[name] = profile_totals.get(name, 0.0) + seconds
+        phase_start = time.perf_counter()
         if output.leaf_pid_logits is not None:
             batch = _with_predicted_leaf_p4(
                 batch,
@@ -1900,12 +1914,22 @@ def batched_free_rollout(
                 mode=construction_pid_mode,
                 temperature=config.rollout_pid_temperature,
             )
+        if config.profile_phases:
+            profile_totals["rollout_pid_construction"] = profile_totals.get(
+                "rollout_pid_construction", 0.0
+            ) + (time.perf_counter() - phase_start)
+        phase_start = time.perf_counter()
         daughters, accepted, mother_types = batched_decode_level(
             output,
             batch,
             active_event_mask=active,
             config=config,
         )
+        if config.profile_phases:
+            profile_totals["proposal_validation_and_exclusive_resolution"] = profile_totals.get(
+                "proposal_validation_and_exclusive_resolution", 0.0
+            ) + (time.perf_counter() - phase_start)
+        phase_start = time.perf_counter()
         batch = batched_level_step(
             batch,
             output,
@@ -1914,6 +1938,10 @@ def batched_free_rollout(
             target_level=target_level,
             mother_types=mother_types,
         )
+        if config.profile_phases:
+            profile_totals["composite_append_and_transitive_updates"] = profile_totals.get(
+                "composite_append_and_transitive_updates", 0.0
+            ) + (time.perf_counter() - phase_start)
         accepted_history.append(accepted)
         daughter_history.append(daughters)
         appended = accepted.any(dim=-1)
@@ -1933,6 +1961,10 @@ def batched_free_rollout(
         stopped |= no_object | completed
         root_completed |= completed
         active = active & appended & ~completed
+        if config.profile_phases:
+            profile_totals["level_host_total"] = profile_totals.get(
+                "level_host_total", 0.0
+            ) + (time.perf_counter() - level_start)
     stop_code = torch.where(active, torch.full_like(stop_code, 3), stop_code)
     stopped |= active
     return BatchedRolloutResult(
@@ -1944,6 +1976,7 @@ def batched_free_rollout(
         stop_code=stop_code,
         accepted_query_masks=tuple(accepted_history),
         daughter_masks=tuple(daughter_history),
+        host_phase_seconds=profile_totals if config.profile_phases else None,
     )
 
 

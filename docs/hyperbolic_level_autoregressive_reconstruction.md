@@ -266,3 +266,25 @@ Corruption training rebuilds all derived p4, charge, source, histogram, level,
 and conflict features. Candidate-correctness, corruption-class, and explicit
 hard-negative losses consume these outputs; corrupted branches are never
 queued as positive channel examples.
+
+## Explicit scientific ablations
+
+Fixture behavior does not select among level encoding (`learned_euclidean`,
+`bounded_tangent_level_embedding`, `none`), radius target (generation height,
+exact root depth, weak/learned), channel pooling (mean-all, FSP-only, B-root,
+learned attention, level weighted), or PID construction (soft expectation,
+temperature softmax, straight-through hard, hard, and rollout-only soft
+decision/hard construction). Daughter compatibility is generic or
+type-conditioned relation-aware. Greedy is the production exclusive resolver;
+bounded weighted set packing and beam remain evaluation-only diagnostics.
+
+Query repulsion stays disabled in the production baseline. The explicit off,
+weak, and stronger configs ignore no-object slots, exclude overlapping matched
+truth hypotheses, share one query mask between numerator and denominator, and
+are query-order invariant. They diagnose slot collapse; fixtures do not choose
+a default.
+
+Optional rollout profiling records unsynchronized host intervals for the first
+encoder pass, PID rebuild, second encoder/pair-relation pass, query/daughter
+decode, proposal resolution, composite append, and transitive updates. It is
+instrumentation only, not CUDA throughput or memory evidence.

@@ -88,3 +88,23 @@ def test_real_only_notebooks_fail_clearly_without_inputs(
     )
     with pytest.raises(RuntimeError, match=message):
         exec(compile(guard, f"{name}:guard", "exec"), {})
+
+
+def test_real_pilot_report_covers_categories_and_fit_policy_diagnostics():
+    notebook = nbformat.read(
+        ROOT / "notebooks" / "inspect_real_mdst_pilot.ipynb", as_version=4
+    )
+    source = "\n".join(cell.source for cell in notebook.cells)
+    for field in (
+        "category_aware_summaries",
+        "track_fit_pid_conditioned_energy_differences",
+        "track_fit_composite_mass_shifts",
+        "track_fit_unavailable_fraction",
+        "pion_comparison_unavailable_fraction",
+        "level1_pointer_logit_comparison",
+        "incomplete_reconstructable_branch",
+        "copied_or_shared_sources",
+    ):
+        assert field in source
+    assert "'status':'NOT_RUN'" in source
+    assert "inspect_trained_physics_validation.ipynb" in source

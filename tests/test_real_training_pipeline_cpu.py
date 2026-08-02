@@ -1,3 +1,5 @@
+import pytest
+
 from hypertagging.data.notebook_fixtures import write_notebook_fixture_v3
 from hypertagging.training.checkpointing import load_training_checkpoint
 from hypertagging.training.pretrain_trainer import PretrainConfig, train_hyperbolic_pretraining
@@ -41,6 +43,13 @@ def test_real_parquet_train_transfer_validate_and_resume(tmp_path):
     ):
         assert name in checkpoint["config"]
     assert (tmp_path / "pretrain" / "best.pt").exists()
+    assert (tmp_path / "pretrain" / "best_principal_topology.pt").exists()
+    parent_checkpoint = tmp_path / "pretrain" / "best_parent_ranking.pt"
+    if pretrain.metrics["validation_parent_ranking_accuracy_denominator"] > 0:
+        assert parent_checkpoint.exists()
+    else:
+        assert not parent_checkpoint.exists()
+    assert (tmp_path / "pretrain" / "best_tree_distance.pt").exists()
     assert (tmp_path / "pretrain" / "latest.pt").exists()
     assert checkpoint["training_state"]["best_metric"] == (
         "validation_full_training_objective"
@@ -63,6 +72,7 @@ def test_real_parquet_train_transfer_validate_and_resume(tmp_path):
             batch_size=2,
             allow_legacy_conflated=True,
             validate_every=1,
+            rollout_validate_every=1,
             checkpoint_every=1,
         )
     )
@@ -73,8 +83,32 @@ def test_real_parquet_train_transfer_validate_and_resume(tmp_path):
     assert reconstruction_payload["training_state"]["best_metric"] == "validation_loss_total"
     assert reconstruction_payload["training_state"]["last_validation_step"] == 1
     assert (tmp_path / "reconstruction" / "best.pt").exists()
+    assert (tmp_path / "reconstruction" / "best_teacher_forced.pt").exists()
+    assert (tmp_path / "reconstruction" / "best_rollout_edge_f1.pt").exists()
+    assert (tmp_path / "reconstruction" / "best_rollout_tree_validity.pt").exists()
     assert (tmp_path / "reconstruction" / "latest.pt").exists()
     assert (tmp_path / "reconstruction" / "checkpoint-step-1.pt").exists()
+    selection = reconstruction_payload["training_state"][
+        "checkpoint_selection_contract"
+    ]
+    assert selection["primary_metric"] == "validation_loss_total"
+    assert selection["thresholds"] == {
+        "object_probability": 0.5,
+        "daughter_pointer_probability": 0.5,
+        "confidence": 0.0,
+        "type_probability": None,
+    }
+    assert "track_fit_policies" in reconstruction_payload["feature_contract"]
+    assert reconstruction_payload["feature_contract"]["pid_reconstruction_mode"]
+    assert reconstruction_payload["feature_contract"]["exclusive_resolver"]["production"] == "greedy"
+    assert reconstruction_payload["validation_selection"]["event_uids"]
+    assert reconstruction_payload["validation_selection"]["rollout_was_run"]
+    assert reconstruction_payload["validation_selection"]["rollout_event_uids"]
+    assert reconstruction_payload["validation_selection"]["rollout_event_uids"] == (
+        reconstruction_payload["validation_selection"]["event_uids"][
+            : int(reconstruction.metrics["rollout_validation_events"])
+        ]
+    )
     resumed_without_new_steps = train_level_reconstruction(
         ReconstructionConfig(
             data=str(data),
@@ -85,6 +119,7 @@ def test_real_parquet_train_transfer_validate_and_resume(tmp_path):
             batch_size=2,
             allow_legacy_conflated=True,
             validate_every=1,
+            rollout_validate_every=1,
             checkpoint_every=1,
         )
     )
@@ -101,7 +136,23 @@ def test_real_parquet_train_transfer_validate_and_resume(tmp_path):
             batch_size=2,
             allow_legacy_conflated=True,
             validate_every=1,
+            rollout_validate_every=1,
             checkpoint_every=1,
         )
     )
     assert resumed.steps == 2
+    with pytest.raises(ValueError, match="checkpoint-selection semantics differ"):
+        train_level_reconstruction(
+            ReconstructionConfig(
+                data=str(data),
+                output_dir=str(tmp_path / "resume_changed_selection"),
+                pretrained_encoder=str(pretrain.checkpoint),
+                resume=str(reconstruction.checkpoint),
+                max_steps=1,
+                batch_size=2,
+                allow_legacy_conflated=True,
+                validate_every=1,
+                rollout_validate_every=2,
+                checkpoint_every=1,
+            )
+        )

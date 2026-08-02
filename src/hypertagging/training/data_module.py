@@ -51,6 +51,7 @@ class RealDataModule:
     prefetch_factor: int = 2
     persistent_workers: bool = False
     source_schema_versions: tuple[str, ...] = ()
+    track_fit_policies: tuple[str, ...] = ()
     dataset_index: dict[str, object] | None = None
     _materialized_splits: dict[str, list[HeterogeneousEvent]] | None = field(
         default=None, init=False, repr=False
@@ -270,6 +271,9 @@ def build_real_data_module(
             prefetch_factor=prefetch_factor,
             persistent_workers=persistent_workers,
             source_schema_versions=tuple(index["schema_versions"]),
+            track_fit_policies=tuple(
+                sorted(str(value) for value in index.get("track_fit_policies", []))
+            ),
             dataset_index=index,
         )
         state = normalization_state or tensor_normalizer_state(index)
@@ -290,6 +294,7 @@ def build_real_data_module(
     scanned = 0
     allowed_types: dict[int, set[int]] = {}
     source_schema_versions: set[str] = set()
+    track_fit_policies = _track_fit_policies_from_publications(paths)
     for path in paths:
         for record in iter_event_records_v4(path):
             if max_events is not None and scanned >= max_events:
@@ -383,6 +388,7 @@ def build_real_data_module(
         prefetch_factor=prefetch_factor,
         persistent_workers=persistent_workers,
         source_schema_versions=tuple(sorted(source_schema_versions)),
+        track_fit_policies=track_fit_policies,
     )
     if normalization_state is None:
         module.normalizers = fit_training_normalizers(module.iter_events("train"))
@@ -417,6 +423,26 @@ def _require_complete_v4_publications(paths: Sequence[Path]) -> None:
         except (OSError, json.JSONDecodeError) as error:
             raise ValueError(f"invalid schema-v4 metadata sidecar {sidecar}") from error
         _validated_completion_marker(path, metadata)
+
+
+def _track_fit_policies_from_publications(
+    paths: Sequence[Path],
+) -> tuple[str, ...]:
+    """Read the MC-independent fit contract even when no index is supplied."""
+
+    policies: set[str] = set()
+    for path in paths:
+        sidecar = path.with_suffix(path.suffix + ".metadata.json")
+        if not sidecar.is_file():
+            continue
+        try:
+            metadata = json.loads(sidecar.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as error:
+            raise ValueError(f"invalid metadata sidecar {sidecar}") from error
+        policy = str(metadata.get("track_fit_policy", "")).strip()
+        if policy:
+            policies.add(policy)
+    return tuple(sorted(policies))
 
 
 def fit_training_normalizers(

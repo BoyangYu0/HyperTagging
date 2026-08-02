@@ -12,6 +12,7 @@ import math
 
 import torch
 
+from hypertagging.preprocessing.schema_v2 import NODE_KIND_TO_ID
 from hypertagging.preprocessing.pid_filter import (
     DETOKENIZE_DICT,
     PDG_TOKENS,
@@ -222,7 +223,7 @@ def _reconstructed_p4_from_leaf_pid(
     p4 = batch["p4"].clone()
     raw_track = (
         batch["node_mask"].bool()
-        & (batch["node_kind_ids"] == 1)
+        & (batch["node_kind_ids"] == NODE_KIND_TO_ID["track"])
         & (batch["level_ids"] == 0)
         & (batch["pid_labels"] == 0)
         & (batch["charge"] != 0)

@@ -10,5 +10,9 @@ validate_every: 100
 rollout_validate_every: 500
 best_metric: validation_loss_total
 best_mode: min
+# Independent diagnostic tracks are always retained as
+# best_teacher_forced.pt, best_rollout_edge_f1.pt, and
+# best_rollout_tree_validity.pt when their denominators are nonzero.
 pilot_allow_train_validation_fallback: false
 initial_state_policy: upsilon4s
+query_repulsion_weight: 0.0

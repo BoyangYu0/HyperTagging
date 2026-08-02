@@ -29,6 +29,11 @@ SRC_ROOT = REPO_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
+from hypertagging.preprocessing.basf2_mdst import (
+    SUPPORTED_TRACK_FIT_POLICIES,
+    TRACK_FIT_POLICY_MAX_P_VALUE_V1,
+)
+
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -75,8 +80,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--track-fit-policy",
-        default="max_p_value_then_pion_fallback-v1",
-        choices=("max_p_value_then_pion_fallback-v1",),
+        default=TRACK_FIT_POLICY_MAX_P_VALUE_V1,
+        choices=SUPPORTED_TRACK_FIT_POLICIES,
         help="Versioned, data-independent TrackFitResult selection contract.",
     )
     parser.add_argument(
