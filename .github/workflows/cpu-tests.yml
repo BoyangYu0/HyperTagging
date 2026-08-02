@@ -26,14 +26,19 @@ jobs:
       - name: Unit suite
         run: python -m pytest -q | tee pytest-summary.txt
       - name: Audit integrity
-        run: python scripts/validate_audit_integrity.py
+        run: python scripts/validate_audit_integrity.py | tee audit-integrity.txt
       - name: Generated notebook consistency
-        run: python scripts/execute_notebook_smoke_tests.py --check-generated
+        run: >-
+          python scripts/execute_notebook_smoke_tests.py --check-generated
+          | tee generated-notebook-consistency.txt
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: cpu-pytest-summary
-          path: pytest-summary.txt
+          path: |
+            pytest-summary.txt
+            audit-integrity.txt
+            generated-notebook-consistency.txt
 
   notebook-smoke:
     runs-on: ubuntu-latest

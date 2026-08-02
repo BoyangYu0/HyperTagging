@@ -198,6 +198,21 @@ def test_validation_overview_preserves_real_only_not_run(tmp_path):
     assert payload["visual_review_status"] == "NOT_REVIEWED"
 
 
+def test_cpu_ci_retains_all_required_machine_readable_evidence_artifacts():
+    workflow = Path(".github/workflows/cpu-tests.yml").read_text(encoding="utf-8")
+    for artifact in (
+        "pytest-summary.txt",
+        "audit-integrity.txt",
+        "generated-notebook-consistency.txt",
+        "notebook_execution_summary.json",
+        "visual_review_index.html",
+        "validation_overview.json",
+    ):
+        assert artifact in workflow
+    assert "workflow_dispatch:" in workflow
+    assert "inputs.source_sha || github.sha" in workflow
+
+
 def test_audited_code_sha_equal_to_head_passes(tmp_path):
     repo, _, ledger = _audit_history_fixture(tmp_path)
     assert _load_validator().validate_audited_code_ancestry(ledger, repo) == []
