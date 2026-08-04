@@ -166,7 +166,13 @@ def _file_identity(path: Path, *, checksum: bool = False) -> dict[str, Any]:
     identity: dict[str, Any] = {
         "input_file_size": int(stat.st_size),
         "input_file_mtime_ns": int(stat.st_mtime_ns),
-        "input_file_identity": f"stat:{stat.st_dev}:{stat.st_ino}:{stat.st_size}:{stat.st_mtime_ns}",
+        # st_dev is a client-local mount identifier and is not stable across
+        # worker hosts for shared filesystems such as PNFS.  The manifest also
+        # binds the absolute path, size, and nanosecond mtime; retain the inode
+        # as a stable namespace identity without introducing a host-local field.
+        "input_file_identity": (
+            f"stat-v2:{stat.st_ino}:{stat.st_size}:{stat.st_mtime_ns}"
+        ),
         "input_file_sha256": None,
     }
     if checksum:

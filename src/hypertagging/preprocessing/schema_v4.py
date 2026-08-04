@@ -10,6 +10,7 @@ from __future__ import annotations
 from collections import Counter
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import subprocess
@@ -298,6 +299,14 @@ class ParquetEventWriter:
         record = dict(event)
         if record.get("schema_version") != SCHEMA_VERSION_V4:
             raise ValueError("ParquetEventWriter accepts native schema-v4 events only")
+        non_finite_paths = _non_finite_float_paths(record)
+        if non_finite_paths:
+            preview = ", ".join(non_finite_paths[:20])
+            suffix = "" if len(non_finite_paths) <= 20 else ", ..."
+            raise ValueError(
+                "schema-v4 event contains non-finite float values at "
+                f"{preview}{suffix}"
+            )
         self._buffer.append(
             {
                 "event_id": int(record["event_id"]),
@@ -547,6 +556,25 @@ def _empty_feature_statistics(width: int) -> dict[str, list[float]]:
         "mean": [0.0] * width,
         "m2": [0.0] * width,
     }
+
+
+def _non_finite_float_paths(value: Any, path: str = "") -> list[str]:
+    """Return bounded-record paths whose float values cannot be strict JSON."""
+
+    if isinstance(value, float):
+        return [path or "<root>"] if not math.isfinite(value) else []
+    if isinstance(value, Mapping):
+        output: list[str] = []
+        for key, child in value.items():
+            child_path = f"{path}.{key}" if path else str(key)
+            output.extend(_non_finite_float_paths(child, child_path))
+        return output
+    if isinstance(value, (list, tuple)):
+        output = []
+        for index, child in enumerate(value):
+            output.extend(_non_finite_float_paths(child, f"{path}[{index}]"))
+        return output
+    return []
 
 
 def _sha256_path(path: Path) -> str:

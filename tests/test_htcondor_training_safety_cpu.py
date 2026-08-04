@@ -83,3 +83,13 @@ def test_condor_wrappers_render_real_data_trainers_without_submitting(
     assert "--data" in result.stdout
     assert "condor_submit " not in result.stdout
     assert "request_gpus = 1" in result.stdout
+
+
+def test_mdst_worker_disables_nounset_while_sourcing_belle2_environment():
+    launcher = (
+        REPOSITORY / "scripts" / "condor" / "submit_mdst_production_10m.sh"
+    ).read_text(encoding="utf-8")
+    setup = "source /cvmfs/belle.cern.ch/tools/b2setup release-08-03-00"
+    setup_position = launcher.index(setup)
+    assert launcher.rindex("set +u", 0, setup_position) < setup_position
+    assert launcher.index("set -u", setup_position) > setup_position

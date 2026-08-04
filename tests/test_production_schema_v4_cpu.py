@@ -10,6 +10,7 @@ from hypertagging.data.notebook_fixtures import (
     write_notebook_fixture_v4,
 )
 from hypertagging.preprocessing.schema_v4 import (
+    ParquetEventWriter,
     SCHEMA_VERSION_V4,
     iter_event_records_v4,
 )
@@ -62,3 +63,18 @@ def test_legacy_gate_requires_explicit_diagnostic_opt_in(tmp_path):
             pilot_split_repair=True,
         )
     assert module.legacy_conflated_fraction == 1.0
+
+
+def test_v4_writer_reports_exact_non_finite_field_path(tmp_path):
+    seed = write_notebook_fixture_v4(tmp_path / "seed.parquet")
+    event = next(iter_event_records_v4(seed))
+    event["nodes"][0]["track_fit_policy_diagnostics"] = {"pion_px": float("nan")}
+    writer = ParquetEventWriter(tmp_path / "non-finite.parquet")
+    try:
+        with pytest.raises(
+            ValueError,
+            match=r"nodes\[0\]\.track_fit_policy_diagnostics\.pion_px",
+        ):
+            writer.write_event(event)
+    finally:
+        writer.abort()

@@ -247,6 +247,47 @@ def test_track_collector_uses_data_independent_pion_fit_and_energy_hypotheses(tm
     assert records[0].mc_id == 17
 
 
+def test_track_collector_rejects_non_finite_selected_fit(tmp_path):
+    class Momentum:
+        def X(self):
+            return float("nan")
+
+        def Y(self):
+            return -0.2
+
+        def Z(self):
+            return 0.4
+
+    class Fit:
+        def getMomentum(self):
+            return Momentum()
+
+        def getChargeSign(self):
+            return -1
+
+        def getPValue(self):
+            return 0.8
+
+    class Track:
+        def getArrayIndex(self):
+            return 4
+
+        def getRelatedTo(self, _name):
+            return None
+
+        def getTrackFitResultWithClosestMass(self, _hypothesis):
+            return Fit()
+
+    collector = _DirectMdstCollector(
+        Basf2PreprocessConfig(("input.root",), tmp_path / "output.parquet")
+    )
+    collector.tracks = [Track()]
+    collector._charged_stable = lambda pdg: ("charged", pdg)
+
+    assert collector._collect_tracks() == []
+    assert collector.collection_stats["tracks_with_non_finite_fit"] == 1
+
+
 def test_ecl_collector_uses_cluster_utils_and_skips_track_matches(tmp_path):
     photon_hypothesis = object()
 

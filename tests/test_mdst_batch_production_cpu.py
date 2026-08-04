@@ -1,9 +1,31 @@
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 from scripts import mdst_batch_production as production
+
+
+def test_input_identity_ignores_host_local_device_number(monkeypatch):
+    device = {"value": 58}
+
+    def fake_stat(_path):
+        return SimpleNamespace(
+            st_dev=device["value"],
+            st_ino=499109497,
+            st_size=3909870476,
+            st_mtime_ns=1762543458387000000,
+        )
+
+    monkeypatch.setattr(Path, "stat", fake_stat)
+    first = production._file_identity(Path("/pnfs/input.root"))
+    device["value"] = 200
+    second = production._file_identity(Path("/pnfs/input.root"))
+    assert first == second
+    assert first["input_file_identity"] == (
+        "stat-v2:499109497:3909870476:1762543458387000000"
+    )
 
 
 def test_manifest_records_are_exact_non_overlapping_ranges(monkeypatch, tmp_path):

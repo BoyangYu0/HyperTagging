@@ -59,8 +59,12 @@ if [[ "${MODE}" == "worker" ]]; then
     echo "--worker requires a task ID" >&2
     exit 1
   fi
+  # Belle II's setup scripts probe optional environment variables directly.
+  # Temporarily disable nounset so a clean Condor environment can be initialized.
+  set +u
   source /cvmfs/belle.cern.ch/tools/b2setup release-08-03-00
   source "${VENV_ROOT}/bin/activate"
+  set -u
   export BASF2_PYTHON_SITE
   export OMP_NUM_THREADS="${CONDOR_CPUS}"
   export MKL_NUM_THREADS="${CONDOR_CPUS}"
