@@ -267,6 +267,13 @@ def test_status_missing_and_targeted_resubmit_are_non_submitting(tmp_path, monke
     )
     rendered = production.render_resubmit(manifest, repo_root=tmp_path)
     assert "queue task_id in (0)" in rendered
+    environment_line = next(
+        line for line in rendered.splitlines() if line.startswith("environment = ")
+    )
+    assert ";" not in environment_line
+    assert f"MANIFEST={manifest.resolve()}" in environment_line
+    assert f"REPO_ROOT={tmp_path.resolve()}" in environment_line
+    assert f"OUTPUT_ROOT={manifest.resolve().parent.parent}" in environment_line
 
 
 def test_source_preflight_failure_writes_structured_failure(tmp_path, monkeypatch):

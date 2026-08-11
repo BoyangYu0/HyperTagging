@@ -93,3 +93,16 @@ def test_mdst_worker_disables_nounset_while_sourcing_belle2_environment():
     setup_position = launcher.index(setup)
     assert launcher.rindex("set +u", 0, setup_position) < setup_position
     assert launcher.index("set -u", setup_position) > setup_position
+
+
+def test_mdst_launcher_uses_unix_safe_condor_environment_separator():
+    launcher = (
+        REPOSITORY / "scripts" / "condor" / "submit_mdst_production_10m.sh"
+    ).read_text(encoding="utf-8")
+    environment_line = next(
+        line for line in launcher.splitlines() if line.startswith("environment = ")
+    )
+    assert ";" not in environment_line
+    for variable in ("MANIFEST", "OUTPUT_ROOT", "REPO_ROOT", "BASF2_PYTHON_SITE"):
+        assert f"{variable}=" in environment_line
+    assert 'MAX_CONCURRENT="${MAX_CONCURRENT:-200}"' in launcher

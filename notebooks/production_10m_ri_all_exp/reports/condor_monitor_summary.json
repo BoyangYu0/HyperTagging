@@ -1,0 +1,108 @@
+{
+  "clusters": {
+    "bulk": {
+      "cluster_id": 4844428,
+      "history": {
+        "exit_code_counts": {
+          "0": 1999
+        },
+        "hold_reasons": [],
+        "job_status_counts": {
+          "4": 1999
+        },
+        "jobs": 1999,
+        "jobs_with_multiple_starts": 0,
+        "remote_wall_clock_seconds": {
+          "maximum": 447.0,
+          "median": 124.0,
+          "total": 276429.0
+        },
+        "request_cpus": [
+          2
+        ],
+        "request_memory_mib": [
+          8192
+        ]
+      },
+      "stderr": {
+        "details": [],
+        "files": 1999,
+        "non_whitespace_files": 0
+      }
+    },
+    "initial_preflight_rejected": {
+      "cluster_id": 4844425,
+      "history": {
+        "exit_code_counts": {
+          "1": 1
+        },
+        "hold_reasons": [],
+        "job_status_counts": {
+          "4": 1
+        },
+        "jobs": 1,
+        "jobs_with_multiple_starts": 0,
+        "remote_wall_clock_seconds": {
+          "maximum": 16.0,
+          "median": 16.0,
+          "total": 16.0
+        },
+        "request_cpus": [
+          2
+        ],
+        "request_memory_mib": [
+          8192
+        ]
+      },
+      "stderr": {
+        "details": [],
+        "files": 0,
+        "non_whitespace_files": 0
+      }
+    },
+    "successful_preflight": {
+      "cluster_id": 4844426,
+      "history": {
+        "exit_code_counts": {
+          "0": 1
+        },
+        "hold_reasons": [],
+        "job_status_counts": {
+          "4": 1
+        },
+        "jobs": 1,
+        "jobs_with_multiple_starts": 0,
+        "remote_wall_clock_seconds": {
+          "maximum": 144.0,
+          "median": 144.0,
+          "total": 144.0
+        },
+        "request_cpus": [
+          2
+        ],
+        "request_memory_mib": [
+          8192
+        ]
+      },
+      "stderr": {
+        "details": [],
+        "files": 0,
+        "non_whitespace_files": 0
+      }
+    }
+  },
+  "generated_at": "2026-08-11T10:48:12.233781Z",
+  "initial_preflight_disposition": {
+    "accepted": false,
+    "produced_shard": false,
+    "reason": "Unix environment entries were separated with semicolons; the worker rejected its pre-processing environment before reading a task."
+  },
+  "successful_campaign_checks": {
+    "bulk_all_completed": true,
+    "bulk_all_exit_zero": true,
+    "bulk_jobs": 1999,
+    "bulk_non_whitespace_stderr": 0,
+    "preflight_all_exit_zero": true,
+    "preflight_jobs": 1
+  }
+}
