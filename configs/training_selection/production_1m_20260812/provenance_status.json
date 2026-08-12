@@ -10,15 +10,15 @@
   "final_non_gpu_readiness": {
     "capacity_gate_complete": true,
     "environment_specification_complete": true,
-    "frozen_gpu_environment_installed": false,
+    "frozen_gpu_environment_installed": true,
     "index_gate_complete": true,
-    "local_gpu_microtest_complete": false,
+    "local_gpu_microtest_complete": true,
     "readiness_manifest": "configs/training_selection/production_1m_20260812/training_readiness.json",
-    "readiness_manifest_hash": "447a810659cd24d6685993a7dc8b08e5d521c7d2fc0e7dd68cfc4d8462a0b654",
+    "readiness_manifest_hash": "32643d2aef23868125f9b45f8e622e5dc4d30500ab88bee43cd62ad5adc6d19b",
     "slurm_tranche_complete": true,
     "trainer_tranche_complete": true
   },
-  "manifest_hash": "fff237203f690155f9716122cbffedae0c36e877a494c2b2563bf9c8f0d94462",
+  "manifest_hash": "45c44404c3dd1917ef9ac2a62765245bcaf1741518546efeeae5291c77d9bf8f",
   "manifest_version": "hypertagging-training-provenance-status-v1",
   "preserved_tips": {
     "focused-post-audit-consolidation-20260802": {
@@ -33,9 +33,8 @@
   "scientific_slurm_submission_allowed": false,
   "scientific_submission_blockers": [
     "The production source object f4e54df23b5c60115e475c5d68df4651899d678e remains unavailable locally; independently recover it and verify tree b6e3a4118b960e3a4676a61af9601438d56cef96.",
-    "Install the reviewed frozen GPU environment and pass its in-allocation CUDA/GPU preflight.",
-    "Complete the later explicitly authorized node-local V100 admission and bounded monitored microtest and record its bound admission and successful-completion receipts.",
-    "Commit and review this readiness tranche on a clean expected SHA and create the immutable experiment tag required by scientific rendering."
+    "Pass the exact in-allocation CUDA/GPU environment preflight on the chosen H200 or V100.",
+    "Commit and review this readiness tranche, create the immutable experiment tag, and pass the clean scientific render gates."
   ],
   "status_date": "2026-08-12",
   "training_integration": {

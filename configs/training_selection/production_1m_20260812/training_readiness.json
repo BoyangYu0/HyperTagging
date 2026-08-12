@@ -34,8 +34,17 @@
       "torch": "2.13.0+cpu",
       "torch_cuda_build": null
     },
-    "frozen_environment_installed": false,
-    "lock_generation": "uv pip compile for Python 3.11/Linux x86_64 with transitive package hashes and explicit PyPI/PyTorch CUDA 12.6 indexes; no environment installed",
+    "frozen_environment": {
+      "cuda_build": "12.6",
+      "install_log_sha256": "454f648a70134a2214bb30d9ade2203aeb2e49822d9343e0e4f1b50d806539e4",
+      "lock_only_preflight": "passed",
+      "path": "/project/agkuhr/users/boyang/envs/hypertagging-gpu-cu126-v1",
+      "python": "3.11.11",
+      "torch": "2.7.1+cu126"
+    },
+    "frozen_environment_installed": true,
+    "in_allocation_gpu_preflight": "required_on_chosen_h200_or_v100",
+    "lock_generation": "uv pip compile for Python 3.11/Linux x86_64 with transitive package hashes and explicit PyPI/PyTorch CUDA 12.6 indexes; frozen environment installed and lock-only preflight passed",
     "lock_receipt_sha256": "6c35af3eaac25ecf7bff12cb13bacefe4e8ee275aa40689adca6ed5f20d7d66d",
     "requirements_input_sha256": "95a1e32849ddec9f052bb22bc56ee3113996ab0cea0285d5db8670e1dbe61a2a",
     "requirements_lock_sha256": "2d34539c79f144f133c39f9ae86c0a34dafaab554c8fe263c28e01fe766576fc",
@@ -74,24 +83,69 @@
     "unique_event_uids": 85000
   },
   "local_gpu_microtest_gate": {
-    "admission_receipt": null,
-    "completion_receipt": null,
+    "admission_receipt": {
+      "file_sha256": "2c6db0fca0c64de0bc9c82814fc0740c03305f1145b59ac8d78b5a9fdeea743b",
+      "gpu_model": "Tesla V100-PCIE-32GB",
+      "gpu_uuid": "GPU-0d5435af-5583-7b0f-f091-5b69e516efec",
+      "hostname": "gar-cn-etp01.garching.physik.uni-muenchen.de",
+      "limits": {
+        "maximum_batch_size": 1,
+        "maximum_duration_seconds": 300,
+        "maximum_steps": 4
+      },
+      "path": "artifacts/experiment_readiness/production_1m_20260812/local_v100_microtest_d7cc46e_short4/admission.json",
+      "receipt_sha256": "a3c9a009ba0b6b4880dc599c4e712787a6b2170d19c107015c4c5b66178bfc98",
+      "receipt_version": "hypertagging-local-v100-admission-v2",
+      "sample_count": 3,
+      "status": "admitted"
+    },
+    "completion_receipt": {
+      "admission_receipt_sha256": "a3c9a009ba0b6b4880dc599c4e712787a6b2170d19c107015c4c5b66178bfc98",
+      "file_sha256": "210b2fa047d71bde6c4d24fbd51c763055150a83463217af984cdcf363476d68",
+      "path": "artifacts/experiment_readiness/production_1m_20260812/local_v100_microtest_d7cc46e_short4/completion.json",
+      "receipt_sha256": "8149f9cae1dd1122a72fe4509e3234056dfd38726f7a44d3fe40ee4a36d4d7de",
+      "receipt_version": "hypertagging-local-v100-completion-v1",
+      "sample_count": 19,
+      "terminal_foreign_pids": [],
+      "terminal_watchdog_failures": [],
+      "trainer_status": 0,
+      "watchdog_reason": "trainer_exit"
+    },
+    "gpu_returned_idle": true,
+    "repository_completion_validator": "passed",
     "required_completion": "trainer_exit with trainer_status 0, at least one monitored sample, and polling no slower than 30 seconds",
     "required_orchestration": "fresh three-sample host/UUID/model-bound admission plus mandatory <=30-second watchdog and canonically hashed, admission-bound successful completion receipt",
     "required_renderer_flags": [
       "--local-admission-receipt",
       "--local-completion-receipt"
     ],
-    "status": "pending_later_explicit_gpu_authorization"
+    "run_artifacts": {
+      "checkpoint": {
+        "all_curriculum_phases_entered": true,
+        "file_sha256": "85e02192a76e9ab2718f3ca3a643e698780f5d1ebc8c0ccbc4d215aa926a7cdf",
+        "git_commit": "d7cc46e6395c6afec15280f683a978532cae501d",
+        "last_validation_step": 4,
+        "path": "artifacts/experiment_readiness/production_1m_20260812/local_v100_microtest_d7cc46e_short4/training/checkpoint.pt",
+        "pending_validation_step": null,
+        "step": 4
+      },
+      "metrics": {
+        "file_sha256": "181f05d0c2d2e712c8dd4bfe6bb14dbd24028829cb7eb2b185e7573ea6a453e6",
+        "final_loss": 4.673738479614258,
+        "path": "artifacts/experiment_readiness/production_1m_20260812/local_v100_microtest_d7cc46e_short4/training/metrics.jsonl",
+        "validation_full_training_objective": 5.179447814822197
+      }
+    },
+    "slurm_submission_performed": false,
+    "status": "complete"
   },
-  "manifest_hash": "447a810659cd24d6685993a7dc8b08e5d521c7d2fc0e7dd68cfc4d8462a0b654",
+  "manifest_hash": "32643d2aef23868125f9b45f8e622e5dc4d30500ab88bee43cd62ad5adc6d19b",
   "manifest_version": "hypertagging-training-readiness-v1",
   "scientific_submission_allowed": false,
   "scientific_submission_blockers": [
     "Recover and independently verify production source object f4e54df23b5c60115e475c5d68df4651899d678e and tree b6e3a4118b960e3a4676a61af9601438d56cef96.",
-    "Install the reviewed frozen GPU lock and pass the in-allocation CUDA/GPU environment preflight.",
-    "Complete a later explicitly authorized node-local V100 admission and bounded monitored microtest with bound admission and successful-completion receipts.",
-    "Commit/review these changes on a clean expected SHA and create the immutable experiment tag required by scientific rendering."
+    "Pass the exact in-allocation CUDA/GPU environment preflight on the chosen H200 or V100.",
+    "Commit and review these changes, create the immutable experiment tag, and pass the clean scientific render gates."
   ],
   "selection": "configs/training_selection/production_1m_20260812/train_035k.json",
   "slurm_tranche": {

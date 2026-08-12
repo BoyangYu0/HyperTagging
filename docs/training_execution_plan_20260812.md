@@ -29,6 +29,8 @@ This document distinguishes:
 |---|---|---|---|
 | Clean branch integration preserves both histories | branch `training-integration-20260812`, merge `83776a2c4f9e7edd776915edf30816730881f9eb`; tags `pre-training-master-537d7cc`, `pre-training-focused-8e9d0b8` | Fixed | Use this branch lineage; do not rewrite either parent. |
 | Production source object missing | `configs/training_selection/production_1m_20260812/provenance_status.json` | Blocking evidence-only issue | Commit `f4e54df23b5c60115e475c5d68df4651899d678e` is unavailable; expected tree `b6e3a4118b960e3a4676a61af9601438d56cef96` cannot be derived independently. CPU work may proceed; scientific Slurm work must fail closed. |
+| Frozen CUDA environment | `/project/agkuhr/users/boyang/envs/hypertagging-gpu-cu126-v1` | Installed; lock-only preflight passed | Python 3.11.11, torch 2.7.1+cu126, CUDA build 12.6; install-log SHA-256 `454f648a70134a2214bb30d9ade2203aeb2e49822d9343e0e4f1b50d806539e4`. The exact in-allocation CUDA/GPU preflight remains mandatory on the chosen H200/V100. |
+| Bound local V100 microtest | `artifacts/experiment_readiness/production_1m_20260812/local_v100_microtest_d7cc46e_short4/` | Successful software/runtime evidence | Three clean V100-bound admission samples, four trainer steps with every curriculum phase entered, step-4 validation completed, normal trainer exit, 19 watchdog samples, no failures or foreign PIDs, and repository completion validation passed. This does not remove source, in-allocation preflight, or clean review/tag/render gates. |
 | 1M reduced data is complete but category-skewed | `/project/agkuhr/users/boyang/data/HyperTagging_uni`; `inventory.json` | Software-validated publication inventory | 200 v4 shards × 5,000 events; 64 mixed, 45 uubar, 21 taupair, 20 ccbar, 18 charged, 16 ddbar, 16 ssbar. It is every tenth production task, not the full 10M composition. |
 | Raw `max_events=N` is a source-order prefix | `src/hypertagging/training/data_module.py`, `src/hypertagging/data/dataset_index.py` | Corrected for selection manifests | Scientific selections now use explicit whole-shard roles; a selection manifest rejects `max_events`. Legacy diagnostic manifests retain prefix compatibility. |
 | Train-only normalization must follow immutable roles | `build_real_data_module`, `build_dataset_index[_from_sidecars]` | Corrected and CPU-tested | Source-role overrides are applied before hash splitting; only `train` contributes normalizer statistics. |
@@ -158,10 +160,21 @@ boundary tests. Do not run the expensive full suite as a first response.
 
 ## Mandatory node-local V100 admission guard
 
-The local Tesla V100 observation (125 MiB, 0%, no process) was timestamped and
-is not permission for a later run. Immediately before every bounded microtest,
-use `scripts/slurm/v100_local_admission.py admit` to collect exactly three
-samples at 10-second intervals, followed only by its monitored `run` subcommand.
+The bounded local V100 microtest at source
+`d7cc46e6395c6afec15280f683a978532cae501d` completed successfully. Its v2
+admission receipt has internal SHA-256 `a3c9a009...` and file SHA-256
+`2c6db0f...`; its admission-bound v1 completion receipt has internal SHA-256
+`8149f9ca...` and file SHA-256 `210b2fa...`. The run used a Tesla
+V100-PCIE-32GB, four steps, batch size one, and a 300-second bound. It ended by
+normal trainer exit with status zero after 19 watchdog samples, no watchdog
+failures, and no foreign PIDs. The GPU was observed idle after completion; no
+Slurm job was submitted. Earlier failed artifacts remain diagnostic-only and
+must not be promoted.
+
+This receipt is evidence for that completed run, not permission for a later
+run. Immediately before every future bounded microtest, use
+`scripts/slurm/v100_local_admission.py admit` to collect exactly three samples
+at 10-second intervals, followed only by its monitored `run` subcommand.
 Each admission sample collects:
 
 ```bash
@@ -184,6 +197,15 @@ one process, at most 10 optimizer steps or 5 minutes (whichever comes first),
 scientific rendering requires a canonically hashed, admission-bound completion
 with normal trainer exit status zero. Never use local V100 for screening,
 confirmation, or final evaluation.
+
+The promoted checkpoint SHA-256 is `85e02192a76e9ab2718f3ca3a643e698780f5d1ebc8c0ccbc4d215aa926a7cdf`.
+It records Git commit `d7cc46e6395c6afec15280f683a978532cae501d`, step 4,
+all curriculum phases including the final phase entered, validation completed
+at step 4, and no pending validation. The metrics JSONL SHA-256 is
+`181f05d0c2d2e712c8dd4bfe6bb14dbd24028829cb7eb2b185e7573ea6a453e6`;
+the final training loss is `4.673738479614258` and the validation full
+objective is `5.179447814822197`. These are microtest execution observations,
+not convergence or scientific-performance claims.
 
 ## Slurm design and dry-run boundary
 
@@ -223,8 +245,8 @@ GPU type. Start with 8 CPUs, 64 GiB RAM, and one GPU; use 1 hour for microtest,
 8–12 hours for 35k screening, and request 24 hours for 100k only after measured
 throughput supports it. Estimates are planning bounds, not measured runtime.
 
-The job must activate a reviewed frozen H200/V100-compatible environment (the
-current CPU test environment is not a GPU environment), set deterministic
+The job must activate the installed reviewed frozen environment at
+`/project/agkuhr/users/boyang/envs/hypertagging-gpu-cu126-v1`, set deterministic
 seeds, stage no mutable source, and write to
 `artifacts/runs/<experiment>/<seed>/<slurm_job_id>/`. Capture rendered config,
 manifest/index/provenance hashes, `pip freeze` or environment lock, Git
@@ -233,8 +255,9 @@ JSONL, checkpoints, cursor/RNG/scheduler/scaler state, and termination reason.
 On USR1, atomically checkpoint then exit with the site-approved requeue code.
 
 Before submission, run `bash -n`, configuration rendering, CPU contract tests,
-manifest/index validation, provenance fail-closed validator, and—only if
-supported—`sbatch --test-only`. Stop at printed command/dry-run until a later
+manifest/index validation, provenance fail-closed validator, and the exact
+in-allocation CUDA/GPU preflight for the selected H200/V100. Only if supported,
+also run `sbatch --test-only`. Stop at printed command/dry-run until a later
 explicit submission authorization.
 
 ## Staged training schedule and promotion gates
@@ -336,11 +359,13 @@ states the reduced-data skew and unsupported claims.
 
 ## Critical path and STOP conditions
 
-Critical path: merge/tags → recover and verify production object → immutable
-roles/manifests (done) → full UID/source index → trainer corrections and CPU
-tests → guarded local microtest or Slurm dry-run → 35k pretraining → 35k
-reconstruction/ablations → 100k three-seed confirmation → optional 250k
-confirmation → sealed test → only then consider larger data or DDP.
+Critical path: merge/tags → immutable roles/manifests and full UID/source index
+(done) → trainer corrections and CPU tests (done) → frozen environment install,
+lock-only preflight, and guarded four-step local V100 microtest (done) → recover
+and verify the production source object → clean review/tag/render gates → exact
+in-allocation CUDA/GPU preflight → 35k pretraining → 35k reconstruction/
+ablations → 100k three-seed confirmation → optional 250k confirmation → sealed
+test → only then consider larger data or DDP.
 
 STOP immediately on any of the following:
 
