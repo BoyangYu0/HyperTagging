@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -10,7 +11,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from scripts.slurm.v100_local_admission import (  # noqa: E402
+    _parse_pmon_compute_pids,
     _run,
+    _telemetry_pids,
     collect_sample,
     evaluate_sample,
     evaluate_watchdog_sample,
@@ -85,7 +88,7 @@ def test_v100_admission_parser_rejects_processes_and_hot_gpu():
     admitted, failures = evaluate_sample(
         gpu,
         compute_apps="GPU-1, 1234, python, 100",
-        pmon="# header\n0 1234 C python 10 0 0 0 0",
+        pmon="# gpu pid type sm mem enc dec command\n0 1234 C 10 0 0 0 python",
         fuser="/dev/nvidia0: 1234",
         queue="22 inter train RUNNING",
     )
@@ -97,6 +100,81 @@ def test_v100_admission_parser_rejects_processes_and_hot_gpu():
         "device_owner_present",
         "user_queue_nonempty",
     }.issubset(failures)
+
+
+def test_pmon_graphics_only_rows_are_ignored_consistently():
+    pmon = (
+        "# gpu pid type sm mem enc dec command\n"
+        "0 - - - - - - -\n"
+        "0 1201 G - - - - Xorg\n"
+        "0 1202 G - - - - gnome-shell\n"
+    )
+    gpu = parse_gpu_row("0, GPU-1, Tesla V100, 32768, 125, 0, 0, 30\n")
+
+    admitted, failures = evaluate_sample(
+        gpu, compute_apps="", pmon=pmon, fuser="", queue=""
+    )
+
+    assert admitted
+    assert failures == []
+    assert _parse_pmon_compute_pids(pmon) == set()
+    assert _telemetry_pids(
+        {"compute_apps": "", "pmon": pmon, "fuser": ""}
+    ) == set()
+
+
+def test_pmon_compute_and_mixed_rows_are_counted():
+    pmon = (
+        "# gpu pid type sm mem enc dec command\n"
+        "0 2201 C 10 2 - - python\n"
+        "0 2202 C+G 20 3 - - mixed-worker\n"
+        "0 2203 G - - - - Xorg\n"
+    )
+    gpu = parse_gpu_row("0, GPU-1, Tesla V100, 32768, 125, 0, 0, 30\n")
+
+    admitted, failures = evaluate_sample(
+        gpu, compute_apps="", pmon=pmon, fuser="", queue=""
+    )
+
+    assert not admitted
+    assert failures == ["pmon_process_present"]
+    assert _parse_pmon_compute_pids(pmon) == {2201, 2202}
+    assert _telemetry_pids(
+        {"compute_apps": "", "pmon": pmon, "fuser": ""}
+    ) == {2201, 2202}
+
+
+def test_compute_apps_and_fuser_pid_checks_are_preserved():
+    assert _telemetry_pids(
+        {
+            "compute_apps": "GPU-1, 4401, python, 100\n",
+            "pmon": "# gpu pid type sm mem enc dec command\n0 4402 G - - - - Xorg\n",
+            "fuser": "/dev/nvidia0: 5501\n/dev/nvidiactl: 5502\n",
+        }
+    ) == {4401, 5501, 5502}
+
+
+@pytest.mark.parametrize(
+    "row",
+    (
+        "unexpected text",
+        "0 3301 G - - - Xorg",
+        "0 3301 unknown - - - - process",
+        "0 - G - - - - Xorg",
+    ),
+)
+def test_malformed_pmon_rows_fail_closed(row):
+    pmon = f"# gpu pid type sm mem enc dec command\n{row}\n"
+    gpu = parse_gpu_row("0, GPU-1, Tesla V100, 32768, 125, 0, 0, 30\n")
+
+    admitted, failures = evaluate_sample(
+        gpu, compute_apps="", pmon=pmon, fuser="", queue=""
+    )
+
+    assert not admitted
+    assert failures == ["pmon_telemetry_malformed"]
+    with pytest.raises(RuntimeError, match="pmon"):
+        _telemetry_pids({"compute_apps": "", "pmon": pmon, "fuser": ""})
 
 
 def test_watchdog_allows_trainer_load_but_rejects_runtime_safety_threshold():
@@ -466,4 +544,110 @@ def test_run_subcommand_rechecks_launches_with_watchdog_and_writes_completion(
     assert launched["start_new_session"] is True
     payload = json.loads(completion.read_text())
     assert payload["trainer_status"] == 0
+    assert payload["terminal_watchdog_failures"] == []
+    assert payload["terminal_observed_pids"] == []
     assert payload["receipt_sha256"]
+
+
+def test_foreign_compute_pid_triggers_bounded_abort_and_diagnostic_receipt(
+    monkeypatch, tmp_path
+):
+    immediate = {
+        "admitted": True,
+        "failures": [],
+        "gpu": {
+            "index": "0",
+            "uuid": "GPU-1",
+            "name": "Tesla V100",
+            "memory_total_mib": 32768,
+            "memory_used_mib": 125,
+            "gpu_utilization_percent": 0,
+            "memory_utilization_percent": 0,
+            "temperature_c": 30,
+        },
+        "compute_apps": "",
+        "pmon": "# gpu pid type sm mem enc dec command\n0 1201 G - - - - Xorg\n",
+        "fuser": "",
+        "queue": "",
+        "slurm": {
+            "user_queue": {"command": [], "output": ""},
+            "node_wide": {
+                "command": [],
+                "output": "",
+                "hostname": os.uname().nodename.partition(".")[0],
+            },
+        },
+    }
+    foreign = {
+        **immediate,
+        "admitted": False,
+        "failures": ["pmon_process_present"],
+        "pmon": (
+            "# gpu pid type sm mem enc dec command\n"
+            "0 1201 G - - - - Xorg\n"
+            "0 9876 C 25 4 - - foreign-worker\n"
+        ),
+    }
+    receipt = {
+        "receipt_sha256": "a" * 64,
+        "gpu_identity": {"uuid": "GPU-1", "model": "Tesla V100"},
+        "limits": {"maximum_duration_seconds": 2},
+    }
+    monkeypatch.setattr(
+        "hypertagging.utils.gpu_safety.load_local_microtest_admission_receipt",
+        lambda _path: receipt,
+    )
+    samples = iter((immediate, foreign))
+    monkeypatch.setattr(
+        "scripts.slurm.v100_local_admission.collect_sample", lambda: next(samples)
+    )
+
+    class FakeProcess:
+        pid = 4321
+
+        def __init__(self, command, *, env, start_new_session):
+            assert command == ["trainer"]
+            assert env["CUDA_VISIBLE_DEVICES"] == "0"
+            assert start_new_session is True
+
+        def poll(self):
+            return None
+
+    monkeypatch.setattr(
+        "scripts.slurm.v100_local_admission.subprocess.Popen", FakeProcess
+    )
+    stops = []
+
+    def fake_bounded_stop(process, *, signal_grace, terminate_grace):
+        stops.append((process.pid, signal_grace, terminate_grace))
+        return -10
+
+    monkeypatch.setattr(
+        "scripts.slurm.v100_local_admission._bounded_stop", fake_bounded_stop
+    )
+    completion = tmp_path / "completion.json"
+    args = SimpleNamespace(
+        receipt=tmp_path / "admission.json",
+        completion_output=completion,
+        poll_seconds=0.001,
+        signal_grace=1.0,
+        terminate_grace=2.0,
+        trainer_command=["trainer"],
+    )
+
+    assert run_monitored(args) == -10
+    assert stops == [(4321, 1.0, 2.0)]
+    payload = json.loads(completion.read_text())
+    assert payload["watchdog_reason"] == "telemetry_threshold_or_foreign_process"
+    assert payload["trainer_status"] == -10
+    assert payload["trainer_pid"] == 4321
+    assert payload["terminal_watchdog_failures"] == ["foreign_process_present"]
+    assert payload["terminal_observed_pids"] == [9876]
+    assert payload["terminal_foreign_pids"] == [9876]
+    assert payload["terminal_telemetry_sample"] == foreign
+    canonical = {
+        key: value for key, value in payload.items() if key != "receipt_sha256"
+    }
+    assert payload["receipt_sha256"] == hashlib.sha256(
+        json.dumps(canonical, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()

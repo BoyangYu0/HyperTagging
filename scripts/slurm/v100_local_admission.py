@@ -64,6 +64,37 @@ def parse_gpu_row(text: str) -> dict[str, Any]:
     return payload
 
 
+def _parse_pmon_compute_pids(text: str) -> set[int]:
+    """Return PIDs from well-formed pmon rows whose type includes compute."""
+
+    pids: set[int] = set()
+    for line in text.splitlines():
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        fields = line.split(maxsplit=7)
+        if len(fields) != 8 or not fields[0].isdigit():
+            raise RuntimeError("unexpected nvidia-smi pmon telemetry shape")
+        pid_text, process_type, *utilization, command = fields[1:]
+        if pid_text == "-":
+            if any(field != "-" for field in fields[2:]):
+                raise RuntimeError("unexpected nvidia-smi pmon idle row")
+            continue
+        if not pid_text.isdigit() or int(pid_text) <= 0:
+            raise RuntimeError("unexpected nvidia-smi pmon PID")
+        if process_type not in {"C", "G", "C+G", "G+C"}:
+            raise RuntimeError("unexpected nvidia-smi pmon process type")
+        if any(
+            value != "-" and (not value.isdigit() or not 0 <= int(value) <= 100)
+            for value in utilization
+        ):
+            raise RuntimeError("unexpected nvidia-smi pmon utilization")
+        if command == "-":
+            raise RuntimeError("unexpected nvidia-smi pmon command")
+        if "C" in process_type.split("+"):
+            pids.add(int(pid_text))
+    return pids
+
+
 def evaluate_sample(
     gpu: dict[str, Any],
     *,
@@ -86,12 +117,13 @@ def evaluate_sample(
         failures.append("temperature_not_below_70_c")
     if compute_apps.strip():
         failures.append("compute_process_present")
-    pmon_process_lines = [
-        line for line in pmon.splitlines()
-        if line.strip() and not line.lstrip().startswith("#") and " - " not in line
-    ]
-    if pmon_process_lines:
-        failures.append("pmon_process_present")
+    try:
+        pmon_compute_pids = _parse_pmon_compute_pids(pmon)
+    except RuntimeError:
+        failures.append("pmon_telemetry_malformed")
+    else:
+        if pmon_compute_pids:
+            failures.append("pmon_process_present")
     if re.search(r"\b\d{2,}\b", fuser):
         failures.append("device_owner_present")
     if queue.strip():
@@ -370,20 +402,21 @@ def admit(args: argparse.Namespace) -> int:
     return 0
 
 
-def _telemetry_pids(sample: dict[str, Any]) -> set[int]:
+def _non_pmon_telemetry_pids(sample: dict[str, Any]) -> set[int]:
     pids: set[int] = set()
     for line in str(sample["compute_apps"]).splitlines():
         fields = line.split(",")
         if len(fields) >= 2 and fields[1].strip().isdigit():
             pids.add(int(fields[1].strip()))
-    for line in str(sample["pmon"]).splitlines():
-        if line.strip() and not line.lstrip().startswith("#"):
-            fields = line.split()
-            if len(fields) >= 2 and fields[1].isdigit():
-                pids.add(int(fields[1]))
     for line in str(sample["fuser"]).splitlines():
         owner_text = line.split(":", 1)[1] if ":" in line else line
         pids.update(int(value) for value in re.findall(r"\b\d+\b", owner_text))
+    return pids
+
+
+def _telemetry_pids(sample: dict[str, Any]) -> set[int]:
+    pids = _non_pmon_telemetry_pids(sample)
+    pids.update(_parse_pmon_compute_pids(str(sample["pmon"])))
     return pids
 
 
@@ -475,6 +508,10 @@ def run_monitored(args: argparse.Namespace) -> int:
     reason = "trainer_exit"
     status: int | None = None
     samples = [immediate]
+    terminal_watchdog_failures: list[str] = []
+    terminal_observed_pids = sorted(_telemetry_pids(immediate))
+    terminal_foreign_pids: list[int] = []
+    terminal_telemetry_sample = immediate
     try:
         while time.monotonic() < deadline:
             status = process.poll()
@@ -487,8 +524,19 @@ def run_monitored(args: argparse.Namespace) -> int:
                 gpu_uuid=str(identity["uuid"]),
                 gpu_model=str(identity["model"]),
             )
-            observed_pids = _telemetry_pids(sample)
-            if unexpected or not observed_pids.issubset({process.pid}):
+            try:
+                observed_pids = _telemetry_pids(sample)
+            except RuntimeError:
+                unexpected.append("pmon_telemetry_malformed")
+                observed_pids = _non_pmon_telemetry_pids(sample)
+            foreign_pids = observed_pids - {process.pid}
+            terminal_watchdog_failures = list(unexpected)
+            if foreign_pids:
+                terminal_watchdog_failures.append("foreign_process_present")
+            terminal_observed_pids = sorted(observed_pids)
+            terminal_foreign_pids = sorted(foreign_pids)
+            terminal_telemetry_sample = sample
+            if terminal_watchdog_failures:
                 reason = "telemetry_threshold_or_foreign_process"
                 status = _bounded_stop(
                     process,
@@ -499,6 +547,7 @@ def run_monitored(args: argparse.Namespace) -> int:
             time.sleep(args.poll_seconds)
         else:
             reason = "watchdog_deadline"
+            terminal_watchdog_failures = ["watchdog_deadline"]
             status = _bounded_stop(
                 process,
                 signal_grace=args.signal_grace,
@@ -517,8 +566,13 @@ def run_monitored(args: argparse.Namespace) -> int:
         "completed_at": datetime.now(timezone.utc).isoformat(),
         "watchdog_reason": reason,
         "trainer_status": status,
+        "trainer_pid": process.pid,
         "sample_count": len(samples),
         "poll_seconds": args.poll_seconds,
+        "terminal_watchdog_failures": terminal_watchdog_failures,
+        "terminal_observed_pids": terminal_observed_pids,
+        "terminal_foreign_pids": terminal_foreign_pids,
+        "terminal_telemetry_sample": terminal_telemetry_sample,
     }
     _write_receipt(completion, args.completion_output)
     return int(status)
