@@ -273,6 +273,8 @@ def build_real_data_module(
         )
 
         index = load_dataset_index(dataset_index)
+        if selection is not None and split_config is None:
+            config = SourceAwareSplitConfig(**index["split_config"])
         if scientific_mode:
             identity = index.get("event_identity_validation", {})
             included = index.get("selection_contract", {}).get("included_splits")
@@ -314,7 +316,38 @@ def build_real_data_module(
         indexed_paths = {str(Path(path).resolve()) for path in index["paths"]}
         if indexed_paths != {str(path.resolve()) for path in paths}:
             raise ValueError("dataset index shard paths do not match requested data")
-        if index["split_config"] != config.__dict__:
+        if selection is not None:
+            included_splits = set(selection.included_splits)
+            expected_source_groups = {
+                source: str(expectation["split"])
+                for source, expectation in selection.source_expectations.items()
+                if str(expectation["split"]) in included_splits
+            }
+            excluded_sources = {
+                source
+                for source, split in selection.source_split_overrides.items()
+                if split not in included_splits
+            }
+            excluded_sources.update(
+                source
+                for source, expectation in selection.source_expectations.items()
+                if str(expectation["split"]) not in included_splits
+            )
+            indexed_excluded_sources = excluded_sources.intersection(
+                index["source_groups"]
+            )
+            if indexed_excluded_sources:
+                raise ValueError(
+                    "dataset index contains sources from excluded training-selection "
+                    f"roles: {sorted(indexed_excluded_sources)}"
+                )
+            if index["source_groups"] != expected_source_groups:
+                raise ValueError(
+                    "dataset index source roles disagree with training selection"
+                )
+        if (selection is None or split_config is not None) and (
+            index["split_config"] != config.__dict__
+        ):
             raise ValueError("dataset index split configuration mismatch")
         legacy_fraction = float(index["legacy_fraction"])
         if legacy_fraction and not allow_legacy_conflated:

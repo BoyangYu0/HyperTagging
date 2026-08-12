@@ -4,6 +4,7 @@ import hashlib
 import pytest
 import torch
 
+from hypertagging.data.splitting import SourceAwareSplitConfig
 from hypertagging.data.training_selection import (
     INVENTORY_VERSION,
     SELECTION_MANIFEST_VERSION,
@@ -155,7 +156,9 @@ def test_scientific_mode_rejects_raw_data_before_scanning(tmp_path):
         build_real_data_module(raw, scientific_mode=True)
 
 
-def test_selection_handoff_fits_normalizers_on_training_role_only(tmp_path):
+def test_selection_handoff_fits_normalizers_on_training_role_only(
+    tmp_path, monkeypatch
+):
     from hypertagging.data.notebook_fixtures import notebook_fixture_trees
     from hypertagging.preprocessing.schema_v4 import export_trees_v4
     from hypertagging.training.data_module import build_real_data_module
@@ -263,14 +266,60 @@ def test_selection_handoff_fits_normalizers_on_training_role_only(tmp_path):
         source_expectations=loaded.source_expectations,
         require_event_identity_validation=True,
     )
+    all_roles = load_training_selection(manifest)
+    assert set(all_roles.source_expectations) == {
+        "source_0.root",
+        "source_1.root",
+        "source_2.root",
+    }
+
+    from dataclasses import replace
+    from hypertagging.data import training_selection
+
+    original_load_training_selection = training_selection.load_training_selection
+
+    def load_selection_with_all_source_expectations(path, *, include_splits=None):
+        selected = original_load_training_selection(
+            path, include_splits=include_splits
+        )
+        return replace(
+            selected,
+            source_expectations=all_roles.source_expectations,
+        )
+
+    monkeypatch.setattr(
+        training_selection,
+        "load_training_selection",
+        load_selection_with_all_source_expectations,
+    )
     indexed_module = build_real_data_module(
         manifest,
         scientific_mode=True,
         required_splits=("train", "validation"),
         dataset_index=index,
+        seed=20260812,
     )
     assert indexed_module.split_counts == {"train": 2, "validation": 2, "test": 0}
     assert indexed_module.dataset_index["normalizer_scope"] == "train"
+    assert indexed_module.dataset_index["source_groups"] == {
+        "source_0.root": "train",
+        "source_1.root": "validation",
+    }
+    assert "source_2.root" not in indexed_module.dataset_index["source_groups"]
+    assert indexed_module.seed == 20260812
+    assert indexed_module.split_config.__dict__ == json.loads(index.read_text())[
+        "split_config"
+    ]
+    assert indexed_module.split_config.seed == 20260730
+
+    with pytest.raises(ValueError, match="split configuration mismatch"):
+        build_real_data_module(
+            manifest,
+            scientific_mode=True,
+            required_splits=("train", "validation"),
+            dataset_index=index,
+            split_config=SourceAwareSplitConfig(seed=20260812),
+        )
 
     from hypertagging.data.dataset_index import _index_hash
 
@@ -292,6 +341,20 @@ def test_selection_handoff_fits_normalizers_on_training_role_only(tmp_path):
             "sidecar-index",
             lambda payload: payload.update(event_identity_validation={}),
             "identity/task-binding gate",
+        ),
+        (
+            "wrong-source-role",
+            lambda payload: payload["source_groups"].update(
+                {"source_0.root": "validation"}
+            ),
+            "source roles disagree",
+        ),
+        (
+            "excluded-test-source",
+            lambda payload: payload["source_groups"].update(
+                {"source_2.root": "test"}
+            ),
+            "sources from excluded training-selection roles",
         ),
     ):
         payload = json.loads(json.dumps(original))
