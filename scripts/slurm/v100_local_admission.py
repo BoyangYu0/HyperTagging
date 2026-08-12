@@ -14,6 +14,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import signal
 import socket
 import subprocess
@@ -33,6 +34,10 @@ COMPUTE_QUERY = (
     "--query-compute-apps=gpu_uuid,pid,process_name,used_gpu_memory",
     "--format=csv,noheader,nounits",
 )
+HTCONDOR_PROCESS_QUERY = ("ps", "-eo", "pid=,comm=")
+SLURM_SQUEUE = "/opt/slurm/bin/squeue"
+SLURM_USER_STATES = "RUNNING,PENDING"
+SLURM_NODE_STATES = "RUNNING,COMPLETING,CONFIGURING,SUSPENDED,RESIZING"
 
 
 def _run(command: tuple[str, ...], *, accepted_returncodes: tuple[int, ...] = (0,)) -> str:
@@ -66,6 +71,7 @@ def evaluate_sample(
     pmon: str,
     fuser: str,
     queue: str,
+    node_slurm_queue: str = "",
 ) -> tuple[bool, list[str]]:
     failures = []
     if "v100" not in str(gpu["name"]).lower():
@@ -90,6 +96,8 @@ def evaluate_sample(
         failures.append("device_owner_present")
     if queue.strip():
         failures.append("user_queue_nonempty")
+    if node_slurm_queue.strip():
+        failures.append("node_slurm_queue_nonempty")
     return not failures, failures
 
 
@@ -111,7 +119,159 @@ def evaluate_watchdog_sample(
             failures.append(f"runtime_{key}_invalid")
     if str(sample["queue"]).strip():
         failures.append("user_queue_nonempty")
+    slurm = sample.get("slurm")
+    if not isinstance(slurm, dict):
+        failures.append("slurm_evidence_not_proven")
+    else:
+        user_queue = slurm.get("user_queue")
+        node_wide = slurm.get("node_wide")
+        if not isinstance(user_queue, dict) or not isinstance(node_wide, dict):
+            failures.append("slurm_evidence_not_proven")
+        elif (
+            not isinstance(user_queue.get("output"), str)
+            or not isinstance(node_wide.get("output"), str)
+            or node_wide.get("hostname") != _short_hostname()
+        ):
+            failures.append("slurm_evidence_not_proven")
+        else:
+            if (
+                user_queue["output"].strip()
+                and "user_queue_nonempty" not in failures
+            ):
+                failures.append("user_queue_nonempty")
+            if node_wide["output"].strip():
+                failures.append("node_slurm_queue_nonempty")
+    htcondor = sample.get("htcondor")
+    if (
+        isinstance(htcondor, dict)
+        and htcondor.get("mode") == "local_host_absence_check"
+        and htcondor.get("absence_proven") is not True
+    ):
+        failures.append("htcondor_absence_not_proven")
     return failures
+
+
+def _htcondor_environment_markers(environ: dict[str, str]) -> list[str]:
+    return sorted(
+        name
+        for name in environ
+        if name.startswith("_CONDOR_") or name.startswith("CONDOR_")
+    )
+
+
+def _parse_process_names(text: str) -> list[tuple[int, str]]:
+    processes: list[tuple[int, str]] = []
+    for line in text.splitlines():
+        if not line.strip():
+            continue
+        fields = line.strip().split(None, 1)
+        if len(fields) != 2 or not fields[0].isdigit() or not fields[1].strip():
+            raise RuntimeError("unexpected local process telemetry shape")
+        processes.append((int(fields[0]), fields[1].strip()))
+    if not processes:
+        raise RuntimeError("local process telemetry returned no processes")
+    return processes
+
+
+def _is_htcondor_process_name(name: str) -> bool:
+    normalized = Path(name).name.lower().strip("[]")
+    return normalized == "condor" or normalized.startswith("condor_")
+
+
+def _collect_htcondor_queue_evidence(
+    user: str, *, environ: dict[str, str] | None = None
+) -> tuple[str, dict[str, Any], list[str]]:
+    command = ("condor_q", user, "-autoformat", "ClusterId", "ProcId", "JobStatus")
+    executable = shutil.which("condor_q")
+    if executable is not None:
+        queue = _run(command)
+        return queue, {
+            "mode": "condor_q",
+            "condor_q_available": True,
+            "condor_q_path": executable,
+            "queue_command": list(command),
+            "queue_output": queue,
+        }, []
+
+    marker_names = _htcondor_environment_markers(
+        dict(os.environ if environ is None else environ)
+    )
+    process_rows = _parse_process_names(_run(HTCONDOR_PROCESS_QUERY))
+    condor_processes = [
+        {"pid": pid, "name": name}
+        for pid, name in process_rows
+        if _is_htcondor_process_name(name)
+    ]
+    failures = []
+    if marker_names:
+        failures.append("htcondor_process_context_present")
+    if condor_processes:
+        failures.append("local_htcondor_process_present")
+    evidence = {
+        "mode": "local_host_absence_check",
+        "condor_q_available": False,
+        "condor_q_path": None,
+        "queue_command": None,
+        "queue_output": None,
+        "process_context": {
+            "pid": os.getpid(),
+            "environment_marker_names": marker_names,
+            "under_htcondor": bool(marker_names),
+        },
+        "local_process_scan": {
+            "scope": "all_local_processes",
+            "command": list(HTCONDOR_PROCESS_QUERY),
+            "processes_scanned": len(process_rows),
+            "htcondor_processes": condor_processes,
+            "clear": not condor_processes,
+        },
+        "absence_proven": not failures,
+    }
+    return "", evidence, failures
+
+
+def _short_hostname() -> str:
+    hostname = socket.gethostname().strip().partition(".")[0]
+    if not hostname or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", hostname):
+        raise RuntimeError("could not determine a safe short hostname for Slurm telemetry")
+    return hostname
+
+
+def _collect_slurm_queue_evidence(user: str) -> tuple[str, str, dict[str, Any]]:
+    hostname = _short_hostname()
+    user_command = (
+        SLURM_SQUEUE,
+        "-h",
+        "-u",
+        user,
+        "-t",
+        SLURM_USER_STATES,
+        "-o",
+        "%i %P %j %T",
+    )
+    node_command = (
+        SLURM_SQUEUE,
+        "-h",
+        "-w",
+        hostname,
+        "-t",
+        SLURM_NODE_STATES,
+        "-o",
+        "%i %u %P %j %T %N",
+    )
+    user_queue = _run(user_command)
+    node_queue = _run(node_command)
+    return user_queue, node_queue, {
+        "user_queue": {
+            "command": list(user_command),
+            "output": user_queue,
+        },
+        "node_wide": {
+            "command": list(node_command),
+            "output": node_queue,
+            "hostname": hostname,
+        },
+    }
 
 
 def collect_sample() -> dict[str, Any]:
@@ -123,19 +283,24 @@ def collect_sample() -> dict[str, Any]:
         ("fuser", "-v", "/dev/nvidia0", "/dev/nvidiactl"),
         accepted_returncodes=(0, 1),
     )
-    slurm_queue = _run(
-        (
-            "/opt/slurm/bin/squeue", "-h", "-u", getpass.getuser(),
-            "-t", "RUNNING,PENDING", "-o", "%i %P %j %T",
-        )
+    user = getpass.getuser()
+    slurm_queue, node_slurm_queue, slurm_evidence = (
+        _collect_slurm_queue_evidence(user)
     )
-    condor_queue = _run(
-        ("condor_q", getpass.getuser(), "-autoformat", "ClusterId", "ProcId", "JobStatus")
+    condor_queue, htcondor_evidence, condor_failures = (
+        _collect_htcondor_queue_evidence(user)
     )
     queue = "\n".join(value.strip() for value in (slurm_queue, condor_queue) if value.strip())
     admitted, failures = evaluate_sample(
-        gpu, compute_apps=compute, pmon=pmon, fuser=fuser, queue=queue
+        gpu,
+        compute_apps=compute,
+        pmon=pmon,
+        fuser=fuser,
+        queue=queue,
+        node_slurm_queue=node_slurm_queue,
     )
+    failures.extend(condor_failures)
+    admitted = admitted and not condor_failures
     return {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "gpu": gpu,
@@ -143,6 +308,8 @@ def collect_sample() -> dict[str, Any]:
         "pmon": pmon,
         "fuser": fuser,
         "queue": queue,
+        "slurm": slurm_evidence,
+        "htcondor": htcondor_evidence,
         "admitted": admitted,
         "failures": failures,
     }

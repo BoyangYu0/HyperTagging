@@ -1,5 +1,6 @@
 from types import SimpleNamespace
 import json
+import os
 from pathlib import Path
 import sys
 
@@ -10,11 +11,64 @@ sys.path.insert(0, str(ROOT))
 
 from scripts.slurm.v100_local_admission import (  # noqa: E402
     _run,
+    collect_sample,
     evaluate_sample,
     evaluate_watchdog_sample,
     parse_gpu_row,
     run_monitored,
 )
+
+
+def _clear_htcondor_environment(monkeypatch):
+    for name in tuple(os.environ):
+        if name.startswith("_CONDOR_") or name.startswith("CONDOR_"):
+            monkeypatch.delenv(name, raising=False)
+
+
+def _mock_admission_commands(
+    monkeypatch,
+    *,
+    process_rows,
+    condor_queue=None,
+    user_slurm_queue="",
+    node_slurm_queue="",
+    node_slurm_error=None,
+):
+    commands = []
+
+    def fake_run(command, **_kwargs):
+        commands.append(command)
+        if command[:2] == (
+            "nvidia-smi",
+            "--query-gpu=index,uuid,name,memory.total,memory.used,"
+            "utilization.gpu,utilization.memory,temperature.gpu",
+        ):
+            return "0, GPU-1, Tesla V100, 32768, 0, 0, 0, 30\n"
+        if command[:2] == (
+            "nvidia-smi",
+            "--query-compute-apps=gpu_uuid,pid,process_name,used_gpu_memory",
+        ):
+            return ""
+        if command == ("nvidia-smi", "pmon", "-c", "1"):
+            return "# gpu pid type sm mem enc dec command\n"
+        if command[:2] == ("fuser", "-v"):
+            return ""
+        if command[:2] == ("/opt/slurm/bin/squeue", "-h"):
+            if "-u" in command:
+                return user_slurm_queue
+            if "-w" in command:
+                if node_slurm_error is not None:
+                    raise node_slurm_error
+                return node_slurm_queue
+        if command == ("ps", "-eo", "pid=,comm="):
+            return process_rows
+        if command[:1] == ("condor_q",):
+            assert condor_queue is not None
+            return condor_queue
+        raise AssertionError(f"unexpected command: {command!r}")
+
+    monkeypatch.setattr("scripts.slurm.v100_local_admission._run", fake_run)
+    return commands
 
 
 def test_v100_admission_parser_accepts_threshold_boundary_except_temperature():
@@ -49,12 +103,146 @@ def test_watchdog_allows_trainer_load_but_rejects_runtime_safety_threshold():
     sample = {
         "gpu": parse_gpu_row("0, GPU-1, Tesla V100, 32768, 20000, 95, 80, 84\n"),
         "queue": "",
+        "slurm": {
+            "user_queue": {"command": [], "output": ""},
+            "node_wide": {
+                "command": [],
+                "output": "",
+                "hostname": os.uname().nodename.partition(".")[0],
+            },
+        },
     }
     assert evaluate_watchdog_sample(
         sample, gpu_uuid="GPU-1", gpu_model="Tesla V100"
     ) == []
     sample["gpu"]["temperature_c"] = 85
     assert "runtime_temperature_not_below_85_c" in evaluate_watchdog_sample(
+        sample, gpu_uuid="GPU-1", gpu_model="Tesla V100"
+    )
+    sample["gpu"]["temperature_c"] = 84
+    sample["htcondor"] = {
+        "mode": "local_host_absence_check",
+        "absence_proven": False,
+    }
+    assert "htcondor_absence_not_proven" in evaluate_watchdog_sample(
+        sample, gpu_uuid="GPU-1", gpu_model="Tesla V100"
+    )
+
+
+def test_empty_node_wide_slurm_placement_accepts_and_records_exact_command(
+    monkeypatch,
+):
+    monkeypatch.setattr(
+        "scripts.slurm.v100_local_admission.socket.gethostname",
+        lambda: "v100-node.example.org",
+    )
+    monkeypatch.setattr(
+        "scripts.slurm.v100_local_admission.getpass.getuser", lambda: "alice"
+    )
+    monkeypatch.setattr(
+        "scripts.slurm.v100_local_admission.shutil.which",
+        lambda name: "/usr/bin/condor_q" if name == "condor_q" else None,
+    )
+    commands = _mock_admission_commands(
+        monkeypatch,
+        process_rows="",
+        condor_queue="",
+    )
+
+    sample = collect_sample()
+
+    user_command = (
+        "/opt/slurm/bin/squeue",
+        "-h",
+        "-u",
+        "alice",
+        "-t",
+        "RUNNING,PENDING",
+        "-o",
+        "%i %P %j %T",
+    )
+    node_command = (
+        "/opt/slurm/bin/squeue",
+        "-h",
+        "-w",
+        "v100-node",
+        "-t",
+        "RUNNING,COMPLETING,CONFIGURING,SUSPENDED,RESIZING",
+        "-o",
+        "%i %u %P %j %T %N",
+    )
+    assert commands.count(user_command) == 1
+    assert [command for command in commands if "-w" in command] == [node_command]
+    assert sample["admitted"] is True
+    assert sample["slurm"] == {
+        "user_queue": {"command": list(user_command), "output": ""},
+        "node_wide": {
+            "command": list(node_command),
+            "output": "",
+            "hostname": "v100-node",
+        },
+    }
+
+
+def test_any_node_wide_slurm_placement_rejects(monkeypatch):
+    monkeypatch.setattr(
+        "scripts.slurm.v100_local_admission.socket.gethostname",
+        lambda: "v100-node.example.org",
+    )
+    monkeypatch.setattr(
+        "scripts.slurm.v100_local_admission.shutil.which",
+        lambda name: "/usr/bin/condor_q" if name == "condor_q" else None,
+    )
+    _mock_admission_commands(
+        monkeypatch,
+        process_rows="",
+        condor_queue="",
+        node_slurm_queue=(
+            "7392 bob gpu other-training RUNNING v100-node\n"
+        ),
+    )
+
+    sample = collect_sample()
+
+    assert sample["admitted"] is False
+    assert "node_slurm_queue_nonempty" in sample["failures"]
+    assert sample["slurm"]["node_wide"]["output"].startswith("7392 bob ")
+
+
+def test_node_wide_slurm_command_error_is_fatal(monkeypatch):
+    monkeypatch.setattr(
+        "scripts.slurm.v100_local_admission.socket.gethostname",
+        lambda: "v100-node.example.org",
+    )
+    _mock_admission_commands(
+        monkeypatch,
+        process_rows="",
+        node_slurm_error=RuntimeError("telemetry command failed: node-wide squeue"),
+    )
+
+    with pytest.raises(RuntimeError, match="node-wide squeue"):
+        collect_sample()
+
+
+def test_watchdog_rejects_node_wide_slurm_placement(monkeypatch):
+    monkeypatch.setattr(
+        "scripts.slurm.v100_local_admission.socket.gethostname",
+        lambda: "v100-node.example.org",
+    )
+    sample = {
+        "gpu": parse_gpu_row("0, GPU-1, Tesla V100, 32768, 1, 0, 0, 30\n"),
+        "queue": "",
+        "slurm": {
+            "user_queue": {"command": [], "output": ""},
+            "node_wide": {
+                "command": [],
+                "output": "7392 bob gpu other-training RUNNING v100-node\n",
+                "hostname": "v100-node",
+            },
+        },
+    }
+
+    assert "node_slurm_queue_nonempty" in evaluate_watchdog_sample(
         sample, gpu_uuid="GPU-1", gpu_model="Tesla V100"
     )
 
@@ -81,6 +269,126 @@ def test_fuser_unexpected_return_code_fails_closed(monkeypatch):
         _run(("fuser", "-v", "/dev/nvidia0"), accepted_returncodes=(0, 1))
 
 
+def test_missing_condor_q_accepts_only_with_explicit_safe_host_evidence(monkeypatch):
+    _clear_htcondor_environment(monkeypatch)
+    monkeypatch.setattr("scripts.slurm.v100_local_admission.shutil.which", lambda _name: None)
+    _mock_admission_commands(
+        monkeypatch,
+        process_rows="1 systemd\n42 python\n",
+    )
+
+    sample = collect_sample()
+
+    assert sample["admitted"] is True
+    assert sample["queue"] == ""
+    assert sample["htcondor"] == {
+        "mode": "local_host_absence_check",
+        "condor_q_available": False,
+        "condor_q_path": None,
+        "queue_command": None,
+        "queue_output": None,
+        "process_context": {
+            "pid": os.getpid(),
+            "environment_marker_names": [],
+            "under_htcondor": False,
+        },
+        "local_process_scan": {
+            "scope": "all_local_processes",
+            "command": ["ps", "-eo", "pid=,comm="],
+            "processes_scanned": 2,
+            "htcondor_processes": [],
+            "clear": True,
+        },
+        "absence_proven": True,
+    }
+
+
+@pytest.mark.parametrize(
+    ("environment", "process_rows", "expected_failure"),
+    (
+        (
+            {"_CONDOR_SCRATCH_DIR": "/tmp/job"},
+            "1 systemd\n42 python\n",
+            "htcondor_process_context_present",
+        ),
+        (
+            {"CONDOR_CONFIG": "/etc/condor/condor_config"},
+            "1 systemd\n42 python\n",
+            "htcondor_process_context_present",
+        ),
+        (
+            {},
+            "1 systemd\n42 condor_starter\n",
+            "local_htcondor_process_present",
+        ),
+    ),
+)
+def test_missing_condor_q_rejects_condor_evidence(
+    monkeypatch, environment, process_rows, expected_failure
+):
+    _clear_htcondor_environment(monkeypatch)
+    for name, value in environment.items():
+        monkeypatch.setenv(name, value)
+    monkeypatch.setattr(
+        "scripts.slurm.v100_local_admission.shutil.which", lambda _name: None
+    )
+    _mock_admission_commands(monkeypatch, process_rows=process_rows)
+
+    sample = collect_sample()
+
+    assert sample["admitted"] is False
+    assert expected_failure in sample["failures"]
+    assert sample["htcondor"]["absence_proven"] is False
+
+
+def test_missing_condor_q_unexpected_process_telemetry_fails_closed(monkeypatch):
+    _clear_htcondor_environment(monkeypatch)
+    monkeypatch.setattr(
+        "scripts.slurm.v100_local_admission.shutil.which", lambda _name: None
+    )
+    _mock_admission_commands(monkeypatch, process_rows="malformed\n")
+
+    with pytest.raises(RuntimeError, match="process telemetry shape"):
+        collect_sample()
+
+
+@pytest.mark.parametrize(
+    ("condor_queue", "expected_admitted"),
+    (("", True), ("123 0 2\n", False)),
+)
+def test_existing_condor_q_preserves_original_queue_behavior(
+    monkeypatch, condor_queue, expected_admitted
+):
+    commands = _mock_admission_commands(
+        monkeypatch,
+        process_rows="",
+        condor_queue=condor_queue,
+    )
+    monkeypatch.setattr(
+        "scripts.slurm.v100_local_admission.shutil.which",
+        lambda name: "/usr/bin/condor_q" if name == "condor_q" else None,
+    )
+    monkeypatch.setattr(
+        "scripts.slurm.v100_local_admission.getpass.getuser", lambda: "alice"
+    )
+
+    sample = collect_sample()
+
+    assert (
+        "condor_q",
+        "alice",
+        "-autoformat",
+        "ClusterId",
+        "ProcId",
+        "JobStatus",
+    ) in commands
+    assert ("ps", "-eo", "pid=,comm=") not in commands
+    assert sample["admitted"] is expected_admitted
+    assert ("user_queue_nonempty" in sample["failures"]) is (not expected_admitted)
+    assert sample["htcondor"]["mode"] == "condor_q"
+    assert sample["htcondor"]["queue_output"] == condor_queue
+
+
 def test_run_subcommand_rechecks_launches_with_watchdog_and_writes_completion(
     monkeypatch, tmp_path
 ):
@@ -101,6 +409,14 @@ def test_run_subcommand_rechecks_launches_with_watchdog_and_writes_completion(
         "pmon": "",
         "fuser": "",
         "queue": "",
+        "slurm": {
+            "user_queue": {"command": [], "output": ""},
+            "node_wide": {
+                "command": [],
+                "output": "",
+                "hostname": os.uname().nodename.partition(".")[0],
+            },
+        },
     }
     receipt = {
         "receipt_sha256": "a" * 64,
