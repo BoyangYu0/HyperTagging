@@ -11,6 +11,7 @@ from hypertagging.models.hyperbolic import (
     radius,
 )
 from hypertagging.preprocessing.schema_v2 import NODE_KINDS
+from hypertagging.utils.tensor_contractions import boolean_matmul
 
 
 PHYSICAL_RELATION_SCALING_VERSION = "physical-relations-overlap-aware-v3"
@@ -98,14 +99,10 @@ def _physical_features(
     source_available = torch.zeros_like(level_ids, dtype=torch.bool)
     if recursive_leaf_source_mask is not None:
         source_available = recursive_leaf_source_mask.any(dim=-1)
-        source_membership = recursive_leaf_source_mask.ne(0).to(torch.float32)
-        # CUDA has no integer bmm kernel.  Keep this structural reduction in
-        # FP32 under AMP: only positivity is consumed, so rounding of very wide
-        # overlap counts cannot change the boolean intersection semantics.
-        with torch.autocast(device_type=source_membership.device.type, enabled=False):
-            recursive_overlap = torch.bmm(
-                source_membership, source_membership.transpose(1, 2)
-            ).gt(0)
+        recursive_overlap = boolean_matmul(
+            recursive_leaf_source_mask,
+            recursive_leaf_source_mask.transpose(1, 2),
+        )
     source_pair_available = source_available[:, :, None] & source_available[:, None, :]
     disjoint_source_pair = source_pair_available & ~recursive_overlap
     ancestor_descendant = (

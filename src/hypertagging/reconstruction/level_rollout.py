@@ -17,9 +17,6 @@ from hypertagging.models.level_autoregressive import (
     _upgrade_flat_batch,
 )
 from hypertagging.preprocessing.schema_v2 import NODE_KIND_TO_ID
-from hypertagging.reconstruction.kinematics import (
-    hard_reconstructed_p4_from_leaf_pid,
-)
 from hypertagging.reconstruction.pid_state import (
     COMPOSITE_TYPE_SOURCE_TO_ID,
     rebuild_runtime_pid_state,
@@ -29,6 +26,7 @@ from hypertagging.preprocessing.pid_filter import PDG_TOKENS
 from hypertagging.preprocessing.schema_v4 import LEAF_MODE_TO_ID
 from hypertagging.reconstruction.constraints import ReconstructionConstraintPolicy
 from hypertagging.reconstruction.constraints import REDUCED_TOKEN_CHARGE
+from hypertagging.utils.tensor_contractions import boolean_matmul
 
 
 @dataclass(frozen=True)
@@ -1155,20 +1153,15 @@ def append_composite_proposals(
     result["daughter_adjacency"] = adjacency
     if "recursive_leaf_source_mask" in batch:
         old_sources = batch["recursive_leaf_source_mask"]
-        new_sources = torch.einsum(
-            "qn,bns->bqs",
-            daughter_masks.float(),
-            old_sources.float(),
-        ).bool()
+        new_sources = boolean_matmul(daughter_masks, old_sources)
         result["recursive_leaf_source_mask"] = torch.cat(
             [old_sources, new_sources],
             dim=1,
         )
-        overlap = torch.einsum(
-            "bns,bms->bnm",
-            result["recursive_leaf_source_mask"].to(torch.int32),
-            result["recursive_leaf_source_mask"].to(torch.int32),
-        ) > 0
+        overlap = boolean_matmul(
+            result["recursive_leaf_source_mask"],
+            result["recursive_leaf_source_mask"].transpose(1, 2),
+        )
         diagonal = torch.eye(
             overlap.shape[-1], dtype=torch.bool, device=device
         ).unsqueeze(0)
@@ -1468,7 +1461,7 @@ def batched_level_step(
     )
     reach = adjacency.clone()
     for _ in range(total_count):
-        reach = reach | (torch.matmul(reach.to(torch.float32), reach.to(torch.float32)) > 0)
+        reach = reach | boolean_matmul(reach, reach)
     identity = torch.eye(total_count, dtype=torch.bool, device=device)[None]
     result["ancestor_descendant_relation"] = (reach | reach.transpose(1, 2)) & ~identity
     for name in (
@@ -1490,18 +1483,16 @@ def batched_level_step(
                 [batch[name], torch.full_like(mother_types, -1)], dim=1
             )
     if "recursive_leaf_source_mask" in batch:
-        new_sources = torch.einsum(
-            "bqn,bns->bqs", selected.to(torch.float32),
-            batch["recursive_leaf_source_mask"].to(torch.float32),
-        ).bool()
+        new_sources = boolean_matmul(
+            selected, batch["recursive_leaf_source_mask"]
+        )
         result["recursive_leaf_source_mask"] = torch.cat(
             [batch["recursive_leaf_source_mask"], new_sources], dim=1
         )
-        overlap = torch.einsum(
-            "bns,bms->bnm",
-            result["recursive_leaf_source_mask"].to(torch.int32),
-            result["recursive_leaf_source_mask"].to(torch.int32),
-        ) > 0
+        overlap = boolean_matmul(
+            result["recursive_leaf_source_mask"],
+            result["recursive_leaf_source_mask"].transpose(1, 2),
+        )
         result["source_conflict_matrix"] = overlap & ~identity
     if "current_pid_probabilities" in batch:
         mother_probability = torch.nn.functional.one_hot(
@@ -1616,9 +1607,7 @@ def _batched_initial_leaf_state(
     if "recursive_leaf_source_mask" in batch:
         sources = batch["recursive_leaf_source_mask"] & leaves[..., None]
         batch["recursive_leaf_source_mask"] = sources
-        overlap = torch.einsum(
-            "bns,bms->bnm", sources.to(torch.int32), sources.to(torch.int32)
-        ) > 0
+        overlap = boolean_matmul(sources, sources.transpose(1, 2))
         identity = torch.eye(
             node_count, dtype=torch.bool, device=leaves.device
         ).unsqueeze(0)
@@ -1807,11 +1796,7 @@ def batched_decode_level(
                 torch.arange(node_count, device=selected.device),
                 num_classes=node_count,
             ).bool()[None].expand(batch_size, -1, -1)
-        proposal_sources = torch.einsum(
-            "bqn,bns->bqs",
-            selected.to(torch.float32),
-            source_mask.to(torch.float32),
-        ).bool()
+        proposal_sources = boolean_matmul(selected, source_mask)
         order = torch.argsort(
             confidence.masked_fill(~proposal_valid, float("-inf")),
             dim=-1,

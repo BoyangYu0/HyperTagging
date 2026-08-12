@@ -12,6 +12,7 @@ from hypertagging.reconstruction.pid_state import (
     COMPOSITE_TYPE_SOURCE_TO_ID,
     hard_daughter_pid_histograms,
 )
+from hypertagging.utils.tensor_contractions import boolean_matmul
 
 
 class PretrainingStage(str, Enum):
@@ -326,9 +327,7 @@ def _rebuild_corrupted_derived_fields(batch: dict[str, torch.Tensor]) -> None:
         summed_charge = torch.einsum("bmn,bn->bm", adjacency.float(), charge)
         p4 = torch.where(mothers.unsqueeze(-1), summed_p4, p4)
         charge = torch.where(mothers, summed_charge, charge)
-        union = torch.einsum(
-            "bmn,bns->bms", adjacency.to(torch.int32), source_mask.to(torch.int32)
-        ) > 0
+        union = boolean_matmul(adjacency, source_mask)
         source_mask = torch.where(mothers.unsqueeze(-1), union, source_mask)
     batch["p4"] = p4
     batch["charge"] = charge
@@ -353,9 +352,7 @@ def _rebuild_corrupted_derived_fields(batch: dict[str, torch.Tensor]) -> None:
     common[..., 4] = mass2.clamp_min(0).sqrt()
     common[..., 5] = charge
     batch["common_features"] = common
-    overlap = torch.einsum(
-        "bns,bms->bnm", source_mask.to(torch.int32), source_mask.to(torch.int32)
-    ) > 0
+    overlap = boolean_matmul(source_mask, source_mask.transpose(1, 2))
     diagonal = torch.eye(overlap.shape[-1], dtype=torch.bool, device=overlap.device)
     batch["source_conflict_matrix"] = overlap & ~diagonal.unsqueeze(0)
 

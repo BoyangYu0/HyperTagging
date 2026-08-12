@@ -8,6 +8,8 @@ from typing import Any
 import torch
 import torch.nn.functional as F
 
+from hypertagging.utils.tensor_contractions import boolean_matmul
+
 
 EPSILON = 1e-6
 
@@ -201,7 +203,7 @@ def connection_loss_from_predictions(
         predictions = (predictions + 1) / 2
     mask = dataset["padding_mask"].to(predictions.device)
     index = dataset["links"].to(predictions.device)
-    padding_mtx = torch.einsum("xi,xj->xij", mask, mask)
+    padding_mtx = boolean_matmul(mask.unsqueeze(-1), mask.unsqueeze(-2))
     connection_mtx = torch.stack([(idx[..., None] == idx).int() for idx in index]) * padding_mtx
     n_connections = connection_mtx.sum(dim=(-2, -1))[:, None, None]
     n_total = padding_mtx.sum(dim=(-2, -1))[:, None, None]

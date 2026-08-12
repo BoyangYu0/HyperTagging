@@ -13,6 +13,7 @@ from hypertagging.losses.set_matching import hungarian_assignment, matching_cost
 from hypertagging.models.mother_pointer import MotherPointerOutput
 from hypertagging.models.mother_pointer import source_conflict_penalty
 from hypertagging.preprocessing.pid_filter import validate_pid_tokens
+from hypertagging.utils.tensor_contractions import boolean_matmul
 
 
 @dataclass(frozen=True)
@@ -325,11 +326,9 @@ def query_proposal_repulsion_loss(
     if matched_pointer_targets is not None:
         if matched_pointer_targets.shape != pointer_logits.shape:
             raise ValueError("matched_pointer_targets must match pointer_logits")
-        target_overlap = torch.einsum(
-            "bqn,bkn->bqk",
-            matched_pointer_targets.to(pointer_logits.dtype),
-            matched_pointer_targets.to(pointer_logits.dtype),
-        ) > 0
+        target_overlap = boolean_matmul(
+            matched_pointer_targets, matched_pointer_targets.transpose(1, 2)
+        )
         selected &= ~target_overlap
     denominator = selected.sum()
     normalized_loss = similarity.masked_select(selected).sum() / denominator.clamp_min(1).to(

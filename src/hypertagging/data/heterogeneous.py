@@ -27,6 +27,7 @@ from hypertagging.preprocessing.schema_v4 import (
     LEAF_MODE_TO_ID,
     iter_event_records_v4,
 )
+from hypertagging.utils.tensor_contractions import boolean_matmul
 
 
 MODEL_INPUT_SOURCE_TO_ID = {
@@ -847,11 +848,10 @@ def collate_heterogeneous_events(events: Sequence[HeterogeneousEvent]) -> dict[s
     output["daughter_pid_histogram_available"] = output[
         "daughter_input_pid_histogram_available"
     ]
-    source_overlap = torch.einsum(
-        "bns,bms->bnm",
-        output["recursive_leaf_source_mask"].to(torch.int32),
-        output["recursive_leaf_source_mask"].to(torch.int32),
-    ) > 0
+    source_overlap = boolean_matmul(
+        output["recursive_leaf_source_mask"],
+        output["recursive_leaf_source_mask"].transpose(1, 2),
+    )
     diagonal = torch.eye(max_nodes, dtype=torch.bool).unsqueeze(0)
     output["source_conflict_matrix"] = source_overlap & ~diagonal
     geometry_fields = (

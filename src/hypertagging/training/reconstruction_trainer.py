@@ -63,6 +63,7 @@ from hypertagging.training.pretrained_transfer import (
     unfreeze_encoder,
 )
 from hypertagging.utils.seeds import seed_everything
+from hypertagging.utils.tensor_contractions import boolean_matmul
 from hypertagging.preprocessing.schema_v4 import LEAF_MODE_TO_ID, feature_spec_v4
 from hypertagging.training.scheduled_sampling import (
     TeacherForcingSchedule,
@@ -1784,10 +1785,8 @@ def _recursive_source_conflicts(batch: dict[str, torch.Tensor]) -> int:
             ).flatten()
             if nodes.numel() < 2:
                 continue
-            overlap = (
-                sources[event_index, nodes].to(torch.int32)
-                @ sources[event_index, nodes].to(torch.int32).T
-            ) > 0
+            node_sources = sources[event_index, nodes]
+            overlap = boolean_matmul(node_sources, node_sources.T)
             conflicts += int(torch.triu(overlap, diagonal=1).sum())
     return conflicts
 
