@@ -1,0 +1,21 @@
+data: configs/training_selection/production_1m_20260812/train_035k.json
+dataset_index: artifacts/experiment_readiness/production_1m_20260812/train_035k/train_035k.complete_only.index.json
+model_preset: gpu_debug
+device: cuda
+gpu_execution_mode: scientific_slurm
+seed: 20260812
+max_steps: 17500
+lr_schedule_total_steps: 17500
+batch_size: 4
+num_workers: 0
+checkpoint_every: 500
+validate_every: 500
+validation_batches: 500
+validation_events: 2000
+curriculum_mode: progressive
+curriculum_phase_steps: [4375, 4375, 4375, 4375]
+require_final_curriculum_phase: true
+objective_gradient_diagnostics: true
+objective_gradient_diagnostics_every: 100
+objective_dominance_ratio: 20.0
+scientific_mode: true

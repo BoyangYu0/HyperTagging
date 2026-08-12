@@ -27,7 +27,7 @@ from hypertagging.preprocessing.schema_v3 import SCHEMA_VERSION_V3
 from hypertagging.preprocessing.pid_filter import PID_VOCABULARY_VERSION
 
 
-DATASET_INDEX_VERSION = "hypertagging-dataset-index-v2"
+DATASET_INDEX_VERSION = "hypertagging-dataset-index-v3"
 SUPPORTED_SCHEMAS = {
     SCHEMA_VERSION_V1,
     SCHEMA_VERSION_V2,
@@ -47,11 +47,35 @@ def build_dataset_index(
     max_events: int | None = None,
     source_split_overrides: Mapping[str, str] | None = None,
     selection_manifest_hash: str | None = None,
+    selection_included_splits: Iterable[str] | None = None,
+    source_expectations: Mapping[str, Mapping[str, Any]] | None = None,
+    require_event_identity_validation: bool = False,
 ) -> Path:
     """Scan once, then persist all startup statistics needed by trainers."""
 
     config = split_config or SourceAwareSplitConfig()
     source_split_overrides = dict(source_split_overrides or {})
+    source_expectations = {
+        str(source): dict(expectation)
+        for source, expectation in dict(source_expectations or {}).items()
+    }
+    included_splits = tuple(
+        selection_included_splits
+        or (("train", "validation", "test") if selection_manifest_hash else ())
+    )
+    if require_event_identity_validation and (
+        selection_manifest_hash is None or not source_expectations
+    ):
+        raise ValueError(
+            "scientific event-identity validation requires selection source expectations"
+        )
+    if require_event_identity_validation and included_splits != (
+        "train",
+        "validation",
+    ):
+        raise ValueError(
+            "scientific event-identity indexing permits exactly train and validation"
+        )
     if selection_manifest_hash is not None and max_events is not None:
         raise ValueError("source-role selection cannot be combined with max_events")
     normalizers = {name: StreamingMaskedFeatureNormalizer() for name in FEATURE_BLOCKS}
@@ -83,6 +107,8 @@ def build_dataset_index(
     channel_projection_groups: dict[int, set[int]] = {}
     channel_projection_event_counts: Counter[int] = Counter()
     channel_projection_mechanisms: dict[int, Counter[str]] = {}
+    seen_event_uids: set[str] = set()
+    event_uid_digest = hashlib.sha256()
     resolved = [Path(path).resolve() for path in paths]
     for path in resolved:
         sidecar = path.with_suffix(path.suffix + ".metadata.json")
@@ -100,10 +126,39 @@ def build_dataset_index(
                 track_fit_policies.add(str(shard_metadata["track_fit_policy"]))
             if shard_metadata.get("schema_version") == SCHEMA_VERSION_V4:
                 marker_payload = _validated_completion_marker(path, shard_metadata)
+            if source_expectations:
+                metadata_source = str(shard_metadata.get("source_file", ""))
+                expectation = source_expectations.get(metadata_source)
+                if expectation is None:
+                    raise ValueError(
+                        f"shard source {metadata_source!r} is absent from selection expectations"
+                    )
+                if str(path) != str(expectation["path"]):
+                    raise ValueError("selection source is bound to a different parquet path")
+                if int(shard_metadata.get("task_id", -1)) != int(expectation["task_id"]):
+                    raise ValueError("selection task_id disagrees with shard metadata")
+                if str(shard_metadata.get("task_record_hash", "")) != str(
+                    expectation["task_record_hash"]
+                ):
+                    raise ValueError("selection task record hash disagrees with shard metadata")
+                metadata_category = str(
+                    shard_metadata.get("category", shard_metadata.get("physics_category", ""))
+                )
+                if metadata_category != str(expectation["category"]):
+                    raise ValueError("selection category disagrees with shard metadata")
         for record in iter_event_records_v4(path):
             if max_events is not None and event_count >= max_events:
                 break
             event_count += 1
+            event_uid = str(record.get("event_uid", ""))
+            if not event_uid:
+                raise ValueError("event record has an empty event_uid")
+            if event_uid in seen_event_uids:
+                raise ValueError(f"duplicate event_uid in selected records: {event_uid!r}")
+            seen_event_uids.add(event_uid)
+            encoded_uid = event_uid.encode("utf-8")
+            event_uid_digest.update(len(encoded_uid).to_bytes(8, "big"))
+            event_uid_digest.update(encoded_uid)
             source = str(record.get("source_file", ""))
             if (
                 selection_manifest_hash is not None
@@ -112,6 +167,14 @@ def build_dataset_index(
                 raise ValueError(
                     f"record source {source!r} is absent from source-role selection"
                 )
+            if source_expectations:
+                expectation = source_expectations[source]
+                if str(record.get("source_category", "")) != str(
+                    expectation["category"]
+                ):
+                    raise ValueError(
+                        f"record category disagrees with selection for source {source!r}"
+                    )
             split = source_split_overrides.get(
                 source, stable_split_name(record, config)
             )
@@ -422,7 +485,24 @@ def build_dataset_index(
             resolved,
             max_events=max_events,
             selection_manifest_hash=selection_manifest_hash,
+            included_splits=included_splits,
         ),
+        "event_identity_validation": {
+            "status": "passed",
+            "validation_scope": "all_opened_train_and_validation_event_records",
+            "validated_events": event_count,
+            "unique_event_uids": len(seen_event_uids),
+            "duplicate_event_uids": 0,
+            "source_mismatches": 0,
+            "category_mismatches": 0,
+            "task_binding": (
+                "selection_to_sidecar_to_completion_marker_validated"
+                if source_expectations
+                else "not_requested_legacy_index"
+            ),
+            "event_uid_stream_sha256": event_uid_digest.hexdigest(),
+            "sealed_test_opened": "test" in included_splits,
+        },
     }
     payload["index_hash"] = _index_hash(payload)
     destination = Path(output)
@@ -497,6 +577,9 @@ def build_dataset_index_from_sidecars(
     target_policy: str = "complete_only",
     source_split_overrides: Mapping[str, str] | None = None,
     selection_manifest_hash: str | None = None,
+    selection_included_splits: Iterable[str] | None = None,
+    source_expectations: Mapping[str, Mapping[str, Any]] | None = None,
+    require_event_identity_validation: bool = False,
 ) -> Path:
     """Merge shard sufficient statistics without opening event payloads.
 
@@ -506,6 +589,14 @@ def build_dataset_index_from_sidecars(
 
     config = split_config or SourceAwareSplitConfig()
     source_split_overrides = dict(source_split_overrides or {})
+    source_expectations = {
+        str(source): dict(expectation)
+        for source, expectation in dict(source_expectations or {}).items()
+    }
+    if require_event_identity_validation:
+        raise ValueError(
+            "sidecar indexing cannot satisfy full event UID/source validation"
+        )
     if not config.group_by_source_file:
         raise ValueError("metadata-only indexing requires source-file grouping")
     resolved = [Path(path).resolve() for path in paths]
@@ -535,6 +626,16 @@ def build_dataset_index_from_sidecars(
             raise ValueError(
                 f"metadata-only indexing requires source_file in {sidecar}"
             )
+        if source_expectations:
+            expectation = source_expectations.get(source)
+            if expectation is None:
+                raise ValueError(f"sidecar source {source!r} is absent from selection")
+            if int(metadata.get("task_id", -1)) != int(expectation["task_id"]):
+                raise ValueError("selection task_id disagrees with shard metadata")
+            if str(metadata.get("task_record_hash", "")) != str(
+                expectation["task_record_hash"]
+            ):
+                raise ValueError("selection task record hash disagrees with shard metadata")
         if selection_manifest_hash is not None and source not in source_split_overrides:
             raise ValueError(
                 f"sidecar source {source!r} is absent from source-role selection"
@@ -685,6 +786,10 @@ def build_dataset_index_from_sidecars(
             resolved,
             max_events=None,
             selection_manifest_hash=selection_manifest_hash,
+            included_splits=tuple(
+                selection_included_splits
+                or (("train", "validation", "test") if selection_manifest_hash else ())
+            ),
         ),
     }
     payload["index_hash"] = _index_hash(payload)
@@ -747,6 +852,7 @@ def _selection_contract(
     *,
     max_events: int | None,
     selection_manifest_hash: str | None,
+    included_splits: Iterable[str] = (),
 ) -> dict[str, Any]:
     resolved = list(paths)
     return {
@@ -757,6 +863,7 @@ def _selection_contract(
         ),
         "max_events": max_events,
         "selection_manifest_hash": selection_manifest_hash,
+        "included_splits": list(included_splits),
         "fingerprint": _selection_fingerprint(
             resolved,
             max_events,

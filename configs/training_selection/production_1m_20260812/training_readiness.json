@@ -1,0 +1,117 @@
+{
+  "capacity_gate": {
+    "gpu_debug": {
+      "architecture_sha256": "5b6c4e973e6e3831237911f4b9d8ad20ca211838102d1fbb02710a81125d0411",
+      "cardinality_overflow_count": 2759,
+      "file_sha256": "4c50a729c2367f4a6dfd36f0e9afc7687afef397405d86823587f6c600f351e1",
+      "path": "artifacts/experiment_readiness/production_1m_20260812/train_035k/capacity.gpu_debug.complete_only.json",
+      "query_overflow_count": 5,
+      "reconstruction_allowed": false,
+      "use": "encoder_pretraining_only"
+    },
+    "small_candidate": {
+      "architecture_sha256": "c35cf3b0071059f2543a5d048f6c4b2affb82ec228e9b0f3230106b4a926b2db",
+      "cardinality_overflow_count": 0,
+      "configured_max_cardinality": 16,
+      "configured_queries": 32,
+      "evidence_adjustment": "max_cardinality increased from 12 to the exact observed maximum 16; the prior value overflowed 106 eligible mothers; queries and target policy were unchanged",
+      "file_sha256": "64aa8488a3c1c64c1f68034527bfdac5b10546c27a7569777498df248bf45895",
+      "maximum_daughter_cardinality": 16,
+      "maximum_mothers": 15,
+      "path": "artifacts/experiment_readiness/production_1m_20260812/train_035k/capacity.small_candidate.complete_only.json",
+      "production_training_allowed": true,
+      "query_overflow_count": 0
+    },
+    "status": "complete",
+    "target_policy": "complete_only"
+  },
+  "environment_gate": {
+    "current_repository_venv_evidence": {
+      "cuda_available": false,
+      "numpy": "2.4.6",
+      "pyarrow": "24.0.0",
+      "scipy": "1.18.0",
+      "torch": "2.13.0+cpu",
+      "torch_cuda_build": null
+    },
+    "frozen_environment_installed": false,
+    "lock_generation": "uv pip compile for Python 3.11/Linux x86_64 with transitive package hashes and explicit PyPI/PyTorch CUDA 12.6 indexes; no environment installed",
+    "lock_receipt_sha256": "6c35af3eaac25ecf7bff12cb13bacefe4e8ee275aa40689adca6ed5f20d7d66d",
+    "requirements_input_sha256": "95a1e32849ddec9f052bb22bc56ee3113996ab0cea0285d5db8670e1dbe61a2a",
+    "requirements_lock_sha256": "2d34539c79f144f133c39f9ae86c0a34dafaab554c8fe263c28e01fe766576fc",
+    "runtime_contract_sha256": "411facd82bb25d64dd17106a2f79d6fe1b23c40a5ed9d502f5fe7cfa11c33c25",
+    "specification_status": "complete"
+  },
+  "index_gate": {
+    "category_counts": {
+      "ccbar": 15000,
+      "charged": 10000,
+      "ddbar": 10000,
+      "mixed": 10000,
+      "ssbar": 10000,
+      "taupair": 15000,
+      "uubar": 15000
+    },
+    "event_count": 85000,
+    "event_uid_stream_sha256": "76de23932d83ac5fce62ce91455ce26416cae831897d99526871da19767393c4",
+    "file_sha256": "f8e09763ca6f33cc54a023fe4d9a626c40533c62c8107724e85cfcd313a8a0bc",
+    "included_splits": [
+      "train",
+      "validation"
+    ],
+    "index_hash": "5fc837315b2e6f5e4783cba2808bfba7672cf4ba12bff1fe5cf050f5d22b6de1",
+    "node_count": 3645707,
+    "normalizer_scope": "train",
+    "path": "artifacts/experiment_readiness/production_1m_20260812/train_035k/train_035k.complete_only.index.json",
+    "sealed_test_opened": false,
+    "selection_manifest_hash": "b55cebee16b6dfa55b7fee943e28cca0de325132547b34dc13fffc24c418df72",
+    "split_counts": {
+      "train": 35000,
+      "validation": 50000
+    },
+    "status": "complete",
+    "target_policy": "complete_only",
+    "unique_event_uids": 85000
+  },
+  "local_gpu_microtest_gate": {
+    "admission_receipt": null,
+    "completion_receipt": null,
+    "required_completion": "trainer_exit with trainer_status 0, at least one monitored sample, and polling no slower than 30 seconds",
+    "required_orchestration": "fresh three-sample host/UUID/model-bound admission plus mandatory <=30-second watchdog and canonically hashed, admission-bound successful completion receipt",
+    "required_renderer_flags": [
+      "--local-admission-receipt",
+      "--local-completion-receipt"
+    ],
+    "status": "pending_later_explicit_gpu_authorization"
+  },
+  "manifest_hash": "447a810659cd24d6685993a7dc8b08e5d521c7d2fc0e7dd68cfc4d8462a0b654",
+  "manifest_version": "hypertagging-training-readiness-v1",
+  "scientific_submission_allowed": false,
+  "scientific_submission_blockers": [
+    "Recover and independently verify production source object f4e54df23b5c60115e475c5d68df4651899d678e and tree b6e3a4118b960e3a4676a61af9601438d56cef96.",
+    "Install the reviewed frozen GPU lock and pass the in-allocation CUDA/GPU environment preflight.",
+    "Complete a later explicitly authorized node-local V100 admission and bounded monitored microtest with bound admission and successful-completion receipts.",
+    "Commit/review these changes on a clean expected SHA and create the immutable experiment tag required by scientific rendering."
+  ],
+  "selection": "configs/training_selection/production_1m_20260812/train_035k.json",
+  "slurm_tranche": {
+    "contract_version": "hypertagging-slurm-one-gpu-contract-v2",
+    "exact_gres": [
+      "gpu:h200nvl:1",
+      "gpu:v100:1"
+    ],
+    "gres_runtime_proof": "exact ReqTRES and AllocTRES maps each contain gres/gpu=1 and only gres/gpu:<expected-type>=1; TresPerNode is an exact typed one-GPU form",
+    "launch_environment": "export_nil_and_verified_contract_only",
+    "rejected_export_policies": [
+      "NONE",
+      "ALL"
+    ],
+    "status": "complete_cpu_verified_no_submission"
+  },
+  "status_date": "2026-08-12",
+  "trainer_tranche": {
+    "pending_validation_exact_resume": true,
+    "safe_boundary_signal_checkpoint": true,
+    "status": "complete_cpu_tested"
+  }
+}

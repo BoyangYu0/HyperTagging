@@ -151,7 +151,7 @@ def test_scientific_mode_rejects_raw_data_before_scanning(tmp_path):
     raw.touch()
     from hypertagging.training.data_module import build_real_data_module
 
-    with pytest.raises(ValueError, match="requires an immutable"):
+    with pytest.raises(ValueError, match="promoted full-record dataset index"):
         build_real_data_module(raw, scientific_mode=True)
 
 
@@ -171,7 +171,12 @@ def test_selection_handoff_fits_normalizers_on_training_role_only(tmp_path):
         parquet = export_trees_v4(
             trees,
             tmp_path / f"source_{task_id}.parquet",
-            metadata={"source_file": source_file, "task_id": task_id},
+            metadata={
+                "source_file": source_file,
+                "category": "fixture",
+                "task_id": task_id,
+                "task_record_hash": f"{task_id + 10:064x}",
+            },
             event_buffer_size=1,
             row_group_size=1,
         )
@@ -220,7 +225,7 @@ def test_selection_handoff_fits_normalizers_on_training_role_only(tmp_path):
     manifest = write_hashed_manifest(selection, tmp_path / "selection.json")
     module = build_real_data_module(
         manifest,
-        scientific_mode=True,
+        scientific_mode=False,
         required_splits=("train", "validation", "test"),
     )
     train_events = list(module.iter_events("train"))
@@ -242,7 +247,9 @@ def test_selection_handoff_fits_normalizers_on_training_role_only(tmp_path):
     )
     assert torch.equal(module.normalizers["track"].count, expected_train_count)
     assert bool((all_count > module.normalizers["track"].count).any())
-    loaded = load_training_selection(manifest)
+    loaded = load_training_selection(
+        manifest, include_splits=("train", "validation")
+    )
     assert module.selection_manifest_hash == loaded.manifest_hash
 
     from hypertagging.data.dataset_index import build_dataset_index
@@ -252,15 +259,53 @@ def test_selection_handoff_fits_normalizers_on_training_role_only(tmp_path):
         tmp_path / "index.json",
         source_split_overrides=loaded.source_split_overrides,
         selection_manifest_hash=loaded.manifest_hash,
+        selection_included_splits=loaded.included_splits,
+        source_expectations=loaded.source_expectations,
+        require_event_identity_validation=True,
     )
     indexed_module = build_real_data_module(
         manifest,
         scientific_mode=True,
-        required_splits=("train", "validation", "test"),
+        required_splits=("train", "validation"),
         dataset_index=index,
     )
-    assert indexed_module.split_counts == {"train": 2, "validation": 2, "test": 2}
+    assert indexed_module.split_counts == {"train": 2, "validation": 2, "test": 0}
     assert indexed_module.dataset_index["normalizer_scope"] == "train"
+
+    from hypertagging.data.dataset_index import _index_hash
+
+    original = json.loads(index.read_text())
+    for name, mutate, message in (
+        (
+            "test-role",
+            lambda payload: payload["selection_contract"].update(
+                included_splits=["train", "validation", "test"]
+            ),
+            "exactly train and validation",
+        ),
+        (
+            "legacy-index",
+            lambda payload: payload.pop("event_identity_validation"),
+            "identity/task-binding gate",
+        ),
+        (
+            "sidecar-index",
+            lambda payload: payload.update(event_identity_validation={}),
+            "identity/task-binding gate",
+        ),
+    ):
+        payload = json.loads(json.dumps(original))
+        mutate(payload)
+        payload["index_hash"] = _index_hash(payload)
+        bad_index = tmp_path / f"{name}.json"
+        bad_index.write_text(json.dumps(payload))
+        with pytest.raises(ValueError, match=message):
+            build_real_data_module(
+                manifest,
+                scientific_mode=True,
+                required_splits=("train", "validation"),
+                dataset_index=bad_index,
+            )
 
 
 def test_inventory_rejects_sidecar_tampering_without_hashing_parquet(tmp_path):

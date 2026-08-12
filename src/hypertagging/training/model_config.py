@@ -58,7 +58,9 @@ MODEL_PRESETS: dict[str, ModelArchitecture] = {
     ),
     "small_candidate": ModelArchitecture(
         "small_candidate", 128, 32, 4, 4, 512, 0.1, 1.0, 32,
-        max_cardinality=12,
+        # Full train_035k+validation complete-only scan (2026-08-12) proves an
+        # exact observed maximum of 16; 12 overflowed 106 eligible mothers.
+        max_cardinality=16,
         tangent_variance_target=0.06,
         hyper_projection_init_scale=0.055,
         capacity_report_required=True,

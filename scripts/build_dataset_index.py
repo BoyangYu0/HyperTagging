@@ -25,6 +25,13 @@ def main() -> int:
         "--selection-manifest",
         help="Immutable source-role manifest; mutually exclusive with --data.",
     )
+    parser.add_argument(
+        "--include-splits",
+        nargs="+",
+        choices=("train", "validation", "test"),
+        default=("train", "validation"),
+        help="Manifest roles whose Parquet payloads may be opened (default excludes sealed test).",
+    )
     parser.add_argument("--output", required=True)
     parser.add_argument("--target-policy", default="complete_only")
     parser.add_argument("--max-events", type=int, default=None)
@@ -43,6 +50,10 @@ def main() -> int:
         parser.error("provide exactly one of --data or --selection-manifest")
     if args.scientific_mode and not args.selection_manifest:
         parser.error("--scientific-mode requires --selection-manifest")
+    if args.scientific_mode and args.from_sidecars:
+        parser.error("--scientific-mode requires full event records, not sidecars")
+    if args.scientific_mode and tuple(args.include_splits) != ("train", "validation"):
+        parser.error("--scientific-mode permits exactly train and validation splits")
     if args.selection_manifest and args.max_events is not None:
         parser.error("--selection-manifest cannot be combined with --max-events")
     builder = (
@@ -50,18 +61,23 @@ def main() -> int:
     )
     kwargs = {"target_policy": args.target_policy}
     if args.selection_manifest:
-        selection = load_training_selection(args.selection_manifest)
+        selection = load_training_selection(
+            args.selection_manifest, include_splits=args.include_splits
+        )
         paths = list(selection.paths)
         kwargs.update(
             {
                 "source_split_overrides": selection.source_split_overrides,
                 "selection_manifest_hash": selection.manifest_hash,
+                "selection_included_splits": selection.included_splits,
+                "source_expectations": selection.source_expectations,
             }
         )
     else:
         paths = resolve_data_paths(args.data)
     if not args.from_sidecars:
         kwargs["max_events"] = args.max_events
+        kwargs["require_event_identity_validation"] = args.scientific_mode
     path = builder(paths, args.output, **kwargs)
     print(path)
     return 0

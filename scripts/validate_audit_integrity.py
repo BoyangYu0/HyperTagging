@@ -58,11 +58,11 @@ def _git(repo_root: Path, *args: str, check: bool = True) -> subprocess.Complete
 
 
 def _notebook_diff_is_cell_ids_only(
-    repo_root: Path, audited_code_sha: str, path: str
+    repo_root: Path, old_revision: str, new_revision: str, path: str
 ) -> bool:
     try:
-        old = json.loads(_git(repo_root, "show", f"{audited_code_sha}:{path}").stdout)
-        new = json.loads(_git(repo_root, "show", f"HEAD:{path}").stdout)
+        old = json.loads(_git(repo_root, "show", f"{old_revision}:{path}").stdout)
+        new = json.loads(_git(repo_root, "show", f"{new_revision}:{path}").stdout)
     except (subprocess.CalledProcessError, FileNotFoundError, json.JSONDecodeError):
         return False
     for notebook in (old, new):
@@ -91,17 +91,45 @@ def validate_audited_code_ancestry(
     allowed = ledger.get("allowed_post_audit_paths", [])
     if not isinstance(allowed, list) or not all(isinstance(value, str) for value in allowed):
         return ["allowed_post_audit_paths must be a list of path patterns"]
+    approved_commits = ledger.get("allowed_post_audit_commits", [])
+    if not isinstance(approved_commits, list) or not all(
+        isinstance(value, str) and re.fullmatch(r"[0-9a-f]{40}", value)
+        for value in approved_commits
+    ):
+        return ["allowed_post_audit_commits must be a list of full commit SHAs"]
     errors: list[str] = []
-    changed = _git(
-        repo_root, "diff", "--name-only", f"{audited_code_sha}..HEAD"
+    revisions = _git(
+        repo_root, "rev-list", "--reverse", f"{audited_code_sha}..HEAD"
     ).stdout.splitlines()
-    for path in changed:
-        if not any(fnmatch.fnmatchcase(path, pattern) for pattern in allowed):
-            errors.append(f"post-audit path is outside the allowlist: {path}")
+    revision_set = set(revisions)
+    for commit in approved_commits:
+        if commit not in revision_set:
+            errors.append(
+                "allowed post-audit commit is not between audited_code_sha and HEAD: "
+                + commit
+            )
+    approved_set = set(approved_commits)
+    for commit in revisions:
+        if commit in approved_set:
             continue
-        if path.startswith("notebooks/") and path.endswith(".ipynb"):
-            if not _notebook_diff_is_cell_ids_only(repo_root, audited_code_sha, path):
-                errors.append("post-audit notebook change is not cell-ID-only: " + path)
+        commit_and_parents = _git(
+            repo_root, "rev-list", "--parents", "-n", "1", commit
+        ).stdout.split()
+        parent = commit_and_parents[1]
+        changed = _git(
+            repo_root, "diff", "--name-only", parent, commit
+        ).stdout.splitlines()
+        for path in changed:
+            if not any(fnmatch.fnmatchcase(path, pattern) for pattern in allowed):
+                errors.append(f"post-audit path is outside the allowlist: {path}")
+                continue
+            if path.startswith("notebooks/") and path.endswith(".ipynb"):
+                if not _notebook_diff_is_cell_ids_only(
+                    repo_root, parent, commit, path
+                ):
+                    errors.append(
+                        "post-audit notebook change is not cell-ID-only: " + path
+                    )
     return errors
 
 

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import sys
@@ -11,8 +12,8 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from hypertagging.data.capacity import production_capacity_report
-from hypertagging.training.model_config import MODEL_PRESETS
+from hypertagging.data.capacity import production_capacity_report  # noqa: E402
+from hypertagging.training.model_config import MODEL_PRESETS  # noqa: E402
 
 
 def main() -> int:
@@ -31,6 +32,18 @@ def main() -> int:
         n_queries_by_level=dict(architecture.n_queries_by_level),
         max_cardinality_by_level=dict(architecture.max_cardinality_by_level),
         target_policy=args.target_policy,
+    )
+    architecture_payload = architecture.to_dict()
+    report["dataset_index_hash"] = str(index["index_hash"])
+    report["model_preset"] = args.model_preset
+    report["architecture"] = architecture_payload
+    report["architecture_sha256"] = hashlib.sha256(
+        json.dumps(
+            architecture_payload, sort_keys=True, separators=(",", ":")
+        ).encode()
+    ).hexdigest()
+    report["constraint_policy"] = (
+        "exact checked preset values; no overflow waiver or cardinality/query weakening"
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")

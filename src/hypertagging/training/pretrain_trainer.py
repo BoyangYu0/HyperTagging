@@ -51,6 +51,11 @@ from hypertagging.training.learning_rate import (
     build_warmup_cosine_scheduler,
     resolve_resume_schedule_contract,
 )
+from hypertagging.training.slurm_signal import (
+    PendingValidationInterrupted,
+    SafeBoundarySignalController,
+    install_safe_boundary_signal_controller,
+)
 from hypertagging.data.streaming import RuntimeFeatureNormalizer, StreamingCursor
 from hypertagging.utils.seeds import seed_everything
 from hypertagging.reconstruction.pid_state import rebuild_runtime_pid_state
@@ -318,7 +323,11 @@ class ChannelMemoryBank(torch.nn.Module):
         )
 
 
-def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
+def train_hyperbolic_pretraining(
+    config: PretrainConfig,
+    *,
+    signal_controller: SafeBoundarySignalController | None = None,
+) -> TrainingResult:
     if config.max_steps <= 0:
         raise ValueError("max_steps must be positive")
     if config.validate_every <= 0 or config.validation_batches <= 0:
@@ -492,8 +501,8 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
     for _ in range(cursor.batch_index):
         if next(batch_iterator, None) is None:
             raise ValueError("streaming resume cursor exceeds the saved epoch")
-    final_loss = 0.0
-    final_metrics: dict[str, float] = {}
+    final_metrics: dict[str, float] = dict((resume_payload or {}).get("metrics", {}))
+    final_loss = float(final_metrics.get("loss", 0.0))
     restored_training_state = (resume_payload or {}).get("training_state", {})
     phase_events_completed = int(
         restored_training_state.get("curriculum_phase_cursor", {}).get(
@@ -533,6 +542,116 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
         "channel_zero_positive_validation_windows", 0
     ))
     completed_steps = start_step
+    signal_controller = (
+        signal_controller or install_safe_boundary_signal_controller()
+    )
+    if not signal_controller.installed:
+        signal_controller.install()
+
+    def run_validation(validation_step: int) -> None:
+        nonlocal best_validation_loss, diagnostic_track_values
+        nonlocal final_metrics, last_validation_step, zero_positive_windows
+        validation_metrics = _validate_pretraining(
+            model,
+            data_module,
+            device=device,
+            config=config,
+            selected_event_uids=validation_uids,
+        )
+        final_metrics.update(validation_metrics)
+        logger.log(step=validation_step, split="validation", **validation_metrics)
+        last_validation_step = validation_step
+        zero_positive_windows = _check_channel_positive_window(
+            validation_metrics, zero_positive_windows, config
+        )
+        diagnostic_track_values, selected_tracks = checkpoint_track_decisions(
+            validation_metrics,
+            diagnostic_track_values,
+            PRETRAIN_CHECKPOINT_TRACKS,
+        )
+        for track in selected_tracks:
+            _save_pretrain_checkpoint(
+                output_dir / track.filename,
+                model=model,
+                optimizer=optimizer,
+                scheduler=scheduler,
+                scaler=scaler,
+                config=config,
+                data_module=data_module,
+                step=validation_step,
+                metrics=final_metrics,
+                streaming_cursor=cursor.state_dict(),
+                best_metric_value=best_validation_loss,
+                last_validation_step=last_validation_step,
+                zero_positive_windows=zero_positive_windows,
+                diagnostic_track_values=diagnostic_track_values,
+                checkpoint_selection_reason=selection_reason(
+                    track, validation_metrics
+                ),
+            )
+        if config.best_metric not in validation_metrics:
+            raise ValueError(
+                f"best_metric {config.best_metric!r} is absent from validation metrics"
+            )
+        validation_loss = float(validation_metrics[config.best_metric])
+        improved = (
+            validation_loss < best_validation_loss
+            if config.best_mode == "min"
+            else validation_loss > best_validation_loss
+        )
+        if improved:
+            best_validation_loss = validation_loss
+            _save_pretrain_checkpoint(
+                output_dir / "best.pt",
+                model=model,
+                optimizer=optimizer,
+                scheduler=scheduler,
+                scaler=scaler,
+                config=config,
+                data_module=data_module,
+                step=validation_step,
+                metrics=final_metrics,
+                streaming_cursor=cursor.state_dict(),
+                best_metric_value=best_validation_loss,
+                last_validation_step=last_validation_step,
+                zero_positive_windows=zero_positive_windows,
+                diagnostic_track_values=diagnostic_track_values,
+                checkpoint_selection_reason={
+                    "metric_name": config.best_metric,
+                    "mode": config.best_mode,
+                    "value": validation_loss,
+                    "denominator_name": "validation_batches",
+                    "denominator": validation_metrics["validation_batches"],
+                    "reason": "new_principal_configured_checkpoint",
+                },
+            )
+        _save_pretrain_checkpoint(
+            output_dir / "latest.pt",
+            model=model,
+            optimizer=optimizer,
+            scheduler=scheduler,
+            scaler=scaler,
+            config=config,
+            data_module=data_module,
+            step=validation_step,
+            metrics=final_metrics,
+            streaming_cursor=cursor.state_dict(),
+            best_metric_value=best_validation_loss,
+            last_validation_step=last_validation_step,
+            zero_positive_windows=zero_positive_windows,
+            diagnostic_track_values=diagnostic_track_values,
+        )
+
+    pending_validation_step = restored_training_state.get("pending_validation_step")
+    if pending_validation_step is not None:
+        pending_validation_step = int(pending_validation_step)
+        if pending_validation_step != start_step or last_validation_step >= start_step:
+            raise ValueError("resume checkpoint contains inconsistent pending validation")
+        try:
+            with signal_controller.restartable_validation():
+                run_validation(pending_validation_step)
+        except PendingValidationInterrupted:
+            signal_controller.exit_after_checkpoint()
     for step in range(start_step, config.max_steps):
         if (
             phase_schedule.mode == "progressive"
@@ -948,72 +1067,8 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 **final_metrics,
             )
         if (step + 1) % config.validate_every == 0:
-            validation_metrics = _validate_pretraining(
-                model,
-                data_module,
-                device=device,
-                config=config,
-                selected_event_uids=validation_uids,
-            )
-            final_metrics.update(validation_metrics)
-            logger.log(step=step + 1, split="validation", **validation_metrics)
-            last_validation_step = step + 1
-            zero_positive_windows = _check_channel_positive_window(
-                validation_metrics, zero_positive_windows, config
-            )
-            diagnostic_track_values, selected_diagnostic_tracks = (
-                checkpoint_track_decisions(
-                    validation_metrics,
-                    diagnostic_track_values,
-                    PRETRAIN_CHECKPOINT_TRACKS,
-                )
-            )
-            for track in selected_diagnostic_tracks:
-                _save_pretrain_checkpoint(
-                    output_dir / track.filename,
-                    model=model, optimizer=optimizer, scheduler=scheduler, scaler=scaler,
-                    config=config, data_module=data_module, step=step + 1,
-                    metrics=final_metrics, streaming_cursor=cursor.state_dict(),
-                    best_metric_value=best_validation_loss,
-                    last_validation_step=last_validation_step,
-                    zero_positive_windows=zero_positive_windows,
-                    diagnostic_track_values=diagnostic_track_values,
-                    checkpoint_selection_reason=selection_reason(
-                        track, validation_metrics
-                    ),
-                )
-            if config.best_metric not in validation_metrics:
-                raise ValueError(
-                    f"best_metric {config.best_metric!r} is absent from validation metrics"
-                )
-            validation_loss = float(validation_metrics[config.best_metric])
-            improved = (
-                validation_loss < best_validation_loss
-                if config.best_mode == "min"
-                else validation_loss > best_validation_loss
-            )
-            if improved:
-                best_validation_loss = validation_loss
-                _save_pretrain_checkpoint(
-                    output_dir / "best.pt",
-                    model=model, optimizer=optimizer, scheduler=scheduler, scaler=scaler,
-                    config=config, data_module=data_module, step=step + 1,
-                    metrics=final_metrics, streaming_cursor=cursor.state_dict(),
-                    best_metric_value=best_validation_loss,
-                    last_validation_step=last_validation_step,
-                    zero_positive_windows=zero_positive_windows,
-                    diagnostic_track_values=diagnostic_track_values,
-                    checkpoint_selection_reason={
-                        "metric_name": config.best_metric,
-                        "mode": config.best_mode,
-                        "value": validation_loss,
-                        "denominator_name": "validation_batches",
-                        "denominator": validation_metrics["validation_batches"],
-                        "reason": "new_principal_configured_checkpoint",
-                    },
-                )
             _save_pretrain_checkpoint(
-                output_dir / "latest.pt",
+                output_dir / "signal-checkpoint.pt",
                 model=model, optimizer=optimizer, scheduler=scheduler, scaler=scaler,
                 config=config, data_module=data_module, step=step + 1,
                 metrics=final_metrics, streaming_cursor=cursor.state_dict(),
@@ -1021,7 +1076,33 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 last_validation_step=last_validation_step,
                 zero_positive_windows=zero_positive_windows,
                 diagnostic_track_values=diagnostic_track_values,
+                pending_validation_step=step + 1,
+                termination_reason="scheduled_validation_pending",
             )
+            try:
+                with signal_controller.restartable_validation():
+                    run_validation(step + 1)
+            except PendingValidationInterrupted:
+                signal_controller.exit_after_checkpoint()
+        if signal_controller.requested:
+            _save_pretrain_checkpoint(
+                output_dir / "signal-checkpoint.pt",
+                model=model,
+                optimizer=optimizer,
+                scheduler=scheduler,
+                scaler=scaler,
+                config=config,
+                data_module=data_module,
+                step=step + 1,
+                metrics=final_metrics,
+                streaming_cursor=cursor.state_dict(),
+                best_metric_value=best_validation_loss,
+                last_validation_step=last_validation_step,
+                zero_positive_windows=zero_positive_windows,
+                diagnostic_track_values=diagnostic_track_values,
+                termination_reason="sigusr1_safe_optimizer_boundary",
+            )
+            signal_controller.exit_after_checkpoint()
         if (step + 1) % config.checkpoint_every == 0:
             _save_pretrain_checkpoint(
                 output_dir / f"checkpoint-step-{step + 1}.pt",
@@ -1127,6 +1208,7 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
         zero_positive_windows=zero_positive_windows,
         diagnostic_track_values=diagnostic_track_values,
     )
+    signal_controller.restore()
     return TrainingResult(
         checkpoint=checkpoint,
         log_path=logger.path,
@@ -1909,6 +1991,8 @@ def _save_pretrain_checkpoint(
     zero_positive_windows: int = 0,
     diagnostic_track_values: dict[str, float] | None = None,
     checkpoint_selection_reason: dict[str, object] | None = None,
+    pending_validation_step: int | None = None,
+    termination_reason: str = "running_or_normal_checkpoint",
 ) -> Path:
     return save_training_checkpoint(
         path,
@@ -1975,6 +2059,7 @@ def _save_pretrain_checkpoint(
             "best_mode": config.best_mode,
             "best_metric_value": float(best_metric_value),
             "last_validation_step": int(last_validation_step),
+            "pending_validation_step": pending_validation_step,
             "channel_zero_positive_validation_windows": int(
                 zero_positive_windows
             ),
@@ -2005,6 +2090,7 @@ def _save_pretrain_checkpoint(
                     metrics.get("curriculum_final_phase_entered", 0)
                 ),
             },
+            "termination_reason": termination_reason,
         },
         validation_selection={
             "split": "validation",

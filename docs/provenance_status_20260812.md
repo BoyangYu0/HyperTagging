@@ -14,11 +14,32 @@ in the inspected repositories, and GitHub returned `not our ref`. Therefore the
 tree cannot yet be independently derived from the commit object.
 
 This is a fail-closed scientific provenance blocker, not a CPU-development
-blocker. CPU implementation, manifest generation, and focused tests may
-continue. Scientific Slurm submission remains forbidden until the object is
-recovered from an archive/campaign worktree or equivalent immutable bundle,
-its tree is verified, the UID/index gate passes, and later trainer/Slurm gates
-are complete.
+blocker. The final non-GPU readiness tranche completed the train+validation
+event UID/source/task index gate, evidence-based capacity proof, trainer signal
+checkpointing, and exact-GRES Slurm dry-run path without opening the sealed-test
+role or submitting a job. The tracked evidence summary is
+`configs/training_selection/production_1m_20260812/training_readiness.json`;
+large generated evidence remains under the ignored
+`artifacts/experiment_readiness/production_1m_20260812/train_035k/` directory.
+
+The corrective CPU-only pass binds all launch values to a v2 hashed job
+contract rendered with `--export=NIL` (and rejects `NONE`/`ALL`), proves the
+exact typed one-GPU request from exact `ReqTRES` and `AllocTRES` maps plus an
+exact typed `TresPerNode`, forwards USR1 through the batch wrapper, and
+serializes pending scheduled validation for exact resume. Local V100 evidence
+now requires both a fresh host/UUID/model-bound three-sample admission receipt
+and a canonically hashed completion receipt proving the bound watchdog-monitored
+trainer exited successfully. Scientific rendering requires the explicit
+`--local-admission-receipt` and `--local-completion-receipt` pair. The frozen
+lock and documented sync command both name PyPI and the PyTorch CUDA 12.6
+index. No GPU command, environment installation, Slurm submission, or Slurm
+mutation was performed.
+
+Scientific Slurm submission remains forbidden until the production object is
+recovered and its tree verified, the frozen GPU environment is installed and
+passes its in-allocation preflight, a later explicitly authorized bounded local
+V100 microtest produces bound admission and successful-completion receipts, and
+this uncommitted tranche is reviewed on a clean immutable tagged commit.
 
 The authoritative machine-readable status is
 `configs/training_selection/production_1m_20260812/provenance_status.json`.

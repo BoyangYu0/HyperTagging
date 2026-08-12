@@ -43,6 +43,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--data", default=None)
     parser.add_argument("--ablation", choices=sorted(ALL_ABLATIONS), default="full_revised")
     parser.add_argument("--device", default="cpu")
+    parser.add_argument(
+        "--gpu-execution-mode",
+        choices=("auto", "scientific_slurm", "slurm_diagnostic", "local_microtest"),
+        default="auto",
+    )
+    parser.add_argument(
+        "--expected-gres", choices=("gpu:h200nvl:1", "gpu:v100:1"), default=None
+    )
+    parser.add_argument("--local-admission-receipt", default=None)
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--tiny", action="store_true")
     parser.add_argument("--max-steps", type=int, default=2)

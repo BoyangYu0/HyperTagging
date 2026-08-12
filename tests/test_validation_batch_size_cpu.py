@@ -1,3 +1,4 @@
+import pytest
 import torch
 
 from hypertagging.data.heterogeneous import heterogeneous_from_level_event
@@ -45,3 +46,18 @@ def test_validation_batch_size_controls_next_level_forward_batching():
     assert result["validation_batch_size"] == 2
     assert result["validation_events"] == 3
 
+
+def test_lightweight_data_module_still_fails_closed_in_scientific_mode():
+    with pytest.raises(
+        ValueError,
+        match="scientific fixed validation requires a training-selection manifest",
+    ):
+        validate_reconstruction(
+            _RecordingModel(),
+            _DataModule(),
+            device=torch.device("cpu"),
+            max_validation_events=3,
+            rollout_validation_events=0,
+            validation_batch_size=2,
+            scientific_mode=True,
+        )

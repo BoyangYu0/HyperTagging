@@ -75,6 +75,11 @@ from hypertagging.training.learning_rate import (
     build_warmup_cosine_scheduler,
     resolve_resume_schedule_contract,
 )
+from hypertagging.training.slurm_signal import (
+    PendingValidationInterrupted,
+    SafeBoundarySignalController,
+    install_safe_boundary_signal_controller,
+)
 
 
 @dataclass(frozen=True)
@@ -186,6 +191,8 @@ class ReconstructionTrainingResult:
 
 def train_level_reconstruction(
     config: ReconstructionConfig,
+    *,
+    signal_controller: SafeBoundarySignalController | None = None,
 ) -> ReconstructionTrainingResult:
     if config.max_steps <= 0:
         raise ValueError("max_steps must be positive")
@@ -470,7 +477,156 @@ def train_level_reconstruction(
     validation_uids: list[str] = list(
         restored_validation_selection.get("event_uids", [])
     )
-    for step in range(start_step, config.max_steps):
+    signal_controller = (
+        signal_controller or install_safe_boundary_signal_controller()
+    )
+    if not signal_controller.installed:
+        signal_controller.install()
+
+    def run_validation(validation_step: int) -> bool:
+        nonlocal best_metric_value, checkpoint_track_values, final_metrics
+        nonlocal last_validation_step, patience_count
+        validation_metrics = validate_reconstruction(
+            model,
+            data_module,
+            device=device,
+            scheduled_sampling_probability=(
+                config.scheduled_sampling_probability
+                if ablation.scheduled_sampling
+                else 0.0
+            ),
+            seed=config.seed,
+            max_validation_events=config.max_validation_events,
+            rollout_validation_events=(
+                config.rollout_validation_events
+                if validation_step % config.rollout_validate_every == 0
+                else 0
+            ),
+            validation_batch_size=config.validation_batch_size,
+            target_policy=config.target_policy,
+            constraint_policy=constraint_policy,
+            rollout_pid_kinematics_mode=config.rollout_pid_kinematics_mode,
+            rollout_pid_temperature=config.rollout_pid_temperature,
+            pilot_allow_train_validation_fallback=(
+                config.pilot_allow_train_validation_fallback
+                or config.allow_legacy_conflated
+                or config.pilot_split_repair
+            ),
+            selected_event_uids=validation_uids,
+            scientific_mode=config.scientific_mode,
+            p4_closure_tolerance=config.rollout_p4_tolerance,
+        )
+        final_metrics.update(validation_metrics)
+        logger.log(step=validation_step, split="validation", **validation_metrics)
+        last_validation_step = validation_step
+        checkpoint_track_values, selected_tracks = checkpoint_track_decisions(
+            validation_metrics, checkpoint_track_values
+        )
+        for track in selected_tracks:
+            _save_reconstruction_checkpoint(
+                output_dir / track.filename,
+                model=model,
+                optimizer=optimizer,
+                scheduler=scheduler,
+                scaler=scaler,
+                config=config,
+                data_module=data_module,
+                step=validation_step,
+                metrics=final_metrics,
+                streaming_cursor=cursor.state_dict(),
+                best_metric_value=best_metric_value,
+                patience_count=patience_count,
+                last_validation_step=last_validation_step,
+                validation_uids=validation_uids,
+                checkpoint_track_values=checkpoint_track_values,
+                checkpoint_selection_contract=selection_contract,
+                checkpoint_selection_reason=selection_reason(
+                    track, validation_metrics
+                ),
+            )
+        primary_track = RECONSTRUCTION_TRACK_BY_METRIC[config.best_metric]
+        eligibility = rollout_checkpoint_eligibility(
+            validation_metrics, _rollout_eligibility_contract(config)
+        )
+        final_metrics["rollout_checkpoint_eligible"] = float(eligibility["eligible"])
+        primary_evaluated = (
+            config.best_metric in validation_metrics
+            and math.isfinite(float(validation_metrics[config.best_metric]))
+            and float(validation_metrics.get(primary_track.denominator_metric, 0.0)) > 0
+            and (not primary_track.requires_rollout or eligibility["eligible"])
+        )
+        if primary_evaluated:
+            current_metric = float(validation_metrics[config.best_metric])
+            improved = (
+                current_metric < best_metric_value
+                if config.best_mode == "min"
+                else current_metric > best_metric_value
+            )
+            if improved:
+                best_metric_value = current_metric
+                patience_count = 0
+                _save_reconstruction_checkpoint(
+                    output_dir / "best.pt",
+                    model=model,
+                    optimizer=optimizer,
+                    scheduler=scheduler,
+                    scaler=scaler,
+                    config=config,
+                    data_module=data_module,
+                    step=validation_step,
+                    metrics=final_metrics,
+                    streaming_cursor=cursor.state_dict(),
+                    best_metric_value=best_metric_value,
+                    patience_count=patience_count,
+                    last_validation_step=last_validation_step,
+                    validation_uids=validation_uids,
+                    checkpoint_track_values=checkpoint_track_values,
+                    checkpoint_selection_contract=selection_contract,
+                    checkpoint_selection_reason={
+                        **selection_reason(primary_track, validation_metrics),
+                        "reason": "new_configured_primary_metric",
+                    },
+                )
+            else:
+                patience_count += 1
+        _save_reconstruction_checkpoint(
+            output_dir / "latest.pt",
+            model=model,
+            optimizer=optimizer,
+            scheduler=scheduler,
+            scaler=scaler,
+            config=config,
+            data_module=data_module,
+            step=validation_step,
+            metrics=final_metrics,
+            streaming_cursor=cursor.state_dict(),
+            best_metric_value=best_metric_value,
+            patience_count=patience_count,
+            last_validation_step=last_validation_step,
+            validation_uids=validation_uids,
+            checkpoint_track_values=checkpoint_track_values,
+            checkpoint_selection_contract=selection_contract,
+        )
+        return (
+            config.early_stopping_patience is not None
+            and patience_count >= config.early_stopping_patience
+        )
+
+    pending_validation_step = restored_state.get("pending_validation_step")
+    resume_validation_requested_stop = False
+    if pending_validation_step is not None:
+        pending_validation_step = int(pending_validation_step)
+        if pending_validation_step != start_step or last_validation_step >= start_step:
+            raise ValueError("resume checkpoint contains inconsistent pending validation")
+        try:
+            with signal_controller.restartable_validation():
+                resume_validation_requested_stop = run_validation(
+                    pending_validation_step
+                )
+        except PendingValidationInterrupted:
+            signal_controller.exit_after_checkpoint()
+    loop_start = config.max_steps if resume_validation_requested_stop else start_step
+    for step in range(loop_start, config.max_steps):
         if model.pid_kinematics_mode == "temperature_softmax":
             progress = min(step / max(config.pid_temperature_duration_steps, 1), 1.0)
             model.pid_temperature = (
@@ -592,106 +748,18 @@ def train_level_reconstruction(
                 )
         logger.log(step=step + 1, target_levels=valid_levels, **final_metrics)
         completed_steps = step + 1
+        should_stop = False
         if (step + 1) % config.validate_every == 0:
-            validation_metrics = validate_reconstruction(
-                model,
-                data_module,
-                device=device,
-                scheduled_sampling_probability=(
-                    config.scheduled_sampling_probability
-                    if ablation.scheduled_sampling else 0.0
-                ),
-                seed=config.seed,
-                max_validation_events=config.max_validation_events,
-                rollout_validation_events=(
-                    config.rollout_validation_events
-                    if (step + 1) % config.rollout_validate_every == 0 else 0
-                ),
-                validation_batch_size=config.validation_batch_size,
-                target_policy=config.target_policy,
-                constraint_policy=constraint_policy,
-                rollout_pid_kinematics_mode=config.rollout_pid_kinematics_mode,
-                rollout_pid_temperature=config.rollout_pid_temperature,
-                pilot_allow_train_validation_fallback=(
-                    config.pilot_allow_train_validation_fallback
-                    or config.allow_legacy_conflated
-                    or config.pilot_split_repair
-                ),
-                selected_event_uids=validation_uids,
-                scientific_mode=config.scientific_mode,
-                p4_closure_tolerance=config.rollout_p4_tolerance,
-            )
-            final_metrics.update(validation_metrics)
-            logger.log(step=step + 1, split="validation", **validation_metrics)
-            last_validation_step = step + 1
-            checkpoint_track_values, selected_tracks = checkpoint_track_decisions(
-                validation_metrics, checkpoint_track_values
-            )
-            for track in selected_tracks:
-                _save_reconstruction_checkpoint(
-                    output_dir / track.filename, model=model, optimizer=optimizer,
-                    scheduler=scheduler, scaler=scaler, config=config,
-                    data_module=data_module, step=step + 1, metrics=final_metrics,
-                    streaming_cursor=cursor.state_dict(),
-                    best_metric_value=best_metric_value,
-                    patience_count=patience_count,
-                    last_validation_step=last_validation_step,
-                    validation_uids=validation_uids,
-                    checkpoint_track_values=checkpoint_track_values,
-                    checkpoint_selection_contract=selection_contract,
-                    checkpoint_selection_reason=selection_reason(
-                        track, validation_metrics
-                    ),
-                )
-            primary_track = RECONSTRUCTION_TRACK_BY_METRIC[config.best_metric]
-            eligibility = rollout_checkpoint_eligibility(
-                validation_metrics, _rollout_eligibility_contract(config)
-            )
-            final_metrics["rollout_checkpoint_eligible"] = float(
-                eligibility["eligible"]
-            )
-            primary_evaluated = (
-                config.best_metric in validation_metrics
-                and math.isfinite(float(validation_metrics[config.best_metric]))
-                and float(
-                    validation_metrics.get(primary_track.denominator_metric, 0.0)
-                ) > 0
-                and (
-                    not primary_track.requires_rollout or eligibility["eligible"]
-                )
-            )
-            if primary_evaluated:
-                current_metric = float(validation_metrics[config.best_metric])
-                improved = (
-                    current_metric < best_metric_value
-                    if config.best_mode == "min"
-                    else current_metric > best_metric_value
-                )
-                if improved:
-                    best_metric_value = current_metric
-                    patience_count = 0
-                    _save_reconstruction_checkpoint(
-                        output_dir / "best.pt", model=model, optimizer=optimizer,
-                        scheduler=scheduler, scaler=scaler, config=config,
-                        data_module=data_module, step=step + 1, metrics=final_metrics,
-                        streaming_cursor=cursor.state_dict(),
-                        best_metric_value=best_metric_value,
-                        patience_count=patience_count,
-                        last_validation_step=last_validation_step,
-                        validation_uids=validation_uids,
-                        checkpoint_track_values=checkpoint_track_values,
-                        checkpoint_selection_contract=selection_contract,
-                        checkpoint_selection_reason={
-                            **selection_reason(primary_track, validation_metrics),
-                            "reason": "new_configured_primary_metric",
-                        },
-                    )
-                else:
-                    patience_count += 1
             _save_reconstruction_checkpoint(
-                output_dir / "latest.pt", model=model, optimizer=optimizer,
-                scheduler=scheduler, scaler=scaler, config=config,
-                data_module=data_module, step=step + 1, metrics=final_metrics,
+                output_dir / "signal-checkpoint.pt",
+                model=model,
+                optimizer=optimizer,
+                scheduler=scheduler,
+                scaler=scaler,
+                config=config,
+                data_module=data_module,
+                step=step + 1,
+                metrics=final_metrics,
                 streaming_cursor=cursor.state_dict(),
                 best_metric_value=best_metric_value,
                 patience_count=patience_count,
@@ -699,12 +767,37 @@ def train_level_reconstruction(
                 validation_uids=validation_uids,
                 checkpoint_track_values=checkpoint_track_values,
                 checkpoint_selection_contract=selection_contract,
+                pending_validation_step=step + 1,
+                termination_reason="scheduled_validation_pending",
             )
-            if (
-                config.early_stopping_patience is not None
-                and patience_count >= config.early_stopping_patience
-            ):
-                break
+            try:
+                with signal_controller.restartable_validation():
+                    should_stop = run_validation(step + 1)
+            except PendingValidationInterrupted:
+                signal_controller.exit_after_checkpoint()
+        if signal_controller.requested:
+            _save_reconstruction_checkpoint(
+                output_dir / "signal-checkpoint.pt",
+                model=model,
+                optimizer=optimizer,
+                scheduler=scheduler,
+                scaler=scaler,
+                config=config,
+                data_module=data_module,
+                step=step + 1,
+                metrics=final_metrics,
+                streaming_cursor=cursor.state_dict(),
+                best_metric_value=best_metric_value,
+                patience_count=patience_count,
+                last_validation_step=last_validation_step,
+                validation_uids=validation_uids,
+                checkpoint_track_values=checkpoint_track_values,
+                checkpoint_selection_contract=selection_contract,
+                termination_reason="sigusr1_safe_optimizer_boundary",
+            )
+            signal_controller.exit_after_checkpoint()
+        if should_stop:
+            break
         if (step + 1) % config.checkpoint_every == 0:
             _save_reconstruction_checkpoint(
                 output_dir / f"checkpoint-step-{step + 1}.pt",
@@ -839,6 +932,7 @@ def train_level_reconstruction(
         checkpoint_track_values=checkpoint_track_values,
         checkpoint_selection_contract=selection_contract,
     )
+    signal_controller.restore()
     if config.scientific_mode and not math.isfinite(best_metric_value):
         raise RuntimeError(
             "scientific run produced no rollout checkpoint eligible for primary selection"
@@ -1398,7 +1492,7 @@ def validate_reconstruction(
         source,
         limit=max_validation_events,
         scientific_mode=scientific_mode,
-        selection_manifest_hash=data_module.selection_manifest_hash,
+        selection_manifest_hash=getattr(data_module, "selection_manifest_hash", None),
         seed=seed,
         restored_event_uids=restored_uids,
     )
@@ -1749,6 +1843,8 @@ def _save_reconstruction_checkpoint(
     checkpoint_track_values: dict[str, float] | None = None,
     checkpoint_selection_contract: dict[str, object] | None = None,
     checkpoint_selection_reason: dict[str, object] | None = None,
+    pending_validation_step: int | None = None,
+    termination_reason: str = "running_or_normal_checkpoint",
 ) -> Path:
     return save_training_checkpoint(
         path,
@@ -1827,6 +1923,7 @@ def _save_reconstruction_checkpoint(
             "best_metric_value": float(best_metric_value),
             "early_stopping_patience_count": int(patience_count),
             "last_validation_step": int(last_validation_step),
+            "pending_validation_step": pending_validation_step,
             "checkpoint_track_values": dict(checkpoint_track_values or {}),
             "checkpoint_selection_contract": dict(
                 checkpoint_selection_contract or {}
@@ -1844,6 +1941,7 @@ def _save_reconstruction_checkpoint(
             "last_rollout_checkpoint_eligibility": rollout_checkpoint_eligibility(
                 metrics, _rollout_eligibility_contract(config)
             ),
+            "termination_reason": termination_reason,
         },
         validation_selection={
             "split": (

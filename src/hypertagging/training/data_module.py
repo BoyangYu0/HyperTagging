@@ -220,9 +220,31 @@ def build_real_data_module(
         load_training_selection,
     )
 
+    if scientific_mode and (dataset_index is None or rescan_dataset):
+        raise ValueError(
+            "scientific mode requires a promoted full-record dataset index"
+        )
+    if scientific_mode and "test" in required_splits:
+        raise ValueError("scientific indexing/training cannot request the sealed test role")
     selection = None
     if isinstance(data, (str, Path)) and is_training_selection_manifest(data):
-        selection = load_training_selection(data)
+        include_splits = None
+        if dataset_index is not None and not rescan_dataset:
+            try:
+                raw_index = json.loads(Path(dataset_index).read_text(encoding="utf-8"))
+                indexed_included = raw_index.get("selection_contract", {}).get(
+                    "included_splits"
+                )
+                if scientific_mode and indexed_included != ["train", "validation"]:
+                    raise ValueError(
+                        "scientific mode permits exactly train and validation roles"
+                    )
+                if indexed_included:
+                    include_splits = tuple(str(value) for value in indexed_included)
+            except (OSError, json.JSONDecodeError, TypeError):
+                # The authoritative index loader below provides the precise error.
+                pass
+        selection = load_training_selection(data, include_splits=include_splits)
     if scientific_mode and selection is None:
         raise ValueError(
             "scientific mode requires an immutable training-selection manifest"
@@ -251,6 +273,20 @@ def build_real_data_module(
         )
 
         index = load_dataset_index(dataset_index)
+        if scientific_mode:
+            identity = index.get("event_identity_validation", {})
+            included = index.get("selection_contract", {}).get("included_splits")
+            if (
+                identity.get("status") != "passed"
+                or identity.get("task_binding")
+                != "selection_to_sidecar_to_completion_marker_validated"
+                or identity.get("sealed_test_opened") is not False
+                or included != ["train", "validation"]
+            ):
+                raise ValueError(
+                    "scientific mode requires the passed exact identity/task-binding "
+                    "gate with sealed test excluded"
+                )
         if index.get("target_policy") != target_policy:
             raise ValueError(
                 "dataset index target policy does not match trainer target policy; "
@@ -267,6 +303,10 @@ def build_real_data_module(
                 != selection.manifest_hash
             ):
                 raise ValueError("dataset index training-selection hash mismatch")
+            if tuple(indexed_selection.get("included_splits", ())) != tuple(
+                selection.included_splits
+            ):
+                raise ValueError("dataset index included-role contract mismatch")
         elif indexed_selection.get("max_events") != max_events:
             raise ValueError(
                 "dataset index event-selection/max-events fingerprint mismatch"

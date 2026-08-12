@@ -36,6 +36,8 @@ class LoadedTrainingSelection:
     source_split_overrides: dict[str, str]
     split_counts: dict[str, int]
     split_shard_counts: dict[str, int]
+    included_splits: tuple[str, ...]
+    source_expectations: dict[str, dict[str, Any]]
 
 
 def canonical_manifest_hash(payload: Mapping[str, Any]) -> str:
@@ -91,9 +93,19 @@ def is_training_selection_manifest(path: str | Path) -> bool:
     )
 
 
-def load_training_selection(path: str | Path) -> LoadedTrainingSelection:
+def load_training_selection(
+    path: str | Path,
+    *,
+    include_splits: Iterable[str] | None = None,
+) -> LoadedTrainingSelection:
     source = Path(path).resolve()
     payload = load_hashed_manifest(source, expected_version=SELECTION_MANIFEST_VERSION)
+    included = tuple(
+        dict.fromkeys(include_splits or ("train", "validation", "test"))
+    )
+    invalid_included = set(included) - {"train", "validation", "test"}
+    if invalid_included or not included:
+        raise ValueError(f"invalid included selection splits: {sorted(invalid_included)}")
     root = Path(payload["data_root"])
     if not root.is_absolute():
         root = (source.parent / root).resolve()
@@ -105,6 +117,7 @@ def load_training_selection(path: str | Path) -> LoadedTrainingSelection:
     split_counts = Counter()
     split_shards = Counter()
     task_splits: dict[int, str] = {}
+    source_expectations: dict[str, dict[str, Any]] = {}
     for entry in entries:
         split = str(entry.get("split", ""))
         if split not in {"train", "validation", "test"}:
@@ -119,6 +132,8 @@ def load_training_selection(path: str | Path) -> LoadedTrainingSelection:
         previous_task = task_splits.setdefault(task_id, split)
         if previous_task != split:
             raise ValueError(f"task {task_id} occurs in multiple splits")
+        if split not in included:
+            continue
         relative = Path(str(entry["path"]))
         parquet = relative if relative.is_absolute() else root / relative
         parquet = parquet.resolve()
@@ -126,20 +141,41 @@ def load_training_selection(path: str | Path) -> LoadedTrainingSelection:
             raise FileNotFoundError(f"missing selected parquet shard: {parquet}")
         _validate_selection_publication(parquet, entry)
         paths.append(parquet)
+        source_expectations[source_file] = {
+            "category": str(entry["category"]),
+            "task_id": task_id,
+            "path": str(parquet),
+            "split": split,
+            "event_count": int(entry["event_count"]),
+            "task_record_hash": str(entry["task_record_hash"]),
+        }
         split_counts[split] += int(entry["event_count"])
         split_shards[split] += 1
     if len(paths) != len(set(paths)):
         raise ValueError("selection contains duplicate parquet paths")
     expected_counts = {
-        name: int(value) for name, value in payload.get("split_counts", {}).items()
+        name: (int(payload.get("split_counts", {}).get(name, 0)) if name in included else 0)
+        for name in ("train", "validation", "test")
     }
     expected_shards = {
-        name: int(value)
-        for name, value in payload.get("split_shard_counts", {}).items()
+        name: (
+            int(payload.get("split_shard_counts", {}).get(name, 0))
+            if name in included
+            else 0
+        )
+        for name in ("train", "validation", "test")
     }
-    if dict(split_counts) != expected_counts:
+    actual_counts = {
+        name: int(split_counts.get(name, 0))
+        for name in ("train", "validation", "test")
+    }
+    actual_shards = {
+        name: int(split_shards.get(name, 0))
+        for name in ("train", "validation", "test")
+    }
+    if actual_counts != expected_counts:
         raise ValueError("selection split event counts disagree with entries")
-    if dict(split_shards) != expected_shards:
+    if actual_shards != expected_shards:
         raise ValueError("selection split shard counts disagree with entries")
     if payload.get("uid_validation", {}).get("status") != "pending_full_index_build":
         raise ValueError("selection UID-validation gate is missing or ambiguous")
@@ -150,6 +186,8 @@ def load_training_selection(path: str | Path) -> LoadedTrainingSelection:
         source_split_overrides=source_roles,
         split_counts=expected_counts,
         split_shard_counts=expected_shards,
+        included_splits=included,
+        source_expectations=source_expectations,
     )
 
 

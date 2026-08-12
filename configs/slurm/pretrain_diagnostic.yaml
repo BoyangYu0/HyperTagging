@@ -1,0 +1,18 @@
+data: configs/training_selection/production_1m_20260812/train_035k.json
+dataset_index: artifacts/experiment_readiness/production_1m_20260812/train_035k/train_035k.complete_only.index.json
+model_preset: gpu_debug
+device: cuda
+gpu_execution_mode: slurm_diagnostic
+seed: 20260812
+max_steps: 10
+batch_size: 2
+num_workers: 0
+checkpoint_every: 5
+validate_every: 10
+validation_batches: 4
+validation_events: 256
+curriculum_mode: progressive
+curriculum_phase_steps: [3, 3, 2, 2]
+require_final_curriculum_phase: true
+objective_dominance_ratio: 20.0
+scientific_mode: false

@@ -17,5 +17,7 @@ hyperbolic_level_encoding: learned_euclidean
 # Conservative production-baseline placeholders. Scientific reconstruction
 # rejects this preset without an indexed, zero-overflow capacity report.
 n_queries: 32
-max_cardinality: 12
+# Evidence: the sealed-test-excluding train_035k complete-only index has an
+# exact maximum daughter cardinality of 16; the previous 12 overflowed 106.
+max_cardinality: 16
 capacity_report_required: true

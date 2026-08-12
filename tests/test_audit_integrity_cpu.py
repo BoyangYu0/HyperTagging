@@ -243,6 +243,23 @@ def test_source_commit_after_audited_code_fails(tmp_path):
     assert errors == ["post-audit path is outside the allowlist: src/model.py"]
 
 
+def test_exact_reviewed_post_audit_commit_passes_but_later_source_change_fails(
+    tmp_path,
+):
+    repo, _, ledger = _audit_history_fixture(tmp_path)
+    (repo / "src/model.py").write_text("VALUE = 2\n", encoding="utf-8")
+    reviewed = _commit(repo, "reviewed source change")
+    ledger["allowed_post_audit_commits"] = [reviewed]
+    validator = _load_validator()
+    assert validator.validate_audited_code_ancestry(ledger, repo) == []
+
+    (repo / "src/model.py").write_text("VALUE = 3\n", encoding="utf-8")
+    _commit(repo, "later unreviewed source change")
+    assert validator.validate_audited_code_ancestry(ledger, repo) == [
+        "post-audit path is outside the allowlist: src/model.py"
+    ]
+
+
 def test_missing_or_nonancestor_audited_code_sha_fails(tmp_path):
     repo, _, ledger = _audit_history_fixture(tmp_path)
     missing = dict(ledger, audited_code_sha="f" * 40)

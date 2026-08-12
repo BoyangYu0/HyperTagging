@@ -160,7 +160,9 @@ boundary tests. Do not run the expensive full suite as a first response.
 
 The local Tesla V100 observation (125 MiB, 0%, no process) was timestamped and
 is not permission for a later run. Immediately before every bounded microtest,
-sample for a full 60 seconds at 10-second intervals:
+use `scripts/slurm/v100_local_admission.py admit` to collect exactly three
+samples at 10-second intervals, followed only by its monitored `run` subcommand.
+Each admission sample collects:
 
 ```bash
 hostname
@@ -171,15 +173,16 @@ nvidia-smi pmon -c 1
 fuser -v /dev/nvidia* 2>&1
 ```
 
-Admission requires all six samples to show zero compute processes, zero GPU and
-memory utilization, no device owner other than system services, and at most
-256 MiB used. Any nonzero utilization, changing memory, process, inaccessible
-query, ambiguous ownership, or another user's announced workload is an ABORT.
-During an admitted test, repeat the queries every 30 seconds from a watchdog.
-If activity appears, send the trainer's normal termination signal, wait for its
-checkpoint/exit, and do not restart locally. Local use is limited to one GPU,
-one process, at most 100 optimizer steps or 15 minutes (whichever comes first),
-`gpu_debug`, and the 35k manifest/index. Never use local V100 for screening,
+Admission requires all three samples to show no compute process or device
+owner, GPU and memory utilization at most 5%, memory use at most 512 MiB, and
+temperature below 70 C. Any failed or ambiguous query or any user queue entry
+is an ABORT. During an admitted test, the mandatory watchdog repeats telemetry
+at least every 30 seconds. If unsafe activity appears, it signals and bounds
+trainer shutdown and does not restart locally. Local use is limited to one GPU,
+one process, at most 10 optimizer steps or 5 minutes (whichever comes first),
+`gpu_debug`, and the 35k manifest/index. Admission alone never qualifies:
+scientific rendering requires a canonically hashed, admission-bound completion
+with normal trainer exit status zero. Never use local V100 for screening,
 confirmation, or final evaluation.
 
 ## Slurm design and dry-run boundary
