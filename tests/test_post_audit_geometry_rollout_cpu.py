@@ -25,6 +25,7 @@ from hypertagging.models.hyperbolic import logmap0, radius
 from hypertagging.models.level_autoregressive import LevelAutoregressiveReconstructor
 from hypertagging.models.relations import (
     PHYSICAL_RELATION_FEATURE_NAMES,
+    PhysicalRelationBias,
     _physical_features,
 )
 from hypertagging.preprocessing.schema_v4 import LEAF_MODE_TO_ID
@@ -309,6 +310,79 @@ def test_overlap_aware_physical_relations_withhold_double_counted_mass_and_energ
     assert features[0, 2, 4, index["pair_mass_energy_available"]] == 1
     assert features[0, 2, 4, index["disjoint_pair_energy"]] > 0
     assert features[0, 3, 2, index["copied_source_conflict"]] == 1
+
+
+def test_recursive_source_overlap_uses_fp32_under_amp_and_preserves_semantics(
+    monkeypatch,
+):
+    source_width = 65_537
+    sources = torch.zeros((1, 3, source_width), dtype=torch.int32)
+    sources[0, 0] = 1
+    sources[0, 1, 0] = 1
+    sources[0, 2, -1] = 1
+    observed_operands = []
+    original_bmm = torch.bmm
+
+    def checked_bmm(left, right):
+        observed_operands.append(
+            (left.dtype, right.dtype, torch.is_autocast_enabled("cpu"))
+        )
+        return original_bmm(left, right)
+
+    monkeypatch.setattr(torch, "bmm", checked_bmm)
+    with torch.autocast(device_type="cpu", dtype=torch.bfloat16):
+        features = _physical_features(
+            p4=torch.zeros(1, 3, 4),
+            charge=torch.zeros(1, 3),
+            level_ids=torch.zeros(1, 3, dtype=torch.long),
+            node_kind_ids=None,
+            copied=None,
+            source_node_ids=None,
+            recursive_leaf_source_mask=sources,
+        )
+
+    assert observed_operands == [(torch.float32, torch.float32, False)]
+    overlap_index = PHYSICAL_RELATION_FEATURE_NAMES.index("recursive_source_overlap")
+    expected = torch.tensor(
+        [[[True, True, True], [True, True, False], [True, False, True]]]
+    )
+    assert torch.equal(features[..., overlap_index].bool(), expected)
+
+
+def test_physical_relation_bias_accepts_bool_and_integer_recursive_source_masks():
+    torch.manual_seed(23)
+    relation = PhysicalRelationBias(hidden_dim=8)
+    source_mask = torch.tensor(
+        [[[1, 0, 0], [1, 1, 0], [0, 0, 1]]], dtype=torch.bool
+    )
+    base_p4 = torch.tensor(
+        [[[0.1, 0.0, 0.0, 0.2], [0.0, 0.1, 0.0, 0.2], [0.0, 0.0, 0.2, 0.3]]]
+    )
+    common = {
+        "charge": torch.tensor([[1.0, -1.0, 0.0]]),
+        "level_ids": torch.tensor([[0, 1, 1]]),
+        "node_mask": torch.ones(1, 3, dtype=torch.bool),
+        "node_kind_ids": torch.tensor([[1, 3, 3]]),
+    }
+    outputs = []
+    for dtype in (torch.bool, torch.int32):
+        relation.zero_grad(set_to_none=True)
+        p4 = base_p4.clone().requires_grad_(True)
+        bias = relation(
+            p4=p4,
+            recursive_leaf_source_mask=source_mask.to(dtype),
+            **common,
+        )
+        assert torch.isfinite(bias).all()
+        bias.sum().backward()
+        assert p4.grad is not None and torch.isfinite(p4.grad).all()
+        assert all(
+            parameter.grad is not None and torch.isfinite(parameter.grad).all()
+            for parameter in relation.parameters()
+        )
+        outputs.append(bias.detach())
+
+    torch.testing.assert_close(outputs[0], outputs[1], rtol=0, atol=0)
 
 
 def test_bounded_beam_keeps_top_k_distinct_partial_candidate_sets():

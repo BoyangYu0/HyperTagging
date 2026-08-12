@@ -98,11 +98,14 @@ def _physical_features(
     source_available = torch.zeros_like(level_ids, dtype=torch.bool)
     if recursive_leaf_source_mask is not None:
         source_available = recursive_leaf_source_mask.any(dim=-1)
-        recursive_overlap = torch.einsum(
-            "bns,bms->bnm",
-            recursive_leaf_source_mask.to(torch.int32),
-            recursive_leaf_source_mask.to(torch.int32),
-        ) > 0
+        source_membership = recursive_leaf_source_mask.ne(0).to(torch.float32)
+        # CUDA has no integer bmm kernel.  Keep this structural reduction in
+        # FP32 under AMP: only positivity is consumed, so rounding of very wide
+        # overlap counts cannot change the boolean intersection semantics.
+        with torch.autocast(device_type=source_membership.device.type, enabled=False):
+            recursive_overlap = torch.bmm(
+                source_membership, source_membership.transpose(1, 2)
+            ).gt(0)
     source_pair_available = source_available[:, :, None] & source_available[:, None, :]
     disjoint_source_pair = source_pair_available & ~recursive_overlap
     ancestor_descendant = (
