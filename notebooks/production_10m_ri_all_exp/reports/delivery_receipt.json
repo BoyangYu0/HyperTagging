@@ -1,0 +1,29 @@
+{
+  "browserWarning": {
+    "code": "browser_unavailable",
+    "message": "No installed Chromium headless-shell executable was found. Set CHROMIUM_EXECUTABLE_PATH (or the legacy PLAYWRIGHT_EXECUTABLE_PATH) or preinstall Chromium headless-shell under PLAYWRIGHT_BROWSERS_PATH; portable tooling never downloads browsers."
+  },
+  "counts": {
+    "blocks": 26,
+    "charts": 5,
+    "html": 0,
+    "metrics": 5,
+    "tables": 3
+  },
+  "html": "/data/dust/user/b/boyangyu/hypertagging/production_10m_ri_all_exp_20260811_f4e54df/validation/report/validation_report.html",
+  "ok": true,
+  "sourceDialog": "not_verified",
+  "sourceInteraction": "not_verified",
+  "stages": {
+    "package": "passed",
+    "validation": "passed",
+    "verification": "structural_only"
+  },
+  "timings": {
+    "staticChartExtractionMs": 5.6,
+    "structuralVerificationMs": 52.2,
+    "totalMs": 497.8,
+    "validateAndPackageMs": 436.6
+  },
+  "viewports": []
+}

@@ -1,0 +1,40 @@
+{
+  "bytes_per_event": 10909.1060453,
+  "categories": {
+    "ccbar": 2160000,
+    "charged": 1315000,
+    "ddbar": 795000,
+    "mixed": 1275000,
+    "ssbar": 770000,
+    "taupair": 1570000,
+    "uubar": 2115000
+  },
+  "experiments": [
+    "e1004"
+  ],
+  "klm_nodes": 21334238,
+  "maximum_depth_quantiles": {
+    "max": 6.0,
+    "p50": 2.0,
+    "p90": 5.0,
+    "p95": 5.0,
+    "p99": 6.0
+  },
+  "missing_companions": 0,
+  "node_count_quantiles": {
+    "max": 119.0,
+    "p50": 44.0,
+    "p90": 63.0,
+    "p95": 68.0,
+    "p99": 78.0
+  },
+  "output_gib": 101.59896728862077,
+  "peak_rss_p99_mib": 769.7292578125,
+  "rejected_preflight_stderr": 1,
+  "shards": 2000,
+  "successful_non_whitespace_stderr": 0,
+  "throughput_median_events_per_second": 42.03531814339046,
+  "unique_event_uids": 10000000,
+  "unique_input_files": 1526,
+  "validated_events": 10000000
+}

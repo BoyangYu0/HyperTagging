@@ -1,0 +1,110 @@
+{
+  "actual_leaf_mode_distribution": {
+    "fixed_hypothesis_candidate": 278899874,
+    "klm_cluster": 21334238,
+    "raw_track_predicted_pid": 78163967,
+    "truth_topology_only": 0
+  },
+  "all_completion_markers_valid": true,
+  "b_root_distribution": {
+    "missing": 7410033,
+    "strict": 2589967
+  },
+  "campaign_config_digest": "fb070c6c9805a6e782dd12708e4f57e71ce5d47b5c55a25c44f436545ac04fd7",
+  "campaign_id": "campaign-fb070c6c9805-f4e54df23b5c",
+  "campaign_stage": "production_10m",
+  "category_distribution": {
+    "ccbar": 2160000,
+    "charged": 1315000,
+    "ddbar": 795000,
+    "mixed": 1275000,
+    "ssbar": 770000,
+    "taupair": 1570000,
+    "uubar": 2115000
+  },
+  "charge_conjugate_normalization": false,
+  "completed_shards": 2000,
+  "event_uid_digest": "dc28323ff840bbc0fcf725f549bf7acc2df89b5e1e0ab4f19e00a947ff17c4fe",
+  "feature_spec_hash": "01dc6c9bdf1e9c3f2b7675c102cb26912a1ff904f1138658b4c3dcf69b57be12",
+  "global_uid_validation_passes": 1,
+  "incomplete_reconstructable_branches": 0,
+  "klm_diagnostics": {
+    "collected_klm_records": 21334239,
+    "complete_branches_with_klm": 61217937,
+    "complete_branches_without_klm": 59687722,
+    "klm_clusters_associated_with_ecl": 8893623,
+    "klm_feature_availability": {
+      "associated_ecl_cluster:True": 21334238,
+      "energy:True": 21334238,
+      "innermost_layer:True": 21334238,
+      "layers:True": 21334238,
+      "momentum_magnitude:True": 21334238,
+      "time:True": 21334238,
+      "x:True": 21334238,
+      "y:True": 21334238,
+      "z:True": 21334238
+    },
+    "klm_nodes_by_category": {
+      "ccbar": 5185218,
+      "charged": 2779660,
+      "ddbar": 1766510,
+      "mixed": 2701448,
+      "ssbar": 1933172,
+      "taupair": 2283013,
+      "uubar": 4685217
+    },
+    "klm_nodes_pruned_or_unretained": 1,
+    "matched_reconstructed_klm_leaves": 14343922,
+    "retained_klm_nodes": 21334238,
+    "truth_kl_like_retained_leaves": 21334238,
+    "unmatched_klm_clusters": 6990316
+  },
+  "klm_node_distribution": {
+    "associated_with_ecl": 8893623,
+    "klm_nodes": 21334238,
+    "unmatched_or_unassociated": 12440615
+  },
+  "klm_training_scope": "included",
+  "leaf_kinematics_mode": "raw_track_predicted_pid",
+  "maximum_depth_quantiles": {
+    "max": 6.0,
+    "p50": 2.0,
+    "p90": 5.0,
+    "p95": 5.0,
+    "p99": 6.0
+  },
+  "missing_shards": [],
+  "model_feature_contract_hash": "546bc22b8f98b2924b402bcc79c479d997fb50026e88f9955a7ac99ce858e76e",
+  "node_count_quantiles": {
+    "max": 119.0,
+    "p50": 44.0,
+    "p90": 63.0,
+    "p95": 68.0,
+    "p99": 78.0
+  },
+  "output_bytes": 109091060453,
+  "output_bytes_per_event": 10909.1060453,
+  "pid_vocabulary_version": "legacy-reduced-pdg-v1",
+  "planned_category_distribution": {
+    "ccbar": 2160000,
+    "charged": 1315000,
+    "ddbar": 795000,
+    "mixed": 1275000,
+    "ssbar": 770000,
+    "taupair": 1570000,
+    "uubar": 2115000
+  },
+  "planned_events": 10000000,
+  "production_readiness_report_sha256": "befc2b55d330e714aaee9def412638fcd611bd16d45c9482b529baf58d214494",
+  "schema_version": "direct-mdst-tree-v4",
+  "source_git_commit": "f4e54df23b5c60115e475c5d68df4651899d678e",
+  "source_git_tree": "b6e3a4118b960e3a4676a61af9601438d56cef96",
+  "source_state": "clean",
+  "tasks": 2000,
+  "track_fit_policy": "max_p_value_then_pion_fallback-v1",
+  "track_fit_policy_distribution": {
+    "max_p_value_then_pion_fallback-v1": 10000000
+  },
+  "unique_event_uids": 10000000,
+  "validated_events": 10000000
+}

@@ -373,7 +373,13 @@ class _DirectMdstCollector:
                 momentum = fit.getMomentum()
                 charge = float(fit.getChargeSign())
                 px, py, pz = float(momentum.X()), float(momentum.Y()), float(momentum.Z())
+                if not all(math.isfinite(value) for value in (px, py, pz, charge)):
+                    self.collection_stats["tracks_with_non_finite_fit"] += 1
+                    continue
                 p2 = px * px + py * py + pz * pz
+                if not math.isfinite(p2):
+                    self.collection_stats["tracks_with_non_finite_fit"] += 1
+                    continue
                 energy_hypotheses = {
                     name: math.sqrt(p2 + PARTICLE_MASSES_GEV[pdg] ** 2)
                     for name, pdg in zip(CHARGED_STABLE_NAMES, CHARGED_STABLE_PDGS)
@@ -923,10 +929,11 @@ def _fit_momentum_components(fit: object) -> tuple[float, float, float] | None:
             ("Y", "Py"),
             ("Z", "Pz"),
         )
-        return tuple(
+        values = tuple(
             float(getattr(momentum, first)() if hasattr(momentum, first) else getattr(momentum, second)())
             for first, second in getters
-        )  # type: ignore[return-value]
+        )
+        return values if all(math.isfinite(value) for value in values) else None
     except Exception:
         return None
 

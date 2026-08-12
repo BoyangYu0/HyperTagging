@@ -9,7 +9,7 @@ OUTPUT_ROOT="${OUTPUT_ROOT:-/data/dust/user/boyangyu/hypertagging/production_10m
 MANIFEST="${MANIFEST:-${OUTPUT_ROOT}/manifests/mdst_10m.jsonl}"
 TARGET_EVENTS="${TARGET_EVENTS:-10000000}"
 EVENTS_PER_TASK="${EVENTS_PER_TASK:-5000}"
-MAX_CONCURRENT="${MAX_CONCURRENT:-50}"
+MAX_CONCURRENT="${MAX_CONCURRENT:-200}"
 CONDOR_RUNTIME="${CONDOR_RUNTIME:-7200}"
 CONDOR_MEMORY="${CONDOR_MEMORY:-8GB}"
 CONDOR_CPUS="${CONDOR_CPUS:-2}"
@@ -59,8 +59,12 @@ if [[ "${MODE}" == "worker" ]]; then
     echo "--worker requires a task ID" >&2
     exit 1
   fi
+  # Belle II's setup scripts probe optional environment variables directly.
+  # Temporarily disable nounset so a clean Condor environment can be initialized.
+  set +u
   source /cvmfs/belle.cern.ch/tools/b2setup release-08-03-00
   source "${VENV_ROOT}/bin/activate"
+  set -u
   export BASF2_PYTHON_SITE
   export OMP_NUM_THREADS="${CONDOR_CPUS}"
   export MKL_NUM_THREADS="${CONDOR_CPUS}"
@@ -119,7 +123,7 @@ request_memory = ${CONDOR_MEMORY}
 +RequestRuntime = ${CONDOR_RUNTIME}
 max_materialize = ${MAX_CONCURRENT}
 max_idle = ${MAX_CONCURRENT}
-environment = "MANIFEST=${MANIFEST};OUTPUT_ROOT=${OUTPUT_ROOT};VENV_ROOT=${VENV_ROOT};REPO_ROOT=${REPO_ROOT};BASF2_PYTHON_SITE=${BASF2_PYTHON_SITE};CONDOR_CPUS=${CONDOR_CPUS}"
+environment = "MANIFEST=${MANIFEST} OUTPUT_ROOT=${OUTPUT_ROOT} VENV_ROOT=${VENV_ROOT} REPO_ROOT=${REPO_ROOT} BASF2_PYTHON_SITE=${BASF2_PYTHON_SITE} CONDOR_CPUS=${CONDOR_CPUS}"
 output = ${OUTPUT_ROOT}/logs/mdst-prod-10m-\$(ClusterId).\$(ProcId).out
 error = ${OUTPUT_ROOT}/logs/mdst-prod-10m-\$(ClusterId).\$(ProcId).err
 log = ${OUTPUT_ROOT}/logs/mdst-prod-10m-\$(ClusterId).log

@@ -166,7 +166,13 @@ def _file_identity(path: Path, *, checksum: bool = False) -> dict[str, Any]:
     identity: dict[str, Any] = {
         "input_file_size": int(stat.st_size),
         "input_file_mtime_ns": int(stat.st_mtime_ns),
-        "input_file_identity": f"stat:{stat.st_dev}:{stat.st_ino}:{stat.st_size}:{stat.st_mtime_ns}",
+        # st_dev is a client-local mount identifier and is not stable across
+        # worker hosts for shared filesystems such as PNFS.  The manifest also
+        # binds the absolute path, size, and nanosecond mtime; retain the inode
+        # as a stable namespace identity without introducing a host-local field.
+        "input_file_identity": (
+            f"stat-v2:{stat.st_ino}:{stat.st_size}:{stat.st_mtime_ns}"
+        ),
         "input_file_sha256": None,
     }
     if checksum:
@@ -1543,6 +1549,8 @@ def render_resubmit(
 
     task_ids = list_missing_tasks(manifest)
     queue_values = ",".join(str(value) for value in task_ids)
+    campaign_root = manifest.resolve().parent.parent
+    log_dir = campaign_root / "logs" / "condor"
     text = "\n".join(
         [
             "universe = vanilla",
@@ -1551,16 +1559,20 @@ def render_resubmit(
             f"initialdir = {repo_root}",
             "getenv = True",
             "should_transfer_files = NO",
-            f'environment = "MANIFEST={manifest}"',
-            "output = resubmit-$(ClusterId).$(task_id).out",
-            "error = resubmit-$(ClusterId).$(task_id).err",
-            "log = resubmit-$(ClusterId).log",
+            (
+                f'environment = "MANIFEST={manifest.resolve()} '
+                f'REPO_ROOT={repo_root.resolve()} OUTPUT_ROOT={campaign_root}"'
+            ),
+            f"output = {log_dir}/mdst-$(ClusterId).$(task_id).out",
+            f"error = {log_dir}/mdst-$(ClusterId).$(task_id).err",
+            f"log = {log_dir}/mdst-$(ClusterId).log",
             (f"queue task_id in ({queue_values})" if task_ids else "# no missing tasks"),
             "",
         ]
     )
     if output is not None:
         output.parent.mkdir(parents=True, exist_ok=True)
+        log_dir.mkdir(parents=True, exist_ok=True)
         output.write_text(text, encoding="utf-8")
     if submit:
         if output is None:

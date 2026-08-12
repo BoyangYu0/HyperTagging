@@ -29,6 +29,13 @@ conflict diagnostics are part of the hyperbolic inspection notebook.
 The real mDST and trained-physics notebooks are real-only. Missing inputs write
 `NOT RUN` and raise a clear guard; they never substitute fixtures.
 
+Completed production evidence is kept separately from the fixture-driven
+notebook registry. The compact 10M RI campaign bundle, including executed
+notebooks, figures, numerical reports, and provenance, is available at
+[`production_10m_ri_all_exp/`](production_10m_ri_all_exp/README.md). Large data
+payloads and per-shard manifests remain under the external production root and
+are intentionally excluded from Git.
+
 Overlap is intentional and narrow: dataset inspection owns schema/PID/tree
 inspection; preprocessing QA owns the aggregate closure decision; four-vector
 validation owns detailed closure visualization; direct-GPT inspection owns
