@@ -1,12 +1,23 @@
-model_preset: production_baseline
+model_preset: gpu_debug
+scientific_mode: true
+curriculum_mode: progressive
+require_final_curriculum_phase: true
+warmup_fraction: 0.05
+max_warmup_steps: 10000
+validation_events: 256
+validation_views:
+  - fsp_topology_anticollapse
+  - truth_guided_distance_radius
+  - multilevel_channel_memory
+  - corrupted_composites_hard_negatives
 channel_memory_size: 4096
 channel_zero_positive_validation_window: 1
 channel_zero_positive_action: warn
 objective_gradient_diagnostics: true
 objective_gradient_diagnostics_every: 1
 pilot_objective_preflight: true
-objective_dominance_ratio: 100.0
-pilot_objective_violation_action: warn
+objective_dominance_ratio: 20.0
+pilot_objective_violation_action: fail
 best_metric: validation_full_training_objective
 lca_relation_weight: 1.0
 parent_ranking_weight: 1.0

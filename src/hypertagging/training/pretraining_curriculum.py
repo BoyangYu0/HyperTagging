@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from enum import Enum
 
 import torch
@@ -18,6 +18,123 @@ class PretrainingStage(str, Enum):
     FSP_ONLY = "fsp_only"
     TRUTH_GUIDED_MULTILEVEL = "truth_guided_multilevel"
     CORRUPTED_COMPOSITES = "corrupted_composites"
+
+
+CURRICULUM_CONTRACT_VERSION = "progressive-pretraining-phases-v1"
+
+
+@dataclass(frozen=True)
+class PretrainingPhase:
+    name: str
+    view: PretrainingStage
+    fraction: float
+    objectives: tuple[str, ...]
+
+
+DEFAULT_PRETRAINING_PHASES: tuple[PretrainingPhase, ...] = (
+    PretrainingPhase(
+        "fsp_topology_anticollapse",
+        PretrainingStage.FSP_ONLY,
+        0.20,
+        ("lca", "var", "cov", "leaf_pid"),
+    ),
+    PretrainingPhase(
+        "truth_guided_distance_radius",
+        PretrainingStage.TRUTH_GUIDED_MULTILEVEL,
+        0.25,
+        ("lca", "parent", "var", "cov", "leaf_pid", "tree_distance", "depth"),
+    ),
+    PretrainingPhase(
+        "multilevel_channel_memory",
+        PretrainingStage.TRUTH_GUIDED_MULTILEVEL,
+        0.30,
+        (
+            "lca", "parent", "var", "cov", "leaf_pid", "tree_distance",
+            "depth", "channel",
+        ),
+    ),
+    PretrainingPhase(
+        "corrupted_composites_hard_negatives",
+        PretrainingStage.CORRUPTED_COMPOSITES,
+        0.25,
+        (
+            "lca", "parent", "var", "cov", "leaf_pid", "tree_distance",
+            "depth", "channel", "corruption", "candidate_correctness",
+            "hard_negative",
+        ),
+    ),
+)
+
+
+@dataclass(frozen=True)
+class ProgressivePhaseSchedule:
+    unit: str
+    durations: tuple[int, ...]
+    phases: tuple[PretrainingPhase, ...] = DEFAULT_PRETRAINING_PHASES
+    mode: str = "progressive"
+
+    def __post_init__(self) -> None:
+        if self.unit not in {"optimizer_step", "event"}:
+            raise ValueError("curriculum phase unit must be optimizer_step or event")
+        if self.mode not in {"progressive", "legacy_alternating_ablation"}:
+            raise ValueError("unknown curriculum mode")
+        if len(self.durations) != len(self.phases):
+            raise ValueError("curriculum durations must match the four named phases")
+        if any(duration < 0 for duration in self.durations) or not sum(self.durations):
+            raise ValueError("curriculum phase durations must form a finite positive budget")
+
+    @property
+    def total_budget(self) -> int:
+        return sum(self.durations)
+
+    def phase_index(self, *, step: int, events: int) -> int:
+        cursor = step if self.unit == "optimizer_step" else events
+        if self.mode == "legacy_alternating_ablation":
+            return cursor % len(self.phases)
+        cumulative = 0
+        for index, duration in enumerate(self.durations):
+            cumulative += duration
+            if cursor < cumulative:
+                return index
+        return len(self.phases) - 1
+
+    def phase(self, *, step: int, events: int) -> PretrainingPhase:
+        return self.phases[self.phase_index(step=step, events=events)]
+
+    def contract(self) -> dict[str, object]:
+        return {
+            "version": CURRICULUM_CONTRACT_VERSION,
+            "mode": self.mode,
+            "unit": self.unit,
+            "durations": list(self.durations),
+            "total_budget": self.total_budget,
+            "phases": [
+                {
+                    **asdict(phase),
+                    "view": phase.view.value,
+                    "objectives": list(phase.objectives),
+                }
+                for phase in self.phases
+            ],
+        }
+
+
+def default_phase_durations(total_budget: int) -> tuple[int, ...]:
+    if total_budget <= 0:
+        raise ValueError("curriculum budget must be positive")
+    if total_budget < len(DEFAULT_PRETRAINING_PHASES):
+        return tuple(1 if index < total_budget else 0 for index in range(4))
+    remaining = total_budget - len(DEFAULT_PRETRAINING_PHASES)
+    raw = [phase.fraction * remaining for phase in DEFAULT_PRETRAINING_PHASES]
+    result = [1 + int(value) for value in raw]
+    leftovers = total_budget - sum(result)
+    order = sorted(
+        range(len(raw)), key=lambda index: (raw[index] - int(raw[index]), -index),
+        reverse=True,
+    )
+    for index in order[:leftovers]:
+        result[index] += 1
+    return tuple(result)
 
 
 @dataclass(frozen=True)
@@ -309,10 +426,15 @@ def _ancestor_positions(parent: torch.Tensor, node: int) -> set[int]:
 
 
 __all__ = [
+    "CURRICULUM_CONTRACT_VERSION",
     "CurriculumBatch",
+    "DEFAULT_PRETRAINING_PHASES",
+    "PretrainingPhase",
     "PretrainingStage",
+    "ProgressivePhaseSchedule",
     "build_curriculum_batch",
     "curriculum_attention_mask",
+    "default_phase_durations",
     "relation_aware_hard_negative_pairs",
     "hard_negative_pairs_with_classes",
 ]

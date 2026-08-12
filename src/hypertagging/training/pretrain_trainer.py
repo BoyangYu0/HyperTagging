@@ -40,10 +40,17 @@ from hypertagging.training.data_module import RealDataModule, build_real_data_mo
 from hypertagging.training.hyperbolic_pretrain import TreeRelationHead
 from hypertagging.training.logging import JsonlLogger
 from hypertagging.training.pretraining_curriculum import (
+    DEFAULT_PRETRAINING_PHASES,
     PretrainingStage,
+    ProgressivePhaseSchedule,
     build_curriculum_batch,
+    default_phase_durations,
 )
-from hypertagging.training.validation import validate_contextual_geometry
+from hypertagging.training.fixed_validation import select_validation_events
+from hypertagging.training.learning_rate import (
+    build_warmup_cosine_scheduler,
+    resolve_resume_schedule_contract,
+)
 from hypertagging.data.streaming import RuntimeFeatureNormalizer, StreamingCursor
 from hypertagging.utils.seeds import seed_everything
 from hypertagging.reconstruction.pid_state import rebuild_runtime_pid_state
@@ -61,6 +68,11 @@ class PretrainConfig:
     max_events: int | None = None
     seed: int = 7
     learning_rate: float = 1e-3
+    lr_schedule_total_steps: int | None = None
+    warmup_fraction: float = 0.05
+    warmup_steps: int | None = None
+    max_warmup_steps: int = 10_000
+    min_lr_ratio: float = 0.0
     weight_decay: float = 1e-4
     gradient_clip: float = 1.0
     checkpoint_every: int = 100
@@ -71,6 +83,10 @@ class PretrainConfig:
         PretrainingStage.TRUTH_GUIDED_MULTILEVEL.value,
         PretrainingStage.CORRUPTED_COMPOSITES.value,
     )
+    curriculum_mode: str = "progressive"
+    curriculum_phase_steps: tuple[int, ...] = ()
+    curriculum_phase_events: tuple[int, ...] = ()
+    require_final_curriculum_phase: bool = False
     curvature: float = 1.0
     mixed_precision: bool = True
     ablation: str = "full_revised"
@@ -97,6 +113,11 @@ class PretrainConfig:
     max_cardinality: int | None = None
     max_cardinality_by_level: tuple[tuple[int, int], ...] = ()
     validation_batches: int = 4
+    validation_events: int | None = None
+    validation_views: tuple[str, ...] = tuple(
+        phase.name for phase in DEFAULT_PRETRAINING_PHASES
+    )
+    scientific_mode: bool = False
     channel_pooling: str = "mean_all"
     tangent_variance_target: float | None = None
     hyper_projection_init_scale: float | None = None
@@ -110,8 +131,8 @@ class PretrainConfig:
     objective_gradient_diagnostics: bool = False
     objective_gradient_diagnostics_every: int = 100
     pilot_objective_preflight: bool = False
-    objective_dominance_ratio: float = 100.0
-    pilot_objective_violation_action: str = "warn"
+    objective_dominance_ratio: float = 20.0
+    pilot_objective_violation_action: str = "fail"
     lca_relation_weight: float = 1.0
     parent_ranking_weight: float = 1.0
     exact_tree_distance_weight: float = 1.0
@@ -302,6 +323,14 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
         raise ValueError("max_steps must be positive")
     if config.validate_every <= 0 or config.validation_batches <= 0:
         raise ValueError("validate_every and validation_batches must be positive")
+    if config.validation_events is not None and config.validation_events <= 0:
+        raise ValueError("validation_events must be positive when supplied")
+    if config.curriculum_mode not in {"progressive", "legacy_alternating_ablation"}:
+        raise ValueError("unknown curriculum_mode")
+    if config.curriculum_phase_steps and config.curriculum_phase_events:
+        raise ValueError("configure curriculum phase budgets in steps or events, not both")
+    if config.scientific_mode and config.curriculum_mode != "progressive":
+        raise ValueError("scientific pretraining requires the progressive curriculum")
     if config.log_every <= 0:
         raise ValueError("log_every must be positive")
     if config.best_mode not in {"min", "max"}:
@@ -357,6 +386,7 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
         ),
         dataset_index=config.dataset_index,
         rescan_dataset=config.rescan_dataset,
+        scientific_mode=config.scientific_mode,
     )
     output_dir = Path(config.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -411,10 +441,20 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
         lr=config.learning_rate,
         weight_decay=config.weight_decay,
     )
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer,
-        T_max=max(config.max_steps, 1),
+    lr_contract = resolve_resume_schedule_contract(
+        resume_payload=resume_payload,
+        configured_total_steps=config.lr_schedule_total_steps,
+        run_max_steps=config.max_steps,
+        warmup_fraction=config.warmup_fraction,
+        warmup_steps=config.warmup_steps,
+        max_warmup_steps=config.max_warmup_steps,
+        min_lr_ratio=config.min_lr_ratio,
+        base_lrs=[group["lr"] for group in optimizer.param_groups],
     )
+    scheduler = build_warmup_cosine_scheduler(optimizer, lr_contract)
+    scheduler.hypertagging_contract = lr_contract
+    phase_schedule = _resolve_phase_schedule(config, resume_payload)
+    model.curriculum_schedule_contract = phase_schedule.contract()
     scaler = torch.amp.GradScaler("cuda", enabled=device.type == "cuda" and config.mixed_precision)
     start_step = 0
     if config.resume:
@@ -455,6 +495,21 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
     final_loss = 0.0
     final_metrics: dict[str, float] = {}
     restored_training_state = (resume_payload or {}).get("training_state", {})
+    phase_events_completed = int(
+        restored_training_state.get("curriculum_phase_cursor", {}).get(
+            "events_completed", 0
+        )
+    )
+    final_phase_entered = bool(
+        restored_training_state.get("curriculum_phase_cursor", {}).get(
+            "final_phase_entered", False
+        )
+    )
+    restored_validation_selection = (resume_payload or {}).get(
+        "validation_selection", {}
+    )
+    validation_uids = list(restored_validation_selection.get("event_uids", []))
+    model.fixed_validation_uids = validation_uids
     if restored_training_state and (
         restored_training_state.get("best_metric") != config.best_metric
         or restored_training_state.get("best_mode") != config.best_mode
@@ -477,7 +532,22 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
     zero_positive_windows = int(restored_training_state.get(
         "channel_zero_positive_validation_windows", 0
     ))
+    completed_steps = start_step
     for step in range(start_step, config.max_steps):
+        if (
+            phase_schedule.mode == "progressive"
+            and (
+                (
+                    phase_schedule.unit == "event"
+                    and phase_events_completed >= phase_schedule.total_budget
+                )
+                or (
+                    phase_schedule.unit == "optimizer_step"
+                    and step >= phase_schedule.total_budget
+                )
+            )
+        ):
+            break
         try:
             next_batch = next(batch_iterator)
         except StopIteration:
@@ -496,7 +566,12 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
         cursor.events_consumed += int(next_batch["node_mask"].shape[0])
         batch = _to_device(next_batch, device)
         _add_topology_labels(batch)
-        stage = PretrainingStage(config.curriculum[step % len(config.curriculum)])
+        phase_index = phase_schedule.phase_index(
+            step=step, events=phase_events_completed
+        )
+        phase = phase_schedule.phases[phase_index]
+        stage = phase.view
+        final_phase_entered |= phase_index == len(phase_schedule.phases) - 1
         curriculum = build_curriculum_batch(
             batch, stage, seed=config.seed + step,
             corruption_objective=config.corruption_objective,
@@ -592,7 +667,7 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 channel_memory_embeddings=memory_embeddings,
                 channel_memory_full_truth_ids=memory_full_ids,
                 channel_memory_reconstructable_ids=memory_reco_ids,
-                weights=_pretraining_weights(config),
+                weights=_pretraining_weights(config, phase=phase),
                 curvature=config.curvature,
                 full_event_max_level=train_batch.get("full_event_max_level"),
                 tangent_variance_target=architecture.tangent_variance_target,
@@ -636,12 +711,16 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 curriculum.hard_negative_pairs,
                 curvature=config.curvature,
             )
+            enabled = set(phase.objectives)
             loss = (
                 loss_output.total
-                + config.leaf_pid_weight * leaf_pid_loss
+                + config.leaf_pid_weight * leaf_pid_loss * float("leaf_pid" in enabled)
                 + config.corruption_class_weight * corruption_loss
+                * float("corruption" in enabled)
                 + config.candidate_correctness_weight * correctness_loss
+                * float("candidate_correctness" in enabled)
                 + config.hard_negative_weight * hard_negative_loss
+                * float("hard_negative" in enabled)
             )
         enqueue_mask = (
             branch_mask
@@ -649,7 +728,7 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 "b_root_discovery_valid", torch.ones_like(branch_mask[:, 0])
             )[:, None]
         )
-        if stage is PretrainingStage.CORRUPTED_COMPOSITES:
+        if "channel" not in phase.objectives or stage is PretrainingStage.CORRUPTED_COMPOSITES:
             enqueue_mask = torch.zeros_like(enqueue_mask)
         model.channel_memory.enqueue(
             branch_embeddings,
@@ -742,7 +821,8 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 len(objective_report["zero_gradient_objectives"])
             )
             if config.pilot_objective_preflight:
-                component_weights = _pretraining_weights(config)
+                component_weights = _pretraining_weights(config, phase=phase)
+                active_objectives = set(phase.objectives)
                 objective_weights = {
                     "lca": component_weights["lca"],
                     "parent": component_weights["parent"],
@@ -751,10 +831,14 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                     "channel": component_weights["channel"],
                     "variance": component_weights["var"],
                     "covariance": component_weights["cov"],
-                    "leaf_pid": config.leaf_pid_weight,
-                    "corruption_class": config.corruption_class_weight,
-                    "candidate_correctness": config.candidate_correctness_weight,
-                    "hard_negative": config.hard_negative_weight,
+                    "leaf_pid": config.leaf_pid_weight
+                    * float("leaf_pid" in active_objectives),
+                    "corruption_class": config.corruption_class_weight
+                    * float("corruption" in active_objectives),
+                    "candidate_correctness": config.candidate_correctness_weight
+                    * float("candidate_correctness" in active_objectives),
+                    "hard_negative": config.hard_negative_weight
+                    * float("hard_negative" in active_objectives),
                 }
                 diagnostic = loss_output.diagnostics
                 objective_denominators = {
@@ -822,6 +906,8 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
         scaler.step(optimizer)
         scaler.update()
         scheduler.step()
+        phase_events_completed += int(next_batch["node_mask"].shape[0])
+        completed_steps = step + 1
         final_loss = float(loss.detach().cpu())
         final_metrics = {
             "loss": final_loss,
@@ -830,6 +916,10 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
             "candidate_correctness_loss": float(correctness_loss.detach().cpu()),
             "hard_negative_loss": float(hard_negative_loss.detach().cpu()),
             "hard_negative_count": float(curriculum.hard_negative_pairs.shape[0]),
+            "learning_rate": float(optimizer.param_groups[0]["lr"]),
+            "curriculum_phase_index": float(phase_index),
+            "curriculum_phase_events_completed": float(phase_events_completed),
+            "curriculum_final_phase_entered": float(final_phase_entered),
             "active_denominator_leaf_pid": float(
                 (
                     train_batch["node_mask"]
@@ -851,13 +941,19 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
             **gradient_metrics,
         }
         if (step + 1) % config.log_every == 0 or step == start_step or step + 1 == config.max_steps:
-            logger.log(step=step + 1, stage=stage.value, **final_metrics)
+            logger.log(
+                step=step + 1,
+                stage=stage.value,
+                curriculum_phase=phase.name,
+                **final_metrics,
+            )
         if (step + 1) % config.validate_every == 0:
             validation_metrics = _validate_pretraining(
                 model,
                 data_module,
                 device=device,
                 config=config,
+                selected_event_uids=validation_uids,
             )
             final_metrics.update(validation_metrics)
             logger.log(step=step + 1, split="validation", **validation_metrics)
@@ -943,13 +1039,14 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                 zero_positive_windows=zero_positive_windows,
                 diagnostic_track_values=diagnostic_track_values,
             )
-    if last_validation_step != config.max_steps:
+    if last_validation_step != completed_steps:
         validation_metrics = _validate_pretraining(
-            model, data_module, device=device, config=config
+            model, data_module, device=device, config=config,
+            selected_event_uids=validation_uids,
         )
         final_metrics.update(validation_metrics)
-        logger.log(step=config.max_steps, split="validation", **validation_metrics)
-        last_validation_step = config.max_steps
+        logger.log(step=completed_steps, split="validation", **validation_metrics)
+        last_validation_step = completed_steps
         zero_positive_windows = _check_channel_positive_window(
             validation_metrics, zero_positive_windows, config
         )
@@ -962,7 +1059,7 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
             _save_pretrain_checkpoint(
                 output_dir / track.filename,
                 model=model, optimizer=optimizer, scheduler=scheduler, scaler=scaler,
-                config=config, data_module=data_module, step=config.max_steps,
+                config=config, data_module=data_module, step=completed_steps,
                 metrics=final_metrics, streaming_cursor=cursor.state_dict(),
                 best_metric_value=best_validation_loss,
                 last_validation_step=last_validation_step,
@@ -982,7 +1079,7 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
             _save_pretrain_checkpoint(
                 output_dir / "best.pt",
                 model=model, optimizer=optimizer, scheduler=scheduler, scaler=scaler,
-                config=config, data_module=data_module, step=config.max_steps,
+                config=config, data_module=data_module, step=completed_steps,
                 metrics=final_metrics, streaming_cursor=cursor.state_dict(),
                 best_metric_value=best_validation_loss,
                 last_validation_step=last_validation_step,
@@ -997,10 +1094,17 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
                     "reason": "new_principal_configured_checkpoint",
                 },
             )
+    if (
+        (config.scientific_mode or config.require_final_curriculum_phase)
+        and not final_phase_entered
+    ):
+        raise RuntimeError(
+            "training ended before entering the final required curriculum phase"
+        )
     _save_pretrain_checkpoint(
         output_dir / "latest.pt",
         model=model, optimizer=optimizer, scheduler=scheduler, scaler=scaler,
-        config=config, data_module=data_module, step=config.max_steps,
+        config=config, data_module=data_module, step=completed_steps,
         metrics=final_metrics, streaming_cursor=cursor.state_dict(),
         best_metric_value=best_validation_loss,
         last_validation_step=last_validation_step,
@@ -1015,7 +1119,7 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
         scaler=scaler,
         config=config,
         data_module=data_module,
-        step=config.max_steps,
+        step=completed_steps,
         metrics=final_metrics,
         streaming_cursor=cursor.state_dict(),
         best_metric_value=best_validation_loss,
@@ -1026,7 +1130,7 @@ def train_hyperbolic_pretraining(config: PretrainConfig) -> TrainingResult:
     return TrainingResult(
         checkpoint=checkpoint,
         log_path=logger.path,
-        steps=config.max_steps,
+        steps=completed_steps,
         final_loss=final_loss,
         metrics=final_metrics,
         data_module=data_module,
@@ -1040,6 +1144,7 @@ def _validate_pretraining(
     *,
     device: torch.device,
     config: PretrainConfig,
+    selected_event_uids: list[str] | None = None,
 ) -> dict[str, float]:
     """Aggregate bounded held-out objective and representation diagnostics."""
 
@@ -1063,25 +1168,54 @@ def _validate_pretraining(
         hyperbolic_level_encoding=config.hyperbolic_level_encoding,
     )
     split = "validation" if data_module.split_counts.get("validation", 0) else "train"
+    if config.scientific_mode and split != "validation":
+        raise ValueError("scientific validation cannot fall back to the training role")
     totals: dict[str, list[float]] = {}
     retrieval_embeddings: list[torch.Tensor] = []
     retrieval_ids: list[torch.Tensor] = []
-    batch_count = event_count = 0
-    for raw_batch in data_module.batches(
-        split, batch_size=config.batch_size, shuffle=False
+    event_limit = config.validation_events or (
+        config.validation_batches * config.batch_size
+    )
+    restored_uids = tuple(selected_event_uids or ())
+    events, fixed_uids, _selection_contract = select_validation_events(
+        data_module.iter_events(split, shuffle=False),
+        limit=event_limit,
+        scientific_mode=config.scientific_mode,
+        selection_manifest_hash=data_module.selection_manifest_hash,
+        seed=config.seed,
+        restored_event_uids=restored_uids,
+    )
+    if not events:
+        raise ValueError("fixed validation selection contains no events")
+    if selected_event_uids is not None and not selected_event_uids:
+        selected_event_uids.extend(fixed_uids)
+    raw_batches = [
+        data_module.normalize_batch(collate_heterogeneous_events(events[start:end]))
+        for start in range(0, len(events), config.batch_size)
+        for end in [min(start + config.batch_size, len(events))]
+    ]
+    phase_by_name = {phase.name: phase for phase in DEFAULT_PRETRAINING_PHASES}
+    for phase in DEFAULT_PRETRAINING_PHASES:
+        phase_by_name.setdefault(phase.view.value, phase)
+    unknown_views = set(config.validation_views) - set(phase_by_name)
+    if unknown_views:
+        raise ValueError(f"unknown named validation views: {sorted(unknown_views)}")
+    validation_work = [
+        (raw_batch, phase_by_name[view_name], view_name)
+        for raw_batch in raw_batches
+        for view_name in config.validation_views
+    ]
+    batch_count = len(raw_batches)
+    event_count = len(events)
+    for evaluation_count, (raw_batch, validation_phase, validation_view_name) in enumerate(
+        validation_work, start=1
     ):
-        if batch_count >= config.validation_batches:
-            break
-        batch_count += 1
-        event_count += int(raw_batch["node_mask"].shape[0])
         batch = _to_device(raw_batch, device)
         _add_topology_labels(batch)
-        validation_stage = PretrainingStage(
-            config.curriculum[(batch_count - 1) % len(config.curriculum)]
-        )
+        validation_stage = validation_phase.view
         curriculum = build_curriculum_batch(
             batch, validation_stage,
-            seed=config.seed + batch_count,
+            seed=config.seed + evaluation_count,
             corruption_objective=config.corruption_objective,
             truth_guided_structural_relation_inputs=(
                 config.truth_guided_structural_relation_inputs
@@ -1164,7 +1298,7 @@ def _validate_pretraining(
                 ], dim=-1,
             ),
             channel_branch_count_arrays=structural_features,
-            weights=_pretraining_weights(config),
+            weights=_pretraining_weights(config, phase=validation_phase),
             curvature=config.curvature,
             full_event_max_level=validation_batch.get("full_event_max_level"),
             tangent_variance_target=architecture.tangent_variance_target,
@@ -1216,7 +1350,7 @@ def _validate_pretraining(
             + config.hard_negative_weight * hard_negative_loss
         )
         totals.setdefault("validation_principal_loss", []).append(float(principal_loss))
-        stage_prefix = f"validation_{validation_stage.value}"
+        stage_prefix = f"validation_{validation_view_name}"
         totals.setdefault(f"{stage_prefix}_principal_loss", []).append(
             float(principal_loss)
         )
@@ -1241,7 +1375,7 @@ def _validate_pretraining(
                 batch,
                 stage=diagnostic_stage,
                 config=config,
-                seed=config.seed + 10_000 + batch_count,
+                seed=config.seed + 10_000 + evaluation_count,
             )
             diagnostic_prefix = f"validation_{diagnostic_stage.value}"
             totals.setdefault(
@@ -1329,12 +1463,16 @@ def _validate_pretraining(
     }
     metrics["validation_batches"] = float(batch_count)
     metrics["validation_events"] = float(event_count)
+    metrics["validation_named_view_evaluations"] = float(len(validation_work))
     return metrics
 
 
-def _pretraining_weights(config: PretrainConfig) -> dict[str, float]:
+def _pretraining_weights(
+    config: PretrainConfig,
+    phase: Any | None = None,
+) -> dict[str, float]:
     ablation = ALL_ABLATIONS[config.ablation]
-    return {
+    weights = {
         "lca": config.lca_relation_weight * float(ablation.lca_relation),
         "parent": config.parent_ranking_weight * float(ablation.parent_ranking),
         "tree_distance": config.exact_tree_distance_weight * float(
@@ -1345,6 +1483,12 @@ def _pretraining_weights(config: PretrainConfig) -> dict[str, float]:
         "var": config.variance_weight * float(ablation.variance_covariance),
         "cov": config.covariance_weight * float(ablation.variance_covariance),
     }
+    if phase is not None:
+        active = set(phase.objectives)
+        weights = {
+            name: value * float(name in active) for name, value in weights.items()
+        }
+    return weights
 
 
 @torch.no_grad()
@@ -1776,6 +1920,15 @@ def _save_pretrain_checkpoint(
         step=step,
         config=asdict(config),
         metrics=metrics,
+        schedule_state={
+            "step": int(step),
+            "learning_rates": [
+                float(group["lr"]) for group in optimizer.param_groups
+            ],
+            "lr_schedule_contract": dict(
+                getattr(scheduler, "hypertagging_contract", {})
+            ),
+        },
         normalizer_state=data_module.normalization_state(),
         split_manifest_hash=data_module.split_manifest_hash,
         feature_contract={
@@ -1836,7 +1989,118 @@ def _save_pretrain_checkpoint(
                     "mode": config.best_mode,
                 }
             ),
+            "lr_schedule_contract": dict(
+                getattr(scheduler, "hypertagging_contract", {})
+            ),
+            "curriculum_schedule_contract": dict(
+                getattr(model, "curriculum_schedule_contract", {})
+            ),
+            "curriculum_phase_cursor": {
+                "completed_optimizer_steps": int(step),
+                "events_completed": int(
+                    metrics.get("curriculum_phase_events_completed", 0)
+                ),
+                "phase_index": int(metrics.get("curriculum_phase_index", 0)),
+                "final_phase_entered": bool(
+                    metrics.get("curriculum_final_phase_entered", 0)
+                ),
+            },
         },
+        validation_selection={
+            "split": "validation",
+            "event_uids": list(getattr(model, "fixed_validation_uids", [])),
+            "strategy": (
+                "manifest_validation_role_uid_hash"
+                if config.scientific_mode else "non_scientific_ci_prefix"
+            ),
+            "scientific_mode": bool(config.scientific_mode),
+            "named_views": list(config.validation_views),
+            "selection_manifest_hash": data_module.selection_manifest_hash or "",
+        },
+    )
+
+
+def _resolve_phase_schedule(
+    config: PretrainConfig,
+    resume_payload: dict[str, Any] | None,
+) -> ProgressivePhaseSchedule:
+    stored = (resume_payload or {}).get("training_state", {}).get(
+        "curriculum_schedule_contract"
+    )
+    if stored:
+        if stored.get("version") != "progressive-pretraining-phases-v1":
+            raise ValueError("unsupported checkpoint curriculum contract version")
+        if stored.get("mode") != config.curriculum_mode:
+            raise ValueError("resume curriculum mode differs from the checkpoint")
+        stored_durations = tuple(int(value) for value in stored["durations"])
+        if config.curriculum_phase_steps and (
+            stored.get("unit") != "optimizer_step"
+            or stored_durations != config.curriculum_phase_steps
+        ):
+            raise ValueError("resume curriculum step boundaries differ from the checkpoint")
+        if config.curriculum_phase_events and (
+            stored.get("unit") != "event"
+            or stored_durations != config.curriculum_phase_events
+        ):
+            raise ValueError("resume curriculum event boundaries differ from the checkpoint")
+        phases = (
+            _legacy_alternating_phases(config)
+            if config.curriculum_mode == "legacy_alternating_ablation"
+            else DEFAULT_PRETRAINING_PHASES
+        )
+        schedule = ProgressivePhaseSchedule(
+            unit=str(stored["unit"]),
+            durations=stored_durations,
+            phases=phases,
+            mode=config.curriculum_mode,
+        )
+        if schedule.contract() != stored:
+            raise ValueError("resume curriculum phase contract differs from the checkpoint")
+        return schedule
+    if config.curriculum_mode == "legacy_alternating_ablation":
+        phases = _legacy_alternating_phases(config)
+        return ProgressivePhaseSchedule(
+            unit="optimizer_step",
+            durations=tuple(1 for _ in phases),
+            phases=phases,
+            mode=config.curriculum_mode,
+        )
+    if config.curriculum_phase_events:
+        schedule = ProgressivePhaseSchedule(
+            unit="event", durations=tuple(config.curriculum_phase_events)
+        )
+    else:
+        schedule = ProgressivePhaseSchedule(
+            unit="optimizer_step",
+            durations=(
+                tuple(config.curriculum_phase_steps)
+                if config.curriculum_phase_steps
+                else default_phase_durations(config.max_steps)
+            ),
+        )
+    if config.scientific_mode and any(duration <= 0 for duration in schedule.durations):
+        raise ValueError(
+            "scientific curriculum budget must allocate time to all four phases"
+        )
+    return schedule
+
+
+def _legacy_alternating_phases(config: PretrainConfig) -> tuple[Any, ...]:
+    all_objectives = tuple(
+        dict.fromkeys(
+            objective
+            for phase in DEFAULT_PRETRAINING_PHASES
+            for objective in phase.objectives
+        )
+    )
+    return tuple(
+        type(DEFAULT_PRETRAINING_PHASES[0])(
+            f"legacy_alternating_{stage}",
+            PretrainingStage(stage),
+            1.0 / len(config.curriculum),
+            all_objectives,
+        )
+        for stage in config.curriculum
     )
 
 
@@ -1875,6 +2139,12 @@ def _pretrain_data_order_contract(
         "split_hash": data_module.split_manifest_hash,
         "target_policy": "complete_only",
         "curriculum_order": list(config.curriculum),
+        "curriculum_mode": config.curriculum_mode,
+        "curriculum_phase_steps": list(config.curriculum_phase_steps),
+        "curriculum_phase_events": list(config.curriculum_phase_events),
+        "scientific_mode": config.scientific_mode,
+        "validation_events": config.validation_events,
+        "validation_views": list(config.validation_views),
         "teacher_forcing_schedule": None,
         "level_sampling_mode": "curriculum_stage",
         "gradient_accumulation": 1,

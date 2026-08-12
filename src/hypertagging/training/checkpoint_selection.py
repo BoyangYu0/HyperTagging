@@ -123,11 +123,14 @@ def reconstruction_selection_contract(
     rollout_pid_temperature: float,
     target_policy: str,
     constraint_policy: Mapping[str, object],
+    eligibility_gates: Mapping[str, object] | None = None,
+    scientific_mode: bool = False,
+    validation_selection_manifest_hash: str = "",
 ) -> dict[str, object]:
     """Fields whose change makes checkpoint ranking incomparable on resume."""
 
     return {
-        "version": "reconstruction-checkpoint-selection-v3",
+        "version": "reconstruction-checkpoint-selection-v4",
         "primary_metric": best_metric,
         "primary_mode": best_mode,
         "tracks": [
@@ -159,6 +162,64 @@ def reconstruction_selection_contract(
             "type_probability": None,
         },
         "target_policy": target_policy,
+        "primary_eligibility_gates": dict(eligibility_gates or {}),
+        "validation_selection": {
+            "version": (
+                "manifest-role-uid-hash-v1"
+                if scientific_mode else "ci-source-prefix-v1"
+            ),
+            "scientific_mode": bool(scientific_mode),
+            "selection_manifest_hash": validation_selection_manifest_hash,
+        },
+    }
+
+
+def rollout_checkpoint_eligibility(
+    metrics: Mapping[str, float],
+    gates: Mapping[str, object],
+) -> dict[str, object]:
+    """Evaluate hard rollout gates independently of metric improvement."""
+
+    failures: list[str] = []
+    required_denominators = tuple(
+        str(name) for name in gates.get("required_denominators", ())
+    )
+    for name in required_denominators:
+        value = float(metrics.get(name, 0.0))
+        if not math.isfinite(value) or value <= 0:
+            failures.append(f"nonzero_denominator:{name}")
+    checks = (
+        (
+            "predicted_tree_validity_rate",
+            float(gates.get("minimum_tree_validity", 0.999)),
+            "minimum",
+        ),
+        (
+            "predicted_p4_closure_rate",
+            float(gates.get("minimum_p4_closure", 1.0)),
+            "minimum",
+        ),
+        (
+            "predicted_recursive_source_conflicts",
+            float(gates.get("maximum_recursive_source_conflicts", 0.0)),
+            "maximum",
+        ),
+    )
+    for metric, threshold, direction in checks:
+        value = float(metrics.get(metric, float("nan")))
+        if not math.isfinite(value):
+            failures.append(f"finite:{metric}")
+        elif direction == "minimum" and value < threshold:
+            failures.append(f"minimum:{metric}")
+        elif direction == "maximum" and value > threshold:
+            failures.append(f"maximum:{metric}")
+    return {
+        "eligible": not failures,
+        "failures": failures,
+        "evaluated_metrics": {
+            name: float(metrics.get(name, float("nan")))
+            for name, _, _ in checks
+        },
     }
 
 
@@ -184,5 +245,6 @@ __all__ = [
     "checkpoint_track_decisions",
     "initial_track_values",
     "reconstruction_selection_contract",
+    "rollout_checkpoint_eligibility",
     "selection_reason",
 ]

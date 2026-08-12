@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import torch
 from torch import nn
-import torch.nn.functional as F
 
 from hypertagging.preprocessing.pid_filter import PDG_TOKENS, validate_pid_tokens
 
@@ -56,46 +55,58 @@ class BoundedTangentScale(nn.Module):
 
 
 def project(x: torch.Tensor, *, curvature: float = 1.0, eps: float = 1e-5) -> torch.Tensor:
-    """Project points inside the Poincare ball."""
+    """Project points inside the Poincare ball in explicit FP32."""
 
-    max_norm = (1.0 - eps) / curvature**0.5
-    norm = torch.linalg.norm(x, dim=-1, keepdim=True).clamp_min(eps)
-    scale = torch.clamp(max_norm / norm, max=1.0)
-    return x * scale
+    with torch.autocast(device_type=x.device.type, enabled=False):
+        x32 = x.float()
+        max_norm = (1.0 - eps) / curvature**0.5
+        norm = torch.linalg.norm(x32, dim=-1, keepdim=True).clamp_min(eps)
+        scale = torch.clamp(max_norm / norm, max=1.0)
+        return x32 * scale
 
 
 def expmap0(v: torch.Tensor, *, curvature: float = 1.0, eps: float = 1e-8) -> torch.Tensor:
-    """Exponential map at the origin of the Poincare ball."""
+    """Exponential map at the origin of the Poincare ball in explicit FP32."""
 
-    sqrt_c = curvature**0.5
-    norm = torch.linalg.norm(v, dim=-1, keepdim=True).clamp_min(eps)
-    return project(torch.tanh(sqrt_c * norm) * v / (sqrt_c * norm), curvature=curvature)
+    with torch.autocast(device_type=v.device.type, enabled=False):
+        v32 = v.float()
+        sqrt_c = curvature**0.5
+        norm = torch.linalg.norm(v32, dim=-1, keepdim=True).clamp_min(eps)
+        return project(
+            torch.tanh(sqrt_c * norm) * v32 / (sqrt_c * norm),
+            curvature=curvature,
+        )
 
 
 def logmap0(x: torch.Tensor, *, curvature: float = 1.0, eps: float = 1e-8) -> torch.Tensor:
-    """Logarithmic map at the origin of the Poincare ball."""
+    """Logarithmic map at the origin of the Poincare ball in explicit FP32."""
 
-    x = project(x, curvature=curvature)
-    sqrt_c = curvature**0.5
-    norm = torch.linalg.norm(x, dim=-1, keepdim=True).clamp_min(eps)
-    return torch.atanh((sqrt_c * norm).clamp(max=1 - eps)) * x / (sqrt_c * norm)
+    with torch.autocast(device_type=x.device.type, enabled=False):
+        x32 = project(x.float(), curvature=curvature)
+        sqrt_c = curvature**0.5
+        norm = torch.linalg.norm(x32, dim=-1, keepdim=True).clamp_min(eps)
+        return (
+            torch.atanh((sqrt_c * norm).clamp(max=1 - eps))
+            * x32
+            / (sqrt_c * norm)
+        )
 
 
 def distance(x: torch.Tensor, y: torch.Tensor, *, curvature: float = 1.0, eps: float = 1e-8) -> torch.Tensor:
-    """Pairwise Poincare distance with broadcasting support."""
+    """Pairwise Poincare distance with broadcasting support in FP32."""
 
-    x = project(x, curvature=curvature)
-    y = project(y, curvature=curvature)
-    sqrt_c = curvature**0.5
-    diff_norm = torch.linalg.vector_norm(x - y, dim=-1)
-    x2 = (x**2).sum(dim=-1).clamp(max=(1 - eps) / curvature)
-    y2 = (y**2).sum(dim=-1).clamp(max=(1 - eps) / curvature)
-    denom = ((1 - curvature * x2) * (1 - curvature * y2)).clamp_min(eps)
-    # The equivalent asinh form has finite derivatives at coincident points;
-    # acosh(1 + delta) has an infinite derivative at delta=0 and can inject
-    # NaNs through diagonal relation-bias entries.
-    argument = sqrt_c * diff_norm / torch.sqrt(denom)
-    return 2.0 * torch.asinh(argument) / sqrt_c
+    with torch.autocast(device_type=x.device.type, enabled=False):
+        x32 = project(x.float(), curvature=curvature)
+        y32 = project(y.float(), curvature=curvature)
+        sqrt_c = curvature**0.5
+        diff_norm = torch.linalg.vector_norm(x32 - y32, dim=-1)
+        x2 = (x32**2).sum(dim=-1).clamp(max=(1 - eps) / curvature)
+        y2 = (y32**2).sum(dim=-1).clamp(max=(1 - eps) / curvature)
+        denom = ((1 - curvature * x2) * (1 - curvature * y2)).clamp_min(eps)
+        # The equivalent asinh form has finite derivatives at coincident points;
+        # acosh(1 + delta) has an infinite derivative at delta=0.
+        argument = sqrt_c * diff_norm / torch.sqrt(denom)
+        return 2.0 * torch.asinh(argument) / sqrt_c
 
 
 def radius(x: torch.Tensor, *, curvature: float = 1.0) -> torch.Tensor:

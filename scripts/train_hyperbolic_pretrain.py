@@ -12,12 +12,12 @@ SRC_ROOT = REPO_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from hypertagging.training.hyperbolic_pretrain import run_hyperbolic_pretrain_dry_run
-from hypertagging.training.pretrain_trainer import PretrainConfig, train_hyperbolic_pretraining
-from hypertagging.models.ablation import ALL_ABLATIONS
-from hypertagging.utils.gpu_safety import assert_full_training_requires_condor
-from hypertagging.training.config import resolve_argparse_namespace
-from hypertagging.training.model_config import MODEL_PRESETS
+from hypertagging.training.hyperbolic_pretrain import run_hyperbolic_pretrain_dry_run  # noqa: E402
+from hypertagging.training.pretrain_trainer import PretrainConfig, train_hyperbolic_pretraining  # noqa: E402
+from hypertagging.models.ablation import ALL_ABLATIONS  # noqa: E402
+from hypertagging.utils.gpu_safety import assert_full_training_requires_condor  # noqa: E402
+from hypertagging.training.config import resolve_argparse_namespace  # noqa: E402
+from hypertagging.training.model_config import MODEL_PRESETS  # noqa: E402
 
 
 def _level_int_pairs(value: str):
@@ -29,6 +29,14 @@ def _level_int_pairs(value: str):
     )
 
 
+def _int_tuple(value: str):
+    return tuple(int(item) for item in value.split(",") if item)
+
+
+def _string_tuple(value: str):
+    return tuple(item for item in value.split(",") if item)
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", default=None)
@@ -38,6 +46,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--tiny", action="store_true")
     parser.add_argument("--max-steps", type=int, default=2)
+    parser.add_argument("--lr-schedule-total-steps", type=int, default=None)
+    parser.add_argument("--warmup-fraction", type=float, default=0.05)
+    parser.add_argument("--warmup-steps", type=int, default=None)
+    parser.add_argument("--max-warmup-steps", type=int, default=10_000)
+    parser.add_argument("--min-lr-ratio", type=float, default=0.0)
     parser.add_argument("--max-events", type=int, default=None)
     parser.add_argument("--batch-size", type=int, default=2)
     parser.add_argument("--num-workers", type=int, default=0)
@@ -48,6 +61,26 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--log-every", type=int, default=10)
     parser.add_argument("--validate-every", type=int, default=100)
     parser.add_argument("--validation-batches", type=int, default=4)
+    parser.add_argument("--validation-events", type=int, default=None)
+    parser.add_argument(
+        "--validation-views",
+        type=_string_tuple,
+        default=(
+            "fsp_topology_anticollapse",
+            "truth_guided_distance_radius",
+            "multilevel_channel_memory",
+            "corrupted_composites_hard_negatives",
+        ),
+    )
+    parser.add_argument(
+        "--curriculum-mode",
+        choices=("progressive", "legacy_alternating_ablation"),
+        default="progressive",
+    )
+    parser.add_argument("--curriculum-phase-steps", type=_int_tuple, default=())
+    parser.add_argument("--curriculum-phase-events", type=_int_tuple, default=())
+    parser.add_argument("--require-final-curriculum-phase", action="store_true")
+    parser.add_argument("--scientific-mode", action="store_true")
     parser.add_argument(
         "--channel-pooling",
         choices=("mean_all", "fsp_only", "b_root", "learned_attention", "level_weighted"),
@@ -67,11 +100,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--objective-gradient-diagnostics", action="store_true")
     parser.add_argument("--objective-gradient-diagnostics-every", type=int, default=100)
     parser.add_argument("--pilot-objective-preflight", action="store_true")
-    parser.add_argument("--objective-dominance-ratio", type=float, default=100.0)
+    parser.add_argument("--objective-dominance-ratio", type=float, default=20.0)
     parser.add_argument(
         "--pilot-objective-violation-action",
         choices=("warn", "fail"),
-        default="warn",
+        default="fail",
     )
     parser.add_argument("--lca-relation-weight", type=float, default=1.0)
     parser.add_argument("--parent-ranking-weight", type=float, default=1.0)
@@ -128,12 +161,26 @@ def main(argv: list[str] | None = None) -> int:
                 output_dir=args.output_dir,
                 device=args.device,
                 max_steps=args.max_steps,
+                lr_schedule_total_steps=args.lr_schedule_total_steps,
+                warmup_fraction=args.warmup_fraction,
+                warmup_steps=args.warmup_steps,
+                max_warmup_steps=args.max_warmup_steps,
+                min_lr_ratio=args.min_lr_ratio,
                 batch_size=args.batch_size,
                 max_events=args.max_events,
                 seed=args.seed,
                 checkpoint_every=args.checkpoint_every,
                 validate_every=args.validate_every,
                 validation_batches=args.validation_batches,
+                validation_events=args.validation_events,
+                validation_views=tuple(args.validation_views),
+                curriculum_mode=args.curriculum_mode,
+                curriculum_phase_steps=tuple(args.curriculum_phase_steps),
+                curriculum_phase_events=tuple(args.curriculum_phase_events),
+                require_final_curriculum_phase=(
+                    args.require_final_curriculum_phase
+                ),
+                scientific_mode=args.scientific_mode,
                 channel_pooling=args.channel_pooling,
                 resume=args.resume,
                 ablation=args.ablation,

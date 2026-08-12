@@ -1,4 +1,7 @@
 model_preset: production_baseline
+scientific_mode: true
+warmup_fraction: 0.05
+max_warmup_steps: 10000
 target_policy: complete_only
 unrepresentable_target_policy: fallback_teacher
 scheduled_sampling_schedule: linear
@@ -6,10 +9,20 @@ scheduled_sampling_duration_steps: 1000
 level_sampling_mode: all_levels
 empirical_type_prior_mode: soft
 validation_batch_size: 4
+max_validation_events: 2000
+rollout_validation_events: 1000
 validate_every: 100
 rollout_validate_every: 500
-best_metric: validation_loss_total
-best_mode: min
+best_metric: predicted_edge_f1
+best_mode: max
+rollout_min_tree_validity: 0.999
+rollout_min_p4_closure: 1.0
+rollout_p4_tolerance: 1.0e-6
+rollout_max_recursive_source_conflicts: 0
+rollout_required_denominators:
+  - rollout_validation_events
+  - predicted_edge_denominator
+  - predicted_p4_closure_denominator
 # Independent diagnostic tracks are always retained as
 # best_teacher_forced.pt, best_rollout_edge_f1.pt, and
 # best_rollout_tree_validity.pt when their denominators are nonzero.

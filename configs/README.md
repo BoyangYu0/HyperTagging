@@ -2,10 +2,12 @@
 
 `condor/` contains HTCondor resource defaults. `ablations/` contains the
 ordered flat-to-full revised-model controls selected with `--ablation`.
-`model_presets/` contains round-trippable `tiny_cpu`, `gpu_debug`, and
-`production_baseline` architecture contracts. The top-level pretraining and
-reconstruction YAML files select the production preset for rendered HTCondor
-jobs; local CLI defaults remain `tiny_cpu`.
+`model_presets/` contains round-trippable `tiny_cpu`, `gpu_debug`,
+`small_candidate`, and `production_baseline` architecture contracts.
+`small_candidate` uses 128/32 dimensions with four heads and four context
+layers; its copied conservative query/cardinality placeholders are explicitly
+`capacity_report_required` and scientific reconstruction rejects the preset
+without a checked dataset index. Local CLI defaults remain `tiny_cpu`.
 
 `first_level_type_relation_bias.yaml` is a real, disabled-by-default soft
 query-node scoring ablation and is serialized in the architecture contract.
@@ -36,6 +38,10 @@ The canonical reduced-production selections are under
 source-level train/validation/test roles before any stable hash split. A
 selection manifest cannot be combined with `--max-events`, and
 `scientific_mode=True` rejects raw data paths entirely.
+Scientific trainer validation hash-ranks UIDs from the manifest's validation
+role and checkpoints the exact cohort. Source-order prefixes remain available
+only when `scientific_mode=False`; neither selection path reads the sealed test
+role.
 
 Build the corresponding dataset index with
 `scripts/build_dataset_index.py --selection-manifest ... --scientific-mode`.

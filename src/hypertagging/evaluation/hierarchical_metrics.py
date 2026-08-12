@@ -392,11 +392,16 @@ def radius_level_correlation(
     levels: torch.Tensor,
     mask: torch.Tensor,
 ) -> float:
-    radii = radius(z)[mask]
-    level_values = levels[mask].float()
-    if radii.numel() < 2 or radii.std(unbiased=False) == 0 or level_values.std(unbiased=False) == 0:
-        return 0.0
-    return float(torch.corrcoef(torch.stack([radii, level_values]))[0, 1])
+    with torch.autocast(device_type=z.device.type, enabled=False):
+        radii = radius(z.float())[mask]
+        level_values = levels[mask].float()
+        if (
+            radii.numel() < 2
+            or radii.std(unbiased=False) == 0
+            or level_values.std(unbiased=False) == 0
+        ):
+            return 0.0
+        return float(torch.corrcoef(torch.stack([radii, level_values]))[0, 1])
 
 
 def summarize_rollout(

@@ -29,6 +29,7 @@ class ModelArchitecture:
     relation_feature_contract_version: str = "physical-relations-overlap-aware-v3"
     hyperbolic_level_encoding: str = "learned_euclidean"
     type_conditioned_daughter_relation_bias: bool = False
+    capacity_report_required: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -54,6 +55,13 @@ MODEL_PRESETS: dict[str, ModelArchitecture] = {
         max_cardinality=8,
         tangent_variance_target=0.08,
         hyper_projection_init_scale=0.065,
+    ),
+    "small_candidate": ModelArchitecture(
+        "small_candidate", 128, 32, 4, 4, 512, 0.1, 1.0, 32,
+        max_cardinality=12,
+        tangent_variance_target=0.06,
+        hyper_projection_init_scale=0.055,
+        capacity_report_required=True,
     ),
     "production_baseline": ModelArchitecture(
         "production_baseline", 256, 64, 8, 6, 1024, 0.1, 1.0, 32,

@@ -240,23 +240,25 @@ class HyperbolicRelationBias(nn.Module):
         self.net = nn.Sequential(nn.Linear(4, hidden_dim), nn.GELU(), nn.Linear(hidden_dim, 1))
 
     def forward(self, *, z_hyperbolic: torch.Tensor, node_mask: torch.Tensor) -> torch.Tensor:
-        d_h = hyperbolic_pairwise_distance(
-            z_hyperbolic,
-            node_mask,
-            curvature=self.curvature,
-        )
-        radii = radius(z_hyperbolic, curvature=self.curvature)
-        tangent = logmap0(z_hyperbolic, curvature=self.curvature)
-        tangent_dot = torch.einsum("bif,bjf->bij", tangent, tangent)
-        features = torch.stack(
-            [
-                torch.log1p(d_h),
-                torch.log1p(radii[:, :, None].expand_as(d_h)),
-                torch.log1p(radii[:, None, :].expand_as(d_h)),
-                _signed_log_scale(tangent_dot, 1.0),
-            ],
-            dim=-1,
-        )
+        with torch.autocast(device_type=z_hyperbolic.device.type, enabled=False):
+            z32 = z_hyperbolic.float()
+            d_h = hyperbolic_pairwise_distance(
+                z32,
+                node_mask,
+                curvature=self.curvature,
+            )
+            radii = radius(z32, curvature=self.curvature)
+            tangent = logmap0(z32, curvature=self.curvature)
+            tangent_dot = torch.einsum("bif,bjf->bij", tangent, tangent)
+            features = torch.stack(
+                [
+                    torch.log1p(d_h),
+                    torch.log1p(radii[:, :, None].expand_as(d_h)),
+                    torch.log1p(radii[:, None, :].expand_as(d_h)),
+                    _signed_log_scale(tangent_dot, 1.0),
+                ],
+                dim=-1,
+            )
         bias = self.net(features).squeeze(-1) if self.enabled else d_h * 0.0
         valid = node_mask[:, :, None] & node_mask[:, None, :]
         return bias.masked_fill(~valid, -1e4)

@@ -12,15 +12,15 @@ SRC_ROOT = REPO_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from hypertagging.training.level_reconstruction_train import run_level_reconstruction_dry_run
-from hypertagging.training.reconstruction_trainer import (
+from hypertagging.training.level_reconstruction_train import run_level_reconstruction_dry_run  # noqa: E402
+from hypertagging.training.reconstruction_trainer import (  # noqa: E402
     ReconstructionConfig,
     train_level_reconstruction,
 )
-from hypertagging.models.ablation import ALL_ABLATIONS
-from hypertagging.utils.gpu_safety import assert_full_training_requires_condor
-from hypertagging.training.config import resolve_argparse_namespace
-from hypertagging.training.model_config import MODEL_PRESETS
+from hypertagging.models.ablation import ALL_ABLATIONS  # noqa: E402
+from hypertagging.utils.gpu_safety import assert_full_training_requires_condor  # noqa: E402
+from hypertagging.training.config import resolve_argparse_namespace  # noqa: E402
+from hypertagging.training.model_config import MODEL_PRESETS  # noqa: E402
 
 
 def _level_int_pairs(value: str):
@@ -30,6 +30,10 @@ def _level_int_pairs(value: str):
         (int(level), int(count))
         for level, count in (item.split(":", 1) for item in value.split(","))
     )
+
+
+def _string_tuple(value: str):
+    return tuple(item for item in value.split(",") if item)
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -60,6 +64,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--tiny", action="store_true")
     parser.add_argument("--max-steps", type=int, default=2)
+    parser.add_argument("--lr-schedule-total-steps", type=int, default=None)
+    parser.add_argument("--warmup-fraction", type=float, default=0.05)
+    parser.add_argument("--warmup-steps", type=int, default=None)
+    parser.add_argument("--max-warmup-steps", type=int, default=10_000)
+    parser.add_argument("--min-lr-ratio", type=float, default=0.0)
     parser.add_argument("--max-events", type=int, default=None)
     parser.add_argument("--batch-size", type=int, default=2)
     parser.add_argument("--num-workers", type=int, default=0)
@@ -123,6 +132,22 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--best-mode", choices=("min", "max"), default="min")
     parser.add_argument("--early-stopping-patience", type=int, default=None)
     parser.add_argument("--pilot-allow-train-validation-fallback", action="store_true")
+    parser.add_argument("--scientific-mode", action="store_true")
+    parser.add_argument("--rollout-min-tree-validity", type=float, default=0.999)
+    parser.add_argument("--rollout-min-p4-closure", type=float, default=1.0)
+    parser.add_argument("--rollout-p4-tolerance", type=float, default=1e-6)
+    parser.add_argument(
+        "--rollout-max-recursive-source-conflicts", type=int, default=0
+    )
+    parser.add_argument(
+        "--rollout-required-denominators",
+        type=_string_tuple,
+        default=(
+            "rollout_validation_events",
+            "predicted_edge_denominator",
+            "predicted_p4_closure_denominator",
+        ),
+    )
     parser.add_argument("--initial-state-policy", choices=("unknown", "upsilon4s"), default="unknown")
     parser.add_argument("--hyperbolic-level-encoding", choices=("learned_euclidean", "bounded_tangent_level_embedding", "none"), default="learned_euclidean")
     parser.add_argument(
@@ -162,6 +187,11 @@ def main(argv: list[str] | None = None) -> int:
                 pretrained_encoder=args.pretrained_encoder,
                 device=args.device,
                 max_steps=args.max_steps,
+                lr_schedule_total_steps=args.lr_schedule_total_steps,
+                warmup_fraction=args.warmup_fraction,
+                warmup_steps=args.warmup_steps,
+                max_warmup_steps=args.max_warmup_steps,
+                min_lr_ratio=args.min_lr_ratio,
                 batch_size=args.batch_size,
                 max_events=args.max_events,
                 seed=args.seed,
@@ -227,6 +257,16 @@ def main(argv: list[str] | None = None) -> int:
                 best_mode=args.best_mode,
                 early_stopping_patience=args.early_stopping_patience,
                 pilot_allow_train_validation_fallback=args.pilot_allow_train_validation_fallback,
+                scientific_mode=args.scientific_mode,
+                rollout_min_tree_validity=args.rollout_min_tree_validity,
+                rollout_min_p4_closure=args.rollout_min_p4_closure,
+                rollout_p4_tolerance=args.rollout_p4_tolerance,
+                rollout_max_recursive_source_conflicts=(
+                    args.rollout_max_recursive_source_conflicts
+                ),
+                rollout_required_denominators=tuple(
+                    args.rollout_required_denominators
+                ),
                 initial_state_policy=args.initial_state_policy,
                 hyperbolic_level_encoding=args.hyperbolic_level_encoding,
                 type_conditioned_daughter_relation_bias=(

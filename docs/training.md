@@ -67,15 +67,17 @@ radius-depth, pooled-channel, variance, covariance, per-loss gradient norms to
 the hyperbolic projection, per-projection gradient norms, and
 the collapse diagnostics documented in
 `docs/hyperbolic_level_autoregressive_reconstruction.md`.
-Validation prefixes the main principal/relation metrics by its curriculum
-stage and always emits separate FSP-only and truth-guided-multilevel relation
+Validation prefixes the main principal/relation metrics by its named curriculum
+view and always emits separate FSP-only and truth-guided-multilevel relation
 accuracy/denominator diagnostics, even for a one-batch bounded validation.
 Exact structural relation inputs are target-only
 by default; `truth_guided_structural_relation_inputs` is a compatibility
 ablation and is serialized with the training configuration.
 
-`validate_every` triggers bounded held-out validation over
-`validation_batches`. It aggregates total/component losses, relation accuracy,
+`validate_every` triggers held-out validation over a fixed event cohort.
+Scientific mode selects manifest-validation-role UIDs by a stable hash and
+serializes them; `validation_batches` is retained for non-scientific CI only.
+Validation aggregates total/component losses, relation accuracy,
 topology-safe parent ranking, tree distance, radius monotonicity,
 variance/covariance/effective rank/boundary fraction, channel retrieval, and
 leaf PID accuracy/entropy. Pretraining preserves its configured full-objective
@@ -97,7 +99,11 @@ Reconstruction writes independent `best_teacher_forced.pt`,
 step that actually ran rollout. The configurable `best.pt` compatibility alias
 records its metric, mode, denominator, validation event UIDs, rollout/constraint
 policy, PID mode, thresholds, and selection reason. Resume rejects changed
-checkpoint-selection semantics.
+checkpoint-selection semantics. A rollout checkpoint can become primary only
+when its rollout denominator and edge/p4 denominators are nonzero, tree
+validity is at least 0.999, p4 closure is complete at the serialized tolerance,
+and recursive-source conflicts are zero. Teacher-forced loss remains an
+independent diagnostic track.
 
 `configs/hyperbolic_pretrain_pilot.yaml` requires bounded objective-gradient
 preflight evidence. It reports raw and weighted magnitudes, active denominators,
@@ -159,8 +165,11 @@ See `docs/condor.md` for render and experiment commands.
 The parquet data module accepts a file, directory, shards, or JSON/JSONL
 manifest; it checks global event UIDs, creates a stable source-aware split,
 fits masked normalization on training only, and raises rather than silently
-dropping node overflow. Pretraining cycles through the configurable
-three-stage curriculum. Reconstruction optimizes every target level in each
+dropping node overflow. Pretraining progresses once through four checkpointed
+phases: 20% FSP-only, 25% truth-guided distance/radius, 30% multilevel channel
+memory, and 25% corrupted composites/hard negatives. Explicit step or event
+durations and the phase cursor are part of the resume contract; the old cycling
+behavior exists only as `legacy_alternating_ablation`. Reconstruction optimizes every target level in each
 batch. Teacher-forced validation is batched; seeded scheduled/free checks use
 the bounded `evaluation_reference_rollout`. `batched_free_rollout` performs
 multi-event, multi-level padded decoding and append with per-event stopping and
@@ -173,6 +182,14 @@ split hash, normalization, metrics, confidence-training state, and RNG states.
 `--pretrained-encoder` loads only compatible shared-encoder keys and reports
 loaded, missing, unexpected, and shape-mismatched keys. Use
 `--freeze-pretrained-encoder-steps` and `--encoder-lr-multiplier` for transfer.
+
+Both real trainers use a versioned optimizer-step schedule with linear warmup
+(5% by scientific default, with an explicit cap/override) followed by cosine
+decay. The resolved total, warmup, floor, base learning rates, scheduler state,
+and current step are serialized. Resume refuses legacy checkpoints without the
+new schedule contract instead of silently assigning them a different curve.
+Hyperbolic exp/log maps, Poincare distances/radii, and VIC variance/covariance/
+effective-rank calculations run in FP32 with AMP disabled around those kernels.
 
 SciPy is a declared production dependency for Hungarian matching. Brute-force
 matching is available only to explicitly bounded tiny CPU pilots; there is no

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 import json
+import math
 from pathlib import Path
 import time
 from typing import Any
@@ -18,7 +19,10 @@ from hypertagging.data.capacity import (
 )
 from hypertagging.data.heterogeneous import collate_heterogeneous_events
 from hypertagging.evaluation.hierarchical_metrics import (
-    complete_target_efficiency_counts, next_level_metrics, summarize_rollout,
+    complete_target_efficiency_counts,
+    next_level_metrics,
+    p4_closure_rate,
+    summarize_rollout,
 )
 from hypertagging.losses.level_reconstruction import (
     confidence_calibration_metrics,
@@ -42,11 +46,11 @@ from hypertagging.training.checkpointing import (
     save_training_checkpoint,
 )
 from hypertagging.training.checkpoint_selection import (
-    RECONSTRUCTION_CHECKPOINT_TRACKS,
     RECONSTRUCTION_TRACK_BY_METRIC,
     checkpoint_track_decisions,
     initial_track_values,
     reconstruction_selection_contract,
+    rollout_checkpoint_eligibility,
     selection_reason,
 )
 from hypertagging.training.data_module import RealDataModule, build_real_data_module
@@ -66,6 +70,11 @@ from hypertagging.training.scheduled_sampling import (
     resolve_unrepresentable_target_policy,
 )
 from hypertagging.training.model_config import resolve_model_architecture
+from hypertagging.training.fixed_validation import select_validation_events
+from hypertagging.training.learning_rate import (
+    build_warmup_cosine_scheduler,
+    resolve_resume_schedule_contract,
+)
 
 
 @dataclass(frozen=True)
@@ -79,6 +88,11 @@ class ReconstructionConfig:
     max_events: int | None = None
     seed: int = 11
     learning_rate: float = 1e-3
+    lr_schedule_total_steps: int | None = None
+    warmup_fraction: float = 0.05
+    warmup_steps: int | None = None
+    max_warmup_steps: int = 10_000
+    min_lr_ratio: float = 0.0
     encoder_lr_multiplier: float = 0.2
     freeze_pretrained_encoder_steps: int = 0
     gradient_clip: float = 1.0
@@ -144,6 +158,16 @@ class ReconstructionConfig:
     best_mode: str = "min"
     early_stopping_patience: int | None = None
     pilot_allow_train_validation_fallback: bool = False
+    scientific_mode: bool = False
+    rollout_min_tree_validity: float = 0.999
+    rollout_min_p4_closure: float = 1.0
+    rollout_p4_tolerance: float = 1e-6
+    rollout_max_recursive_source_conflicts: int = 0
+    rollout_required_denominators: tuple[str, ...] = (
+        "rollout_validation_events",
+        "predicted_edge_denominator",
+        "predicted_p4_closure_denominator",
+    )
     initial_state_policy: str = "unknown"
     hyperbolic_level_encoding: str = "learned_euclidean"
     type_conditioned_daughter_relation_bias: bool = False
@@ -173,6 +197,13 @@ def train_level_reconstruction(
         raise ValueError(
             "best_metric must be validation_loss_total, predicted_edge_f1, or "
             "predicted_tree_validity_rate"
+        )
+    if config.scientific_mode and (
+        config.best_metric != "predicted_edge_f1" or config.best_mode != "max"
+    ):
+        raise ValueError(
+            "scientific reconstruction requires rollout predicted_edge_f1 as "
+            "the maximizing primary metric"
         )
     if config.early_stopping_patience is not None and config.early_stopping_patience < 1:
         raise ValueError("early_stopping_patience must be positive when supplied")
@@ -227,6 +258,7 @@ def train_level_reconstruction(
         rescan_dataset=config.rescan_dataset,
         target_policy=config.target_policy,
         allow_incomplete_v4_publication=config.allow_incomplete_v4_publication,
+        scientific_mode=config.scientific_mode,
     )
     if config.ablation not in ALL_ABLATIONS:
         raise ValueError(f"unknown ablation: {config.ablation}")
@@ -252,6 +284,9 @@ def train_level_reconstruction(
         tangent_scale_mode=config.tangent_scale_mode,
         hyperbolic_level_encoding=config.hyperbolic_level_encoding,
         type_conditioned_daughter_relation_bias=effective_type_relation_bias,
+    )
+    _require_scientific_capacity_report(
+        architecture, data_module, scientific_mode=config.scientific_mode
     )
     capacity = (
         capacity_statistics_from_index(
@@ -329,10 +364,18 @@ def train_level_reconstruction(
             leaf_pid_lr_multiplier=config.leaf_pid_lr_multiplier,
         )
     )
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer,
-        T_max=max(config.max_steps, 1),
+    lr_contract = resolve_resume_schedule_contract(
+        resume_payload=resume_payload,
+        configured_total_steps=config.lr_schedule_total_steps,
+        run_max_steps=config.max_steps,
+        warmup_fraction=config.warmup_fraction,
+        warmup_steps=config.warmup_steps,
+        max_warmup_steps=config.max_warmup_steps,
+        min_lr_ratio=config.min_lr_ratio,
+        base_lrs=[group["lr"] for group in optimizer.param_groups],
     )
+    scheduler = build_warmup_cosine_scheduler(optimizer, lr_contract)
+    scheduler.hypertagging_contract = lr_contract
     scaler = torch.amp.GradScaler("cuda", enabled=device.type == "cuda" and config.mixed_precision)
     start_step = 0
     if config.resume:
@@ -394,6 +437,11 @@ def train_level_reconstruction(
         rollout_pid_temperature=config.rollout_pid_temperature,
         target_policy=config.target_policy,
         constraint_policy=constraint_policy.to_dict(),
+        eligibility_gates=_rollout_eligibility_contract(config),
+        scientific_mode=config.scientific_mode,
+        validation_selection_manifest_hash=(
+            data_module.selection_manifest_hash or ""
+        ),
     )
     final_metrics: dict[str, float] = dict((resume_payload or {}).get("metrics", {}))
     final_loss = float(final_metrics.get("loss", 0.0))
@@ -502,6 +550,7 @@ def train_level_reconstruction(
         final_loss = float(loss.detach().cpu())
         final_metrics = {
             "loss": final_loss,
+            "learning_rate": float(optimizer.param_groups[0]["lr"]),
             "leaf_pid_loss": float(leaf_pid_loss.detach().cpu()),
             "levels_trained": float(len(valid_levels)),
             **context_metrics,
@@ -544,7 +593,6 @@ def train_level_reconstruction(
         logger.log(step=step + 1, target_levels=valid_levels, **final_metrics)
         completed_steps = step + 1
         if (step + 1) % config.validate_every == 0:
-            validation_uids = []
             validation_metrics = validate_reconstruction(
                 model,
                 data_module,
@@ -570,6 +618,8 @@ def train_level_reconstruction(
                     or config.pilot_split_repair
                 ),
                 selected_event_uids=validation_uids,
+                scientific_mode=config.scientific_mode,
+                p4_closure_tolerance=config.rollout_p4_tolerance,
             )
             final_metrics.update(validation_metrics)
             logger.log(step=step + 1, split="validation", **validation_metrics)
@@ -594,11 +644,21 @@ def train_level_reconstruction(
                     ),
                 )
             primary_track = RECONSTRUCTION_TRACK_BY_METRIC[config.best_metric]
+            eligibility = rollout_checkpoint_eligibility(
+                validation_metrics, _rollout_eligibility_contract(config)
+            )
+            final_metrics["rollout_checkpoint_eligible"] = float(
+                eligibility["eligible"]
+            )
             primary_evaluated = (
                 config.best_metric in validation_metrics
+                and math.isfinite(float(validation_metrics[config.best_metric]))
                 and float(
                     validation_metrics.get(primary_track.denominator_metric, 0.0)
                 ) > 0
+                and (
+                    not primary_track.requires_rollout or eligibility["eligible"]
+                )
             )
             if primary_evaluated:
                 current_metric = float(validation_metrics[config.best_metric])
@@ -665,7 +725,6 @@ def train_level_reconstruction(
                 checkpoint_selection_contract=selection_contract,
             )
     if last_validation_step != completed_steps:
-        validation_uids = []
         validation_metrics = validate_reconstruction(
         model,
         data_module,
@@ -687,6 +746,8 @@ def train_level_reconstruction(
             or config.pilot_split_repair
         ),
         selected_event_uids=validation_uids,
+        scientific_mode=config.scientific_mode,
+        p4_closure_tolerance=config.rollout_p4_tolerance,
         )
         final_metrics.update(validation_metrics)
         logger.log(step=completed_steps, split="validation", **validation_metrics)
@@ -711,9 +772,17 @@ def train_level_reconstruction(
                 ),
             )
         primary_track = RECONSTRUCTION_TRACK_BY_METRIC[config.best_metric]
+        eligibility = rollout_checkpoint_eligibility(
+            validation_metrics, _rollout_eligibility_contract(config)
+        )
+        final_metrics["rollout_checkpoint_eligible"] = float(
+            eligibility["eligible"]
+        )
         primary_evaluated = (
             config.best_metric in validation_metrics
+            and math.isfinite(float(validation_metrics[config.best_metric]))
             and float(validation_metrics.get(primary_track.denominator_metric, 0.0)) > 0
+            and (not primary_track.requires_rollout or eligibility["eligible"])
         )
         if primary_evaluated:
             current_metric = float(validation_metrics[config.best_metric])
@@ -770,6 +839,10 @@ def train_level_reconstruction(
         checkpoint_track_values=checkpoint_track_values,
         checkpoint_selection_contract=selection_contract,
     )
+    if config.scientific_mode and not math.isfinite(best_metric_value):
+        raise RuntimeError(
+            "scientific run produced no rollout checkpoint eligible for primary selection"
+        )
     return ReconstructionTrainingResult(
         checkpoint=checkpoint,
         log_path=logger.path,
@@ -1301,6 +1374,8 @@ def validate_reconstruction(
     rollout_pid_temperature: float = 0.5,
     pilot_allow_train_validation_fallback: bool = False,
     selected_event_uids: list[str] | None = None,
+    scientific_mode: bool = False,
+    p4_closure_tolerance: float = 1e-6,
 ) -> dict[str, float]:
     model.eval()
     source = data_module.iter_events("validation", shuffle=False)
@@ -1314,17 +1389,23 @@ def validate_reconstruction(
             )
         source = data_module.iter_events("train", shuffle=False)
         used_train_fallback = True
+    if scientific_mode and used_train_fallback:
+        raise ValueError("scientific validation cannot use the training fallback")
     if validation_batch_size <= 0:
         raise ValueError("validation_batch_size must be positive")
-    events = []
-    for event in source:
-        if len(events) >= max_validation_events:
-            break
-        events.append(event)
+    restored_uids = tuple(selected_event_uids or ())
+    events, fixed_uids, _selection_contract = select_validation_events(
+        source,
+        limit=max_validation_events,
+        scientific_mode=scientific_mode,
+        selection_manifest_hash=data_module.selection_manifest_hash,
+        seed=seed,
+        restored_event_uids=restored_uids,
+    )
     if not events:
         raise ValueError("bounded validation selection contains no events")
-    if selected_event_uids is not None:
-        selected_event_uids.extend(event.event_uid for event in events)
+    if selected_event_uids is not None and not selected_event_uids:
+        selected_event_uids.extend(fixed_uids)
     accumulated: dict[str, list[float]] = {}
 
     # Dynamic full-tree rollouts remain per-event, while fixed next-level
@@ -1447,6 +1528,9 @@ def validate_reconstruction(
         )
         teacher_metrics = summarize_rollout(teacher.batch, batch)
         predicted_metrics = summarize_rollout(predicted.batch, batch)
+        predicted_metrics["p4_closure_rate"] = p4_closure_rate(
+            predicted.batch, tolerance=p4_closure_tolerance
+        )
         leaf_multiplicity = int(
             (
                 batch["node_mask"][0]
@@ -1457,14 +1541,6 @@ def validate_reconstruction(
             "low" if leaf_multiplicity <= 4 else "medium" if leaf_multiplicity <= 8 else "high"
         )
         truth_depth = int(batch["level_ids"][batch["node_mask"]].max())
-        channel_pair = tuple(
-            sorted(
-                (
-                    int(batch["b1_full_truth_channel_ids"][0]),
-                    int(batch["b2_full_truth_channel_ids"][0]),
-                )
-            )
-        )
         represented = total_targets = 0
         for target_level in range(1, truth_depth + 1):
             alignment = aligned_level_targets(
@@ -1482,6 +1558,18 @@ def validate_reconstruction(
             "predicted_p4_closure_rate": float(predicted_metrics["p4_closure_rate"]),
             "predicted_tree_validity_rate": float(
                 predicted_metrics["tree_validity_rate"]
+            ),
+            "predicted_edge_denominator": float(
+                batch["daughter_adjacency"][batch["node_mask"]].sum()
+            ),
+            "predicted_p4_closure_denominator": float(
+                (
+                    predicted.batch["daughter_adjacency"].any(dim=-1)
+                    & predicted.batch["node_mask"]
+                ).sum()
+            ),
+            "predicted_recursive_source_conflicts": float(
+                _recursive_source_conflicts(predicted.batch)
             ),
             "scheduled_rollout_valid": float(scheduled.valid),
             "representable_target_rate": represented / max(total_targets, 1),
@@ -1556,6 +1644,7 @@ def validate_reconstruction(
             "rollout_validation_events": float(rollout_count),
             "validation_batch_size": float(validation_batch_size),
             "validation_used_train_fallback": float(used_train_fallback),
+            "p4_closure_tolerance": float(p4_closure_tolerance),
         }
     )
     return output_metrics
@@ -1583,6 +1672,62 @@ def _aggregate_metric_lists(
         denominator = sum(accumulated[denominator_name])
         output[f"micro_{stem}"] = numerator / denominator if denominator else 0.0
     return output
+
+
+def _recursive_source_conflicts(batch: dict[str, torch.Tensor]) -> int:
+    """Count same-level reconstructed nodes that reuse an underlying leaf."""
+
+    sources = batch.get("recursive_leaf_source_mask")
+    if sources is None:
+        return 0
+    conflicts = 0
+    for event_index in range(batch["node_mask"].shape[0]):
+        active = batch["node_mask"][event_index]
+        levels = batch["level_ids"][event_index]
+        for level in torch.unique(levels[active & (levels > 0)]).tolist():
+            nodes = (active & (levels == int(level))).nonzero(
+                as_tuple=False
+            ).flatten()
+            if nodes.numel() < 2:
+                continue
+            overlap = (
+                sources[event_index, nodes].to(torch.int32)
+                @ sources[event_index, nodes].to(torch.int32).T
+            ) > 0
+            conflicts += int(torch.triu(overlap, diagonal=1).sum())
+    return conflicts
+
+
+def _rollout_eligibility_contract(
+    config: ReconstructionConfig,
+) -> dict[str, object]:
+    return {
+        "version": "rollout-checkpoint-eligibility-v1",
+        "minimum_tree_validity": float(config.rollout_min_tree_validity),
+        "minimum_p4_closure": float(config.rollout_min_p4_closure),
+        "p4_closure_tolerance": float(config.rollout_p4_tolerance),
+        "maximum_recursive_source_conflicts": int(
+            config.rollout_max_recursive_source_conflicts
+        ),
+        "required_denominators": list(config.rollout_required_denominators),
+    }
+
+
+def _require_scientific_capacity_report(
+    architecture: Any,
+    data_module: RealDataModule,
+    *,
+    scientific_mode: bool,
+) -> None:
+    if (
+        scientific_mode
+        and architecture.capacity_report_required
+        and data_module.dataset_index is None
+    ):
+        raise ValueError(
+            "small_candidate is capacity-report-required: scientific training "
+            "requires a checked dataset index before model construction"
+        )
 
 
 def _save_reconstruction_checkpoint(
@@ -1627,6 +1772,12 @@ def _save_reconstruction_checkpoint(
                 duration_steps=config.scheduled_sampling_duration_steps,
             ).probability(max(step - 1, 0)),
             "kind": config.scheduled_sampling_schedule,
+            "learning_rates": [
+                float(group["lr"]) for group in optimizer.param_groups
+            ],
+            "lr_schedule_contract": dict(
+                getattr(scheduler, "hypertagging_contract", {})
+            ),
         },
         feature_contract={
             "feature_spec_revision": feature_spec_v4()["feature_spec_revision"],
@@ -1687,6 +1838,12 @@ def _save_reconstruction_checkpoint(
                     "mode": config.best_mode,
                 }
             ),
+            "lr_schedule_contract": dict(
+                getattr(scheduler, "hypertagging_contract", {})
+            ),
+            "last_rollout_checkpoint_eligibility": rollout_checkpoint_eligibility(
+                metrics, _rollout_eligibility_contract(config)
+            ),
         },
         validation_selection={
             "split": (
@@ -1702,6 +1859,12 @@ def _save_reconstruction_checkpoint(
                 metrics.get("rollout_validation_events", 0.0) > 0
             ),
             "deterministic": True,
+            "strategy": (
+                "manifest_validation_role_uid_hash"
+                if config.scientific_mode else "non_scientific_ci_prefix"
+            ),
+            "scientific_mode": bool(config.scientific_mode),
+            "selection_manifest_hash": data_module.selection_manifest_hash or "",
             "max_validation_events": int(config.max_validation_events),
             "rollout_validation_events": int(config.rollout_validation_events),
         },
@@ -1732,6 +1895,7 @@ def _data_order_contract(
         "initial_state_policy": config.initial_state_policy,
         "gradient_accumulation": config.gradient_accumulation,
         "num_workers": config.num_workers,
+        "scientific_mode": config.scientific_mode,
     }
 
 

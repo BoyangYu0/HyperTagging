@@ -7,10 +7,7 @@ from dataclasses import dataclass, field
 import torch
 import torch.nn.functional as F
 
-from hypertagging.data.tree_geometry import (
-    EXACT_TREE_GEOMETRY_CONTRACT_VERSION,
-    build_exact_tree_geometry,
-)
+from hypertagging.data.tree_geometry import build_exact_tree_geometry
 from hypertagging.models.hyperbolic import distance, logmap0, radius
 
 
@@ -552,29 +549,32 @@ def variance_regularization(
     target_tangent_norm: float = 0.5,
     eps: float = 1e-4,
 ) -> torch.Tensor:
-    valid = tangent[mask]
-    if valid.shape[0] < 2:
-        return tangent.sum() * 0.0
-    if gamma is None:
-        # For curvature one, d_H(0, exp_0(u)) = 2 ||u||.  A fixed RMS tangent
-        # norm therefore requires a 1/sqrt(dimension) per-coordinate target.
-        gamma = dimension_aware_tangent_variance_target(
-            tangent.shape[-1], target_tangent_norm=target_tangent_norm
-        )
-    if gamma < 0:
-        raise ValueError("tangent variance target must be non-negative")
-    standard_deviation = torch.sqrt(valid.var(dim=0, unbiased=False) + eps)
-    return F.relu(float(gamma) - standard_deviation).mean()
+    with torch.autocast(device_type=tangent.device.type, enabled=False):
+        tangent32 = tangent.float()
+        valid = tangent32[mask]
+        if valid.shape[0] < 2:
+            return tangent32.sum() * 0.0
+        if gamma is None:
+            # For curvature one, d_H(0, exp_0(u)) = 2 ||u||.
+            gamma = dimension_aware_tangent_variance_target(
+                tangent32.shape[-1], target_tangent_norm=target_tangent_norm
+            )
+        if gamma < 0:
+            raise ValueError("tangent variance target must be non-negative")
+        standard_deviation = torch.sqrt(valid.var(dim=0, unbiased=False) + eps)
+        return F.relu(float(gamma) - standard_deviation).mean()
 
 
 def covariance_regularization(tangent: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
-    valid = tangent[mask]
-    if valid.shape[0] < 2:
-        return tangent.sum() * 0.0
-    centered = valid - valid.mean(dim=0, keepdim=True)
-    covariance = centered.T @ centered / max(valid.shape[0] - 1, 1)
-    off_diagonal = covariance - torch.diag(torch.diagonal(covariance))
-    return off_diagonal.square().sum() / covariance.shape[0]
+    with torch.autocast(device_type=tangent.device.type, enabled=False):
+        tangent32 = tangent.float()
+        valid = tangent32[mask]
+        if valid.shape[0] < 2:
+            return tangent32.sum() * 0.0
+        centered = valid - valid.mean(dim=0, keepdim=True)
+        covariance = centered.T @ centered / max(valid.shape[0] - 1, 1)
+        off_diagonal = covariance - torch.diag(torch.diagonal(covariance))
+        return off_diagonal.square().sum() / covariance.shape[0]
 
 
 def balanced_tangent_sample(
@@ -917,6 +917,26 @@ def collapse_diagnostics(
     b_side: torch.Tensor | None = None,
     boundary_threshold: float = 0.95,
     curvature: float = 1.0,
+) -> dict[str, torch.Tensor]:
+    # SVD/covariance/effective-rank diagnostics are numerically fragile under
+    # AMP and are part of the scientific contract, so keep the entire block FP32.
+    with torch.autocast(device_type=z.device.type, enabled=False):
+        return _collapse_diagnostics_fp32(
+            z.float(), mask, level_ids=level_ids, node_kind_ids=node_kind_ids,
+            b_side=b_side, boundary_threshold=boundary_threshold,
+            curvature=curvature,
+        )
+
+
+def _collapse_diagnostics_fp32(
+    z: torch.Tensor,
+    mask: torch.Tensor,
+    *,
+    level_ids: torch.Tensor | None,
+    node_kind_ids: torch.Tensor | None,
+    b_side: torch.Tensor | None,
+    boundary_threshold: float,
+    curvature: float,
 ) -> dict[str, torch.Tensor]:
     tangent = logmap0(z, curvature=curvature)
     valid = tangent[mask]
