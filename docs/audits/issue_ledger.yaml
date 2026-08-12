@@ -18,6 +18,23 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_ede387e_focused_post_audit_consolidation.md
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
+allowed_post_audit_commits:
+  - 0e030d578f6e21fa993523be809b5fbecc8b1467
+  - d02e823e0cbcc81c96c442994057155c7d8b7862
+  - 537d7cc0e5d03c24b90d6b4d04f828df39f02c18
+  - 3f1f3232d0e786abcab75d566299801668c5622b
+  - 8e9d0b8e1042e7f296b0b3d197e1d9f72ffe16c9
+  - 83776a2c4f9e7edd776915edf30816730881f9eb
+  - a22045a330e85e9e294424ca47f79d04f1d7bcf1
+  - 41da0a25ebde9c78991b789a9837b5f100b1cafa
+  - f6327defce08a13ba20805b7fcbd7cab7ceee208
+  - cebef0f22f50940a90bfdc85980ae31088abb8ab
+  - f14946f8fcc3076636a67110b95c88477bb13438
+  - 1d78d4cbcac319d3dcb1b5e5a111ef2121ba0884
+  - 4ce18a6c84d7b23dfef574a63e75bc6fe7c2a8da
+  - 17d1f14e33be228265b17caa177bcd4163b33338
+  - d7cc46e6395c6afec15280f683a978532cae501d
+  - 004e0d322e65a490407e6d4fec0c1fb4ccdcf235
 audit_tool_version: hypertagging-audit-integrity-v4
 verification_commands:
   - /data/dust/user/boyangyu/uv_env/bin/python -m pytest -q
