@@ -1,0 +1,1901 @@
+{
+  "allocation_order": [
+    "validation",
+    "test",
+    "stress",
+    "training_pool"
+  ],
+  "category_role_shard_counts": {
+    "ccbar": {
+      "stress": 1,
+      "test": 2,
+      "training_pool": 15,
+      "validation": 2
+    },
+    "charged": {
+      "stress": 1,
+      "test": 1,
+      "training_pool": 15,
+      "validation": 1
+    },
+    "ddbar": {
+      "stress": 1,
+      "test": 1,
+      "training_pool": 13,
+      "validation": 1
+    },
+    "mixed": {
+      "stress": 1,
+      "test": 1,
+      "training_pool": 61,
+      "validation": 1
+    },
+    "ssbar": {
+      "stress": 1,
+      "test": 1,
+      "training_pool": 13,
+      "validation": 1
+    },
+    "taupair": {
+      "stress": 1,
+      "test": 2,
+      "training_pool": 16,
+      "validation": 2
+    },
+    "uubar": {
+      "stress": 1,
+      "test": 2,
+      "training_pool": 40,
+      "validation": 2
+    }
+  },
+  "entries": [
+    {
+      "category": "ccbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "74a8b19d7ba6396f829566c7f807ca61b98177e3b8deafba0b5a9b959baefbd8",
+      "rank": "677e6f23730db4cf014a8680dbc00a71134ea993d9c338a22ef5d1ec4647d68f",
+      "role": "stress",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052205/s00/e1004/4S/r00000/ccbar/mdst/sub00/mdst_000100_prod00052205_task10030000101.root",
+      "task_id": 329
+    },
+    {
+      "category": "charged",
+      "event_count": 5000,
+      "inventory_entry_hash": "cab2f6a6e1de6fde5b4bb6edf0500602bc4a505ab319f3b9966d255ff19d0def",
+      "rank": "4277fdd64940391cd239aa46d890ee2fd9da8dbb2b5eaf1fc374ac4024ede7fb",
+      "role": "stress",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052207/s00/e1004/4S/r00000/charged/mdst/sub00/mdst_000100_prod00052207_task10030000100.root",
+      "task_id": 1989
+    },
+    {
+      "category": "ddbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "71c7061f54d90da35c1efd9023b5dd6cedd64f25ca20de2bbed51014f48bf511",
+      "rank": "1a1942ab3be26f21bf0ecf63299f53aa6a6523aa1561786ac5ca99fad5286204",
+      "role": "stress",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052211/s00/e1004/4S/r00000/ddbar/mdst/sub00/mdst_000030_prod00052211_task10030000030.root",
+      "task_id": 1969
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "9ff19383a8c8e6d6cd28bc55352d419827d308f5863315f308abb99bdc53c865",
+      "rank": "042682afdbb87f15b426d8362d1eab63d5156442c002e6eb48932e9e274d6553",
+      "role": "stress",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000049_prod00052209_task10030000049.root",
+      "task_id": 1039
+    },
+    {
+      "category": "ssbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "61f407fa2882652436986324b655937e567c73f0b88f2fd21c5cafec13744f29",
+      "rank": "40219966779cee8400efb54ce2c49a02693d29ea62a3ab0db3190c26f2ef333d",
+      "role": "stress",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052232/s00/e1004/4S/r00000/ssbar/mdst/sub00/mdst_000001_prod00052232_task10030000001.root",
+      "task_id": 249
+    },
+    {
+      "category": "taupair",
+      "event_count": 5000,
+      "inventory_entry_hash": "4efe1e0c01aaf2c8d4a8a452a9876931ceafeddd7dd488bfd9c878cceaa11554",
+      "rank": "154eb0ec889dca3ea8a6b1c55282881da036def9ec9a34f595942d1406b21a6e",
+      "role": "stress",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052234/s00/e1004/4S/r00000/taupair/mdst/sub00/mdst_000089_prod00052234_task10030000089.root",
+      "task_id": 439
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "3d31b6f9131303dbe35fbbe051d0b3a326828ceb55faa5a06eb041e921c0fb59",
+      "rank": "0fb96ab1ded8dae45e549ffba52c4219be222db69891089acea4c5fa95c08ef9",
+      "role": "stress",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000270_prod00052236_task10030000270.root",
+      "task_id": 349
+    },
+    {
+      "category": "ccbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "7f0526a56a34bf94894fb29951bc4ca2d98f9d1e8ddd5a9063d52f8b4b6775f6",
+      "rank": "3f6bd9b26fdf5c609bb063e4bc4db75fde2694c9559293d676f084a610b7394f",
+      "role": "test",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052205/s00/e1004/4S/r00000/ccbar/mdst/sub00/mdst_000091_prod00052205_task10030000092.root",
+      "task_id": 1939
+    },
+    {
+      "category": "ccbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "508d93a638a72effb7445fd176fb1ca48ca57a814a82a9e3513b2714c78e597a",
+      "rank": "6130559cfbfe4f7703264cd284664f8d662080d2fac196fcca806a2ade09b481",
+      "role": "test",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052205/s00/e1004/4S/r00000/ccbar/mdst/sub00/mdst_000142_prod00052205_task10030000143.root",
+      "task_id": 1519
+    },
+    {
+      "category": "charged",
+      "event_count": 5000,
+      "inventory_entry_hash": "085626cb09927e79dee8af355b96695206f39b1a8b5d2652d1b26bf134458d4d",
+      "rank": "330019b792429f357116862c4f1267bfe803a1245f5818f68c690086985c0d57",
+      "role": "test",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052207/s00/e1004/4S/r00000/charged/mdst/sub00/mdst_000133_prod00052207_task10030000133.root",
+      "task_id": 379
+    },
+    {
+      "category": "ddbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "4e74ed73799f65ffe5626336f9b35c88866d400c1fe9d29a936d513674646aa8",
+      "rank": "178c29205adecdd6f3ebc01cecda1557fddbe81cf132a678dc4fc729a34fb25c",
+      "role": "test",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052211/s00/e1004/4S/r00000/ddbar/mdst/sub00/mdst_000080_prod00052211_task10030000080.root",
+      "task_id": 1829
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "6a5dd7e70ab051103f13887e25e5cd83f42744e9a014b7fbcf8158694a6c9e44",
+      "rank": "02253c4765783e4906a6ea4c8d8e46018548d3d5dea4412af3d424c8ce8dc83e",
+      "role": "test",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000064_prod00052209_task10030000064.root",
+      "task_id": 739
+    },
+    {
+      "category": "ssbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "4fc8ebeba8452bef806e6341dca70a4efb660fd4be541d57877f979e4fe4e57d",
+      "rank": "1768709a92494adee5f92f1ce3f58b5af65fa2bc94eb35df1b5cf127f2fda820",
+      "role": "test",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052232/s00/e1004/4S/r00000/ssbar/mdst/sub00/mdst_000082_prod00052232_task10030000082.root",
+      "task_id": 1859
+    },
+    {
+      "category": "taupair",
+      "event_count": 5000,
+      "inventory_entry_hash": "ffddbac14c9f6f60acd8c6f8acb5275048910776126ed8a358b5d410409d20dc",
+      "rank": "0ec954658a23e25731c998385b9e5a7a7f425998d007eca979507bbf6bee477b",
+      "role": "test",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052234/s00/e1004/4S/r00000/taupair/mdst/sub00/mdst_000151_prod00052234_task10030000151.root",
+      "task_id": 1769
+    },
+    {
+      "category": "taupair",
+      "event_count": 5000,
+      "inventory_entry_hash": "a492898fd7cbe7f48209d8c4c84ea8d93e3b407e3bd297c74f4898c7abcd0ee3",
+      "rank": "107d0a359f4da421f70ef9b462f613c7245a0648582ef514f7d7ddf7ec9dd29f",
+      "role": "test",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052234/s00/e1004/4S/r00000/taupair/mdst/sub00/mdst_000144_prod00052234_task10030000144.root",
+      "task_id": 509
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "e16d1b933b8748b24388a41b6365d4dd19aa120861f55dedcea525780087782a",
+      "rank": "0a92f6e33b1f4e1dd86bdac0c3601943fa3f0ec3542536b2c3e4f37bb5ff34e7",
+      "role": "test",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000126_prod00052236_task10030000126.root",
+      "task_id": 1419
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "4afdcc4ef117da69e5ecab3237f12c348224729f20af4eeb9569b65927dc1f92",
+      "rank": "0ca250903fe194ac061beda65f5c5e733e2c3dc0c33a54205ab4d7ff1e179ba0",
+      "role": "test",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000159_prod00052236_task10030000159.root",
+      "task_id": 1319
+    },
+    {
+      "category": "ccbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "54e5e85ff61306a41ca25b1272494a5aa6db1819727af8d025cfd26900a97f08",
+      "rank": "68f91a78eb6c62a7079ea6d0d01005678cf344f1b4d7e24d582836671d9191b5",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052205/s00/e1004/4S/r00000/ccbar/mdst/sub00/mdst_000225_prod00052205_task10030000230.root",
+      "task_id": 49
+    },
+    {
+      "category": "ccbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "1909011639725396e3decad98f4ee3e749b7e77c0a6b007da536eb641075244f",
+      "rank": "69bcda5dad3cacad8ec846fd030bc7bca7b60a350fa9e8e343d9ef5392e1525f",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052205/s00/e1004/4S/r00000/ccbar/mdst/sub00/mdst_000053_prod00052205_task10030000053.root",
+      "task_id": 1729
+    },
+    {
+      "category": "ccbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "caae94458c88771613c9765a9d8bea262fc8732b7c11312aa025fc757200829c",
+      "rank": "6a862ad228fd38d96ac35f664744904391ef93c3f150ac1bb3792afa782f67cc",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052205/s00/e1004/4S/r00000/ccbar/mdst/sub00/mdst_000219_prod00052205_task10030000224.root",
+      "task_id": 1219
+    },
+    {
+      "category": "ccbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "82476a0f62e04c273a6b07f17efd0a636d86655d4eaf1429eed348e0c3ce2ef5",
+      "rank": "844b946615f16f33a9fdc8c1a326d8ad7a1fe04e7f434394cff017d5d82acf0f",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052205/s00/e1004/4S/r00000/ccbar/mdst/sub00/mdst_000065_prod00052205_task10030000065.root",
+      "task_id": 119
+    },
+    {
+      "category": "ccbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "7dc36a19c07bc5e6b70cdfbf4b600ee0915e4b23bb2959e4c0e1132d3052ef75",
+      "rank": "8cda8f2c7bbb0e583429118a8f8f9bf364fee41a42f8ff07331a896d1faa9662",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052205/s00/e1004/4S/r00000/ccbar/mdst/sub00/mdst_000015_prod00052205_task10030000015.root",
+      "task_id": 1659
+    },
+    {
+      "category": "ccbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "c6f185303a35e7997083a12bb722f865f1095bcea90501e88ed439ee941ab255",
+      "rank": "9d0c67ff5225182696cba258813eebadfd2b1b7374fca5f23188056d6a629b42",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052205/s00/e1004/4S/r00000/ccbar/mdst/sub00/mdst_000194_prod00052205_task10030000195.root",
+      "task_id": 1189
+    },
+    {
+      "category": "ccbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "7065fe68984f81cac6f95c3a5540a241386f4f4c4ed02f42d43a407d06152cf4",
+      "rank": "a225fbbab1fab16a1971c91fadcc80cbeab4636326c3b82e7f1ee213fa57265c",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052205/s00/e1004/4S/r00000/ccbar/mdst/sub00/mdst_000179_prod00052205_task10030000180.root",
+      "task_id": 189
+    },
+    {
+      "category": "ccbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "c916bad279b73a069ccd3bcaf3e7ef6354912e6cdd8e9c0b95632991ccbaaaa5",
+      "rank": "ab7fda14ee3488dd1a6b5d177ead2ebb6083ce784742175d4fde72ddb842e885",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052205/s00/e1004/4S/r00000/ccbar/mdst/sub00/mdst_000198_prod00052205_task10030000199.root",
+      "task_id": 469
+    },
+    {
+      "category": "ccbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "885c01a1d57f17d1579b6a38c863584548cefb58f72408002023daa9caebf979",
+      "rank": "b306a89f29ed3eb7bfd08b341b3379542ab1017d686650c28984aa81adccb3c1",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052205/s00/e1004/4S/r00000/ccbar/mdst/sub00/mdst_000240_prod00052205_task10030000245.root",
+      "task_id": 259
+    },
+    {
+      "category": "ccbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "80c42408850f7e2706d3859b65beaf644689865954ce5a0c375dbbe1104c056e",
+      "rank": "b5fb85879519d8cf4eee8ae809fe40b0a513474fefd55c3ca5636f4dcc323d05",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052205/s00/e1004/4S/r00000/ccbar/mdst/sub00/mdst_000006_prod00052205_task10030000006.root",
+      "task_id": 399
+    },
+    {
+      "category": "ccbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "e9f09cd59d20287cc43f8c64a3645143504bcfd3037834dfd00e16ec73a07612",
+      "rank": "b6a8d9c107255e4fd98a9437626ae646cda85ce88436023a95c0368e6216ed9f",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052205/s00/e1004/4S/r00000/ccbar/mdst/sub00/mdst_000121_prod00052205_task10030000122.root",
+      "task_id": 1869
+    },
+    {
+      "category": "ccbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "49bb3089758b74f768d2986784491db01a2202b6e53f9c3fdc44e1f7fc63bbe5",
+      "rank": "c3aa00788eccf662ffc32e0cde91dc16b9deafa97e363cd75f38942cac18dbff",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052205/s00/e1004/4S/r00000/ccbar/mdst/sub00/mdst_000299_prod00052205_task10030000304.root",
+      "task_id": 1279
+    },
+    {
+      "category": "ccbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "51d1a86c5e19b0d5a056a86edf3704ec6727875d18febdcc14e84e9fdff5beb8",
+      "rank": "dbe2fe680af377a8fef701010b99550162b2ff4739ecf179f5068e86dce2f89f",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052205/s00/e1004/4S/r00000/ccbar/mdst/sub00/mdst_000094_prod00052205_task10030000095.root",
+      "task_id": 1249
+    },
+    {
+      "category": "ccbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "05bac63c67c42a0bd94dd4105e2e3426fa4fd0aacd513fddf1d099389cfbbd06",
+      "rank": "dbf5dd99f5b83b795af0b1a47065280fc425686a06de9fb78164dd3fe54baf9b",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052205/s00/e1004/4S/r00000/ccbar/mdst/sub00/mdst_000005_prod00052205_task10030000005.root",
+      "task_id": 1799
+    },
+    {
+      "category": "ccbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "bf0ecfcb666d70376af9caf210511a9512c1f6dbef5f49f9018c43be46c15c68",
+      "rank": "f310591d73890486aaa6235774946779b2695e27fb150f2c043cb156ab0d4b45",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052205/s00/e1004/4S/r00000/ccbar/mdst/sub00/mdst_000298_prod00052205_task10030000303.root",
+      "task_id": 1159
+    },
+    {
+      "category": "charged",
+      "event_count": 5000,
+      "inventory_entry_hash": "6c5058ba8a521aed8fc3e4b18678ab1ad1c3c4799959dce7ce5175df0dff111f",
+      "rank": "4732186aea40274e6679b1c604d31af44a48af51d685e30da47a9fc4f17b9b86",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052207/s00/e1004/4S/r00000/charged/mdst/sub00/mdst_000182_prod00052207_task10030000182.root",
+      "task_id": 1919
+    },
+    {
+      "category": "charged",
+      "event_count": 5000,
+      "inventory_entry_hash": "b9b69f9c776344aaa8b1673c3e2613a4aee2f9475e3a43f522c19a4f0aca405d",
+      "rank": "48b016334ff6226fc4ef12c85606844090784e269b420898739d6b44b08ee66f",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052207/s00/e1004/4S/r00000/charged/mdst/sub00/mdst_000158_prod00052207_task10030000158.root",
+      "task_id": 1709
+    },
+    {
+      "category": "charged",
+      "event_count": 5000,
+      "inventory_entry_hash": "07588d9e1e0e06cddd6d252e512a5f987edec8803472c7f02b065542c8e71e9b",
+      "rank": "57cfb563eac3353cd4f23527d0f3fbe6ecb7111f929a96f7930b29ba6156c688",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052207/s00/e1004/4S/r00000/charged/mdst/sub00/mdst_000195_prod00052207_task10030000195.root",
+      "task_id": 1779
+    },
+    {
+      "category": "charged",
+      "event_count": 5000,
+      "inventory_entry_hash": "f609476584bb2a621ea03a9d4abd09ca4d1d5c2abfc715978ed495290b16dd6d",
+      "rank": "5b057bf612805d9e05d8d29a40f80907bdc62b42dc2581876e82c92b6f31bce0",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052207/s00/e1004/4S/r00000/charged/mdst/sub00/mdst_000087_prod00052207_task10030000087.root",
+      "task_id": 169
+    },
+    {
+      "category": "charged",
+      "event_count": 5000,
+      "inventory_entry_hash": "dca02babba1886b6bdee5f9d21546533ca4ab87b4ae59397c744773def8f7b86",
+      "rank": "62da9d11f32b41f914be0575ebdd90d8e541db873cc800b32ebe4142b8b171f3",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052207/s00/e1004/4S/r00000/charged/mdst/sub00/mdst_000014_prod00052207_task10030000014.root",
+      "task_id": 1129
+    },
+    {
+      "category": "charged",
+      "event_count": 5000,
+      "inventory_entry_hash": "af5b4c6cf18685fecd78475a8775f936b6a5df8666d434357766c1afdfad2a4f",
+      "rank": "679ac3069289a23ce3885abee0f139ed87e9c4f1475703a2439282b999e88729",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052207/s00/e1004/4S/r00000/charged/mdst/sub00/mdst_000131_prod00052207_task10030000131.root",
+      "task_id": 609
+    },
+    {
+      "category": "charged",
+      "event_count": 5000,
+      "inventory_entry_hash": "657f120507074803ade1f5afd78fbff3d89b9638a048c738448ba7029f92b54c",
+      "rank": "785e709e88970b21b850d3f629b330544d86e83fb5f8a4adf050a551c4cab622",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052207/s00/e1004/4S/r00000/charged/mdst/sub00/mdst_000065_prod00052207_task10030000065.root",
+      "task_id": 589
+    },
+    {
+      "category": "charged",
+      "event_count": 5000,
+      "inventory_entry_hash": "dbaa22f84cc0aa8c471fc07dbc80bcf82cb3b17a0a9c1dfdbb64fa3174cf7335",
+      "rank": "7d21c5153c1986ad696bdee9999dda0af086a1cb0e1304a8abe289f75967c62e",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052207/s00/e1004/4S/r00000/charged/mdst/sub00/mdst_000027_prod00052207_task10030000027.root",
+      "task_id": 239
+    },
+    {
+      "category": "charged",
+      "event_count": 5000,
+      "inventory_entry_hash": "92dcfe1e3a07d82e052b85e4d1fe41415e197bd5eea9e806d3d1de18e187ff60",
+      "rank": "ba1f98e8a9d390a926d16373d4bbc287ed036f0b17e2de3686adca0093cec08d",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052207/s00/e1004/4S/r00000/charged/mdst/sub00/mdst_000128_prod00052207_task10030000128.root",
+      "task_id": 309
+    },
+    {
+      "category": "charged",
+      "event_count": 5000,
+      "inventory_entry_hash": "01022efb86545491b83cdf3efcf362b9bb445a4cb18d6421274911d8061fd267",
+      "rank": "c2a09a24a33f5baa67ca9b60675038c0da790b4aecbb45043ec5545a229b5393",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052207/s00/e1004/4S/r00000/charged/mdst/sub00/mdst_000032_prod00052207_task10030000032.root",
+      "task_id": 519
+    },
+    {
+      "category": "charged",
+      "event_count": 5000,
+      "inventory_entry_hash": "a5cfba59d07de1aa10ec972a701f0897c23657529596786302a455d9ed08136b",
+      "rank": "c9d2f11e784f5e8a1aa965a4aaa496a129466112139a5f970179a8d9120b229c",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052207/s00/e1004/4S/r00000/charged/mdst/sub00/mdst_000160_prod00052207_task10030000160.root",
+      "task_id": 449
+    },
+    {
+      "category": "charged",
+      "event_count": 5000,
+      "inventory_entry_hash": "53148ff668b7e8bcb53731dfc9b7f1c504434264c21526a77e5cc5815c3ed9e8",
+      "rank": "d9627a26f8a07122a9f5ecfc04eff4f89a685d34c55544d2bed7d625b8275c5f",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052207/s00/e1004/4S/r00000/charged/mdst/sub00/mdst_000183_prod00052207_task10030000183.root",
+      "task_id": 1569
+    },
+    {
+      "category": "charged",
+      "event_count": 5000,
+      "inventory_entry_hash": "b0167c5e63156a13d047a9f502b1d7f5bc39c6f916ce8a671312fbdf32c4bb64",
+      "rank": "e7374e0f2823a2d8680ad9062faadf11689e29996be868800814c0e16febc13a",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052207/s00/e1004/4S/r00000/charged/mdst/sub00/mdst_000148_prod00052207_task10030000148.root",
+      "task_id": 29
+    },
+    {
+      "category": "charged",
+      "event_count": 5000,
+      "inventory_entry_hash": "51e503ada13c51b3a99d9b45a1bf194f351726626fe3a69f296310109a061976",
+      "rank": "f085dbfcd1448d8abdf1c820b390198947bbe35be2bde4168f6ac40d172dc41c",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052207/s00/e1004/4S/r00000/charged/mdst/sub00/mdst_000003_prod00052207_task10030000003.root",
+      "task_id": 1849
+    },
+    {
+      "category": "charged",
+      "event_count": 5000,
+      "inventory_entry_hash": "0c20cda61723dbe9546b7f2ee3033e38dd6b2f18ae35fc9d908eecf55670bd63",
+      "rank": "f47657e7a4334dff95f6e7c6c21296faf802010e1ca70df914b7f630c8c515da",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052207/s00/e1004/4S/r00000/charged/mdst/sub00/mdst_000084_prod00052207_task10030000084.root",
+      "task_id": 99
+    },
+    {
+      "category": "ddbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "dac586287d6406ed740eedad461826008f11dae28f6214ee23e2d0645031a9ed",
+      "rank": "223dd31eb2fc167a4df02796b87259ec52d5f4874f479f84fbce6a5105177694",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052211/s00/e1004/4S/r00000/ddbar/mdst/sub00/mdst_000002_prod00052211_task10030000002.root",
+      "task_id": 79
+    },
+    {
+      "category": "ddbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "32296be596380a88191db25bc8cb607865ebb1b34472cbadea2c2eaf07508868",
+      "rank": "24f86ffd5853709ce5089dc9e7f7fe8f798de55f758ecd37c488c276360298e5",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052211/s00/e1004/4S/r00000/ddbar/mdst/sub00/mdst_000040_prod00052211_task10030000040.root",
+      "task_id": 499
+    },
+    {
+      "category": "ddbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "4e15198e34fbd2a28977afedace666690156eec7f925a0bc45315ecb998d9315",
+      "rank": "3b9704a673f230dc25d9778062b645d9c62e7483c6bd6ecdb3008c8b5cacd4db",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052211/s00/e1004/4S/r00000/ddbar/mdst/sub00/mdst_000060_prod00052211_task10030000060.root",
+      "task_id": 219
+    },
+    {
+      "category": "ddbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "63a473f0ad367170d8ef5c543ca587d4b7bcf14c3a3e465b96a22f16f048ceb7",
+      "rank": "5cd903fb8b386ee323d78ef8ab6cc89680f7a72a0875e78db5bc1d5808739785",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052211/s00/e1004/4S/r00000/ddbar/mdst/sub00/mdst_000048_prod00052211_task10030000048.root",
+      "task_id": 1689
+    },
+    {
+      "category": "ddbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "59c725c00c65463fdfac24b0f59703dae0019a4d7d14bc6a925f311afd3d6762",
+      "rank": "6d883cbabc1ba12fa1c2b2a6c2ac83ac6a8afb5b1e13255590b0fb483da5c02b",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052211/s00/e1004/4S/r00000/ddbar/mdst/sub00/mdst_000003_prod00052211_task10030000003.root",
+      "task_id": 9
+    },
+    {
+      "category": "ddbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "8b84b8212d5a98d4f8d8f652b0eb616b19d5363e200c224f7e05440f22b9e1bd",
+      "rank": "86420b61839d5beeb8a6c4eebb5a4683ef09ff2c682d199d8bdfb879e4e8a57b",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052211/s00/e1004/4S/r00000/ddbar/mdst/sub00/mdst_000051_prod00052211_task10030000051.root",
+      "task_id": 149
+    },
+    {
+      "category": "ddbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "d4777f20bd9ad7ee4981e3e65f9f03f67ea095691f706d2532c7b68f7078b0eb",
+      "rank": "98d17cb865c6e1fdadf5602a8470c9172279cd01654751c1d85113efd9732e67",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052211/s00/e1004/4S/r00000/ddbar/mdst/sub00/mdst_000055_prod00052211_task10030000055.root",
+      "task_id": 1759
+    },
+    {
+      "category": "ddbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "c0ea79c5b2b35d4f364087d4a10c0106846c9174b026230e2ac98894fa097e47",
+      "rank": "a09ea21556952ee40a98eefeaccbffa97703c7560caa710b026a224c2f5663cd",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052211/s00/e1004/4S/r00000/ddbar/mdst/sub00/mdst_000069_prod00052211_task10030000069.root",
+      "task_id": 429
+    },
+    {
+      "category": "ddbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "c8c6a73f92f17657d963c41e7a541eb7657fe8199781a73288a421a1626967c7",
+      "rank": "a65317843b2aecb7f96e490f0062c1a31822174efbbdb9821fd752f5160de733",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052211/s00/e1004/4S/r00000/ddbar/mdst/sub00/mdst_000044_prod00052211_task10030000044.root",
+      "task_id": 1619
+    },
+    {
+      "category": "ddbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "4dd14aeddde539a4128201eb9a0dcd20c71f5ae10efef22a18f965e329ca57ac",
+      "rank": "aa7cc6c1c5392323d6b6369560c27aa5d7164f7cf5813d3c42bf665164be98a5",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052211/s00/e1004/4S/r00000/ddbar/mdst/sub00/mdst_000006_prod00052211_task10030000006.root",
+      "task_id": 1549
+    },
+    {
+      "category": "ddbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "5d189ee7cabcaebdebc5a2e994c2a1be31214f3552a3d816bdc1eda12f2e18b1",
+      "rank": "ac86f4ac7a3c48d9c42aa586b325ea3b73c243be0b8eb730a44c918f62b8b4c3",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052211/s00/e1004/4S/r00000/ddbar/mdst/sub00/mdst_000078_prod00052211_task10030000078.root",
+      "task_id": 359
+    },
+    {
+      "category": "ddbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "5d06e68dfbbfce21779c233174386a9c865c0d080b615a05f33f9a50607a0828",
+      "rank": "db9d10e0c20a1bb144146ad697b464366211fda7fbf3d7734afffa0fb8fd0f8e",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052211/s00/e1004/4S/r00000/ddbar/mdst/sub00/mdst_000031_prod00052211_task10030000031.root",
+      "task_id": 289
+    },
+    {
+      "category": "ddbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "5ea3bd1d3ceb5aa42cb83d7cb214b44b2a5cfbd4996ceb2d89ab673b1afdf326",
+      "rank": "fc6808435811b4cdf7e38d6e8168fc7815cd9690309e6623366229885a95f87b",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052211/s00/e1004/4S/r00000/ddbar/mdst/sub00/mdst_000086_prod00052211_task10030000086.root",
+      "task_id": 569
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "ef591a5355a05762084228aa4d79a20aee6f5b529ecbd5a59860a5a120ce483e",
+      "rank": "16cc9098c67366592bfdf51066901d40fb66ae192dbd6fddacce7f6daa5f8450",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000131_prod00052209_task10030000131.root",
+      "task_id": 779
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "562a2dd682fb7f92e2e36bc80cf9a20c2e72c338dd181ca66402006253f0d01b",
+      "rank": "1730ec375e8e35496ad342f9f8b7424d1e59b4ae9e9505df1d5c81cd6920b558",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000144_prod00052209_task10030000144.root",
+      "task_id": 479
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "15e827fdcb830cb0abdc0dcdf751f337c592cb41f19797c864b474ea41184259",
+      "rank": "17e446ae9c73f5e7ff1054cd50f53232262b5e17e22024e2ecd56444768dca0e",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000022_prod00052209_task10030000022.root",
+      "task_id": 1089
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "88d45d4286bcd425026b47c763801845671b670990431056124dca08ba6fee43",
+      "rank": "1b14d7af66cfc29474f413d5c220321ede1a3e9406b901484ff539332b2b9e11",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000084_prod00052209_task10030000084.root",
+      "task_id": 799
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "adce7f08df807854a9f576df99733f87d5625241e07d819ba78f342d347d181e",
+      "rank": "1b1d8c2b1103758d134d2b282c65b3b2488b180371f8c7ad64f50e1b14a684e4",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000040_prod00052209_task10030000040.root",
+      "task_id": 679
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "ab05046c2f8259acc1f88f463865e68458a94fe7cc36f51822c6c2e34119cc56",
+      "rank": "1dd7221dfd86e66d05fa4bb58512ce2a02b221f98ebedb530a67f2788d512c6e",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000017_prod00052209_task10030000017.root",
+      "task_id": 729
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "ebc8cefee821c35905e993441afddd9371a0a1006383f7ab52efcda94a072aff",
+      "rank": "1fa64c439df056cc1cd7472d10ffd31d069986308ea2c2bc300e14d588d45b50",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000026_prod00052209_task10030000026.root",
+      "task_id": 659
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "7ac192f891faa972734174886991beaf11ea284b8a7bcac9bca0ba7634b87546",
+      "rank": "2068cafefc3b84d409cb241768552502d1b8643d4d61681916a0725eeb1f5294",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000068_prod00052209_task10030000068.root",
+      "task_id": 979
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "13e71ea95ba2e4079cc36950229808d07531a810de7f4da1a9006c474f4d2bff",
+      "rank": "22636d107be6dbb238990fd18482f7a63194bd461e24ef9edaf3db943133f3b7",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000138_prod00052209_task10030000138.root",
+      "task_id": 919
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "61dd4e893985ad127d1469f8234a583c57df8f6679a39c55f5c2fea04210d5e7",
+      "rank": "22f5a7bf5b6915942462a211e3643575ca7622b9a9a5a2f51b7dbad9919779a6",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000081_prod00052209_task10030000081.root",
+      "task_id": 59
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "f23bf48933bdcce5f24f8ca013a0184c9e1e0f0ed6089bd454ba6c0f42d883f9",
+      "rank": "26d396121f39dd8117a28ff8910b4257d896ef3b83e1797fb2986898f7b4cf97",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000021_prod00052209_task10030000021.root",
+      "task_id": 789
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "3e973f3b70bbc76633472a21c76bae7b0261cf40c9bee67a43eb85706680efcc",
+      "rank": "275c178e14c611ea8e39567bf054bc7357fbe0aae097f8d1a2afc1ca355947a9",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000169_prod00052209_task10030000169.root",
+      "task_id": 409
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "13448e70adc04bbea6bf4f046caa21c2adbb6b922aa39fce91565e150809ee1b",
+      "rank": "286cf10d305a54212a943bcc488f7c788f860910af4dd5b21df86f83e3526546",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000002_prod00052209_task10030000002.root",
+      "task_id": 929
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "300c005475f3ad93f0fe45bb6ac09f3aba3921fa522b183dcb3c6ad0384078b1",
+      "rank": "2ba9bf39a75d2ab608e26afce063388516b086fea0e45be435adee5e699a1de8",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000140_prod00052209_task10030000140.root",
+      "task_id": 809
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "8596de8270570c4f90f07efa48c303f6662cd412f2688ab53d349f686d318997",
+      "rank": "2bf81dc9031c8f0c0640d44b11cd2771035d9c21039961d7bf3f530cb8f79bc2",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000094_prod00052209_task10030000094.root",
+      "task_id": 939
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "07d7653da0a52b44a0e064bbff461ac3b2569a184f711e8e43b4d72019f9763c",
+      "rank": "2cd7e799783b3d94b96e67543a89049a3c1d99681b781f7666718cc342678c05",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000097_prod00052209_task10030000097.root",
+      "task_id": 1059
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "9991f13cebce382477599e94679bc20172973b34aee3ac494cbb6fb2092fcc2f",
+      "rank": "331bc3a08b177aa1897bea2306163a633d48402a26d848fcb1f6f3b5d60d10f4",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000118_prod00052209_task10030000118.root",
+      "task_id": 1809
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "ed8af7c3fa5febbb371642e120c9498de6ebd3807dedff522eb678a2f7f00e86",
+      "rank": "35ccf37232f97f6f560ba98f9b64ea80c5d397467b320911e14aed09088bdb9c",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000098_prod00052209_task10030000098.root",
+      "task_id": 699
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "45ef46a48aaf9a5633e7a50ce84204b5cafda5707ab0ec1d1c1f6232e57c9498",
+      "rank": "3670169ca17ff708313355943b6db13ea527a9e7aab4270fb547cb029aefe9e6",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000088_prod00052209_task10030000088.root",
+      "task_id": 1069
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "486281368e5ec141c9d65130840e52deba23af1e7e6708cba8945502cbe7d0e6",
+      "rank": "45b59708094f43d96d226fb118106341f8b6e99ae48bcb87a0fada2b3c758c8b",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000176_prod00052209_task10030000176.root",
+      "task_id": 1879
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "7becdabb6ac0b8fd249028d1048e5348dd46827d5a9b1c00e226f8bbcb0c0240",
+      "rank": "4750e3bdf2b728f5907aaab9d76681432203ea687061d7b82b7acf81cdc6855f",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000037_prod00052209_task10030000037.root",
+      "task_id": 1599
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "5a8c29176c2d4faca15fabe8ae10e0df5dd4eb3d90836964f77e3b5f616c81a5",
+      "rank": "5046465276a3556a990ad005d73224bc188c503c1eb7b27af46c56ffcb587dda",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000029_prod00052209_task10030000029.root",
+      "task_id": 1949
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "e56f6a4cc189870790941b24135d76684c737777a453abc3ad94b4159980defe",
+      "rank": "5058524abcd2feee114ca46bc97131b071607010a2ffa8e744b2f2abc5d701c7",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000183_prod00052209_task10030000183.root",
+      "task_id": 819
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "d2ad3113336018d2513ac05f8025191b91c0af445c19eea4b3805bf1467735b0",
+      "rank": "5349516d3c7e256c62db345bd69bdc456d99de5196242c7f69b16429254161d4",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000085_prod00052209_task10030000085.root",
+      "task_id": 829
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "1c650c4729ab1e66764805d8c54c3fc963146b0cbcd6bd2e7129b2626eba70b8",
+      "rank": "5a74cc295e4a8675b40b6bd9e6b835d84c0095952395537de5a534c36da1bb16",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000056_prod00052209_task10030000056.root",
+      "task_id": 709
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "dbfe8ad357223721a39d40385117475378b1d24a4aa30408a109df96940a8a6b",
+      "rank": "604f0efbadf8e8311d53c534077eb1368283aa7d1da8fe5274bfc84e2fb09657",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000011_prod00052209_task10030000011.root",
+      "task_id": 909
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "349b3994a7a2eb13eb3cff476365aa363287ff35f0653e96df3a30783ae5c7ff",
+      "rank": "70406323c4a179e5faa82c0d18293f6510894c34007d5e06435740a05162009b",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000045_prod00052209_task10030000045.root",
+      "task_id": 639
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "6d0106da82141e0327628f32f6b3450a7fc42c03b81499d0fbe34f8d5134a18a",
+      "rank": "736fb944d103a62d5472f3b8a7ef7f9adf29619df60400a00bbf27abd4d8651b",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000070_prod00052209_task10030000070.root",
+      "task_id": 759
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "3303a759e153b437dbcded234ba6203e6c4a20691303867c4bb84525ba717fea",
+      "rank": "74b2c9bb0deb2fa1c089c1b5a4bb6cc6c98a80892522359f421147732e0c5d73",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000112_prod00052209_task10030000112.root",
+      "task_id": 949
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "8244d62ff75110e1ddbbb6294cc5da4b7366fd3479b43d2f76376423620785a9",
+      "rank": "7a5f97231b260935015b50230ee3cd5fdd40919e54b09dfe855afa961d888bc9",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000091_prod00052209_task10030000091.root",
+      "task_id": 669
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "4bc4b96d7ac35c85fed2cbcc0655897ea81183914d80495d2454c83b7a536cbf",
+      "rank": "7bb5eabe63af3cfa81e6e97b02f0689247e6c79ba50c43707f7cbcdefe15234e",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000136_prod00052209_task10030000136.root",
+      "task_id": 769
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "3ed5fafb372986b552105ffaeb616a55d45c7fcf3f6176d823d4b5a366500e40",
+      "rank": "7fcf4b7ec6938c35f7c9d62a812e284c583fc725cc43e2686ce4b4acc6054d94",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000155_prod00052209_task10030000155.root",
+      "task_id": 1009
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "3236eadd354c3ad329cab0cddc24cdcce5cd56c4066c100e616657f1ecfdf70b",
+      "rank": "838b76655a194f213c2c4e32150bf0bfd418d846f27f25f58038e18c88423600",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000044_prod00052209_task10030000044.root",
+      "task_id": 839
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "625bc70976af4458f8e0e2a348c7e958e7d5dca65e769a861c75d99291d346b6",
+      "rank": "8978d9aa92e23e48a966cd343e480a6112549e04594f9ceecb297c1308c06ad5",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000066_prod00052209_task10030000066.root",
+      "task_id": 1029
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "c02033a30911127e1951ee68c409c4e6b96bcf2b252852913604da874fee7295",
+      "rank": "8a566b7687bf0a92f88f57a2273acec48c1f52ad3062d0b13f0c45ba55a4ea5c",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000157_prod00052209_task10030000157.root",
+      "task_id": 1669
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "63020ceb952fa2577ae09a5dc53651dacbae25a60718cee193df9bc4e5a81bb1",
+      "rank": "8a6c3880cf0299c5ce39124e067e3062e4127790533335d087c541b5f744000c",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000177_prod00052209_task10030000177.root",
+      "task_id": 199
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "5ad1f13621e2a9cad9c2e1f10622397361f9e189f0d5545f3d13c145e61e4b5e",
+      "rank": "9041855f218a7144f519114e46e0b87283fe6ae98dbc4cb4b1176442a320c007",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000015_prod00052209_task10030000015.root",
+      "task_id": 549
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "19eb05dde8db1bbbfd055324adc9d8bc5c5aa601d39d87caea442a9185dbe608",
+      "rank": "90cb24f7378ba82a9409bd03d703ec2f9516a67c68be5398efb1515ff60f71fe",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000185_prod00052209_task10030000185.root",
+      "task_id": 969
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "323f01cc768bd95f72d747c70b3fa50af9df03f654b88573f73e3a25e21d41d7",
+      "rank": "999040d9a2b336d233db0fff87a2afa6d29d003d92c3f5344917d2fd39a33232",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000047_prod00052209_task10030000047.root",
+      "task_id": 1529
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "1e6976756e6736f91fcf3ac4c365275803ee5550cda166eeef90a015a5cc7928",
+      "rank": "99f403deb8c9b69e2d372133bfa2086034c99c5ecfce1876b03f58ce8091bc80",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000057_prod00052209_task10030000057.root",
+      "task_id": 1099
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "66c3235e35e1617bc623fc494f2bba1f75a4a67483b6845d1f73b42db83041c2",
+      "rank": "9af0a633611161d92a42e5ba79528b0939966388c7820f370a96952b8e24d336",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000130_prod00052209_task10030000130.root",
+      "task_id": 849
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "f6a03058c9ae7e0cc4f0ca0fb4f6dfc95da24f8391a79bbab5904eba526745aa",
+      "rank": "a00d134e80acdcd89d5d469bd22a26531f927168dc70143bea5aeca2556a0f17",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000115_prod00052209_task10030000115.root",
+      "task_id": 999
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "63c7b4e67080d83e2444347afdd7d0907d9d46bb359de4c0f72257a1bacc11e5",
+      "rank": "ae51e3edb0eaf1a5c6eb3cf050d3bb3530e8b3b590b6d5736092dc615b757b6a",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000036_prod00052209_task10030000036.root",
+      "task_id": 719
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "e935b2a9e48afa4186f317b6c8dd57da21bcf85cfa3a6531830d6a5b6c67ee78",
+      "rank": "b31bb5edd191f49ace064263194c5059d67529a25927c85cc1ef37f0df75849c",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000054_prod00052209_task10030000054.root",
+      "task_id": 749
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "ed455dd6449773d6c363245314571bcf40dbeb86cfc280098476ed53456706be",
+      "rank": "b97c420bf1f77f401c0fd4b183ee6c1a28f42479ad8cf3ce75cc2e0e0803b72a",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000145_prod00052209_task10030000145.root",
+      "task_id": 989
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "6a3d5d330aa806c070923a2e0b69e21ba5dde58312b13caa311bf7cec02853e9",
+      "rank": "ba81c45ad1a8c390839b8d11b2cf8c04a286665a712235ffc9905d69a3f144ac",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000128_prod00052209_task10030000128.root",
+      "task_id": 339
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "4a1d42fbca0947c371778080249cc0b1948c72413e8b9478f1146acbf08219d8",
+      "rank": "c0e5c5ad32523a48fa5363361111e1c4d9e92c18818cd34b3468ba2cfdbd1186",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000160_prod00052209_task10030000160.root",
+      "task_id": 869
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "5c87869b569289231898448016df6e7bfae48522fd7c35631255caf7a7c13ece",
+      "rank": "c3c15dbd30f57dd6692852701015fd713bc4f816a7f145afd6767d5d99cace2c",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000154_prod00052209_task10030000154.root",
+      "task_id": 629
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "a866daaea2a9a03d49977a4db415a82ed2f5598864be14514b94209efec5dce9",
+      "rank": "c6af8f439892ff5eec46d0ae581723286516a53ac02d97dec22cbd182ec3030d",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000158_prod00052209_task10030000158.root",
+      "task_id": 689
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "a4c0c00a37ee9c0179a829cb9e8efcbf0af4bd6db214209ddb4e84a61c01f36c",
+      "rank": "c7c01bd9691f922aea6b4c04ffdfa70f4649a6d686c1f665e478488721dbb1e4",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000075_prod00052209_task10030000075.root",
+      "task_id": 1049
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "07675e4ea9cacdbdefd37136fbec16fec012f5d6312bc5aa2d09f17692213978",
+      "rank": "d2165b06bec028d7bd261dda44a1e49f8f1f424fc39fa676e22cc9f5299d705b",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000059_prod00052209_task10030000059.root",
+      "task_id": 649
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "982d5956a013bf911884b4d8738c2c0c8270df07754586544b2afb2ee06c22bc",
+      "rank": "d825253ce8852c064c692a9a78dad81418ba6d5fe676b23f6f85a3db7833fac4",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000108_prod00052209_task10030000108.root",
+      "task_id": 269
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "5455ca02aa3a995a1d4fde5c503b841018e4e475edaaa0cbca976d8dbb46a06a",
+      "rank": "dc2b92a27c6f67b074544d36a6adb7e75073d877bc32b412a80dc103bbc99c52",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000171_prod00052209_task10030000171.root",
+      "task_id": 859
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "8bde79f010752aaab2a6c437c14db9608e5e2a68ce1d672c098f75b10d2b1389",
+      "rank": "de8184ae040a3f913927ce867fef921997f95d0c4cdf283595dd569a615ee5f8",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000146_prod00052209_task10030000146.root",
+      "task_id": 1019
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "adf80e0e140abe4e3568652825d5959f09d4f3bad299202977f4760a8304a39d",
+      "rank": "e45fc6a444d96fa6e646f7d43b4c61d21a7d88bb019ba45262046da4a30d6745",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000127_prod00052209_task10030000127.root",
+      "task_id": 889
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "aa505d02101da02c27d64eaac7501868479714487f284c1557514ea5edf0ed92",
+      "rank": "e56324015d62def64ef2d41672addce0136ed9d927d2ca19c4315bd7f6e1b9e5",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000105_prod00052209_task10030000105.root",
+      "task_id": 1079
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "8a1bb74c609bd4b5d790cd053112cc49805b79a069a3b75f458d4a58203d3a1e",
+      "rank": "e6253fdcbc1cdeb64cbb78838be22a4e3ea014a03af3bd7994a2c8570ec85968",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000162_prod00052209_task10030000162.root",
+      "task_id": 129
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "d7323fe0c047b97e647018413342cefd3f6d229d44e396613d9c75bab931da7c",
+      "rank": "ebdb310c29d8cacc6fe4c2e2cf26631cafa5102e673b34ccf66f70f908f248d7",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000159_prod00052209_task10030000159.root",
+      "task_id": 879
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "9e0a9736bd1dad95a41fae11cdf4dae540a112d7ef6e5b6c2d5bb549428dbeb4",
+      "rank": "f238ee565df3bd50ee68bd80de7b5e88e4a082819c619daa3846ed2f3d1815f7",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000151_prod00052209_task10030000151.root",
+      "task_id": 899
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "218061274a777ed3f1cae0cb240bdbde0da6e172d23147828a4fc9f20384ab13",
+      "rank": "f9455ae7527ec4c2d62bcf43cf5340f99bc762b62b1e4fa8d08c2085cd69a298",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000052_prod00052209_task10030000052.root",
+      "task_id": 959
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "ba6337ac3fc82496668505ee82f0bfb44544ab909745db51db3ceb2d9d444e9d",
+      "rank": "ffa3ba0eaa4d279217b2c6e991fd89cfd7ba299fa870f37a15d9c8411b9588e9",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000082_prod00052209_task10030000082.root",
+      "task_id": 1739
+    },
+    {
+      "category": "ssbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "34d8a6aa94bc7d52de532e4b850ec3263f5d82c4769a12dd98a59ae605a78dea",
+      "rank": "42d07030afd241adbeeaee7dc3de86e3ec13305b421cda8b4c0837959e17acd6",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052232/s00/e1004/4S/r00000/ssbar/mdst/sub00/mdst_000034_prod00052232_task10030000034.root",
+      "task_id": 319
+    },
+    {
+      "category": "ssbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "35d7991c09b7d5e419a151f1e47a22f21a22e907f6275b5585a4c21de7f11b32",
+      "rank": "44a815866a377aa06039ad760f91db33716caf6d90728cc2102f775d43aacf0b",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052232/s00/e1004/4S/r00000/ssbar/mdst/sub00/mdst_000059_prod00052232_task10030000059.root",
+      "task_id": 1719
+    },
+    {
+      "category": "ssbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "855ec06b162373fe69facf59d01eabec207683a44d465c9626861882c804ff31",
+      "rank": "64b3e867f63290bc577403a2a848886b03139b445a8077924d48ec39daf697f8",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052232/s00/e1004/4S/r00000/ssbar/mdst/sub00/mdst_000021_prod00052232_task10030000021.root",
+      "task_id": 1789
+    },
+    {
+      "category": "ssbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "d5daa747766610b7b45ee3cc13aba340ab8a16e79b44ac8a06acebbb31898965",
+      "rank": "664198d5bf92675d0180f26d004f6f45b13318a588557d95cba1b99c8371507a",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052232/s00/e1004/4S/r00000/ssbar/mdst/sub00/mdst_000032_prod00052232_task10030000032.root",
+      "task_id": 109
+    },
+    {
+      "category": "ssbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "2b0cd93611b8c04d7f8523632e45e15b17a397a471b5abe53741a6720961e7ac",
+      "rank": "76007823d84ca5c95df9cfbbe2d27cdb8003f9f745b106066c56cf6ed5096a21",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052232/s00/e1004/4S/r00000/ssbar/mdst/sub00/mdst_000069_prod00052232_task10030000069.root",
+      "task_id": 389
+    },
+    {
+      "category": "ssbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "3b51ccf530bb144e574208ccc92af6995721bf96abe2557891a08b830f267f8b",
+      "rank": "846a01c5f25a2107e45806fbee25b7f4b35c7be6262b03cf0986afe56d72f037",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052232/s00/e1004/4S/r00000/ssbar/mdst/sub00/mdst_000008_prod00052232_task10030000008.root",
+      "task_id": 1929
+    },
+    {
+      "category": "ssbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "7788e4d97fc0e76a84aea46608d60fd989331ca915f11bd2158ca040c7609875",
+      "rank": "a153a90c7fade158ca9f447382cbb33a7a62fdffac39d4c3fd6436d5963ea448",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052232/s00/e1004/4S/r00000/ssbar/mdst/sub00/mdst_000033_prod00052232_task10030000033.root",
+      "task_id": 1649
+    },
+    {
+      "category": "ssbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "88ee607c1973c42e95cd367ad94bde79262250382a3ea79ff32ee81b18f15373",
+      "rank": "afb656275e51f227b48ab896f57715e48f12a40f51dcb3bccad169d89cf272c3",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052232/s00/e1004/4S/r00000/ssbar/mdst/sub00/mdst_000017_prod00052232_task10030000017.root",
+      "task_id": 179
+    },
+    {
+      "category": "ssbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "fb052f7de92479e04b1628b0fd31a796d1d4ea0a090861dd588a16deed08c4d6",
+      "rank": "c00b877fa421459d095f1af322f83325221be4549d71603ee6b77310c7756a67",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052232/s00/e1004/4S/r00000/ssbar/mdst/sub00/mdst_000015_prod00052232_task10030000015.root",
+      "task_id": 599
+    },
+    {
+      "category": "ssbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "9cdb390044237d101b9eae32336258b481f8a5c0c2aa7e00976b5db144809372",
+      "rank": "c01d9e5c964ba72406eb7f7099ee5afacddab3c137c01d6a4badb5f8e821cf85",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052232/s00/e1004/4S/r00000/ssbar/mdst/sub00/mdst_000041_prod00052232_task10030000041.root",
+      "task_id": 1579
+    },
+    {
+      "category": "ssbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "0d08fc65a2abc5409902730de5333875c83bf52ac2a1fabedbf7c54175a3871d",
+      "rank": "e1251325b1af9215c8767bda2626d4c31a3567c5932927492e2ee69aff7198e6",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052232/s00/e1004/4S/r00000/ssbar/mdst/sub00/mdst_000072_prod00052232_task10030000072.root",
+      "task_id": 1999
+    },
+    {
+      "category": "ssbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "8e3ce153383698f736147b43c04fa934e80a5af55fdc3953bc0cadcaaab12362",
+      "rank": "f0ae5da9464ef5b53ac304b607fe011684f580d5ee05ea1834498dc6feba5c2b",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052232/s00/e1004/4S/r00000/ssbar/mdst/sub00/mdst_000083_prod00052232_task10030000083.root",
+      "task_id": 459
+    },
+    {
+      "category": "ssbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "d0d6397971bb3c8590bf04bc424e178c7a5de8d04e9c7280a17a4883109a3bfd",
+      "rank": "f1d6ee99f57c24c2f305c475d8ee6cd1bd460b65d57cefb5013298af4c65407e",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052232/s00/e1004/4S/r00000/ssbar/mdst/sub00/mdst_000014_prod00052232_task10030000014.root",
+      "task_id": 39
+    },
+    {
+      "category": "taupair",
+      "event_count": 5000,
+      "inventory_entry_hash": "c88dfec5edb02f75a28dc706354eee3fb5248ffe079c5aae7ccc27ba96db1b9e",
+      "rank": "305e720e5d62ef3feb393a6bef000e120d365f7e0b368e158972810aa2266e2b",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052234/s00/e1004/4S/r00000/taupair/mdst/sub00/mdst_000238_prod00052234_task10030000238.root",
+      "task_id": 229
+    },
+    {
+      "category": "taupair",
+      "event_count": 5000,
+      "inventory_entry_hash": "afdbb3deb34fdb81726a6d21184b36ba9754388ed61a6510facfd19db3ce6ba9",
+      "rank": "42cb39e4770cfba3302260c9640f93dace4a2f23d05706512d5267f5e5b83282",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052234/s00/e1004/4S/r00000/taupair/mdst/sub00/mdst_000127_prod00052234_task10030000127.root",
+      "task_id": 1259
+    },
+    {
+      "category": "taupair",
+      "event_count": 5000,
+      "inventory_entry_hash": "0db18974c72f55d515e280f47795c307ca7965fa327e9ff92422d8af8c6b97ed",
+      "rank": "78467fa1a1afa5e495821c059c2abfdf944cb869e23f335206acdbcf805a9c1b",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052234/s00/e1004/4S/r00000/taupair/mdst/sub00/mdst_000033_prod00052234_task10030000033.root",
+      "task_id": 89
+    },
+    {
+      "category": "taupair",
+      "event_count": 5000,
+      "inventory_entry_hash": "7be41d858216ae445a634ee51264caac80394fc4c4b041e3d62bfb0eb3f90de2",
+      "rank": "7e2e1b34b80de24b5c98fa15053b4cf547778c8a17e22b5b7d6899c39464b5a5",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052234/s00/e1004/4S/r00000/taupair/mdst/sub00/mdst_000228_prod00052234_task10030000228.root",
+      "task_id": 1559
+    },
+    {
+      "category": "taupair",
+      "event_count": 5000,
+      "inventory_entry_hash": "4c56408dfb990f3c054e41ab57548fb97b1791c9f0e84fc6ef7212b89ac4a4ed",
+      "rank": "9fdef00c2d3710c26c5e4b2c96176e79d2946767225f56adfd84408158291747",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052234/s00/e1004/4S/r00000/taupair/mdst/sub00/mdst_000115_prod00052234_task10030000115.root",
+      "task_id": 299
+    },
+    {
+      "category": "taupair",
+      "event_count": 5000,
+      "inventory_entry_hash": "2bb1fa38f0dd4020d651a7ad03e8267f63d7026309445e605ef0c30c0bec32ae",
+      "rank": "a210232a125c1ac29ed16ca6d4a2bf943dac00a821fd84bde84d452841d14836",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052234/s00/e1004/4S/r00000/taupair/mdst/sub00/mdst_000055_prod00052234_task10030000055.root",
+      "task_id": 1229
+    },
+    {
+      "category": "taupair",
+      "event_count": 5000,
+      "inventory_entry_hash": "c90b088363f80aed3ea388eebe5189fe8a38a736b336af697ab224decda8d9e3",
+      "rank": "a6fc110517b05af71ee6adab2475aaf45f4178b72a690de4c507885ac45e8830",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052234/s00/e1004/4S/r00000/taupair/mdst/sub00/mdst_000163_prod00052234_task10030000163.root",
+      "task_id": 1699
+    },
+    {
+      "category": "taupair",
+      "event_count": 5000,
+      "inventory_entry_hash": "6d2100febc0fb4bfbe6ecfd8db3ec4ceb9cc0bd950a6499a88de7db2309768ad",
+      "rank": "b4a4f014cf56064281b8760fc023679c4d2fb8a4a536fcbe517aba1cf65a6c49",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052234/s00/e1004/4S/r00000/taupair/mdst/sub00/mdst_000243_prod00052234_task10030000243.root",
+      "task_id": 1629
+    },
+    {
+      "category": "taupair",
+      "event_count": 5000,
+      "inventory_entry_hash": "7e302ddc2a78e47d15d6d5d9a12902ffa4cfb62545a01babaab811580e7fe70e",
+      "rank": "b8d93d6bfa63ff0173e6de7737bb1699fdc767c945f2f92ef05139109a8369fc",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052234/s00/e1004/4S/r00000/taupair/mdst/sub00/mdst_000138_prod00052234_task10030000138.root",
+      "task_id": 1909
+    },
+    {
+      "category": "taupair",
+      "event_count": 5000,
+      "inventory_entry_hash": "f2ce1e86c5155e411a49d8b3ed3204daf6b9af5152816caffa472646c9847ba3",
+      "rank": "b9484384538498b5d06a446c2555d094088b1bcf6b2acf44416d5c2904cd4e3e",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052234/s00/e1004/4S/r00000/taupair/mdst/sub00/mdst_000008_prod00052234_task10030000008.root",
+      "task_id": 1199
+    },
+    {
+      "category": "taupair",
+      "event_count": 5000,
+      "inventory_entry_hash": "bdf9b223b937aba00908cf2e856e8d9cc7fb7b0699299b99b5c5fb8f694c4f87",
+      "rank": "b962f78c0ddb82800c4bef27aed05c410ac8d143ab8c1a0fb42d1e97631e4825",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052234/s00/e1004/4S/r00000/taupair/mdst/sub00/mdst_000053_prod00052234_task10030000053.root",
+      "task_id": 1169
+    },
+    {
+      "category": "taupair",
+      "event_count": 5000,
+      "inventory_entry_hash": "a2106cb5052be8f1061e9ea5bf4a826d1a7b9ea3a575407cf5b428f1eb062a10",
+      "rank": "bad48715d7f9779cca441a486bf72da1d668a7f96c142e7455b16c5701ef1f9f",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052234/s00/e1004/4S/r00000/taupair/mdst/sub00/mdst_000156_prod00052234_task10030000156.root",
+      "task_id": 1839
+    },
+    {
+      "category": "taupair",
+      "event_count": 5000,
+      "inventory_entry_hash": "4c5528b567c661f10a0f71b03d2407eecd8a6e64512e95c920d1aebd52fbbb99",
+      "rank": "baf2caf343501cae040ddd23b134be36295c679ab8d9f82bd47cf4a941141725",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052234/s00/e1004/4S/r00000/taupair/mdst/sub00/mdst_000103_prod00052234_task10030000103.root",
+      "task_id": 19
+    },
+    {
+      "category": "taupair",
+      "event_count": 5000,
+      "inventory_entry_hash": "3ac5a1267cede62a684e2b1ea235abe1ec67661b70428107988d5bc08eda5e7b",
+      "rank": "c8a95a38a168bf902f23552f7d75090e23592ca74303d52658410a2413965743",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052234/s00/e1004/4S/r00000/taupair/mdst/sub00/mdst_000153_prod00052234_task10030000153.root",
+      "task_id": 1979
+    },
+    {
+      "category": "taupair",
+      "event_count": 5000,
+      "inventory_entry_hash": "2da3a1272cea590b5e40cf60d760a30dd035905e427c134b39a1420d2ccb298c",
+      "rank": "d54b9bf582f2d41cbdca8214ab723a5d9f01370b0964a302d16bc558ec4b2833",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052234/s00/e1004/4S/r00000/taupair/mdst/sub00/mdst_000218_prod00052234_task10030000218.root",
+      "task_id": 369
+    },
+    {
+      "category": "taupair",
+      "event_count": 5000,
+      "inventory_entry_hash": "a4649c2ab4c8f1d3b777a357260c3ded9cd98576a4a4c47f86a25d73034efe3f",
+      "rank": "da25e75f4af38c2a077c14fbce91d69a2cc7443904549f5f4ad68e7a8e8f1129",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052234/s00/e1004/4S/r00000/taupair/mdst/sub00/mdst_000150_prod00052234_task10030000150.root",
+      "task_id": 579
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "b8c916fc68bd0692e67d553767219e2d189a7548e8407880ccafa6137d9f6327",
+      "rank": "10936e1cbb7409ba47b2e379804edaa189fb52216b337bf667e6fe8ff3e4f578",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000113_prod00052236_task10030000113.root",
+      "task_id": 279
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "11e1e24a2735378a2627d082b999a0a425ac2b15d43838c672ba306a13639ac2",
+      "rank": "17143e9fa028741f53d06e8238a7f02d10e5afa05956229e31d1c20c88b61788",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000316_prod00052236_task10030000318.root",
+      "task_id": 1489
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "6d92e0cb9a7ce3773825d63c527060fcd8fcae47b79fc9cc849eaaace927b39d",
+      "rank": "171f1d5f08b097061d0b07cb0993513ffd5309ff162053a3abf4b11ed78e138f",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000073_prod00052236_task10030000073.root",
+      "task_id": 1399
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "dddb048d7a2326504bb1f98cd25840fa65403ff204a6a0148f138024fd27a699",
+      "rank": "1effc15334863d16c8f48e6d25339a97ebbff4beddc00f2360a3c251f57c734b",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000297_prod00052236_task10030000297.root",
+      "task_id": 1309
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "3b566d0d75a6a01b17d9a95574967ccf9a9037cf26d0450672ac6cdbfb27a51b",
+      "rank": "23435a0f1c26345e9fc3f96e69a0d8b1acd695781127d4de27b657692d8c62f3",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000069_prod00052236_task10030000069.root",
+      "task_id": 1459
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "bd18e9a85b37592ff34c36997adb265becd3c2cc549329b44e945302399fc955",
+      "rank": "2466008746a3148713cd6a4a6fb3f6ce21d3e0cd6de5146e24b6d0079a43b8bf",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000142_prod00052236_task10030000142.root",
+      "task_id": 1139
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "4ae588f74864134b0ee0f9e7a6f00a93aff168c811246fd5183e100b891d8eb2",
+      "rank": "252d2264fbdfce7c3329fcfb9dc90535e2c1c2e6be0bc704310967612103042a",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000046_prod00052236_task10030000046.root",
+      "task_id": 1349
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "e072cb92ff68755c579dbb67f6ea4508f1fd4626583ada949a80ac5bf9940a02",
+      "rank": "256697a544037cc1ecc9178715eba30a363dfc1ddc8541b6ada7470ebc529028",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000324_prod00052236_task10030000326.root",
+      "task_id": 1609
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "531f51bc06c343b2b9e76a9ec62534dd3dc891a0a843e0c8109ad25aeca90a60",
+      "rank": "268f33d73632bd6418e841073ec7f44953abae3a3a5ba3370229baf315b85ffc",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000019_prod00052236_task10030000019.root",
+      "task_id": 1499
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "f9780565ddcd3ae48476bae670373f1bfe119661b00f4e18a14574d122b67768",
+      "rank": "2c50fc2df8a0fd5432d3d6e76742c0e72c8d7b739dcc3434f65ec765e0276601",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000041_prod00052236_task10030000041.root",
+      "task_id": 619
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "727b4ce2827758184a738740d14a5d139d2242ba911ca1324613929d7b1e6bbd",
+      "rank": "347e031ac996898e547259b294907f84cc7425c73c3c343316e4c73d72ef1556",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000016_prod00052236_task10030000016.root",
+      "task_id": 489
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "3c17b4b72cec06cf65a35c06140ff2fd88088810cac1ad5ed27714684cac99f2",
+      "rank": "3fae9b86f5d0d538db1a26a7af61f951d03a8d8a3c33b84ab4a187c5ed45b7c5",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000245_prod00052236_task10030000245.root",
+      "task_id": 1269
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "6b16b5cf1fb6b197704c8923de23fdbeb2f1c031f5708163f5df66d9f6a19bdc",
+      "rank": "4cc7281acba578f748c3fd5cd292ba01c7ceb386e1680c6ffdb9f513afb90dcf",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000065_prod00052236_task10030000065.root",
+      "task_id": 1359
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "ae16ce330aa959e549213b875a053b09874e53b2825b1ee68a5cd3b87aa473be",
+      "rank": "4dae41cc1448df77a96bf4b02f30fea18f12a9a57bf159142b1167b2a8fa0cde",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000208_prod00052236_task10030000208.root",
+      "task_id": 1209
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "6fe295563748429cb67fd626736f835c7411e1478d04bd07e3756396bba8ee4e",
+      "rank": "4ea1f0ffb34dbe5675d1943245fd445c56f75d9d2415608fc50fd48ecaf8c137",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000009_prod00052236_task10030000009.root",
+      "task_id": 1429
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "588ae606853fbdd4ddb77c00610b20938aa81bb84122104ac3e6abb891e5c2f2",
+      "rank": "5d0ffcd565bcd94044f29140e44f2edd970b801cdb3d420f4be6e63ce48de76d",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000076_prod00052236_task10030000076.root",
+      "task_id": 139
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "7746d2f39e945412ee34c0c1043129cff81f087cb7e9587090a8d8847aee8e0d",
+      "rank": "616c13e968b94d6b31bd1824e0ca9edb6b29f42993a7338d27532b78151951c4",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000042_prod00052236_task10030000042.root",
+      "task_id": 1469
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "582352f4edfc8c331bfc66adf9b054930dbd3a864bcfbf344be589c1e3cb1cdd",
+      "rank": "63c394349f3e193442df0a2c0a9a73c52e8831bb7643f3db15c298af823aba3e",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000003_prod00052236_task10030000003.root",
+      "task_id": 69
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "b9c8a452dd18411df32dc1edc3d1cd8847297e1dee88ffa313a4960bee67cb94",
+      "rank": "6fbdcb67c226302acbd67a6a10b5a4e13ab7b5ef46266291268c0fbd5fc1acce",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000178_prod00052236_task10030000178.root",
+      "task_id": 1339
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "f7f0b2c68c0f267999d9b6579cb92228ab1436d3ba3ae92710f988a6e98323a2",
+      "rank": "82e23d39d3df4a2fff91aa1d6e182355d63a805c42c400af15689e56fef89e05",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000285_prod00052236_task10030000285.root",
+      "task_id": 1299
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "ef5d10620f4e0be4074e1daaa53b52b0190ee9d2873dbdb9d93e0441f6f0839a",
+      "rank": "8f0f9c8e07a651f81507738de0817d93ebe495b2a1936b66e8d3c5c7c6a2cd0a",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000136_prod00052236_task10030000136.root",
+      "task_id": 1889
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "d50bd42fddaf7dd38fe5d03a73ca53930ca7fb7f4471489c6a6a9bfad0bde2a1",
+      "rank": "9703cf078f43ef21356a101aa6197855b71e955b875fa3eaa69ed53c6034aeea",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000055_prod00052236_task10030000055.root",
+      "task_id": 1409
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "02813cda8c2cc03af137a2bf36ec46adb28d5e7307c74ae85beadad335cd0405",
+      "rank": "9882d1fc7b1dc7e6ddeec2dd719a42176240dc8eda8640fed1273d9b4e035f68",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000051_prod00052236_task10030000051.root",
+      "task_id": 1369
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "0c90e2b5bf87e79a4fb9de40c166b48f203215e81fbd9e95f74a59990c73e8b0",
+      "rank": "9c7478a21401292102c06b27a185b9b2b7c9e4864c6cdc20e0d6fc556cf44fee",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000334_prod00052236_task10030000336.root",
+      "task_id": 419
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "7bc67a53612fced164e2d4db1c8b1203d718428d6ded2f05e947959135d1987d",
+      "rank": "a39e02d2e2b8ca9289fb035803404ce4b19e96c262daff4a5d24eaf5d849b3bc",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000309_prod00052236_task10030000311.root",
+      "task_id": 1539
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "b217636aa9d631fbe7f49b4573344a373596107e0521b25e9cf613272a4f44db",
+      "rank": "a6dc7bd687d3de6ce2e3fe8da21b8431af73a4b91ad69aa35f75f99012967e77",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000091_prod00052236_task10030000091.root",
+      "task_id": 1389
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "735f0554edfaa6c7476594c25b9b22c538561919b1b536db785023cac03aabc6",
+      "rank": "ac63f33f70fea692952f5aaa37ff8ddb0ac00ab115dbf4b5f972f9a1b45cd0ef",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000332_prod00052236_task10030000334.root",
+      "task_id": 1959
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "a9e5dc70564f4193224a363585f629ee46b9de70d53e4dd1a580f06edd5a0945",
+      "rank": "aecca58138e99323cb5c1b53160f7c1ee4b17656336ec449c4abf8c801a7f1a6",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000171_prod00052236_task10030000171.root",
+      "task_id": 1179
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "e8ee6f02d3f9918b66a9484c67af63bab92b1fdcf397d09348f86af448080510",
+      "rank": "be733839a53c081bc09ecef7916382cc9b34273849bc64d542c51b7e8b53c2c0",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000288_prod00052236_task10030000288.root",
+      "task_id": 1329
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "4963d48a8d5582d5fed798357d76f1c155c8236b1b5746d44cc4bb312f33a27c",
+      "rank": "cfdb7f5b5ba8e16e0717dd00cbf6d8b10d39981fe52584acac72d53cecc83aa7",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000012_prod00052236_task10030000012.root",
+      "task_id": 1749
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "3b077e57eb8e897dd8f11615d952cc68939b67985d0ea40e3410cd204caaa75e",
+      "rank": "d42eb60d3e833a15fe1386b2975facbb1346bc3c68d29b90be67baf82a25b901",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000010_prod00052236_task10030000010.root",
+      "task_id": 209
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "821e74be9c4a1b80752bcaaeb49ba39a694a03b01a02a2007834252c1fa4cb1e",
+      "rank": "dd2833a048563dd96f3e583debc6cf306a51d1e4936d651db3ca391145f1f095",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000094_prod00052236_task10030000094.root",
+      "task_id": 559
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "e32c77d3a91e98771e8e5dd1b13f97a442d6acecdfc2b0e7ddcef4149afb2306",
+      "rank": "deb92ee668a0d76cca1b5655df8121c3e59aec97bc29aa0fb7aa93422c65376b",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000201_prod00052236_task10030000201.root",
+      "task_id": 1439
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "276f2bf914e286cca487341913737f446923ac9d02e8609b05ac5c0e387e44e9",
+      "rank": "e0582d0a01f90409159ddbc1a205296c8edc0d2a91b565cd2b9337f6fbf53b0c",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000029_prod00052236_task10030000029.root",
+      "task_id": 1149
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "438aa4be038afd6b768c8f5c61493c56d1fa26bc8f5ae1c63f29c388ac3a4b64",
+      "rank": "e61f7f61501759cebf212b4ff9e704066555f2b614d89619b7fdde80a6559688",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000305_prod00052236_task10030000307.root",
+      "task_id": 1679
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "13ec29be659ff5cf26dffd559300bf14b16b2b9fd8a47c2b87c15dda06d0681f",
+      "rank": "efb7b6dee1706c44eae5db141a57af7dcadf24316582057b54908954520f12aa",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000133_prod00052236_task10030000133.root",
+      "task_id": 1819
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "b453b0cef686c361bae9f1a5b9bbe0e064c55d55477254e153d590f4cf7d8036",
+      "rank": "f1d5c1aebb0095a098ea43d138c17ac25b1b6a7c573d0830d7964a04f83b07ac",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000027_prod00052236_task10030000027.root",
+      "task_id": 1479
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "6af12429a53470140f056ae605cfde3e9394edbfc37bfcb9d6a448c0809379c7",
+      "rank": "fa62bab59536ff1d948f5510c13ed9296dea21444064c0760fd18a642b28a9c4",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000034_prod00052236_task10030000034.root",
+      "task_id": 1119
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "7e42f61805427ff2abc3cd270f7466ef9f98a8d2509f34ac391f05a861706417",
+      "rank": "fa714301617fa9edb5f6ec02476973c4e3dcdf0a03b016e74b18aeeb8475e810",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000057_prod00052236_task10030000057.root",
+      "task_id": 1239
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "4aa5c259b703bdb41dbc89d105a45bf87a9ca5de86dd306f13944069201b332d",
+      "rank": "fff109eb22398a32afdbad54143289e7184e57d9b19c3b691fb704e1da3ec7f6",
+      "role": "training_pool",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000090_prod00052236_task10030000090.root",
+      "task_id": 1509
+    },
+    {
+      "category": "ccbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "23805af01695b4a0d6576a810602efd093c0c8a35299d4dd0b6a38e7c2e59b3c",
+      "rank": "26a7e0accd70c08a05252f10b5a607f0ef48e677286b5f8e49aa24396be1ccc1",
+      "role": "validation",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052205/s00/e1004/4S/r00000/ccbar/mdst/sub00/mdst_000048_prod00052205_task10030000048.root",
+      "task_id": 1589
+    },
+    {
+      "category": "ccbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "d0e9da053f97fc97b99118b98618a73e97cc9cc480aa281429ed19fe4cfaea66",
+      "rank": "2f811e8dda207d7c853ea06a64277980e6148e10eeb292715ce1a33f09ba0780",
+      "role": "validation",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052205/s00/e1004/4S/r00000/ccbar/mdst/sub00/mdst_000337_prod00052205_task10030000342.root",
+      "task_id": 539
+    },
+    {
+      "category": "charged",
+      "event_count": 5000,
+      "inventory_entry_hash": "911e3c9c1a9fe2321ac24b2d8f558d69d22033e2de98f91857e0d5a7cc8254d3",
+      "rank": "1944ed88ca2353b50141d0fc530d903282b17a090240483dd5f6d680a0909c7c",
+      "role": "validation",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052207/s00/e1004/4S/r00000/charged/mdst/sub00/mdst_000109_prod00052207_task10030000109.root",
+      "task_id": 1639
+    },
+    {
+      "category": "ddbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "8b0a64f76a40e647b05ac48173e17c3c59ea6ba3bad8917b1d9b672a769a80a3",
+      "rank": "13fa5411933180905a788a2b013781430e8cb0a1cd6fe7032cb73caf2ad82d98",
+      "role": "validation",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052211/s00/e1004/4S/r00000/ddbar/mdst/sub00/mdst_000090_prod00052211_task10030000090.root",
+      "task_id": 1899
+    },
+    {
+      "category": "mixed",
+      "event_count": 5000,
+      "inventory_entry_hash": "f6314aa92bac50b365a125ec033aa1587ccba87ad76c97d6d868861f8e47cbda",
+      "rank": "018a8623da6207a20c529251172cc37b09c840e52150193bdad543476c395eb8",
+      "role": "validation",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052209/s00/e1004/4S/r00000/mixed/mdst/sub00/mdst_000058_prod00052209_task10030000058.root",
+      "task_id": 1109
+    },
+    {
+      "category": "ssbar",
+      "event_count": 5000,
+      "inventory_entry_hash": "51ce0f51e19e8e681a5ae33db7ed7c42a08cd43e233a8e98a2030cc6f23c9a07",
+      "rank": "145f358734a4b27148b9827604861c78d66828c1bcb706e9496a43b214966c09",
+      "role": "validation",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052232/s00/e1004/4S/r00000/ssbar/mdst/sub00/mdst_000004_prod00052232_task10030000004.root",
+      "task_id": 529
+    },
+    {
+      "category": "taupair",
+      "event_count": 5000,
+      "inventory_entry_hash": "646100c2f3f40773071208a401dc3617ab867fd75c5e65c4400d39383d05fe05",
+      "rank": "0879218dc57e9162fefdc05fda4bff016be7e2ff17a6f2b8bc7003bcde606ea6",
+      "role": "validation",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052234/s00/e1004/4S/r00000/taupair/mdst/sub00/mdst_000213_prod00052234_task10030000213.root",
+      "task_id": 159
+    },
+    {
+      "category": "taupair",
+      "event_count": 5000,
+      "inventory_entry_hash": "6f8be0ae9af2750cc7582e06773ed72025b4c1168a595b80db4d6be8a834228e",
+      "rank": "0886fa4954aa38b8c8641edf273e6881f41ff6cd2fe55251e1fcb7b33afb73b8",
+      "role": "validation",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052234/s00/e1004/4S/r00000/taupair/mdst/sub00/mdst_000113_prod00052234_task10030000113.root",
+      "task_id": 1289
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "330bc9dc97d2a798e11204886c046d2e81ea154b742204ce8a001cf613816aeb",
+      "rank": "009c580a3e5e797f7293dfe2368f70b0aa4feeb205ba912cadfd8b9b4c48780d",
+      "role": "validation",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000060_prod00052236_task10030000060.root",
+      "task_id": 1449
+    },
+    {
+      "category": "uubar",
+      "event_count": 5000,
+      "inventory_entry_hash": "81b292d0ad34e03e487b8d2a1707fe69396a06e1870c686baf95a3150b3d4b31",
+      "rank": "080a192c0d08e2fc20d4b9a37fc8f1fa8bf29f7fd1007317e86ba0e77f6e6604",
+      "role": "validation",
+      "source_file": "/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/prod00052236/s00/e1004/4S/r00000/uubar/mdst/sub00/mdst_000137_prod00052236_task10030000137.root",
+      "task_id": 1379
+    }
+  ],
+  "inventory_hash": "6b65445cdf3e43fde053bd26694b7b7977a378541009e4b0ae41dcd4334c9480",
+  "manifest_hash": "90627c77197dc7d9a9c27b90502162995e24fb3f174f896ccaef384023e067d8",
+  "manifest_version": "hypertagging-source-role-manifest-v1",
+  "quota_shards": {
+    "stress": {
+      "ccbar": 1,
+      "charged": 1,
+      "ddbar": 1,
+      "mixed": 1,
+      "ssbar": 1,
+      "taupair": 1,
+      "uubar": 1
+    },
+    "test": {
+      "ccbar": 2,
+      "charged": 1,
+      "ddbar": 1,
+      "mixed": 1,
+      "ssbar": 1,
+      "taupair": 2,
+      "uubar": 2
+    },
+    "validation": {
+      "ccbar": 2,
+      "charged": 1,
+      "ddbar": 1,
+      "mixed": 1,
+      "ssbar": 1,
+      "taupair": 2,
+      "uubar": 2
+    }
+  },
+  "role_event_counts": {
+    "stress": 35000,
+    "test": 50000,
+    "training_pool": 865000,
+    "validation": 50000
+  },
+  "role_shard_counts": {
+    "stress": 7,
+    "test": 10,
+    "training_pool": 173,
+    "validation": 10
+  },
+  "selection_seed": 20260812,
+  "source_role_isolation": "validated",
+  "task_role_isolation": "validated"
+}

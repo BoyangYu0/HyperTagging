@@ -1,0 +1,101 @@
+{
+  "category_representativeness_note": "The 1M reduced campaign is source-task sampled and skewed, especially toward mixed and uubar. The explicit quotas improve small-run coverage but do not make 500k or 865k category representative.",
+  "data_root": "/project/agkuhr/users/boyang/data/HyperTagging_uni",
+  "fixed_validation_test_sets": "validated",
+  "generated_by": "scripts/build_training_selection.py",
+  "inventory_category_shards": {
+    "ccbar": 20,
+    "charged": 18,
+    "ddbar": 16,
+    "mixed": 64,
+    "ssbar": 16,
+    "taupair": 21,
+    "uubar": 45
+  },
+  "inventory_events": 1000000,
+  "inventory_hash": "6b65445cdf3e43fde053bd26694b7b7977a378541009e4b0ae41dcd4334c9480",
+  "inventory_shards": 200,
+  "manifest_hash": "1c9fcf66325f59a2c63932affa4da1b740dc36b7d3cb8556d257270476359b47",
+  "manifest_version": "hypertagging-training-selection-summary-v1",
+  "nested_source_sets": "validated",
+  "nested_training_selections": [
+    {
+      "category_train_shards": {
+        "ccbar": 1,
+        "charged": 1,
+        "ddbar": 1,
+        "mixed": 1,
+        "ssbar": 1,
+        "taupair": 1,
+        "uubar": 1
+      },
+      "name": "train_035k",
+      "test_events": 50000,
+      "train_events": 35000,
+      "train_shards": 7,
+      "validation_events": 50000
+    },
+    {
+      "category_train_shards": {
+        "ccbar": 4,
+        "charged": 3,
+        "ddbar": 2,
+        "mixed": 2,
+        "ssbar": 2,
+        "taupair": 3,
+        "uubar": 4
+      },
+      "name": "train_100k",
+      "test_events": 50000,
+      "train_events": 100000,
+      "train_shards": 20,
+      "validation_events": 50000
+    },
+    {
+      "category_train_shards": {
+        "ccbar": 11,
+        "charged": 7,
+        "ddbar": 4,
+        "mixed": 6,
+        "ssbar": 4,
+        "taupair": 8,
+        "uubar": 10
+      },
+      "name": "train_250k",
+      "test_events": 50000,
+      "train_events": 250000,
+      "train_shards": 50,
+      "validation_events": 50000
+    }
+  ],
+  "reduced_campaign_contract": "validated",
+  "role_events": {
+    "stress": 35000,
+    "test": 50000,
+    "training_pool": 865000,
+    "validation": 50000
+  },
+  "role_shards": {
+    "stress": 7,
+    "test": 10,
+    "training_pool": 173,
+    "validation": 10
+  },
+  "roles_hash": "90627c77197dc7d9a9c27b90502162995e24fb3f174f896ccaef384023e067d8",
+  "selection_hashes": {
+    "train_035k": "b55cebee16b6dfa55b7fee943e28cca0de325132547b34dc13fffc24c418df72",
+    "train_100k": "018612eed8b48d180b0ee5a2ab992d7679296b19772bb55a60860607be325a3d",
+    "train_250k": "2e3d4a819bd25dc7369c7c4e1ae002e12e3e78e3b4871b2410fbcb45998466a7"
+  },
+  "selection_seed": 20260812,
+  "training_pool_category_shards": {
+    "ccbar": 15,
+    "charged": 15,
+    "ddbar": 13,
+    "mixed": 61,
+    "ssbar": 13,
+    "taupair": 16,
+    "uubar": 40
+  },
+  "uid_validation": "pending_full_index_build"
+}

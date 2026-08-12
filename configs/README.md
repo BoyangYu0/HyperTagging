@@ -26,3 +26,21 @@ Expected data roots:
 
 - Toy MC: `/home/boyang/data/MC`
 - GraFEI: `/home/boyang/data/graFEI`
+
+## Immutable scientific data selection
+
+The canonical reduced-production selections are under
+`training_selection/production_1m_20260812/`. Pass `train_035k.json`,
+`train_100k.json`, or `train_250k.json` as the existing trainer `--data` value;
+`build_real_data_module` detects the selection contract and applies its
+source-level train/validation/test roles before any stable hash split. A
+selection manifest cannot be combined with `--max-events`, and
+`scientific_mode=True` rejects raw data paths entirely.
+
+Build the corresponding dataset index with
+`scripts/build_dataset_index.py --selection-manifest ... --scientific-mode`.
+Do not use raw `max_events=N` prefixes as scientific subsets. Legacy JSONL
+production manifests and prefixes remain supported for explicitly diagnostic
+CPU/CI runs. The manifest's UID status remains a promotion gate until a full
+event-level index (not `--from-sidecars`) validates UID uniqueness and source
+consistency.

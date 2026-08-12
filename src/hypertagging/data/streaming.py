@@ -56,14 +56,13 @@ class StreamingCursor:
     batch_index: int = 0
 
     def state_dict(self) -> dict[str, int]:
-        return {
-            name: int(getattr(self, name))
-            for name in self.__dataclass_fields__
-        }
+        return {name: int(getattr(self, name)) for name in self.__dataclass_fields__}
 
     @classmethod
     def from_state_dict(cls, state: Mapping[str, Any]) -> "StreamingCursor":
-        return cls(**{name: int(state.get(name, 0)) for name in cls.__dataclass_fields__})
+        return cls(
+            **{name: int(state.get(name, 0)) for name in cls.__dataclass_fields__}
+        )
 
 
 class ParquetEventIterableDataset(IterableDataset):
@@ -79,6 +78,8 @@ class ParquetEventIterableDataset(IterableDataset):
         split_name: str | None = None,
         split_config: Any | None = None,
         split_overrides: Mapping[str, str] | None = None,
+        source_split_overrides: Mapping[str, str] | None = None,
+        require_source_split_override: bool = False,
     ) -> None:
         super().__init__()
         self.paths = tuple(Path(path) for path in paths)
@@ -88,13 +89,13 @@ class ParquetEventIterableDataset(IterableDataset):
         self.split_name = split_name
         self.split_config = split_config
         self.split_overrides = dict(split_overrides or {})
+        self.source_split_overrides = dict(source_split_overrides or {})
+        self.require_source_split_override = bool(require_source_split_override)
 
     def __iter__(self) -> Iterator[dict[str, Any]]:
         yield from self.iter_from_cursor(StreamingCursor())
 
-    def iter_from_cursor(
-        self, cursor: StreamingCursor
-    ) -> Iterator[dict[str, Any]]:
+    def iter_from_cursor(self, cursor: StreamingCursor) -> Iterator[dict[str, Any]]:
         worker = get_worker_info()
         worker_id = 0 if worker is None else worker.id
         worker_count = 1 if worker is None else worker.num_workers
@@ -129,10 +130,18 @@ class ParquetEventIterableDataset(IterableDataset):
                     if self.split_name is not None:
                         from hypertagging.data.splitting import stable_split_name
 
-                        assigned = self.split_overrides.get(
-                            str(event["event_uid"]),
-                            stable_split_name(event, self.split_config),
-                        )
+                        event_uid = str(event["event_uid"])
+                        source_file = str(event.get("source_file", ""))
+                        assigned = self.split_overrides.get(event_uid)
+                        if assigned is None:
+                            assigned = self.source_split_overrides.get(source_file)
+                        if assigned is None and self.require_source_split_override:
+                            raise ValueError(
+                                f"record source {source_file!r} is absent from "
+                                "the training-selection roles"
+                            )
+                        if assigned is None:
+                            assigned = stable_split_name(event, self.split_config)
                         if assigned != self.split_name:
                             continue
                     yield event
@@ -220,7 +229,9 @@ class StreamingMaskedFeatureNormalizer:
         total = self.count + count
         delta = mean - self.mean
         self.mean = self.mean + delta * count / total.clamp_min(1)
-        self.m2 = self.m2 + m2 + delta.square() * self.count * count / total.clamp_min(1)
+        self.m2 = (
+            self.m2 + m2 + delta.square() * self.count * count / total.clamp_min(1)
+        )
         self.count = total
 
     def transform(
@@ -266,14 +277,18 @@ class RuntimeFeatureNormalizer(nn.Module):
     ) -> None:
         super().__init__()
         self.register_buffer("common_mean", common_mean.detach().clone().float())
-        self.register_buffer("common_std", common_std.detach().clone().float().clamp_min(1e-6))
+        self.register_buffer(
+            "common_std", common_std.detach().clone().float().clamp_min(1e-6)
+        )
         self.register_buffer("composite_mean", composite_mean.detach().clone().float())
         self.register_buffer(
             "composite_std", composite_std.detach().clone().float().clamp_min(1e-6)
         )
 
     @classmethod
-    def identity(cls, common_width: int, composite_width: int) -> "RuntimeFeatureNormalizer":
+    def identity(
+        cls, common_width: int, composite_width: int
+    ) -> "RuntimeFeatureNormalizer":
         return cls(
             common_mean=torch.zeros(common_width),
             common_std=torch.ones(common_width),

@@ -6,7 +6,7 @@ from collections import Counter
 import hashlib
 import json
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Iterable, Mapping
 
 import torch
 
@@ -15,8 +15,12 @@ from hypertagging.data.splitting import SourceAwareSplitConfig, stable_split_nam
 from hypertagging.data.streaming import StreamingMaskedFeatureNormalizer
 from hypertagging.preprocessing.schema_v4 import (
     COMPLETION_MARKER_VERSION,
-    FEATURE_SPEC_REVISION_V4, LEAF_MODE_TO_ID, SCHEMA_VERSION_V4,
-    TARGET_COMPOSITE_METADATA_INDICES, feature_spec_v4, iter_event_records_v4,
+    FEATURE_SPEC_REVISION_V4,
+    LEAF_MODE_TO_ID,
+    SCHEMA_VERSION_V4,
+    TARGET_COMPOSITE_METADATA_INDICES,
+    feature_spec_v4,
+    iter_event_records_v4,
 )
 from hypertagging.preprocessing.schema_v2 import SCHEMA_VERSION_V1, SCHEMA_VERSION_V2
 from hypertagging.preprocessing.schema_v3 import SCHEMA_VERSION_V3
@@ -24,7 +28,12 @@ from hypertagging.preprocessing.pid_filter import PID_VOCABULARY_VERSION
 
 
 DATASET_INDEX_VERSION = "hypertagging-dataset-index-v2"
-SUPPORTED_SCHEMAS = {SCHEMA_VERSION_V1, SCHEMA_VERSION_V2, SCHEMA_VERSION_V3, SCHEMA_VERSION_V4}
+SUPPORTED_SCHEMAS = {
+    SCHEMA_VERSION_V1,
+    SCHEMA_VERSION_V2,
+    SCHEMA_VERSION_V3,
+    SCHEMA_VERSION_V4,
+}
 FEATURE_BLOCKS = ("common", "track", "cluster", "composite")
 MAX_CHANNEL_FREQUENCY_SLICE_SIGNATURES = 4096
 
@@ -36,13 +45,16 @@ def build_dataset_index(
     split_config: SourceAwareSplitConfig | None = None,
     target_policy: str = "complete_only",
     max_events: int | None = None,
+    source_split_overrides: Mapping[str, str] | None = None,
+    selection_manifest_hash: str | None = None,
 ) -> Path:
     """Scan once, then persist all startup statistics needed by trainers."""
 
     config = split_config or SourceAwareSplitConfig()
-    normalizers = {
-        name: StreamingMaskedFeatureNormalizer() for name in FEATURE_BLOCKS
-    }
+    source_split_overrides = dict(source_split_overrides or {})
+    if selection_manifest_hash is not None and max_events is not None:
+        raise ValueError("source-role selection cannot be combined with max_events")
+    normalizers = {name: StreamingMaskedFeatureNormalizer() for name in FEATURE_BLOCKS}
     all_split_normalizers = {
         name: StreamingMaskedFeatureNormalizer() for name in FEATURE_BLOCKS
     }
@@ -61,9 +73,8 @@ def build_dataset_index(
     track_fit_policies = set()
     shards: list[dict[str, Any]] = []
     policy_capacity = {
-        policy: Counter() for policy in (
-            "complete_only", "reconstructable_partial", "diagnostic_all"
-        )
+        policy: Counter()
+        for policy in ("complete_only", "reconstructable_partial", "diagnostic_all")
     }
     capacity_slices: dict[int, dict[str, dict[str, dict[str, int]]]] = {}
     channel_frequency: Counter[str] = Counter()
@@ -93,15 +104,29 @@ def build_dataset_index(
             if max_events is not None and event_count >= max_events:
                 break
             event_count += 1
-            split = stable_split_name(record, config)
+            source = str(record.get("source_file", ""))
+            if (
+                selection_manifest_hash is not None
+                and source not in source_split_overrides
+            ):
+                raise ValueError(
+                    f"record source {source!r} is absent from source-role selection"
+                )
+            split = source_split_overrides.get(
+                source, stable_split_name(record, config)
+            )
             split_counts[split] += 1
             category_counts[str(record.get("source_category", ""))] += 1
-            source = str(record.get("source_file", "")) or str(record["event_uid"])
+            source = source or str(record["event_uid"])
             previous = source_groups.setdefault(source, split)
             if previous != split:
                 raise ValueError(f"source group {source!r} leaks across splits")
             schema_versions.add(
-                str(record.get("source_schema_version", record.get("schema_version", "")))
+                str(
+                    record.get(
+                        "source_schema_version", record.get("schema_version", "")
+                    )
+                )
             )
             event = heterogeneous_event_from_record(record)
             for side in ("b1", "b2"):
@@ -110,7 +135,9 @@ def build_dataset_index(
                     getattr(event, f"{side}_reconstructable_channel_id")
                 )
                 if full_id > 0 and reconstructable_id > 0:
-                    channel_projection_groups.setdefault(reconstructable_id, set()).add(full_id)
+                    channel_projection_groups.setdefault(reconstructable_id, set()).add(
+                        full_id
+                    )
                     channel_projection_event_counts[reconstructable_id] += 1
                     mechanism_counts = channel_projection_mechanisms.setdefault(
                         reconstructable_id, Counter()
@@ -182,14 +209,13 @@ def build_dataset_index(
                     for mother in mothers.tolist()
                 ]
                 neutral_multiplicity = int(
-                    (
-                        event.active
-                        & (event.level_ids == 0)
-                        & (event.charge == 0)
-                    ).sum()
+                    (event.active & (event.level_ids == 0) & (event.charge == 0)).sum()
                 )
                 for dimension, value in (
-                    ("source_category", str(record.get("source_category", "")) or "unknown"),
+                    (
+                        "source_category",
+                        str(record.get("source_category", "")) or "unknown",
+                    ),
                     ("event_multiplicity", str(int(event.active.sum()))),
                     ("neutral_multiplicity", str(neutral_multiplicity)),
                 ):
@@ -218,9 +244,13 @@ def build_dataset_index(
                         row["maximum_daughter_cardinality"],
                         max(cardinalities, default=0),
                     )
-                mother_count_histograms.setdefault(level, Counter())[int(mothers.numel())] += 1
+                mother_count_histograms.setdefault(level, Counter())[
+                    int(mothers.numel())
+                ] += 1
                 for mother in mothers.tolist():
-                    daughter_cardinality[int(event.daughter_adjacency[mother].sum())] += 1
+                    daughter_cardinality[
+                        int(event.daughter_adjacency[mother].sum())
+                    ] += 1
                     daughter_cardinality_by_level.setdefault(level, Counter())[
                         int(event.daughter_adjacency[mother].sum())
                     ] += 1
@@ -267,7 +297,9 @@ def build_dataset_index(
             break
     if not event_count:
         raise ValueError("cannot index an empty dataset")
-    fitted_normalizers = normalizers if split_counts.get("train", 0) else all_split_normalizers
+    fitted_normalizers = (
+        normalizers if split_counts.get("train", 0) else all_split_normalizers
+    )
     normalizer_state = {
         block: {
             key: value.tolist()
@@ -279,15 +311,17 @@ def build_dataset_index(
     for level, signatures in channel_capacity.items():
         for signature, row in signatures.items():
             frequency = str(channel_frequency[signature])
-            aggregate = capacity_slices.setdefault(level, {}).setdefault(
-                "channel_frequency", {}
-            ).setdefault(
-                frequency,
-                {
-                    "event_count": 0,
-                    "maximum_mothers": 0,
-                    "maximum_daughter_cardinality": 0,
-                },
+            aggregate = (
+                capacity_slices.setdefault(level, {})
+                .setdefault("channel_frequency", {})
+                .setdefault(
+                    frequency,
+                    {
+                        "event_count": 0,
+                        "maximum_mothers": 0,
+                        "maximum_daughter_cardinality": 0,
+                    },
+                )
             )
             aggregate["event_count"] += row["event_count"]
             aggregate["maximum_mothers"] = max(
@@ -312,7 +346,9 @@ def build_dataset_index(
         "category_counts": dict(category_counts),
         "legacy_fraction": legacy_nodes / max(total_nodes, 1),
         "normalizer_state": normalizer_state,
-        "normalizer_scope": "train" if split_counts.get("train", 0) else "all_events_no_train_split_diagnostic",
+        "normalizer_scope": "train"
+        if split_counts.get("train", 0)
+        else "all_events_no_train_split_diagnostic",
         "allowed_types_by_level": {
             str(level): sorted(tokens) for level, tokens in allowed_types.items()
         },
@@ -327,7 +363,9 @@ def build_dataset_index(
             str(level): {str(k): v for k, v in sorted(histogram.items())}
             for level, histogram in sorted(daughter_cardinality_by_level.items())
         },
-        "depth_distribution": {str(k): v for k, v in sorted(depth_distribution.items())},
+        "depth_distribution": {
+            str(k): v for k, v in sorted(depth_distribution.items())
+        },
         "target_policy": target_policy,
         "target_policy_counts": dict(target_counts),
         "policy_capacity_statistics": {
@@ -357,13 +395,17 @@ def build_dataset_index(
                     "reconstructable_channel_id": reconstructable_id,
                     "full_truth_channel_ids": sorted(full_ids),
                     "distinct_full_truth_channels": len(full_ids),
-                    "event_branch_count": channel_projection_event_counts[reconstructable_id],
+                    "event_branch_count": channel_projection_event_counts[
+                        reconstructable_id
+                    ],
                     # These are co-occurrence diagnostics, not causal labels.
                     "possible_mechanism_event_counts": dict(
                         channel_projection_mechanisms.get(reconstructable_id, {})
                     ),
                 }
-                for reconstructable_id, full_ids in sorted(channel_projection_groups.items())
+                for reconstructable_id, full_ids in sorted(
+                    channel_projection_groups.items()
+                )
                 if len(full_ids) > 1
             ],
             "mechanism_scope": (
@@ -376,11 +418,11 @@ def build_dataset_index(
         "feature_spec_revision": FEATURE_SPEC_REVISION_V4,
         "feature_spec_hash": feature_spec_v4()["feature_spec_hash"],
         "supported_schema_set": sorted(SUPPORTED_SCHEMAS),
-        "selection_contract": {
-            "mode": "ordered_prefix",
-            "max_events": max_events,
-            "fingerprint": _selection_fingerprint(resolved, max_events),
-        },
+        "selection_contract": _selection_contract(
+            resolved,
+            max_events=max_events,
+            selection_manifest_hash=selection_manifest_hash,
+        ),
     }
     payload["index_hash"] = _index_hash(payload)
     destination = Path(output)
@@ -391,7 +433,9 @@ def build_dataset_index(
     return destination
 
 
-def load_dataset_index(path: str | Path, *, verify_sources: bool = True) -> dict[str, Any]:
+def load_dataset_index(
+    path: str | Path, *, verify_sources: bool = True
+) -> dict[str, Any]:
     payload = json.loads(Path(path).read_text())
     if payload.get("index_version") != DATASET_INDEX_VERSION:
         raise ValueError("unsupported dataset index version")
@@ -411,7 +455,9 @@ def load_dataset_index(path: str | Path, *, verify_sources: bool = True) -> dict
     selection = payload.get("selection_contract", {})
     resolved = [Path(value).resolve() for value in payload.get("paths", ())]
     if selection.get("fingerprint") != _selection_fingerprint(
-        resolved, selection.get("max_events")
+        resolved,
+        selection.get("max_events"),
+        selection_manifest_hash=selection.get("selection_manifest_hash"),
     ):
         raise ValueError("dataset index selection fingerprint mismatch")
     if verify_sources:
@@ -428,9 +474,13 @@ def _update_capacity_slice(
     mother_count: int,
     maximum_cardinality: int,
 ) -> None:
-    row = slices.setdefault(level, {}).setdefault(dimension, {}).setdefault(
-        value,
-        {"event_count": 0, "maximum_mothers": 0, "maximum_daughter_cardinality": 0},
+    row = (
+        slices.setdefault(level, {})
+        .setdefault(dimension, {})
+        .setdefault(
+            value,
+            {"event_count": 0, "maximum_mothers": 0, "maximum_daughter_cardinality": 0},
+        )
     )
     row["event_count"] += 1
     row["maximum_mothers"] = max(row["maximum_mothers"], mother_count)
@@ -445,6 +495,8 @@ def build_dataset_index_from_sidecars(
     *,
     split_config: SourceAwareSplitConfig | None = None,
     target_policy: str = "complete_only",
+    source_split_overrides: Mapping[str, str] | None = None,
+    selection_manifest_hash: str | None = None,
 ) -> Path:
     """Merge shard sufficient statistics without opening event payloads.
 
@@ -453,6 +505,7 @@ def build_dataset_index_from_sidecars(
     """
 
     config = split_config or SourceAwareSplitConfig()
+    source_split_overrides = dict(source_split_overrides or {})
     if not config.group_by_source_file:
         raise ValueError("metadata-only indexing requires source-file grouping")
     resolved = [Path(path).resolve() for path in paths]
@@ -461,17 +514,14 @@ def build_dataset_index_from_sidecars(
     source_groups: dict[str, str] = {}
     schema_versions: set[str] = set()
     feature_hashes: set[str] = set()
-    normalizers = {
-        name: StreamingMaskedFeatureNormalizer() for name in FEATURE_BLOCKS
-    }
+    normalizers = {name: StreamingMaskedFeatureNormalizer() for name in FEATURE_BLOCKS}
     capacity = Counter()
     completeness = Counter()
     total_nodes = legacy_nodes = 0
     shards: list[dict[str, Any]] = []
     policy_capacity = {
-        policy: Counter() for policy in (
-            "complete_only", "reconstructable_partial", "diagnostic_all"
-        )
+        policy: Counter()
+        for policy in ("complete_only", "reconstructable_partial", "diagnostic_all")
     }
     for path in resolved:
         sidecar = path.with_suffix(path.suffix + ".metadata.json")
@@ -482,13 +532,21 @@ def build_dataset_index_from_sidecars(
         marker_payload = _validated_completion_marker(path, metadata)
         source = str(metadata.get("source_file", ""))
         if not source:
-            raise ValueError(f"metadata-only indexing requires source_file in {sidecar}")
+            raise ValueError(
+                f"metadata-only indexing requires source_file in {sidecar}"
+            )
+        if selection_manifest_hash is not None and source not in source_split_overrides:
+            raise ValueError(
+                f"sidecar source {source!r} is absent from source-role selection"
+            )
         pseudo_event = {
             "event_uid": f"sidecar:{path.name}",
             "source_file": source,
             "source_category": str(metadata.get("category", "")),
         }
-        split = stable_split_name(pseudo_event, config)
+        split = source_split_overrides.get(
+            source, stable_split_name(pseudo_event, config)
+        )
         previous = source_groups.setdefault(source, split)
         if previous != split:
             raise ValueError(f"source group {source!r} leaks across splits")
@@ -517,9 +575,7 @@ def build_dataset_index_from_sidecars(
         total_nodes += int(shard_capacity.get("nodes", 0))
         legacy_nodes += int(shard_capacity.get("leaf_mode_legacy_conflated", 0))
         if split == "train":
-            for block, state in metadata.get(
-                "aggregate_feature_welford", {}
-            ).items():
+            for block, state in metadata.get("aggregate_feature_welford", {}).items():
                 if block == "ecl_cluster":
                     block = "cluster"
                 shard = StreamingMaskedFeatureNormalizer()
@@ -535,7 +591,10 @@ def build_dataset_index_from_sidecars(
         for policy in policy_capacity:
             if policy in supplied_policy:
                 policy_capacity[policy].update(
-                    {str(key): int(value) for key, value in supplied_policy[policy].items()}
+                    {
+                        str(key): int(value)
+                        for key, value in supplied_policy[policy].items()
+                    }
                 )
         shards.append(
             {
@@ -548,7 +607,10 @@ def build_dataset_index_from_sidecars(
                 "schema": str(metadata.get("schema_version", "")),
                 "feature_hash": str(metadata.get("feature_spec_hash", "")),
                 "pid_vocabulary": str(metadata.get("pid_vocabulary_version", "")),
-                "source_entry_range": [metadata.get("entry_start"), metadata.get("entry_stop_exclusive")],
+                "source_entry_range": [
+                    metadata.get("entry_start"),
+                    metadata.get("entry_stop_exclusive"),
+                ],
                 "completion_marker_content": marker_payload,
             }
         )
@@ -575,9 +637,9 @@ def build_dataset_index_from_sidecars(
             level, token = key.removeprefix("target_type_level_").split("_token_")
             allowed.setdefault(level, set()).add(int(token))
         elif key.startswith("daughter_cardinality_level_"):
-            level, count = key.removeprefix(
-                "daughter_cardinality_level_"
-            ).split("_value_")
+            level, count = key.removeprefix("daughter_cardinality_level_").split(
+                "_value_"
+            )
             daughter_hist_by_level.setdefault(level, {})[count] = int(value)
         elif key.startswith("daughter_cardinality_"):
             daughter_hist[key.removeprefix("daughter_cardinality_")] = int(value)
@@ -598,6 +660,7 @@ def build_dataset_index_from_sidecars(
         "category_counts": dict(category_counts),
         "legacy_fraction": legacy_nodes / max(total_nodes, 1),
         "normalizer_state": normalizer_state,
+        "normalizer_scope": "train",
         "allowed_types_by_level": {
             level: sorted(tokens) for level, tokens in allowed.items()
         },
@@ -618,11 +681,11 @@ def build_dataset_index_from_sidecars(
         "feature_spec_revision": FEATURE_SPEC_REVISION_V4,
         "feature_spec_hash": feature_spec_v4()["feature_spec_hash"],
         "supported_schema_set": sorted(SUPPORTED_SCHEMAS),
-        "selection_contract": {
-            "mode": "all",
-            "max_events": None,
-            "fingerprint": _selection_fingerprint(resolved, None),
-        },
+        "selection_contract": _selection_contract(
+            resolved,
+            max_events=None,
+            selection_manifest_hash=selection_manifest_hash,
+        ),
     }
     payload["index_hash"] = _index_hash(payload)
     destination = Path(output)
@@ -633,7 +696,9 @@ def build_dataset_index_from_sidecars(
     return destination
 
 
-def tensor_normalizer_state(index: dict[str, Any]) -> dict[str, dict[str, torch.Tensor]]:
+def tensor_normalizer_state(
+    index: dict[str, Any],
+) -> dict[str, dict[str, torch.Tensor]]:
     return {
         block: {
             key: torch.tensor(value, dtype=torch.float32)
@@ -658,18 +723,51 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _selection_fingerprint(paths: Iterable[Path], max_events: int | None) -> str:
+def _selection_fingerprint(
+    paths: Iterable[Path],
+    max_events: int | None,
+    *,
+    selection_manifest_hash: str | None = None,
+) -> str:
     payload = {
         "paths": [str(Path(path).resolve()) for path in paths],
         "max_events": max_events,
         "event_selection": "ordered_prefix",
     }
+    if selection_manifest_hash is not None:
+        payload["event_selection"] = "source_role_manifest"
+        payload["selection_manifest_hash"] = selection_manifest_hash
     return hashlib.sha256(
         json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()
 
 
-def _validated_completion_marker(path: Path, metadata: dict[str, Any]) -> dict[str, Any]:
+def _selection_contract(
+    paths: Iterable[Path],
+    *,
+    max_events: int | None,
+    selection_manifest_hash: str | None,
+) -> dict[str, Any]:
+    resolved = list(paths)
+    return {
+        "mode": (
+            "source_role_manifest"
+            if selection_manifest_hash is not None
+            else ("ordered_prefix" if max_events is not None else "all")
+        ),
+        "max_events": max_events,
+        "selection_manifest_hash": selection_manifest_hash,
+        "fingerprint": _selection_fingerprint(
+            resolved,
+            max_events,
+            selection_manifest_hash=selection_manifest_hash,
+        ),
+    }
+
+
+def _validated_completion_marker(
+    path: Path, metadata: dict[str, Any]
+) -> dict[str, Any]:
     marker = path.with_suffix(path.suffix + ".complete")
     if not marker.exists():
         raise ValueError(f"missing completion marker for {path}")
@@ -695,27 +793,49 @@ def _validated_completion_marker(path: Path, metadata: dict[str, Any]) -> dict[s
     if payload.get("sidecar_sha256") != _sha256_file(sidecar):
         raise ValueError(f"completion marker sidecar digest mismatch for {path}")
     for key in (
-        "campaign_id", "campaign_config_digest", "source_git_commit",
-        "source_git_tree", "source_state", "task_record_hash", "task_id",
-        "source_file", "source_file_size", "source_file_mtime_ns",
-        "source_file_identity", "source_file_sha256", "entry_start", "entry_stop_exclusive",
-        "planned_events", "campaign_stage", "klm_training_scope",
-        "production_readiness_report_sha256", "physics_category", "output_file",
-        "leaf_kinematics_mode", "track_fit_policy",
-        "charge_conjugate_normalization", "event_buffer_size", "row_group_size",
+        "campaign_id",
+        "campaign_config_digest",
+        "source_git_commit",
+        "source_git_tree",
+        "source_state",
+        "task_record_hash",
+        "task_id",
+        "source_file",
+        "source_file_size",
+        "source_file_mtime_ns",
+        "source_file_identity",
+        "source_file_sha256",
+        "entry_start",
+        "entry_stop_exclusive",
+        "planned_events",
+        "campaign_stage",
+        "klm_training_scope",
+        "production_readiness_report_sha256",
+        "physics_category",
+        "output_file",
+        "leaf_kinematics_mode",
+        "track_fit_policy",
+        "charge_conjugate_normalization",
+        "event_buffer_size",
+        "row_group_size",
     ):
         if key in payload and payload.get(key) != metadata.get(key):
-            raise ValueError(f"completion marker {key} disagrees with sidecar for {path}")
+            raise ValueError(
+                f"completion marker {key} disagrees with sidecar for {path}"
+            )
     return payload
 
 
 def _verify_indexed_shards(index: dict[str, Any]) -> None:
     expected_paths = [str(Path(path).resolve()) for path in index.get("paths", ())]
-    shard_paths = [str(Path(shard["path"]).resolve()) for shard in index.get("shards", ())]
+    shard_paths = [
+        str(Path(shard["path"]).resolve()) for shard in index.get("shards", ())
+    ]
     truncated = index.get("selection_contract", {}).get("max_events") is not None
     paths_match = (
         expected_paths[: len(shard_paths)] == shard_paths
-        if truncated else expected_paths == shard_paths
+        if truncated
+        else expected_paths == shard_paths
     )
     if not paths_match:
         raise ValueError("dataset index shard/path list mismatch")
@@ -739,8 +859,12 @@ def _verify_indexed_shards(index: dict[str, Any]) -> None:
             marker_payload = _validated_completion_marker(path, metadata)
             if marker_payload != shard.get("completion_marker_content"):
                 raise ValueError(f"completion marker content changed for {path}")
-            if int(shard.get("event_count", -1)) != int(metadata.get("event_count", -2)):
-                raise ValueError(f"indexed event count disagrees with sidecar for {path}")
+            if int(shard.get("event_count", -1)) != int(
+                metadata.get("event_count", -2)
+            ):
+                raise ValueError(
+                    f"indexed event count disagrees with sidecar for {path}"
+                )
             if shard.get("feature_hash") != metadata.get("feature_spec_hash"):
                 raise ValueError(f"indexed shard feature hash changed for {path}")
             if shard.get("pid_vocabulary") != metadata.get("pid_vocabulary_version"):

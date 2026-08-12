@@ -44,6 +44,8 @@ class RealDataModule:
     shuffle_buffer_size: int = 1024
     allow_legacy_conflated: bool = False
     split_overrides: dict[str, str] = field(default_factory=dict)
+    source_split_overrides: dict[str, str] = field(default_factory=dict)
+    selection_manifest_hash: str | None = None
     split_counts: dict[str, int] = field(default_factory=dict)
     legacy_conflated_fraction: float = 0.0
     allowed_types_by_level: dict[int, tuple[int, ...]] = field(default_factory=dict)
@@ -76,14 +78,20 @@ class RealDataModule:
                 )
             )
         for record in records:
-            assigned = self.split_overrides.get(
-                str(record["event_uid"]),
-                stable_split_name(record, self.split_config),
+            assigned = _assigned_split(
+                record,
+                self.split_config,
+                event_overrides=self.split_overrides,
+                source_overrides=self.source_split_overrides,
+                require_source_override=self.selection_manifest_hash is not None,
             )
             if assigned != split:
                 continue
             event = heterogeneous_event_from_record(record)
-            if self.max_nodes is not None and event.common_features.shape[0] > self.max_nodes:
+            if (
+                self.max_nodes is not None
+                and event.common_features.shape[0] > self.max_nodes
+            ):
                 if self.max_nodes_overflow == "drop":
                     self.overflow_counters["max_nodes_dropped"] += 1
                     continue
@@ -134,7 +142,9 @@ class RealDataModule:
         if pending:
             yield self.normalize_batch(collate_heterogeneous_events(pending))
 
-    def normalize_batch(self, batch: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
+    def normalize_batch(
+        self, batch: dict[str, torch.Tensor]
+    ) -> dict[str, torch.Tensor]:
         result = dict(batch)
         for block, normalizer in self.normalizers.items():
             # Common/composite values remain raw until the authoritative
@@ -152,7 +162,8 @@ class RealDataModule:
 
     def normalization_state(self) -> dict[str, dict[str, torch.Tensor]]:
         return {
-            name: normalizer.state_dict() for name, normalizer in self.normalizers.items()
+            name: normalizer.state_dict()
+            for name, normalizer in self.normalizers.items()
         }
 
     @property
@@ -200,11 +211,37 @@ def build_real_data_module(
     rescan_dataset: bool = False,
     target_policy: str = "complete_only",
     allow_incomplete_v4_publication: bool = False,
+    scientific_mode: bool = False,
 ) -> RealDataModule:
     """Build a restartable streaming data module without retaining event lists."""
 
-    paths = resolve_data_paths(data)
-    if not allow_incomplete_v4_publication:
+    from hypertagging.data.training_selection import (
+        is_training_selection_manifest,
+        load_training_selection,
+    )
+
+    selection = None
+    if isinstance(data, (str, Path)) and is_training_selection_manifest(data):
+        selection = load_training_selection(data)
+    if scientific_mode and selection is None:
+        raise ValueError(
+            "scientific mode requires an immutable training-selection manifest"
+        )
+    if selection is not None and max_events is not None:
+        raise ValueError(
+            "training-selection manifests cannot be combined with raw max_events prefixes"
+        )
+    if selection is not None and pilot_split_repair:
+        raise ValueError("selection manifests cannot use pilot_split_repair")
+    paths = list(selection.paths) if selection is not None else resolve_data_paths(data)
+    source_split_overrides = (
+        dict(selection.source_split_overrides) if selection is not None else {}
+    )
+    # The selection loader verifies its manifest plus sidecar/marker hashes and
+    # marker-bound parquet digest reference. Avoid re-reading every selected
+    # parquet payload here; the promoted full dataset index is the payload/UID
+    # verification gate.
+    if not allow_incomplete_v4_publication and selection is None:
         _require_complete_v4_publications(paths)
     config = split_config or SourceAwareSplitConfig(seed=seed)
     if dataset_index is not None and not rescan_dataset:
@@ -219,8 +256,18 @@ def build_real_data_module(
                 "dataset index target policy does not match trainer target policy; "
                 "request an explicit rescan to change policy"
             )
-        indexed_max_events = index.get("selection_contract", {}).get("max_events")
-        if indexed_max_events != max_events:
+        indexed_selection = index.get("selection_contract", {})
+        if selection is not None:
+            if indexed_selection.get("mode") != "source_role_manifest":
+                raise ValueError(
+                    "dataset index was not built from a source-role manifest"
+                )
+            if (
+                indexed_selection.get("selection_manifest_hash")
+                != selection.manifest_hash
+            ):
+                raise ValueError("dataset index training-selection hash mismatch")
+        elif indexed_selection.get("max_events") != max_events:
             raise ValueError(
                 "dataset index event-selection/max-events fingerprint mismatch"
             )
@@ -236,6 +283,10 @@ def build_real_data_module(
             name: int(index["split_counts"].get(name, 0))
             for name in ("train", "validation", "test")
         }
+        if selection is not None and split_counts != selection.split_counts:
+            raise ValueError(
+                "dataset index split counts disagree with training selection"
+            )
         missing = [name for name in required_splits if split_counts[name] == 0]
         if missing:
             raise ValueError(f"indexed dataset has empty required split(s) {missing}")
@@ -246,8 +297,13 @@ def build_real_data_module(
             "pilot_split_repair": False,
             "overrides": {},
             "dataset_index_hash": index["index_hash"],
+            "selection_manifest_hash": (
+                selection.manifest_hash if selection is not None else None
+            ),
         }
-        manifest_json = json.dumps(split_manifest, sort_keys=True, separators=(",", ":"))
+        manifest_json = json.dumps(
+            split_manifest, sort_keys=True, separators=(",", ":")
+        )
         module = RealDataModule(
             input_paths=tuple(str(path) for path in paths),
             normalizers={},
@@ -262,6 +318,10 @@ def build_real_data_module(
             shuffle_buffer_size=shuffle_buffer_size,
             allow_legacy_conflated=allow_legacy_conflated,
             split_counts=split_counts,
+            source_split_overrides=source_split_overrides,
+            selection_manifest_hash=(
+                selection.manifest_hash if selection is not None else None
+            ),
             legacy_conflated_fraction=legacy_fraction,
             allowed_types_by_level={
                 int(level): tuple(int(token) for token in tokens)
@@ -285,7 +345,9 @@ def build_real_data_module(
     split_counts = {"train": 0, "validation": 0, "test": 0}
     group_splits: dict[str, str] = {}
     source_counts: dict[str, dict[str, int]] = {
-        "train": {}, "validation": {}, "test": {}
+        "train": {},
+        "validation": {},
+        "test": {},
     }
     first_uid = ""
     first_split = ""
@@ -302,9 +364,19 @@ def build_real_data_module(
             scanned += 1
             uid = str(record["event_uid"])
             source_schema_versions.add(
-                str(record.get("source_schema_version", record.get("schema_version", "")))
+                str(
+                    record.get(
+                        "source_schema_version", record.get("schema_version", "")
+                    )
+                )
             )
-            split = stable_split_name(record, config)
+            split = _assigned_split(
+                record,
+                config,
+                event_overrides={},
+                source_overrides=source_split_overrides,
+                require_source_override=selection is not None,
+            )
             if not first_uid:
                 first_uid, first_split = uid, split
             split_counts[split] += 1
@@ -331,6 +403,10 @@ def build_real_data_module(
             break
     if scanned == 0:
         raise ValueError("no events were loaded from the supplied parquet data")
+    if selection is not None and split_counts != selection.split_counts:
+        raise ValueError(
+            "training-selection event counts disagree with scanned publications"
+        )
     legacy_fraction = legacy_nodes / max(total_nodes, 1)
     if legacy_nodes and not allow_legacy_conflated:
         raise ValueError(
@@ -363,6 +439,10 @@ def build_real_data_module(
         "split_counts": split_counts,
         "pilot_split_repair": bool(pilot_split_repair),
         "overrides": overrides,
+        "source_role_overrides": dict(sorted(source_split_overrides.items())),
+        "selection_manifest_hash": (
+            selection.manifest_hash if selection is not None else None
+        ),
     }
     manifest_json = json.dumps(split_manifest, sort_keys=True, separators=(",", ":"))
     module = RealDataModule(
@@ -379,6 +459,10 @@ def build_real_data_module(
         shuffle_buffer_size=shuffle_buffer_size,
         allow_legacy_conflated=allow_legacy_conflated,
         split_overrides=overrides,
+        source_split_overrides=source_split_overrides,
+        selection_manifest_hash=(
+            selection.manifest_hash if selection is not None else None
+        ),
         split_counts=split_counts,
         legacy_conflated_fraction=legacy_fraction,
         allowed_types_by_level={
@@ -448,9 +532,7 @@ def _track_fit_policies_from_publications(
 def fit_training_normalizers(
     events: Iterator[HeterogeneousEvent] | Sequence[HeterogeneousEvent],
 ) -> dict[str, StreamingMaskedFeatureNormalizer]:
-    output = {
-        block: StreamingMaskedFeatureNormalizer() for block in FEATURE_BLOCKS
-    }
+    output = {block: StreamingMaskedFeatureNormalizer() for block in FEATURE_BLOCKS}
     count = 0
     for event in events:
         count += 1
@@ -478,6 +560,15 @@ def resolve_data_paths(data: str | Path | Sequence[str | Path]) -> list[Path]:
         elif path.suffix == ".parquet":
             output.append(path)
         elif path.suffix in {".jsonl", ".json"}:
+            if path.suffix == ".json":
+                from hypertagging.data.training_selection import (
+                    is_training_selection_manifest,
+                    load_training_selection,
+                )
+
+                if is_training_selection_manifest(path):
+                    output.extend(load_training_selection(path).paths)
+                    continue
             text = path.read_text(encoding="utf-8")
             records = (
                 [json.loads(line) for line in text.splitlines() if line.strip()]
@@ -531,6 +622,8 @@ class _StreamingHeterogeneousDataset(IterableDataset):
         self.split = split
         self.split_config = module.split_config
         self.split_overrides = module.split_overrides
+        self.source_split_overrides = module.source_split_overrides
+        self.require_source_split_override = module.selection_manifest_hash is not None
         self.shuffle_buffer_size = module.shuffle_buffer_size if shuffle else 0
         self.seed = module.seed + epoch
 
@@ -545,16 +638,42 @@ class _StreamingHeterogeneousDataset(IterableDataset):
             split_name=self.split,
             split_config=self.split_config,
             split_overrides=self.split_overrides,
+            source_split_overrides=self.source_split_overrides,
+            require_source_split_override=self.require_source_split_override,
         )
         for record in records:
             event = heterogeneous_event_from_record(record)
-            if self.max_nodes is not None and event.common_features.shape[0] > self.max_nodes:
+            if (
+                self.max_nodes is not None
+                and event.common_features.shape[0] > self.max_nodes
+            ):
                 if self.overflow == "drop":
                     continue
                 raise OverflowError(
                     f"event {event.event_uid} exceeds max_nodes={self.max_nodes}"
                 )
             yield event
+
+
+def _assigned_split(
+    record: dict,
+    config: SourceAwareSplitConfig,
+    *,
+    event_overrides: dict[str, str],
+    source_overrides: dict[str, str],
+    require_source_override: bool = False,
+) -> str:
+    event_uid = str(record["event_uid"])
+    if event_uid in event_overrides:
+        return event_overrides[event_uid]
+    source = str(record.get("source_file", ""))
+    if source in source_overrides:
+        return source_overrides[source]
+    if require_source_override:
+        raise ValueError(
+            f"record source {source!r} is absent from the training-selection roles"
+        )
+    return stable_split_name(record, config)
 
 
 __all__ = [
