@@ -221,6 +221,8 @@ def _reconstructed_p4_from_leaf_pid(
     hard: bool,
 ) -> torch.Tensor:
     p4 = batch["p4"].clone()
+    # Slice the feature axis before applying a two-dimensional boolean mask.
+    input_p3 = batch["p4"][..., :3]
     raw_track = (
         batch["node_mask"].bool()
         & (batch["node_kind_ids"] == NODE_KIND_TO_ID["track"])
@@ -247,12 +249,12 @@ def _reconstructed_p4_from_leaf_pid(
             masked_logits = selected_logits.new_full(selected_logits.shape, -1e4)
             masked_logits[:, allowed] = selected_logits[:, allowed]
             p4[selected] = hard_track_p4_from_pid_token(
-                batch["p4"][selected, :3],
+                input_p3[selected],
                 masked_logits.argmax(dim=-1),
             )
         else:
             p4[selected] = soft_track_p4_from_pid_logits(
-                batch["p4"][selected, :3],
+                input_p3[selected],
                 pid_logits[selected],
                 allowed_tokens=allowed,
             )

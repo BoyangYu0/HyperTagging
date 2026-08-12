@@ -180,14 +180,16 @@ def rebuild_runtime_pid_state(
     current_tokens = probabilities.argmax(dim=-1)
     available = node_mask & (probabilities.sum(dim=-1) > 0)
     p4 = batch["p4"].clone()
+    # Slice the feature axis before applying a two-dimensional boolean mask.
+    input_p3 = batch["p4"][..., :3]
     if raw.any():
         if mode == "hard":
             p4[raw] = hard_track_p4_from_pid_token(
-                batch["p4"][raw, :3], current_tokens[raw]
+                input_p3[raw], current_tokens[raw]
             )
         elif mode == "straight_through_hard":
             p4[raw] = track_p4_from_pid_probabilities(
-                batch["p4"][raw, :3], raw_probabilities[raw]
+                input_p3[raw], raw_probabilities[raw]
             )
         else:
             for sign in (-1, 1):
@@ -202,7 +204,7 @@ def rebuild_runtime_pid_state(
                     if particle_charge == sign
                 )
                 p4[selected] = soft_track_p4_from_pid_logits(
-                    batch["p4"][selected, :3],
+                    input_p3[selected],
                     raw_logits[selected] / effective_temperature,
                     allowed_tokens=allowed,
                 )
