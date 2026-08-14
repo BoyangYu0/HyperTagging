@@ -43,13 +43,29 @@
       "torch": "2.7.1+cu126"
     },
     "frozen_environment_installed": true,
-    "in_allocation_gpu_preflight": "required_on_chosen_h200_or_v100",
+    "in_allocation_gpu_preflight": "passed_on_v100_for_diagnostic_job_15745941; fresh_preflight_required_in_eventual_scientific_job",
     "lock_generation": "uv pip compile for Python 3.11/Linux x86_64 with transitive package hashes and explicit PyPI/PyTorch CUDA 12.6 indexes; frozen environment installed and lock-only preflight passed",
     "lock_receipt_sha256": "6c35af3eaac25ecf7bff12cb13bacefe4e8ee275aa40689adca6ed5f20d7d66d",
     "requirements_input_sha256": "95a1e32849ddec9f052bb22bc56ee3113996ab0cea0285d5db8670e1dbe61a2a",
     "requirements_lock_sha256": "2d34539c79f144f133c39f9ae86c0a34dafaab554c8fe263c28e01fe766576fc",
     "runtime_contract_sha256": "411facd82bb25d64dd17106a2f79d6fe1b23c40a5ed9d502f5fe7cfa11c33c25",
-    "specification_status": "complete"
+    "specification_status": "complete",
+    "uv_management": {
+      "activation_helper": "scripts/activate_env.sh",
+      "bash_shortcuts": [
+        "htenv",
+        "htgpu"
+      ],
+      "fresh_bash_shortcut_verification": "passed",
+      "gpu_environment_sync": "strict hashed uv pip sync from requirements-cu126.lock; dry-run predicted no changes and actual sync made no changes",
+      "gpu_uv_check": "passed for 47 packages",
+      "project_lock_metadata_gap": "committed uv.lock predates direct scipy and PyYAML metadata; frozen all-extras sync was followed by uv-managed scipy==1.18.0 and PyYAML==6.0.3 restoration without relocking",
+      "project_sync": "uv sync --frozen --all-extras",
+      "project_uv_check": "passed for 124 packages",
+      "uv_binary": "/home/b/Boyang.Yu/.local/bin/uv",
+      "uv_lock_sha256_unchanged": "89c26ccc9d6e748482252a46ee1b5f8d096501f86c7ba3f69850353a5e3e0a6e",
+      "uv_version": "0.5.20"
+    }
   },
   "index_gate": {
     "category_counts": {
@@ -222,6 +238,69 @@
           "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
           "stdout_sha256": "8ebc98299e2fcea7e3530e02129a1008430ca86889cdccc516708d9ea48ca87c",
           "trainer_status": 0
+        },
+        {
+          "allocation": {
+            "alloc_tres": "gres/gpu=1,gres/gpu:v100=1",
+            "gpu_initial_memory_mib": 0,
+            "gpu_initial_temperature_c": 31,
+            "gpu_initial_utilization_percent": 0,
+            "gpu_model": "Tesla V100-SXM2-32GB",
+            "gpu_uuid": "GPU-a05b4e3c-ebbc-bb4a-d9f5-c406210b3a2d",
+            "periodic_telemetry_peak_memory_mib": 554,
+            "periodic_telemetry_peak_temperature_c": 33,
+            "periodic_telemetry_peak_utilization_percent": 11,
+            "periodic_telemetry_samples": 9,
+            "req_tres": "gres/gpu=1,gres/gpu:v100=1",
+            "slurm_max_gpu_memory_mib": 550,
+            "slurm_max_gpu_utilization_percent": 4,
+            "tres_per_node": "gres:gpu:v100:1"
+          },
+          "checkpoint": {
+            "all_curriculum_phases_entered": true,
+            "file_sha256": "f203b58ee2760a88e8da6eda3c8057e6fe8629d553dbf85ae61592acc43f8a2e",
+            "git_commit": "0c5e054a52403a376bf3c93e3edb3e6998fdf146",
+            "last_validation_step": 4,
+            "pending_validation_step": null,
+            "phase_indices_by_step": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "step": 4
+          },
+          "contract_file_sha256": "8e38fb1930ef15ce0dbcc02911091c4de941557537f0127081a4d98e73936383",
+          "contract_sha256": "f98b6ff3a9bd0d6c2570e8f1c042cea4f286beed8f6598506507dedc27a4748a",
+          "elapsed": "00:02:12",
+          "end": "2026-08-14T16:16:27+02:00",
+          "exit_code": "0:0",
+          "job_id": "15745941",
+          "max_rss_kib": 2471112,
+          "metrics": {
+            "file_sha256": "83587a0341719e47641f190c7b400788d80c01aa4443d3cc7d2cf6b1365c6e94",
+            "final_loss": 3.9874038696289062,
+            "validation_batches": 1,
+            "validation_events": 2,
+            "validation_full_training_objective": 4.860116958618164,
+            "validation_named_view_evaluations": 4,
+            "validation_progress_event_views": 8,
+            "validation_progress_final_elapsed_seconds": 6.591,
+            "validation_progress_final_throughput_per_second": 1.213828
+          },
+          "model_preset": "small_candidate",
+          "node": "th-cl-nv01",
+          "preflight_file_sha256": "f2418db2b2ad5d4f6a585a9d86e4e97a97fbef2e9080719332d56d3ab2a2642e",
+          "receipt_file_sha256": "3b75c861ae263e12af71491146e433a4092f8a0be58fa43d26f36b0d64564698",
+          "receipt_sha256": "04b8a81cfa2148061c4f513d68957821d6aec6fc1ff9a0dc84e00566c48125a9",
+          "receipt_verified_fail_closed": true,
+          "start": "2026-08-14T16:14:15+02:00",
+          "state": "COMPLETED",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "93d01707b441feadfc07d118f711b20147605c5de6176af9f1dcf0a1fe1deb50",
+          "telemetry_file_sha256": "7388ef866ee4f12d801ee19da4c23ba2ad635dc1c4429bea9ecf2d21f1baf4bc",
+          "telemetry_summary_file_sha256": "7c276d380f647307953524bf85132bc499269ebe1bb4404731d7d093bc0f8b9f",
+          "trainer_status": 0
         }
       ],
       "diagnostic_only": true,
@@ -229,12 +308,12 @@
       "status": "complete"
     }
   },
-  "manifest_hash": "4ac9a4d4191a516a5204758e1bab2b95cd5c7c2bd3ed61e96f519d08f67535d7",
+  "manifest_hash": "21ccd5c338c6837b05f983fefa535e069c15b96c9b219e1444c557265650b1bb",
   "manifest_version": "hypertagging-training-readiness-v1",
   "scientific_submission_allowed": false,
   "scientific_submission_blockers": [
     "Recover and independently verify production source object f4e54df23b5c60115e475c5d68df4651899d678e and tree b6e3a4118b960e3a4676a61af9601438d56cef96.",
-    "Pass the exact in-allocation CUDA/GPU environment preflight on the chosen H200 or V100.",
+    "Pass a fresh exact in-allocation CUDA/GPU environment preflight in the eventual scientific job on the chosen H200 or V100.",
     "Commit and review these changes, create the immutable experiment tag, and pass the clean scientific render gates."
   ],
   "selection": "configs/training_selection/production_1m_20260812/train_035k.json",

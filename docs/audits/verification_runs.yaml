@@ -141,3 +141,45 @@ runs:
     ci_run: NOT_RUN_FOR_DIRTY_WORKTREE
     human_visual_review_status: NOT_REVIEWED
     evidence_limitations: No clean committed campaign source, current-HEAD real multi-category pilot, KLM scope decision, representative resource measurement, 100k canary, 10M run, remote CI, CUDA profile, or human visual review; schema-v4 is retained.
+  - source_sha: 0c5e054a52403a376bf3c93e3edb3e6998fdf146
+    metadata_head: resolved_by_git_rev_parse_HEAD
+    worktree_state: dirty_readiness_evidence_updates_at_clean_runtime_source
+    date: '2026-08-14T16:30:00+02:00'
+    commands:
+      - /home/b/Boyang.Yu/.local/bin/uv sync --frozen --all-extras
+      - /home/b/Boyang.Yu/.local/bin/uv pip check --python .venv/bin/python
+      - /home/b/Boyang.Yu/.local/bin/uv pip sync --strict --require-hashes --python /project/agkuhr/users/boyang/envs/hypertagging-gpu-cu126-v1/bin/python --index-url https://pypi.org/simple --extra-index-url https://download.pytorch.org/whl/cu126 environment/gpu/requirements-cu126.lock
+      - .venv/bin/python -m pytest -q
+      - .venv/bin/python scripts/slurm/verify_execution_receipt.py artifacts/slurm/jobs/15745941/attempt-00/receipt.json --require-completed
+      - .venv/bin/python scripts/validate_training_provenance.py
+      - .venv/bin/python scripts/validate_audit_integrity.py
+      - .venv/bin/python scripts/generate_audit_views.py --check
+      - bash -n scripts/activate_env.sh scripts/slurm/train_one_gpu.sbatch /home/b/Boyang.Yu/.bashrc
+      - git diff --check
+    pytest:
+      result: PASS
+      passed: 461
+      skipped: 8
+      warnings: 24
+      duration_seconds: 267.94
+      wall_seconds: 270.42
+    notebooks:
+      generated_consistency: {result: NOT_RUN, count: 0}
+      default_fixture: {result: NOT_RUN, count: 0}
+      real_mdst_pilot: {result: NOT_RUN, count: 0}
+      trained_physics_validation: {result: NOT_RUN, count: 0}
+    real_data_inputs: frozen_train_035k_plus_validation_only_sealed_test_closed
+    checkpoint:
+      job_id: '15745941'
+      path: artifacts/runs/pretrain-035k-small-candidate-diag4-0c5e054/20260812/15745941/checkpoint.pt
+      sha256: f203b58ee2760a88e8da6eda3c8057e6fe8629d553dbf85ae61592acc43f8a2e
+      step: 4
+    slurm_receipt:
+      version: hypertagging-slurm-attempt-v2
+      receipt_sha256: 04b8a81cfa2148061c4f513d68957821d6aec6fc1ff9a0dc84e00566c48125a9
+      file_sha256: 3b75c861ae263e12af71491146e433a4092f8a0be58fa43d26f36b0d64564698
+      state: COMPLETED
+      exit_code: '0:0'
+    ci_run: NOT_RUN_LOCAL_ONLY
+    human_visual_review_status: NOT_REVIEWED
+    evidence_limitations: Job 15745941 and the CPU suite close bounded software/runtime evidence only; the production source object/tree, fresh scientific-allocation preflight, final scientific tag, convergence, scientific performance, sealed test, remote CI, and full training remain absent or deliberately blocked.

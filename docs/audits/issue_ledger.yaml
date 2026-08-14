@@ -1,8 +1,8 @@
 schema_version: hypertagging-audit-ledger-v4
 audited_branch: focused-post-audit-consolidation-20260802
 audited_code_sha: 6e46423e5ed4553aae1fccdce33db6e03f9cb4c8
-audit_generated_at: '2026-08-02T18:30:00+02:00'
-audit_scope: focused production-integrity corrections in a dirty worktree atop audited_code_sha, complete CPU tests, and fixture notebooks; no current-worktree real pilot, HTCondor submission, CUDA job, or 100k/10M production
+audit_generated_at: '2026-08-14T16:30:00+02:00'
+audit_scope: focused production-integrity corrections plus the 2026-08-14 training-integration uv workflow and bounded clean-source V100 diagnostics; no scientific/full training, sealed-test access, final scientific tag, 100k canary, or 10M production
 allowed_post_audit_paths:
   - docs/audit_index.md
   - docs/audits/README.md
@@ -53,7 +53,7 @@ verification_result_summary:
   exact_sha_ci: SOURCE_SHA_HAS_NO_REMOTE_RUN
   exact_sha_ci_run: 'audited source ede387e is local-only and has no remote run; no prior remote run is promoted to exact-source evidence'
   post_audit_commit_classification: audit_metadata_only
-  cpu_pytest: '334 passed, 8 skipped, 20 warnings in 324.47s on the focused dirty worktree atop audited_code_sha'
+  cpu_pytest: '461 passed, 8 skipped, 24 warnings in 267.94s (270.42s wall) on the training-integration evidence worktree with runtime code pinned to clean 0c5e054'
   fixture_notebooks: 15 passed
   first_level_diagnostic: 1 passed
   generated_notebook_consistency: 18 passed
@@ -1197,3 +1197,14 @@ items:
     external_evidence_required: [representative multi-category KLM/K_L pilot denominators, 100k canary if KLM is included, and real worker/storage/index timings]
     last_verified_sha: 6e46423e5ed4553aae1fccdce33db6e03f9cb4c8
     notes: The required fields and explicit included/excluded_by_policy/unresolved decision are implemented; current scope is unresolved, resource results are fixture-only, and schema-v4 remains selected.
+  - id: TRAIN-022
+    title: Slurm validation and trainer runtime could remain silent without periodic GPU evidence
+    originating_audit: docs/training_execution_plan_20260812.md
+    first_reported_sha: c5dee97c2485f003a86583c7b275433aa3dca5b4
+    current_status: FIXED_AND_TESTED
+    current_evidence_files: [src/hypertagging/training/pretrain_trainer.py, scripts/slurm/monitor_gpu_telemetry.py, scripts/slurm/train_one_gpu.sbatch, scripts/slurm/finalize_execution_receipt.py, scripts/slurm/verify_execution_receipt.py, configs/slurm/pretrain_diagnostic_small_candidate.yaml, scripts/activate_env.sh, docs/training.md]
+    current_tests: [tests/test_slurm_runtime_observability_cpu.py, tests/test_environment_activation_cpu.py, tests/test_slurm_requeue_and_render_contract_cpu.py, tests/test_trainer_corrections_cpu.py]
+    notebook_evidence: []
+    external_evidence_required: []
+    last_verified_sha: 0c5e054a52403a376bf3c93e3edb3e6998fdf146
+    notes: Job 15745941 completed from clean 0c5e054 on exact gpu:v100:1 with small_candidate, four steps and phases, one two-event validation batch with flushed structured progress, nine cleaned-up periodic telemetry samples, and a fail-closed v2 receipt hashing telemetry and exposing 554 MiB/11%/33 C peaks. uv frozen workflows and fresh-shell htenv/htgpu activation also passed. This is diagnostic runtime evidence, not scientific performance.

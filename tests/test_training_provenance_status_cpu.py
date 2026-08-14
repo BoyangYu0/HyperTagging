@@ -44,10 +44,13 @@ def test_cpu_work_is_allowed_but_scientific_submission_fails_closed():
     assert status["final_non_gpu_readiness"]["frozen_gpu_environment_installed"] is True
     assert status["final_non_gpu_readiness"]["local_gpu_microtest_complete"] is True
     assert readiness["environment_gate"]["frozen_environment_installed"] is True
-    assert (
-        readiness["environment_gate"]["in_allocation_gpu_preflight"]
-        == "required_on_chosen_h200_or_v100"
-    )
+    assert "job_15745941" in readiness["environment_gate"][
+        "in_allocation_gpu_preflight"
+    ]
+    uv_workflow = readiness["environment_gate"]["uv_management"]
+    assert uv_workflow["uv_binary"] == "/home/b/Boyang.Yu/.local/bin/uv"
+    assert uv_workflow["fresh_bash_shortcut_verification"] == "passed"
+    assert uv_workflow["bash_shortcuts"] == ["htenv", "htgpu"]
     microtest = readiness["local_gpu_microtest_gate"]
     assert microtest["status"] == "complete"
     assert microtest["admission_receipt"]["sample_count"] == 3
@@ -77,15 +80,26 @@ def test_cpu_work_is_allowed_but_scientific_submission_fails_closed():
         "15744980",
         "15745064",
         "15745095",
+        "15745941",
     ]
     assert [attempt["state"] for attempt in attempts] == [
         "FAILED",
         "FAILED",
         "COMPLETED",
+        "COMPLETED",
     ]
     assert attempts[-1]["trainer_status"] == 0
     assert attempts[-1]["receipt_verified_fail_closed"] is True
     assert attempts[-1]["checkpoint"]["pending_validation_step"] is None
+    assert attempts[-1]["model_preset"] == "small_candidate"
+    assert attempts[-1]["checkpoint"]["phase_indices_by_step"] == [0, 1, 2, 3]
+    assert attempts[-1]["metrics"]["validation_batches"] == 1
+    assert attempts[-1]["metrics"]["validation_events"] <= 32
+    assert attempts[-1]["allocation"]["periodic_telemetry_samples"] == 9
+    assert status["final_non_gpu_readiness"][
+        "slurm_small_candidate_diagnostic_complete"
+    ] is True
+    assert status["final_non_gpu_readiness"]["uv_environment_workflow_complete"] is True
     assert status["final_non_gpu_readiness"]["slurm_v100_diagnostic_complete"] is True
     assert status["final_non_gpu_readiness"]["slurm_h200_diagnostic_complete"] is False
     command = [

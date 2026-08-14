@@ -30,8 +30,10 @@ This document distinguishes:
 | Clean branch integration preserves both histories | branch `training-integration-20260812`, merge `83776a2c4f9e7edd776915edf30816730881f9eb`; tags `pre-training-master-537d7cc`, `pre-training-focused-8e9d0b8` | Fixed | Use this branch lineage; do not rewrite either parent. |
 | Production source object missing | `configs/training_selection/production_1m_20260812/provenance_status.json` | Blocking evidence-only issue | Commit `f4e54df23b5c60115e475c5d68df4651899d678e` is unavailable; expected tree `b6e3a4118b960e3a4676a61af9601438d56cef96` cannot be derived independently. CPU work may proceed; scientific Slurm work must fail closed. |
 | Frozen CUDA environment | `/project/agkuhr/users/boyang/envs/hypertagging-gpu-cu126-v1` | Installed; lock-only preflight passed | Python 3.11.11, torch 2.7.1+cu126, CUDA build 12.6; install-log SHA-256 `454f648a70134a2214bb30d9ade2203aeb2e49822d9343e0e4f1b50d806539e4`. The exact in-allocation CUDA/GPU preflight remains mandatory on the chosen H200/V100. |
+| uv environment workflow | `/home/b/Boyang.Yu/.local/bin/uv`; `scripts/activate_env.sh`; `htenv`/`htgpu` | Verified | Project `uv sync --frozen --all-extras` preserved `uv.lock` SHA-256 `89c26c...`; the known SciPy/PyYAML lock-metadata gap was restored through uv without relocking. Strict hashed GPU sync predicted and made no changes; uv checks and the GPU lock-only preflight pass. Both shortcuts were verified in a fresh Bash shell. |
 | Bound local V100 microtest | `artifacts/experiment_readiness/production_1m_20260812/local_v100_microtest_d7cc46e_short4/` | Successful software/runtime evidence | Three clean V100-bound admission samples, four trainer steps with every curriculum phase entered, step-4 validation completed, normal trainer exit, 19 watchdog samples, no failures or foreign PIDs, and repository completion validation passed. This does not remove source, in-allocation preflight, or clean review/tag/render gates. |
 | Slurm V100 diagnostic | job `15745095`; receipt `artifacts/slurm/jobs/15745095/attempt-00/receipt.json` | Successful diagnostic/runtime evidence | Exact `gpu:v100:1` request/allocation on `th-cl-nv01`, frozen-environment preflight, 10 steps, all phases, and 256-event validation completed in 12:07. Receipt, checkpoint, metrics, allocation, and telemetry hashes verify. This is not scientific evidence. |
+| Slurm `small_candidate` diagnostic | job `15745941`; receipt `artifacts/slurm/jobs/15745941/attempt-00/receipt.json` | Successful final runtime evidence | Clean source `0c5e054...`, actual `small_candidate`, four steps with phase indices 0/1/2/3, one 2-event validation batch, structured progress for four named views, and periodic GPU telemetry completed in 2:12. The v2 receipt hashes telemetry and exposes peaks. This remains non-scientific. |
 | Slurm H200 diagnostic | a1e8102 contract `diagnostic-h200-a1e8102.job-contract.json` | Not submitted; exact resource unavailable | The contract verifies, but by 2026-08-14 15:45 CEST `kng-cl-nv03` had `Gres=(null)` and partition `inter` no longer advertised `gres/gpu:h200nvl`. Submission therefore remained fail-closed. |
 | 1M reduced data is complete but category-skewed | `/project/agkuhr/users/boyang/data/HyperTagging_uni`; `inventory.json` | Software-validated publication inventory | 200 v4 shards × 5,000 events; 64 mixed, 45 uubar, 21 taupair, 20 ccbar, 18 charged, 16 ddbar, 16 ssbar. It is every tenth production task, not the full 10M composition. |
 | Raw `max_events=N` is a source-order prefix | `src/hypertagging/training/data_module.py`, `src/hypertagging/data/dataset_index.py` | Corrected for selection manifests | Scientific selections now use explicit whole-shard roles; a selection manifest rejects `max_events`. Legacy diagnostic manifests retain prefix compatibility. |
@@ -255,6 +257,7 @@ The 2026-08-14 V100 sequence was:
 | `15744980` | `a1e8102` | `FAILED 1:0`, 0 s, `th-cl-nv01`; stderr SHA-256 `3c8017c8...` | Preserved. Slurm's copied spool script made `BASH_SOURCE` resolve outside the checkout. Fixed by using validated absolute `SLURM_SUBMIT_DIR`. |
 | `15745064` | `5f6dfc6` | `FAILED 1:0`, 1 s, `th-cl-nv02`; receipt internal SHA-256 `756d34f3...`, file SHA-256 `13b41161...` | Preserved. System-Python bootstrap imported Torch before environment verification. Fixed with lazy standalone pure-stdlib safety loading. |
 | `15745095` | `63cc269` | `COMPLETED 0:0`, 12:07, `th-cl-nv01`; receipt internal SHA-256 `7da521ee...`, file SHA-256 `2ac45018...` | Successful non-scientific diagnostic. No requeue or signal; trainer status 0. |
+| `15745941` | `0c5e054` | `COMPLETED 0:0`, 2:12, `th-cl-nv01`; v2 receipt internal SHA-256 `04b8a81c...`, file SHA-256 `3b75c861...` | Successful final `small_candidate` diagnostic. Four steps/phases, one 2-event validation batch, structured progress, and nine periodic telemetry samples; trainer status 0. |
 
 For job `15745095`, `ReqTRES` and `AllocTRES` each proved exactly
 `gres/gpu=1,gres/gpu:v100=1`, and `TresPerNode=gres:gpu:v100:1`. Preflight saw
@@ -268,6 +271,24 @@ objective is `4.667485743761063`, and the fixed validation covered 256 events
 and 512 named-view evaluations. These observations demonstrate execution, not
 learning or convergence. The subsequent diagnostic contract reduces validation
 to 32 events because the 256-event aggregate dominated the 12-minute runtime.
+
+Job `15745941` closed that runtime-evidence gap with the actual reduced model.
+Its exact request/allocation and `TresPerNode` were `gpu:v100:1`; the
+in-allocation preflight saw the same V100 UUID as job `15745095`. Step
+checkpoints prove phase indices `[0,1,2,3]`, and the final checkpoint SHA-256 is
+`f203b58e...` with step 4, validation complete at step 4, and no pending
+validation. Validation covered one batch, two events, four named views and
+eight event-view evaluations; the final progress line reported 6.591 seconds
+and 1.213828 event-views/s. Nine 15-second telemetry samples had peaks of 554
+MiB, 11% GPU utilization, and 33 C; Slurm reported 550 MiB GPU memory, 4% GPU
+utilization, and 2,471,112 KiB RSS. Metrics SHA-256 is `83587a03...`; stdout
+SHA-256 is `93d01707...`; stderr was empty. These are bounded execution facts,
+not learning or convergence evidence.
+
+The post-run complete CPU suite passed `461 passed, 8 skipped, 24 warnings` in
+267.94 seconds (270.42 seconds wall). Focused observability, Slurm contract,
+provenance, audit, selection, and environment checks are retained separately
+so this aggregate result is not confused with the GPU execution receipt.
 
 The job must activate the installed reviewed frozen environment at
 `/project/agkuhr/users/boyang/envs/hypertagging-gpu-cu126-v1`, set deterministic

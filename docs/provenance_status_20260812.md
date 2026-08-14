@@ -46,6 +46,26 @@ These are diagnostic execution observations, not scientific evidence. The
 verified a1e8102 H200 contract was not submitted because live Slurm removed
 `gpu:h200nvl` from `kng-cl-nv03` and partition `inter` TRES.
 
+A final fourth serialized V100 diagnostic, job `15745941`, ran from clean
+source `0c5e054...` with the actual capacity-approved `small_candidate` and the
+frozen 35k train plus validation-only index. It completed four optimizer steps
+and phase indices `[0,1,2,3]` in 2:12, then completed one 2-event validation
+batch across four named views. Structured stdout reported elapsed time and
+event-view throughput after every view. The v2 receipt internal SHA-256 is
+`04b8a81c...`, checkpoint SHA-256 is `f203b58e...`, and metrics SHA-256 is
+`83587a03...`. Nine periodic telemetry samples were cleaned up normally and
+hashed into the receipt; their peaks were 554 MiB, 11% GPU utilization, and
+33 C. This is diagnostic runtime evidence only and did not open sealed test.
+
+Both environments are now managed with
+`/home/b/Boyang.Yu/.local/bin/uv`. The project frozen all-extras sync preserved
+`uv.lock` SHA-256 `89c26c...`; the known SciPy/PyYAML metadata gap was restored
+through uv without relocking. Strict hashed GPU sync against
+`requirements-cu126.lock` made no changes, and both uv package checks plus the
+GPU lock-only preflight pass. The tracked `scripts/activate_env.sh` exposes
+explicit `project` and `gpu` modes; `.bashrc` functions `htenv` and `htgpu`
+were verified in a fresh Bash shell.
+
 Scientific Slurm submission remains forbidden until the production object is
 recovered and its tree verified, the frozen GPU environment passes a fresh
 in-allocation preflight for the scientific job, and the final reviewed commit

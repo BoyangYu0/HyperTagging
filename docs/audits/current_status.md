@@ -8,12 +8,12 @@ This is the sole authoritative current audit report. Historical reports under
 
 - Audited source SHA: `6e46423e5ed4553aae1fccdce33db6e03f9cb4c8`
 - Audit metadata HEAD: resolved dynamically with `git rev-parse HEAD`
-- Canonical complete CPU pytest result: 334 passed, 8 skipped, 20 warnings
+- Canonical complete CPU pytest result: 461 passed, 8 skipped, 24 warnings
 - Human visual review: `NOT_REVIEWED`
 
 | Ledger status | Count |
 |---|---:|
-| `FIXED_AND_TESTED` | 82 |
+| `FIXED_AND_TESTED` | 83 |
 | `IMPLEMENTED_NOT_REAL_VERIFIED` | 6 |
 | `INTENTIONALLY_DEFERRED_SCIENCE` | 4 |
 | `OBSOLETE_OR_DUPLICATE` | 1 |
@@ -27,6 +27,24 @@ committed current-HEAD multi-category real pilot has not run. Therefore the
 10M. The next operator action is to commit the focused worktree, render a new
 1k–10k pilot campaign from that clean source, run only its bounded shards,
 validate it globally, and review the consolidated report and figures.
+
+## Training-integration runtime evidence — 2026-08-14
+
+Non-scientific Slurm job `15745941` completed in 2:12 on `th-cl-nv01` from
+clean source `0c5e054...` with exact `gpu:v100:1` request/allocation, the
+frozen CUDA 12.6 environment, the 35k train plus validation-only index, and the
+actual `small_candidate`. Four checkpoints prove phase indices 0, 1, 2, and 3.
+One two-event validation batch completed across four named views with flushed
+JSON progress, elapsed time, event-view count, and throughput. The v2 receipt
+internal SHA-256 is `04b8a81c...`; it hashes nine periodic GPU telemetry
+samples and exposes peaks of 554 MiB, 11% utilization, and 33 C. Sealed test
+remained closed. This closes software/runtime observability evidence only; it
+is not convergence or scientific-performance evidence.
+
+The installed uv 0.5.20 now manages both environments. Frozen project sync
+preserved `uv.lock`; strict hashed GPU sync made no changes. The tracked
+activation helper and fresh-shell-verified `htenv`/`htgpu` shortcuts select the
+project and frozen GPU environments explicitly.
 
 ## Software fixed and tested
 
