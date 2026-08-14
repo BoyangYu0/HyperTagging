@@ -68,6 +68,26 @@ def test_cpu_work_is_allowed_but_scientific_submission_fails_closed():
         "export_nil_and_verified_contract_only"
     )
     assert readiness["slurm_tranche"]["rejected_export_policies"] == ["NONE", "ALL"]
+    diagnostics = readiness["slurm_diagnostic_execution"]
+    assert diagnostics["status"] == "v100_complete_h200_unavailable"
+    assert diagnostics["h200"]["submission_performed"] is False
+    assert diagnostics["h200"]["state"] == "not_submitted_exact_gres_unavailable"
+    attempts = diagnostics["v100"]["attempts"]
+    assert [attempt["job_id"] for attempt in attempts] == [
+        "15744980",
+        "15745064",
+        "15745095",
+    ]
+    assert [attempt["state"] for attempt in attempts] == [
+        "FAILED",
+        "FAILED",
+        "COMPLETED",
+    ]
+    assert attempts[-1]["trainer_status"] == 0
+    assert attempts[-1]["receipt_verified_fail_closed"] is True
+    assert attempts[-1]["checkpoint"]["pending_validation_step"] is None
+    assert status["final_non_gpu_readiness"]["slurm_v100_diagnostic_complete"] is True
+    assert status["final_non_gpu_readiness"]["slurm_h200_diagnostic_complete"] is False
     command = [
         sys.executable,
         str(ROOT / "scripts" / "validate_training_provenance.py"),

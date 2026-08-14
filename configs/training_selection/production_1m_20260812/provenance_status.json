@@ -14,11 +14,14 @@
     "index_gate_complete": true,
     "local_gpu_microtest_complete": true,
     "readiness_manifest": "configs/training_selection/production_1m_20260812/training_readiness.json",
-    "readiness_manifest_hash": "32643d2aef23868125f9b45f8e622e5dc4d30500ab88bee43cd62ad5adc6d19b",
+    "readiness_manifest_hash": "4ac9a4d4191a516a5204758e1bab2b95cd5c7c2bd3ed61e96f519d08f67535d7",
+    "slurm_h200_diagnostic_complete": false,
+    "slurm_h200_diagnostic_disposition": "not submitted because exact gpu:h200nvl:1 disappeared from the live node and partition TRES",
+    "slurm_v100_diagnostic_complete": true,
     "slurm_tranche_complete": true,
     "trainer_tranche_complete": true
   },
-  "manifest_hash": "45c44404c3dd1917ef9ac2a62765245bcaf1741518546efeeae5291c77d9bf8f",
+  "manifest_hash": "731b2c23589d98b42991df822b7de503bd9065b4cd97300afb17c36efe79b917",
   "manifest_version": "hypertagging-training-provenance-status-v1",
   "preserved_tips": {
     "focused-post-audit-consolidation-20260802": {
@@ -36,7 +39,7 @@
     "Pass the exact in-allocation CUDA/GPU environment preflight on the chosen H200 or V100.",
     "Commit and review this readiness tranche, create the immutable experiment tag, and pass the clean scientific render gates."
   ],
-  "status_date": "2026-08-12",
+  "status_date": "2026-08-14",
   "training_integration": {
     "base_commit": "83776a2c4f9e7edd776915edf30816730881f9eb",
     "branch": "training-integration-20260812",

@@ -35,6 +35,10 @@ allowed_post_audit_commits:
   - 17d1f14e33be228265b17caa177bcd4163b33338
   - d7cc46e6395c6afec15280f683a978532cae501d
   - 004e0d322e65a490407e6d4fec0c1fb4ccdcf235
+  - 5f6dfc635988b40bd0a09034a9f0d8ccfb9ca9e9
+  - 63cc2697e5e85f8c76bdaf5250b93175b4195039
+  - 6aa6a9f027f532d6bff1510a9e04424c11a037be
+  - bcbb2504c530d55851207d610cf7f9a1190a22f4
 audit_tool_version: hypertagging-audit-integrity-v4
 verification_commands:
   - /data/dust/user/boyangyu/uv_env/bin/python -m pytest -q

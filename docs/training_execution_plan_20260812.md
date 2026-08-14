@@ -31,6 +31,8 @@ This document distinguishes:
 | Production source object missing | `configs/training_selection/production_1m_20260812/provenance_status.json` | Blocking evidence-only issue | Commit `f4e54df23b5c60115e475c5d68df4651899d678e` is unavailable; expected tree `b6e3a4118b960e3a4676a61af9601438d56cef96` cannot be derived independently. CPU work may proceed; scientific Slurm work must fail closed. |
 | Frozen CUDA environment | `/project/agkuhr/users/boyang/envs/hypertagging-gpu-cu126-v1` | Installed; lock-only preflight passed | Python 3.11.11, torch 2.7.1+cu126, CUDA build 12.6; install-log SHA-256 `454f648a70134a2214bb30d9ade2203aeb2e49822d9343e0e4f1b50d806539e4`. The exact in-allocation CUDA/GPU preflight remains mandatory on the chosen H200/V100. |
 | Bound local V100 microtest | `artifacts/experiment_readiness/production_1m_20260812/local_v100_microtest_d7cc46e_short4/` | Successful software/runtime evidence | Three clean V100-bound admission samples, four trainer steps with every curriculum phase entered, step-4 validation completed, normal trainer exit, 19 watchdog samples, no failures or foreign PIDs, and repository completion validation passed. This does not remove source, in-allocation preflight, or clean review/tag/render gates. |
+| Slurm V100 diagnostic | job `15745095`; receipt `artifacts/slurm/jobs/15745095/attempt-00/receipt.json` | Successful diagnostic/runtime evidence | Exact `gpu:v100:1` request/allocation on `th-cl-nv01`, frozen-environment preflight, 10 steps, all phases, and 256-event validation completed in 12:07. Receipt, checkpoint, metrics, allocation, and telemetry hashes verify. This is not scientific evidence. |
+| Slurm H200 diagnostic | a1e8102 contract `diagnostic-h200-a1e8102.job-contract.json` | Not submitted; exact resource unavailable | The contract verifies, but by 2026-08-14 15:45 CEST `kng-cl-nv03` had `Gres=(null)` and partition `inter` no longer advertised `gres/gpu:h200nvl`. Submission therefore remained fail-closed. |
 | 1M reduced data is complete but category-skewed | `/project/agkuhr/users/boyang/data/HyperTagging_uni`; `inventory.json` | Software-validated publication inventory | 200 v4 shards × 5,000 events; 64 mixed, 45 uubar, 21 taupair, 20 ccbar, 18 charged, 16 ddbar, 16 ssbar. It is every tenth production task, not the full 10M composition. |
 | Raw `max_events=N` is a source-order prefix | `src/hypertagging/training/data_module.py`, `src/hypertagging/data/dataset_index.py` | Corrected for selection manifests | Scientific selections now use explicit whole-shard roles; a selection manifest rejects `max_events`. Legacy diagnostic manifests retain prefix compatibility. |
 | Train-only normalization must follow immutable roles | `build_real_data_module`, `build_dataset_index[_from_sidecars]` | Corrected and CPU-tested | Source-role overrides are applied before hash splitting; only `train` contributes normalizer statistics. |
@@ -207,9 +209,11 @@ the final training loss is `4.673738479614258` and the validation full
 objective is `5.179447814822197`. These are microtest execution observations,
 not convergence or scientific-performance claims.
 
-## Slurm design and dry-run boundary
+## Slurm execution evidence and remaining dry-run boundary
 
-No job is submitted in this tranche. At execution time, inspect live state:
+Authorized diagnostic submissions were serialized after each live queue/GRES
+check. No scientific/full-training job was submitted. Continue to inspect live
+state before every future execution:
 
 ```bash
 /opt/slurm/bin/squeue -u boyang.yu -o '%.18i %.9P %.24j %.8T %.10M %.6D %R'
@@ -219,7 +223,7 @@ No job is submitted in this tranche. At execution time, inspect live state:
 /opt/slurm/bin/sbatch --help
 ```
 
-The dedicated `agkuhr` V100 nodes were DRAIN during audit; do not target them
+The dedicated `agkuhr` V100 nodes remained DRAIN; do not target them
 until they are live and authorized. Use partition `inter` with exactly one of
 the site-advertised GRES strings. Initial templates are:
 
@@ -238,12 +242,32 @@ the site-advertised GRES strings. Initial templates are:
 #SBATCH --gres=gpu:v100:1
 ```
 
-The site may run an older Slurm version: verify `--gres`, `--signal`, `--requeue`,
-`--test-only`, and output-token syntax against `/opt/slurm/bin/* --help` and site
-policy. A generic `--gres=gpu:1` is forbidden because it can land on the wrong
-GPU type. Start with 8 CPUs, 64 GiB RAM, and one GPU; use 1 hour for microtest,
-8–12 hours for 35k screening, and request 24 hours for 100k only after measured
-throughput supports it. Estimates are planning bounds, not measured runtime.
+The site runs Slurm 23.02.8: `--gres`, `--signal`, `--requeue`, and `--export`
+are supported, while `--test-only` is absent. Verify these again after a site
+upgrade. A generic `--gres=gpu:1` is forbidden because it can land on the wrong
+GPU type. Start with 8 CPUs, 64 GiB RAM, and one GPU. Estimates are planning
+bounds, not measured runtime.
+
+The 2026-08-14 V100 sequence was:
+
+| Job | Commit | Terminal evidence | Disposition |
+|---|---|---|---|
+| `15744980` | `a1e8102` | `FAILED 1:0`, 0 s, `th-cl-nv01`; stderr SHA-256 `3c8017c8...` | Preserved. Slurm's copied spool script made `BASH_SOURCE` resolve outside the checkout. Fixed by using validated absolute `SLURM_SUBMIT_DIR`. |
+| `15745064` | `5f6dfc6` | `FAILED 1:0`, 1 s, `th-cl-nv02`; receipt internal SHA-256 `756d34f3...`, file SHA-256 `13b41161...` | Preserved. System-Python bootstrap imported Torch before environment verification. Fixed with lazy standalone pure-stdlib safety loading. |
+| `15745095` | `63cc269` | `COMPLETED 0:0`, 12:07, `th-cl-nv01`; receipt internal SHA-256 `7da521ee...`, file SHA-256 `2ac45018...` | Successful non-scientific diagnostic. No requeue or signal; trainer status 0. |
+
+For job `15745095`, `ReqTRES` and `AllocTRES` each proved exactly
+`gres/gpu=1,gres/gpu:v100=1`, and `TresPerNode=gres:gpu:v100:1`. Preflight saw
+one `Tesla V100-SXM2-32GB` with UUID
+`GPU-a05b4e3c-ebbc-bb4a-d9f5-c406210b3a2d`; its initial memory/utilization were
+0 MiB/0%, temperature 45 C, and no compute applications were present. Slurm
+accounting reported peak GPU memory 516 MiB, peak GPU utilization 13%, and
+peak RSS 2,529,476 KiB. Checkpoint SHA-256 is `6a5fefb6...`; metrics SHA-256 is
+`c164cde2...`; final training loss is `4.8059282302856445`, validation full
+objective is `4.667485743761063`, and the fixed validation covered 256 events
+and 512 named-view evaluations. These observations demonstrate execution, not
+learning or convergence. The subsequent diagnostic contract reduces validation
+to 32 events because the 256-event aggregate dominated the 12-minute runtime.
 
 The job must activate the installed reviewed frozen environment at
 `/project/agkuhr/users/boyang/envs/hypertagging-gpu-cu126-v1`, set deterministic
@@ -273,8 +297,8 @@ memory, and discarded/overflow events.
 | Stage | Data/model | Budget | Validation | Seeds | Go gate |
 |---|---|---:|---:|---|---|
 | CPU smoke | tiny fixture / `tiny_cpu` | 2–10 steps | fixture | 20260812 | Deterministic, finite, exact resume; software only. |
-| GPU microtest | 35k / `gpu_debug` | ≤100 steps or 15 min | 256 fixed events | 20260812 | No OOM/NaN, stable throughput, FP32 diagnostics, checkpoint/resume. |
-| Screening | 35k / `gpu_debug` | 70k seen events (2 pool passes) | fixed 2k validation | 20260812; paired ablations use same seed | Key validation objectives improve from step-0/frozen baselines; no representation collapse; no unexplained >20:1 objective-gradient dominance; memory headroom ≥20%. |
+| GPU microtest | 35k / `gpu_debug` | ≤100 steps or 15 min | 32 fixed events for Slurm execution diagnostics | 20260812 | No OOM/NaN, stable throughput, FP32 diagnostics, checkpoint/resume. |
+| First full screening | 35k / `small_candidate` | 70k seen events (17,500 steps × batch 4; 2 pool passes) | fixed 2k validation | 20260812; paired ablations use same seed | Key validation objectives improve from step-0/frozen baselines; no representation collapse; no unexplained >20:1 objective-gradient dominance; memory headroom ≥20%. |
 | Candidate | 100k / smallest convergent preset | 300k seen events (3 passes) | fixed 5k validation | all 3 | All seeds finite; median and each-seed trend improve; topology/parent ranking beats preregistered random/constant baseline; seed spread reported; exact resume passes. |
 | Promoted confirmation | 250k / unchanged candidate | 750k seen events (3 passes), with early stop | full 50k validation in final checkpoint sweep | all 3 | Candidate gains persist with paired confidence intervals; no category loses catastrophically; compute scaling justified. |
 
@@ -361,9 +385,10 @@ states the reduced-data skew and unsupported claims.
 
 Critical path: merge/tags → immutable roles/manifests and full UID/source index
 (done) → trainer corrections and CPU tests (done) → frozen environment install,
-lock-only preflight, and guarded four-step local V100 microtest (done) → recover
-and verify the production source object → clean review/tag/render gates → exact
-in-allocation CUDA/GPU preflight → 35k pretraining → 35k reconstruction/
+lock-only preflight, guarded four-step local V100 microtest, and exact V100
+Slurm diagnostic (done) → recover and verify the production source object →
+clean review/tag/render gates → exact in-allocation CUDA/GPU preflight → 35k
+pretraining → 35k reconstruction/
 ablations → 100k three-seed confirmation → optional 250k confirmation → sealed
 test → only then consider larger data or DDP.
 
@@ -388,3 +413,43 @@ STOP immediately on any of the following:
 When stopped, retain artifacts, label the run failed/diagnostic, identify the
 smallest CPU or bounded microtest that discriminates causes, and do not promote
 or silently extend the budget.
+
+## Exact blocked no-submit full-training contract
+
+The first full run is frozen to `train_035k.json` plus validation only, the
+complete-only 85k train/validation index, model preset `small_candidate`, seed
+`20260812`, 17,500 steps, batch size 4, and fixed 2,000-event validation. The
+sealed test remains closed. Render the deliberately non-executable contract
+from the final clean commit with the successful local V100 admission/completion
+receipts:
+
+```bash
+.venv/bin/python scripts/slurm/render_one_gpu_job.py \
+  --mode scientific \
+  --blocked-no-submit \
+  --gres gpu:v100:1 \
+  --experiment pretrain-035k-small-candidate-first-full \
+  --local-admission-receipt artifacts/experiment_readiness/production_1m_20260812/local_v100_microtest_d7cc46e_short4/admission.json \
+  --local-completion-receipt artifacts/experiment_readiness/production_1m_20260812/local_v100_microtest_d7cc46e_short4/completion.json \
+  --output artifacts/experiment_readiness/production_1m_20260812/slurm/scientific-v100-small-candidate-final-no-submit.job-contract.json
+
+.venv/bin/python scripts/slurm/verify_job_contract.py \
+  artifacts/experiment_readiness/production_1m_20260812/slurm/scientific-v100-small-candidate-final-no-submit.job-contract.json
+```
+
+The exact future command printed by that renderer is retained as a no-submit
+contract:
+
+```bash
+/opt/slurm/bin/sbatch --account=others --partition=inter --gres=gpu:v100:1 \
+  --cpus-per-task=8 --mem=64G --time=12:00:00 --signal=B:USR1@300 --requeue \
+  --job-name=pretrain-035k-small-candidate-first-full --export=NIL \
+  scripts/slurm/train_one_gpu.sbatch \
+  /home/b/Boyang.Yu/HyperTagging_uni/HyperTagging/artifacts/experiment_readiness/production_1m_20260812/slurm/scientific-v100-small-candidate-final-no-submit.job-contract.json
+```
+
+Do not run it. The contract records `submission_authorized=false`, and the
+allocation prologue refuses to emit runtime values. Recover and independently
+verify source object `f4e54df...`/tree `b6e3a411...`, create the reviewed final
+experiment tag, recheck the queue/GRES, and re-render without
+`--blocked-no-submit` before any scientific submission.

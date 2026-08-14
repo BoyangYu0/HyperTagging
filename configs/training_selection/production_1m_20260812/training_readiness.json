@@ -139,7 +139,97 @@
     "slurm_submission_performed": false,
     "status": "complete"
   },
-  "manifest_hash": "32643d2aef23868125f9b45f8e622e5dc4d30500ab88bee43cd62ad5adc6d19b",
+  "slurm_diagnostic_execution": {
+    "h200": {
+      "a1e8102_contract": {
+        "contract_sha256": "d0a97f77dac96f701c81439c512807d9e640b894324e1badb9424f1c0d2dbded",
+        "file_sha256": "00cefdc0f078066e0de5e2c819efcab5c044f6ba71c65db114b85c56d2582b3e",
+        "gres": "gpu:h200nvl:1",
+        "verified": true
+      },
+      "last_live_check": "2026-08-14T15:45:39+02:00",
+      "live_scheduler_finding": "kng-cl-nv03 Gres=(null); partition inter TRES has no gres/gpu:h200nvl; exact typed submission refused",
+      "state": "not_submitted_exact_gres_unavailable",
+      "submission_performed": false
+    },
+    "status": "v100_complete_h200_unavailable",
+    "v100": {
+      "attempts": [
+        {
+          "elapsed": "00:00:00",
+          "exit_code": "1:0",
+          "failure": "Slurm spool copy made BASH_SOURCE repository discovery resolve outside the checkout",
+          "job_id": "15744980",
+          "node": "th-cl-nv01",
+          "state": "FAILED",
+          "stderr_sha256": "3c8017c8a0e99522c77828389d71e7955a59c7057aa8611ab813f7fcdfd80c53",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "contract_sha256": "5db69d71560f4edb06eb15c2c1ca04129e44aa3b94c0814522b76b9d907a2812",
+          "elapsed": "00:00:01",
+          "exit_code": "1:0",
+          "failure": "system-Python contract bootstrap imported torch before the frozen environment was verified",
+          "job_id": "15745064",
+          "node": "th-cl-nv02",
+          "receipt_file_sha256": "13b411617830b49dfe41e6bde143e33d40d7ef57b696e8f27caaa407c64fdfd2",
+          "receipt_sha256": "756d34f3ce95a331dea01476d8bec24f2846e3c7d599fa398696957cf0b17a1c",
+          "state": "FAILED",
+          "stderr_sha256": "2b0c3038c4731afd33a6b7572a37e11b2f8f3fd79d2a088372d81c72b1014b1f",
+          "stdout_sha256": "699cfb7a30a921e9a4163e9aeaf12788b60b9be599e67be4dbb872227e191e53"
+        },
+        {
+          "allocation": {
+            "alloc_tres": "gres/gpu=1,gres/gpu:v100=1",
+            "gpu_initial_memory_mib": 0,
+            "gpu_initial_temperature_c": 45,
+            "gpu_initial_utilization_percent": 0,
+            "gpu_model": "Tesla V100-SXM2-32GB",
+            "gpu_uuid": "GPU-a05b4e3c-ebbc-bb4a-d9f5-c406210b3a2d",
+            "max_gpu_memory_mib": 516,
+            "max_gpu_utilization_percent": 13,
+            "req_tres": "gres/gpu=1,gres/gpu:v100=1",
+            "tres_per_node": "gres:gpu:v100:1"
+          },
+          "checkpoint": {
+            "all_curriculum_phases_entered": true,
+            "file_sha256": "6a5fefb6d1856d74d4a13931aa023da349c9aeb2d664f42bc2e7f2fc5d25c30d",
+            "git_commit": "63cc2697e5e85f8c76bdaf5250b93175b4195039",
+            "last_validation_step": 10,
+            "pending_validation_step": null,
+            "step": 10
+          },
+          "contract_sha256": "1f85d03fdd48eb2910380b4d2b24beea5f6beed9ec30322eceb05b71c73e5d42",
+          "elapsed": "00:12:07",
+          "end": "2026-08-14T15:40:16+02:00",
+          "exit_code": "0:0",
+          "job_id": "15745095",
+          "max_rss_kib": 2529476,
+          "metrics": {
+            "file_sha256": "c164cde24711369d3640e2db5c82d82fba610e20afb15290adc6d7600e3f9e8e",
+            "final_loss": 4.8059282302856445,
+            "validation_events": 256,
+            "validation_full_training_objective": 4.667485743761063,
+            "validation_named_view_evaluations": 512
+          },
+          "node": "th-cl-nv01",
+          "preflight_file_sha256": "f2418db2b2ad5d4f6a585a9d86e4e97a97fbef2e9080719332d56d3ab2a2642e",
+          "receipt_file_sha256": "2ac450187eaec993eda8b672aeb63f8c3b89e3289732d71bbc9e658d1a3424b6",
+          "receipt_sha256": "7da521eecf2dd236d74eaf92bddd7c07d1da6d5b493a8b8b3797d9a4b3867da1",
+          "receipt_verified_fail_closed": true,
+          "start": "2026-08-14T15:28:09+02:00",
+          "state": "COMPLETED",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "8ebc98299e2fcea7e3530e02129a1008430ca86889cdccc516708d9ea48ca87c",
+          "trainer_status": 0
+        }
+      ],
+      "diagnostic_only": true,
+      "scientific_claims_allowed": false,
+      "status": "complete"
+    }
+  },
+  "manifest_hash": "4ac9a4d4191a516a5204758e1bab2b95cd5c7c2bd3ed61e96f519d08f67535d7",
   "manifest_version": "hypertagging-training-readiness-v1",
   "scientific_submission_allowed": false,
   "scientific_submission_blockers": [
@@ -162,7 +252,7 @@
     ],
     "status": "complete_cpu_verified_no_submission"
   },
-  "status_date": "2026-08-12",
+  "status_date": "2026-08-14",
   "trainer_tranche": {
     "pending_validation_exact_resume": true,
     "safe_boundary_signal_checkpoint": true,
