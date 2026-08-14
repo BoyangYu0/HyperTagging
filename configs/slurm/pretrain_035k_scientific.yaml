@@ -1,6 +1,6 @@
 data: configs/training_selection/production_1m_20260812/train_035k.json
 dataset_index: artifacts/experiment_readiness/production_1m_20260812/train_035k/train_035k.complete_only.index.json
-model_preset: gpu_debug
+model_preset: small_candidate
 device: cuda
 gpu_execution_mode: scientific_slurm
 seed: 20260812

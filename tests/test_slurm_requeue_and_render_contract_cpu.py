@@ -222,6 +222,7 @@ def test_renderer_only_writes_contract_and_prints_exact_sanitized_command(
     assert contract["export_policy"] == "NIL"
     assert contract["seed"] == 20260812
     assert contract["max_restarts"] == 2
+    assert contract["submission_authorized"] is True
 
 
 @pytest.mark.parametrize(
@@ -275,7 +276,15 @@ def test_scientific_renderer_validates_binds_and_hashes_both_receipts(
     monkeypatch.setattr(
         render_one_gpu_job.subprocess,
         "run",
-        lambda *args, **kwargs: SimpleNamespace(returncode=0),
+        lambda *args, **kwargs: SimpleNamespace(
+            returncode=0,
+            stdout=json.dumps(
+                {
+                    "scientific_slurm_submission_allowed": True,
+                    "blockers": [],
+                }
+            ),
+        ),
     )
     output = tmp_path / "scientific-contract.json"
     monkeypatch.setattr(
@@ -373,6 +382,87 @@ def test_scientific_contract_verifier_revalidates_completion_binding(
     path.write_text(json.dumps(tampered))
     with pytest.raises(RuntimeError, match="NIL export policy"):
         verify_contract(path)
+
+
+def test_blocked_scientific_contract_verifies_but_refuses_shell_runtime(
+    monkeypatch, tmp_path, capsys
+):
+    admission = tmp_path / "admission.json"
+    completion = tmp_path / "completion.json"
+    admission.write_text('{"admission":true}\n')
+    completion.write_text('{"completion":true}\n')
+    gpu_env = tmp_path / "gpu-env"
+    (gpu_env / "bin").mkdir(parents=True)
+    (gpu_env / "bin" / "python").write_text("")
+    monkeypatch.setattr(
+        render_one_gpu_job,
+        "load_local_microtest_completion_receipt",
+        lambda *args, **kwargs: {},
+    )
+    monkeypatch.setattr(
+        render_one_gpu_job,
+        "validate_live_slurm",
+        lambda gres: {"exact_gres": gres, "version": "slurm 23.02.8"},
+    )
+    monkeypatch.setattr(
+        render_one_gpu_job.subprocess,
+        "run",
+        lambda *args, **kwargs: SimpleNamespace(
+            returncode=0,
+            stdout=json.dumps(
+                {
+                    "scientific_slurm_submission_allowed": False,
+                    "blockers": ["missing source object/tree"],
+                }
+            ),
+        ),
+    )
+    output = tmp_path / "blocked-scientific-contract.json"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "render_one_gpu_job.py",
+            "--mode",
+            "scientific",
+            "--gres",
+            "gpu:v100:1",
+            "--gpu-env",
+            str(gpu_env),
+            "--expected-git-sha",
+            "a" * 40,
+            "--local-admission-receipt",
+            str(admission),
+            "--local-completion-receipt",
+            str(completion),
+            "--blocked-no-submit",
+            "--output",
+            str(output),
+        ],
+    )
+    assert render_one_gpu_job.main() == 0
+    contract = json.loads(output.read_text())
+    assert contract["submission_authorized"] is False
+    assert contract["verification_scope"] == "blocked_no_submit"
+    assert contract["scientific_submission_blockers"] == [
+        "missing source object/tree"
+    ]
+    assert json.loads(capsys.readouterr().out)["sbatch_command"]
+
+    monkeypatch.setattr(
+        "scripts.slurm.verify_job_contract._git",
+        lambda *args: "a" * 40 if args == ("rev-parse", "HEAD") else "",
+    )
+    monkeypatch.setattr(
+        "scripts.slurm.verify_job_contract.verify_hashed_inputs",
+        lambda *args, **kwargs: None,
+    )
+    monkeypatch.setattr(
+        "scripts.slurm.verify_job_contract.load_local_microtest_completion_receipt",
+        lambda *args, **kwargs: {},
+    )
+    verified, _, _ = verify_contract(output)
+    assert verified["submission_authorized"] is False
 
 
 def test_wrapper_forwards_usr1_and_requeues_at_most_once(tmp_path):

@@ -155,6 +155,10 @@ def verify_contract(
     stored = verify_rendered_contract_hash(contract)
     if contract.get("export_policy") != "NIL":
         raise RuntimeError("rendered job contract requires exact NIL export policy")
+    if contract.get("submission_authorized", True) is False and contract.get(
+        "verification_scope"
+    ) != "blocked_no_submit":
+        raise RuntimeError("unauthorized contract lacks blocked no-submit scope")
     runtime = validated_runtime_values(contract)
     if _git("rev-parse", "HEAD") != contract["expected_git_sha"]:
         raise RuntimeError("job source Git SHA differs from rendered contract")
@@ -261,10 +265,27 @@ def main() -> int:
     if contract["mode"] == "scientific" and not provenance.get(
         "scientific_slurm_submission_allowed", False
     ):
-        raise RuntimeError("scientific render is blocked by provenance status")
+        if contract.get("submission_authorized", True):
+            raise RuntimeError("scientific render is blocked by provenance status")
+        if not contract.get("scientific_submission_blockers"):
+            raise RuntimeError("blocked no-submit contract does not record blockers")
+    if args.shell_output is not None and not contract.get(
+        "submission_authorized", True
+    ):
+        raise RuntimeError(
+            "blocked no-submit contract is verified but not authorized for execution"
+        )
     if args.shell_output is not None:
         write_shell_runtime(runtime, args.shell_output)
-    print(json.dumps({"contract_verified": True, "contract_sha256": stored}))
+    print(
+        json.dumps(
+            {
+                "contract_verified": True,
+                "contract_sha256": stored,
+                "execution_authorized": contract.get("submission_authorized", True),
+            }
+        )
+    )
     return 0
 
 

@@ -104,8 +104,18 @@ def main() -> int:
     parser.add_argument("--max-restarts", type=int, default=2)
     parser.add_argument("--local-admission-receipt", type=Path)
     parser.add_argument("--local-completion-receipt", type=Path)
+    parser.add_argument(
+        "--blocked-no-submit",
+        action="store_true",
+        help=(
+            "render an exact scientific contract and command that the allocation "
+            "prologue will refuse to execute while provenance blockers remain"
+        ),
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
+    if args.blocked_no_submit and args.mode != "scientific":
+        raise RuntimeError("--blocked-no-submit is only valid for scientific contracts")
     if args.seed < 0:
         raise RuntimeError("seed must be non-negative")
     if not 0 <= args.max_restarts <= 10:
@@ -135,20 +145,31 @@ def main() -> int:
             raise RuntimeError(
                 "scientific render requires admitted and successful completion receipts"
             )
+        status_command = [
+            sys.executable,
+            str(ROOT / "scripts/validate_training_provenance.py"),
+        ]
+        if not args.blocked_no_submit:
+            status_command.append("--require-scientific-slurm-ready")
         status = subprocess.run(
-            (
-                sys.executable,
-                str(ROOT / "scripts/validate_training_provenance.py"),
-                "--require-scientific-slurm-ready",
-            ),
+            status_command,
             cwd=ROOT,
+            text=True,
+            capture_output=True,
             check=False,
         )
         if status.returncode != 0:
             raise RuntimeError(
                 "scientific render blocked by provenance/readiness status"
             )
-        if not args.expected_git_tag:
+        provenance_result = json.loads(status.stdout)
+        if args.blocked_no_submit and provenance_result.get(
+            "scientific_slurm_submission_allowed"
+        ):
+            raise RuntimeError(
+                "blocked no-submit render requires an active scientific blocker"
+            )
+        if not args.blocked_no_submit and not args.expected_git_tag:
             raise RuntimeError(
                 "scientific render requires an immutable expected Git tag"
             )
@@ -173,6 +194,7 @@ def main() -> int:
         "environment/gpu/runtime-contract.json",
         "environment/gpu/environment-lock.sha256",
         "configs/training_selection/production_1m_20260812/training_readiness.json",
+        "configs/training_selection/production_1m_20260812/provenance_status.json",
     )
     hashed_inputs = [_hashed_input(path) for path in hashed_paths]
     if admission_receipt is not None and completion_receipt is not None:
@@ -214,6 +236,15 @@ def main() -> int:
             str(completion_receipt) if completion_receipt is not None else None
         ),
         "submission_performed": False,
+        "submission_authorized": not args.blocked_no_submit,
+        "verification_scope": (
+            "blocked_no_submit" if args.blocked_no_submit else "execution"
+        ),
+        "scientific_submission_blockers": (
+            provenance_result.get("blockers", [])
+            if args.mode == "scientific" and args.blocked_no_submit
+            else []
+        ),
     }
     canonical = json.dumps(contract, sort_keys=True, separators=(",", ":"))
     contract["contract_sha256"] = hashlib.sha256(canonical.encode()).hexdigest()

@@ -10,7 +10,7 @@ num_workers: 0
 checkpoint_every: 5
 validate_every: 10
 validation_batches: 4
-validation_events: 256
+validation_events: 32
 curriculum_mode: progressive
 curriculum_phase_steps: [3, 3, 2, 2]
 require_final_curriculum_phase: true
