@@ -14,7 +14,7 @@
     "index_gate_complete": true,
     "local_gpu_microtest_complete": true,
     "readiness_manifest": "configs/training_selection/production_1m_20260812/training_readiness.json",
-    "readiness_manifest_hash": "21ccd5c338c6837b05f983fefa535e069c15b96c9b219e1444c557265650b1bb",
+    "readiness_manifest_hash": "0341c1b81003790c38e1cb0cb23c7877ab0fc676e53f94550b037ec995ca2094",
     "slurm_h200_diagnostic_complete": false,
     "slurm_h200_diagnostic_disposition": "not submitted because exact gpu:h200nvl:1 disappeared from the live node and partition TRES",
     "slurm_small_candidate_diagnostic_complete": true,
@@ -24,7 +24,7 @@
     "trainer_tranche_complete": true,
     "uv_environment_workflow_complete": true
   },
-  "manifest_hash": "43646b9aa278604e5f160ea8740bcd58ea61adb481ee7b23ef42f66234f53185",
+  "manifest_hash": "d952eacf4cf2f55683419dd8b76189f68adffe81f13603bf33ebc01c2d4e9bc7",
   "manifest_version": "hypertagging-training-provenance-status-v1",
   "preserved_tips": {
     "focused-post-audit-consolidation-20260802": {

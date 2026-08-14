@@ -166,13 +166,16 @@ hashed requirements lock:
   environment/gpu/requirements-cu126.lock
 ```
 
-The committed `uv.lock` currently predates the direct `scipy` and `PyYAML`
-metadata entries in `pyproject.toml`. Until an explicitly authorized relock,
-restore those declared packages after the frozen project sync with uv:
+The committed `uv.lock` records every direct runtime dependency from
+`pyproject.toml`, including `scipy` and `PyYAML`, in both the editable-root
+dependency list and `requires-dist` metadata. Reproduce and verify the project
+environment without manual package restoration:
 
 ```bash
-/home/b/Boyang.Yu/.local/bin/uv pip install --python .venv/bin/python \
-  'scipy==1.18.0' 'PyYAML==6.0.3'
+/home/b/Boyang.Yu/.local/bin/uv sync --frozen --all-extras
+/home/b/Boyang.Yu/.local/bin/uv pip check
+/home/b/Boyang.Yu/.local/bin/uv run --frozen --all-extras \
+  python scripts/check_uv_lock_direct_dependencies.py
 ```
 
 Source the tracked helper directly, or use the Bash functions installed below:

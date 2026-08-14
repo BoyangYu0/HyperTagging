@@ -59,8 +59,10 @@ hashed into the receipt; their peaks were 554 MiB, 11% GPU utilization, and
 
 Both environments are now managed with
 `/home/b/Boyang.Yu/.local/bin/uv`. The project frozen all-extras sync preserved
-`uv.lock` SHA-256 `89c26c...`; the known SciPy/PyYAML metadata gap was restored
-through uv without relocking. Strict hashed GPU sync against
+the corrected `uv.lock` SHA-256 `38e6093...`; its editable-root metadata now
+contains all 10 direct runtime dependencies, including SciPy and PyYAML. Two
+consecutive frozen syncs audited 124 packages without changes, `uv pip check`
+passed, and imports reported SciPy 1.18.0 and PyYAML 6.0.3. Strict hashed GPU sync against
 `requirements-cu126.lock` made no changes, and both uv package checks plus the
 GPU lock-only preflight pass. The tracked `scripts/activate_env.sh` exposes
 explicit `project` and `gpu` modes; `.bashrc` functions `htenv` and `htgpu`

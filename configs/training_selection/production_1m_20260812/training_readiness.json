@@ -59,11 +59,13 @@
       "fresh_bash_shortcut_verification": "passed",
       "gpu_environment_sync": "strict hashed uv pip sync from requirements-cu126.lock; dry-run predicted no changes and actual sync made no changes",
       "gpu_uv_check": "passed for 47 packages",
-      "project_lock_metadata_gap": "committed uv.lock predates direct scipy and PyYAML metadata; frozen all-extras sync was followed by uv-managed scipy==1.18.0 and PyYAML==6.0.3 restoration without relocking",
-      "project_sync": "uv sync --frozen --all-extras",
+      "project_lock_direct_dependencies": "pyproject and editable-root lock metadata agree on all 10 direct runtime dependencies, including scipy and PyYAML; deterministic drift checker passed",
+      "project_lock_diff_scope": "208 additive lines: editable-root pyyaml/scipy dependency and requires-dist metadata plus resolver-selected scipy 1.15.3/1.17.1/1.18.0 records; no existing package pin or artifact changed",
+      "project_sync": "two consecutive uv sync --frozen --all-extras runs audited 124 packages and made no changes",
       "project_uv_check": "passed for 124 packages",
       "uv_binary": "/home/b/Boyang.Yu/.local/bin/uv",
-      "uv_lock_sha256_unchanged": "89c26ccc9d6e748482252a46ee1b5f8d096501f86c7ba3f69850353a5e3e0a6e",
+      "uv_lock_previous_sha256": "89c26ccc9d6e748482252a46ee1b5f8d096501f86c7ba3f69850353a5e3e0a6e",
+      "uv_lock_sha256": "38e6093c27f6cd70e56dcab4a30c561629a9b6ee968f6b73243709c8b2f5cc91",
       "uv_version": "0.5.20"
     }
   },
@@ -308,7 +310,7 @@
       "status": "complete"
     }
   },
-  "manifest_hash": "21ccd5c338c6837b05f983fefa535e069c15b96c9b219e1444c557265650b1bb",
+  "manifest_hash": "0341c1b81003790c38e1cb0cb23c7877ab0fc676e53f94550b037ec995ca2094",
   "manifest_version": "hypertagging-training-readiness-v1",
   "scientific_submission_allowed": false,
   "scientific_submission_blockers": [
