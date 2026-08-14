@@ -9,8 +9,9 @@ After review, create the immutable environment at the path used by the Slurm
 renderer:
 
 ```bash
-uv venv --python 3.11 /project/agkuhr/users/boyang/envs/hypertagging-gpu-cu126-v1
-uv pip sync --python /project/agkuhr/users/boyang/envs/hypertagging-gpu-cu126-v1/bin/python \
+/home/b/Boyang.Yu/.local/bin/uv venv --python 3.11 /project/agkuhr/users/boyang/envs/hypertagging-gpu-cu126-v1
+/home/b/Boyang.Yu/.local/bin/uv pip sync --strict --require-hashes \
+  --python /project/agkuhr/users/boyang/envs/hypertagging-gpu-cu126-v1/bin/python \
   --index-url https://pypi.org/simple \
   --extra-index-url https://download.pytorch.org/whl/cu126 \
   environment/gpu/requirements-cu126.lock

@@ -151,10 +151,47 @@ hyperbolic relation stages, the pretraining loss weights, leaf-PID loss,
 scheduled sampling, and encoder-transfer eligibility; the selected value is
 stored in the checkpoint config.
 
+## uv environments and activation
+
+Use the installed uv binary explicitly. The project environment is synchronized
+without relocking, and the CUDA environment is synchronized from its separate
+hashed requirements lock:
+
+```bash
+/home/b/Boyang.Yu/.local/bin/uv sync --frozen --all-extras
+/home/b/Boyang.Yu/.local/bin/uv pip sync --strict --require-hashes \
+  --python /project/agkuhr/users/boyang/envs/hypertagging-gpu-cu126-v1/bin/python \
+  --index-url https://pypi.org/simple \
+  --extra-index-url https://download.pytorch.org/whl/cu126 \
+  environment/gpu/requirements-cu126.lock
+```
+
+The committed `uv.lock` currently predates the direct `scipy` and `PyYAML`
+metadata entries in `pyproject.toml`. Until an explicitly authorized relock,
+restore those declared packages after the frozen project sync with uv:
+
+```bash
+/home/b/Boyang.Yu/.local/bin/uv pip install --python .venv/bin/python \
+  'scipy==1.18.0' 'PyYAML==6.0.3'
+```
+
+Source the tracked helper directly, or use the Bash functions installed below:
+
+```bash
+source scripts/activate_env.sh project  # project .venv
+source scripts/activate_env.sh gpu      # frozen CUDA 12.6 venv
+htenv
+htgpu
+```
+
+Each activation changes to this checkout and sets `HYPERTAGGING_ENV_MODE` to
+`project` or `gpu`.
+
 ## GPU and production boundary
 
-Real data, real model sizes, and long training are HTCondor-only. CUDA outside
-Condor is refused unless the command is explicitly tiny and
+Real data, real model sizes, and long training use guarded batch execution.
+CUDA outside an authorized batch or bounded diagnostic is refused unless the
+command is explicitly tiny and
 `--allow-local-tiny-gpu-test` is supplied; that path checks `condor_q`,
 `nvidia-smi`, and active GPU processes first. No training script submits a job.
 

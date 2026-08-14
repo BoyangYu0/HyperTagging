@@ -51,15 +51,38 @@ receipt_file="${attempt_root}/receipt.json"
 started_at="$(date --utc --iso-8601=seconds)"
 terminal_stage=bootstrap
 run_root=""
+telemetry_pid=""
+telemetry_status=""
+telemetry_file="${attempt_root}/gpu-telemetry.jsonl"
+telemetry_summary_file="${attempt_root}/gpu-telemetry-summary.json"
 log_stage() {
   terminal_stage="$1"
   printf '%s stage=%s state=%s\n' "$(date --utc --iso-8601=seconds)" "$1" "$2" \
     | tee -a "${stage_log}"
 }
+stop_gpu_telemetry() {
+  [[ -n "${telemetry_pid}" ]] || return 0
+  if kill -0 "${telemetry_pid}" 2>/dev/null; then
+    kill -TERM "${telemetry_pid}" 2>/dev/null || true
+  fi
+  if wait "${telemetry_pid}"; then
+    telemetry_status=0
+  else
+    telemetry_status=$?
+  fi
+  telemetry_pid=""
+  return "${telemetry_status}"
+}
 finalize_attempt() {
   local batch_status=$?
   trap - EXIT
   set +e
+  stop_gpu_telemetry
+  local final_telemetry_status=$?
+  if (( final_telemetry_status != 0 && batch_status == 0 )); then
+    batch_status=79
+    terminal_stage=gpu_telemetry_failed
+  fi
   log_stage "${terminal_stage}" "batch_exit_${batch_status}"
   receipt_args=(
     --receipt "${receipt_file}"
@@ -86,6 +109,7 @@ finalize_attempt() {
   exit "${batch_status}"
 }
 trap finalize_attempt EXIT
+trap 'exit 143' TERM INT HUP
 log_stage bootstrap started
 cp "${job_contract}" "${attempt_root}/submitted-job-contract.json"
 runtime_dir="$(mktemp -d "${attempt_root}/.verified-runtime.XXXXXX")"
@@ -124,6 +148,13 @@ cp "${attempt_root}/nvidia-smi.txt" "${run_root}/provenance/nvidia-smi.txt"
 cp "${attempt_root}/environment.txt" "${run_root}/provenance/environment.txt"
 printf '%s\n' "${attempt_root}" > "${run_root}/provenance/current-attempt.txt"
 
+log_stage gpu_runtime_telemetry started
+/usr/bin/python3 scripts/slurm/monitor_gpu_telemetry.py \
+  --output "${telemetry_file}" \
+  --summary "${telemetry_summary_file}" \
+  --interval-seconds 15 &
+telemetry_pid=$!
+
 resume_args=()
 if [[ "${SLURM_RESTART_COUNT:-0}" -gt 0 ]]; then
   signal_checkpoint="${run_root}/signal-checkpoint.pt"
@@ -154,6 +185,11 @@ if (( trainer_wrapper_status != 0 )); then
   terminal_stage=trainer_failed
   exit "${trainer_wrapper_status}"
 fi
+if ! stop_gpu_telemetry; then
+  terminal_stage=gpu_telemetry_failed
+  exit 79
+fi
+log_stage gpu_runtime_telemetry complete
 if [[ -f "${wrapper_status_file}" ]] \
   && grep -q '"action":"requeue_requested"' "${wrapper_status_file}"; then
   terminal_stage=requeue_requested

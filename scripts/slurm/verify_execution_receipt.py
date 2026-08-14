@@ -15,7 +15,11 @@ def _sha256(path: Path) -> str:
 
 def verify_receipt(path: Path, *, require_completed: bool = False) -> dict[str, object]:
     payload = json.loads(path.read_text(encoding="utf-8"))
-    if payload.get("receipt_version") != "hypertagging-slurm-attempt-v1":
+    receipt_version = payload.get("receipt_version")
+    if receipt_version not in {
+        "hypertagging-slurm-attempt-v1",
+        "hypertagging-slurm-attempt-v2",
+    }:
         raise RuntimeError("unsupported Slurm attempt receipt")
     stored = str(payload.get("receipt_sha256", ""))
     canonical = {key: value for key, value in payload.items() if key != "receipt_sha256"}
@@ -49,6 +53,18 @@ def verify_receipt(path: Path, *, require_completed: bool = False) -> dict[str, 
             raise RuntimeError(
                 f"completed Slurm attempt lacks required evidence: {sorted(missing)}"
             )
+        if receipt_version == "hypertagging-slurm-attempt-v2":
+            telemetry = payload.get("gpu_telemetry") or {}
+            telemetry_artifacts = {"gpu_telemetry", "gpu_telemetry_summary"}
+            missing_telemetry = telemetry_artifacts - set(payload.get("artifacts", {}))
+            if (
+                missing_telemetry
+                or telemetry.get("status") != "completed"
+                or int(telemetry.get("sample_count", 0)) <= 0
+            ):
+                raise RuntimeError(
+                    "completed Slurm attempt lacks healthy periodic GPU telemetry"
+                )
     return payload
 
 

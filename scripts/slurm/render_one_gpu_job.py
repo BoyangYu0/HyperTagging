@@ -15,6 +15,11 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
+DIAGNOSTIC_CONFIGS = (
+    "configs/slurm/pretrain_diagnostic.yaml",
+    "configs/slurm/pretrain_diagnostic_small_candidate.yaml",
+)
+
 from hypertagging.utils.gpu_safety import (  # noqa: E402
     ALLOWED_SLURM_GRES,
     load_local_microtest_completion_receipt,
@@ -100,6 +105,11 @@ def main() -> int:
     parser.add_argument("--expected-git-sha", default=None)
     parser.add_argument("--expected-git-tag")
     parser.add_argument("--experiment")
+    parser.add_argument(
+        "--diagnostic-config",
+        choices=DIAGNOSTIC_CONFIGS,
+        default=DIAGNOSTIC_CONFIGS[0],
+    )
     parser.add_argument("--seed", type=int, default=20260812)
     parser.add_argument("--max-restarts", type=int, default=2)
     parser.add_argument("--local-admission-receipt", type=Path)
@@ -178,7 +188,7 @@ def main() -> int:
 
     live = validate_live_slurm(args.gres)
     config = (
-        "configs/slurm/pretrain_diagnostic.yaml"
+        args.diagnostic_config
         if args.mode == "diagnostic"
         else "configs/slurm/pretrain_035k_scientific.yaml"
     )

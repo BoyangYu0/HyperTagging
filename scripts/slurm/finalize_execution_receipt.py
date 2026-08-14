@@ -50,6 +50,8 @@ def main() -> int:
         "gpu_compute_apps": args.attempt_root / "gpu-compute-apps.csv",
         "gpu_pmon": args.attempt_root / "gpu-pmon.txt",
         "gpu_preflight": args.attempt_root / "gpu-preflight.json",
+        "gpu_telemetry": args.attempt_root / "gpu-telemetry.jsonl",
+        "gpu_telemetry_summary": args.attempt_root / "gpu-telemetry-summary.json",
     }
     if args.run_root is not None:
         candidates.update(
@@ -65,14 +67,38 @@ def main() -> int:
 
     trainer_status = wrapper.get("trainer_status") if wrapper is not None else None
     action = wrapper.get("action") if wrapper is not None else "trainer_not_started"
+    telemetry: dict[str, object] | None = None
+    telemetry_summary = args.attempt_root / "gpu-telemetry-summary.json"
+    if telemetry_summary.is_file():
+        telemetry_payload = json.loads(telemetry_summary.read_text(encoding="utf-8"))
+        telemetry = {
+            "telemetry_version": telemetry_payload.get("telemetry_version"),
+            "status": telemetry_payload.get("status"),
+            "started_at": telemetry_payload.get("started_at"),
+            "completed_at": telemetry_payload.get("completed_at"),
+            "interval_seconds": telemetry_payload.get("interval_seconds"),
+            "sample_count": telemetry_payload.get("sample_count"),
+            "peak_memory_used_mib": telemetry_payload.get("peak_memory_used_mib"),
+            "peak_gpu_utilization_percent": telemetry_payload.get(
+                "peak_gpu_utilization_percent"
+            ),
+            "peak_temperature_c": telemetry_payload.get("peak_temperature_c"),
+            "error": telemetry_payload.get("error"),
+        }
+    telemetry_complete = bool(
+        telemetry
+        and telemetry.get("status") == "completed"
+        and int(telemetry.get("sample_count", 0)) > 0
+    )
     success = (
         args.batch_exit_status == 0
         and trainer_status == 0
         and action == "trainer_exit"
         and args.terminal_stage == "trainer_complete"
+        and telemetry_complete
     )
     receipt: dict[str, object] = {
-        "receipt_version": "hypertagging-slurm-attempt-v1",
+        "receipt_version": "hypertagging-slurm-attempt-v2",
         "status": "completed" if success else "failed_or_nonterminal",
         "terminal_stage": args.terminal_stage,
         "batch_exit_status": args.batch_exit_status,
@@ -80,6 +106,7 @@ def main() -> int:
         "wrapper": wrapper,
         "started_at": args.started_at,
         "completed_at": args.completed_at,
+        "gpu_telemetry": telemetry,
         "slurm": {
             "job_id": os.environ.get("SLURM_JOB_ID"),
             "restart_count": os.environ.get("SLURM_RESTART_COUNT", "0"),

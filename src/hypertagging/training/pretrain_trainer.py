@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass
 import json
 import math
 from pathlib import Path
+import time
 from typing import Any
 import warnings
 
@@ -1219,6 +1220,36 @@ def train_hyperbolic_pretraining(
     )
 
 
+def _validation_progress_record(
+    *,
+    started: float,
+    batch_index: int,
+    batch_count: int,
+    view_index: int,
+    view_count: int,
+    view_name: str,
+    completed_event_views: int,
+    total_events: int,
+) -> dict[str, object]:
+    elapsed = max(time.monotonic() - started, 0.0)
+    return {
+        "event": "validation_progress",
+        "elapsed_seconds": round(elapsed, 3),
+        "validation_batch": batch_index,
+        "validation_batches": batch_count,
+        "validation_view": view_name,
+        "validation_view_index": view_index,
+        "validation_views": view_count,
+        "validation_events": total_events,
+        "completed_event_views": completed_event_views,
+        "event_view_throughput_per_second": round(
+            completed_event_views / elapsed, 6
+        )
+        if elapsed > 0
+        else None,
+    }
+
+
 @torch.no_grad()
 def _validate_pretraining(
     model: ContextualPretrainingModel,
@@ -1283,13 +1314,33 @@ def _validate_pretraining(
     if unknown_views:
         raise ValueError(f"unknown named validation views: {sorted(unknown_views)}")
     validation_work = [
-        (raw_batch, phase_by_name[view_name], view_name)
-        for raw_batch in raw_batches
-        for view_name in config.validation_views
+        (batch_index, view_index, raw_batch, phase_by_name[view_name], view_name)
+        for batch_index, raw_batch in enumerate(raw_batches, start=1)
+        for view_index, view_name in enumerate(config.validation_views, start=1)
     ]
     batch_count = len(raw_batches)
     event_count = len(events)
-    for evaluation_count, (raw_batch, validation_phase, validation_view_name) in enumerate(
+    validation_started = time.monotonic()
+    completed_event_views = 0
+    print(
+        json.dumps(
+            {
+                "event": "validation_started",
+                "validation_batches": batch_count,
+                "validation_events": event_count,
+                "validation_views": len(config.validation_views),
+            },
+            sort_keys=True,
+        ),
+        flush=True,
+    )
+    for evaluation_count, (
+        batch_index,
+        view_index,
+        raw_batch,
+        validation_phase,
+        validation_view_name,
+    ) in enumerate(
         validation_work, start=1
     ):
         batch = _to_device(raw_batch, device)
@@ -1523,6 +1574,23 @@ def _validate_pretraining(
         if selected.any():
             retrieval_embeddings.append(branch_embeddings.reshape(-1, branch_embeddings.shape[-1])[selected].cpu())
             retrieval_ids.append(full_channel_ids.reshape(-1)[selected].cpu())
+        completed_event_views += int(raw_batch["node_mask"].shape[0])
+        print(
+            json.dumps(
+                _validation_progress_record(
+                    started=validation_started,
+                    batch_index=batch_index,
+                    batch_count=batch_count,
+                    view_index=view_index,
+                    view_count=len(config.validation_views),
+                    view_name=validation_view_name,
+                    completed_event_views=completed_event_views,
+                    total_events=event_count,
+                ),
+                sort_keys=True,
+            ),
+            flush=True,
+        )
     if retrieval_embeddings:
         embeddings = F.normalize(torch.cat(retrieval_embeddings), dim=-1)
         ids = torch.cat(retrieval_ids)

@@ -180,6 +180,11 @@ def test_corrected_scientific_configs_and_small_candidate_contract():
     slurm_diagnostic = yaml.safe_load(
         Path("configs/slurm/pretrain_diagnostic.yaml").read_text(encoding="utf-8")
     )
+    small_candidate_diagnostic = yaml.safe_load(
+        Path("configs/slurm/pretrain_diagnostic_small_candidate.yaml").read_text(
+            encoding="utf-8"
+        )
+    )
     assert pilot["model_preset"] == "gpu_debug"
     assert pilot["objective_dominance_ratio"] == 20.0
     assert pilot["pilot_objective_violation_action"] == "fail"
@@ -188,6 +193,11 @@ def test_corrected_scientific_configs_and_small_candidate_contract():
     assert slurm_scientific["validation_events"] == 2000
     assert slurm_diagnostic["model_preset"] == "gpu_debug"
     assert slurm_diagnostic["validation_events"] == 32
+    assert small_candidate_diagnostic["model_preset"] == "small_candidate"
+    assert small_candidate_diagnostic["max_steps"] == 4
+    assert small_candidate_diagnostic["curriculum_phase_steps"] == [1, 1, 1, 1]
+    assert small_candidate_diagnostic["validation_batches"] == 1
+    assert small_candidate_diagnostic["validation_events"] <= 32
     assert reconstruction["max_validation_events"] == 2000
     assert reconstruction["rollout_validation_events"] == 1000
     assert reconstruction["best_metric"] == "predicted_edge_f1"
