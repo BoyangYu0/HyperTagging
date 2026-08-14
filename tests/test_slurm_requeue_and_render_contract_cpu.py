@@ -20,6 +20,7 @@ from scripts.slurm.verify_job_contract import (  # noqa: E402
     verify_rendered_contract_hash,
 )
 from scripts.slurm import render_one_gpu_job  # noqa: E402
+from scripts.slurm.verify_execution_receipt import verify_receipt  # noqa: E402
 
 
 def test_contract_verifier_bootstrap_does_not_import_torch():
@@ -584,3 +585,9 @@ def test_attempt_receipt_hashes_failure_evidence(tmp_path):
     assert payload["artifacts"]["metrics"]["sha256"] == hashlib.sha256(
         metrics.read_bytes()
     ).hexdigest()
+    assert verify_receipt(receipt)["trainer_status"] == 1
+    with pytest.raises(RuntimeError, match="normal completion"):
+        verify_receipt(receipt, require_completed=True)
+    metrics.write_text("changed\n")
+    with pytest.raises(RuntimeError, match="artifact (size|hash) changed"):
+        verify_receipt(receipt)
