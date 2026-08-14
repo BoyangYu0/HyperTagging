@@ -87,6 +87,10 @@ def test_slurm_templates_forbid_generic_gres_and_submission_side_effects():
     assert '"--export=NONE"' not in renderer
     assert '"--export=ALL"' not in renderer
     assert '"scripts/slurm/train_one_gpu.sbatch",' in renderer
+    assert 'SLURM_SUBMIT_DIR' in sbatch
+    assert 'dirname "${BASH_SOURCE[0]}"' not in sbatch
+    assert 'artifacts/slurm/jobs/${SLURM_JOB_ID}' in sbatch
+    assert 'finalize_execution_receipt.py' in sbatch
     for ambient in (
         "HYPERTAGGING_GPU_ENV",
         "HYPERTAGGING_EXPECTED_GRES",
@@ -353,6 +357,7 @@ def test_wrapper_forwards_usr1_and_requeues_at_most_once(tmp_path):
     child_ready = tmp_path / "ready"
     child_signal = tmp_path / "child-signal"
     requeue_log = tmp_path / "requeues"
+    status_file = tmp_path / "wrapper-status.json"
     trainer = tmp_path / "trainer.py"
     trainer.write_text(
         "import os, signal, sys, time\n"
@@ -377,6 +382,8 @@ def test_wrapper_forwards_usr1_and_requeues_at_most_once(tmp_path):
             "2",
             "--scontrol",
             str(fake_scontrol),
+            "--status-file",
+            str(status_file),
             "--",
             sys.executable,
             str(trainer),
@@ -399,3 +406,69 @@ def test_wrapper_forwards_usr1_and_requeues_at_most_once(tmp_path):
     assert process.wait(timeout=5) == 0
     assert child_signal.read_text() == "USR1"
     assert requeue_log.read_text().splitlines() == ["requeue 123"]
+    status = json.loads(status_file.read_text())
+    assert status["action"] == "requeue_requested"
+    assert status["trainer_status"] == 75
+    assert status["usr1_received"] == 1
+
+
+def test_attempt_receipt_hashes_failure_evidence(tmp_path):
+    attempt = tmp_path / "attempt-00"
+    run = tmp_path / "run"
+    attempt.mkdir()
+    run.mkdir()
+    contract = tmp_path / "contract.json"
+    contract.write_text('{"contract":true}\n')
+    stage_log = attempt / "stages.log"
+    stage_log.write_text("stage=trainer_failed\n")
+    wrapper_status = attempt / "wrapper-status.json"
+    wrapper_status.write_text(
+        json.dumps(
+            {
+                "action": "trainer_exit",
+                "trainer_status": 1,
+                "wrapper_status": 1,
+            }
+        )
+    )
+    metrics = run / "metrics.jsonl"
+    metrics.write_text('{"loss":1.0}\n')
+    receipt = attempt / "receipt.json"
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/slurm/finalize_execution_receipt.py",
+            "--receipt",
+            str(receipt),
+            "--contract",
+            str(contract),
+            "--attempt-root",
+            str(attempt),
+            "--run-root",
+            str(run),
+            "--stage-log",
+            str(stage_log),
+            "--wrapper-status",
+            str(wrapper_status),
+            "--batch-exit-status",
+            "1",
+            "--terminal-stage",
+            "trainer_failed",
+            "--started-at",
+            "2026-08-14T10:00:00+00:00",
+            "--completed-at",
+            "2026-08-14T10:01:00+00:00",
+        ],
+        cwd=ROOT,
+        check=False,
+    )
+    assert result.returncode == 0
+    payload = json.loads(receipt.read_text())
+    stored = payload.pop("receipt_sha256")
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    assert stored == hashlib.sha256(canonical.encode()).hexdigest()
+    assert payload["status"] == "failed_or_nonterminal"
+    assert payload["trainer_status"] == 1
+    assert payload["artifacts"]["metrics"]["sha256"] == hashlib.sha256(
+        metrics.read_bytes()
+    ).hexdigest()
