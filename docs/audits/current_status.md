@@ -8,12 +8,12 @@ This is the sole authoritative current audit report. Historical reports under
 
 - Audited source SHA: `6e46423e5ed4553aae1fccdce33db6e03f9cb4c8`
 - Audit metadata HEAD: resolved dynamically with `git rev-parse HEAD`
-- Canonical complete CPU pytest result: 461 passed, 8 skipped, 24 warnings
+- Canonical complete CPU pytest result: 463 passed, 8 skipped, 24 warnings
 - Human visual review: `NOT_REVIEWED`
 
 | Ledger status | Count |
 |---|---:|
-| `FIXED_AND_TESTED` | 83 |
+| `FIXED_AND_TESTED` | 84 |
 | `IMPLEMENTED_NOT_REAL_VERIFIED` | 6 |
 | `INTENTIONALLY_DEFERRED_SCIENCE` | 4 |
 | `OBSOLETE_OR_DUPLICATE` | 1 |
@@ -41,8 +41,11 @@ samples and exposes peaks of 554 MiB, 11% utilization, and 33 C. Sealed test
 remained closed. This closes software/runtime observability evidence only; it
 is not convergence or scientific-performance evidence.
 
-The installed uv 0.5.20 now manages both environments. Frozen project sync
-preserved `uv.lock`; strict hashed GPU sync made no changes. The tracked
+The installed uv 0.5.20 now manages both environments. The corrected project
+lock SHA-256 is `38e6093...`; it contains all 10 direct runtime dependencies in
+editable-root metadata, and consecutive frozen all-extras syncs made no
+changes. The static drift checker, uv package check, and SciPy/PyYAML imports
+pass. Strict hashed GPU sync remains separate and made no changes. The tracked
 activation helper and fresh-shell-verified `htenv`/`htgpu` shortcuts select the
 project and frozen GPU environments explicitly.
 

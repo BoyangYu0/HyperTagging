@@ -1,8 +1,8 @@
 schema_version: hypertagging-audit-ledger-v4
 audited_branch: focused-post-audit-consolidation-20260802
 audited_code_sha: 6e46423e5ed4553aae1fccdce33db6e03f9cb4c8
-audit_generated_at: '2026-08-14T16:30:00+02:00'
-audit_scope: focused production-integrity corrections plus the 2026-08-14 training-integration uv workflow and bounded clean-source V100 diagnostics; no scientific/full training, sealed-test access, final scientific tag, 100k canary, or 10M production
+audit_generated_at: '2026-08-14T16:48:02+02:00'
+audit_scope: focused production-integrity corrections plus the 2026-08-14 training-integration uv workflow, reproducible project dependency lock, and bounded clean-source V100 diagnostics; no scientific/full training, sealed-test access, final scientific tag, 100k canary, or 10M production
 allowed_post_audit_paths:
   - docs/audit_index.md
   - docs/audits/README.md
@@ -42,23 +42,28 @@ allowed_post_audit_commits:
   - 6ebf2ce2c8cdb7e701b07c4d0a9fdc4c9aff82e6
   - c5dee97c2485f003a86583c7b275433aa3dca5b4
   - 5e5a5661a651784cedc0e64909885b8abd761f45
+  - 7acddc096d7cb6e4e03005f24739a98e5cff185b
 audit_tool_version: hypertagging-audit-integrity-v4
 verification_commands:
-  - /data/dust/user/boyangyu/uv_env/bin/python -m pytest -q
-  - /data/dust/user/boyangyu/uv_env/bin/python scripts/validate_audit_integrity.py
-  - /data/dust/user/boyangyu/uv_env/bin/python scripts/execute_notebook_smoke_tests.py --check-generated
-  - /data/dust/user/boyangyu/uv_env/bin/python scripts/generate_audit_views.py --check
-  - /data/dust/user/boyangyu/uv_env/bin/python scripts/execute_notebook_smoke_tests.py --keep-output /tmp/hypertagging-post-audit-final
-  - /data/dust/user/boyangyu/uv_env/bin/python scripts/execute_notebook_smoke_tests.py --diagnostic-only --diagnostic-first-level-ambiguity --keep-output /tmp/hypertagging-first-level-final
+  - /home/b/Boyang.Yu/.local/bin/uv lock --check
+  - /home/b/Boyang.Yu/.local/bin/uv sync --frozen --all-extras
+  - /home/b/Boyang.Yu/.local/bin/uv pip check
+  - /home/b/Boyang.Yu/.local/bin/uv run --frozen --all-extras python scripts/check_uv_lock_direct_dependencies.py
+  - CUDA_VISIBLE_DEVICES='' /home/b/Boyang.Yu/.local/bin/uv run --frozen --all-extras python -m pytest -q
+  - /home/b/Boyang.Yu/.local/bin/uv run --frozen --all-extras python scripts/validate_training_provenance.py
+  - /home/b/Boyang.Yu/.local/bin/uv run --frozen --all-extras python scripts/validate_audit_integrity.py
+  - /home/b/Boyang.Yu/.local/bin/uv run --frozen --all-extras python scripts/generate_audit_views.py --check
+  - git diff --check
 verification_result_summary:
   exact_sha_ci: SOURCE_SHA_HAS_NO_REMOTE_RUN
-  exact_sha_ci_run: 'audited source ede387e is local-only and has no remote run; no prior remote run is promoted to exact-source evidence'
-  post_audit_commit_classification: audit_metadata_only
-  cpu_pytest: '461 passed, 8 skipped, 24 warnings in 267.94s (270.42s wall) on the training-integration evidence worktree with runtime code pinned to clean 0c5e054'
-  fixture_notebooks: 15 passed
-  first_level_diagnostic: 1 passed
-  generated_notebook_consistency: 18 passed
-  bounded_real_mdst_pilot: 'NOT RUN; immutable worker source requires a clean committed checkout and no campaign-bound 1k-10k multi-category pilot input was supplied'
+  exact_sha_ci_run: 'dependency-lock source 7acddc0 is local-only and has no remote run; no prior remote run is promoted to exact-source evidence'
+  post_audit_commit_classification: dependency_lock_and_audit_metadata
+  cpu_pytest: '463 passed, 8 skipped, 24 warnings in 263.22s (266.22s wall) with CUDA hidden at clean source 7acddc0'
+  project_dependency_lock: 'uv.lock SHA-256 38e6093c27f6cd70e56dcab4a30c561629a9b6ee968f6b73243709c8b2f5cc91; 10 direct runtime dependencies aligned; two frozen all-extras syncs made no changes; uv pip check and SciPy/PyYAML imports passed'
+  fixture_notebooks: NOT_RUN_IN_DEPENDENCY_CLEANUP
+  first_level_diagnostic: NOT_RUN_IN_DEPENDENCY_CLEANUP
+  generated_notebook_consistency: NOT_RUN_IN_DEPENDENCY_CLEANUP
+  bounded_real_mdst_pilot: 'NOT RUN; dependency reproducibility cleanup did not access real or sealed data'
 production_readiness:
   recommendation: NO_GO
   blocker: current-HEAD multi-category pilot has not run from a clean immutable campaign source; KLM scope and representative resources remain unresolved
@@ -1209,3 +1214,14 @@ items:
     external_evidence_required: []
     last_verified_sha: 0c5e054a52403a376bf3c93e3edb3e6998fdf146
     notes: Job 15745941 completed from clean 0c5e054 on exact gpu:v100:1 with small_candidate, four steps and phases, one two-event validation batch with flushed structured progress, nine cleaned-up periodic telemetry samples, and a fail-closed v2 receipt hashing telemetry and exposing 554 MiB/11%/33 C peaks. uv frozen workflows and fresh-shell htenv/htgpu activation also passed. This is diagnostic runtime evidence, not scientific performance.
+  - id: TRAIN-023
+    title: Project lock omitted declared SciPy and PyYAML root metadata
+    originating_audit: docs/training.md
+    first_reported_sha: ac9f8eed7881b8911a492ebd79a8fb17ae060fd2
+    current_status: FIXED_AND_TESTED
+    current_evidence_files: [pyproject.toml, uv.lock, scripts/check_uv_lock_direct_dependencies.py, configs/training_selection/production_1m_20260812/training_readiness.json, docs/training.md]
+    current_tests: [tests/test_uv_lock_direct_dependencies_cpu.py]
+    notebook_evidence: []
+    external_evidence_required: []
+    last_verified_sha: 7acddc096d7cb6e4e03005f24739a98e5cff185b
+    notes: uv lock --check now accepts a minimal additive lock update; editable-root dependencies and requires-dist contain all 10 direct runtime requirements, frozen all-extras sync is idempotent, uv pip check passes, and SciPy/PyYAML import from the frozen environment without manual restoration.

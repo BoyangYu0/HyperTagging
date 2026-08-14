@@ -183,3 +183,47 @@ runs:
     ci_run: NOT_RUN_LOCAL_ONLY
     human_visual_review_status: NOT_REVIEWED
     evidence_limitations: Job 15745941 and the CPU suite close bounded software/runtime evidence only; the production source object/tree, fresh scientific-allocation preflight, final scientific tag, convergence, scientific performance, sealed test, remote CI, and full training remain absent or deliberately blocked.
+  - source_sha: 7acddc096d7cb6e4e03005f24739a98e5cff185b
+    metadata_head: resolved_by_git_rev_parse_HEAD
+    worktree_state: clean_committed_source_with_pending_audit_metadata
+    date: '2026-08-14T16:48:02+02:00'
+    commands:
+      - /home/b/Boyang.Yu/.local/bin/uv lock --check
+      - /home/b/Boyang.Yu/.local/bin/uv sync --frozen --all-extras
+      - /home/b/Boyang.Yu/.local/bin/uv pip check
+      - /home/b/Boyang.Yu/.local/bin/uv run --frozen --all-extras python -c 'import scipy, yaml'
+      - /home/b/Boyang.Yu/.local/bin/uv run --frozen --all-extras python scripts/check_uv_lock_direct_dependencies.py
+      - /home/b/Boyang.Yu/.local/bin/uv run --frozen --all-extras python -m pytest -q tests/test_uv_lock_direct_dependencies_cpu.py tests/test_training_provenance_status_cpu.py
+      - CUDA_VISIBLE_DEVICES='' /home/b/Boyang.Yu/.local/bin/uv run --frozen --all-extras python -m pytest -q
+      - /home/b/Boyang.Yu/.local/bin/uv run --frozen --all-extras python scripts/validate_training_provenance.py
+      - /home/b/Boyang.Yu/.local/bin/uv run --frozen --all-extras python scripts/validate_training_provenance.py --require-scientific-slurm-ready
+      - /home/b/Boyang.Yu/.local/bin/uv run --frozen --all-extras python scripts/validate_audit_integrity.py
+      - /home/b/Boyang.Yu/.local/bin/uv run --frozen --all-extras python scripts/generate_audit_views.py --check
+      - git diff --check
+    pytest:
+      result: PASS
+      passed: 463
+      skipped: 8
+      warnings: 24
+      duration_seconds: 263.22
+      wall_seconds: 266.22
+    dependency_lock:
+      uv_version: 0.5.20
+      previous_sha256: 89c26ccc9d6e748482252a46ee1b5f8d096501f86c7ba3f69850353a5e3e0a6e
+      sha256: 38e6093c27f6cd70e56dcab4a30c561629a9b6ee968f6b73243709c8b2f5cc91
+      direct_runtime_dependencies: 10
+      added_package_records: [scipy==1.15.3, scipy==1.17.1, scipy==1.18.0]
+      removed_package_records: []
+      frozen_syncs: two_no_change
+      uv_pip_check: PASS_124_PACKAGES
+      imports: {scipy: 1.18.0, PyYAML: 6.0.3}
+    notebooks:
+      generated_consistency: {result: NOT_RUN, count: 0}
+      default_fixture: {result: NOT_RUN, count: 0}
+      real_mdst_pilot: {result: NOT_RUN, count: 0}
+      trained_physics_validation: {result: NOT_RUN, count: 0}
+    real_data_inputs: NOT_ACCESSED_DEPENDENCY_REPRODUCIBILITY_ONLY
+    checkpoint: none
+    ci_run: NOT_RUN_LOCAL_ONLY
+    human_visual_review_status: NOT_REVIEWED
+    evidence_limitations: Dependency reproducibility and the complete CPU suite are verified only; the production source object/tree, fresh scientific-allocation preflight, final review/tag, convergence, scientific performance, sealed test, remote CI, and full training remain absent or deliberately blocked.
