@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -12,13 +13,34 @@ import re
 import shlex
 import subprocess
 import sys
+from types import ModuleType
 
 ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT / "src"))
 
-from hypertagging.utils.gpu_safety import (  # noqa: E402
-    load_local_microtest_completion_receipt,
-)
+
+def _load_gpu_safety_module() -> ModuleType:
+    """Load the pure-stdlib safety module without importing package __init__."""
+
+    module_name = "_hypertagging_slurm_gpu_safety"
+    existing = sys.modules.get(module_name)
+    if existing is not None:
+        return existing
+    path = ROOT / "src/hypertagging/utils/gpu_safety.py"
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("cannot load standalone GPU safety verifier")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def load_local_microtest_completion_receipt(*args, **kwargs):
+    """Lazily dispatch receipt validation for the scientific-only path."""
+
+    return _load_gpu_safety_module().load_local_microtest_completion_receipt(
+        *args, **kwargs
+    )
 
 CONTRACT_VERSION = "hypertagging-slurm-one-gpu-contract-v2"
 RUNTIME_FIELDS = (

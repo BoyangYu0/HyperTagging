@@ -22,6 +22,28 @@ from scripts.slurm.verify_job_contract import (  # noqa: E402
 from scripts.slurm import render_one_gpu_job  # noqa: E402
 
 
+def test_contract_verifier_bootstrap_does_not_import_torch():
+    result = subprocess.run(
+        [
+            "/usr/bin/python3",
+            "-c",
+            (
+                "import importlib.util,sys;"
+                "spec=importlib.util.spec_from_file_location('verify',"
+                "'scripts/slurm/verify_job_contract.py');"
+                "module=importlib.util.module_from_spec(spec);"
+                "spec.loader.exec_module(module);"
+                "assert 'torch' not in sys.modules"
+            ),
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
+
 def test_requeue_wrapper_never_requeues_outside_slurm(tmp_path):
     trainer = tmp_path / "trainer.sh"
     trainer.write_text("#!/usr/bin/env bash\nexit 75\n")
