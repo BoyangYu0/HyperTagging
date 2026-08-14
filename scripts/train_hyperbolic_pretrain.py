@@ -16,6 +16,7 @@ from hypertagging.training.hyperbolic_pretrain import run_hyperbolic_pretrain_dr
 from hypertagging.training.pretrain_trainer import PretrainConfig, train_hyperbolic_pretraining  # noqa: E402
 from hypertagging.models.ablation import ALL_ABLATIONS  # noqa: E402
 from hypertagging.utils.gpu_safety import assert_full_training_requires_condor  # noqa: E402
+from hypertagging.utils.gpu_safety import ALLOWED_SLURM_GRES  # noqa: E402
 from hypertagging.training.config import resolve_argparse_namespace  # noqa: E402
 from hypertagging.training.model_config import MODEL_PRESETS  # noqa: E402
 
@@ -48,9 +49,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         choices=("auto", "scientific_slurm", "slurm_diagnostic", "local_microtest"),
         default="auto",
     )
-    parser.add_argument(
-        "--expected-gres", choices=("gpu:h200nvl:1", "gpu:v100:1"), default=None
-    )
+    parser.add_argument("--expected-gres", choices=ALLOWED_SLURM_GRES, default=None)
     parser.add_argument("--local-admission-receipt", default=None)
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--tiny", action="store_true")
@@ -60,6 +59,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--warmup-steps", type=int, default=None)
     parser.add_argument("--max-warmup-steps", type=int, default=10_000)
     parser.add_argument("--min-lr-ratio", type=float, default=0.0)
+    parser.add_argument("--amp-init-scale", type=float, default=4096.0)
     parser.add_argument("--max-events", type=int, default=None)
     parser.add_argument("--batch-size", type=int, default=2)
     parser.add_argument("--num-workers", type=int, default=0)
@@ -175,6 +175,7 @@ def main(argv: list[str] | None = None) -> int:
                 warmup_steps=args.warmup_steps,
                 max_warmup_steps=args.max_warmup_steps,
                 min_lr_ratio=args.min_lr_ratio,
+                amp_init_scale=args.amp_init_scale,
                 batch_size=args.batch_size,
                 max_events=args.max_events,
                 seed=args.seed,

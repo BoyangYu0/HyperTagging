@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
 import getpass
 import hashlib
 import json
@@ -18,6 +19,12 @@ sys.path.insert(0, str(ROOT / "src"))
 DIAGNOSTIC_CONFIGS = (
     "configs/slurm/pretrain_diagnostic.yaml",
     "configs/slurm/pretrain_diagnostic_small_candidate.yaml",
+)
+
+ACCELERATOR_PRIORITY = (
+    "gpu:h200nvl:1",
+    "gpu:h100nvl:1",
+    "gpu:v100:1",
 )
 
 from hypertagging.utils.gpu_safety import (  # noqa: E402
@@ -60,8 +67,30 @@ def validate_live_slurm(gres: str) -> dict[str, Any]:
     test_only_supported = "--test-only" in help_text
     sinfo = _run(("/opt/slurm/bin/sinfo", "-h", "-p", "inter", "-N", "-o", "%N|%T|%G"))
     gres_name = gres.removeprefix("gpu:").removesuffix(":1")
-    if not any(f"gpu:{gres_name}:" in line for line in sinfo.splitlines()):
+    sinfo_lines = sinfo.splitlines()
+    if not any(f"gpu:{gres_name}:" in line for line in sinfo_lines):
         raise RuntimeError(f"exact GRES {gres!r} is not advertised in partition inter")
+    usable_lines = [
+        line
+        for line in sinfo_lines
+        if not any(
+            state in line.lower()
+            for state in ("down", "drain", "fail", "maint", "unknown")
+        )
+    ]
+    usable_priority = [
+        candidate
+        for candidate in ACCELERATOR_PRIORITY
+        if any(
+            f"gpu:{candidate.removeprefix('gpu:').removesuffix(':1')}:" in line
+            for line in usable_lines
+        )
+    ]
+    if not usable_priority or usable_priority[0] != gres:
+        raise RuntimeError(
+            f"selected GRES {gres!r} violates live accelerator priority; "
+            f"usable priority is {usable_priority}"
+        )
     partition = _run(("/opt/slurm/bin/scontrol", "show", "partition", "inter"))
     if "PartitionName=inter" not in partition or "State=UP" not in partition:
         raise RuntimeError("partition inter is absent or not up")
@@ -85,7 +114,13 @@ def validate_live_slurm(gres: str) -> dict[str, Any]:
         "exact_gres": gres,
         "sbatch_test_only_supported": test_only_supported,
         "required_flags_verified": list(required_flags),
-        "sinfo_snapshot": sinfo.splitlines(),
+        "sinfo_snapshot": sinfo_lines,
+        "user_requested_accelerator_priority": list(ACCELERATOR_PRIORITY),
+        "usable_priority": usable_priority,
+        "selection_reason": (
+            f"selected {gres} as the highest-priority exact usable GRES "
+            "advertised by the live inter partition"
+        ),
     }
 
 
@@ -122,10 +157,24 @@ def main() -> int:
             "prologue will refuse to execute while provenance blockers remain"
         ),
     )
+    parser.add_argument(
+        "--user-authorized-scientific-submit",
+        action="store_true",
+        help=(
+            "record explicit interactive user authorization to execute scientific "
+            "training while retaining unresolved provenance blockers"
+        ),
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if args.blocked_no_submit and args.mode != "scientific":
         raise RuntimeError("--blocked-no-submit is only valid for scientific contracts")
+    if args.user_authorized_scientific_submit and args.mode != "scientific":
+        raise RuntimeError(
+            "--user-authorized-scientific-submit is only valid for scientific contracts"
+        )
+    if args.blocked_no_submit and args.user_authorized_scientific_submit:
+        raise RuntimeError("scientific submission cannot be both blocked and authorized")
     if args.seed < 0:
         raise RuntimeError("seed must be non-negative")
     if not 0 <= args.max_restarts <= 10:
@@ -159,7 +208,7 @@ def main() -> int:
             sys.executable,
             str(ROOT / "scripts/validate_training_provenance.py"),
         ]
-        if not args.blocked_no_submit:
+        if not args.blocked_no_submit and not args.user_authorized_scientific_submit:
             status_command.append("--require-scientific-slurm-ready")
         status = subprocess.run(
             status_command,
@@ -179,7 +228,11 @@ def main() -> int:
             raise RuntimeError(
                 "blocked no-submit render requires an active scientific blocker"
             )
-        if not args.blocked_no_submit and not args.expected_git_tag:
+        if (
+            not args.blocked_no_submit
+            and not args.user_authorized_scientific_submit
+            and not args.expected_git_tag
+        ):
             raise RuntimeError(
                 "scientific render requires an immutable expected Git tag"
             )
@@ -248,13 +301,37 @@ def main() -> int:
         "submission_performed": False,
         "submission_authorized": not args.blocked_no_submit,
         "verification_scope": (
-            "blocked_no_submit" if args.blocked_no_submit else "execution"
+            "blocked_no_submit"
+            if args.blocked_no_submit
+            else (
+                "user_authorized_execution_with_recorded_provenance_limitations"
+                if args.user_authorized_scientific_submit
+                else "execution"
+            )
         ),
         "scientific_submission_blockers": (
             provenance_result.get("blockers", [])
-            if args.mode == "scientific" and args.blocked_no_submit
+            if args.mode == "scientific"
+            and (args.blocked_no_submit or args.user_authorized_scientific_submit)
             else []
         ),
+        "user_submission_authorization": (
+            {
+                "authorized": True,
+                "recorded_at": datetime.now(timezone.utc).isoformat(),
+                "source": "interactive_user_instruction",
+                "scope": "single_35k_small_candidate_scientific_submission",
+                "provenance_limitations_must_remain_recorded": True,
+            }
+            if args.user_authorized_scientific_submit
+            else None
+        ),
+        "accelerator_selection": {
+            "priority": list(ACCELERATOR_PRIORITY),
+            "selected": args.gres,
+            "live_usable_priority": live.get("usable_priority", []),
+            "reason": live.get("selection_reason", "live exact-GRES validation passed"),
+        },
     }
     canonical = json.dumps(contract, sort_keys=True, separators=(",", ":"))
     contract["contract_sha256"] = hashlib.sha256(canonical.encode()).hexdigest()

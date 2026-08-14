@@ -79,6 +79,7 @@ class PretrainConfig:
     warmup_steps: int | None = None
     max_warmup_steps: int = 10_000
     min_lr_ratio: float = 0.0
+    amp_init_scale: float = 4096.0
     weight_decay: float = 1e-4
     gradient_clip: float = 1.0
     checkpoint_every: int = 100
@@ -343,6 +344,8 @@ def train_hyperbolic_pretraining(
         raise ValueError("scientific pretraining requires the progressive curriculum")
     if config.log_every <= 0:
         raise ValueError("log_every must be positive")
+    if not math.isfinite(config.amp_init_scale) or config.amp_init_scale <= 0:
+        raise ValueError("amp_init_scale must be finite and positive")
     if config.best_mode not in {"min", "max"}:
         raise ValueError("best_mode must be 'min' or 'max'")
     if config.best_metric not in {
@@ -465,7 +468,11 @@ def train_hyperbolic_pretraining(
     scheduler.hypertagging_contract = lr_contract
     phase_schedule = _resolve_phase_schedule(config, resume_payload)
     model.curriculum_schedule_contract = phase_schedule.contract()
-    scaler = torch.amp.GradScaler("cuda", enabled=device.type == "cuda" and config.mixed_precision)
+    scaler = torch.amp.GradScaler(
+        "cuda",
+        enabled=device.type == "cuda" and config.mixed_precision,
+        init_scale=config.amp_init_scale,
+    )
     start_step = 0
     if config.resume:
         payload = restore_training_checkpoint(
@@ -1022,7 +1029,9 @@ def train_hyperbolic_pretraining(
                 gradient_metrics[f"gradient_projection_{name}"] = (
                     _parameter_gradient_norm(module.parameters())
                 )
-        torch.nn.utils.clip_grad_norm_(model.parameters(), config.gradient_clip)
+        torch.nn.utils.clip_grad_norm_(
+            model.parameters(), config.gradient_clip, error_if_nonfinite=True
+        )
         scaler.step(optimizer)
         scaler.update()
         scheduler.step()
@@ -1692,7 +1701,11 @@ def _stage_relation_validation(
 def _tensor_gradient_norm(
     gradients: tuple[torch.Tensor | None, ...],
 ) -> float:
-    squares = [gradient.detach().float().square().sum() for gradient in gradients if gradient is not None]
+    squares = [
+        gradient.detach().double().square().sum()
+        for gradient in gradients
+        if gradient is not None
+    ]
     return float(torch.stack(squares).sum().sqrt().cpu()) if squares else 0.0
 
 

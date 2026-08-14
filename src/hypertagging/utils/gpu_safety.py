@@ -31,7 +31,7 @@ def is_inside_condor() -> bool:
     )
 
 
-ALLOWED_SLURM_GRES = ("gpu:h200nvl:1", "gpu:v100:1")
+ALLOWED_SLURM_GRES = ("gpu:h200nvl:1", "gpu:h100nvl:1", "gpu:v100:1")
 LOCAL_RECEIPT_MAX_AGE_SECONDS = 90
 LOCAL_COMPLETION_SHUTDOWN_GRACE_SECONDS = 30
 
@@ -44,6 +44,7 @@ def _one_visible_device(value: str) -> bool:
 def _gpu_name_matches_gres(name: str, gres: str) -> bool:
     patterns = {
         "gpu:h200nvl:1": r"^NVIDIA H200 NVL(?: [A-Za-z0-9][A-Za-z0-9 ._-]*)?$",
+        "gpu:h100nvl:1": r"^NVIDIA H100 NVL(?: [A-Za-z0-9][A-Za-z0-9 ._-]*)?$",
         "gpu:v100:1": r"^(?:NVIDIA|Tesla) V100(?:[ -][A-Za-z0-9][A-Za-z0-9 ._-]*)?$",
     }
     pattern = patterns.get(gres)

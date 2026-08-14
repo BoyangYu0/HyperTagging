@@ -14,7 +14,10 @@ import sys
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from hypertagging.utils.gpu_safety import assert_scientific_slurm_gpu_allowed  # noqa: E402
+from hypertagging.utils.gpu_safety import (  # noqa: E402
+    ALLOWED_SLURM_GRES,
+    assert_scientific_slurm_gpu_allowed,
+)
 
 
 def sha256(path: Path) -> str:
@@ -32,7 +35,7 @@ def verify_lock_hashes(root: Path) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--expected-gres", choices=("gpu:h200nvl:1", "gpu:v100:1"))
+    parser.add_argument("--expected-gres", choices=ALLOWED_SLURM_GRES)
     parser.add_argument("--lock-only", action="store_true")
     args = parser.parse_args()
     contract_path = ROOT / "environment/gpu/runtime-contract.json"

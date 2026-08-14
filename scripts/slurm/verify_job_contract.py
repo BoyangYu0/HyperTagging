@@ -127,7 +127,11 @@ def validated_runtime_values(contract: dict[str, object]) -> dict[str, str]:
         contract["gpu_environment"], field="gpu_environment"
     )
     train_config = _safe_relative_path(contract["train_config"], field="train_config")
-    if contract["gres"] not in {"gpu:h200nvl:1", "gpu:v100:1"}:
+    if contract["gres"] not in {
+        "gpu:h200nvl:1",
+        "gpu:h100nvl:1",
+        "gpu:v100:1",
+    }:
         raise RuntimeError("contract contains unsupported or generic GRES")
     experiment = str(contract["experiment"])
     if re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,79}", experiment) is None:
@@ -265,7 +269,14 @@ def main() -> int:
     if contract["mode"] == "scientific" and not provenance.get(
         "scientific_slurm_submission_allowed", False
     ):
-        if contract.get("submission_authorized", True):
+        user_authorization = contract.get("user_submission_authorization", {})
+        if contract.get("submission_authorized", True) and not (
+            isinstance(user_authorization, dict)
+            and user_authorization.get("authorized") is True
+            and contract.get("verification_scope")
+            == "user_authorized_execution_with_recorded_provenance_limitations"
+            and contract.get("scientific_submission_blockers")
+        ):
             raise RuntimeError("scientific render is blocked by provenance status")
         if not contract.get("scientific_submission_blockers"):
             raise RuntimeError("blocked no-submit contract does not record blockers")

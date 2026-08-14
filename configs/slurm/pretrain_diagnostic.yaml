@@ -7,6 +7,7 @@ seed: 20260812
 max_steps: 10
 batch_size: 2
 num_workers: 0
+amp_init_scale: 4096.0
 checkpoint_every: 5
 validate_every: 10
 validation_batches: 4

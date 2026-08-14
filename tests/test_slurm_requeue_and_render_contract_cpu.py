@@ -226,6 +226,32 @@ def test_renderer_only_writes_contract_and_prints_exact_sanitized_command(
     assert contract["submission_authorized"] is True
 
 
+def test_live_inventory_selects_h100nvl_before_v100_when_h200_is_absent(
+    monkeypatch,
+):
+    def fake_run(command):
+        if command[:2] == ("/opt/slurm/bin/sbatch", "--version"):
+            return "slurm 23.02.8\n"
+        if command[:2] == ("/opt/slurm/bin/sbatch", "--help"):
+            return "--account --partition --gres --signal --requeue --export"
+        if command[:2] == ("/opt/slurm/bin/sinfo", "-h"):
+            return (
+                "usm-cl-nv01|idle|gpu:h100nvl:7(S:0-6)\n"
+                "th-cl-nv01|idle|gpu:v100:2(S:0-1)\n"
+            )
+        if command[:3] == ("/opt/slurm/bin/scontrol", "show", "partition"):
+            return "PartitionName=inter State=UP\n"
+        if command[:3] == ("/opt/slurm/bin/sacctmgr", "-nP", "show"):
+            return "boyang.yu|others|inter|\n"
+        raise AssertionError(command)
+
+    monkeypatch.setattr(render_one_gpu_job, "_run", fake_run)
+    live = render_one_gpu_job.validate_live_slurm("gpu:h100nvl:1")
+    assert live["usable_priority"] == ["gpu:h100nvl:1", "gpu:v100:1"]
+    with pytest.raises(RuntimeError, match="violates live accelerator priority"):
+        render_one_gpu_job.validate_live_slurm("gpu:v100:1")
+
+
 @pytest.mark.parametrize(
     "provided_flag", ("--local-admission-receipt", "--local-completion-receipt")
 )
@@ -335,6 +361,79 @@ def test_scientific_renderer_validates_binds_and_hashes_both_receipts(
     assert "--export=NIL" in command
     assert contract["submission_performed"] is False
     assert contract["export_policy"] == "NIL"
+
+
+def test_explicit_user_authorization_retains_provenance_blocker_and_h100_label(
+    monkeypatch, tmp_path, capsys
+):
+    admission = tmp_path / "admission.json"
+    completion = tmp_path / "completion.json"
+    admission.write_text('{"admission":true}\n')
+    completion.write_text('{"completion":true}\n')
+    gpu_env = tmp_path / "gpu-env"
+    (gpu_env / "bin").mkdir(parents=True)
+    (gpu_env / "bin" / "python").write_text("")
+    monkeypatch.setattr(
+        render_one_gpu_job,
+        "load_local_microtest_completion_receipt",
+        lambda *args, **kwargs: {},
+    )
+    monkeypatch.setattr(
+        render_one_gpu_job,
+        "validate_live_slurm",
+        lambda gres: {
+            "exact_gres": gres,
+            "usable_priority": ["gpu:h100nvl:1", "gpu:v100:1"],
+            "selection_reason": "H200 absent; exact H100-NVL is usable",
+        },
+    )
+    monkeypatch.setattr(
+        render_one_gpu_job.subprocess,
+        "run",
+        lambda *args, **kwargs: SimpleNamespace(
+            returncode=0,
+            stdout=json.dumps(
+                {
+                    "scientific_slurm_submission_allowed": False,
+                    "blockers": ["missing source object/tree"],
+                }
+            ),
+        ),
+    )
+    output = tmp_path / "authorized-scientific-contract.json"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "render_one_gpu_job.py",
+            "--mode",
+            "scientific",
+            "--gres",
+            "gpu:h100nvl:1",
+            "--gpu-env",
+            str(gpu_env),
+            "--expected-git-sha",
+            "a" * 40,
+            "--local-admission-receipt",
+            str(admission),
+            "--local-completion-receipt",
+            str(completion),
+            "--user-authorized-scientific-submit",
+            "--output",
+            str(output),
+        ],
+    )
+    assert render_one_gpu_job.main() == 0
+    contract = json.loads(output.read_text())
+    assert contract["gres"] == "gpu:h100nvl:1"
+    assert contract["user_submission_authorization"]["authorized"] is True
+    assert contract["scientific_submission_blockers"] == [
+        "missing source object/tree"
+    ]
+    assert contract["accelerator_selection"]["selected"] == "gpu:h100nvl:1"
+    assert "--gres=gpu:h100nvl:1" in json.loads(capsys.readouterr().out)[
+        "sbatch_command"
+    ]
 
 
 def test_scientific_contract_verifier_revalidates_completion_binding(

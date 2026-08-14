@@ -40,6 +40,7 @@ def _job_record(gres: str, *, tres_per_node_count: bool = False) -> str:
     ("gres", "name", "tres_per_node_count"),
     (
         ("gpu:h200nvl:1", "NVIDIA H200 NVL", False),
+        ("gpu:h100nvl:1", "NVIDIA H100 NVL", False),
         ("gpu:v100:1", "Tesla V100-SXM2-32GB", True),
     ),
 )

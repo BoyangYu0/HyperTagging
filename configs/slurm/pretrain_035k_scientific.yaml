@@ -8,6 +8,8 @@ max_steps: 17500
 lr_schedule_total_steps: 17500
 batch_size: 4
 num_workers: 0
+log_every: 1
+amp_init_scale: 4096.0
 checkpoint_every: 500
 validate_every: 500
 validation_batches: 500

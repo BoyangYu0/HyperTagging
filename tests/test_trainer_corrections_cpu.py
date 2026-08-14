@@ -27,7 +27,11 @@ from hypertagging.training.pretraining_curriculum import (
     ProgressivePhaseSchedule,
     default_phase_durations,
 )
-from hypertagging.training.pretrain_trainer import PretrainConfig, _resolve_phase_schedule
+from hypertagging.training.pretrain_trainer import (
+    PretrainConfig,
+    _resolve_phase_schedule,
+    _tensor_gradient_norm,
+)
 from hypertagging.training.reconstruction_trainer import (
     _require_scientific_capacity_report,
 )
@@ -165,6 +169,13 @@ def test_geometry_and_vic_are_fp32_under_cpu_autocast_with_finite_gradients():
     assert torch.isfinite(relation_source.grad).all()
 
 
+def test_gradient_norm_uses_fp64_accumulation_and_amp_scale_is_serialized():
+    gradient = torch.tensor([1.0e20, -1.0e20], dtype=torch.float32)
+    assert _tensor_gradient_norm((gradient,)) == pytest.approx(2.0**0.5 * 1.0e20)
+    config = PretrainConfig(data="unused", output_dir="unused")
+    assert config.amp_init_scale == 4096.0
+
+
 def test_corrected_scientific_configs_and_small_candidate_contract():
     pilot = yaml.safe_load(
         Path("configs/hyperbolic_pretrain_pilot.yaml").read_text(encoding="utf-8")
@@ -190,6 +201,8 @@ def test_corrected_scientific_configs_and_small_candidate_contract():
     assert pilot["pilot_objective_violation_action"] == "fail"
     assert pilot["validation_events"] == 256
     assert slurm_scientific["model_preset"] == "small_candidate"
+    assert slurm_scientific["log_every"] == 1
+    assert slurm_scientific["amp_init_scale"] == 4096.0
     assert slurm_scientific["validation_events"] == 2000
     assert slurm_diagnostic["model_preset"] == "gpu_debug"
     assert slurm_diagnostic["validation_events"] == 32
