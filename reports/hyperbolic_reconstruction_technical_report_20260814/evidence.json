@@ -1,0 +1,1699 @@
+{
+  "datasetContracts": {
+    "ablation_arm_rows": {
+      "grain": "ablation arm",
+      "laterUse": "table",
+      "status": "mixed"
+    },
+    "ablation_coverage": {
+      "grain": "ablation family",
+      "laterUse": "chart",
+      "status": "mixed"
+    },
+    "curriculum_phase_rows": {
+      "grain": "curriculum phase",
+      "laterUse": "supporting evidence",
+      "status": "planned"
+    },
+    "curriculum_plan": {
+      "grain": "35k scientific plan",
+      "laterUse": "chart",
+      "status": "planned"
+    },
+    "data_contract_rows": {
+      "grain": "data contract field",
+      "laterUse": "table",
+      "status": "observed"
+    },
+    "diagnostic_contract_rows": {
+      "grain": "diagnostic receipt field",
+      "laterUse": "table",
+      "status": "observed diagnostic"
+    },
+    "diagnostic_telemetry": {
+      "grain": "15-second telemetry sample",
+      "laterUse": "chart",
+      "status": "observed diagnostic"
+    },
+    "inference_capacity_controls": {
+      "grain": "capacity control",
+      "laterUse": "chart",
+      "status": "observed train+validation index"
+    },
+    "inference_contract_rows": {
+      "grain": "inference control",
+      "laterUse": "table",
+      "status": "mixed"
+    },
+    "model_contract_rows": {
+      "grain": "small_candidate field",
+      "laterUse": "table",
+      "status": "observed"
+    },
+    "model_module_composition": {
+      "grain": "small_candidate model surface",
+      "laterUse": "chart",
+      "status": "observed"
+    },
+    "model_parameter_scale": {
+      "grain": "CPU-instantiated preset",
+      "laterUse": "chart",
+      "status": "observed"
+    },
+    "no_submit_contract_rows": {
+      "grain": "no-submit contract field",
+      "laterUse": "table",
+      "status": "mixed"
+    },
+    "production_category_composition": {
+      "grain": "production category",
+      "laterUse": "chart",
+      "status": "observed"
+    },
+    "readiness_gates": {
+      "grain": "readiness gate",
+      "laterUse": "chart",
+      "status": "mixed"
+    },
+    "staged_training_budgets": {
+      "grain": "promotion stage",
+      "laterUse": "chart",
+      "status": "planned"
+    },
+    "structural_percentiles": {
+      "grain": "reconstruction level",
+      "laterUse": "chart",
+      "status": "observed"
+    },
+    "subset_ladder": {
+      "grain": "nested selection",
+      "laterUse": "chart",
+      "status": "observed metadata"
+    }
+  },
+  "datasets": {
+    "ablation_arm_rows": [
+      {
+        "arm": "flat baseline",
+        "armId": "flat_baseline",
+        "evidenceStatus": "observed_code_config",
+        "family": "representation",
+        "implementation": "flat_baseline",
+        "status": "implemented"
+      },
+      {
+        "arm": "heterogeneous Euclidean adapters without context",
+        "armId": "heterogeneous_only",
+        "evidenceStatus": "observed_code_config",
+        "family": "representation",
+        "implementation": "heterogeneous_only",
+        "status": "implemented"
+      },
+      {
+        "arm": "contextual Euclidean",
+        "armId": "contextual_euclidean",
+        "evidenceStatus": "observed_code_config",
+        "family": "representation",
+        "implementation": "contextual_euclidean",
+        "status": "implemented"
+      },
+      {
+        "arm": "hyperbolic node projection/objectives",
+        "armId": "hyperbolic_node_geometry",
+        "evidenceStatus": "observed_code_config",
+        "family": "representation",
+        "implementation": "contextual_hyperbolic_parent_lca",
+        "status": "implemented"
+      },
+      {
+        "arm": "remove contextual encoder",
+        "armId": "context_removal",
+        "evidenceStatus": "observed_code_config",
+        "family": "context",
+        "implementation": "heterogeneous_only",
+        "status": "implemented"
+      },
+      {
+        "arm": "physical relation bias on, hyperbolic refinement off",
+        "armId": "physical_relation_bias_only",
+        "evidenceStatus": "planned",
+        "family": "relation bias",
+        "implementation": "model API supports separate flags; no named YAML arm",
+        "status": "planned_no_named_arm"
+      },
+      {
+        "arm": "physical plus hyperbolic relation refinement",
+        "armId": "physical_plus_hyperbolic_relation",
+        "evidenceStatus": "observed_code_config",
+        "family": "relation bias",
+        "implementation": "plus_hyperbolic_relation_attention",
+        "status": "implemented"
+      },
+      {
+        "arm": "level_encoding_none",
+        "armId": "level_encoding_none",
+        "evidenceStatus": "observed_config",
+        "family": "level geometry",
+        "implementation": "ablations/level_encoding_none.yaml",
+        "status": "implemented"
+      },
+      {
+        "arm": "level_encoding_euclidean",
+        "armId": "level_encoding_euclidean",
+        "evidenceStatus": "observed_config",
+        "family": "level geometry",
+        "implementation": "ablations/level_encoding_euclidean.yaml",
+        "status": "implemented"
+      },
+      {
+        "arm": "level_encoding_bounded_tangent",
+        "armId": "level_encoding_bounded_tangent",
+        "evidenceStatus": "observed_config",
+        "family": "level geometry",
+        "implementation": "ablations/level_encoding_bounded_tangent.yaml",
+        "status": "implemented"
+      },
+      {
+        "arm": "radius_generation_height",
+        "armId": "radius_generation_height",
+        "evidenceStatus": "observed_config",
+        "family": "radius geometry",
+        "implementation": "ablations/radius_generation_height.yaml",
+        "status": "implemented"
+      },
+      {
+        "arm": "radius_exact_root_depth",
+        "armId": "radius_exact_root_depth",
+        "evidenceStatus": "observed_config",
+        "family": "radius geometry",
+        "implementation": "ablations/radius_exact_root_depth.yaml",
+        "status": "implemented"
+      },
+      {
+        "arm": "radius_weak_or_learned",
+        "armId": "radius_weak_or_learned",
+        "evidenceStatus": "observed_config",
+        "family": "radius geometry",
+        "implementation": "ablations/radius_weak_or_learned.yaml",
+        "status": "implemented"
+      },
+      {
+        "arm": "learned_bounded_tangent_scale",
+        "armId": "learned_bounded_tangent_scale",
+        "evidenceStatus": "observed_config",
+        "family": "tangent scale",
+        "implementation": "ablations/learned_bounded_tangent_scale.yaml",
+        "status": "implemented"
+      },
+      {
+        "arm": "lower_radius_tangent_scale",
+        "armId": "lower_radius_tangent_scale",
+        "evidenceStatus": "observed_config",
+        "family": "tangent scale",
+        "implementation": "ablations/lower_radius_tangent_scale.yaml",
+        "status": "implemented"
+      },
+      {
+        "arm": "scheduled sampling plus free rollout",
+        "armId": "scheduled_sampling_mechanism",
+        "evidenceStatus": "observed_code_config",
+        "family": "exposure bias",
+        "implementation": "plus_scheduled_sampling",
+        "status": "implemented"
+      },
+      {
+        "arm": "scheduled sampling endpoint 0%",
+        "armId": "scheduled_sampling_0",
+        "evidenceStatus": "planned",
+        "family": "exposure bias endpoint",
+        "implementation": "paired 35k screen; winner and 0% control advance",
+        "status": "planned_scientific_comparison"
+      },
+      {
+        "arm": "scheduled sampling endpoint 10%",
+        "armId": "scheduled_sampling_10",
+        "evidenceStatus": "planned",
+        "family": "exposure bias endpoint",
+        "implementation": "paired 35k screen; winner and 0% control advance",
+        "status": "planned_scientific_comparison"
+      },
+      {
+        "arm": "scheduled sampling endpoint 25%",
+        "armId": "scheduled_sampling_25",
+        "evidenceStatus": "planned",
+        "family": "exposure bias endpoint",
+        "implementation": "paired 35k screen; winner and 0% control advance",
+        "status": "planned_scientific_comparison"
+      },
+      {
+        "arm": "scheduled sampling endpoint 50%",
+        "armId": "scheduled_sampling_50",
+        "evidenceStatus": "planned",
+        "family": "exposure bias endpoint",
+        "implementation": "paired 35k screen; winner and 0% control advance",
+        "status": "planned_scientific_comparison"
+      }
+    ],
+    "ablation_coverage": [
+      {
+        "evidenceStatus": "observed_config",
+        "family": "context",
+        "implementedArms": 1,
+        "plannedArms": 0,
+        "totalArms": 1
+      },
+      {
+        "evidenceStatus": "observed_config",
+        "family": "exposure bias",
+        "implementedArms": 1,
+        "plannedArms": 0,
+        "totalArms": 1
+      },
+      {
+        "evidenceStatus": "mixed_observed_planned",
+        "family": "exposure bias endpoint",
+        "implementedArms": 0,
+        "plannedArms": 4,
+        "totalArms": 4
+      },
+      {
+        "evidenceStatus": "observed_config",
+        "family": "level geometry",
+        "implementedArms": 3,
+        "plannedArms": 0,
+        "totalArms": 3
+      },
+      {
+        "evidenceStatus": "observed_config",
+        "family": "radius geometry",
+        "implementedArms": 3,
+        "plannedArms": 0,
+        "totalArms": 3
+      },
+      {
+        "evidenceStatus": "mixed_observed_planned",
+        "family": "relation bias",
+        "implementedArms": 1,
+        "plannedArms": 1,
+        "totalArms": 2
+      },
+      {
+        "evidenceStatus": "observed_config",
+        "family": "representation",
+        "implementedArms": 4,
+        "plannedArms": 0,
+        "totalArms": 4
+      },
+      {
+        "evidenceStatus": "observed_config",
+        "family": "tangent scale",
+        "implementedArms": 2,
+        "plannedArms": 0,
+        "totalArms": 2
+      }
+    ],
+    "curriculum_phase_rows": [
+      {
+        "activeObjectiveCount": 5,
+        "activeObjectives": "covariance_weight,lca_relation_weight,leaf_pid_weight,parent_ranking_weight,variance_weight",
+        "evidenceStatus": "planned",
+        "phase": "topology_parent_anticollapse",
+        "phaseIndex": 1,
+        "steps": 4375
+      },
+      {
+        "activeObjectiveCount": 7,
+        "activeObjectives": "covariance_weight,exact_tree_distance_weight,lca_relation_weight,leaf_pid_weight,parent_ranking_weight,radius_depth_weight,variance_weight",
+        "evidenceStatus": "planned",
+        "phase": "distance_radius",
+        "phaseIndex": 2,
+        "steps": 4375
+      },
+      {
+        "activeObjectiveCount": 8,
+        "activeObjectives": "channel_weight,covariance_weight,exact_tree_distance_weight,lca_relation_weight,leaf_pid_weight,parent_ranking_weight,radius_depth_weight,variance_weight",
+        "evidenceStatus": "planned",
+        "phase": "channel",
+        "phaseIndex": 3,
+        "steps": 4375
+      },
+      {
+        "activeObjectiveCount": 11,
+        "activeObjectives": "candidate_correctness_weight,channel_weight,corruption_class_weight,covariance_weight,exact_tree_distance_weight,hard_negative_weight,lca_relation_weight,leaf_pid_weight,parent_ranking_weight,radius_depth_weight,variance_weight",
+        "evidenceStatus": "planned",
+        "phase": "candidate_hard_negative",
+        "phaseIndex": 4,
+        "steps": 4375
+      }
+    ],
+    "curriculum_plan": [
+      {
+        "evidenceStatus": "planned",
+        "phase1Steps": 4375,
+        "phase2Steps": 4375,
+        "phase3Steps": 4375,
+        "phase4Steps": 4375,
+        "plan": "35k scientific pretraining"
+      }
+    ],
+    "data_contract_rows": [
+      {
+        "field": "inventory_events",
+        "status": "observed",
+        "value": 1000000
+      },
+      {
+        "field": "inventory_shards",
+        "status": "observed",
+        "value": 200
+      },
+      {
+        "field": "indexed_train_validation_events",
+        "status": "observed",
+        "value": 85000
+      },
+      {
+        "field": "indexed_nodes",
+        "status": "observed",
+        "value": 3645707
+      },
+      {
+        "field": "unique_event_uids",
+        "status": "observed",
+        "value": 85000
+      },
+      {
+        "field": "sealed_test_opened",
+        "status": "observed",
+        "value": false
+      },
+      {
+        "field": "normalizer_scope",
+        "status": "observed",
+        "value": "train"
+      },
+      {
+        "field": "target_policy",
+        "status": "observed",
+        "value": "complete_only"
+      }
+    ],
+    "diagnostic_contract_rows": [
+      {
+        "field": "job_id",
+        "status": "observed_diagnostic",
+        "value": "15745941"
+      },
+      {
+        "field": "model_preset",
+        "status": "observed_diagnostic",
+        "value": "small_candidate"
+      },
+      {
+        "field": "elapsed_seconds",
+        "status": "observed_diagnostic",
+        "value": 132
+      },
+      {
+        "field": "optimizer_steps",
+        "status": "observed_diagnostic",
+        "value": 4
+      },
+      {
+        "field": "curriculum_phases_entered",
+        "status": "observed_diagnostic",
+        "value": 4
+      },
+      {
+        "field": "validation_batches",
+        "status": "observed_diagnostic",
+        "value": 1
+      },
+      {
+        "field": "validation_events",
+        "status": "observed_diagnostic",
+        "value": 2
+      },
+      {
+        "field": "validation_named_views",
+        "status": "observed_diagnostic",
+        "value": 4
+      },
+      {
+        "field": "validation_event_view_evaluations",
+        "status": "observed_diagnostic",
+        "value": 8
+      },
+      {
+        "field": "telemetry_samples",
+        "status": "observed_diagnostic",
+        "value": 9
+      },
+      {
+        "field": "peak_memory_mib",
+        "status": "observed_diagnostic",
+        "value": 554
+      },
+      {
+        "field": "peak_gpu_utilization_percent",
+        "status": "observed_diagnostic",
+        "value": 11
+      },
+      {
+        "field": "peak_temperature_c",
+        "status": "observed_diagnostic",
+        "value": 33
+      },
+      {
+        "field": "scientific_claim",
+        "status": "observed_boundary",
+        "value": false
+      }
+    ],
+    "diagnostic_telemetry": [
+      {
+        "elapsedSeconds": 0,
+        "evidenceStatus": "observed_diagnostic",
+        "gpuModel": "Tesla V100-SXM2-32GB",
+        "gpuUtilizationPercent": 1,
+        "memoryUsedMiB": 0,
+        "sample": 1,
+        "temperatureC": 31
+      },
+      {
+        "elapsedSeconds": 15,
+        "evidenceStatus": "observed_diagnostic",
+        "gpuModel": "Tesla V100-SXM2-32GB",
+        "gpuUtilizationPercent": 8,
+        "memoryUsedMiB": 542,
+        "sample": 2,
+        "temperatureC": 32
+      },
+      {
+        "elapsedSeconds": 30,
+        "evidenceStatus": "observed_diagnostic",
+        "gpuModel": "Tesla V100-SXM2-32GB",
+        "gpuUtilizationPercent": 0,
+        "memoryUsedMiB": 554,
+        "sample": 3,
+        "temperatureC": 33
+      },
+      {
+        "elapsedSeconds": 45,
+        "evidenceStatus": "observed_diagnostic",
+        "gpuModel": "Tesla V100-SXM2-32GB",
+        "gpuUtilizationPercent": 0,
+        "memoryUsedMiB": 554,
+        "sample": 4,
+        "temperatureC": 33
+      },
+      {
+        "elapsedSeconds": 60,
+        "evidenceStatus": "observed_diagnostic",
+        "gpuModel": "Tesla V100-SXM2-32GB",
+        "gpuUtilizationPercent": 0,
+        "memoryUsedMiB": 554,
+        "sample": 5,
+        "temperatureC": 33
+      },
+      {
+        "elapsedSeconds": 75,
+        "evidenceStatus": "observed_diagnostic",
+        "gpuModel": "Tesla V100-SXM2-32GB",
+        "gpuUtilizationPercent": 0,
+        "memoryUsedMiB": 554,
+        "sample": 6,
+        "temperatureC": 33
+      },
+      {
+        "elapsedSeconds": 90,
+        "evidenceStatus": "observed_diagnostic",
+        "gpuModel": "Tesla V100-SXM2-32GB",
+        "gpuUtilizationPercent": 0,
+        "memoryUsedMiB": 554,
+        "sample": 7,
+        "temperatureC": 33
+      },
+      {
+        "elapsedSeconds": 105,
+        "evidenceStatus": "observed_diagnostic",
+        "gpuModel": "Tesla V100-SXM2-32GB",
+        "gpuUtilizationPercent": 0,
+        "memoryUsedMiB": 554,
+        "sample": 8,
+        "temperatureC": 33
+      },
+      {
+        "elapsedSeconds": 120,
+        "evidenceStatus": "observed_diagnostic",
+        "gpuModel": "Tesla V100-SXM2-32GB",
+        "gpuUtilizationPercent": 11,
+        "memoryUsedMiB": 554,
+        "sample": 9,
+        "temperatureC": 33
+      }
+    ],
+    "inference_capacity_controls": [
+      {
+        "capacityMargin": 17,
+        "configuredCapacity": 32,
+        "control": "mother queries",
+        "evidenceStatus": "observed_train_validation_index",
+        "observedMaximum": 15
+      },
+      {
+        "capacityMargin": 0,
+        "configuredCapacity": 16,
+        "control": "daughter cardinality",
+        "evidenceStatus": "observed_train_validation_index",
+        "observedMaximum": 16
+      }
+    ],
+    "inference_contract_rows": [
+      {
+        "control": "training topology source",
+        "status": "implemented",
+        "value": "truth-guided supervision"
+      },
+      {
+        "control": "inference mother source",
+        "status": "implemented",
+        "value": "predicted mothers"
+      },
+      {
+        "control": "mother four-momentum",
+        "status": "implemented",
+        "value": "exact daughter sum"
+      },
+      {
+        "control": "default exclusivity",
+        "status": "implemented",
+        "value": "greedy"
+      },
+      {
+        "control": "bounded set packing",
+        "status": "implemented_diagnostic",
+        "value": "evaluation only"
+      },
+      {
+        "control": "bounded beam",
+        "status": "implemented_diagnostic",
+        "value": "evaluation only"
+      },
+      {
+        "control": "rollout checkpoint metric",
+        "status": "planned_config",
+        "value": "predicted_edge_f1"
+      },
+      {
+        "control": "minimum tree validity",
+        "status": "planned_config",
+        "value": 0.999
+      },
+      {
+        "control": "minimum p4 closure",
+        "status": "planned_config",
+        "value": 1.0
+      },
+      {
+        "control": "p4 tolerance",
+        "status": "planned_config",
+        "value": 1e-06
+      },
+      {
+        "control": "maximum recursive-source conflicts",
+        "status": "planned_config",
+        "value": 0
+      }
+    ],
+    "model_contract_rows": [
+      {
+        "evidenceStatus": "observed_config",
+        "field": "d_model",
+        "value": 128
+      },
+      {
+        "evidenceStatus": "observed_config",
+        "field": "hyper_dim",
+        "value": 32
+      },
+      {
+        "evidenceStatus": "observed_config",
+        "field": "n_heads",
+        "value": 4
+      },
+      {
+        "evidenceStatus": "observed_config",
+        "field": "n_context_layers",
+        "value": 4
+      },
+      {
+        "evidenceStatus": "observed_config",
+        "field": "ffn_dim",
+        "value": 512
+      },
+      {
+        "evidenceStatus": "observed_config",
+        "field": "n_queries",
+        "value": 32
+      },
+      {
+        "evidenceStatus": "observed_config",
+        "field": "max_cardinality",
+        "value": 16
+      },
+      {
+        "evidenceStatus": "observed_config",
+        "field": "curvature",
+        "value": 1.0
+      },
+      {
+        "evidenceStatus": "observed_config",
+        "field": "hyperbolic_level_encoding",
+        "value": "learned_euclidean"
+      },
+      {
+        "evidenceStatus": "observed_cpu_instantiation",
+        "field": "pretraining_trainable_parameters",
+        "value": 1395159
+      },
+      {
+        "evidenceStatus": "observed_cpu_instantiation",
+        "field": "reconstruction_trainable_parameters",
+        "value": 2135433
+      }
+    ],
+    "model_module_composition": [
+      {
+        "auxiliaryHeads": 774,
+        "auxiliaryHeadsShare": 0.0005547754772036736,
+        "contextOrRelationHead": 66438,
+        "contextOrRelationHeadShare": 0.04762037875252928,
+        "decoder": 0,
+        "decoderShare": 0.0,
+        "encoder": 1322658,
+        "encoderShare": 0.9480338800093753,
+        "evidenceStatus": "observed_cpu_instantiation",
+        "leafPidHead": 5289,
+        "leafPidHeadShare": 0.003790965760891769,
+        "levelDecoders": 0,
+        "levelDecodersShare": 0.0,
+        "modelSurface": "pretraining",
+        "relationBias": 0,
+        "relationBiasShare": 0.0,
+        "totalParameters": 1395159
+      },
+      {
+        "auxiliaryHeads": 0,
+        "auxiliaryHeadsShare": 0.0,
+        "contextOrRelationHead": 529920,
+        "contextOrRelationHeadShare": 0.24815576044764692,
+        "decoder": 269500,
+        "decoderShare": 0.12620391274275522,
+        "encoder": 1322658,
+        "encoderShare": 0.6193863258645904,
+        "evidenceStatus": "observed_cpu_instantiation",
+        "leafPidHead": 5289,
+        "leafPidHeadShare": 0.002476781055645389,
+        "levelDecoders": 0,
+        "levelDecodersShare": 0.0,
+        "modelSurface": "reconstruction",
+        "relationBias": 8066,
+        "relationBiasShare": 0.003777219889362017,
+        "totalParameters": 2135433
+      }
+    ],
+    "model_parameter_scale": [
+      {
+        "contextLayers": 3,
+        "dModel": 64,
+        "evidenceStatus": "observed_cpu_instantiation",
+        "hyperDim": 16,
+        "preset": "gpu_debug",
+        "pretrainingParameters": 280775,
+        "queries": 12,
+        "reconstructionParameters": 438513
+      },
+      {
+        "contextLayers": 6,
+        "dModel": 256,
+        "evidenceStatus": "observed_cpu_instantiation",
+        "hyperDim": 64,
+        "preset": "production_baseline",
+        "pretrainingParameters": 7040375,
+        "queries": 32,
+        "reconstructionParameters": 14071879
+      },
+      {
+        "contextLayers": 4,
+        "dModel": 128,
+        "evidenceStatus": "observed_cpu_instantiation",
+        "hyperDim": 32,
+        "preset": "small_candidate",
+        "pretrainingParameters": 1395159,
+        "queries": 32,
+        "reconstructionParameters": 2135433
+      },
+      {
+        "contextLayers": 2,
+        "dModel": 32,
+        "evidenceStatus": "observed_cpu_instantiation",
+        "hyperDim": 8,
+        "preset": "tiny_cpu",
+        "pretrainingParameters": 60575,
+        "queries": 8,
+        "reconstructionParameters": 94631
+      }
+    ],
+    "no_submit_contract_rows": [
+      {
+        "field": "contract_version",
+        "status": "observed",
+        "value": "hypertagging-slurm-one-gpu-contract-v2"
+      },
+      {
+        "field": "mode",
+        "status": "observed",
+        "value": "scientific"
+      },
+      {
+        "field": "verification_scope",
+        "status": "observed",
+        "value": "blocked_no_submit"
+      },
+      {
+        "field": "selection_manifest",
+        "status": "observed",
+        "value": "configs/training_selection/production_1m_20260812/train_035k.json"
+      },
+      {
+        "field": "model_preset",
+        "status": "planned_contract",
+        "value": "small_candidate"
+      },
+      {
+        "field": "seed",
+        "status": "planned_contract",
+        "value": 20260812
+      },
+      {
+        "field": "submission_authorized",
+        "status": "observed",
+        "value": false
+      },
+      {
+        "field": "submission_performed",
+        "status": "observed",
+        "value": false
+      },
+      {
+        "field": "sealed_test_role_access",
+        "status": "observed",
+        "value": "forbidden"
+      },
+      {
+        "field": "scientific_blocker_1",
+        "status": "observed_blocker",
+        "value": "The production source object f4e54df23b5c60115e475c5d68df4651899d678e remains unavailable locally; independently recover it and verify tree b6e3a4118b960e3a4676a61af9601438d56cef96."
+      },
+      {
+        "field": "scientific_blocker_2",
+        "status": "observed_blocker",
+        "value": "Pass a fresh exact in-allocation CUDA/GPU environment preflight in the eventual scientific job on the chosen H200 or V100."
+      },
+      {
+        "field": "scientific_blocker_3",
+        "status": "observed_blocker",
+        "value": "Commit and review this readiness tranche, create the immutable experiment tag, and pass the clean scientific render gates."
+      }
+    ],
+    "production_category_composition": [
+      {
+        "category": "ccbar",
+        "eventShare": 0.1,
+        "events": 100000,
+        "eventsPerShard": 5000.0,
+        "evidenceStatus": "observed_metadata",
+        "shards": 20
+      },
+      {
+        "category": "charged",
+        "eventShare": 0.09,
+        "events": 90000,
+        "eventsPerShard": 5000.0,
+        "evidenceStatus": "observed_metadata",
+        "shards": 18
+      },
+      {
+        "category": "ddbar",
+        "eventShare": 0.08,
+        "events": 80000,
+        "eventsPerShard": 5000.0,
+        "evidenceStatus": "observed_metadata",
+        "shards": 16
+      },
+      {
+        "category": "mixed",
+        "eventShare": 0.32,
+        "events": 320000,
+        "eventsPerShard": 5000.0,
+        "evidenceStatus": "observed_metadata",
+        "shards": 64
+      },
+      {
+        "category": "ssbar",
+        "eventShare": 0.08,
+        "events": 80000,
+        "eventsPerShard": 5000.0,
+        "evidenceStatus": "observed_metadata",
+        "shards": 16
+      },
+      {
+        "category": "taupair",
+        "eventShare": 0.105,
+        "events": 105000,
+        "eventsPerShard": 5000.0,
+        "evidenceStatus": "observed_metadata",
+        "shards": 21
+      },
+      {
+        "category": "uubar",
+        "eventShare": 0.225,
+        "events": 225000,
+        "eventsPerShard": 5000.0,
+        "evidenceStatus": "observed_metadata",
+        "shards": 45
+      }
+    ],
+    "readiness_gates": [
+      {
+        "blocked": 0,
+        "detail": "validated",
+        "evidenceStatus": "observed",
+        "gate": "reduced 1M publication inventory",
+        "observedComplete": 1,
+        "plannedRequired": 0,
+        "unavailable": 0,
+        "unknown": 0
+      },
+      {
+        "blocked": 0,
+        "detail": "complete",
+        "evidenceStatus": "observed",
+        "gate": "35k train plus validation index",
+        "observedComplete": 1,
+        "plannedRequired": 0,
+        "unavailable": 0,
+        "unknown": 0
+      },
+      {
+        "blocked": 0,
+        "detail": "complete",
+        "evidenceStatus": "observed",
+        "gate": "small_candidate capacity",
+        "observedComplete": 1,
+        "plannedRequired": 0,
+        "unavailable": 0,
+        "unknown": 0
+      },
+      {
+        "blocked": 0,
+        "detail": "463 passed",
+        "evidenceStatus": "observed",
+        "gate": "CPU test suite",
+        "observedComplete": 1,
+        "plannedRequired": 0,
+        "unavailable": 0,
+        "unknown": 0
+      },
+      {
+        "blocked": 0,
+        "detail": "complete",
+        "evidenceStatus": "observed_diagnostic",
+        "gate": "V100 small_candidate diagnostic",
+        "observedComplete": 1,
+        "plannedRequired": 0,
+        "unavailable": 0,
+        "unknown": 0
+      },
+      {
+        "blocked": 1,
+        "detail": "The production source object f4e54df23b5c60115e475c5d68df4651899d678e remains unavailable locally; independently recover it and verify tree b6e3a4118b960e3a4676a61af9601438d56cef96.",
+        "evidenceStatus": "observed_blocker",
+        "gate": "production source object/tree",
+        "observedComplete": 0,
+        "plannedRequired": 0,
+        "unavailable": 0,
+        "unknown": 0
+      },
+      {
+        "blocked": 0,
+        "detail": "Pass a fresh exact in-allocation CUDA/GPU environment preflight in the eventual scientific job on the chosen H200 or V100.",
+        "evidenceStatus": "planned",
+        "gate": "fresh in-allocation preflight",
+        "observedComplete": 0,
+        "plannedRequired": 1,
+        "unavailable": 0,
+        "unknown": 0
+      },
+      {
+        "blocked": 0,
+        "detail": "Commit and review this readiness tranche, create the immutable experiment tag, and pass the clean scientific render gates.",
+        "evidenceStatus": "planned",
+        "gate": "clean review/tag/render",
+        "observedComplete": 0,
+        "plannedRequired": 1,
+        "unavailable": 0,
+        "unknown": 0
+      },
+      {
+        "blocked": 0,
+        "detail": "not_submitted_exact_gres_unavailable",
+        "evidenceStatus": "observed_metadata",
+        "gate": "exact H200 resource",
+        "observedComplete": 0,
+        "plannedRequired": 0,
+        "unavailable": 1,
+        "unknown": 0
+      },
+      {
+        "blocked": 0,
+        "detail": "no full scientific run or sealed-test evaluation",
+        "evidenceStatus": "unknown",
+        "gate": "long convergence and held-out quality",
+        "observedComplete": 0,
+        "plannedRequired": 0,
+        "unavailable": 0,
+        "unknown": 1
+      }
+    ],
+    "staged_training_budgets": [
+      {
+        "evidenceStatus": "planned",
+        "pretrainingSeenEvents": 70000,
+        "reconstructionSeenEvents": 105000,
+        "stage": "screening"
+      },
+      {
+        "evidenceStatus": "planned",
+        "pretrainingSeenEvents": 300000,
+        "reconstructionSeenEvents": 300000,
+        "stage": "candidate"
+      },
+      {
+        "evidenceStatus": "planned",
+        "pretrainingSeenEvents": 750000,
+        "reconstructionSeenEvents": 750000,
+        "stage": "confirmation"
+      }
+    ],
+    "structural_percentiles": [
+      {
+        "configuredMaxCardinality": 16,
+        "configuredQueries": 32,
+        "daughterP50": 2.0,
+        "daughterP90": 2.0,
+        "daughterP95": 3.0,
+        "daughterP99": 4.0,
+        "evidenceStatus": "observed_train_validation_index",
+        "level": 1,
+        "maximumDaughters": 9,
+        "maximumMothers": 15,
+        "motherP50": 2.0,
+        "motherP90": 5.0,
+        "motherP95": 5.0,
+        "motherP99": 7.0
+      },
+      {
+        "configuredMaxCardinality": 16,
+        "configuredQueries": 32,
+        "daughterP50": 3.0,
+        "daughterP90": 5.0,
+        "daughterP95": 6.0,
+        "daughterP99": 9.0,
+        "evidenceStatus": "observed_train_validation_index",
+        "level": 2,
+        "maximumDaughters": 16,
+        "maximumMothers": 6,
+        "motherP50": 2.0,
+        "motherP90": 3.0,
+        "motherP95": 3.0,
+        "motherP99": 4.0
+      },
+      {
+        "configuredMaxCardinality": 16,
+        "configuredQueries": 32,
+        "daughterP50": 2.0,
+        "daughterP90": 6.0,
+        "daughterP95": 7.0,
+        "daughterP99": 10.0,
+        "evidenceStatus": "observed_train_validation_index",
+        "level": 3,
+        "maximumDaughters": 15,
+        "maximumMothers": 4,
+        "motherP50": 1.0,
+        "motherP90": 2.0,
+        "motherP95": 2.0,
+        "motherP99": 3.0
+      },
+      {
+        "configuredMaxCardinality": 16,
+        "configuredQueries": 32,
+        "daughterP50": 2.0,
+        "daughterP90": 6.0,
+        "daughterP95": 8.0,
+        "daughterP99": 10.0,
+        "evidenceStatus": "observed_train_validation_index",
+        "level": 4,
+        "maximumDaughters": 14,
+        "maximumMothers": 3,
+        "motherP50": 1.0,
+        "motherP90": 2.0,
+        "motherP95": 2.0,
+        "motherP99": 2.0
+      },
+      {
+        "configuredMaxCardinality": 16,
+        "configuredQueries": 32,
+        "daughterP50": 2.0,
+        "daughterP90": 3.0,
+        "daughterP95": 4.0,
+        "daughterP99": 8.0,
+        "evidenceStatus": "observed_train_validation_index",
+        "level": 5,
+        "maximumDaughters": 13,
+        "maximumMothers": 2,
+        "motherP50": 1.0,
+        "motherP90": 1.0,
+        "motherP95": 1.0,
+        "motherP99": 1.0
+      },
+      {
+        "configuredMaxCardinality": 16,
+        "configuredQueries": 32,
+        "daughterP50": 2.0,
+        "daughterP90": 2.0,
+        "daughterP95": 2.0,
+        "daughterP99": 2.0,
+        "evidenceStatus": "observed_train_validation_index",
+        "level": 6,
+        "maximumDaughters": 2,
+        "maximumMothers": 1,
+        "motherP50": 1.0,
+        "motherP90": 1.0,
+        "motherP95": 1.0,
+        "motherP99": 1.0
+      }
+    ],
+    "subset_ladder": [
+      {
+        "categoryShardCounts": "ccbar:1,charged:1,ddbar:1,mixed:1,ssbar:1,taupair:1,uubar:1",
+        "evidenceStatus": "observed_metadata",
+        "sealedTestAccessed": false,
+        "sealedTestEventsMetadataOnly": 50000,
+        "selection": "train_035k",
+        "trainEvents": 35000,
+        "trainShards": 7,
+        "validationEvents": 50000
+      },
+      {
+        "categoryShardCounts": "ccbar:4,charged:3,ddbar:2,mixed:2,ssbar:2,taupair:3,uubar:4",
+        "evidenceStatus": "observed_metadata",
+        "sealedTestAccessed": false,
+        "sealedTestEventsMetadataOnly": 50000,
+        "selection": "train_100k",
+        "trainEvents": 100000,
+        "trainShards": 20,
+        "validationEvents": 50000
+      },
+      {
+        "categoryShardCounts": "ccbar:11,charged:7,ddbar:4,mixed:6,ssbar:4,taupair:8,uubar:10",
+        "evidenceStatus": "observed_metadata",
+        "sealedTestAccessed": false,
+        "sealedTestEventsMetadataOnly": 50000,
+        "selection": "train_250k",
+        "trainEvents": 250000,
+        "trainShards": 50,
+        "validationEvents": 50000
+      }
+    ]
+  },
+  "evidenceBoundary": {
+    "accessedSourceCount": 40,
+    "allowedInputSuffixes": [
+      ".json",
+      ".jsonl",
+      ".md",
+      ".py",
+      ".yaml"
+    ],
+    "gpuAccessPerformed": false,
+    "jobMutationPerformed": false,
+    "modelCheckpointOpened": false,
+    "numberLabels": {
+      "observed": "directly extracted or CPU-instantiated from tracked evidence",
+      "planned": "specified by a tracked execution/configuration plan but not run",
+      "unknown": "required scientific evidence is absent"
+    },
+    "schedulerAccessPerformed": false,
+    "sealedTestPayloadAccessed": false
+  },
+  "facts": {
+    "ablations": {
+      "armCount": 20,
+      "crossProductsPlanned": false,
+      "implementedArmCount": 15,
+      "physicalOnlyNamedArm": false,
+      "plannedArmCount": 5
+    },
+    "curriculum": {
+      "phaseCount": 4,
+      "plannedBatchSize": 4,
+      "plannedSeenEvents": 70000,
+      "plannedSteps": 17500,
+      "plannedValidationEvents": 2000
+    },
+    "data": {
+      "capacityCardinalityOverflowCount": 0,
+      "capacityQueryOverflowCount": 0,
+      "indexedEvents": 85000,
+      "indexedNodes": 3645707,
+      "inventoryEvents": 1000000,
+      "inventoryShards": 200,
+      "observedReconstructionLevels": 6,
+      "sealedTestOpened": false
+    },
+    "diagnostic": {
+      "elapsedSeconds": 132,
+      "jobId": "15745941",
+      "modelPreset": "small_candidate",
+      "peakGpuUtilizationPercent": 11,
+      "peakMemoryMiB": 554,
+      "peakTemperatureC": 33,
+      "phaseIndices": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "scientificClaimsAllowed": false,
+      "steps": 4,
+      "telemetrySamples": 9,
+      "validationBatches": 1,
+      "validationEventViewEvaluations": 8,
+      "validationEvents": 2,
+      "validationNamedViews": 4
+    },
+    "inference": {
+      "boundedBeam": "evaluation_only",
+      "configuredMaxCardinality": 16,
+      "configuredQueries": 32,
+      "defaultExclusivity": "greedy",
+      "inferenceMothers": "predicted",
+      "motherP4": "daughter_sum",
+      "observedMaximumDaughters": 16,
+      "observedMaximumMothers": 15,
+      "setPacking": "evaluation_only",
+      "teacherForcingMothers": "truth_guided_topology_reco_features"
+    },
+    "models": {
+      "gpu_debug": {
+        "architecture": {
+          "capacity_report_required": false,
+          "curvature": 1.0,
+          "d_model": 64,
+          "dropout": 0.05,
+          "ffn_dim": 192,
+          "hyper_dim": 16,
+          "hyper_projection_init_scale": 0.065,
+          "hyperbolic_level_encoding": "learned_euclidean",
+          "hyperbolic_scale_contract_version": "dimension-aware-tangent-radius-v2",
+          "max_cardinality": 8,
+          "max_cardinality_by_level": [],
+          "n_context_layers": 3,
+          "n_heads": 4,
+          "n_queries": 12,
+          "n_queries_by_level": [],
+          "preset": "gpu_debug",
+          "relation_feature_contract_version": "physical-relations-overlap-aware-v3",
+          "tangent_scale_mode": "fixed",
+          "tangent_variance_target": 0.08,
+          "tree_distance_contract_version": "exact-edge-log-fixed-scale-v2",
+          "tree_geometry_contract_version": "retained-tree-exact-edges-v2",
+          "type_conditioned_daughter_relation_bias": false
+        },
+        "pretrainingTopLevelModules": {
+          "candidate_correctness_head": 65,
+          "corruption_type_head": 325,
+          "encoder": 260882,
+          "leaf_pid_head": 2665,
+          "relation_head": 16838
+        },
+        "pretrainingTrainableParameters": 280775,
+        "reconstructionTopLevelModules": {
+          "decoder": 71540,
+          "encoder": 260882,
+          "flat_contextualizer": 100416,
+          "flat_relation_bias": 3010,
+          "leaf_pid_head": 2665
+        },
+        "reconstructionTrainableParameters": 438513
+      },
+      "production_baseline": {
+        "architecture": {
+          "capacity_report_required": false,
+          "curvature": 1.0,
+          "d_model": 256,
+          "dropout": 0.1,
+          "ffn_dim": 1024,
+          "hyper_dim": 64,
+          "hyper_projection_init_scale": 0.05,
+          "hyperbolic_level_encoding": "learned_euclidean",
+          "hyperbolic_scale_contract_version": "dimension-aware-tangent-radius-v2",
+          "max_cardinality": 12,
+          "max_cardinality_by_level": [
+            [
+              1,
+              8
+            ],
+            [
+              2,
+              10
+            ],
+            [
+              3,
+              12
+            ]
+          ],
+          "n_context_layers": 6,
+          "n_heads": 8,
+          "n_queries": 32,
+          "n_queries_by_level": [
+            [
+              1,
+              32
+            ],
+            [
+              2,
+              24
+            ],
+            [
+              3,
+              16
+            ]
+          ],
+          "preset": "production_baseline",
+          "relation_feature_contract_version": "physical-relations-overlap-aware-v3",
+          "tangent_scale_mode": "fixed",
+          "tangent_variance_target": 0.05,
+          "tree_distance_contract_version": "exact-edge-log-fixed-scale-v2",
+          "tree_geometry_contract_version": "retained-tree-exact-edges-v2",
+          "type_conditioned_daughter_relation_bias": false
+        },
+        "pretrainingTopLevelModules": {
+          "candidate_correctness_head": 257,
+          "corruption_type_head": 1285,
+          "encoder": 6764354,
+          "leaf_pid_head": 10537,
+          "relation_head": 263942
+        },
+        "pretrainingTrainableParameters": 7040375,
+        "reconstructionTopLevelModules": {
+          "decoder": 1029432,
+          "encoder": 6764354,
+          "flat_contextualizer": 3162624,
+          "flat_relation_bias": 24322,
+          "leaf_pid_head": 10537,
+          "level_decoders": 3080610
+        },
+        "reconstructionTrainableParameters": 14071879
+      },
+      "small_candidate": {
+        "architecture": {
+          "capacity_report_required": true,
+          "curvature": 1.0,
+          "d_model": 128,
+          "dropout": 0.1,
+          "ffn_dim": 512,
+          "hyper_dim": 32,
+          "hyper_projection_init_scale": 0.055,
+          "hyperbolic_level_encoding": "learned_euclidean",
+          "hyperbolic_scale_contract_version": "dimension-aware-tangent-radius-v2",
+          "max_cardinality": 16,
+          "max_cardinality_by_level": [],
+          "n_context_layers": 4,
+          "n_heads": 4,
+          "n_queries": 32,
+          "n_queries_by_level": [],
+          "preset": "small_candidate",
+          "relation_feature_contract_version": "physical-relations-overlap-aware-v3",
+          "tangent_scale_mode": "fixed",
+          "tangent_variance_target": 0.06,
+          "tree_distance_contract_version": "exact-edge-log-fixed-scale-v2",
+          "tree_geometry_contract_version": "retained-tree-exact-edges-v2",
+          "type_conditioned_daughter_relation_bias": false
+        },
+        "pretrainingTopLevelModules": {
+          "candidate_correctness_head": 129,
+          "corruption_type_head": 645,
+          "encoder": 1322658,
+          "leaf_pid_head": 5289,
+          "relation_head": 66438
+        },
+        "pretrainingTrainableParameters": 1395159,
+        "reconstructionTopLevelModules": {
+          "decoder": 269500,
+          "encoder": 1322658,
+          "flat_contextualizer": 529920,
+          "flat_relation_bias": 8066,
+          "leaf_pid_head": 5289
+        },
+        "reconstructionTrainableParameters": 2135433
+      },
+      "tiny_cpu": {
+        "architecture": {
+          "capacity_report_required": false,
+          "curvature": 1.0,
+          "d_model": 32,
+          "dropout": 0.0,
+          "ffn_dim": 64,
+          "hyper_dim": 8,
+          "hyper_projection_init_scale": 0.08,
+          "hyperbolic_level_encoding": "learned_euclidean",
+          "hyperbolic_scale_contract_version": "dimension-aware-tangent-radius-v2",
+          "max_cardinality": 6,
+          "max_cardinality_by_level": [],
+          "n_context_layers": 2,
+          "n_heads": 4,
+          "n_queries": 8,
+          "n_queries_by_level": [],
+          "preset": "tiny_cpu",
+          "relation_feature_contract_version": "physical-relations-overlap-aware-v3",
+          "tangent_scale_mode": "fixed",
+          "tangent_variance_target": 0.12,
+          "tree_distance_contract_version": "exact-edge-log-fixed-scale-v2",
+          "tree_geometry_contract_version": "retained-tree-exact-edges-v2",
+          "type_conditioned_daughter_relation_bias": false
+        },
+        "pretrainingTopLevelModules": {
+          "candidate_correctness_head": 33,
+          "corruption_type_head": 165,
+          "encoder": 54698,
+          "leaf_pid_head": 1353,
+          "relation_head": 4326
+        },
+        "pretrainingTrainableParameters": 60575,
+        "reconstructionTopLevelModules": {
+          "decoder": 20242,
+          "encoder": 54698,
+          "flat_contextualizer": 17088,
+          "flat_relation_bias": 1250,
+          "leaf_pid_head": 1353
+        },
+        "reconstructionTrainableParameters": 94631
+      }
+    },
+    "readiness": {
+      "blockerCount": 3,
+      "blockers": [
+        "The production source object f4e54df23b5c60115e475c5d68df4651899d678e remains unavailable locally; independently recover it and verify tree b6e3a4118b960e3a4676a61af9601438d56cef96.",
+        "Pass a fresh exact in-allocation CUDA/GPU environment preflight in the eventual scientific job on the chosen H200 or V100.",
+        "Commit and review this readiness tranche, create the immutable experiment tag, and pass the clean scientific render gates."
+      ],
+      "cpuTests": {
+        "passed": 463,
+        "skipped": 8,
+        "warnings": 24
+      },
+      "h100Substitution": "not_observed_in_tracked_job_contracts",
+      "h200State": "not_submitted_exact_gres_unavailable",
+      "noSubmitContract": true,
+      "scientificSubmissionAllowed": false,
+      "trackedH100JobContractCount": 0
+    }
+  },
+  "generatedAt": "2026-08-14T00:00:00Z",
+  "reportDate": "2026-08-14",
+  "sources": [
+    {
+      "id": "ablation_config_contextual_euclidean",
+      "path": "configs/ablations/contextual_euclidean.yaml",
+      "provenance": "tracked_repo",
+      "sha256": "15558cd0272151efbe0213a6b08ea283726e87efc7c25c4102651a9ec24b5124"
+    },
+    {
+      "id": "ablation_config_contextual_hyperbolic_parent_lca",
+      "path": "configs/ablations/contextual_hyperbolic_parent_lca.yaml",
+      "provenance": "tracked_repo",
+      "sha256": "9e8b21543af957299477a7b03f8250b27fcce3b4e1a538b19e0ec6f83d54412b"
+    },
+    {
+      "id": "ablation_config_flat_baseline",
+      "path": "configs/ablations/flat_baseline.yaml",
+      "provenance": "tracked_repo",
+      "sha256": "d17dc4ce85628144a83e5e1c681d0066cb8fbc12faaa05e83b7aeb8e40f68bf5"
+    },
+    {
+      "id": "ablation_config_full_revised",
+      "path": "configs/ablations/full_revised.yaml",
+      "provenance": "tracked_repo",
+      "sha256": "fe84e8d2290ef0fdf8a0260f8dbd17ddcc603d53e8100a4ae6e5b1dcab9d3003"
+    },
+    {
+      "id": "ablation_config_heterogeneous_only",
+      "path": "configs/ablations/heterogeneous_only.yaml",
+      "provenance": "tracked_repo",
+      "sha256": "d5f0893fb7ad8c40c2161e47766e5b363aec8b0d8e7d083049281451177b9025"
+    },
+    {
+      "id": "ablation_config_learned_bounded_tangent_scale",
+      "path": "configs/ablations/learned_bounded_tangent_scale.yaml",
+      "provenance": "tracked_repo",
+      "sha256": "7357194d115ec57f7929ed15e4ea3ca3a764c12f8585c23da136fc82b5fbc913"
+    },
+    {
+      "id": "ablation_config_level_encoding_bounded_tangent",
+      "path": "configs/ablations/level_encoding_bounded_tangent.yaml",
+      "provenance": "tracked_repo",
+      "sha256": "9b3452df518ef282eead9e635ed9dd58d8f61334fbabc1746afb60d0c2c168a7"
+    },
+    {
+      "id": "ablation_config_level_encoding_euclidean",
+      "path": "configs/ablations/level_encoding_euclidean.yaml",
+      "provenance": "tracked_repo",
+      "sha256": "4a1ef0452785b38d6f239eae83e1b6b758af5e93403d3debb629881b65c7b48f"
+    },
+    {
+      "id": "ablation_config_level_encoding_none",
+      "path": "configs/ablations/level_encoding_none.yaml",
+      "provenance": "tracked_repo",
+      "sha256": "c7a410fc35b4e96a2f1dc3e2fea3af4c2df8e431b8fac9579dd5c78d2d71ba52"
+    },
+    {
+      "id": "ablation_config_lower_radius_tangent_scale",
+      "path": "configs/ablations/lower_radius_tangent_scale.yaml",
+      "provenance": "tracked_repo",
+      "sha256": "f49978304db836fe59602527366e65fd4d81ddb8febe1d7f6133d3509188c8d8"
+    },
+    {
+      "id": "ablation_config_plus_cross_event_channel",
+      "path": "configs/ablations/plus_cross_event_channel.yaml",
+      "provenance": "tracked_repo",
+      "sha256": "238f02b54bbd15f1604d60cac5d684d466d75883863fcfccabde46093425ee7f"
+    },
+    {
+      "id": "ablation_config_plus_hyperbolic_relation_attention",
+      "path": "configs/ablations/plus_hyperbolic_relation_attention.yaml",
+      "provenance": "tracked_repo",
+      "sha256": "2e704ba80b23ad07a5a684aedd8de2470e43b191d44ab674dfc6c5fb4f4c409c"
+    },
+    {
+      "id": "ablation_config_plus_scheduled_sampling",
+      "path": "configs/ablations/plus_scheduled_sampling.yaml",
+      "provenance": "tracked_repo",
+      "sha256": "aa0131eb177eae0faa2c24ec1fbecefc9d693e0a633b9351014c07b868ee0f07"
+    },
+    {
+      "id": "ablation_config_radius_exact_root_depth",
+      "path": "configs/ablations/radius_exact_root_depth.yaml",
+      "provenance": "tracked_repo",
+      "sha256": "54e2c03a9fe1c81ab15596375fa9eb5f31455189999d4162bf10214b253a5c68"
+    },
+    {
+      "id": "ablation_config_radius_generation_height",
+      "path": "configs/ablations/radius_generation_height.yaml",
+      "provenance": "tracked_repo",
+      "sha256": "b6d6ddd69ab492972fe651c1201aa29eb9f7734422191dcb60f36126e0ff7d77"
+    },
+    {
+      "id": "ablation_config_radius_weak_or_learned",
+      "path": "configs/ablations/radius_weak_or_learned.yaml",
+      "provenance": "tracked_repo",
+      "sha256": "698b52e05f50ddb48292a8680b238531b228defb356c36728921b68fa13279d0"
+    },
+    {
+      "id": "ablation_source",
+      "path": "src/hypertagging/models/ablation.py",
+      "provenance": "tracked_repo",
+      "sha256": "0ad7fa6408454798219529378a0b0553d321b8bc910c46f4550c87b83f487e6b"
+    },
+    {
+      "id": "architecture_document",
+      "path": "docs/hyperbolic_level_autoregressive_reconstruction.md",
+      "provenance": "tracked_repo",
+      "sha256": "29cd22a5ff905c10e12a1ab6fca2d5a289296d4113e53d5b7775c7a255e23487"
+    },
+    {
+      "id": "capacity_small_candidate",
+      "path": "artifacts/experiment_readiness/production_1m_20260812/train_035k/capacity.small_candidate.complete_only.json",
+      "provenance": "allowed_reduced_metadata",
+      "sha256": "64aa8488a3c1c64c1f68034527bfdac5b10546c27a7569777498df248bf45895"
+    },
+    {
+      "id": "current_status",
+      "path": "docs/audits/current_status.md",
+      "provenance": "tracked_repo",
+      "sha256": "32b53769632e63aa0fefbc261d35d3cb8d4d12ac29baedcb6c0d614924bdf66e"
+    },
+    {
+      "id": "curriculum_stage_1",
+      "path": "configs/ablations/pretrain_stage1_topology_parent_anticollapse.yaml",
+      "provenance": "tracked_repo",
+      "sha256": "72812b9ebec4fe9a45677a357f96f4c8e3d6fcbd6e634773b1c5610328d6fa3b"
+    },
+    {
+      "id": "curriculum_stage_2",
+      "path": "configs/ablations/pretrain_stage2_distance_radius.yaml",
+      "provenance": "tracked_repo",
+      "sha256": "9fb72d02c490ef5c166b6dc73aa0d5aeb8bca43b2b0894c6e0adc4d9337090ea"
+    },
+    {
+      "id": "curriculum_stage_3",
+      "path": "configs/ablations/pretrain_stage3_channel.yaml",
+      "provenance": "tracked_repo",
+      "sha256": "df10221ebe4fec56ab0999c0fcb82e33c1316c15b154dd3b042d254a1a68fb42"
+    },
+    {
+      "id": "curriculum_stage_4",
+      "path": "configs/ablations/pretrain_stage4_candidate_hard_negative.yaml",
+      "provenance": "tracked_repo",
+      "sha256": "3dd7026095e77a127ddb1dcac86120e90d35509f2f760b2dc3723bfaa201c105"
+    },
+    {
+      "id": "diagnostic_metrics",
+      "path": "artifacts/runs/pretrain-035k-small-candidate-diag4-0c5e054/20260812/15745941/metrics.jsonl",
+      "provenance": "allowed_reduced_metadata",
+      "sha256": "83587a0341719e47641f190c7b400788d80c01aa4443d3cc7d2cf6b1365c6e94"
+    },
+    {
+      "id": "diagnostic_receipt",
+      "path": "artifacts/slurm/jobs/15745941/attempt-00/receipt.json",
+      "provenance": "allowed_reduced_metadata",
+      "sha256": "3b75c861ae263e12af71491146e433a4092f8a0be58fa43d26f36b0d64564698"
+    },
+    {
+      "id": "diagnostic_telemetry",
+      "path": "artifacts/slurm/jobs/15745941/attempt-00/gpu-telemetry.jsonl",
+      "provenance": "allowed_reduced_metadata",
+      "sha256": "7388ef866ee4f12d801ee19da4c23ba2ad635dc1c4429bea9ecf2d21f1baf4bc"
+    },
+    {
+      "id": "diagnostic_telemetry_summary",
+      "path": "artifacts/slurm/jobs/15745941/attempt-00/gpu-telemetry-summary.json",
+      "provenance": "allowed_reduced_metadata",
+      "sha256": "7c276d380f647307953524bf85132bc499269ebe1bb4404731d7d093bc0f8b9f"
+    },
+    {
+      "id": "inventory",
+      "path": "configs/training_selection/production_1m_20260812/inventory.json",
+      "provenance": "tracked_repo",
+      "sha256": "e115242f496705056ddb727313008a4fb878e4d57d86e540a6138765a1d5d577"
+    },
+    {
+      "id": "model_config_source",
+      "path": "src/hypertagging/training/model_config.py",
+      "provenance": "tracked_repo",
+      "sha256": "a17e481e1300eab3f12a343f302a2a5e77af4181f6b3b33f6c4c716dd970e340"
+    },
+    {
+      "id": "model_source",
+      "path": "src/hypertagging/models/level_autoregressive.py",
+      "provenance": "tracked_repo",
+      "sha256": "fe907162b1a90a2229f6297e71c13259df93f21d86d04b7c80a2dc881e322542"
+    },
+    {
+      "id": "no_submit_contract",
+      "path": "artifacts/experiment_readiness/production_1m_20260812/slurm/scientific-v100-small-candidate-final-no-submit.job-contract.json",
+      "provenance": "allowed_reduced_metadata",
+      "sha256": "d5982816f9b2d3452bc08d16bf6d157224a0ae331b91104322bde82dade76ecc"
+    },
+    {
+      "id": "pretrain_diagnostic_config",
+      "path": "configs/slurm/pretrain_diagnostic_small_candidate.yaml",
+      "provenance": "tracked_repo",
+      "sha256": "7aed075ba59ef2735de2d5a034a1c6d21e790ab7c60acd8870cdf61a4a411fc5"
+    },
+    {
+      "id": "pretrain_scientific_config",
+      "path": "configs/slurm/pretrain_035k_scientific.yaml",
+      "provenance": "tracked_repo",
+      "sha256": "c49ccc87a396332d90f2d22599b5d91690e8e4e0b3d4eb31d7da772b2cc0c510"
+    },
+    {
+      "id": "pretrain_source",
+      "path": "src/hypertagging/training/pretrain_trainer.py",
+      "provenance": "tracked_repo",
+      "sha256": "eaaeb41ce851d9308e6441558ca53e2e23d2dc1e284682a0598c8c1ad6e97bc3"
+    },
+    {
+      "id": "reconstruction_config",
+      "path": "configs/level_reconstruction.yaml",
+      "provenance": "tracked_repo",
+      "sha256": "771d32acef098bc7e59cc4e4759d9c2b6a0b1655adf94f01511695816d2c07ed"
+    },
+    {
+      "id": "selection_summary",
+      "path": "configs/training_selection/production_1m_20260812/summary.json",
+      "provenance": "tracked_repo",
+      "sha256": "d1af01506a8bdd03128aa691dfd7d673e49756d9b991c1f65bcc93503466ffe6"
+    },
+    {
+      "id": "small_candidate_config",
+      "path": "configs/model_presets/small_candidate.yaml",
+      "provenance": "tracked_repo",
+      "sha256": "9d6951a65faa5f2ec0829a733540b2e19e86f2c07a18e377858ba20a4001a453"
+    },
+    {
+      "id": "training_plan",
+      "path": "docs/training_execution_plan_20260812.md",
+      "provenance": "tracked_repo",
+      "sha256": "83adbaa1e297dcf7f7fb7981ed6f2e5c355085c8bc3f71f9a915cd8b299a4c5b"
+    },
+    {
+      "id": "training_readiness",
+      "path": "configs/training_selection/production_1m_20260812/training_readiness.json",
+      "provenance": "tracked_repo",
+      "sha256": "ef812f5e82a7efae442e861bded21bce5399cd3ab1370650c60d4e520a1f4e24"
+    }
+  ],
+  "status": "partial",
+  "title": "Hyperbolic Reconstruction: Data, Model, Training and Inference Readiness",
+  "unknowns": [
+    {
+      "id": "full_convergence",
+      "statement": "No long GPU convergence result is present in permitted tracked evidence.",
+      "status": "unknown"
+    },
+    {
+      "id": "held_out_reconstruction_quality",
+      "statement": "The sealed test remains closed; held-out reconstruction quality is absent.",
+      "status": "unknown"
+    },
+    {
+      "id": "physical_bias_only_named_arm",
+      "statement": "The model exposes separate physical/hyperbolic flags, but no named physical-only ablation config exists.",
+      "status": "planned"
+    }
+  ],
+  "version": 1
+}

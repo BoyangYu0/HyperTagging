@@ -1,0 +1,4564 @@
+{
+  "manifest": {
+    "blocks": [
+      {
+        "body": "# Hyperbolic Reconstruction: Data, Model, Training and Inference Readiness",
+        "id": "section-01-title",
+        "layout": "full",
+        "type": "markdown"
+      },
+      {
+        "body": "## Technical summary — implementation evidence is strong, scientific readiness remains partial\n\n**Result headline.** The repository supports a pilot-ready, relation-aware, level-autoregressive reconstruction path, but it does not yet support a convergence or held-out physics-quality claim.\n\n**Interpretation.** Observed evidence covers a 1,000,000-event reduced publication, a sealed-test-excluding 85,000-event train+validation index, CPU-constructed model presets, and a bounded runtime diagnostic. Planned evidence begins with the frozen 35k scientific path.\n\n**Evidence note.** Values below are labeled observed, planned, or unknown. Implemented mechanics are separated from deferred designs and unrun scientific comparisons.\n\n**Method/assumption.** This snapshot copies bounded rows from `evidence.json`; it performs no payload, checkpoint, scheduler, or sealed-test access.\n\n**Limitation/implication.** The report status is partial. Publication integrity and software execution are prerequisites, not substitutes for long training and held-out reconstruction quality.",
+        "id": "section-02-technical-summary",
+        "layout": "full",
+        "type": "markdown"
+      },
+      {
+        "id": "block-data-contract-table",
+        "layout": "full",
+        "tableId": "data-contract-table",
+        "type": "table"
+      },
+      {
+        "body": "## Key findings with visual evidence — scale and hierarchy justify set reconstruction, not long-sequence modeling\n\n**Takeaway.** The observed reduced inventory contains 1,000,000 events, but its category mixture is skewed; mixed and uubar dominate the metadata composition.\n\n**How to read.** Compare absolute event bars across the seven categories. Each shard contributes the same event count, so event and shard composition agree.\n\n**Evidence note.** This is observed publication metadata, not a claim that the reduced campaign is category-representative.\n\n**Method/assumption.** Counts are recomputed from inventory entries and cross-checked against the tracked selection summary.\n\n**Implication/caveat.** Future metrics must report macro-category and production-mixture-weighted views separately.",
+        "id": "section-03-key-findings",
+        "layout": "full",
+        "sourceId": "inventory",
+        "type": "markdown"
+      },
+      {
+        "chartId": "production-category-composition",
+        "id": "block-production-category-composition",
+        "layout": "full",
+        "type": "chart"
+      },
+      {
+        "body": "### First-level multiplicity is the principal structural pressure\n\n**Takeaway.** The observed complete-only index contains 6 populated reconstruction levels, with the largest mother multiplicity concentrated at level 1.\n\n**How to read.** Follow p50 through p99 across ordered levels; higher percentiles expose the tail that query capacity must cover.\n\n**Evidence note.** Percentiles and maxima come only from train+validation index metadata; sealed test is excluded.\n\n**Method/assumption.** Reconstruction level is generation height, not graph distance.\n\n**Implication/caveat.** Capacity conclusions apply to the selected complete-only index and require revalidation if the target policy or data population changes.",
+        "id": "key-finding-structure-explainer",
+        "layout": "full",
+        "sourceId": "capacity_small_candidate",
+        "type": "markdown"
+      },
+      {
+        "chartId": "structural-percentiles",
+        "id": "block-structural-percentiles",
+        "layout": "full",
+        "type": "chart"
+      },
+      {
+        "body": "## Scope, data, and definitions — promotion uses immutable nested subsets and a sealed final test\n\n**Takeaway.** The 35k, 100k, and 250k training subsets are nested; validation stays fixed and test appears only as sealed metadata.\n\n**How to read.** The growing blue segment is training data. Purple validation is fixed. Neutral test is a role-size annotation and was not opened.\n\n**Evidence note.** Whole source/task shards are indivisible, normalizers use train only, and the indexed cohort is complete-only train+validation.\n\n**Method/assumption.** “Observed” here means manifest/index metadata, not evaluated model performance. Reconstruction level means retained-tree generation height.\n\n**Implication/caveat.** No threshold, checkpoint, or ablation may be selected on the sealed test; stress and validation remain separate diagnostic roles.",
+        "id": "section-04-scope-data-definitions",
+        "layout": "full",
+        "sourceId": "selection_summary",
+        "type": "markdown"
+      },
+      {
+        "chartId": "subset-ladder",
+        "id": "block-subset-ladder",
+        "layout": "full",
+        "type": "chart"
+      },
+      {
+        "body": "## Model specification — shared relation-aware geometry stays small enough for staged single-GPU study\n\n**Takeaway.** CPU instantiation counts 1,395,159 trainable pretraining parameters and 2,135,433 reconstruction parameters for `small_candidate`.\n\n**How to read.** Compare the two surfaces across presets; the counts include actual trainable tensors constructed from repository code, not estimates.\n\n**Evidence note.** The architecture is a heterogeneous Euclidean set transformer with physical relation bias, shared Poincaré projections/objectives, optional hyperbolic relation refinement, and level-autoregressive pointer decoding.\n\n**Method/assumption.** Truth supervises topology, while composite inputs and four-momenta are reconstructed from daughter state. The counted full-revised module owns allocated top-level parameters even when a compatibility module is inactive on the heterogeneous forward path.\n\n**Implication/caveat.** Mixture-of-experts is deferred and is not part of any implemented production model or parameter total.",
+        "id": "section-05-model-specification",
+        "layout": "full",
+        "sourceId": "report_evidence",
+        "type": "markdown"
+      },
+      {
+        "chartId": "model-parameter-scale",
+        "id": "block-model-parameter-scale",
+        "layout": "full",
+        "type": "chart"
+      },
+      {
+        "body": "### The shared encoder dominates trainable capacity\n\n**Takeaway.** Encoder parameters dominate both `small_candidate` surfaces; reconstruction additionally allocates contextualization and pointer-decoder capacity.\n\n**How to read.** Each horizontal bar sums to 100% within its model surface. Use the exact-contract table for absolute totals.\n\n**Evidence note.** Module groups are top-level names from actual CPU-instantiated models.\n\n**Method/assumption.** Shares use trainable parameters only; non-trainable channel-memory buffers are excluded.\n\n**Implication/caveat.** Composition does not measure runtime or memory hotspots; representative profiling remains future evidence.",
+        "id": "model-composition-explainer",
+        "layout": "full",
+        "sourceId": "report_evidence",
+        "type": "markdown"
+      },
+      {
+        "chartId": "model-module-composition",
+        "id": "block-model-module-composition",
+        "layout": "full",
+        "type": "chart"
+      },
+      {
+        "id": "block-model-contract-table",
+        "layout": "full",
+        "tableId": "model-contract-table",
+        "type": "table"
+      },
+      {
+        "body": "## Training methodology and details — progressive objectives and free rollout address geometry and exposure bias\n\n**Takeaway.** The first scientific pretraining plan allocates 17,500 optimizer steps across four equal progressive phases, for 70,000 planned seen events.\n\n**How to read.** The stacked bar is a planned allocation: topology/parent/anticollapse, distance/radius, channel contrast, then candidate correctness/hard negatives.\n\n**Evidence note.** Objectives cover same-mother/branch and LCA relations, parent ranking, exact tree distance, radius/depth, B-side/channel separation, and tangent-space anti-collapse.\n\n**Method/assumption.** Objectives are cumulative unless preregistered otherwise; scheduled sampling and free rollout are required to address exposure bias.\n\n**Implication/caveat.** Planned steps are not observed convergence, and promotion gates require measured validation and rollout behavior.",
+        "id": "section-06-training-methodology",
+        "layout": "full",
+        "sourceId": "pretrain_scientific_config",
+        "type": "markdown"
+      },
+      {
+        "chartId": "curriculum-plan",
+        "id": "block-curriculum-plan",
+        "layout": "full",
+        "type": "chart"
+      },
+      {
+        "body": "### Compute expands only after evidence gates\n\n**Takeaway.** Screening, candidate, and confirmation budgets increase in discrete stages for both pretraining and reconstruction.\n\n**How to read.** Compare pretraining and reconstruction seen-event budgets within each promotion stage; all bars are planned.\n\n**Evidence note.** Screening uses one paired seed; confirmation requires multi-seed evidence and fixed validation cohorts.\n\n**Method/assumption.** Event budgets, not vague epochs, are authoritative.\n\n**Implication/caveat.** No 1M/10M or distributed scaling is justified until the 250k stage demonstrates stable scientific value and compute scaling.",
+        "id": "staged-budget-explainer",
+        "layout": "full",
+        "sourceId": "training_plan",
+        "type": "markdown"
+      },
+      {
+        "chartId": "staged-training-budgets",
+        "id": "block-staged-training-budgets",
+        "layout": "full",
+        "type": "chart"
+      },
+      {
+        "body": "## Inference design — learned proposals are bounded by exclusivity, topology, and exact daughter-sum kinematics\n\n**Takeaway.** The configured mother-query budget exceeds the observed mother maximum, while daughter-cardinality capacity exactly reaches the observed maximum.\n\n**How to read.** Compare configured and observed bars for the two count-based controls; the tooltip exposes remaining margin.\n\n**Evidence note.** Teacher forcing uses truth topology but reco-derived mother features and daughter-summed p4. Inference uses predicted mothers, learned type/pointer/confidence scores, greedy exclusivity, and light hard constraints.\n\n**Method/assumption.** Exact bounded set packing and beam search are evaluation-only diagnostics. Whole-set scoring and iterative within-mother pointer decoding remain deferred designs, not implemented inference paths.\n\n**Implication/caveat.** Zero cardinality margin warrants monitoring on every promoted cohort; later physical fits/constraints are separate from unconstrained truth-momentum regression.",
+        "id": "section-07-inference-design",
+        "layout": "full",
+        "sourceId": "report_evidence",
+        "type": "markdown"
+      },
+      {
+        "chartId": "inference-capacity-controls",
+        "id": "block-inference-capacity-controls",
+        "layout": "full",
+        "type": "chart"
+      },
+      {
+        "id": "block-inference-contract-table",
+        "layout": "full",
+        "tableId": "inference-contract-table",
+        "type": "table"
+      },
+      {
+        "body": "## Limitations and robustness — the four-step V100 run proves execution, not learning\n\n**Takeaway.** Diagnostic job 15745941 completed 4 steps in 132 seconds with 9 telemetry samples; peak utilization was 11%.\n\n**How to read.** The utilization trace shows sparse bounded activity. Memory and temperature remain available in tooltips and the exact table.\n\n**Evidence note.** The run entered four curriculum phases and validated on only 2 events across 4 named views.\n\n**Method/assumption.** Receipt, readiness metadata, raw telemetry, and metrics were cross-checked. No checkpoint payload was opened.\n\n**Implication/caveat.** This is diagnostic smoke evidence only: it cannot establish convergence, throughput at scientific scale, calibration, category robustness, or held-out reconstruction quality.",
+        "id": "section-08-limitations-robustness",
+        "layout": "full",
+        "sourceId": "report_evidence",
+        "type": "markdown"
+      },
+      {
+        "chartId": "diagnostic-telemetry",
+        "id": "block-diagnostic-telemetry",
+        "layout": "full",
+        "type": "chart"
+      },
+      {
+        "id": "block-diagnostic-contract-table",
+        "layout": "full",
+        "tableId": "diagnostic-contract-table",
+        "type": "table"
+      },
+      {
+        "body": "## Staged training and ablation plan — isolate mechanisms sequentially and never cross-product the grid\n\n**Takeaway.** The evidence registry contains 15 implemented/named arms and 5 planned arms across focused representation, context, relation, geometry, and exposure-bias families.\n\n**How to read.** Blue counts are runnable named controls; purple counts require a scientific comparison or a missing named arm.\n\n**Evidence note.** The ladder isolates flat baseline, heterogeneous/contextual Euclidean encoding, hyperbolic node geometry, combined physical+hyperbolic relation attention, context removal, level/radius/tangent variants, and scheduled-sampling endpoints.\n\n**Method/assumption.** Screening is paired on 35k; only directional, safe effects advance. MoE, whole-set scoring, and iterative-pointer designs stay deferred.\n\n**Implication/caveat.** A physical-relation-only named arm is absent even though the model API exposes separate physical and hyperbolic flags; add that runnable control before claiming the two biases are isolated.",
+        "id": "section-09-staged-ablation-plan",
+        "layout": "full",
+        "sourceId": "report_evidence",
+        "type": "markdown"
+      },
+      {
+        "chartId": "ablation-coverage",
+        "id": "block-ablation-coverage",
+        "layout": "full",
+        "type": "chart"
+      },
+      {
+        "id": "block-ablation-arm-table",
+        "layout": "full",
+        "tableId": "ablation-arm-table",
+        "type": "table"
+      },
+      {
+        "body": "## Recommended next steps — clear provenance and execution gates before any scientific run\n\n**Result headline.** Keep the scientific path fail-closed until all three serialized blockers are resolved.\n\n**Interpretation.** Recover and independently verify the production source object/tree; require a fresh exact in-allocation CUDA/GPU preflight; then commit, review, tag, and render from a clean immutable source.\n\n**Evidence note.** The blocked contract authorizes no submission, records no submission, and forbids sealed-test access.\n\n**Method/assumption.** After those gates, run only the 35k `small_candidate` pretraining/reconstruction screen and preregistered ablations.\n\n**Limitation/implication.** H200 exact GRES was unavailable in the observed metadata. No H100 job contract is tracked; absence of a tracked contract is not proof of external scheduler state.",
+        "id": "section-10-recommended-next-steps",
+        "layout": "full",
+        "sourceId": "no_submit_contract",
+        "type": "markdown"
+      },
+      {
+        "id": "block-no-submit-contract-table",
+        "layout": "full",
+        "tableId": "no-submit-contract-table",
+        "type": "table"
+      },
+      {
+        "body": "## Further questions — scientific quality, scaling, and causal attribution remain open\n\n**Takeaway.** The unresolved questions are concentrated in planned prerequisites and scientifically unknown outcomes, not in the mechanics of deterministic evidence generation.\n\n**How to read.** Each readiness row has exactly one evidence state. Colors identify categories and do not encode good/bad judgment.\n\n**Evidence note.** Open questions include reproducible 35k learning, three-seed 100k stability, 250k category/channel robustness, rollout calibration, KLM cohorts, representative throughput, and final sealed-test quality.\n\n**Method/assumption.** Promotion requires paired baselines, fixed validation UIDs, rollout-selected checkpoints, and explicit denominators.\n\n**Implication/caveat.** Do not infer H100 substitution, long-run convergence, held-out quality, or benefit from hyperbolic/physical biases until corresponding evidence is recorded.",
+        "id": "section-11-further-questions",
+        "layout": "full",
+        "sourceId": "training_readiness",
+        "type": "markdown"
+      },
+      {
+        "chartId": "readiness-gates",
+        "id": "block-readiness-gates",
+        "layout": "full",
+        "type": "chart"
+      }
+    ],
+    "cards": [],
+    "charts": [
+      {
+        "comparisonContext": {
+          "baseline": "zero",
+          "denominator": "1,000,000 inventory events",
+          "grain": "production category",
+          "normalization": "none",
+          "semanticFamily": "observed composition",
+          "unit": "events"
+        },
+        "dataset": "production_category_composition",
+        "encodings": {
+          "label": {
+            "aggregate": "none",
+            "field": "events",
+            "format": "number",
+            "label": "Events",
+            "type": "quantitative",
+            "unit": "events"
+          },
+          "tooltip": [
+            {
+              "aggregate": "none",
+              "field": "shards",
+              "format": "number",
+              "label": "Shards",
+              "type": "quantitative",
+              "unit": "shards"
+            },
+            {
+              "aggregate": "none",
+              "field": "eventShare",
+              "format": "percent",
+              "label": "Inventory share",
+              "type": "quantitative",
+              "unit": "share"
+            }
+          ],
+          "x": {
+            "aggregate": "none",
+            "field": "category",
+            "label": "Production category",
+            "type": "nominal"
+          },
+          "y": {
+            "aggregate": "none",
+            "field": "events",
+            "format": "number",
+            "label": "Events",
+            "type": "quantitative",
+            "unit": "events"
+          }
+        },
+        "id": "production-category-composition",
+        "intent": "composition",
+        "layout": "full",
+        "maxRows": 7,
+        "palette": {
+          "kind": "semantic",
+          "name": "blue-observed"
+        },
+        "question": "How is the reduced production inventory distributed across categories?",
+        "rationale": "Horizontal bars make seven category labels readable and expose the documented mixed/uubar skew without implying representativeness.",
+        "referenceLines": [
+          {
+            "axis": "x",
+            "color": "neutral",
+            "label": "Zero",
+            "lineStyle": "solid",
+            "value": 0
+          }
+        ],
+        "settings": {
+          "categoryLabelPolicy": "wrap",
+          "orientation": "horizontal",
+          "showValues": true,
+          "sort": "descending"
+        },
+        "sourceId": "evidence_dataset_production_category_composition",
+        "subtitle": "Observed metadata for 1,000,000 events across 200 fixed-size shards",
+        "surface": {
+          "compact": false,
+          "showControls": false,
+          "surface": "explorer",
+          "viewMode": "both"
+        },
+        "title": "Reduced production category composition",
+        "type": "horizontalBar",
+        "unit": "events",
+        "valueFormat": "number",
+        "xAxisTitle": "Observed events",
+        "yAxisTitle": "Production category"
+      },
+      {
+        "comparisonContext": {
+          "baseline": "level-specific median",
+          "denominator": "eligible events in the 85,000-event train+validation index",
+          "grain": "reconstruction level",
+          "normalization": "quantiles within level",
+          "semanticFamily": "structural distribution",
+          "unit": "mothers per event"
+        },
+        "dataset": "structural_percentiles",
+        "encodings": {
+          "tooltip": [
+            {
+              "aggregate": "none",
+              "field": "maximumMothers",
+              "format": "number",
+              "label": "Observed maximum",
+              "type": "quantitative",
+              "unit": "mothers per event"
+            },
+            {
+              "aggregate": "none",
+              "field": "maximumDaughters",
+              "format": "number",
+              "label": "Maximum daughter cardinality",
+              "type": "quantitative",
+              "unit": "daughters"
+            }
+          ],
+          "x": {
+            "aggregate": "none",
+            "field": "level",
+            "label": "Reconstruction level",
+            "type": "ordinal"
+          },
+          "y": {
+            "aggregate": "none",
+            "fields": [
+              "motherP50",
+              "motherP90",
+              "motherP95",
+              "motherP99"
+            ],
+            "format": "number",
+            "label": "Mother count",
+            "type": "quantitative",
+            "unit": "mothers per event"
+          }
+        },
+        "id": "structural-percentiles",
+        "intent": "distribution",
+        "layout": "full",
+        "maxRows": 6,
+        "palette": {
+          "kind": "categorical",
+          "name": "blue-purple-orange-pink-percentiles"
+        },
+        "question": "Where does set cardinality concentrate across reconstruction levels?",
+        "rationale": "An ordered multi-series line preserves the level sequence and compares four observed percentiles without treating the hierarchy as time.",
+        "referenceLines": [
+          {
+            "axis": "y",
+            "color": "neutral",
+            "label": "Zero",
+            "lineStyle": "solid",
+            "value": 0
+          }
+        ],
+        "settings": {
+          "showPoints": "always",
+          "showValues": false,
+          "sort": "none"
+        },
+        "sourceId": "evidence_dataset_structural_percentiles",
+        "subtitle": "Observed train+validation complete-only index; six populated reconstruction levels",
+        "surface": {
+          "compact": false,
+          "showControls": false,
+          "surface": "explorer",
+          "viewMode": "both"
+        },
+        "title": "Mother-count percentiles by reconstruction level",
+        "type": "line",
+        "unit": "mothers per event",
+        "valueFormat": "number",
+        "xAxisTitle": "Reconstruction level",
+        "yAxisTitle": "Observed mothers per event"
+      },
+      {
+        "comparisonContext": {
+          "baseline": "35k selection",
+          "denominator": "events named by each selection manifest",
+          "grain": "nested training selection",
+          "normalization": "none",
+          "semanticFamily": "data promotion ladder",
+          "unit": "events"
+        },
+        "dataset": "subset_ladder",
+        "encodings": {
+          "tooltip": [
+            {
+              "aggregate": "none",
+              "field": "trainShards",
+              "format": "number",
+              "label": "Train shards",
+              "type": "quantitative",
+              "unit": "shards"
+            },
+            {
+              "aggregate": "none",
+              "field": "sealedTestAccessed",
+              "label": "Sealed test accessed",
+              "type": "nominal"
+            }
+          ],
+          "x": {
+            "aggregate": "none",
+            "field": "selection",
+            "label": "Selection",
+            "type": "ordinal"
+          },
+          "y": {
+            "aggregate": "none",
+            "fields": [
+              "trainEvents",
+              "validationEvents",
+              "sealedTestEventsMetadataOnly"
+            ],
+            "format": "number",
+            "label": "Events",
+            "type": "quantitative",
+            "unit": "events"
+          }
+        },
+        "id": "subset-ladder",
+        "intent": "composition",
+        "layout": "full",
+        "maxRows": 3,
+        "palette": {
+          "kind": "semantic",
+          "name": "blue-purple-neutral-data-roles"
+        },
+        "question": "How do training events scale while validation and sealed-test metadata remain fixed?",
+        "rationale": "Stacked bars show the discrete promotion ladder and held-out role sizes; the neutral test segment is metadata only, not accessed evaluation data.",
+        "referenceLines": [
+          {
+            "axis": "y",
+            "color": "neutral",
+            "label": "Zero",
+            "lineStyle": "solid",
+            "value": 0
+          }
+        ],
+        "settings": {
+          "groupMode": "stacked",
+          "showValues": true,
+          "sort": "none"
+        },
+        "sourceId": "evidence_dataset_subset_ladder",
+        "subtitle": "Observed manifest metadata; validation is fixed and the 50,000-event test role remains sealed",
+        "surface": {
+          "compact": false,
+          "showControls": false,
+          "surface": "explorer",
+          "viewMode": "both"
+        },
+        "title": "Nested training subset ladder",
+        "type": "stackedBar",
+        "unit": "events",
+        "valueFormat": "number",
+        "xAxisTitle": "Nested selection",
+        "yAxisTitle": "Events by role"
+      },
+      {
+        "comparisonContext": {
+          "baseline": "tiny_cpu",
+          "denominator": "trainable tensor elements",
+          "grain": "model preset and training surface",
+          "normalization": "none",
+          "semanticFamily": "model capacity",
+          "unit": "parameters"
+        },
+        "dataset": "model_parameter_scale",
+        "encodings": {
+          "tooltip": [
+            {
+              "aggregate": "none",
+              "field": "dModel",
+              "format": "number",
+              "label": "d_model",
+              "type": "quantitative",
+              "unit": "dimensions"
+            },
+            {
+              "aggregate": "none",
+              "field": "contextLayers",
+              "format": "number",
+              "label": "Context layers",
+              "type": "quantitative",
+              "unit": "layers"
+            }
+          ],
+          "x": {
+            "aggregate": "none",
+            "field": "preset",
+            "label": "Model preset",
+            "type": "ordinal"
+          },
+          "y": {
+            "aggregate": "none",
+            "fields": [
+              "pretrainingParameters",
+              "reconstructionParameters"
+            ],
+            "format": "compact",
+            "label": "Trainable parameters",
+            "type": "quantitative",
+            "unit": "parameters"
+          }
+        },
+        "id": "model-parameter-scale",
+        "intent": "comparison",
+        "layout": "full",
+        "maxRows": 4,
+        "palette": {
+          "kind": "semantic",
+          "name": "blue-purple-model-surfaces"
+        },
+        "question": "How does trainable parameter count scale across the four implemented presets?",
+        "rationale": "Grouped bars compare the two model surfaces at each preset and preserve the large scale difference between debug and promotion models.",
+        "referenceLines": [
+          {
+            "axis": "y",
+            "color": "neutral",
+            "label": "Zero",
+            "lineStyle": "solid",
+            "value": 0
+          }
+        ],
+        "settings": {
+          "groupMode": "grouped",
+          "showValues": true,
+          "sort": "none"
+        },
+        "sourceId": "evidence_dataset_model_parameter_scale",
+        "subtitle": "Actual pretraining and full-revised reconstruction module instantiation",
+        "surface": {
+          "compact": false,
+          "showControls": false,
+          "surface": "explorer",
+          "viewMode": "both"
+        },
+        "title": "Trainable parameter scale across CPU-instantiated presets",
+        "type": "bar",
+        "unit": "parameters",
+        "valueFormat": "compact",
+        "xAxisTitle": "CPU-instantiated preset",
+        "yAxisTitle": "Trainable parameters"
+      },
+      {
+        "comparisonContext": {
+          "baseline": "within-surface total",
+          "denominator": "trainable parameters in each small_candidate surface",
+          "grain": "model surface",
+          "normalization": "share of surface total",
+          "semanticFamily": "module composition",
+          "unit": "share"
+        },
+        "dataset": "model_module_composition",
+        "encodings": {
+          "tooltip": [
+            {
+              "aggregate": "none",
+              "field": "totalParameters",
+              "format": "number",
+              "label": "Surface total",
+              "type": "quantitative",
+              "unit": "parameters"
+            }
+          ],
+          "x": {
+            "aggregate": "none",
+            "field": "modelSurface",
+            "label": "Model surface",
+            "type": "nominal"
+          },
+          "y": {
+            "aggregate": "none",
+            "fields": [
+              "encoderShare",
+              "relationBiasShare",
+              "contextOrRelationHeadShare",
+              "decoderShare",
+              "levelDecodersShare",
+              "leafPidHeadShare",
+              "auxiliaryHeadsShare"
+            ],
+            "format": "percent",
+            "label": "Share of trainable parameters",
+            "type": "quantitative",
+            "unit": "share"
+          }
+        },
+        "id": "model-module-composition",
+        "intent": "composition",
+        "layout": "full",
+        "maxRows": 2,
+        "palette": {
+          "kind": "categorical",
+          "name": "blue-purple-orange-yellow-pink-green-neutral-modules"
+        },
+        "question": "Which major modules account for small_candidate trainable capacity?",
+        "rationale": "A 100% horizontal stack compares composition despite different surface totals; exact counts remain in the model contract table.",
+        "referenceLines": [
+          {
+            "axis": "x",
+            "color": "neutral",
+            "label": "Zero",
+            "lineStyle": "solid",
+            "value": 0
+          }
+        ],
+        "settings": {
+          "groupMode": "stacked100",
+          "orientation": "horizontal",
+          "showPercent": true,
+          "sort": "none"
+        },
+        "sourceId": "evidence_dataset_model_module_composition",
+        "subtitle": "Share of actual trainable parameters by top-level module for both model surfaces",
+        "surface": {
+          "compact": false,
+          "showControls": false,
+          "surface": "explorer",
+          "viewMode": "both"
+        },
+        "title": "small_candidate trainable-module composition",
+        "type": "horizontalStackedBar100",
+        "unit": "share",
+        "valueFormat": "percent",
+        "xAxisTitle": "Share of trainable parameters",
+        "yAxisTitle": "Model surface"
+      },
+      {
+        "comparisonContext": {
+          "baseline": "17,500-step plan",
+          "denominator": "planned optimizer steps",
+          "grain": "curriculum phase",
+          "normalization": "none",
+          "semanticFamily": "planned curriculum",
+          "unit": "optimizer steps"
+        },
+        "dataset": "curriculum_plan",
+        "encodings": {
+          "x": {
+            "aggregate": "none",
+            "field": "plan",
+            "label": "Training plan",
+            "type": "nominal"
+          },
+          "y": {
+            "aggregate": "none",
+            "fields": [
+              "phase1Steps",
+              "phase2Steps",
+              "phase3Steps",
+              "phase4Steps"
+            ],
+            "format": "number",
+            "label": "Optimizer steps",
+            "type": "quantitative",
+            "unit": "optimizer steps"
+          }
+        },
+        "id": "curriculum-plan",
+        "intent": "composition",
+        "layout": "full",
+        "maxRows": 1,
+        "palette": {
+          "kind": "categorical",
+          "name": "blue-purple-orange-pink-curriculum-phases"
+        },
+        "question": "How is the first scientific pretraining budget allocated across curriculum phases?",
+        "rationale": "One stacked bar makes the cumulative four-phase allocation explicit without implying that planned steps have executed.",
+        "referenceLines": [
+          {
+            "axis": "y",
+            "color": "neutral",
+            "label": "Zero",
+            "lineStyle": "solid",
+            "value": 0
+          }
+        ],
+        "settings": {
+          "groupMode": "stacked",
+          "showValues": true,
+          "sort": "none"
+        },
+        "sourceId": "evidence_dataset_curriculum_plan",
+        "subtitle": "17,500 optimizer steps divided evenly across four progressive phases",
+        "surface": {
+          "compact": false,
+          "showControls": false,
+          "surface": "explorer",
+          "viewMode": "both"
+        },
+        "title": "Planned 35k pretraining curriculum",
+        "type": "stackedBar",
+        "unit": "optimizer steps",
+        "valueFormat": "number",
+        "xAxisTitle": "Planned run",
+        "yAxisTitle": "Optimizer steps"
+      },
+      {
+        "comparisonContext": {
+          "baseline": "35k screening",
+          "denominator": "planned seen events",
+          "grain": "promotion stage and training track",
+          "normalization": "none",
+          "semanticFamily": "staged promotion",
+          "unit": "seen events"
+        },
+        "dataset": "staged_training_budgets",
+        "encodings": {
+          "x": {
+            "aggregate": "none",
+            "field": "stage",
+            "label": "Promotion stage",
+            "type": "ordinal"
+          },
+          "y": {
+            "aggregate": "none",
+            "fields": [
+              "pretrainingSeenEvents",
+              "reconstructionSeenEvents"
+            ],
+            "format": "compact",
+            "label": "Seen events",
+            "type": "quantitative",
+            "unit": "seen events"
+          }
+        },
+        "id": "staged-training-budgets",
+        "intent": "comparison",
+        "layout": "full",
+        "maxRows": 3,
+        "palette": {
+          "kind": "semantic",
+          "name": "blue-purple-planned-training-tracks"
+        },
+        "question": "How does the planned event budget grow from screening through confirmation?",
+        "rationale": "Grouped bars compare pretraining and reconstruction at the same promotion stage while preserving planned status.",
+        "referenceLines": [
+          {
+            "axis": "y",
+            "color": "neutral",
+            "label": "Zero",
+            "lineStyle": "solid",
+            "value": 0
+          }
+        ],
+        "settings": {
+          "groupMode": "grouped",
+          "showValues": true,
+          "sort": "none"
+        },
+        "sourceId": "evidence_dataset_staged_training_budgets",
+        "subtitle": "Pretraining and reconstruction budgets increase only after staged evidence gates",
+        "surface": {
+          "compact": false,
+          "showControls": false,
+          "surface": "explorer",
+          "viewMode": "both"
+        },
+        "title": "Planned event budgets by promotion stage",
+        "type": "bar",
+        "unit": "seen events",
+        "valueFormat": "compact",
+        "xAxisTitle": "Promotion stage",
+        "yAxisTitle": "Planned seen events"
+      },
+      {
+        "comparisonContext": {
+          "baseline": "observed maximum",
+          "denominator": "count per event or mother",
+          "grain": "inference capacity control",
+          "normalization": "none",
+          "semanticFamily": "capacity guard",
+          "unit": "count"
+        },
+        "dataset": "inference_capacity_controls",
+        "encodings": {
+          "tooltip": [
+            {
+              "aggregate": "none",
+              "field": "capacityMargin",
+              "format": "number",
+              "label": "Capacity margin",
+              "type": "quantitative",
+              "unit": "count"
+            }
+          ],
+          "x": {
+            "aggregate": "none",
+            "field": "control",
+            "label": "Capacity control",
+            "type": "nominal"
+          },
+          "y": {
+            "aggregate": "none",
+            "fields": [
+              "configuredCapacity",
+              "observedMaximum"
+            ],
+            "format": "number",
+            "label": "Count",
+            "type": "quantitative",
+            "unit": "count"
+          }
+        },
+        "id": "inference-capacity-controls",
+        "intent": "comparison",
+        "layout": "full",
+        "maxRows": 2,
+        "palette": {
+          "kind": "semantic",
+          "name": "blue-purple-configured-observed"
+        },
+        "question": "Do configured query and daughter-cardinality limits cover observed indexed structure?",
+        "rationale": "Grouped bars expose capacity headroom and the zero-margin daughter-cardinality boundary using the same count unit.",
+        "referenceLines": [
+          {
+            "axis": "y",
+            "color": "neutral",
+            "label": "Zero",
+            "lineStyle": "solid",
+            "value": 0
+          }
+        ],
+        "settings": {
+          "groupMode": "grouped",
+          "showValues": true,
+          "sort": "none"
+        },
+        "sourceId": "evidence_dataset_inference_capacity_controls",
+        "subtitle": "Observed on the sealed-test-excluding 85,000-event train+validation index",
+        "surface": {
+          "compact": false,
+          "showControls": false,
+          "surface": "explorer",
+          "viewMode": "both"
+        },
+        "title": "Inference capacity versus observed structural maxima",
+        "type": "bar",
+        "unit": "count",
+        "valueFormat": "number",
+        "xAxisTitle": "Inference capacity control",
+        "yAxisTitle": "Configured and observed count"
+      },
+      {
+        "comparisonContext": {
+          "baseline": "zero utilization",
+          "denominator": "one allocated V100",
+          "grain": "15-second telemetry sample",
+          "normalization": "GPU utilization percent",
+          "semanticFamily": "diagnostic telemetry",
+          "unit": "percent"
+        },
+        "dataset": "diagnostic_telemetry",
+        "encodings": {
+          "tooltip": [
+            {
+              "aggregate": "none",
+              "field": "memoryUsedMiB",
+              "format": "number",
+              "label": "Memory used",
+              "type": "quantitative",
+              "unit": "MiB"
+            },
+            {
+              "aggregate": "none",
+              "field": "temperatureC",
+              "format": "number",
+              "label": "Temperature",
+              "type": "quantitative",
+              "unit": "°C"
+            }
+          ],
+          "x": {
+            "aggregate": "none",
+            "field": "elapsedSeconds",
+            "format": "number",
+            "label": "Elapsed time",
+            "type": "quantitative",
+            "unit": "seconds"
+          },
+          "y": {
+            "aggregate": "none",
+            "field": "gpuUtilizationPercent",
+            "format": "number",
+            "label": "GPU utilization",
+            "type": "quantitative",
+            "unit": "percent"
+          }
+        },
+        "id": "diagnostic-telemetry",
+        "intent": "trend",
+        "layout": "full",
+        "maxRows": 9,
+        "palette": {
+          "kind": "semantic",
+          "name": "blue-observed"
+        },
+        "question": "What utilization pattern was observed during the bounded four-step diagnostic?",
+        "rationale": "A nine-point line is sufficient for the bounded telemetry interval and avoids mixing utilization, memory, and temperature units on one axis.",
+        "referenceLines": [
+          {
+            "axis": "y",
+            "color": "neutral",
+            "label": "Zero",
+            "lineStyle": "solid",
+            "value": 0
+          }
+        ],
+        "settings": {
+          "showPoints": "always",
+          "showValues": false,
+          "sort": "none"
+        },
+        "sourceId": "evidence_dataset_diagnostic_telemetry",
+        "subtitle": "Nine observed 15-second samples from job 15745941; runtime evidence only",
+        "surface": {
+          "compact": false,
+          "showControls": false,
+          "surface": "explorer",
+          "viewMode": "both"
+        },
+        "title": "Diagnostic GPU utilization telemetry",
+        "type": "line",
+        "unit": "percent",
+        "valueFormat": "number",
+        "xAxisTitle": "Elapsed seconds from first telemetry sample",
+        "yAxisTitle": "GPU utilization (%)"
+      },
+      {
+        "comparisonContext": {
+          "baseline": "implemented named arm",
+          "denominator": "enumerated evidence-package arms",
+          "grain": "ablation family",
+          "normalization": "none",
+          "semanticFamily": "ablation readiness",
+          "unit": "arms"
+        },
+        "dataset": "ablation_coverage",
+        "encodings": {
+          "tooltip": [
+            {
+              "aggregate": "none",
+              "field": "totalArms",
+              "format": "number",
+              "label": "Total enumerated arms",
+              "type": "quantitative",
+              "unit": "arms"
+            }
+          ],
+          "x": {
+            "aggregate": "none",
+            "field": "family",
+            "label": "Ablation family",
+            "type": "nominal"
+          },
+          "y": {
+            "aggregate": "none",
+            "fields": [
+              "implementedArms",
+              "plannedArms"
+            ],
+            "format": "number",
+            "label": "Arms",
+            "type": "quantitative",
+            "unit": "arms"
+          }
+        },
+        "id": "ablation-coverage",
+        "intent": "composition",
+        "layout": "full",
+        "maxRows": 8,
+        "palette": {
+          "kind": "semantic",
+          "name": "blue-purple-implemented-planned"
+        },
+        "question": "Which ablation families have runnable named arms, and where are planned gaps?",
+        "rationale": "Horizontal stacked counts show implemented versus planned arms by family without ranking families as better or worse.",
+        "referenceLines": [
+          {
+            "axis": "x",
+            "color": "neutral",
+            "label": "Zero",
+            "lineStyle": "solid",
+            "value": 0
+          }
+        ],
+        "settings": {
+          "categoryLabelPolicy": "wrap",
+          "groupMode": "stacked",
+          "orientation": "horizontal",
+          "showValues": true,
+          "sort": "none"
+        },
+        "sourceId": "evidence_dataset_ablation_coverage",
+        "subtitle": "Named runnable controls remain separate from planned scientific comparisons",
+        "surface": {
+          "compact": false,
+          "showControls": false,
+          "surface": "explorer",
+          "viewMode": "both"
+        },
+        "title": "Implemented and planned ablation-arm coverage",
+        "type": "horizontalStackedBar",
+        "unit": "arms",
+        "valueFormat": "number",
+        "xAxisTitle": "Enumerated arms",
+        "yAxisTitle": "Ablation family"
+      },
+      {
+        "comparisonContext": {
+          "baseline": "one state per gate",
+          "denominator": "ten enumerated readiness gates",
+          "grain": "readiness gate",
+          "normalization": "one-hot state share",
+          "semanticFamily": "evidence readiness",
+          "unit": "share"
+        },
+        "dataset": "readiness_gates",
+        "encodings": {
+          "tooltip": [
+            {
+              "aggregate": "none",
+              "field": "detail",
+              "label": "Evidence detail",
+              "type": "text"
+            }
+          ],
+          "x": {
+            "aggregate": "none",
+            "field": "gate",
+            "label": "Readiness gate",
+            "type": "nominal"
+          },
+          "y": {
+            "aggregate": "none",
+            "fields": [
+              "observedComplete",
+              "plannedRequired",
+              "blocked",
+              "unavailable",
+              "unknown"
+            ],
+            "format": "percent",
+            "label": "Gate state",
+            "type": "quantitative",
+            "unit": "share"
+          }
+        },
+        "id": "readiness-gates",
+        "intent": "composition",
+        "layout": "full",
+        "maxRows": 10,
+        "palette": {
+          "kind": "semantic",
+          "name": "blue-purple-orange-yellow-neutral-readiness"
+        },
+        "question": "Which gates are evidenced, planned, blocked, unavailable, or scientifically unknown?",
+        "rationale": "A 100% horizontal status matrix preserves each gate as one unit and makes label categories explicit without green/red judgment semantics.",
+        "referenceLines": [
+          {
+            "axis": "x",
+            "color": "neutral",
+            "label": "Zero",
+            "lineStyle": "solid",
+            "value": 0
+          }
+        ],
+        "settings": {
+          "categoryLabelPolicy": "wrap",
+          "groupMode": "stacked100",
+          "orientation": "horizontal",
+          "showPercent": true,
+          "sort": "none"
+        },
+        "sourceId": "evidence_dataset_readiness_gates",
+        "subtitle": "Observed, planned, blocked, unavailable, and unknown states are one-hot evidence labels",
+        "surface": {
+          "compact": false,
+          "showControls": false,
+          "surface": "explorer",
+          "viewMode": "both"
+        },
+        "title": "Readiness evidence and unresolved gates",
+        "type": "horizontalStackedBar100",
+        "unit": "share",
+        "valueFormat": "percent",
+        "xAxisTitle": "Evidence-state share",
+        "yAxisTitle": "Readiness gate"
+      }
+    ],
+    "description": "A deterministic technical evidence package for structured-set reconstruction architecture, data, training, inference, diagnostics, and staged scientific readiness.",
+    "generatedAt": "2026-08-14T00:00:00Z",
+    "sources": [
+      {
+        "id": "report_evidence",
+        "label": "Deterministic report evidence snapshot",
+        "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+        "query": {
+          "description": "Bounded deterministic extraction; chart and table rows are copied unchanged from evidence.json.",
+          "engine": "repository",
+          "filters": [
+            "explicit exact-file allowlist",
+            "tracked repository evidence or permitted reduced-dataset metadata only",
+            "sealed-test payloads excluded"
+          ],
+          "language": "python",
+          "metric_definitions": [
+            "observed = extracted or CPU-instantiated from permitted evidence",
+            "planned = specified in tracked configuration or execution plan",
+            "unknown = required scientific result absent"
+          ],
+          "tables_used": [
+            "configs/ablations/contextual_euclidean.yaml",
+            "configs/ablations/contextual_hyperbolic_parent_lca.yaml",
+            "configs/ablations/flat_baseline.yaml",
+            "configs/ablations/full_revised.yaml",
+            "configs/ablations/heterogeneous_only.yaml",
+            "configs/ablations/learned_bounded_tangent_scale.yaml",
+            "configs/ablations/level_encoding_bounded_tangent.yaml",
+            "configs/ablations/level_encoding_euclidean.yaml",
+            "configs/ablations/level_encoding_none.yaml",
+            "configs/ablations/lower_radius_tangent_scale.yaml",
+            "configs/ablations/plus_cross_event_channel.yaml",
+            "configs/ablations/plus_hyperbolic_relation_attention.yaml",
+            "configs/ablations/plus_scheduled_sampling.yaml",
+            "configs/ablations/radius_exact_root_depth.yaml",
+            "configs/ablations/radius_generation_height.yaml",
+            "configs/ablations/radius_weak_or_learned.yaml",
+            "src/hypertagging/models/ablation.py",
+            "docs/hyperbolic_level_autoregressive_reconstruction.md",
+            "artifacts/experiment_readiness/production_1m_20260812/train_035k/capacity.small_candidate.complete_only.json",
+            "docs/audits/current_status.md",
+            "configs/ablations/pretrain_stage1_topology_parent_anticollapse.yaml",
+            "configs/ablations/pretrain_stage2_distance_radius.yaml",
+            "configs/ablations/pretrain_stage3_channel.yaml",
+            "configs/ablations/pretrain_stage4_candidate_hard_negative.yaml",
+            "artifacts/runs/pretrain-035k-small-candidate-diag4-0c5e054/20260812/15745941/metrics.jsonl",
+            "artifacts/slurm/jobs/15745941/attempt-00/receipt.json",
+            "artifacts/slurm/jobs/15745941/attempt-00/gpu-telemetry.jsonl",
+            "artifacts/slurm/jobs/15745941/attempt-00/gpu-telemetry-summary.json",
+            "configs/training_selection/production_1m_20260812/inventory.json",
+            "src/hypertagging/training/model_config.py",
+            "src/hypertagging/models/level_autoregressive.py",
+            "artifacts/experiment_readiness/production_1m_20260812/slurm/scientific-v100-small-candidate-final-no-submit.job-contract.json",
+            "configs/slurm/pretrain_diagnostic_small_candidate.yaml",
+            "configs/slurm/pretrain_035k_scientific.yaml",
+            "src/hypertagging/training/pretrain_trainer.py",
+            "configs/level_reconstruction.yaml",
+            "configs/training_selection/production_1m_20260812/summary.json",
+            "configs/model_presets/small_candidate.yaml",
+            "docs/training_execution_plan_20260812.md",
+            "configs/training_selection/production_1m_20260812/training_readiness.json"
+          ]
+        }
+      },
+      {
+        "id": "evidence_dataset_ablation_arm_rows",
+        "label": "SQL-verified evidence dataset: ablation_arm_rows",
+        "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+        "query": {
+          "description": "Executed against the canonical evidence JSON and verified to return all 20 ablation_arm_rows rows in deterministic array order.",
+          "dialect": "SQLite JSON1",
+          "engine": "sqlite3",
+          "filters": [
+            "JSON path $.datasets.ablation_arm_rows",
+            "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+          ],
+          "language": "SQL",
+          "metric_definitions": [
+            "row_json is the unchanged JSON value for one canonical evidence dataset row"
+          ],
+          "parameters": {
+            "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+          },
+          "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.ablation_arm_rows')\nORDER BY CAST(key AS INTEGER)",
+          "tables_used": [
+            "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+            "src/hypertagging/models/ablation.py",
+            "docs/training_execution_plan_20260812.md",
+            "configs/ablations/flat_baseline.yaml",
+            "configs/ablations/heterogeneous_only.yaml",
+            "configs/ablations/contextual_euclidean.yaml",
+            "configs/ablations/contextual_hyperbolic_parent_lca.yaml",
+            "configs/ablations/plus_cross_event_channel.yaml",
+            "configs/ablations/plus_hyperbolic_relation_attention.yaml",
+            "configs/ablations/full_revised.yaml",
+            "configs/ablations/level_encoding_none.yaml",
+            "configs/ablations/level_encoding_euclidean.yaml",
+            "configs/ablations/level_encoding_bounded_tangent.yaml",
+            "configs/ablations/radius_generation_height.yaml",
+            "configs/ablations/radius_exact_root_depth.yaml",
+            "configs/ablations/radius_weak_or_learned.yaml",
+            "configs/ablations/learned_bounded_tangent_scale.yaml",
+            "configs/ablations/lower_radius_tangent_scale.yaml",
+            "configs/ablations/plus_scheduled_sampling.yaml"
+          ]
+        }
+      },
+      {
+        "id": "evidence_dataset_ablation_coverage",
+        "label": "SQL-verified evidence dataset: ablation_coverage",
+        "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+        "query": {
+          "description": "Executed against the canonical evidence JSON and verified to return all 8 ablation_coverage rows in deterministic array order.",
+          "dialect": "SQLite JSON1",
+          "engine": "sqlite3",
+          "filters": [
+            "JSON path $.datasets.ablation_coverage",
+            "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+          ],
+          "language": "SQL",
+          "metric_definitions": [
+            "row_json is the unchanged JSON value for one canonical evidence dataset row"
+          ],
+          "parameters": {
+            "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+          },
+          "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.ablation_coverage')\nORDER BY CAST(key AS INTEGER)",
+          "tables_used": [
+            "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+            "src/hypertagging/models/ablation.py",
+            "docs/training_execution_plan_20260812.md",
+            "configs/ablations/flat_baseline.yaml",
+            "configs/ablations/heterogeneous_only.yaml",
+            "configs/ablations/contextual_euclidean.yaml",
+            "configs/ablations/contextual_hyperbolic_parent_lca.yaml",
+            "configs/ablations/plus_cross_event_channel.yaml",
+            "configs/ablations/plus_hyperbolic_relation_attention.yaml",
+            "configs/ablations/full_revised.yaml",
+            "configs/ablations/level_encoding_none.yaml",
+            "configs/ablations/level_encoding_euclidean.yaml",
+            "configs/ablations/level_encoding_bounded_tangent.yaml",
+            "configs/ablations/radius_generation_height.yaml",
+            "configs/ablations/radius_exact_root_depth.yaml",
+            "configs/ablations/radius_weak_or_learned.yaml",
+            "configs/ablations/learned_bounded_tangent_scale.yaml",
+            "configs/ablations/lower_radius_tangent_scale.yaml",
+            "configs/ablations/plus_scheduled_sampling.yaml"
+          ]
+        }
+      },
+      {
+        "id": "evidence_dataset_curriculum_plan",
+        "label": "SQL-verified evidence dataset: curriculum_plan",
+        "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+        "query": {
+          "description": "Executed against the canonical evidence JSON and verified to return all 1 curriculum_plan rows in deterministic array order.",
+          "dialect": "SQLite JSON1",
+          "engine": "sqlite3",
+          "filters": [
+            "JSON path $.datasets.curriculum_plan",
+            "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+          ],
+          "language": "SQL",
+          "metric_definitions": [
+            "row_json is the unchanged JSON value for one canonical evidence dataset row"
+          ],
+          "parameters": {
+            "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+          },
+          "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.curriculum_plan')\nORDER BY CAST(key AS INTEGER)",
+          "tables_used": [
+            "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+            "configs/slurm/pretrain_035k_scientific.yaml",
+            "docs/training_execution_plan_20260812.md",
+            "configs/ablations/pretrain_stage1_topology_parent_anticollapse.yaml",
+            "configs/ablations/pretrain_stage2_distance_radius.yaml",
+            "configs/ablations/pretrain_stage3_channel.yaml",
+            "configs/ablations/pretrain_stage4_candidate_hard_negative.yaml"
+          ]
+        }
+      },
+      {
+        "id": "evidence_dataset_data_contract_rows",
+        "label": "SQL-verified evidence dataset: data_contract_rows",
+        "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+        "query": {
+          "description": "Executed against the canonical evidence JSON and verified to return all 8 data_contract_rows rows in deterministic array order.",
+          "dialect": "SQLite JSON1",
+          "engine": "sqlite3",
+          "filters": [
+            "JSON path $.datasets.data_contract_rows",
+            "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+          ],
+          "language": "SQL",
+          "metric_definitions": [
+            "row_json is the unchanged JSON value for one canonical evidence dataset row"
+          ],
+          "parameters": {
+            "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+          },
+          "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.data_contract_rows')\nORDER BY CAST(key AS INTEGER)",
+          "tables_used": [
+            "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+            "configs/training_selection/production_1m_20260812/inventory.json",
+            "configs/training_selection/production_1m_20260812/summary.json",
+            "artifacts/experiment_readiness/production_1m_20260812/train_035k/capacity.small_candidate.complete_only.json",
+            "configs/training_selection/production_1m_20260812/training_readiness.json"
+          ]
+        }
+      },
+      {
+        "id": "evidence_dataset_diagnostic_contract_rows",
+        "label": "SQL-verified evidence dataset: diagnostic_contract_rows",
+        "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+        "query": {
+          "description": "Executed against the canonical evidence JSON and verified to return all 14 diagnostic_contract_rows rows in deterministic array order.",
+          "dialect": "SQLite JSON1",
+          "engine": "sqlite3",
+          "filters": [
+            "JSON path $.datasets.diagnostic_contract_rows",
+            "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+          ],
+          "language": "SQL",
+          "metric_definitions": [
+            "row_json is the unchanged JSON value for one canonical evidence dataset row"
+          ],
+          "parameters": {
+            "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+          },
+          "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.diagnostic_contract_rows')\nORDER BY CAST(key AS INTEGER)",
+          "tables_used": [
+            "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+            "artifacts/slurm/jobs/15745941/attempt-00/receipt.json",
+            "artifacts/slurm/jobs/15745941/attempt-00/gpu-telemetry-summary.json",
+            "artifacts/runs/pretrain-035k-small-candidate-diag4-0c5e054/20260812/15745941/metrics.jsonl",
+            "configs/slurm/pretrain_diagnostic_small_candidate.yaml"
+          ]
+        }
+      },
+      {
+        "id": "evidence_dataset_diagnostic_telemetry",
+        "label": "SQL-verified evidence dataset: diagnostic_telemetry",
+        "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+        "query": {
+          "description": "Executed against the canonical evidence JSON and verified to return all 9 diagnostic_telemetry rows in deterministic array order.",
+          "dialect": "SQLite JSON1",
+          "engine": "sqlite3",
+          "filters": [
+            "JSON path $.datasets.diagnostic_telemetry",
+            "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+          ],
+          "language": "SQL",
+          "metric_definitions": [
+            "row_json is the unchanged JSON value for one canonical evidence dataset row"
+          ],
+          "parameters": {
+            "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+          },
+          "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.diagnostic_telemetry')\nORDER BY CAST(key AS INTEGER)",
+          "tables_used": [
+            "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+            "artifacts/slurm/jobs/15745941/attempt-00/receipt.json",
+            "artifacts/slurm/jobs/15745941/attempt-00/gpu-telemetry.jsonl",
+            "artifacts/slurm/jobs/15745941/attempt-00/gpu-telemetry-summary.json"
+          ]
+        }
+      },
+      {
+        "id": "evidence_dataset_inference_capacity_controls",
+        "label": "SQL-verified evidence dataset: inference_capacity_controls",
+        "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+        "query": {
+          "description": "Executed against the canonical evidence JSON and verified to return all 2 inference_capacity_controls rows in deterministic array order.",
+          "dialect": "SQLite JSON1",
+          "engine": "sqlite3",
+          "filters": [
+            "JSON path $.datasets.inference_capacity_controls",
+            "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+          ],
+          "language": "SQL",
+          "metric_definitions": [
+            "row_json is the unchanged JSON value for one canonical evidence dataset row"
+          ],
+          "parameters": {
+            "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+          },
+          "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.inference_capacity_controls')\nORDER BY CAST(key AS INTEGER)",
+          "tables_used": [
+            "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+            "artifacts/experiment_readiness/production_1m_20260812/train_035k/capacity.small_candidate.complete_only.json",
+            "configs/level_reconstruction.yaml"
+          ]
+        }
+      },
+      {
+        "id": "evidence_dataset_inference_contract_rows",
+        "label": "SQL-verified evidence dataset: inference_contract_rows",
+        "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+        "query": {
+          "description": "Executed against the canonical evidence JSON and verified to return all 11 inference_contract_rows rows in deterministic array order.",
+          "dialect": "SQLite JSON1",
+          "engine": "sqlite3",
+          "filters": [
+            "JSON path $.datasets.inference_contract_rows",
+            "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+          ],
+          "language": "SQL",
+          "metric_definitions": [
+            "row_json is the unchanged JSON value for one canonical evidence dataset row"
+          ],
+          "parameters": {
+            "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+          },
+          "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.inference_contract_rows')\nORDER BY CAST(key AS INTEGER)",
+          "tables_used": [
+            "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+            "docs/hyperbolic_level_autoregressive_reconstruction.md",
+            "configs/level_reconstruction.yaml",
+            "src/hypertagging/models/level_autoregressive.py",
+            "artifacts/experiment_readiness/production_1m_20260812/train_035k/capacity.small_candidate.complete_only.json"
+          ]
+        }
+      },
+      {
+        "id": "evidence_dataset_model_contract_rows",
+        "label": "SQL-verified evidence dataset: model_contract_rows",
+        "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+        "query": {
+          "description": "Executed against the canonical evidence JSON and verified to return all 11 model_contract_rows rows in deterministic array order.",
+          "dialect": "SQLite JSON1",
+          "engine": "sqlite3",
+          "filters": [
+            "JSON path $.datasets.model_contract_rows",
+            "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+          ],
+          "language": "SQL",
+          "metric_definitions": [
+            "row_json is the unchanged JSON value for one canonical evidence dataset row"
+          ],
+          "parameters": {
+            "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+          },
+          "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.model_contract_rows')\nORDER BY CAST(key AS INTEGER)",
+          "tables_used": [
+            "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+            "src/hypertagging/training/model_config.py",
+            "src/hypertagging/models/level_autoregressive.py",
+            "src/hypertagging/training/pretrain_trainer.py",
+            "configs/model_presets/small_candidate.yaml"
+          ]
+        }
+      },
+      {
+        "id": "evidence_dataset_model_module_composition",
+        "label": "SQL-verified evidence dataset: model_module_composition",
+        "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+        "query": {
+          "description": "Executed against the canonical evidence JSON and verified to return all 2 model_module_composition rows in deterministic array order.",
+          "dialect": "SQLite JSON1",
+          "engine": "sqlite3",
+          "filters": [
+            "JSON path $.datasets.model_module_composition",
+            "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+          ],
+          "language": "SQL",
+          "metric_definitions": [
+            "row_json is the unchanged JSON value for one canonical evidence dataset row"
+          ],
+          "parameters": {
+            "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+          },
+          "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.model_module_composition')\nORDER BY CAST(key AS INTEGER)",
+          "tables_used": [
+            "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+            "src/hypertagging/training/model_config.py",
+            "src/hypertagging/models/level_autoregressive.py",
+            "src/hypertagging/training/pretrain_trainer.py",
+            "configs/model_presets/small_candidate.yaml"
+          ]
+        }
+      },
+      {
+        "id": "evidence_dataset_model_parameter_scale",
+        "label": "SQL-verified evidence dataset: model_parameter_scale",
+        "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+        "query": {
+          "description": "Executed against the canonical evidence JSON and verified to return all 4 model_parameter_scale rows in deterministic array order.",
+          "dialect": "SQLite JSON1",
+          "engine": "sqlite3",
+          "filters": [
+            "JSON path $.datasets.model_parameter_scale",
+            "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+          ],
+          "language": "SQL",
+          "metric_definitions": [
+            "row_json is the unchanged JSON value for one canonical evidence dataset row"
+          ],
+          "parameters": {
+            "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+          },
+          "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.model_parameter_scale')\nORDER BY CAST(key AS INTEGER)",
+          "tables_used": [
+            "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+            "src/hypertagging/training/model_config.py",
+            "src/hypertagging/models/level_autoregressive.py",
+            "src/hypertagging/training/pretrain_trainer.py",
+            "configs/model_presets/small_candidate.yaml"
+          ]
+        }
+      },
+      {
+        "id": "evidence_dataset_no_submit_contract_rows",
+        "label": "SQL-verified evidence dataset: no_submit_contract_rows",
+        "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+        "query": {
+          "description": "Executed against the canonical evidence JSON and verified to return all 12 no_submit_contract_rows rows in deterministic array order.",
+          "dialect": "SQLite JSON1",
+          "engine": "sqlite3",
+          "filters": [
+            "JSON path $.datasets.no_submit_contract_rows",
+            "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+          ],
+          "language": "SQL",
+          "metric_definitions": [
+            "row_json is the unchanged JSON value for one canonical evidence dataset row"
+          ],
+          "parameters": {
+            "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+          },
+          "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.no_submit_contract_rows')\nORDER BY CAST(key AS INTEGER)",
+          "tables_used": [
+            "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+            "artifacts/experiment_readiness/production_1m_20260812/slurm/scientific-v100-small-candidate-final-no-submit.job-contract.json"
+          ]
+        }
+      },
+      {
+        "id": "evidence_dataset_production_category_composition",
+        "label": "SQL-verified evidence dataset: production_category_composition",
+        "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+        "query": {
+          "description": "Executed against the canonical evidence JSON and verified to return all 7 production_category_composition rows in deterministic array order.",
+          "dialect": "SQLite JSON1",
+          "engine": "sqlite3",
+          "filters": [
+            "JSON path $.datasets.production_category_composition",
+            "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+          ],
+          "language": "SQL",
+          "metric_definitions": [
+            "row_json is the unchanged JSON value for one canonical evidence dataset row"
+          ],
+          "parameters": {
+            "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+          },
+          "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.production_category_composition')\nORDER BY CAST(key AS INTEGER)",
+          "tables_used": [
+            "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+            "configs/training_selection/production_1m_20260812/inventory.json",
+            "configs/training_selection/production_1m_20260812/summary.json"
+          ]
+        }
+      },
+      {
+        "id": "evidence_dataset_readiness_gates",
+        "label": "SQL-verified evidence dataset: readiness_gates",
+        "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+        "query": {
+          "description": "Executed against the canonical evidence JSON and verified to return all 10 readiness_gates rows in deterministic array order.",
+          "dialect": "SQLite JSON1",
+          "engine": "sqlite3",
+          "filters": [
+            "JSON path $.datasets.readiness_gates",
+            "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+          ],
+          "language": "SQL",
+          "metric_definitions": [
+            "row_json is the unchanged JSON value for one canonical evidence dataset row"
+          ],
+          "parameters": {
+            "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+          },
+          "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.readiness_gates')\nORDER BY CAST(key AS INTEGER)",
+          "tables_used": [
+            "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+            "configs/training_selection/production_1m_20260812/training_readiness.json",
+            "artifacts/experiment_readiness/production_1m_20260812/slurm/scientific-v100-small-candidate-final-no-submit.job-contract.json",
+            "docs/audits/current_status.md",
+            "docs/training_execution_plan_20260812.md"
+          ]
+        }
+      },
+      {
+        "id": "evidence_dataset_staged_training_budgets",
+        "label": "SQL-verified evidence dataset: staged_training_budgets",
+        "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+        "query": {
+          "description": "Executed against the canonical evidence JSON and verified to return all 3 staged_training_budgets rows in deterministic array order.",
+          "dialect": "SQLite JSON1",
+          "engine": "sqlite3",
+          "filters": [
+            "JSON path $.datasets.staged_training_budgets",
+            "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+          ],
+          "language": "SQL",
+          "metric_definitions": [
+            "row_json is the unchanged JSON value for one canonical evidence dataset row"
+          ],
+          "parameters": {
+            "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+          },
+          "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.staged_training_budgets')\nORDER BY CAST(key AS INTEGER)",
+          "tables_used": [
+            "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+            "docs/training_execution_plan_20260812.md"
+          ]
+        }
+      },
+      {
+        "id": "evidence_dataset_structural_percentiles",
+        "label": "SQL-verified evidence dataset: structural_percentiles",
+        "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+        "query": {
+          "description": "Executed against the canonical evidence JSON and verified to return all 6 structural_percentiles rows in deterministic array order.",
+          "dialect": "SQLite JSON1",
+          "engine": "sqlite3",
+          "filters": [
+            "JSON path $.datasets.structural_percentiles",
+            "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+          ],
+          "language": "SQL",
+          "metric_definitions": [
+            "row_json is the unchanged JSON value for one canonical evidence dataset row"
+          ],
+          "parameters": {
+            "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+          },
+          "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.structural_percentiles')\nORDER BY CAST(key AS INTEGER)",
+          "tables_used": [
+            "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+            "artifacts/experiment_readiness/production_1m_20260812/train_035k/capacity.small_candidate.complete_only.json",
+            "configs/training_selection/production_1m_20260812/training_readiness.json"
+          ]
+        }
+      },
+      {
+        "id": "evidence_dataset_subset_ladder",
+        "label": "SQL-verified evidence dataset: subset_ladder",
+        "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+        "query": {
+          "description": "Executed against the canonical evidence JSON and verified to return all 3 subset_ladder rows in deterministic array order.",
+          "dialect": "SQLite JSON1",
+          "engine": "sqlite3",
+          "filters": [
+            "JSON path $.datasets.subset_ladder",
+            "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+          ],
+          "language": "SQL",
+          "metric_definitions": [
+            "row_json is the unchanged JSON value for one canonical evidence dataset row"
+          ],
+          "parameters": {
+            "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+          },
+          "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.subset_ladder')\nORDER BY CAST(key AS INTEGER)",
+          "tables_used": [
+            "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+            "configs/training_selection/production_1m_20260812/summary.json",
+            "configs/training_selection/production_1m_20260812/training_readiness.json"
+          ]
+        }
+      },
+      {
+        "id": "ablation_config_contextual_euclidean",
+        "label": "ablation config contextual euclidean",
+        "path": "configs/ablations/contextual_euclidean.yaml",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "15558cd0272151efbe0213a6b08ea283726e87efc7c25c4102651a9ec24b5124",
+          "tables_used": [
+            "configs/ablations/contextual_euclidean.yaml"
+          ]
+        }
+      },
+      {
+        "id": "ablation_config_contextual_hyperbolic_parent_lca",
+        "label": "ablation config contextual hyperbolic parent lca",
+        "path": "configs/ablations/contextual_hyperbolic_parent_lca.yaml",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "9e8b21543af957299477a7b03f8250b27fcce3b4e1a538b19e0ec6f83d54412b",
+          "tables_used": [
+            "configs/ablations/contextual_hyperbolic_parent_lca.yaml"
+          ]
+        }
+      },
+      {
+        "id": "ablation_config_flat_baseline",
+        "label": "ablation config flat baseline",
+        "path": "configs/ablations/flat_baseline.yaml",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "d17dc4ce85628144a83e5e1c681d0066cb8fbc12faaa05e83b7aeb8e40f68bf5",
+          "tables_used": [
+            "configs/ablations/flat_baseline.yaml"
+          ]
+        }
+      },
+      {
+        "id": "ablation_config_full_revised",
+        "label": "ablation config full revised",
+        "path": "configs/ablations/full_revised.yaml",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "fe84e8d2290ef0fdf8a0260f8dbd17ddcc603d53e8100a4ae6e5b1dcab9d3003",
+          "tables_used": [
+            "configs/ablations/full_revised.yaml"
+          ]
+        }
+      },
+      {
+        "id": "ablation_config_heterogeneous_only",
+        "label": "ablation config heterogeneous only",
+        "path": "configs/ablations/heterogeneous_only.yaml",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "d5f0893fb7ad8c40c2161e47766e5b363aec8b0d8e7d083049281451177b9025",
+          "tables_used": [
+            "configs/ablations/heterogeneous_only.yaml"
+          ]
+        }
+      },
+      {
+        "id": "ablation_config_learned_bounded_tangent_scale",
+        "label": "ablation config learned bounded tangent scale",
+        "path": "configs/ablations/learned_bounded_tangent_scale.yaml",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "7357194d115ec57f7929ed15e4ea3ca3a764c12f8585c23da136fc82b5fbc913",
+          "tables_used": [
+            "configs/ablations/learned_bounded_tangent_scale.yaml"
+          ]
+        }
+      },
+      {
+        "id": "ablation_config_level_encoding_bounded_tangent",
+        "label": "ablation config level encoding bounded tangent",
+        "path": "configs/ablations/level_encoding_bounded_tangent.yaml",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "9b3452df518ef282eead9e635ed9dd58d8f61334fbabc1746afb60d0c2c168a7",
+          "tables_used": [
+            "configs/ablations/level_encoding_bounded_tangent.yaml"
+          ]
+        }
+      },
+      {
+        "id": "ablation_config_level_encoding_euclidean",
+        "label": "ablation config level encoding euclidean",
+        "path": "configs/ablations/level_encoding_euclidean.yaml",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "4a1ef0452785b38d6f239eae83e1b6b758af5e93403d3debb629881b65c7b48f",
+          "tables_used": [
+            "configs/ablations/level_encoding_euclidean.yaml"
+          ]
+        }
+      },
+      {
+        "id": "ablation_config_level_encoding_none",
+        "label": "ablation config level encoding none",
+        "path": "configs/ablations/level_encoding_none.yaml",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "c7a410fc35b4e96a2f1dc3e2fea3af4c2df8e431b8fac9579dd5c78d2d71ba52",
+          "tables_used": [
+            "configs/ablations/level_encoding_none.yaml"
+          ]
+        }
+      },
+      {
+        "id": "ablation_config_lower_radius_tangent_scale",
+        "label": "ablation config lower radius tangent scale",
+        "path": "configs/ablations/lower_radius_tangent_scale.yaml",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "f49978304db836fe59602527366e65fd4d81ddb8febe1d7f6133d3509188c8d8",
+          "tables_used": [
+            "configs/ablations/lower_radius_tangent_scale.yaml"
+          ]
+        }
+      },
+      {
+        "id": "ablation_config_plus_cross_event_channel",
+        "label": "ablation config plus cross event channel",
+        "path": "configs/ablations/plus_cross_event_channel.yaml",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "238f02b54bbd15f1604d60cac5d684d466d75883863fcfccabde46093425ee7f",
+          "tables_used": [
+            "configs/ablations/plus_cross_event_channel.yaml"
+          ]
+        }
+      },
+      {
+        "id": "ablation_config_plus_hyperbolic_relation_attention",
+        "label": "ablation config plus hyperbolic relation attention",
+        "path": "configs/ablations/plus_hyperbolic_relation_attention.yaml",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "2e704ba80b23ad07a5a684aedd8de2470e43b191d44ab674dfc6c5fb4f4c409c",
+          "tables_used": [
+            "configs/ablations/plus_hyperbolic_relation_attention.yaml"
+          ]
+        }
+      },
+      {
+        "id": "ablation_config_plus_scheduled_sampling",
+        "label": "ablation config plus scheduled sampling",
+        "path": "configs/ablations/plus_scheduled_sampling.yaml",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "aa0131eb177eae0faa2c24ec1fbecefc9d693e0a633b9351014c07b868ee0f07",
+          "tables_used": [
+            "configs/ablations/plus_scheduled_sampling.yaml"
+          ]
+        }
+      },
+      {
+        "id": "ablation_config_radius_exact_root_depth",
+        "label": "ablation config radius exact root depth",
+        "path": "configs/ablations/radius_exact_root_depth.yaml",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "54e2c03a9fe1c81ab15596375fa9eb5f31455189999d4162bf10214b253a5c68",
+          "tables_used": [
+            "configs/ablations/radius_exact_root_depth.yaml"
+          ]
+        }
+      },
+      {
+        "id": "ablation_config_radius_generation_height",
+        "label": "ablation config radius generation height",
+        "path": "configs/ablations/radius_generation_height.yaml",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "b6d6ddd69ab492972fe651c1201aa29eb9f7734422191dcb60f36126e0ff7d77",
+          "tables_used": [
+            "configs/ablations/radius_generation_height.yaml"
+          ]
+        }
+      },
+      {
+        "id": "ablation_config_radius_weak_or_learned",
+        "label": "ablation config radius weak or learned",
+        "path": "configs/ablations/radius_weak_or_learned.yaml",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "698b52e05f50ddb48292a8680b238531b228defb356c36728921b68fa13279d0",
+          "tables_used": [
+            "configs/ablations/radius_weak_or_learned.yaml"
+          ]
+        }
+      },
+      {
+        "id": "ablation_source",
+        "label": "ablation source",
+        "path": "src/hypertagging/models/ablation.py",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "0ad7fa6408454798219529378a0b0553d321b8bc910c46f4550c87b83f487e6b",
+          "tables_used": [
+            "src/hypertagging/models/ablation.py"
+          ]
+        }
+      },
+      {
+        "id": "architecture_document",
+        "label": "architecture document",
+        "path": "docs/hyperbolic_level_autoregressive_reconstruction.md",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "29cd22a5ff905c10e12a1ab6fca2d5a289296d4113e53d5b7775c7a255e23487",
+          "tables_used": [
+            "docs/hyperbolic_level_autoregressive_reconstruction.md"
+          ]
+        }
+      },
+      {
+        "id": "capacity_small_candidate",
+        "label": "capacity small candidate",
+        "path": "artifacts/experiment_readiness/production_1m_20260812/train_035k/capacity.small_candidate.complete_only.json",
+        "query": {
+          "description": "allowed_reduced_metadata input verified by SHA-256.",
+          "engine": "repository",
+          "id": "64aa8488a3c1c64c1f68034527bfdac5b10546c27a7569777498df248bf45895",
+          "tables_used": [
+            "artifacts/experiment_readiness/production_1m_20260812/train_035k/capacity.small_candidate.complete_only.json"
+          ]
+        }
+      },
+      {
+        "id": "current_status",
+        "label": "current status",
+        "path": "docs/audits/current_status.md",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "32b53769632e63aa0fefbc261d35d3cb8d4d12ac29baedcb6c0d614924bdf66e",
+          "tables_used": [
+            "docs/audits/current_status.md"
+          ]
+        }
+      },
+      {
+        "id": "curriculum_stage_1",
+        "label": "curriculum stage 1",
+        "path": "configs/ablations/pretrain_stage1_topology_parent_anticollapse.yaml",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "72812b9ebec4fe9a45677a357f96f4c8e3d6fcbd6e634773b1c5610328d6fa3b",
+          "tables_used": [
+            "configs/ablations/pretrain_stage1_topology_parent_anticollapse.yaml"
+          ]
+        }
+      },
+      {
+        "id": "curriculum_stage_2",
+        "label": "curriculum stage 2",
+        "path": "configs/ablations/pretrain_stage2_distance_radius.yaml",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "9fb72d02c490ef5c166b6dc73aa0d5aeb8bca43b2b0894c6e0adc4d9337090ea",
+          "tables_used": [
+            "configs/ablations/pretrain_stage2_distance_radius.yaml"
+          ]
+        }
+      },
+      {
+        "id": "curriculum_stage_3",
+        "label": "curriculum stage 3",
+        "path": "configs/ablations/pretrain_stage3_channel.yaml",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "df10221ebe4fec56ab0999c0fcb82e33c1316c15b154dd3b042d254a1a68fb42",
+          "tables_used": [
+            "configs/ablations/pretrain_stage3_channel.yaml"
+          ]
+        }
+      },
+      {
+        "id": "curriculum_stage_4",
+        "label": "curriculum stage 4",
+        "path": "configs/ablations/pretrain_stage4_candidate_hard_negative.yaml",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "3dd7026095e77a127ddb1dcac86120e90d35509f2f760b2dc3723bfaa201c105",
+          "tables_used": [
+            "configs/ablations/pretrain_stage4_candidate_hard_negative.yaml"
+          ]
+        }
+      },
+      {
+        "id": "diagnostic_metrics",
+        "label": "diagnostic metrics",
+        "path": "artifacts/runs/pretrain-035k-small-candidate-diag4-0c5e054/20260812/15745941/metrics.jsonl",
+        "query": {
+          "description": "allowed_reduced_metadata input verified by SHA-256.",
+          "engine": "repository",
+          "id": "83587a0341719e47641f190c7b400788d80c01aa4443d3cc7d2cf6b1365c6e94",
+          "tables_used": [
+            "artifacts/runs/pretrain-035k-small-candidate-diag4-0c5e054/20260812/15745941/metrics.jsonl"
+          ]
+        }
+      },
+      {
+        "id": "diagnostic_receipt",
+        "label": "diagnostic receipt",
+        "path": "artifacts/slurm/jobs/15745941/attempt-00/receipt.json",
+        "query": {
+          "description": "allowed_reduced_metadata input verified by SHA-256.",
+          "engine": "repository",
+          "id": "3b75c861ae263e12af71491146e433a4092f8a0be58fa43d26f36b0d64564698",
+          "tables_used": [
+            "artifacts/slurm/jobs/15745941/attempt-00/receipt.json"
+          ]
+        }
+      },
+      {
+        "id": "diagnostic_telemetry",
+        "label": "diagnostic telemetry",
+        "path": "artifacts/slurm/jobs/15745941/attempt-00/gpu-telemetry.jsonl",
+        "query": {
+          "description": "allowed_reduced_metadata input verified by SHA-256.",
+          "engine": "repository",
+          "id": "7388ef866ee4f12d801ee19da4c23ba2ad635dc1c4429bea9ecf2d21f1baf4bc",
+          "tables_used": [
+            "artifacts/slurm/jobs/15745941/attempt-00/gpu-telemetry.jsonl"
+          ]
+        }
+      },
+      {
+        "id": "diagnostic_telemetry_summary",
+        "label": "diagnostic telemetry summary",
+        "path": "artifacts/slurm/jobs/15745941/attempt-00/gpu-telemetry-summary.json",
+        "query": {
+          "description": "allowed_reduced_metadata input verified by SHA-256.",
+          "engine": "repository",
+          "id": "7c276d380f647307953524bf85132bc499269ebe1bb4404731d7d093bc0f8b9f",
+          "tables_used": [
+            "artifacts/slurm/jobs/15745941/attempt-00/gpu-telemetry-summary.json"
+          ]
+        }
+      },
+      {
+        "id": "inventory",
+        "label": "inventory",
+        "path": "configs/training_selection/production_1m_20260812/inventory.json",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "e115242f496705056ddb727313008a4fb878e4d57d86e540a6138765a1d5d577",
+          "tables_used": [
+            "configs/training_selection/production_1m_20260812/inventory.json"
+          ]
+        }
+      },
+      {
+        "id": "model_config_source",
+        "label": "model config source",
+        "path": "src/hypertagging/training/model_config.py",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "a17e481e1300eab3f12a343f302a2a5e77af4181f6b3b33f6c4c716dd970e340",
+          "tables_used": [
+            "src/hypertagging/training/model_config.py"
+          ]
+        }
+      },
+      {
+        "id": "model_source",
+        "label": "model source",
+        "path": "src/hypertagging/models/level_autoregressive.py",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "fe907162b1a90a2229f6297e71c13259df93f21d86d04b7c80a2dc881e322542",
+          "tables_used": [
+            "src/hypertagging/models/level_autoregressive.py"
+          ]
+        }
+      },
+      {
+        "id": "no_submit_contract",
+        "label": "no submit contract",
+        "path": "artifacts/experiment_readiness/production_1m_20260812/slurm/scientific-v100-small-candidate-final-no-submit.job-contract.json",
+        "query": {
+          "description": "allowed_reduced_metadata input verified by SHA-256.",
+          "engine": "repository",
+          "id": "d5982816f9b2d3452bc08d16bf6d157224a0ae331b91104322bde82dade76ecc",
+          "tables_used": [
+            "artifacts/experiment_readiness/production_1m_20260812/slurm/scientific-v100-small-candidate-final-no-submit.job-contract.json"
+          ]
+        }
+      },
+      {
+        "id": "pretrain_diagnostic_config",
+        "label": "pretrain diagnostic config",
+        "path": "configs/slurm/pretrain_diagnostic_small_candidate.yaml",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "7aed075ba59ef2735de2d5a034a1c6d21e790ab7c60acd8870cdf61a4a411fc5",
+          "tables_used": [
+            "configs/slurm/pretrain_diagnostic_small_candidate.yaml"
+          ]
+        }
+      },
+      {
+        "id": "pretrain_scientific_config",
+        "label": "pretrain scientific config",
+        "path": "configs/slurm/pretrain_035k_scientific.yaml",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "c49ccc87a396332d90f2d22599b5d91690e8e4e0b3d4eb31d7da772b2cc0c510",
+          "tables_used": [
+            "configs/slurm/pretrain_035k_scientific.yaml"
+          ]
+        }
+      },
+      {
+        "id": "pretrain_source",
+        "label": "pretrain source",
+        "path": "src/hypertagging/training/pretrain_trainer.py",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "eaaeb41ce851d9308e6441558ca53e2e23d2dc1e284682a0598c8c1ad6e97bc3",
+          "tables_used": [
+            "src/hypertagging/training/pretrain_trainer.py"
+          ]
+        }
+      },
+      {
+        "id": "reconstruction_config",
+        "label": "reconstruction config",
+        "path": "configs/level_reconstruction.yaml",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "771d32acef098bc7e59cc4e4759d9c2b6a0b1655adf94f01511695816d2c07ed",
+          "tables_used": [
+            "configs/level_reconstruction.yaml"
+          ]
+        }
+      },
+      {
+        "id": "selection_summary",
+        "label": "selection summary",
+        "path": "configs/training_selection/production_1m_20260812/summary.json",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "d1af01506a8bdd03128aa691dfd7d673e49756d9b991c1f65bcc93503466ffe6",
+          "tables_used": [
+            "configs/training_selection/production_1m_20260812/summary.json"
+          ]
+        }
+      },
+      {
+        "id": "small_candidate_config",
+        "label": "small candidate config",
+        "path": "configs/model_presets/small_candidate.yaml",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "9d6951a65faa5f2ec0829a733540b2e19e86f2c07a18e377858ba20a4001a453",
+          "tables_used": [
+            "configs/model_presets/small_candidate.yaml"
+          ]
+        }
+      },
+      {
+        "id": "training_plan",
+        "label": "training plan",
+        "path": "docs/training_execution_plan_20260812.md",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "83adbaa1e297dcf7f7fb7981ed6f2e5c355085c8bc3f71f9a915cd8b299a4c5b",
+          "tables_used": [
+            "docs/training_execution_plan_20260812.md"
+          ]
+        }
+      },
+      {
+        "id": "training_readiness",
+        "label": "training readiness",
+        "path": "configs/training_selection/production_1m_20260812/training_readiness.json",
+        "query": {
+          "description": "tracked_repo input verified by SHA-256.",
+          "engine": "repository",
+          "id": "ef812f5e82a7efae442e861bded21bce5399cd3ab1370650c60d4e520a1f4e24",
+          "tables_used": [
+            "configs/training_selection/production_1m_20260812/training_readiness.json"
+          ]
+        }
+      }
+    ],
+    "surface": "report",
+    "tables": [
+      {
+        "columns": [
+          {
+            "field": "field",
+            "label": "Contract field",
+            "type": "text"
+          },
+          {
+            "field": "value",
+            "label": "Exact value",
+            "role": "value",
+            "type": "text"
+          },
+          {
+            "field": "status",
+            "label": "Evidence status",
+            "type": "text"
+          }
+        ],
+        "dataset": "data_contract_rows",
+        "density": "spacious",
+        "id": "data-contract-table",
+        "layout": "full",
+        "sourceId": "evidence_dataset_data_contract_rows",
+        "subtitle": "Observed metadata only; no sealed-test payload access",
+        "title": "Exact data and index contract"
+      },
+      {
+        "columns": [
+          {
+            "field": "field",
+            "label": "Model field",
+            "type": "text"
+          },
+          {
+            "field": "value",
+            "label": "Exact value",
+            "role": "value",
+            "type": "text"
+          },
+          {
+            "field": "evidenceStatus",
+            "label": "Evidence status",
+            "type": "text"
+          }
+        ],
+        "dataset": "model_contract_rows",
+        "density": "spacious",
+        "id": "model-contract-table",
+        "layout": "full",
+        "sourceId": "evidence_dataset_model_contract_rows",
+        "subtitle": "Configured architecture plus CPU-instantiated trainable totals",
+        "title": "Exact small_candidate model contract"
+      },
+      {
+        "columns": [
+          {
+            "field": "field",
+            "label": "Diagnostic field",
+            "type": "text"
+          },
+          {
+            "field": "value",
+            "label": "Exact value",
+            "role": "value",
+            "type": "text"
+          },
+          {
+            "field": "status",
+            "label": "Evidence status",
+            "type": "text"
+          }
+        ],
+        "dataset": "diagnostic_contract_rows",
+        "density": "spacious",
+        "id": "diagnostic-contract-table",
+        "layout": "full",
+        "sourceId": "evidence_dataset_diagnostic_contract_rows",
+        "subtitle": "Bounded runtime evidence; not convergence or held-out quality",
+        "title": "Exact job 15745941 diagnostic contract"
+      },
+      {
+        "columns": [
+          {
+            "field": "control",
+            "label": "Control",
+            "type": "text"
+          },
+          {
+            "field": "value",
+            "label": "Exact setting",
+            "role": "value",
+            "type": "text"
+          },
+          {
+            "field": "status",
+            "label": "Implementation status",
+            "type": "text"
+          }
+        ],
+        "dataset": "inference_contract_rows",
+        "density": "spacious",
+        "id": "inference-contract-table",
+        "layout": "full",
+        "sourceId": "evidence_dataset_inference_contract_rows",
+        "subtitle": "Implemented mechanics and planned checkpoint gates are labeled separately",
+        "title": "Exact inference and rollout controls"
+      },
+      {
+        "columns": [
+          {
+            "field": "field",
+            "label": "Contract field",
+            "type": "text"
+          },
+          {
+            "field": "value",
+            "label": "Exact value",
+            "role": "value",
+            "type": "text"
+          },
+          {
+            "field": "status",
+            "label": "Evidence status",
+            "type": "text"
+          }
+        ],
+        "dataset": "no_submit_contract_rows",
+        "density": "spacious",
+        "id": "no-submit-contract-table",
+        "layout": "full",
+        "sourceId": "evidence_dataset_no_submit_contract_rows",
+        "subtitle": "Scientific execution remains unauthorized and unperformed",
+        "title": "Exact blocked no-submit contract"
+      },
+      {
+        "columns": [
+          {
+            "field": "family",
+            "label": "Family",
+            "type": "text"
+          },
+          {
+            "field": "arm",
+            "label": "Arm",
+            "type": "text"
+          },
+          {
+            "field": "status",
+            "label": "Status",
+            "type": "text"
+          },
+          {
+            "field": "implementation",
+            "label": "Implementation / plan",
+            "type": "text"
+          },
+          {
+            "field": "evidenceStatus",
+            "label": "Evidence label",
+            "type": "text"
+          }
+        ],
+        "dataset": "ablation_arm_rows",
+        "density": "dense",
+        "id": "ablation-arm-table",
+        "layout": "full",
+        "sourceId": "evidence_dataset_ablation_arm_rows",
+        "subtitle": "Runnable named controls, planned comparisons, and the physical-only gap",
+        "title": "Exact ablation-arm registry"
+      }
+    ],
+    "title": "Hyperbolic Reconstruction: Data, Model, Training and Inference Readiness",
+    "version": 1
+  },
+  "snapshot": {
+    "accessIssues": [
+      {
+        "id": "missing-full-convergence",
+        "message": "No long GPU convergence result is present; diagnostic smoke evidence cannot substitute.",
+        "scope": "scientific results",
+        "sourceId": "training_plan"
+      },
+      {
+        "id": "missing-held-out-quality",
+        "message": "The sealed test remains closed, so held-out reconstruction quality is unknown.",
+        "scope": "held-out reconstruction",
+        "sourceId": "selection_summary"
+      },
+      {
+        "id": "blocker-production-source",
+        "message": "The production source object f4e54df23b5c60115e475c5d68df4651899d678e remains unavailable locally; independently recover it and verify tree b6e3a4118b960e3a4676a61af9601438d56cef96.",
+        "scope": "scientific submission",
+        "sourceId": "no_submit_contract"
+      },
+      {
+        "id": "blocker-fresh-preflight",
+        "message": "Pass a fresh exact in-allocation CUDA/GPU environment preflight in the eventual scientific job on the chosen H200 or V100.",
+        "scope": "scientific submission",
+        "sourceId": "no_submit_contract"
+      },
+      {
+        "id": "blocker-review-tag-render",
+        "message": "Commit and review this readiness tranche, create the immutable experiment tag, and pass the clean scientific render gates.",
+        "scope": "scientific submission",
+        "sourceId": "no_submit_contract"
+      },
+      {
+        "id": "h200-unavailable",
+        "message": "Exact H200 GRES was unavailable in the observed readiness metadata; no submission was performed.",
+        "scope": "resource availability",
+        "sourceId": "training_readiness"
+      },
+      {
+        "dataset": "ablation_arm_rows",
+        "id": "physical-only-named-arm-gap",
+        "message": "A standalone named physical-relation-bias arm is absent; the sequential scientific comparison is planned.",
+        "scope": "ablation isolation",
+        "sourceId": "report_evidence"
+      }
+    ],
+    "datasets": {
+      "ablation_arm_rows": [
+        {
+          "arm": "flat baseline",
+          "armId": "flat_baseline",
+          "evidenceStatus": "observed_code_config",
+          "family": "representation",
+          "implementation": "flat_baseline",
+          "status": "implemented"
+        },
+        {
+          "arm": "heterogeneous Euclidean adapters without context",
+          "armId": "heterogeneous_only",
+          "evidenceStatus": "observed_code_config",
+          "family": "representation",
+          "implementation": "heterogeneous_only",
+          "status": "implemented"
+        },
+        {
+          "arm": "contextual Euclidean",
+          "armId": "contextual_euclidean",
+          "evidenceStatus": "observed_code_config",
+          "family": "representation",
+          "implementation": "contextual_euclidean",
+          "status": "implemented"
+        },
+        {
+          "arm": "hyperbolic node projection/objectives",
+          "armId": "hyperbolic_node_geometry",
+          "evidenceStatus": "observed_code_config",
+          "family": "representation",
+          "implementation": "contextual_hyperbolic_parent_lca",
+          "status": "implemented"
+        },
+        {
+          "arm": "remove contextual encoder",
+          "armId": "context_removal",
+          "evidenceStatus": "observed_code_config",
+          "family": "context",
+          "implementation": "heterogeneous_only",
+          "status": "implemented"
+        },
+        {
+          "arm": "physical relation bias on, hyperbolic refinement off",
+          "armId": "physical_relation_bias_only",
+          "evidenceStatus": "planned",
+          "family": "relation bias",
+          "implementation": "model API supports separate flags; no named YAML arm",
+          "status": "planned_no_named_arm"
+        },
+        {
+          "arm": "physical plus hyperbolic relation refinement",
+          "armId": "physical_plus_hyperbolic_relation",
+          "evidenceStatus": "observed_code_config",
+          "family": "relation bias",
+          "implementation": "plus_hyperbolic_relation_attention",
+          "status": "implemented"
+        },
+        {
+          "arm": "level_encoding_none",
+          "armId": "level_encoding_none",
+          "evidenceStatus": "observed_config",
+          "family": "level geometry",
+          "implementation": "ablations/level_encoding_none.yaml",
+          "status": "implemented"
+        },
+        {
+          "arm": "level_encoding_euclidean",
+          "armId": "level_encoding_euclidean",
+          "evidenceStatus": "observed_config",
+          "family": "level geometry",
+          "implementation": "ablations/level_encoding_euclidean.yaml",
+          "status": "implemented"
+        },
+        {
+          "arm": "level_encoding_bounded_tangent",
+          "armId": "level_encoding_bounded_tangent",
+          "evidenceStatus": "observed_config",
+          "family": "level geometry",
+          "implementation": "ablations/level_encoding_bounded_tangent.yaml",
+          "status": "implemented"
+        },
+        {
+          "arm": "radius_generation_height",
+          "armId": "radius_generation_height",
+          "evidenceStatus": "observed_config",
+          "family": "radius geometry",
+          "implementation": "ablations/radius_generation_height.yaml",
+          "status": "implemented"
+        },
+        {
+          "arm": "radius_exact_root_depth",
+          "armId": "radius_exact_root_depth",
+          "evidenceStatus": "observed_config",
+          "family": "radius geometry",
+          "implementation": "ablations/radius_exact_root_depth.yaml",
+          "status": "implemented"
+        },
+        {
+          "arm": "radius_weak_or_learned",
+          "armId": "radius_weak_or_learned",
+          "evidenceStatus": "observed_config",
+          "family": "radius geometry",
+          "implementation": "ablations/radius_weak_or_learned.yaml",
+          "status": "implemented"
+        },
+        {
+          "arm": "learned_bounded_tangent_scale",
+          "armId": "learned_bounded_tangent_scale",
+          "evidenceStatus": "observed_config",
+          "family": "tangent scale",
+          "implementation": "ablations/learned_bounded_tangent_scale.yaml",
+          "status": "implemented"
+        },
+        {
+          "arm": "lower_radius_tangent_scale",
+          "armId": "lower_radius_tangent_scale",
+          "evidenceStatus": "observed_config",
+          "family": "tangent scale",
+          "implementation": "ablations/lower_radius_tangent_scale.yaml",
+          "status": "implemented"
+        },
+        {
+          "arm": "scheduled sampling plus free rollout",
+          "armId": "scheduled_sampling_mechanism",
+          "evidenceStatus": "observed_code_config",
+          "family": "exposure bias",
+          "implementation": "plus_scheduled_sampling",
+          "status": "implemented"
+        },
+        {
+          "arm": "scheduled sampling endpoint 0%",
+          "armId": "scheduled_sampling_0",
+          "evidenceStatus": "planned",
+          "family": "exposure bias endpoint",
+          "implementation": "paired 35k screen; winner and 0% control advance",
+          "status": "planned_scientific_comparison"
+        },
+        {
+          "arm": "scheduled sampling endpoint 10%",
+          "armId": "scheduled_sampling_10",
+          "evidenceStatus": "planned",
+          "family": "exposure bias endpoint",
+          "implementation": "paired 35k screen; winner and 0% control advance",
+          "status": "planned_scientific_comparison"
+        },
+        {
+          "arm": "scheduled sampling endpoint 25%",
+          "armId": "scheduled_sampling_25",
+          "evidenceStatus": "planned",
+          "family": "exposure bias endpoint",
+          "implementation": "paired 35k screen; winner and 0% control advance",
+          "status": "planned_scientific_comparison"
+        },
+        {
+          "arm": "scheduled sampling endpoint 50%",
+          "armId": "scheduled_sampling_50",
+          "evidenceStatus": "planned",
+          "family": "exposure bias endpoint",
+          "implementation": "paired 35k screen; winner and 0% control advance",
+          "status": "planned_scientific_comparison"
+        }
+      ],
+      "ablation_coverage": [
+        {
+          "evidenceStatus": "observed_config",
+          "family": "context",
+          "implementedArms": 1,
+          "plannedArms": 0,
+          "totalArms": 1
+        },
+        {
+          "evidenceStatus": "observed_config",
+          "family": "exposure bias",
+          "implementedArms": 1,
+          "plannedArms": 0,
+          "totalArms": 1
+        },
+        {
+          "evidenceStatus": "mixed_observed_planned",
+          "family": "exposure bias endpoint",
+          "implementedArms": 0,
+          "plannedArms": 4,
+          "totalArms": 4
+        },
+        {
+          "evidenceStatus": "observed_config",
+          "family": "level geometry",
+          "implementedArms": 3,
+          "plannedArms": 0,
+          "totalArms": 3
+        },
+        {
+          "evidenceStatus": "observed_config",
+          "family": "radius geometry",
+          "implementedArms": 3,
+          "plannedArms": 0,
+          "totalArms": 3
+        },
+        {
+          "evidenceStatus": "mixed_observed_planned",
+          "family": "relation bias",
+          "implementedArms": 1,
+          "plannedArms": 1,
+          "totalArms": 2
+        },
+        {
+          "evidenceStatus": "observed_config",
+          "family": "representation",
+          "implementedArms": 4,
+          "plannedArms": 0,
+          "totalArms": 4
+        },
+        {
+          "evidenceStatus": "observed_config",
+          "family": "tangent scale",
+          "implementedArms": 2,
+          "plannedArms": 0,
+          "totalArms": 2
+        }
+      ],
+      "curriculum_phase_rows": [
+        {
+          "activeObjectiveCount": 5,
+          "activeObjectives": "covariance_weight,lca_relation_weight,leaf_pid_weight,parent_ranking_weight,variance_weight",
+          "evidenceStatus": "planned",
+          "phase": "topology_parent_anticollapse",
+          "phaseIndex": 1,
+          "steps": 4375
+        },
+        {
+          "activeObjectiveCount": 7,
+          "activeObjectives": "covariance_weight,exact_tree_distance_weight,lca_relation_weight,leaf_pid_weight,parent_ranking_weight,radius_depth_weight,variance_weight",
+          "evidenceStatus": "planned",
+          "phase": "distance_radius",
+          "phaseIndex": 2,
+          "steps": 4375
+        },
+        {
+          "activeObjectiveCount": 8,
+          "activeObjectives": "channel_weight,covariance_weight,exact_tree_distance_weight,lca_relation_weight,leaf_pid_weight,parent_ranking_weight,radius_depth_weight,variance_weight",
+          "evidenceStatus": "planned",
+          "phase": "channel",
+          "phaseIndex": 3,
+          "steps": 4375
+        },
+        {
+          "activeObjectiveCount": 11,
+          "activeObjectives": "candidate_correctness_weight,channel_weight,corruption_class_weight,covariance_weight,exact_tree_distance_weight,hard_negative_weight,lca_relation_weight,leaf_pid_weight,parent_ranking_weight,radius_depth_weight,variance_weight",
+          "evidenceStatus": "planned",
+          "phase": "candidate_hard_negative",
+          "phaseIndex": 4,
+          "steps": 4375
+        }
+      ],
+      "curriculum_plan": [
+        {
+          "evidenceStatus": "planned",
+          "phase1Steps": 4375,
+          "phase2Steps": 4375,
+          "phase3Steps": 4375,
+          "phase4Steps": 4375,
+          "plan": "35k scientific pretraining"
+        }
+      ],
+      "data_contract_rows": [
+        {
+          "field": "inventory_events",
+          "status": "observed",
+          "value": 1000000
+        },
+        {
+          "field": "inventory_shards",
+          "status": "observed",
+          "value": 200
+        },
+        {
+          "field": "indexed_train_validation_events",
+          "status": "observed",
+          "value": 85000
+        },
+        {
+          "field": "indexed_nodes",
+          "status": "observed",
+          "value": 3645707
+        },
+        {
+          "field": "unique_event_uids",
+          "status": "observed",
+          "value": 85000
+        },
+        {
+          "field": "sealed_test_opened",
+          "status": "observed",
+          "value": false
+        },
+        {
+          "field": "normalizer_scope",
+          "status": "observed",
+          "value": "train"
+        },
+        {
+          "field": "target_policy",
+          "status": "observed",
+          "value": "complete_only"
+        }
+      ],
+      "diagnostic_contract_rows": [
+        {
+          "field": "job_id",
+          "status": "observed_diagnostic",
+          "value": "15745941"
+        },
+        {
+          "field": "model_preset",
+          "status": "observed_diagnostic",
+          "value": "small_candidate"
+        },
+        {
+          "field": "elapsed_seconds",
+          "status": "observed_diagnostic",
+          "value": 132
+        },
+        {
+          "field": "optimizer_steps",
+          "status": "observed_diagnostic",
+          "value": 4
+        },
+        {
+          "field": "curriculum_phases_entered",
+          "status": "observed_diagnostic",
+          "value": 4
+        },
+        {
+          "field": "validation_batches",
+          "status": "observed_diagnostic",
+          "value": 1
+        },
+        {
+          "field": "validation_events",
+          "status": "observed_diagnostic",
+          "value": 2
+        },
+        {
+          "field": "validation_named_views",
+          "status": "observed_diagnostic",
+          "value": 4
+        },
+        {
+          "field": "validation_event_view_evaluations",
+          "status": "observed_diagnostic",
+          "value": 8
+        },
+        {
+          "field": "telemetry_samples",
+          "status": "observed_diagnostic",
+          "value": 9
+        },
+        {
+          "field": "peak_memory_mib",
+          "status": "observed_diagnostic",
+          "value": 554
+        },
+        {
+          "field": "peak_gpu_utilization_percent",
+          "status": "observed_diagnostic",
+          "value": 11
+        },
+        {
+          "field": "peak_temperature_c",
+          "status": "observed_diagnostic",
+          "value": 33
+        },
+        {
+          "field": "scientific_claim",
+          "status": "observed_boundary",
+          "value": false
+        }
+      ],
+      "diagnostic_telemetry": [
+        {
+          "elapsedSeconds": 0,
+          "evidenceStatus": "observed_diagnostic",
+          "gpuModel": "Tesla V100-SXM2-32GB",
+          "gpuUtilizationPercent": 1,
+          "memoryUsedMiB": 0,
+          "sample": 1,
+          "temperatureC": 31
+        },
+        {
+          "elapsedSeconds": 15,
+          "evidenceStatus": "observed_diagnostic",
+          "gpuModel": "Tesla V100-SXM2-32GB",
+          "gpuUtilizationPercent": 8,
+          "memoryUsedMiB": 542,
+          "sample": 2,
+          "temperatureC": 32
+        },
+        {
+          "elapsedSeconds": 30,
+          "evidenceStatus": "observed_diagnostic",
+          "gpuModel": "Tesla V100-SXM2-32GB",
+          "gpuUtilizationPercent": 0,
+          "memoryUsedMiB": 554,
+          "sample": 3,
+          "temperatureC": 33
+        },
+        {
+          "elapsedSeconds": 45,
+          "evidenceStatus": "observed_diagnostic",
+          "gpuModel": "Tesla V100-SXM2-32GB",
+          "gpuUtilizationPercent": 0,
+          "memoryUsedMiB": 554,
+          "sample": 4,
+          "temperatureC": 33
+        },
+        {
+          "elapsedSeconds": 60,
+          "evidenceStatus": "observed_diagnostic",
+          "gpuModel": "Tesla V100-SXM2-32GB",
+          "gpuUtilizationPercent": 0,
+          "memoryUsedMiB": 554,
+          "sample": 5,
+          "temperatureC": 33
+        },
+        {
+          "elapsedSeconds": 75,
+          "evidenceStatus": "observed_diagnostic",
+          "gpuModel": "Tesla V100-SXM2-32GB",
+          "gpuUtilizationPercent": 0,
+          "memoryUsedMiB": 554,
+          "sample": 6,
+          "temperatureC": 33
+        },
+        {
+          "elapsedSeconds": 90,
+          "evidenceStatus": "observed_diagnostic",
+          "gpuModel": "Tesla V100-SXM2-32GB",
+          "gpuUtilizationPercent": 0,
+          "memoryUsedMiB": 554,
+          "sample": 7,
+          "temperatureC": 33
+        },
+        {
+          "elapsedSeconds": 105,
+          "evidenceStatus": "observed_diagnostic",
+          "gpuModel": "Tesla V100-SXM2-32GB",
+          "gpuUtilizationPercent": 0,
+          "memoryUsedMiB": 554,
+          "sample": 8,
+          "temperatureC": 33
+        },
+        {
+          "elapsedSeconds": 120,
+          "evidenceStatus": "observed_diagnostic",
+          "gpuModel": "Tesla V100-SXM2-32GB",
+          "gpuUtilizationPercent": 11,
+          "memoryUsedMiB": 554,
+          "sample": 9,
+          "temperatureC": 33
+        }
+      ],
+      "inference_capacity_controls": [
+        {
+          "capacityMargin": 17,
+          "configuredCapacity": 32,
+          "control": "mother queries",
+          "evidenceStatus": "observed_train_validation_index",
+          "observedMaximum": 15
+        },
+        {
+          "capacityMargin": 0,
+          "configuredCapacity": 16,
+          "control": "daughter cardinality",
+          "evidenceStatus": "observed_train_validation_index",
+          "observedMaximum": 16
+        }
+      ],
+      "inference_contract_rows": [
+        {
+          "control": "training topology source",
+          "status": "implemented",
+          "value": "truth-guided supervision"
+        },
+        {
+          "control": "inference mother source",
+          "status": "implemented",
+          "value": "predicted mothers"
+        },
+        {
+          "control": "mother four-momentum",
+          "status": "implemented",
+          "value": "exact daughter sum"
+        },
+        {
+          "control": "default exclusivity",
+          "status": "implemented",
+          "value": "greedy"
+        },
+        {
+          "control": "bounded set packing",
+          "status": "implemented_diagnostic",
+          "value": "evaluation only"
+        },
+        {
+          "control": "bounded beam",
+          "status": "implemented_diagnostic",
+          "value": "evaluation only"
+        },
+        {
+          "control": "rollout checkpoint metric",
+          "status": "planned_config",
+          "value": "predicted_edge_f1"
+        },
+        {
+          "control": "minimum tree validity",
+          "status": "planned_config",
+          "value": 0.999
+        },
+        {
+          "control": "minimum p4 closure",
+          "status": "planned_config",
+          "value": 1.0
+        },
+        {
+          "control": "p4 tolerance",
+          "status": "planned_config",
+          "value": 1e-06
+        },
+        {
+          "control": "maximum recursive-source conflicts",
+          "status": "planned_config",
+          "value": 0
+        }
+      ],
+      "model_contract_rows": [
+        {
+          "evidenceStatus": "observed_config",
+          "field": "d_model",
+          "value": 128
+        },
+        {
+          "evidenceStatus": "observed_config",
+          "field": "hyper_dim",
+          "value": 32
+        },
+        {
+          "evidenceStatus": "observed_config",
+          "field": "n_heads",
+          "value": 4
+        },
+        {
+          "evidenceStatus": "observed_config",
+          "field": "n_context_layers",
+          "value": 4
+        },
+        {
+          "evidenceStatus": "observed_config",
+          "field": "ffn_dim",
+          "value": 512
+        },
+        {
+          "evidenceStatus": "observed_config",
+          "field": "n_queries",
+          "value": 32
+        },
+        {
+          "evidenceStatus": "observed_config",
+          "field": "max_cardinality",
+          "value": 16
+        },
+        {
+          "evidenceStatus": "observed_config",
+          "field": "curvature",
+          "value": 1.0
+        },
+        {
+          "evidenceStatus": "observed_config",
+          "field": "hyperbolic_level_encoding",
+          "value": "learned_euclidean"
+        },
+        {
+          "evidenceStatus": "observed_cpu_instantiation",
+          "field": "pretraining_trainable_parameters",
+          "value": 1395159
+        },
+        {
+          "evidenceStatus": "observed_cpu_instantiation",
+          "field": "reconstruction_trainable_parameters",
+          "value": 2135433
+        }
+      ],
+      "model_module_composition": [
+        {
+          "auxiliaryHeads": 774,
+          "auxiliaryHeadsShare": 0.0005547754772036736,
+          "contextOrRelationHead": 66438,
+          "contextOrRelationHeadShare": 0.04762037875252928,
+          "decoder": 0,
+          "decoderShare": 0.0,
+          "encoder": 1322658,
+          "encoderShare": 0.9480338800093753,
+          "evidenceStatus": "observed_cpu_instantiation",
+          "leafPidHead": 5289,
+          "leafPidHeadShare": 0.003790965760891769,
+          "levelDecoders": 0,
+          "levelDecodersShare": 0.0,
+          "modelSurface": "pretraining",
+          "relationBias": 0,
+          "relationBiasShare": 0.0,
+          "totalParameters": 1395159
+        },
+        {
+          "auxiliaryHeads": 0,
+          "auxiliaryHeadsShare": 0.0,
+          "contextOrRelationHead": 529920,
+          "contextOrRelationHeadShare": 0.24815576044764692,
+          "decoder": 269500,
+          "decoderShare": 0.12620391274275522,
+          "encoder": 1322658,
+          "encoderShare": 0.6193863258645904,
+          "evidenceStatus": "observed_cpu_instantiation",
+          "leafPidHead": 5289,
+          "leafPidHeadShare": 0.002476781055645389,
+          "levelDecoders": 0,
+          "levelDecodersShare": 0.0,
+          "modelSurface": "reconstruction",
+          "relationBias": 8066,
+          "relationBiasShare": 0.003777219889362017,
+          "totalParameters": 2135433
+        }
+      ],
+      "model_parameter_scale": [
+        {
+          "contextLayers": 3,
+          "dModel": 64,
+          "evidenceStatus": "observed_cpu_instantiation",
+          "hyperDim": 16,
+          "preset": "gpu_debug",
+          "pretrainingParameters": 280775,
+          "queries": 12,
+          "reconstructionParameters": 438513
+        },
+        {
+          "contextLayers": 6,
+          "dModel": 256,
+          "evidenceStatus": "observed_cpu_instantiation",
+          "hyperDim": 64,
+          "preset": "production_baseline",
+          "pretrainingParameters": 7040375,
+          "queries": 32,
+          "reconstructionParameters": 14071879
+        },
+        {
+          "contextLayers": 4,
+          "dModel": 128,
+          "evidenceStatus": "observed_cpu_instantiation",
+          "hyperDim": 32,
+          "preset": "small_candidate",
+          "pretrainingParameters": 1395159,
+          "queries": 32,
+          "reconstructionParameters": 2135433
+        },
+        {
+          "contextLayers": 2,
+          "dModel": 32,
+          "evidenceStatus": "observed_cpu_instantiation",
+          "hyperDim": 8,
+          "preset": "tiny_cpu",
+          "pretrainingParameters": 60575,
+          "queries": 8,
+          "reconstructionParameters": 94631
+        }
+      ],
+      "no_submit_contract_rows": [
+        {
+          "field": "contract_version",
+          "status": "observed",
+          "value": "hypertagging-slurm-one-gpu-contract-v2"
+        },
+        {
+          "field": "mode",
+          "status": "observed",
+          "value": "scientific"
+        },
+        {
+          "field": "verification_scope",
+          "status": "observed",
+          "value": "blocked_no_submit"
+        },
+        {
+          "field": "selection_manifest",
+          "status": "observed",
+          "value": "configs/training_selection/production_1m_20260812/train_035k.json"
+        },
+        {
+          "field": "model_preset",
+          "status": "planned_contract",
+          "value": "small_candidate"
+        },
+        {
+          "field": "seed",
+          "status": "planned_contract",
+          "value": 20260812
+        },
+        {
+          "field": "submission_authorized",
+          "status": "observed",
+          "value": false
+        },
+        {
+          "field": "submission_performed",
+          "status": "observed",
+          "value": false
+        },
+        {
+          "field": "sealed_test_role_access",
+          "status": "observed",
+          "value": "forbidden"
+        },
+        {
+          "field": "scientific_blocker_1",
+          "status": "observed_blocker",
+          "value": "The production source object f4e54df23b5c60115e475c5d68df4651899d678e remains unavailable locally; independently recover it and verify tree b6e3a4118b960e3a4676a61af9601438d56cef96."
+        },
+        {
+          "field": "scientific_blocker_2",
+          "status": "observed_blocker",
+          "value": "Pass a fresh exact in-allocation CUDA/GPU environment preflight in the eventual scientific job on the chosen H200 or V100."
+        },
+        {
+          "field": "scientific_blocker_3",
+          "status": "observed_blocker",
+          "value": "Commit and review this readiness tranche, create the immutable experiment tag, and pass the clean scientific render gates."
+        }
+      ],
+      "production_category_composition": [
+        {
+          "category": "ccbar",
+          "eventShare": 0.1,
+          "events": 100000,
+          "eventsPerShard": 5000.0,
+          "evidenceStatus": "observed_metadata",
+          "shards": 20
+        },
+        {
+          "category": "charged",
+          "eventShare": 0.09,
+          "events": 90000,
+          "eventsPerShard": 5000.0,
+          "evidenceStatus": "observed_metadata",
+          "shards": 18
+        },
+        {
+          "category": "ddbar",
+          "eventShare": 0.08,
+          "events": 80000,
+          "eventsPerShard": 5000.0,
+          "evidenceStatus": "observed_metadata",
+          "shards": 16
+        },
+        {
+          "category": "mixed",
+          "eventShare": 0.32,
+          "events": 320000,
+          "eventsPerShard": 5000.0,
+          "evidenceStatus": "observed_metadata",
+          "shards": 64
+        },
+        {
+          "category": "ssbar",
+          "eventShare": 0.08,
+          "events": 80000,
+          "eventsPerShard": 5000.0,
+          "evidenceStatus": "observed_metadata",
+          "shards": 16
+        },
+        {
+          "category": "taupair",
+          "eventShare": 0.105,
+          "events": 105000,
+          "eventsPerShard": 5000.0,
+          "evidenceStatus": "observed_metadata",
+          "shards": 21
+        },
+        {
+          "category": "uubar",
+          "eventShare": 0.225,
+          "events": 225000,
+          "eventsPerShard": 5000.0,
+          "evidenceStatus": "observed_metadata",
+          "shards": 45
+        }
+      ],
+      "readiness_gates": [
+        {
+          "blocked": 0,
+          "detail": "validated",
+          "evidenceStatus": "observed",
+          "gate": "reduced 1M publication inventory",
+          "observedComplete": 1,
+          "plannedRequired": 0,
+          "unavailable": 0,
+          "unknown": 0
+        },
+        {
+          "blocked": 0,
+          "detail": "complete",
+          "evidenceStatus": "observed",
+          "gate": "35k train plus validation index",
+          "observedComplete": 1,
+          "plannedRequired": 0,
+          "unavailable": 0,
+          "unknown": 0
+        },
+        {
+          "blocked": 0,
+          "detail": "complete",
+          "evidenceStatus": "observed",
+          "gate": "small_candidate capacity",
+          "observedComplete": 1,
+          "plannedRequired": 0,
+          "unavailable": 0,
+          "unknown": 0
+        },
+        {
+          "blocked": 0,
+          "detail": "463 passed",
+          "evidenceStatus": "observed",
+          "gate": "CPU test suite",
+          "observedComplete": 1,
+          "plannedRequired": 0,
+          "unavailable": 0,
+          "unknown": 0
+        },
+        {
+          "blocked": 0,
+          "detail": "complete",
+          "evidenceStatus": "observed_diagnostic",
+          "gate": "V100 small_candidate diagnostic",
+          "observedComplete": 1,
+          "plannedRequired": 0,
+          "unavailable": 0,
+          "unknown": 0
+        },
+        {
+          "blocked": 1,
+          "detail": "The production source object f4e54df23b5c60115e475c5d68df4651899d678e remains unavailable locally; independently recover it and verify tree b6e3a4118b960e3a4676a61af9601438d56cef96.",
+          "evidenceStatus": "observed_blocker",
+          "gate": "production source object/tree",
+          "observedComplete": 0,
+          "plannedRequired": 0,
+          "unavailable": 0,
+          "unknown": 0
+        },
+        {
+          "blocked": 0,
+          "detail": "Pass a fresh exact in-allocation CUDA/GPU environment preflight in the eventual scientific job on the chosen H200 or V100.",
+          "evidenceStatus": "planned",
+          "gate": "fresh in-allocation preflight",
+          "observedComplete": 0,
+          "plannedRequired": 1,
+          "unavailable": 0,
+          "unknown": 0
+        },
+        {
+          "blocked": 0,
+          "detail": "Commit and review this readiness tranche, create the immutable experiment tag, and pass the clean scientific render gates.",
+          "evidenceStatus": "planned",
+          "gate": "clean review/tag/render",
+          "observedComplete": 0,
+          "plannedRequired": 1,
+          "unavailable": 0,
+          "unknown": 0
+        },
+        {
+          "blocked": 0,
+          "detail": "not_submitted_exact_gres_unavailable",
+          "evidenceStatus": "observed_metadata",
+          "gate": "exact H200 resource",
+          "observedComplete": 0,
+          "plannedRequired": 0,
+          "unavailable": 1,
+          "unknown": 0
+        },
+        {
+          "blocked": 0,
+          "detail": "no full scientific run or sealed-test evaluation",
+          "evidenceStatus": "unknown",
+          "gate": "long convergence and held-out quality",
+          "observedComplete": 0,
+          "plannedRequired": 0,
+          "unavailable": 0,
+          "unknown": 1
+        }
+      ],
+      "staged_training_budgets": [
+        {
+          "evidenceStatus": "planned",
+          "pretrainingSeenEvents": 70000,
+          "reconstructionSeenEvents": 105000,
+          "stage": "screening"
+        },
+        {
+          "evidenceStatus": "planned",
+          "pretrainingSeenEvents": 300000,
+          "reconstructionSeenEvents": 300000,
+          "stage": "candidate"
+        },
+        {
+          "evidenceStatus": "planned",
+          "pretrainingSeenEvents": 750000,
+          "reconstructionSeenEvents": 750000,
+          "stage": "confirmation"
+        }
+      ],
+      "structural_percentiles": [
+        {
+          "configuredMaxCardinality": 16,
+          "configuredQueries": 32,
+          "daughterP50": 2.0,
+          "daughterP90": 2.0,
+          "daughterP95": 3.0,
+          "daughterP99": 4.0,
+          "evidenceStatus": "observed_train_validation_index",
+          "level": 1,
+          "maximumDaughters": 9,
+          "maximumMothers": 15,
+          "motherP50": 2.0,
+          "motherP90": 5.0,
+          "motherP95": 5.0,
+          "motherP99": 7.0
+        },
+        {
+          "configuredMaxCardinality": 16,
+          "configuredQueries": 32,
+          "daughterP50": 3.0,
+          "daughterP90": 5.0,
+          "daughterP95": 6.0,
+          "daughterP99": 9.0,
+          "evidenceStatus": "observed_train_validation_index",
+          "level": 2,
+          "maximumDaughters": 16,
+          "maximumMothers": 6,
+          "motherP50": 2.0,
+          "motherP90": 3.0,
+          "motherP95": 3.0,
+          "motherP99": 4.0
+        },
+        {
+          "configuredMaxCardinality": 16,
+          "configuredQueries": 32,
+          "daughterP50": 2.0,
+          "daughterP90": 6.0,
+          "daughterP95": 7.0,
+          "daughterP99": 10.0,
+          "evidenceStatus": "observed_train_validation_index",
+          "level": 3,
+          "maximumDaughters": 15,
+          "maximumMothers": 4,
+          "motherP50": 1.0,
+          "motherP90": 2.0,
+          "motherP95": 2.0,
+          "motherP99": 3.0
+        },
+        {
+          "configuredMaxCardinality": 16,
+          "configuredQueries": 32,
+          "daughterP50": 2.0,
+          "daughterP90": 6.0,
+          "daughterP95": 8.0,
+          "daughterP99": 10.0,
+          "evidenceStatus": "observed_train_validation_index",
+          "level": 4,
+          "maximumDaughters": 14,
+          "maximumMothers": 3,
+          "motherP50": 1.0,
+          "motherP90": 2.0,
+          "motherP95": 2.0,
+          "motherP99": 2.0
+        },
+        {
+          "configuredMaxCardinality": 16,
+          "configuredQueries": 32,
+          "daughterP50": 2.0,
+          "daughterP90": 3.0,
+          "daughterP95": 4.0,
+          "daughterP99": 8.0,
+          "evidenceStatus": "observed_train_validation_index",
+          "level": 5,
+          "maximumDaughters": 13,
+          "maximumMothers": 2,
+          "motherP50": 1.0,
+          "motherP90": 1.0,
+          "motherP95": 1.0,
+          "motherP99": 1.0
+        },
+        {
+          "configuredMaxCardinality": 16,
+          "configuredQueries": 32,
+          "daughterP50": 2.0,
+          "daughterP90": 2.0,
+          "daughterP95": 2.0,
+          "daughterP99": 2.0,
+          "evidenceStatus": "observed_train_validation_index",
+          "level": 6,
+          "maximumDaughters": 2,
+          "maximumMothers": 1,
+          "motherP50": 1.0,
+          "motherP90": 1.0,
+          "motherP95": 1.0,
+          "motherP99": 1.0
+        }
+      ],
+      "subset_ladder": [
+        {
+          "categoryShardCounts": "ccbar:1,charged:1,ddbar:1,mixed:1,ssbar:1,taupair:1,uubar:1",
+          "evidenceStatus": "observed_metadata",
+          "sealedTestAccessed": false,
+          "sealedTestEventsMetadataOnly": 50000,
+          "selection": "train_035k",
+          "trainEvents": 35000,
+          "trainShards": 7,
+          "validationEvents": 50000
+        },
+        {
+          "categoryShardCounts": "ccbar:4,charged:3,ddbar:2,mixed:2,ssbar:2,taupair:3,uubar:4",
+          "evidenceStatus": "observed_metadata",
+          "sealedTestAccessed": false,
+          "sealedTestEventsMetadataOnly": 50000,
+          "selection": "train_100k",
+          "trainEvents": 100000,
+          "trainShards": 20,
+          "validationEvents": 50000
+        },
+        {
+          "categoryShardCounts": "ccbar:11,charged:7,ddbar:4,mixed:6,ssbar:4,taupair:8,uubar:10",
+          "evidenceStatus": "observed_metadata",
+          "sealedTestAccessed": false,
+          "sealedTestEventsMetadataOnly": 50000,
+          "selection": "train_250k",
+          "trainEvents": 250000,
+          "trainShards": 50,
+          "validationEvents": 50000
+        }
+      ]
+    },
+    "generatedAt": "2026-08-14T00:00:00Z",
+    "status": "partial",
+    "version": 1
+  },
+  "sources": [
+    {
+      "id": "report_evidence",
+      "label": "Deterministic report evidence snapshot",
+      "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+      "query": {
+        "description": "Bounded deterministic extraction; chart and table rows are copied unchanged from evidence.json.",
+        "engine": "repository",
+        "filters": [
+          "explicit exact-file allowlist",
+          "tracked repository evidence or permitted reduced-dataset metadata only",
+          "sealed-test payloads excluded"
+        ],
+        "language": "python",
+        "metric_definitions": [
+          "observed = extracted or CPU-instantiated from permitted evidence",
+          "planned = specified in tracked configuration or execution plan",
+          "unknown = required scientific result absent"
+        ],
+        "tables_used": [
+          "configs/ablations/contextual_euclidean.yaml",
+          "configs/ablations/contextual_hyperbolic_parent_lca.yaml",
+          "configs/ablations/flat_baseline.yaml",
+          "configs/ablations/full_revised.yaml",
+          "configs/ablations/heterogeneous_only.yaml",
+          "configs/ablations/learned_bounded_tangent_scale.yaml",
+          "configs/ablations/level_encoding_bounded_tangent.yaml",
+          "configs/ablations/level_encoding_euclidean.yaml",
+          "configs/ablations/level_encoding_none.yaml",
+          "configs/ablations/lower_radius_tangent_scale.yaml",
+          "configs/ablations/plus_cross_event_channel.yaml",
+          "configs/ablations/plus_hyperbolic_relation_attention.yaml",
+          "configs/ablations/plus_scheduled_sampling.yaml",
+          "configs/ablations/radius_exact_root_depth.yaml",
+          "configs/ablations/radius_generation_height.yaml",
+          "configs/ablations/radius_weak_or_learned.yaml",
+          "src/hypertagging/models/ablation.py",
+          "docs/hyperbolic_level_autoregressive_reconstruction.md",
+          "artifacts/experiment_readiness/production_1m_20260812/train_035k/capacity.small_candidate.complete_only.json",
+          "docs/audits/current_status.md",
+          "configs/ablations/pretrain_stage1_topology_parent_anticollapse.yaml",
+          "configs/ablations/pretrain_stage2_distance_radius.yaml",
+          "configs/ablations/pretrain_stage3_channel.yaml",
+          "configs/ablations/pretrain_stage4_candidate_hard_negative.yaml",
+          "artifacts/runs/pretrain-035k-small-candidate-diag4-0c5e054/20260812/15745941/metrics.jsonl",
+          "artifacts/slurm/jobs/15745941/attempt-00/receipt.json",
+          "artifacts/slurm/jobs/15745941/attempt-00/gpu-telemetry.jsonl",
+          "artifacts/slurm/jobs/15745941/attempt-00/gpu-telemetry-summary.json",
+          "configs/training_selection/production_1m_20260812/inventory.json",
+          "src/hypertagging/training/model_config.py",
+          "src/hypertagging/models/level_autoregressive.py",
+          "artifacts/experiment_readiness/production_1m_20260812/slurm/scientific-v100-small-candidate-final-no-submit.job-contract.json",
+          "configs/slurm/pretrain_diagnostic_small_candidate.yaml",
+          "configs/slurm/pretrain_035k_scientific.yaml",
+          "src/hypertagging/training/pretrain_trainer.py",
+          "configs/level_reconstruction.yaml",
+          "configs/training_selection/production_1m_20260812/summary.json",
+          "configs/model_presets/small_candidate.yaml",
+          "docs/training_execution_plan_20260812.md",
+          "configs/training_selection/production_1m_20260812/training_readiness.json"
+        ]
+      }
+    },
+    {
+      "id": "evidence_dataset_ablation_arm_rows",
+      "label": "SQL-verified evidence dataset: ablation_arm_rows",
+      "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+      "query": {
+        "description": "Executed against the canonical evidence JSON and verified to return all 20 ablation_arm_rows rows in deterministic array order.",
+        "dialect": "SQLite JSON1",
+        "engine": "sqlite3",
+        "filters": [
+          "JSON path $.datasets.ablation_arm_rows",
+          "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+        ],
+        "language": "SQL",
+        "metric_definitions": [
+          "row_json is the unchanged JSON value for one canonical evidence dataset row"
+        ],
+        "parameters": {
+          "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+        },
+        "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.ablation_arm_rows')\nORDER BY CAST(key AS INTEGER)",
+        "tables_used": [
+          "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+          "src/hypertagging/models/ablation.py",
+          "docs/training_execution_plan_20260812.md",
+          "configs/ablations/flat_baseline.yaml",
+          "configs/ablations/heterogeneous_only.yaml",
+          "configs/ablations/contextual_euclidean.yaml",
+          "configs/ablations/contextual_hyperbolic_parent_lca.yaml",
+          "configs/ablations/plus_cross_event_channel.yaml",
+          "configs/ablations/plus_hyperbolic_relation_attention.yaml",
+          "configs/ablations/full_revised.yaml",
+          "configs/ablations/level_encoding_none.yaml",
+          "configs/ablations/level_encoding_euclidean.yaml",
+          "configs/ablations/level_encoding_bounded_tangent.yaml",
+          "configs/ablations/radius_generation_height.yaml",
+          "configs/ablations/radius_exact_root_depth.yaml",
+          "configs/ablations/radius_weak_or_learned.yaml",
+          "configs/ablations/learned_bounded_tangent_scale.yaml",
+          "configs/ablations/lower_radius_tangent_scale.yaml",
+          "configs/ablations/plus_scheduled_sampling.yaml"
+        ]
+      }
+    },
+    {
+      "id": "evidence_dataset_ablation_coverage",
+      "label": "SQL-verified evidence dataset: ablation_coverage",
+      "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+      "query": {
+        "description": "Executed against the canonical evidence JSON and verified to return all 8 ablation_coverage rows in deterministic array order.",
+        "dialect": "SQLite JSON1",
+        "engine": "sqlite3",
+        "filters": [
+          "JSON path $.datasets.ablation_coverage",
+          "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+        ],
+        "language": "SQL",
+        "metric_definitions": [
+          "row_json is the unchanged JSON value for one canonical evidence dataset row"
+        ],
+        "parameters": {
+          "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+        },
+        "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.ablation_coverage')\nORDER BY CAST(key AS INTEGER)",
+        "tables_used": [
+          "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+          "src/hypertagging/models/ablation.py",
+          "docs/training_execution_plan_20260812.md",
+          "configs/ablations/flat_baseline.yaml",
+          "configs/ablations/heterogeneous_only.yaml",
+          "configs/ablations/contextual_euclidean.yaml",
+          "configs/ablations/contextual_hyperbolic_parent_lca.yaml",
+          "configs/ablations/plus_cross_event_channel.yaml",
+          "configs/ablations/plus_hyperbolic_relation_attention.yaml",
+          "configs/ablations/full_revised.yaml",
+          "configs/ablations/level_encoding_none.yaml",
+          "configs/ablations/level_encoding_euclidean.yaml",
+          "configs/ablations/level_encoding_bounded_tangent.yaml",
+          "configs/ablations/radius_generation_height.yaml",
+          "configs/ablations/radius_exact_root_depth.yaml",
+          "configs/ablations/radius_weak_or_learned.yaml",
+          "configs/ablations/learned_bounded_tangent_scale.yaml",
+          "configs/ablations/lower_radius_tangent_scale.yaml",
+          "configs/ablations/plus_scheduled_sampling.yaml"
+        ]
+      }
+    },
+    {
+      "id": "evidence_dataset_curriculum_plan",
+      "label": "SQL-verified evidence dataset: curriculum_plan",
+      "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+      "query": {
+        "description": "Executed against the canonical evidence JSON and verified to return all 1 curriculum_plan rows in deterministic array order.",
+        "dialect": "SQLite JSON1",
+        "engine": "sqlite3",
+        "filters": [
+          "JSON path $.datasets.curriculum_plan",
+          "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+        ],
+        "language": "SQL",
+        "metric_definitions": [
+          "row_json is the unchanged JSON value for one canonical evidence dataset row"
+        ],
+        "parameters": {
+          "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+        },
+        "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.curriculum_plan')\nORDER BY CAST(key AS INTEGER)",
+        "tables_used": [
+          "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+          "configs/slurm/pretrain_035k_scientific.yaml",
+          "docs/training_execution_plan_20260812.md",
+          "configs/ablations/pretrain_stage1_topology_parent_anticollapse.yaml",
+          "configs/ablations/pretrain_stage2_distance_radius.yaml",
+          "configs/ablations/pretrain_stage3_channel.yaml",
+          "configs/ablations/pretrain_stage4_candidate_hard_negative.yaml"
+        ]
+      }
+    },
+    {
+      "id": "evidence_dataset_data_contract_rows",
+      "label": "SQL-verified evidence dataset: data_contract_rows",
+      "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+      "query": {
+        "description": "Executed against the canonical evidence JSON and verified to return all 8 data_contract_rows rows in deterministic array order.",
+        "dialect": "SQLite JSON1",
+        "engine": "sqlite3",
+        "filters": [
+          "JSON path $.datasets.data_contract_rows",
+          "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+        ],
+        "language": "SQL",
+        "metric_definitions": [
+          "row_json is the unchanged JSON value for one canonical evidence dataset row"
+        ],
+        "parameters": {
+          "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+        },
+        "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.data_contract_rows')\nORDER BY CAST(key AS INTEGER)",
+        "tables_used": [
+          "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+          "configs/training_selection/production_1m_20260812/inventory.json",
+          "configs/training_selection/production_1m_20260812/summary.json",
+          "artifacts/experiment_readiness/production_1m_20260812/train_035k/capacity.small_candidate.complete_only.json",
+          "configs/training_selection/production_1m_20260812/training_readiness.json"
+        ]
+      }
+    },
+    {
+      "id": "evidence_dataset_diagnostic_contract_rows",
+      "label": "SQL-verified evidence dataset: diagnostic_contract_rows",
+      "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+      "query": {
+        "description": "Executed against the canonical evidence JSON and verified to return all 14 diagnostic_contract_rows rows in deterministic array order.",
+        "dialect": "SQLite JSON1",
+        "engine": "sqlite3",
+        "filters": [
+          "JSON path $.datasets.diagnostic_contract_rows",
+          "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+        ],
+        "language": "SQL",
+        "metric_definitions": [
+          "row_json is the unchanged JSON value for one canonical evidence dataset row"
+        ],
+        "parameters": {
+          "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+        },
+        "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.diagnostic_contract_rows')\nORDER BY CAST(key AS INTEGER)",
+        "tables_used": [
+          "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+          "artifacts/slurm/jobs/15745941/attempt-00/receipt.json",
+          "artifacts/slurm/jobs/15745941/attempt-00/gpu-telemetry-summary.json",
+          "artifacts/runs/pretrain-035k-small-candidate-diag4-0c5e054/20260812/15745941/metrics.jsonl",
+          "configs/slurm/pretrain_diagnostic_small_candidate.yaml"
+        ]
+      }
+    },
+    {
+      "id": "evidence_dataset_diagnostic_telemetry",
+      "label": "SQL-verified evidence dataset: diagnostic_telemetry",
+      "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+      "query": {
+        "description": "Executed against the canonical evidence JSON and verified to return all 9 diagnostic_telemetry rows in deterministic array order.",
+        "dialect": "SQLite JSON1",
+        "engine": "sqlite3",
+        "filters": [
+          "JSON path $.datasets.diagnostic_telemetry",
+          "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+        ],
+        "language": "SQL",
+        "metric_definitions": [
+          "row_json is the unchanged JSON value for one canonical evidence dataset row"
+        ],
+        "parameters": {
+          "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+        },
+        "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.diagnostic_telemetry')\nORDER BY CAST(key AS INTEGER)",
+        "tables_used": [
+          "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+          "artifacts/slurm/jobs/15745941/attempt-00/receipt.json",
+          "artifacts/slurm/jobs/15745941/attempt-00/gpu-telemetry.jsonl",
+          "artifacts/slurm/jobs/15745941/attempt-00/gpu-telemetry-summary.json"
+        ]
+      }
+    },
+    {
+      "id": "evidence_dataset_inference_capacity_controls",
+      "label": "SQL-verified evidence dataset: inference_capacity_controls",
+      "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+      "query": {
+        "description": "Executed against the canonical evidence JSON and verified to return all 2 inference_capacity_controls rows in deterministic array order.",
+        "dialect": "SQLite JSON1",
+        "engine": "sqlite3",
+        "filters": [
+          "JSON path $.datasets.inference_capacity_controls",
+          "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+        ],
+        "language": "SQL",
+        "metric_definitions": [
+          "row_json is the unchanged JSON value for one canonical evidence dataset row"
+        ],
+        "parameters": {
+          "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+        },
+        "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.inference_capacity_controls')\nORDER BY CAST(key AS INTEGER)",
+        "tables_used": [
+          "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+          "artifacts/experiment_readiness/production_1m_20260812/train_035k/capacity.small_candidate.complete_only.json",
+          "configs/level_reconstruction.yaml"
+        ]
+      }
+    },
+    {
+      "id": "evidence_dataset_inference_contract_rows",
+      "label": "SQL-verified evidence dataset: inference_contract_rows",
+      "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+      "query": {
+        "description": "Executed against the canonical evidence JSON and verified to return all 11 inference_contract_rows rows in deterministic array order.",
+        "dialect": "SQLite JSON1",
+        "engine": "sqlite3",
+        "filters": [
+          "JSON path $.datasets.inference_contract_rows",
+          "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+        ],
+        "language": "SQL",
+        "metric_definitions": [
+          "row_json is the unchanged JSON value for one canonical evidence dataset row"
+        ],
+        "parameters": {
+          "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+        },
+        "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.inference_contract_rows')\nORDER BY CAST(key AS INTEGER)",
+        "tables_used": [
+          "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+          "docs/hyperbolic_level_autoregressive_reconstruction.md",
+          "configs/level_reconstruction.yaml",
+          "src/hypertagging/models/level_autoregressive.py",
+          "artifacts/experiment_readiness/production_1m_20260812/train_035k/capacity.small_candidate.complete_only.json"
+        ]
+      }
+    },
+    {
+      "id": "evidence_dataset_model_contract_rows",
+      "label": "SQL-verified evidence dataset: model_contract_rows",
+      "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+      "query": {
+        "description": "Executed against the canonical evidence JSON and verified to return all 11 model_contract_rows rows in deterministic array order.",
+        "dialect": "SQLite JSON1",
+        "engine": "sqlite3",
+        "filters": [
+          "JSON path $.datasets.model_contract_rows",
+          "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+        ],
+        "language": "SQL",
+        "metric_definitions": [
+          "row_json is the unchanged JSON value for one canonical evidence dataset row"
+        ],
+        "parameters": {
+          "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+        },
+        "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.model_contract_rows')\nORDER BY CAST(key AS INTEGER)",
+        "tables_used": [
+          "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+          "src/hypertagging/training/model_config.py",
+          "src/hypertagging/models/level_autoregressive.py",
+          "src/hypertagging/training/pretrain_trainer.py",
+          "configs/model_presets/small_candidate.yaml"
+        ]
+      }
+    },
+    {
+      "id": "evidence_dataset_model_module_composition",
+      "label": "SQL-verified evidence dataset: model_module_composition",
+      "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+      "query": {
+        "description": "Executed against the canonical evidence JSON and verified to return all 2 model_module_composition rows in deterministic array order.",
+        "dialect": "SQLite JSON1",
+        "engine": "sqlite3",
+        "filters": [
+          "JSON path $.datasets.model_module_composition",
+          "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+        ],
+        "language": "SQL",
+        "metric_definitions": [
+          "row_json is the unchanged JSON value for one canonical evidence dataset row"
+        ],
+        "parameters": {
+          "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+        },
+        "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.model_module_composition')\nORDER BY CAST(key AS INTEGER)",
+        "tables_used": [
+          "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+          "src/hypertagging/training/model_config.py",
+          "src/hypertagging/models/level_autoregressive.py",
+          "src/hypertagging/training/pretrain_trainer.py",
+          "configs/model_presets/small_candidate.yaml"
+        ]
+      }
+    },
+    {
+      "id": "evidence_dataset_model_parameter_scale",
+      "label": "SQL-verified evidence dataset: model_parameter_scale",
+      "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+      "query": {
+        "description": "Executed against the canonical evidence JSON and verified to return all 4 model_parameter_scale rows in deterministic array order.",
+        "dialect": "SQLite JSON1",
+        "engine": "sqlite3",
+        "filters": [
+          "JSON path $.datasets.model_parameter_scale",
+          "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+        ],
+        "language": "SQL",
+        "metric_definitions": [
+          "row_json is the unchanged JSON value for one canonical evidence dataset row"
+        ],
+        "parameters": {
+          "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+        },
+        "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.model_parameter_scale')\nORDER BY CAST(key AS INTEGER)",
+        "tables_used": [
+          "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+          "src/hypertagging/training/model_config.py",
+          "src/hypertagging/models/level_autoregressive.py",
+          "src/hypertagging/training/pretrain_trainer.py",
+          "configs/model_presets/small_candidate.yaml"
+        ]
+      }
+    },
+    {
+      "id": "evidence_dataset_no_submit_contract_rows",
+      "label": "SQL-verified evidence dataset: no_submit_contract_rows",
+      "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+      "query": {
+        "description": "Executed against the canonical evidence JSON and verified to return all 12 no_submit_contract_rows rows in deterministic array order.",
+        "dialect": "SQLite JSON1",
+        "engine": "sqlite3",
+        "filters": [
+          "JSON path $.datasets.no_submit_contract_rows",
+          "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+        ],
+        "language": "SQL",
+        "metric_definitions": [
+          "row_json is the unchanged JSON value for one canonical evidence dataset row"
+        ],
+        "parameters": {
+          "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+        },
+        "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.no_submit_contract_rows')\nORDER BY CAST(key AS INTEGER)",
+        "tables_used": [
+          "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+          "artifacts/experiment_readiness/production_1m_20260812/slurm/scientific-v100-small-candidate-final-no-submit.job-contract.json"
+        ]
+      }
+    },
+    {
+      "id": "evidence_dataset_production_category_composition",
+      "label": "SQL-verified evidence dataset: production_category_composition",
+      "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+      "query": {
+        "description": "Executed against the canonical evidence JSON and verified to return all 7 production_category_composition rows in deterministic array order.",
+        "dialect": "SQLite JSON1",
+        "engine": "sqlite3",
+        "filters": [
+          "JSON path $.datasets.production_category_composition",
+          "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+        ],
+        "language": "SQL",
+        "metric_definitions": [
+          "row_json is the unchanged JSON value for one canonical evidence dataset row"
+        ],
+        "parameters": {
+          "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+        },
+        "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.production_category_composition')\nORDER BY CAST(key AS INTEGER)",
+        "tables_used": [
+          "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+          "configs/training_selection/production_1m_20260812/inventory.json",
+          "configs/training_selection/production_1m_20260812/summary.json"
+        ]
+      }
+    },
+    {
+      "id": "evidence_dataset_readiness_gates",
+      "label": "SQL-verified evidence dataset: readiness_gates",
+      "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+      "query": {
+        "description": "Executed against the canonical evidence JSON and verified to return all 10 readiness_gates rows in deterministic array order.",
+        "dialect": "SQLite JSON1",
+        "engine": "sqlite3",
+        "filters": [
+          "JSON path $.datasets.readiness_gates",
+          "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+        ],
+        "language": "SQL",
+        "metric_definitions": [
+          "row_json is the unchanged JSON value for one canonical evidence dataset row"
+        ],
+        "parameters": {
+          "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+        },
+        "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.readiness_gates')\nORDER BY CAST(key AS INTEGER)",
+        "tables_used": [
+          "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+          "configs/training_selection/production_1m_20260812/training_readiness.json",
+          "artifacts/experiment_readiness/production_1m_20260812/slurm/scientific-v100-small-candidate-final-no-submit.job-contract.json",
+          "docs/audits/current_status.md",
+          "docs/training_execution_plan_20260812.md"
+        ]
+      }
+    },
+    {
+      "id": "evidence_dataset_staged_training_budgets",
+      "label": "SQL-verified evidence dataset: staged_training_budgets",
+      "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+      "query": {
+        "description": "Executed against the canonical evidence JSON and verified to return all 3 staged_training_budgets rows in deterministic array order.",
+        "dialect": "SQLite JSON1",
+        "engine": "sqlite3",
+        "filters": [
+          "JSON path $.datasets.staged_training_budgets",
+          "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+        ],
+        "language": "SQL",
+        "metric_definitions": [
+          "row_json is the unchanged JSON value for one canonical evidence dataset row"
+        ],
+        "parameters": {
+          "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+        },
+        "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.staged_training_budgets')\nORDER BY CAST(key AS INTEGER)",
+        "tables_used": [
+          "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+          "docs/training_execution_plan_20260812.md"
+        ]
+      }
+    },
+    {
+      "id": "evidence_dataset_structural_percentiles",
+      "label": "SQL-verified evidence dataset: structural_percentiles",
+      "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+      "query": {
+        "description": "Executed against the canonical evidence JSON and verified to return all 6 structural_percentiles rows in deterministic array order.",
+        "dialect": "SQLite JSON1",
+        "engine": "sqlite3",
+        "filters": [
+          "JSON path $.datasets.structural_percentiles",
+          "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+        ],
+        "language": "SQL",
+        "metric_definitions": [
+          "row_json is the unchanged JSON value for one canonical evidence dataset row"
+        ],
+        "parameters": {
+          "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+        },
+        "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.structural_percentiles')\nORDER BY CAST(key AS INTEGER)",
+        "tables_used": [
+          "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+          "artifacts/experiment_readiness/production_1m_20260812/train_035k/capacity.small_candidate.complete_only.json",
+          "configs/training_selection/production_1m_20260812/training_readiness.json"
+        ]
+      }
+    },
+    {
+      "id": "evidence_dataset_subset_ladder",
+      "label": "SQL-verified evidence dataset: subset_ladder",
+      "path": "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+      "query": {
+        "description": "Executed against the canonical evidence JSON and verified to return all 3 subset_ladder rows in deterministic array order.",
+        "dialect": "SQLite JSON1",
+        "engine": "sqlite3",
+        "filters": [
+          "JSON path $.datasets.subset_ladder",
+          "ORDER BY CAST(json_each.key AS INTEGER) preserves canonical array order"
+        ],
+        "language": "SQL",
+        "metric_definitions": [
+          "row_json is the unchanged JSON value for one canonical evidence dataset row"
+        ],
+        "parameters": {
+          "evidence_json": "UTF-8 JSON text for the complete canonical evidence.json document; the generator binds this value to :evidence_json."
+        },
+        "sql": "SELECT value AS row_json\nFROM json_each(:evidence_json, '$.datasets.subset_ladder')\nORDER BY CAST(key AS INTEGER)",
+        "tables_used": [
+          "reports/hyperbolic_reconstruction_technical_report_20260814/evidence.json",
+          "configs/training_selection/production_1m_20260812/summary.json",
+          "configs/training_selection/production_1m_20260812/training_readiness.json"
+        ]
+      }
+    },
+    {
+      "id": "ablation_config_contextual_euclidean",
+      "label": "ablation config contextual euclidean",
+      "path": "configs/ablations/contextual_euclidean.yaml",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "15558cd0272151efbe0213a6b08ea283726e87efc7c25c4102651a9ec24b5124",
+        "tables_used": [
+          "configs/ablations/contextual_euclidean.yaml"
+        ]
+      }
+    },
+    {
+      "id": "ablation_config_contextual_hyperbolic_parent_lca",
+      "label": "ablation config contextual hyperbolic parent lca",
+      "path": "configs/ablations/contextual_hyperbolic_parent_lca.yaml",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "9e8b21543af957299477a7b03f8250b27fcce3b4e1a538b19e0ec6f83d54412b",
+        "tables_used": [
+          "configs/ablations/contextual_hyperbolic_parent_lca.yaml"
+        ]
+      }
+    },
+    {
+      "id": "ablation_config_flat_baseline",
+      "label": "ablation config flat baseline",
+      "path": "configs/ablations/flat_baseline.yaml",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "d17dc4ce85628144a83e5e1c681d0066cb8fbc12faaa05e83b7aeb8e40f68bf5",
+        "tables_used": [
+          "configs/ablations/flat_baseline.yaml"
+        ]
+      }
+    },
+    {
+      "id": "ablation_config_full_revised",
+      "label": "ablation config full revised",
+      "path": "configs/ablations/full_revised.yaml",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "fe84e8d2290ef0fdf8a0260f8dbd17ddcc603d53e8100a4ae6e5b1dcab9d3003",
+        "tables_used": [
+          "configs/ablations/full_revised.yaml"
+        ]
+      }
+    },
+    {
+      "id": "ablation_config_heterogeneous_only",
+      "label": "ablation config heterogeneous only",
+      "path": "configs/ablations/heterogeneous_only.yaml",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "d5f0893fb7ad8c40c2161e47766e5b363aec8b0d8e7d083049281451177b9025",
+        "tables_used": [
+          "configs/ablations/heterogeneous_only.yaml"
+        ]
+      }
+    },
+    {
+      "id": "ablation_config_learned_bounded_tangent_scale",
+      "label": "ablation config learned bounded tangent scale",
+      "path": "configs/ablations/learned_bounded_tangent_scale.yaml",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "7357194d115ec57f7929ed15e4ea3ca3a764c12f8585c23da136fc82b5fbc913",
+        "tables_used": [
+          "configs/ablations/learned_bounded_tangent_scale.yaml"
+        ]
+      }
+    },
+    {
+      "id": "ablation_config_level_encoding_bounded_tangent",
+      "label": "ablation config level encoding bounded tangent",
+      "path": "configs/ablations/level_encoding_bounded_tangent.yaml",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "9b3452df518ef282eead9e635ed9dd58d8f61334fbabc1746afb60d0c2c168a7",
+        "tables_used": [
+          "configs/ablations/level_encoding_bounded_tangent.yaml"
+        ]
+      }
+    },
+    {
+      "id": "ablation_config_level_encoding_euclidean",
+      "label": "ablation config level encoding euclidean",
+      "path": "configs/ablations/level_encoding_euclidean.yaml",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "4a1ef0452785b38d6f239eae83e1b6b758af5e93403d3debb629881b65c7b48f",
+        "tables_used": [
+          "configs/ablations/level_encoding_euclidean.yaml"
+        ]
+      }
+    },
+    {
+      "id": "ablation_config_level_encoding_none",
+      "label": "ablation config level encoding none",
+      "path": "configs/ablations/level_encoding_none.yaml",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "c7a410fc35b4e96a2f1dc3e2fea3af4c2df8e431b8fac9579dd5c78d2d71ba52",
+        "tables_used": [
+          "configs/ablations/level_encoding_none.yaml"
+        ]
+      }
+    },
+    {
+      "id": "ablation_config_lower_radius_tangent_scale",
+      "label": "ablation config lower radius tangent scale",
+      "path": "configs/ablations/lower_radius_tangent_scale.yaml",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "f49978304db836fe59602527366e65fd4d81ddb8febe1d7f6133d3509188c8d8",
+        "tables_used": [
+          "configs/ablations/lower_radius_tangent_scale.yaml"
+        ]
+      }
+    },
+    {
+      "id": "ablation_config_plus_cross_event_channel",
+      "label": "ablation config plus cross event channel",
+      "path": "configs/ablations/plus_cross_event_channel.yaml",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "238f02b54bbd15f1604d60cac5d684d466d75883863fcfccabde46093425ee7f",
+        "tables_used": [
+          "configs/ablations/plus_cross_event_channel.yaml"
+        ]
+      }
+    },
+    {
+      "id": "ablation_config_plus_hyperbolic_relation_attention",
+      "label": "ablation config plus hyperbolic relation attention",
+      "path": "configs/ablations/plus_hyperbolic_relation_attention.yaml",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "2e704ba80b23ad07a5a684aedd8de2470e43b191d44ab674dfc6c5fb4f4c409c",
+        "tables_used": [
+          "configs/ablations/plus_hyperbolic_relation_attention.yaml"
+        ]
+      }
+    },
+    {
+      "id": "ablation_config_plus_scheduled_sampling",
+      "label": "ablation config plus scheduled sampling",
+      "path": "configs/ablations/plus_scheduled_sampling.yaml",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "aa0131eb177eae0faa2c24ec1fbecefc9d693e0a633b9351014c07b868ee0f07",
+        "tables_used": [
+          "configs/ablations/plus_scheduled_sampling.yaml"
+        ]
+      }
+    },
+    {
+      "id": "ablation_config_radius_exact_root_depth",
+      "label": "ablation config radius exact root depth",
+      "path": "configs/ablations/radius_exact_root_depth.yaml",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "54e2c03a9fe1c81ab15596375fa9eb5f31455189999d4162bf10214b253a5c68",
+        "tables_used": [
+          "configs/ablations/radius_exact_root_depth.yaml"
+        ]
+      }
+    },
+    {
+      "id": "ablation_config_radius_generation_height",
+      "label": "ablation config radius generation height",
+      "path": "configs/ablations/radius_generation_height.yaml",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "b6d6ddd69ab492972fe651c1201aa29eb9f7734422191dcb60f36126e0ff7d77",
+        "tables_used": [
+          "configs/ablations/radius_generation_height.yaml"
+        ]
+      }
+    },
+    {
+      "id": "ablation_config_radius_weak_or_learned",
+      "label": "ablation config radius weak or learned",
+      "path": "configs/ablations/radius_weak_or_learned.yaml",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "698b52e05f50ddb48292a8680b238531b228defb356c36728921b68fa13279d0",
+        "tables_used": [
+          "configs/ablations/radius_weak_or_learned.yaml"
+        ]
+      }
+    },
+    {
+      "id": "ablation_source",
+      "label": "ablation source",
+      "path": "src/hypertagging/models/ablation.py",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "0ad7fa6408454798219529378a0b0553d321b8bc910c46f4550c87b83f487e6b",
+        "tables_used": [
+          "src/hypertagging/models/ablation.py"
+        ]
+      }
+    },
+    {
+      "id": "architecture_document",
+      "label": "architecture document",
+      "path": "docs/hyperbolic_level_autoregressive_reconstruction.md",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "29cd22a5ff905c10e12a1ab6fca2d5a289296d4113e53d5b7775c7a255e23487",
+        "tables_used": [
+          "docs/hyperbolic_level_autoregressive_reconstruction.md"
+        ]
+      }
+    },
+    {
+      "id": "capacity_small_candidate",
+      "label": "capacity small candidate",
+      "path": "artifacts/experiment_readiness/production_1m_20260812/train_035k/capacity.small_candidate.complete_only.json",
+      "query": {
+        "description": "allowed_reduced_metadata input verified by SHA-256.",
+        "engine": "repository",
+        "id": "64aa8488a3c1c64c1f68034527bfdac5b10546c27a7569777498df248bf45895",
+        "tables_used": [
+          "artifacts/experiment_readiness/production_1m_20260812/train_035k/capacity.small_candidate.complete_only.json"
+        ]
+      }
+    },
+    {
+      "id": "current_status",
+      "label": "current status",
+      "path": "docs/audits/current_status.md",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "32b53769632e63aa0fefbc261d35d3cb8d4d12ac29baedcb6c0d614924bdf66e",
+        "tables_used": [
+          "docs/audits/current_status.md"
+        ]
+      }
+    },
+    {
+      "id": "curriculum_stage_1",
+      "label": "curriculum stage 1",
+      "path": "configs/ablations/pretrain_stage1_topology_parent_anticollapse.yaml",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "72812b9ebec4fe9a45677a357f96f4c8e3d6fcbd6e634773b1c5610328d6fa3b",
+        "tables_used": [
+          "configs/ablations/pretrain_stage1_topology_parent_anticollapse.yaml"
+        ]
+      }
+    },
+    {
+      "id": "curriculum_stage_2",
+      "label": "curriculum stage 2",
+      "path": "configs/ablations/pretrain_stage2_distance_radius.yaml",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "9fb72d02c490ef5c166b6dc73aa0d5aeb8bca43b2b0894c6e0adc4d9337090ea",
+        "tables_used": [
+          "configs/ablations/pretrain_stage2_distance_radius.yaml"
+        ]
+      }
+    },
+    {
+      "id": "curriculum_stage_3",
+      "label": "curriculum stage 3",
+      "path": "configs/ablations/pretrain_stage3_channel.yaml",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "df10221ebe4fec56ab0999c0fcb82e33c1316c15b154dd3b042d254a1a68fb42",
+        "tables_used": [
+          "configs/ablations/pretrain_stage3_channel.yaml"
+        ]
+      }
+    },
+    {
+      "id": "curriculum_stage_4",
+      "label": "curriculum stage 4",
+      "path": "configs/ablations/pretrain_stage4_candidate_hard_negative.yaml",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "3dd7026095e77a127ddb1dcac86120e90d35509f2f760b2dc3723bfaa201c105",
+        "tables_used": [
+          "configs/ablations/pretrain_stage4_candidate_hard_negative.yaml"
+        ]
+      }
+    },
+    {
+      "id": "diagnostic_metrics",
+      "label": "diagnostic metrics",
+      "path": "artifacts/runs/pretrain-035k-small-candidate-diag4-0c5e054/20260812/15745941/metrics.jsonl",
+      "query": {
+        "description": "allowed_reduced_metadata input verified by SHA-256.",
+        "engine": "repository",
+        "id": "83587a0341719e47641f190c7b400788d80c01aa4443d3cc7d2cf6b1365c6e94",
+        "tables_used": [
+          "artifacts/runs/pretrain-035k-small-candidate-diag4-0c5e054/20260812/15745941/metrics.jsonl"
+        ]
+      }
+    },
+    {
+      "id": "diagnostic_receipt",
+      "label": "diagnostic receipt",
+      "path": "artifacts/slurm/jobs/15745941/attempt-00/receipt.json",
+      "query": {
+        "description": "allowed_reduced_metadata input verified by SHA-256.",
+        "engine": "repository",
+        "id": "3b75c861ae263e12af71491146e433a4092f8a0be58fa43d26f36b0d64564698",
+        "tables_used": [
+          "artifacts/slurm/jobs/15745941/attempt-00/receipt.json"
+        ]
+      }
+    },
+    {
+      "id": "diagnostic_telemetry",
+      "label": "diagnostic telemetry",
+      "path": "artifacts/slurm/jobs/15745941/attempt-00/gpu-telemetry.jsonl",
+      "query": {
+        "description": "allowed_reduced_metadata input verified by SHA-256.",
+        "engine": "repository",
+        "id": "7388ef866ee4f12d801ee19da4c23ba2ad635dc1c4429bea9ecf2d21f1baf4bc",
+        "tables_used": [
+          "artifacts/slurm/jobs/15745941/attempt-00/gpu-telemetry.jsonl"
+        ]
+      }
+    },
+    {
+      "id": "diagnostic_telemetry_summary",
+      "label": "diagnostic telemetry summary",
+      "path": "artifacts/slurm/jobs/15745941/attempt-00/gpu-telemetry-summary.json",
+      "query": {
+        "description": "allowed_reduced_metadata input verified by SHA-256.",
+        "engine": "repository",
+        "id": "7c276d380f647307953524bf85132bc499269ebe1bb4404731d7d093bc0f8b9f",
+        "tables_used": [
+          "artifacts/slurm/jobs/15745941/attempt-00/gpu-telemetry-summary.json"
+        ]
+      }
+    },
+    {
+      "id": "inventory",
+      "label": "inventory",
+      "path": "configs/training_selection/production_1m_20260812/inventory.json",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "e115242f496705056ddb727313008a4fb878e4d57d86e540a6138765a1d5d577",
+        "tables_used": [
+          "configs/training_selection/production_1m_20260812/inventory.json"
+        ]
+      }
+    },
+    {
+      "id": "model_config_source",
+      "label": "model config source",
+      "path": "src/hypertagging/training/model_config.py",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "a17e481e1300eab3f12a343f302a2a5e77af4181f6b3b33f6c4c716dd970e340",
+        "tables_used": [
+          "src/hypertagging/training/model_config.py"
+        ]
+      }
+    },
+    {
+      "id": "model_source",
+      "label": "model source",
+      "path": "src/hypertagging/models/level_autoregressive.py",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "fe907162b1a90a2229f6297e71c13259df93f21d86d04b7c80a2dc881e322542",
+        "tables_used": [
+          "src/hypertagging/models/level_autoregressive.py"
+        ]
+      }
+    },
+    {
+      "id": "no_submit_contract",
+      "label": "no submit contract",
+      "path": "artifacts/experiment_readiness/production_1m_20260812/slurm/scientific-v100-small-candidate-final-no-submit.job-contract.json",
+      "query": {
+        "description": "allowed_reduced_metadata input verified by SHA-256.",
+        "engine": "repository",
+        "id": "d5982816f9b2d3452bc08d16bf6d157224a0ae331b91104322bde82dade76ecc",
+        "tables_used": [
+          "artifacts/experiment_readiness/production_1m_20260812/slurm/scientific-v100-small-candidate-final-no-submit.job-contract.json"
+        ]
+      }
+    },
+    {
+      "id": "pretrain_diagnostic_config",
+      "label": "pretrain diagnostic config",
+      "path": "configs/slurm/pretrain_diagnostic_small_candidate.yaml",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "7aed075ba59ef2735de2d5a034a1c6d21e790ab7c60acd8870cdf61a4a411fc5",
+        "tables_used": [
+          "configs/slurm/pretrain_diagnostic_small_candidate.yaml"
+        ]
+      }
+    },
+    {
+      "id": "pretrain_scientific_config",
+      "label": "pretrain scientific config",
+      "path": "configs/slurm/pretrain_035k_scientific.yaml",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "c49ccc87a396332d90f2d22599b5d91690e8e4e0b3d4eb31d7da772b2cc0c510",
+        "tables_used": [
+          "configs/slurm/pretrain_035k_scientific.yaml"
+        ]
+      }
+    },
+    {
+      "id": "pretrain_source",
+      "label": "pretrain source",
+      "path": "src/hypertagging/training/pretrain_trainer.py",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "eaaeb41ce851d9308e6441558ca53e2e23d2dc1e284682a0598c8c1ad6e97bc3",
+        "tables_used": [
+          "src/hypertagging/training/pretrain_trainer.py"
+        ]
+      }
+    },
+    {
+      "id": "reconstruction_config",
+      "label": "reconstruction config",
+      "path": "configs/level_reconstruction.yaml",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "771d32acef098bc7e59cc4e4759d9c2b6a0b1655adf94f01511695816d2c07ed",
+        "tables_used": [
+          "configs/level_reconstruction.yaml"
+        ]
+      }
+    },
+    {
+      "id": "selection_summary",
+      "label": "selection summary",
+      "path": "configs/training_selection/production_1m_20260812/summary.json",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "d1af01506a8bdd03128aa691dfd7d673e49756d9b991c1f65bcc93503466ffe6",
+        "tables_used": [
+          "configs/training_selection/production_1m_20260812/summary.json"
+        ]
+      }
+    },
+    {
+      "id": "small_candidate_config",
+      "label": "small candidate config",
+      "path": "configs/model_presets/small_candidate.yaml",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "9d6951a65faa5f2ec0829a733540b2e19e86f2c07a18e377858ba20a4001a453",
+        "tables_used": [
+          "configs/model_presets/small_candidate.yaml"
+        ]
+      }
+    },
+    {
+      "id": "training_plan",
+      "label": "training plan",
+      "path": "docs/training_execution_plan_20260812.md",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "83adbaa1e297dcf7f7fb7981ed6f2e5c355085c8bc3f71f9a915cd8b299a4c5b",
+        "tables_used": [
+          "docs/training_execution_plan_20260812.md"
+        ]
+      }
+    },
+    {
+      "id": "training_readiness",
+      "label": "training readiness",
+      "path": "configs/training_selection/production_1m_20260812/training_readiness.json",
+      "query": {
+        "description": "tracked_repo input verified by SHA-256.",
+        "engine": "repository",
+        "id": "ef812f5e82a7efae442e861bded21bce5399cd3ab1370650c60d4e520a1f4e24",
+        "tables_used": [
+          "configs/training_selection/production_1m_20260812/training_readiness.json"
+        ]
+      }
+    }
+  ],
+  "surface": "report"
+}
