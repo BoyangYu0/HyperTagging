@@ -40,6 +40,7 @@ allowed_post_audit_commits:
   - 6aa6a9f027f532d6bff1510a9e04424c11a037be
   - bcbb2504c530d55851207d610cf7f9a1190a22f4
   - 6ebf2ce2c8cdb7e701b07c4d0a9fdc4c9aff82e6
+  - c5dee97c2485f003a86583c7b275433aa3dca5b4
 audit_tool_version: hypertagging-audit-integrity-v4
 verification_commands:
   - /data/dust/user/boyangyu/uv_env/bin/python -m pytest -q
