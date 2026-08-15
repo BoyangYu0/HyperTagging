@@ -1341,6 +1341,7 @@ def _single_event_batch(
 _NODE_BATCH_FIELDS = {
     "common_features", "common_availability", "track_features",
     "track_availability", "cluster_features", "cluster_availability",
+    "klm_features", "klm_availability",
     "composite_features", "composite_availability",
     "daughter_input_pid_histogram", "daughter_truth_pid_histogram",
     "daughter_pid_histogram", "daughter_input_pid_histogram_available",
@@ -1357,7 +1358,10 @@ _NODE_BATCH_FIELDS = {
     "partial_missing_daughters", "contracted_intermediate",
     "valid_reconstruction_target", "truth_root_distance",
     "full_event_max_level", "current_pid_probabilities", "current_pid_tokens",
-    "current_pid_available",
+    "current_pid_available", "daughter_input_pid_source_ids",
+    "daughter_truth_pid_source_ids", "model_input_source_ids",
+    "truth_supervision_source_ids", "depth_from_retained_root",
+    "distance_to_nearest_retained_root",
 }
 _PAIR_BATCH_FIELDS = {
     "daughter_adjacency", "source_conflict_matrix", "lca_depth",
@@ -1393,7 +1397,12 @@ def _collate_context_batches(
             output[key] = combined
         elif key in _NODE_BATCH_FIELDS:
             combined = values[0].new_zeros((len(values), max_nodes, *values[0].shape[2:]))
-            if key in {"parent_ids", "level_ids", "node_ids", "reco_ids", "source_node_ids", "copied_from"}:
+            if key in {
+                "parent_ids", "level_ids", "node_ids", "reco_ids",
+                "source_node_ids", "copied_from", "daughter_input_pid_source_ids",
+                "daughter_truth_pid_source_ids", "model_input_source_ids",
+                "truth_supervision_source_ids",
+            }:
                 combined.fill_(-1)
             for index, value in enumerate(values):
                 combined[index, : value.shape[1]] = value[0]
