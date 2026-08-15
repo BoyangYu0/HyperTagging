@@ -32,7 +32,7 @@ REQUIRED_PROBE = {
     "freeze_pretrained_encoder_steps": 100,
     "freeze_leaf_pid_head_steps": 100,
     "transfer_leaf_pid_head": True,
-    "model_preset": "production_baseline",
+    "model_preset": "small_candidate",
     "max_cardinality": 16,
     "max_cardinality_by_level": [[1, 16], [2, 16], [3, 16]],
     "target_policy": "complete_only",
