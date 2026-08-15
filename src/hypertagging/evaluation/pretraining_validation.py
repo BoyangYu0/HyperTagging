@@ -246,8 +246,14 @@ def evaluate_pretraining_checkpoint(
     expected_checkpoint_sha256: str,
     expected_source_git_sha: str,
     expected_checkpoint_step: int = 3282,
+    require_selected_minimum: bool = True,
 ) -> dict[str, Any]:
-    """Evaluate exactly 2,000 validation-role events without training mutation."""
+    """Evaluate exactly 2,000 validation-role events without training mutation.
+
+    Scientific best-checkpoint evaluation keeps ``require_selected_minimum=True``.
+    Explicit checkpoint-comparison studies may set it to ``False`` while retaining
+    every cohort, integrity, finiteness, and sealed-test guard in this function.
+    """
 
     checkpoint_path = Path(checkpoint).resolve(strict=True)
     data_path = Path(data).resolve(strict=True)
@@ -280,7 +286,7 @@ def evaluate_pretraining_checkpoint(
             "checkpoint step differs from the scientifically selected step"
         )
     reason = payload.get("training_state", {}).get("checkpoint_selection_reason", {})
-    if (
+    if require_selected_minimum and (
         reason.get("metric_name") != "validation_full_training_objective"
         or reason.get("mode") != "min"
         or reason.get("reason") != "new_principal_configured_checkpoint"
@@ -368,6 +374,7 @@ def evaluate_pretraining_checkpoint(
             "step": int(payload["step"]),
             "git_commit": payload.get("git_commit"),
             "selection_reason": reason,
+            "selected_minimum_required": bool(require_selected_minimum),
         },
         "source": {
             "git_sha": current_source_sha,

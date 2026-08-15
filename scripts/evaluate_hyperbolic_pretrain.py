@@ -25,6 +25,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--device", choices=("cpu", "cuda"), required=True)
     parser.add_argument("--expected-checkpoint-sha256", required=True)
     parser.add_argument("--expected-source-git-sha", required=True)
+    parser.add_argument("--expected-checkpoint-step", type=int, default=3282)
+    parser.add_argument(
+        "--allow-comparison-checkpoint",
+        action="store_true",
+        help="Permit a hash-bound non-best checkpoint while retaining read-only validation guards.",
+    )
     return parser.parse_args(argv)
 
 
@@ -38,12 +44,17 @@ def main(argv: list[str] | None = None) -> int:
         device=args.device,
         expected_checkpoint_sha256=args.expected_checkpoint_sha256,
         expected_source_git_sha=args.expected_source_git_sha,
+        expected_checkpoint_step=args.expected_checkpoint_step,
+        require_selected_minimum=not args.allow_comparison_checkpoint,
     )
     print(
         json.dumps(
             {
                 "status": result["status"],
                 "checkpoint_step": result["checkpoint"]["step"],
+                "selected_minimum_required": result["checkpoint"][
+                    "selected_minimum_required"
+                ],
                 "validation_events": result["metrics"]["validation_events"],
                 "output": str(args.output.resolve()),
             },
