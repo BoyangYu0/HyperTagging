@@ -1048,7 +1048,9 @@ def train_hyperbolic_pretraining(
                         diagnostic["active_denominator_tree_distance"].detach().cpu()
                     ),
                     "radius": float(diagnostic["active_denominator_radius"].detach().cpu()),
-                    "channel": float(diagnostic["channel_active_anchors"].detach().cpu()),
+                    "channel": float(
+                        diagnostic["channel_loss_support_terms"].detach().cpu()
+                    ),
                     "variance": float(
                         diagnostic["active_denominator_variance"].detach().cpu()
                     ),

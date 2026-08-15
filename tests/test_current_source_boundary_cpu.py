@@ -512,6 +512,7 @@ def test_full_revised_production_config_activates_modules_and_objectives():
         "active_denominator_covariance",
         "parent_ranking_accuracy_denominator",
         "channel_active_anchors",
+        "channel_loss_support_terms",
     ):
         assert float(loss.diagnostics[name]) > 0, name
     leaf_mask = batch["node_mask"] & (batch["level_ids"] == 0)

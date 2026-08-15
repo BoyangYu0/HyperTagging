@@ -737,6 +737,7 @@ def cross_event_channel_metric_loss(
             "channel_negative_pairs": zero,
             "channel_active_anchors": zero,
             "channel_total_anchors": valid_indices.numel() + zero,
+            "channel_loss_support_terms": zero,
         }
     embedding = F.normalize(flat_embeddings[valid_indices], dim=-1)
     selected_full = full_ids[valid_indices]
@@ -826,6 +827,10 @@ def cross_event_channel_metric_loss(
         if current_pairs.any()
         else zero
     )
+    loss_support_terms = (
+        current_pairs.sum().to(similarity.dtype) / 2
+        + active_anchor.sum().to(similarity.dtype)
+    )
     loss = contrastive + structured_regression_weight * structured_regression
     return loss, {
         "channel_positive_pairs": positives.sum().to(similarity.dtype) / 2,
@@ -833,6 +838,7 @@ def cross_event_channel_metric_loss(
         "channel_active_anchors": active_anchor.sum().to(similarity.dtype),
         "channel_total_anchors": similarity.new_tensor(similarity.shape[0]),
         "channel_structured_regression": structured_regression,
+        "channel_loss_support_terms": loss_support_terms,
     }
 
 

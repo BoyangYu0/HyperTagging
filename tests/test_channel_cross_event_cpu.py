@@ -92,6 +92,27 @@ def test_structured_cross_event_similarity_is_trainable_without_exact_id_match()
     assert embedding.grad is not None and torch.isfinite(embedding.grad).all()
 
 
+def test_structured_regression_pairs_are_channel_loss_support_without_positives():
+    embedding = torch.randn(1, 2, 8, requires_grad=True)
+    mask = torch.ones(1, 2, dtype=torch.bool)
+    counts = torch.zeros(1, 2, 41)
+    counts[0, 0, 3] = 1
+    counts[0, 1, 9] = 1
+    loss, diagnostics = cross_event_channel_metric_loss(
+        embedding,
+        mask,
+        torch.tensor([[101, 202]]),
+        reconstructable_channel_ids=torch.tensor([[301, 402]]),
+        branch_count_arrays=counts,
+    )
+    loss.backward()
+    assert diagnostics["channel_positive_pairs"] == 0
+    assert diagnostics["channel_active_anchors"] == 0
+    assert diagnostics["channel_loss_support_terms"] == 1
+    assert loss > 0
+    assert embedding.grad is not None and torch.isfinite(embedding.grad).all()
+
+
 def test_channel_memory_bank_has_resume_stable_state_shape():
     bank = ChannelMemoryBank(capacity=3, embedding_dim=4)
     bank.enqueue(
