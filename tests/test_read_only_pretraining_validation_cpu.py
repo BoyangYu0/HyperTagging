@@ -42,6 +42,7 @@ class _Model(torch.nn.Module):
     def __init__(self):
         super().__init__()
         self.weight = torch.nn.Parameter(torch.tensor([1.0]))
+        self.register_buffer("scalar_count", torch.zeros((), dtype=torch.long))
 
 
 def _payload():
@@ -150,6 +151,14 @@ def test_read_only_validation_rejects_train_role_fallback():
             dataset_index=Path("index.json"),
             device=torch.device("cpu"),
         )
+
+
+def test_model_state_digest_supports_scalar_integer_buffers():
+    model = _Model()
+    before = evaluation._state_digest(model.state_dict())
+    model.scalar_count.add_(1)
+    after = evaluation._state_digest(model.state_dict())
+    assert before != after
 
 
 def test_slurm_contract_is_exact_and_bootstraps_without_torch(monkeypatch, tmp_path):

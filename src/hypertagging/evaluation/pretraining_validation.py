@@ -67,7 +67,9 @@ def _state_digest(state: dict[str, torch.Tensor]) -> str:
         digest.update(name.encode("utf-8"))
         digest.update(str(value.dtype).encode("ascii"))
         digest.update(json.dumps(list(value.shape), separators=(",", ":")).encode())
-        digest.update(value.view(torch.uint8).numpy().tobytes())
+        # Flatten first because PyTorch cannot reinterpret a scalar tensor as
+        # bytes when the source and target element sizes differ.
+        digest.update(value.reshape(-1).view(torch.uint8).numpy().tobytes())
     return digest.hexdigest()
 
 
