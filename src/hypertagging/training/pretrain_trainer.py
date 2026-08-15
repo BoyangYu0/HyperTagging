@@ -152,6 +152,7 @@ class PretrainConfig:
     variance_weight: float = 0.1
     covariance_weight: float = 0.01
     leaf_pid_weight: float = 1.0
+    leaf_pid_phase_weights: tuple[float, ...] = ()
     corruption_class_weight: float = 0.1
     candidate_correctness_weight: float = 0.1
     hard_negative_weight: float = 0.1
@@ -419,6 +420,15 @@ def train_hyperbolic_pretraining(
         )
     if config.pilot_objective_violation_action not in {"warn", "fail"}:
         raise ValueError("pilot objective violation action must be warn or fail")
+    if config.leaf_pid_phase_weights and len(config.leaf_pid_phase_weights) != len(
+        DEFAULT_PRETRAINING_PHASES
+    ):
+        raise ValueError("leaf PID phase weights must match the curriculum phases")
+    if any(
+        not math.isfinite(weight) or weight < 0
+        for weight in config.leaf_pid_phase_weights
+    ):
+        raise ValueError("leaf PID phase weights must be finite and non-negative")
     seed_everything(config.seed)
     if config.resume and config.num_workers > 0:
         raise ValueError("exact streaming resume currently requires num_workers=0")
@@ -763,6 +773,9 @@ def train_hyperbolic_pretraining(
         )
         phase_entry = previous_phase_index != phase_index
         phase = phase_schedule.phases[phase_index]
+        leaf_pid_training_weight = _leaf_pid_training_weight(
+            config, phase_index=phase_index
+        )
         stage = phase.view
         final_phase_entered |= phase_index == len(phase_schedule.phases) - 1
         curriculum = build_curriculum_batch(
@@ -910,7 +923,9 @@ def train_hyperbolic_pretraining(
             enabled = set(phase.objectives)
             loss = (
                 loss_output.total
-                + config.leaf_pid_weight * leaf_pid_loss * float("leaf_pid" in enabled)
+                + leaf_pid_training_weight
+                * leaf_pid_loss
+                * float("leaf_pid" in enabled)
                 + config.corruption_class_weight * corruption_loss
                 * float("corruption" in enabled)
                 + config.candidate_correctness_weight * correctness_loss
@@ -1029,7 +1044,7 @@ def train_hyperbolic_pretraining(
                     "channel": component_weights["channel"],
                     "variance": component_weights["var"],
                     "covariance": component_weights["cov"],
-                    "leaf_pid": config.leaf_pid_weight
+                    "leaf_pid": leaf_pid_training_weight
                     * float("leaf_pid" in active_objectives),
                     "corruption_class": config.corruption_class_weight
                     * float("corruption" in active_objectives),
@@ -1191,6 +1206,7 @@ def train_hyperbolic_pretraining(
             "hard_negative_loss": float(hard_negative_loss.detach().cpu()),
             "hard_negative_count": float(curriculum.hard_negative_pairs.shape[0]),
             "learning_rate": float(optimizer.param_groups[0]["lr"]),
+            "leaf_pid_training_weight": float(leaf_pid_training_weight),
             "amp_dtype": config.amp_dtype if amp_dtype is not None else "float32",
             "grad_scaler_enabled": float(scaler.is_enabled()),
             "grad_scaler_scale": float(scaler.get_scale()),
@@ -1835,6 +1851,16 @@ def _pretraining_weights(
             name: value * float(name in active) for name, value in weights.items()
         }
     return weights
+
+
+def _leaf_pid_training_weight(
+    config: PretrainConfig,
+    *,
+    phase_index: int,
+) -> float:
+    if config.leaf_pid_phase_weights:
+        return float(config.leaf_pid_phase_weights[phase_index])
+    return float(config.leaf_pid_weight)
 
 
 @torch.no_grad()

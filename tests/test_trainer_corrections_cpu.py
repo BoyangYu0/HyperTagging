@@ -37,6 +37,7 @@ from hypertagging.training.pretraining_curriculum import (
 from hypertagging.training.pretrain_trainer import (
     PretrainConfig,
     _allow_empty_channel_memory_expansion,
+    _leaf_pid_training_weight,
     _nonfinite_gradient_report,
     _objective_diagnostics_due,
     _resolve_phase_schedule,
@@ -97,6 +98,54 @@ def test_empty_channel_memory_expansion_requires_exact_channel_phase_boundary():
             schedule,
             {**payload, "step": 2189},
         )
+
+
+def test_leaf_pid_phase_weights_preserve_early_training_and_taper_late_phases():
+    config = PretrainConfig(
+        data="unused",
+        output_dir="unused",
+        leaf_pid_weight=1.0,
+        leaf_pid_phase_weights=(1.0, 1.0, 0.5, 0.5),
+    )
+    assert [
+        _leaf_pid_training_weight(config, phase_index=index) for index in range(4)
+    ] == [1.0, 1.0, 0.5, 0.5]
+    fallback = PretrainConfig(
+        data="unused", output_dir="unused", leaf_pid_weight=0.75
+    )
+    assert _leaf_pid_training_weight(fallback, phase_index=3) == 0.75
+
+
+def test_late_leaf_pid_weight_has_margin_for_measured_h100_dominance():
+    objectives = {"lca": torch.tensor(0.47), "leaf_pid": torch.tensor(0.74)}
+    denominators = {"lca": 1.0, "leaf_pid": 1.0}
+    gradients = {
+        "gradient_norms": {
+            "shared_encoder": {"lca": 1.0, "leaf_pid": 20.1182},
+            "tree_projection": {"lca": 1.0, "leaf_pid": 1.0},
+            "hyperbolic_projection": {"lca": 1.0, "leaf_pid": 1.0},
+        }
+    }
+    with pytest.raises(RuntimeError, match="leaf_pid/lca=20.1182"):
+        objective_preflight_report(
+            objectives,
+            {"lca": 1.0, "leaf_pid": 1.0},
+            denominators,
+            gradients,
+            dominance_ratio=20.0,
+            action="fail",
+        )
+    report = objective_preflight_report(
+        objectives,
+        {"lca": 1.0, "leaf_pid": 0.5},
+        denominators,
+        gradients,
+        dominance_ratio=20.0,
+        action="fail",
+    )
+    assert report["pass"]
+    assert report["weighted_dominance_ratio"] == pytest.approx(10.0591)
+    assert report["dominance_threshold"] / report["weighted_dominance_ratio"] > 1.98
 
 
 def test_scientific_short_curriculum_is_rejected_and_legacy_is_named():
@@ -555,6 +604,7 @@ def test_corrected_scientific_configs_and_small_candidate_contract():
     assert h100_rerun["objective_dominance_ratio"] == 20.0
     assert h100_rerun["objective_weighted_loss_tolerance"] == 1e-7
     assert h100_rerun["channel_memory_size"] == 4096
+    assert h100_rerun["leaf_pid_phase_weights"] == [1.0, 1.0, 0.5, 0.5]
     rerun_schedule = learning_rate_schedule_contract(
         total_steps=h100_rerun["lr_schedule_total_steps"],
         warmup_fraction=h100_rerun["warmup_fraction"],
@@ -578,6 +628,7 @@ def test_corrected_scientific_configs_and_small_candidate_contract():
         "objective_weighted_loss_tolerance",
         "pilot_objective_violation_action",
         "validation_events",
+        "leaf_pid_phase_weights",
     ):
         assert getattr(parsed_rerun, name) == h100_rerun[name]
     assert reconstruction["max_validation_events"] == 2000

@@ -34,6 +34,10 @@ def _int_tuple(value: str):
     return tuple(int(item) for item in value.split(",") if item)
 
 
+def _float_tuple(value: str):
+    return tuple(float(item) for item in value.split(",") if item)
+
+
 def _string_tuple(value: str):
     return tuple(item for item in value.split(",") if item)
 
@@ -132,6 +136,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--variance-weight", type=float, default=0.1)
     parser.add_argument("--covariance-weight", type=float, default=0.01)
     parser.add_argument("--leaf-pid-weight", type=float, default=1.0)
+    parser.add_argument("--leaf-pid-phase-weights", type=_float_tuple, default=())
     parser.add_argument("--corruption-class-weight", type=float, default=0.1)
     parser.add_argument("--candidate-correctness-weight", type=float, default=0.1)
     parser.add_argument("--hard-negative-weight", type=float, default=0.1)
@@ -235,6 +240,7 @@ def main(argv: list[str] | None = None) -> int:
                 variance_weight=args.variance_weight,
                 covariance_weight=args.covariance_weight,
                 leaf_pid_weight=args.leaf_pid_weight,
+                leaf_pid_phase_weights=tuple(args.leaf_pid_phase_weights),
                 corruption_class_weight=args.corruption_class_weight,
                 candidate_correctness_weight=args.candidate_correctness_weight,
                 hard_negative_weight=args.hard_negative_weight,
