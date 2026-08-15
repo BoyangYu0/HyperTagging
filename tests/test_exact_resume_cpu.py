@@ -4,6 +4,7 @@ import numpy as np
 import torch
 
 from hypertagging.training.checkpointing import (
+    _restore_random_states,
     restore_training_checkpoint,
     save_training_checkpoint,
 )
@@ -40,6 +41,42 @@ def test_checkpoint_restores_scaler_and_all_rng_states(tmp_path):
     assert actual[0] == expected[0]
     assert actual[1] == expected[1]
     torch.testing.assert_close(actual[2], expected[2])
+
+
+def test_rng_restore_moves_device_mapped_state_back_to_cpu(monkeypatch):
+    class MappedState:
+        def __init__(self, value):
+            self.value = value
+            self.cpu_calls = 0
+
+        def cpu(self):
+            self.cpu_calls += 1
+            return self.value
+
+    torch_state = MappedState(torch.get_rng_state())
+    cuda_state = MappedState(torch.get_rng_state())
+    restored = {}
+    monkeypatch.setattr(torch, "set_rng_state", lambda state: restored.setdefault("torch", state))
+    monkeypatch.setattr(torch.cuda, "is_available", lambda: True)
+    monkeypatch.setattr(
+        torch.cuda,
+        "set_rng_state_all",
+        lambda states: restored.setdefault("cuda", states),
+    )
+
+    _restore_random_states(
+        {
+            "python": random.getstate(),
+            "numpy": np.random.get_state(),
+            "torch": torch_state,
+            "cuda": [cuda_state],
+        }
+    )
+
+    assert torch_state.cpu_calls == 1
+    assert cuda_state.cpu_calls == 1
+    assert restored["torch"].device.type == "cpu"
+    assert restored["cuda"][0].device.type == "cpu"
 
 
 def test_one_step_checkpoint_resume_matches_uninterrupted_two_steps(tmp_path):

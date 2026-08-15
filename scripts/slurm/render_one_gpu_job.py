@@ -159,6 +159,11 @@ def main() -> int:
     parser.add_argument("--local-admission-receipt", type=Path)
     parser.add_argument("--local-completion-receipt", type=Path)
     parser.add_argument(
+        "--resume-checkpoint",
+        type=Path,
+        help="repository-local checkpoint for the initial scientific attempt",
+    )
+    parser.add_argument(
         "--blocked-no-submit",
         action="store_true",
         help=(
@@ -206,6 +211,17 @@ def main() -> int:
             completion_receipt,
             admission_path=admission_receipt,
         )
+    resume_checkpoint: Path | None = None
+    if args.resume_checkpoint is not None:
+        resume_checkpoint = _resolve(args.resume_checkpoint).resolve()
+        try:
+            resume_checkpoint.relative_to(ROOT.resolve())
+        except ValueError as error:
+            raise RuntimeError("resume checkpoint must remain inside the repository") from error
+        if not resume_checkpoint.is_file() or resume_checkpoint.suffix != ".pt":
+            raise RuntimeError("resume checkpoint must be an existing .pt file")
+        if args.mode != "scientific":
+            raise RuntimeError("resume checkpoint rendering is scientific-only")
 
     expected_sha = args.expected_git_sha or _run(("git", "rev-parse", "HEAD")).strip()
     if args.mode == "scientific":
@@ -273,6 +289,8 @@ def main() -> int:
         hashed_inputs.extend(
             (_hashed_input(admission_receipt), _hashed_input(completion_receipt))
         )
+    if resume_checkpoint is not None:
+        hashed_inputs.append(_hashed_input(resume_checkpoint))
     contract: dict[str, Any] = {
         "contract_version": "hypertagging-slurm-one-gpu-contract-v2",
         "mode": args.mode,
@@ -306,6 +324,11 @@ def main() -> int:
         ),
         "local_completion_receipt": (
             str(completion_receipt) if completion_receipt is not None else None
+        ),
+        "resume_checkpoint": (
+            str(resume_checkpoint.relative_to(ROOT.resolve()))
+            if resume_checkpoint is not None
+            else None
         ),
         "submission_performed": False,
         "submission_authorized": not args.blocked_no_submit,

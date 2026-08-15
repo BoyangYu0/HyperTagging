@@ -11,6 +11,7 @@ from hypertagging.models.hyperbolic import (
     radius,
 )
 from hypertagging.preprocessing.schema_v2 import NODE_KINDS
+from hypertagging.reconstruction.kinematics import stable_invariant_mass
 from hypertagging.utils.tensor_contractions import boolean_matmul
 
 
@@ -83,8 +84,7 @@ def _physical_features(
     same_level = (level_ids[:, :, None] == level_ids[:, None, :]).float()
     charge_sum = charge[:, :, None] + charge[:, None, :]
     pair_p4 = p4[:, :, None, :] + p4[:, None, :, :]
-    mass2 = pair_p4[..., 3] ** 2 - (pair_p4[..., :3] ** 2).sum(dim=-1)
-    mass = torch.sqrt(torch.clamp(mass2, min=0.0))
+    mass = stable_invariant_mass(pair_p4)
     momentum_dot = torch.einsum("bif,bjf->bij", p4[..., :3], p4[..., :3])
     same_kind = (
         torch.zeros_like(level_diff)

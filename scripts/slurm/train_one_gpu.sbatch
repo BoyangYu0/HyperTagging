@@ -163,6 +163,12 @@ if [[ "${SLURM_RESTART_COUNT:-0}" -gt 0 ]]; then
     exit 77
   }
   resume_args=(--resume "${signal_checkpoint}")
+elif [[ -n "${resume_checkpoint}" ]]; then
+  [[ -f "${resume_checkpoint}" ]] || {
+    echo "initial resume checkpoint is missing" >&2
+    exit 77
+  }
+  resume_args=(--resume "${resume_checkpoint}")
 fi
 
 cleanup_runtime

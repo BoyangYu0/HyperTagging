@@ -20,6 +20,7 @@ from scripts.slurm.verify_job_contract import (  # noqa: E402
     verify_rendered_contract_hash,
 )
 from scripts.slurm import render_one_gpu_job  # noqa: E402
+from scripts.slurm import verify_job_contract as contract_verifier  # noqa: E402
 from scripts.slurm.verify_execution_receipt import verify_receipt  # noqa: E402
 
 
@@ -114,6 +115,8 @@ def test_slurm_templates_forbid_generic_gres_and_submission_side_effects():
     assert 'dirname "${BASH_SOURCE[0]}"' not in sbatch
     assert 'artifacts/slurm/jobs/${SLURM_JOB_ID}' in sbatch
     assert 'finalize_execution_receipt.py' in sbatch
+    assert 'elif [[ -n "${resume_checkpoint}" ]]' in sbatch
+    assert 'resume_args=(--resume "${resume_checkpoint}")' in sbatch
     for ambient in (
         "HYPERTAGGING_GPU_ENV",
         "HYPERTAGGING_EXPECTED_GRES",
@@ -155,7 +158,9 @@ def test_prologue_contract_and_input_hashes_fail_on_mutation(tmp_path):
         verify_rendered_contract_hash(contract)
 
 
-def test_runtime_values_are_contract_bound_and_shell_constrained():
+def test_runtime_values_are_contract_bound_and_shell_constrained(
+    monkeypatch, tmp_path
+):
     contract = {
         "gpu_environment": "/frozen/gpu-env",
         "gres": "gpu:v100:1",
@@ -165,6 +170,13 @@ def test_runtime_values_are_contract_bound_and_shell_constrained():
         "max_restarts": 2,
     }
     assert validated_runtime_values(contract)["seed"] == "20260812"
+    assert validated_runtime_values(contract)["resume_checkpoint"] == ""
+    checkpoint = tmp_path / "checkpoint-step-1094.pt"
+    checkpoint.write_bytes(b"trusted checkpoint fixture")
+    monkeypatch.setattr(contract_verifier, "ROOT", tmp_path)
+    assert validated_runtime_values(
+        {**contract, "resume_checkpoint": checkpoint.name}
+    )["resume_checkpoint"] == checkpoint.name
     for field, mutation in (
         ("gres", "gpu:1"),
         ("train_config", "../outside.yaml"),
@@ -174,6 +186,10 @@ def test_runtime_values_are_contract_bound_and_shell_constrained():
     ):
         with pytest.raises(RuntimeError):
             validated_runtime_values({**contract, field: mutation})
+    with pytest.raises(RuntimeError):
+        validated_runtime_values(
+            {**contract, "resume_checkpoint": "../outside.pt"}
+        )
 
 
 def test_renderer_only_writes_contract_and_prints_exact_sanitized_command(

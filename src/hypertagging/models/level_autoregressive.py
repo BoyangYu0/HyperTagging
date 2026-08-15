@@ -24,6 +24,7 @@ from hypertagging.preprocessing.schema_v3 import (
 from hypertagging.preprocessing.schema_v4 import KLM_FEATURE_NAMES
 from hypertagging.preprocessing.pid_filter import PDG_TOKENS, validate_pid_tokens
 from hypertagging.reconstruction.pid_state import rebuild_runtime_pid_state
+from hypertagging.reconstruction.kinematics import stable_invariant_mass
 from hypertagging.data.streaming import RuntimeFeatureNormalizer
 
 
@@ -528,8 +529,7 @@ def _runtime_reconstruction_batch(
     output["daughter_pid_histogram_available"] = runtime.daughter_histogram_available
     common = output["common_features"].clone()
     common[..., :4] = runtime.p4
-    mass2 = runtime.p4[..., 3].square() - runtime.p4[..., :3].square().sum(dim=-1)
-    common[..., 4] = mass2.clamp_min(0).sqrt()
+    common[..., 4] = stable_invariant_mass(runtime.p4)
     output["common_features"] = common
     composite = output["composite_features"].clone()
     if composite.shape[-1] >= 4:

@@ -140,6 +140,15 @@ def validated_runtime_values(contract: dict[str, object]) -> dict[str, str]:
     max_restarts = int(contract["max_restarts"])
     if seed < 0 or not 0 <= max_restarts <= 10:
         raise RuntimeError("contract seed/restart bounds are invalid")
+    resume_value = contract.get("resume_checkpoint")
+    resume_checkpoint = ""
+    if resume_value is not None:
+        resume_checkpoint = _safe_relative_path(
+            resume_value, field="resume_checkpoint"
+        )
+        resume_path = ROOT / resume_checkpoint
+        if resume_path.suffix != ".pt" or not resume_path.is_file():
+            raise RuntimeError("contract resume checkpoint is not an existing .pt file")
     return {
         "gpu_environment": gpu_environment,
         "gres": str(contract["gres"]),
@@ -147,6 +156,7 @@ def validated_runtime_values(contract: dict[str, object]) -> dict[str, str]:
         "experiment": experiment,
         "seed": str(seed),
         "max_restarts": str(max_restarts),
+        "resume_checkpoint": resume_checkpoint,
     }
 
 
@@ -206,6 +216,7 @@ def write_shell_runtime(values: dict[str, str], destination: Path) -> None:
         "experiment": "experiment",
         "seed": "seed",
         "max_restarts": "max_restarts",
+        "resume_checkpoint": "resume_checkpoint",
     }
     lines = [
         f"readonly {names[key]}={shlex.quote(value)}" for key, value in values.items()

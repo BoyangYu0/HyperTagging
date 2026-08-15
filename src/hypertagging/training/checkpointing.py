@@ -165,13 +165,20 @@ def restore_training_checkpoint(
     if scaler is not None and payload.get("scaler_state_dict") is not None:
         scaler.load_state_dict(payload["scaler_state_dict"])
     if restore_random_states and payload.get("random_states"):
-        states = payload["random_states"]
-        random.setstate(states["python"])
-        np.random.set_state(states["numpy"])
-        torch.set_rng_state(states["torch"])
-        if torch.cuda.is_available() and states.get("cuda"):
-            torch.cuda.set_rng_state_all(states["cuda"])
+        _restore_random_states(payload["random_states"])
     return payload
+
+
+def _restore_random_states(states: dict[str, Any]) -> None:
+    """Restore checkpoint RNG state after a potentially device-mapped load."""
+
+    random.setstate(states["python"])
+    np.random.set_state(states["numpy"])
+    # RNG state APIs require CPU ByteTensors. A checkpoint loaded with
+    # map_location="cuda" otherwise maps these metadata tensors to CUDA too.
+    torch.set_rng_state(states["torch"].cpu())
+    if torch.cuda.is_available() and states.get("cuda"):
+        torch.cuda.set_rng_state_all([state.cpu() for state in states["cuda"]])
 
 
 def _git_commit() -> str:

@@ -47,6 +47,38 @@ CANONICAL_TRACK_HYPOTHESIS = "pion"
 CANONICAL_TRACK_TOKEN = TOKENIZE_DICT[211]
 
 
+def stable_invariant_mass(p4: torch.Tensor) -> torch.Tensor:
+    """Return a finite-gradient invariant mass in explicit FP32.
+
+    ``sqrt(clamp(E**2 - |p|**2, 0))`` has an infinite derivative on the
+    light cone.  In a differentiable runtime reconstruction that turns a
+    finite zero mass into ``0 * inf`` NaNs even when a later availability mask
+    supplies zero upstream gradient.  Values whose positive mass squared is
+    no larger than the FP32 subtraction resolution are numerically
+    indistinguishable from the light cone, so project them to exactly zero
+    before taking the square root.  Resolved timelike values retain the exact
+    physical formula and gradient.
+    """
+
+    if p4.shape[-1] != 4:
+        raise ValueError("four-momentum must end in dimension 4")
+    with torch.autocast(device_type=p4.device.type, enabled=False):
+        p4_32 = p4.float()
+        momentum2 = p4_32[..., :3].square().sum(dim=-1)
+        energy2 = p4_32[..., 3].square()
+        mass2 = energy2 - momentum2
+        resolution = torch.finfo(p4_32.dtype).eps * (energy2 + momentum2)
+        resolved = mass2 > resolution
+        # Never evaluate sqrt at zero: masked branches can still receive a
+        # zero upstream gradient, and 0 * sqrt'(0) is NaN in autograd.
+        safe_mass2 = torch.where(resolved, mass2, torch.ones_like(mass2))
+        return torch.where(
+            resolved,
+            torch.sqrt(safe_mass2),
+            torch.zeros_like(safe_mass2),
+        )
+
+
 def _as_p3(p3: torch.Tensor) -> torch.Tensor:
     if p3.shape[-1] != 3:
         raise ValueError(f"track p3 must end in dimension 3, got {tuple(p3.shape)}")
