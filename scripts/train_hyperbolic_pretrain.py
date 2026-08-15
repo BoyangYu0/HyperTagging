@@ -54,12 +54,18 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--tiny", action="store_true")
     parser.add_argument("--max-steps", type=int, default=2)
+    parser.add_argument("--learning-rate", type=float, default=1e-3)
+    parser.add_argument("--weight-decay", type=float, default=1e-4)
+    parser.add_argument("--gradient-clip", type=float, default=1.0)
     parser.add_argument("--lr-schedule-total-steps", type=int, default=None)
     parser.add_argument("--warmup-fraction", type=float, default=0.05)
     parser.add_argument("--warmup-steps", type=int, default=None)
     parser.add_argument("--max-warmup-steps", type=int, default=10_000)
     parser.add_argument("--min-lr-ratio", type=float, default=0.0)
     parser.add_argument("--amp-init-scale", type=float, default=4096.0)
+    parser.add_argument(
+        "--amp-dtype", choices=("float16", "bfloat16"), default="float16"
+    )
     parser.add_argument("--max-events", type=int, default=None)
     parser.add_argument("--batch-size", type=int, default=2)
     parser.add_argument("--num-workers", type=int, default=0)
@@ -111,6 +117,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--pilot-objective-preflight", action="store_true")
     parser.add_argument("--objective-dominance-ratio", type=float, default=20.0)
     parser.add_argument(
+        "--objective-weighted-loss-tolerance", type=float, default=1e-7
+    )
+    parser.add_argument(
         "--pilot-objective-violation-action",
         choices=("warn", "fail"),
         default="fail",
@@ -140,6 +149,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--tangent-variance-target", type=float, default=None)
     parser.add_argument("--hyper-projection-init-scale", type=float, default=None)
     parser.add_argument("--tangent-scale-mode", choices=("fixed", "learned_bounded"), default=None)
+    parser.add_argument("--max-tangent-norm", type=float, default=None)
     parser.add_argument("--n-heads", type=int, default=None)
     parser.add_argument("--n-context-layers", type=int, default=None)
     parser.add_argument("--ffn-dim", type=int, default=None)
@@ -170,12 +180,16 @@ def main(argv: list[str] | None = None) -> int:
                 output_dir=args.output_dir,
                 device=args.device,
                 max_steps=args.max_steps,
+                learning_rate=args.learning_rate,
+                weight_decay=args.weight_decay,
+                gradient_clip=args.gradient_clip,
                 lr_schedule_total_steps=args.lr_schedule_total_steps,
                 warmup_fraction=args.warmup_fraction,
                 warmup_steps=args.warmup_steps,
                 max_warmup_steps=args.max_warmup_steps,
                 min_lr_ratio=args.min_lr_ratio,
                 amp_init_scale=args.amp_init_scale,
+                amp_dtype=args.amp_dtype,
                 batch_size=args.batch_size,
                 max_events=args.max_events,
                 seed=args.seed,
@@ -207,6 +221,9 @@ def main(argv: list[str] | None = None) -> int:
                 ),
                 pilot_objective_preflight=args.pilot_objective_preflight,
                 objective_dominance_ratio=args.objective_dominance_ratio,
+                objective_weighted_loss_tolerance=(
+                    args.objective_weighted_loss_tolerance
+                ),
                 pilot_objective_violation_action=(
                     args.pilot_objective_violation_action
                 ),
@@ -239,6 +256,7 @@ def main(argv: list[str] | None = None) -> int:
                 tangent_variance_target=args.tangent_variance_target,
                 hyper_projection_init_scale=args.hyper_projection_init_scale,
                 tangent_scale_mode=args.tangent_scale_mode,
+                max_tangent_norm=args.max_tangent_norm,
                 n_heads=args.n_heads,
                 n_context_layers=args.n_context_layers,
                 ffn_dim=args.ffn_dim,

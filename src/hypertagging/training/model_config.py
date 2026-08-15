@@ -23,6 +23,7 @@ class ModelArchitecture:
     tangent_variance_target: float = 0.1
     hyper_projection_init_scale: float = 0.05
     tangent_scale_mode: str = "fixed"
+    max_tangent_norm: float | None = None
     hyperbolic_scale_contract_version: str = "dimension-aware-tangent-radius-v2"
     tree_geometry_contract_version: str = "retained-tree-exact-edges-v2"
     tree_distance_contract_version: str = "exact-edge-log-fixed-scale-v2"

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import json
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -11,7 +12,13 @@ from hypertagging.losses.hyperbolic_pretraining import (
     covariance_regularization,
     variance_regularization,
 )
-from hypertagging.models.hyperbolic import distance, expmap0, logmap0, radius
+from hypertagging.models.hyperbolic import (
+    bound_tangent_norm,
+    distance,
+    expmap0,
+    logmap0,
+    radius,
+)
 from hypertagging.models.relations import HyperbolicRelationBias
 from hypertagging.training.checkpoint_selection import rollout_checkpoint_eligibility
 from hypertagging.training.fixed_validation import select_validation_events
@@ -29,8 +36,12 @@ from hypertagging.training.pretraining_curriculum import (
 )
 from hypertagging.training.pretrain_trainer import (
     PretrainConfig,
+    _nonfinite_gradient_report,
+    _objective_diagnostics_due,
     _resolve_phase_schedule,
+    _resolve_amp_dtype,
     _tensor_gradient_norm,
+    objective_preflight_report,
 )
 from hypertagging.training.reconstruction_trainer import (
     _require_scientific_capacity_report,
@@ -176,7 +187,294 @@ def test_gradient_norm_uses_fp64_accumulation_and_amp_scale_is_serialized():
     assert config.amp_init_scale == 4096.0
 
 
+def test_h100_bfloat16_policy_is_explicit_and_scaler_safe_without_gpu_access():
+    assert _resolve_amp_dtype(
+        device=torch.device("cpu"), mixed_precision=True, amp_dtype="bfloat16"
+    ) is None
+    assert _resolve_amp_dtype(
+        device=torch.device("cuda"),
+        mixed_precision=True,
+        amp_dtype="bfloat16",
+        cuda_bf16_supported=True,
+    ) is torch.bfloat16
+    assert _resolve_amp_dtype(
+        device=torch.device("cuda"),
+        mixed_precision=True,
+        amp_dtype="float16",
+    ) is torch.float16
+    with pytest.raises(RuntimeError, match="not supported"):
+        _resolve_amp_dtype(
+            device=torch.device("cuda"),
+            mixed_precision=True,
+            amp_dtype="bfloat16",
+            cuda_bf16_supported=False,
+        )
+
+
+def test_smooth_tangent_bound_prevents_boundary_saturation_with_finite_gradient():
+    source = (torch.randn(8, 32) * 20.0).requires_grad_()
+    with torch.autocast("cpu", dtype=torch.bfloat16):
+        bounded = bound_tangent_norm(source, maximum=1.5)
+        mapped = expmap0(bounded)
+        loss = logmap0(mapped).square().mean()
+    assert bounded.dtype == mapped.dtype == torch.float32
+    assert float(torch.linalg.vector_norm(bounded, dim=-1).max().detach()) == pytest.approx(
+        1.5, abs=5e-7
+    )
+    assert float(torch.linalg.vector_norm(mapped, dim=-1).max().detach()) < 0.95
+    loss.backward()
+    assert source.grad is not None
+    assert torch.isfinite(source.grad).all()
+
+
+def test_nonfinite_gradient_report_names_first_parameter_and_counts_values():
+    model = torch.nn.Sequential(torch.nn.Linear(2, 2), torch.nn.Linear(2, 1))
+    parameters = list(model.parameters())
+    parameters[0].grad = torch.tensor([[float("nan"), 1.0], [float("inf"), 2.0]])
+    parameters[1].grad = torch.tensor([float("-inf"), 0.0])
+    report = _nonfinite_gradient_report(model.named_parameters())
+    assert report["first_offending_parameter"] == "0.weight"
+    assert report["offending_parameter_count"] == 2
+    assert report["nonfinite_elements"] == 3
+    assert report["offending_parameters"][0]["nan_elements"] == 1
+    assert report["offending_parameters"][0]["positive_inf_elements"] == 1
+
+
+def test_objective_preflight_runs_at_each_active_phase_entry():
+    common = {
+        "enabled": True,
+        "start_step": 0,
+        "max_steps": 4376,
+        "cadence": 547,
+        "preflight_enabled": True,
+        "preflight_retry_pending": False,
+    }
+    assert _objective_diagnostics_due(
+        completed_step=1095,
+        phase_entry=True,
+        **common,
+    )
+    assert not _objective_diagnostics_due(
+        completed_step=1096,
+        phase_entry=False,
+        **common,
+    )
+    assert _objective_diagnostics_due(
+        completed_step=1641,
+        phase_entry=False,
+        **common,
+    )
+    assert not _objective_diagnostics_due(
+        completed_step=1095,
+        phase_entry=True,
+        **{**common, "preflight_enabled": False},
+    )
+    assert _objective_diagnostics_due(
+        completed_step=1096,
+        phase_entry=False,
+        **{**common, "preflight_retry_pending": True},
+    )
+
+
+def test_rerun_radius_weight_satisfies_shared_encoder_dominance_gate():
+    names = ("lca", "tree_distance", "radius", "covariance", "leaf_pid")
+    objectives = {name: torch.tensor(1.0) for name in names}
+    denominators = {name: 1.0 for name in names}
+    denominators["covariance"] = 2.0
+    gradient_report = {
+        "gradient_norms": {
+            "shared_encoder": {
+                "lca": 0.6073,
+                "tree_distance": 1.6169,
+                "radius": 69.4427,
+                "covariance": 0.0549,
+                "leaf_pid": 1.1201,
+            }
+        }
+    }
+    weights = {
+        "lca": 1.0,
+        "tree_distance": 1.0,
+        "radius": 0.02,
+        "covariance": 0.01,
+        "leaf_pid": 1.0,
+    }
+    report = objective_preflight_report(
+        objectives,
+        weights,
+        denominators,
+        gradient_report,
+        dominance_ratio=20.0,
+        action="fail",
+    )
+    assert report["pass"]
+    assert report["weighted_dominance_ratio"] == pytest.approx(1.6169 / 0.6073)
+    assert report["objectives"]["radius"][
+        "weighted_shared_encoder_gradient_norm"
+    ] == pytest.approx(69.4427 * 0.02)
+    with pytest.raises(RuntimeError, match="radius/lca"):
+        objective_preflight_report(
+            objectives,
+            {**weights, "radius": 0.2},
+            denominators,
+            gradient_report,
+            dominance_ratio=20.0,
+            action="fail",
+        )
+
+
+@pytest.mark.parametrize(
+    ("name", "denominator"),
+    [
+        ("lca", 0.0),
+        ("parent", 0.0),
+        ("tree_distance", 0.0),
+        ("radius", 0.0),
+        ("channel", 0.0),
+        ("variance", 1.0),
+        ("covariance", 1.0),
+        ("leaf_pid", 0.0),
+        ("corruption_class", 0.0),
+        ("candidate_correctness", 0.0),
+        ("hard_negative", 0.0),
+    ],
+)
+def test_objective_preflight_skips_active_objectives_without_batch_support(
+    name: str, denominator: float
+):
+    report = objective_preflight_report(
+        {name: torch.tensor(0.0)},
+        {name: 1.0},
+        {name: denominator},
+        {
+            "gradient_norms": {
+                group: {name: 0.0}
+                for group in (
+                    "shared_encoder",
+                    "tree_projection",
+                    "hyperbolic_projection",
+                )
+            }
+        },
+        action="fail",
+    )
+    row = report["objectives"][name]
+    assert report["pass"]
+    assert report["evaluation_status"] == "passed_with_skips"
+    assert report["not_evaluable_objectives"] == {
+        name: "insufficient_support"
+    }
+    assert row["support_status"] == "insufficient_support"
+    assert row["has_sufficient_support"] is False
+    assert row["evaluation_status"] == "not_evaluable"
+    assert row["skipped"] is True
+    assert row["skip_reason"] == "insufficient_support"
+    json.dumps(report, allow_nan=False)
+
+
+def test_objective_preflight_fails_supported_nonzero_loss_with_zero_shared_gradient():
+    with pytest.raises(RuntimeError, match="channel:zero_gradient"):
+        objective_preflight_report(
+            {"channel": torch.tensor(0.75)},
+            {"channel": 0.2},
+            {"channel": 3.0},
+            {
+                "gradient_norms": {
+                    "shared_encoder": {"channel": 0.0},
+                    "tree_projection": {"channel": 2.0},
+                    "hyperbolic_projection": {"channel": 1.0},
+                }
+            },
+            action="fail",
+        )
+
+
+@pytest.mark.parametrize(
+    ("raw_loss", "weight"),
+    [(2.8675262910837773e-6, 0.01), (1.0, 1e-7)],
+)
+def test_objective_preflight_accepts_supported_loss_satisfied_within_tolerance(
+    raw_loss: float,
+    weight: float,
+):
+    report = objective_preflight_report(
+        {"covariance": torch.tensor(raw_loss, dtype=torch.float64)},
+        {"covariance": weight},
+        {"covariance": 16.0},
+        {
+            "gradient_norms": {
+                "shared_encoder": {"covariance": 0.0},
+                "tree_projection": {"covariance": 0.0},
+                "hyperbolic_projection": {"covariance": 0.0},
+            }
+        },
+        weighted_loss_tolerance=1e-7,
+        action="fail",
+    )
+    row = report["objectives"]["covariance"]
+    assert report["pass"]
+    assert report["weighted_loss_tolerance"] == 1e-7
+    assert report["satisfied_within_tolerance_objectives"] == ["covariance"]
+    assert row["evaluation_status"] == "satisfied_within_tolerance"
+    assert row["weighted_loss_tolerance"] == 1e-7
+    assert row["meaningful_nonzero_loss"] is False
+    assert row["shared_encoder_gradient_norm"] == 0.0
+    json.dumps(report, allow_nan=False)
+
+
+def test_objective_preflight_rejects_supported_loss_above_tolerance_with_zero_gradient():
+    with pytest.raises(RuntimeError, match="covariance:zero_gradient"):
+        objective_preflight_report(
+            {"covariance": torch.tensor(1.0001e-5, dtype=torch.float64)},
+            {"covariance": 0.01},
+            {"covariance": 16.0},
+            {
+                "gradient_norms": {
+                    "shared_encoder": {"covariance": 0.0},
+                    "tree_projection": {"covariance": 0.0},
+                    "hyperbolic_projection": {"covariance": 0.0},
+                }
+            },
+            weighted_loss_tolerance=1e-7,
+            action="fail",
+        )
+
+
+@pytest.mark.parametrize(
+    ("loss", "denominator", "shared_gradient", "violation"),
+    [
+        (1.0, 0.0, 0.0, "loss_without_support"),
+        (6e-8, 0.0, 0.0, "loss_without_support"),
+        (0.0, 0.0, 1.0, "gradient_without_support"),
+        (1.0, -1.0, 1.0, "invalid_denominator"),
+        (1.0, 1.0, float("nan"), "non_finite"),
+    ],
+)
+def test_objective_preflight_rejects_inconsistent_or_broken_supported_objective(
+    loss: float,
+    denominator: float,
+    shared_gradient: float,
+    violation: str,
+):
+    with pytest.raises(RuntimeError, match=violation):
+        objective_preflight_report(
+            {"hard_negative": torch.tensor(loss)},
+            {"hard_negative": 0.1},
+            {"hard_negative": denominator},
+            {
+                "gradient_norms": {
+                    "shared_encoder": {"hard_negative": shared_gradient},
+                    "tree_projection": {"hard_negative": 0.0},
+                    "hyperbolic_projection": {"hard_negative": 0.0},
+                }
+            },
+            action="fail",
+        )
+
+
 def test_corrected_scientific_configs_and_small_candidate_contract():
+    from scripts.train_hyperbolic_pretrain import parse_args
+
     pilot = yaml.safe_load(
         Path("configs/hyperbolic_pretrain_pilot.yaml").read_text(encoding="utf-8")
     )
@@ -196,6 +494,11 @@ def test_corrected_scientific_configs_and_small_candidate_contract():
             encoding="utf-8"
         )
     )
+    h100_rerun = yaml.safe_load(
+        Path("configs/slurm/pretrain_035k_h100_rerun_20260815.yaml").read_text(
+            encoding="utf-8"
+        )
+    )
     assert pilot["model_preset"] == "gpu_debug"
     assert pilot["objective_dominance_ratio"] == 20.0
     assert pilot["pilot_objective_violation_action"] == "fail"
@@ -211,6 +514,48 @@ def test_corrected_scientific_configs_and_small_candidate_contract():
     assert small_candidate_diagnostic["curriculum_phase_steps"] == [1, 1, 1, 1]
     assert small_candidate_diagnostic["validation_batches"] == 1
     assert small_candidate_diagnostic["validation_events"] <= 32
+    assert h100_rerun["amp_dtype"] == "bfloat16"
+    assert h100_rerun["max_tangent_norm"] == 1.5
+    assert h100_rerun["batch_size"] == 16
+    assert h100_rerun["max_steps"] * h100_rerun["batch_size"] == 70_016
+    assert sum(h100_rerun["curriculum_phase_steps"]) == h100_rerun["max_steps"]
+    assert h100_rerun["validate_every"] == h100_rerun["checkpoint_every"] == 547
+    assert h100_rerun["validation_events"] == 512
+    assert h100_rerun["num_workers"] == 0
+    assert h100_rerun["learning_rate"] == 5e-4
+    assert h100_rerun["warmup_fraction"] == 0.1
+    assert h100_rerun["min_lr_ratio"] == 0.1
+    assert h100_rerun["gradient_clip"] == 0.5
+    assert h100_rerun["radius_depth_weight"] == 0.02
+    assert h100_rerun["pilot_objective_preflight"] is True
+    assert h100_rerun["pilot_objective_violation_action"] == "fail"
+    assert h100_rerun["objective_dominance_ratio"] == 20.0
+    assert h100_rerun["objective_weighted_loss_tolerance"] == 1e-7
+    rerun_schedule = learning_rate_schedule_contract(
+        total_steps=h100_rerun["lr_schedule_total_steps"],
+        warmup_fraction=h100_rerun["warmup_fraction"],
+        max_warmup_steps=h100_rerun["max_warmup_steps"],
+        min_lr_ratio=h100_rerun["min_lr_ratio"],
+        base_lrs=[h100_rerun["learning_rate"]],
+    )
+    assert rerun_schedule["warmup_steps"] == 438
+    assert rerun_schedule["warmup_steps"] * h100_rerun["batch_size"] == 7_008
+    assert rerun_schedule["min_lr_ratio"] * h100_rerun["learning_rate"] == 5e-5
+    parsed_rerun = parse_args(
+        ["--config", "configs/slurm/pretrain_035k_h100_rerun_20260815.yaml"]
+    )
+    for name in (
+        "learning_rate",
+        "warmup_fraction",
+        "min_lr_ratio",
+        "gradient_clip",
+        "radius_depth_weight",
+        "pilot_objective_preflight",
+        "objective_weighted_loss_tolerance",
+        "pilot_objective_violation_action",
+        "validation_events",
+    ):
+        assert getattr(parsed_rerun, name) == h100_rerun[name]
     assert reconstruction["max_validation_events"] == 2000
     assert reconstruction["rollout_validation_events"] == 1000
     assert reconstruction["best_metric"] == "predicted_edge_f1"

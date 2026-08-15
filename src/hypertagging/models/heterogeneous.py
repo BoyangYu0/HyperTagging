@@ -9,6 +9,7 @@ from torch import nn
 
 from hypertagging.models.hyperbolic import (
     BoundedTangentScale,
+    bound_tangent_norm,
     expmap0,
     initialize_hyper_projection,
 )
@@ -210,6 +211,7 @@ class HeterogeneousNodeEncoder(nn.Module):
         dropout: float = 0.0,
         hyper_projection_init_scale: float = 0.05,
         tangent_scale_mode: str = "fixed",
+        max_tangent_norm: float | None = None,
         hyperbolic_level_encoding: str = "learned_euclidean",
     ) -> None:
         super().__init__()
@@ -295,6 +297,9 @@ class HeterogeneousNodeEncoder(nn.Module):
             self.hyper_projection, output_std=hyper_projection_init_scale
         )
         self.tangent_scale = BoundedTangentScale(mode=tangent_scale_mode)
+        if max_tangent_norm is not None and max_tangent_norm <= 0:
+            raise ValueError("max_tangent_norm must be positive when supplied")
+        self.max_tangent_norm = max_tangent_norm
 
     def forward(
         self,
@@ -462,7 +467,10 @@ class HeterogeneousNodeEncoder(nn.Module):
             physical_attention_weights = None
         preliminary_tree = self.tree_head(h)
         preliminary_z = expmap0(
-            self.tangent_scale(self.hyper_projection(preliminary_tree)),
+            bound_tangent_norm(
+                self.tangent_scale(self.hyper_projection(preliminary_tree)),
+                maximum=self.max_tangent_norm,
+            ),
             curvature=self.curvature,
         )
         hyper_bias = self.hyperbolic_relation_bias(
@@ -483,7 +491,10 @@ class HeterogeneousNodeEncoder(nn.Module):
         reconstruction = self.reconstruction_head(h)
         channel = self.channel_head(h)
         z = expmap0(
-            self.tangent_scale(self.hyper_projection(tree)),
+            bound_tangent_norm(
+                self.tangent_scale(self.hyper_projection(tree)),
+                maximum=self.max_tangent_norm,
+            ),
             curvature=self.curvature,
         )
         z = z * batch["node_mask"].unsqueeze(-1)

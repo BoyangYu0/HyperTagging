@@ -202,21 +202,27 @@ def test_pid_ablation_yaml_reaches_typed_cli_config(filename: str, mode: str):
     assert args.pid_kinematics_mode == mode
 
 
-def test_pilot_objective_config_and_preflight_report_fail_on_inactive_objective():
+def test_pilot_objective_config_and_preflight_report_skips_unsupported_objective():
     config = yaml.safe_load(Path("configs/hyperbolic_pretrain_pilot.yaml").read_text())
     assert config["objective_gradient_diagnostics"] is True
     assert config["objective_gradient_diagnostics_every"] == 1
     assert config["pilot_objective_preflight"] is True
     objectives = {"lca": torch.tensor(1.0), "channel": torch.tensor(0.0)}
     gradients = {"gradient_norms": {"shared_encoder": {"lca": 1.0, "channel": 0.0}}}
-    with pytest.raises(RuntimeError, match="channel"):
-        objective_preflight_report(
-            objectives,
-            {"lca": 1.0, "channel": 0.2},
-            {"lca": 4.0, "channel": 0.0},
-            gradients,
-            action="fail",
-        )
+    report = objective_preflight_report(
+        objectives,
+        {"lca": 1.0, "channel": 0.2},
+        {"lca": 4.0, "channel": 0.0},
+        gradients,
+        action="fail",
+    )
+    assert report["pass"]
+    assert report["evaluation_status"] == "passed_with_skips"
+    assert report["not_evaluable_objectives"] == {
+        "channel": "insufficient_support"
+    }
+    assert report["objectives"]["channel"]["evaluation_status"] == "not_evaluable"
+    assert report["objectives"]["channel"]["skipped"] is True
 
 
 def test_objective_preflight_checks_all_documented_projection_norms():
@@ -225,7 +231,7 @@ def test_objective_preflight_checks_all_documented_projection_norms():
     denominators = {"lca": 2.0}
     tree_only = {
         "gradient_norms": {
-            "shared_encoder": {"lca": 0.0},
+            "shared_encoder": {"lca": 1.0},
             "tree_projection": {"lca": 2.0},
             "hyperbolic_projection": {"lca": 0.0},
         }

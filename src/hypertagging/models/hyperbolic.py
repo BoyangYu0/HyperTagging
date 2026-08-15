@@ -78,6 +78,25 @@ def expmap0(v: torch.Tensor, *, curvature: float = 1.0, eps: float = 1e-8) -> to
         )
 
 
+def bound_tangent_norm(
+    tangent: torch.Tensor,
+    *,
+    maximum: float | None,
+    eps: float = 1e-8,
+) -> torch.Tensor:
+    """Smoothly bound tangent-vector norms while retaining radial gradients."""
+
+    if maximum is None:
+        return tangent
+    if not 0 < maximum:
+        raise ValueError("max_tangent_norm must be positive when supplied")
+    with torch.autocast(device_type=tangent.device.type, enabled=False):
+        tangent32 = tangent.float()
+        norm = torch.linalg.vector_norm(tangent32, dim=-1, keepdim=True)
+        bounded_norm = float(maximum) * torch.tanh(norm / float(maximum))
+        return tangent32 * bounded_norm / norm.clamp_min(eps)
+
+
 def logmap0(x: torch.Tensor, *, curvature: float = 1.0, eps: float = 1e-8) -> torch.Tensor:
     """Logarithmic map at the origin of the Poincare ball in explicit FP32."""
 
@@ -129,6 +148,7 @@ class HyperbolicNodeEncoder(nn.Module):
         curvature: float = 1.0,
         hyper_projection_init_scale: float = 0.05,
         tangent_scale_mode: str = "fixed",
+        max_tangent_norm: float | None = None,
     ) -> None:
         super().__init__()
         self.curvature = curvature
@@ -143,6 +163,7 @@ class HyperbolicNodeEncoder(nn.Module):
             self.hyper_projection, output_std=hyper_projection_init_scale
         )
         self.tangent_scale = BoundedTangentScale(mode=tangent_scale_mode)
+        self.max_tangent_norm = max_tangent_norm
 
     def forward(
         self,
@@ -157,7 +178,10 @@ class HyperbolicNodeEncoder(nn.Module):
         base = self.feature_projection(torch.cat([node_features, charge.unsqueeze(-1)], dim=-1))
         h = self.mlp(torch.cat([base, self.pid_embedding(pid_safe), self.level_embedding(level_safe)], dim=-1))
         z = expmap0(
-            self.tangent_scale(self.hyper_projection(h)),
+            bound_tangent_norm(
+                self.tangent_scale(self.hyper_projection(h)),
+                maximum=self.max_tangent_norm,
+            ),
             curvature=self.curvature,
         )
         return h, z

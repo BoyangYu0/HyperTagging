@@ -20,6 +20,10 @@ DIAGNOSTIC_CONFIGS = (
     "configs/slurm/pretrain_diagnostic.yaml",
     "configs/slurm/pretrain_diagnostic_small_candidate.yaml",
 )
+SCIENTIFIC_CONFIGS = (
+    "configs/slurm/pretrain_035k_scientific.yaml",
+    "configs/slurm/pretrain_035k_h100_rerun_20260815.yaml",
+)
 
 ACCELERATOR_PRIORITY = (
     "gpu:h200nvl:1",
@@ -145,6 +149,11 @@ def main() -> int:
         choices=DIAGNOSTIC_CONFIGS,
         default=DIAGNOSTIC_CONFIGS[0],
     )
+    parser.add_argument(
+        "--scientific-config",
+        choices=SCIENTIFIC_CONFIGS,
+        default=SCIENTIFIC_CONFIGS[0],
+    )
     parser.add_argument("--seed", type=int, default=20260812)
     parser.add_argument("--max-restarts", type=int, default=2)
     parser.add_argument("--local-admission-receipt", type=Path)
@@ -243,7 +252,7 @@ def main() -> int:
     config = (
         args.diagnostic_config
         if args.mode == "diagnostic"
-        else "configs/slurm/pretrain_035k_scientific.yaml"
+        else args.scientific_config
     )
     dataset_index = (
         "artifacts/experiment_readiness/production_1m_20260812/train_035k/"

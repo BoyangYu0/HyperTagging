@@ -40,6 +40,8 @@ def test_real_parquet_train_transfer_validate_and_resume(tmp_path):
         "hard_negative_weight",
         "radius_target_mode",
         "channel_pooling",
+        "amp_dtype",
+        "max_tangent_norm",
     ):
         assert name in checkpoint["config"]
     assert (tmp_path / "pretrain" / "best.pt").exists()
@@ -63,6 +65,20 @@ def test_real_parquet_train_transfer_validate_and_resume(tmp_path):
     assert "validation_loss_hard_negative" in pretrain.metrics
     assert "validation_relation_accuracy" in pretrain.metrics
     assert "validation_parent_ranking_accuracy" in pretrain.metrics
+    for name in (
+        "raw_gradient_norm",
+        "step_seconds",
+        "data_wait_seconds",
+        "events_per_second",
+        "active_nodes_per_second",
+        "process_peak_rss_bytes",
+        "validation_seconds",
+        "validation_event_views_per_second",
+        "validation_model_forwards",
+    ):
+        assert pretrain.metrics[name] >= 0
+    assert pretrain.metrics["amp_dtype"] == "float32"
+    assert pretrain.metrics["validation_model_forwards"] == 6
     reconstruction = train_level_reconstruction(
         ReconstructionConfig(
             data=str(data),

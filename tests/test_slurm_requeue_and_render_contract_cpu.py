@@ -327,6 +327,8 @@ def test_scientific_renderer_validates_binds_and_hashes_both_receipts(
             "a" * 40,
             "--expected-git-tag",
             "immutable-test-tag",
+            "--scientific-config",
+            "configs/slurm/pretrain_035k_h100_rerun_20260815.yaml",
             "--gpu-env",
             str(gpu_env),
             "--local-admission-receipt",
@@ -345,6 +347,9 @@ def test_scientific_renderer_validates_binds_and_hashes_both_receipts(
     }
     assert contract["local_admission_receipt"] == str(admission.resolve())
     assert contract["local_completion_receipt"] == str(completion.resolve())
+    assert contract["train_config"] == (
+        "configs/slurm/pretrain_035k_h100_rerun_20260815.yaml"
+    )
     receipt_inputs = {
         item["path"]: item["sha256"] for item in contract["hashed_inputs"]
     }

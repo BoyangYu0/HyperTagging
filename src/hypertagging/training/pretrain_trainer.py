@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass
 import json
 import math
 from pathlib import Path
+import resource
 import time
 from typing import Any
 import warnings
@@ -80,6 +81,7 @@ class PretrainConfig:
     max_warmup_steps: int = 10_000
     min_lr_ratio: float = 0.0
     amp_init_scale: float = 4096.0
+    amp_dtype: str = "float16"
     weight_decay: float = 1e-4
     gradient_clip: float = 1.0
     checkpoint_every: int = 100
@@ -129,6 +131,7 @@ class PretrainConfig:
     tangent_variance_target: float | None = None
     hyper_projection_init_scale: float | None = None
     tangent_scale_mode: str | None = None
+    max_tangent_norm: float | None = None
     radius_target_mode: str = "generation_height_radius"
     best_metric: str = "validation_full_training_objective"
     best_mode: str = "min"
@@ -139,6 +142,7 @@ class PretrainConfig:
     objective_gradient_diagnostics_every: int = 100
     pilot_objective_preflight: bool = False
     objective_dominance_ratio: float = 20.0
+    objective_weighted_loss_tolerance: float = 1e-7
     pilot_objective_violation_action: str = "fail"
     lca_relation_weight: float = 1.0
     parent_ranking_weight: float = 1.0
@@ -164,6 +168,31 @@ class TrainingResult:
     data_module: RealDataModule
 
 
+def _resolve_amp_dtype(
+    *,
+    device: torch.device,
+    mixed_precision: bool,
+    amp_dtype: str,
+    cuda_bf16_supported: bool | None = None,
+) -> torch.dtype | None:
+    """Resolve explicit CUDA autocast precision and fail closed on unsafe BF16."""
+
+    if amp_dtype not in {"float16", "bfloat16"}:
+        raise ValueError("amp_dtype must be float16 or bfloat16")
+    if device.type != "cuda" or not mixed_precision:
+        return None
+    if amp_dtype == "float16":
+        return torch.float16
+    supported = (
+        torch.cuda.is_bf16_supported()
+        if cuda_bf16_supported is None
+        else cuda_bf16_supported
+    )
+    if not supported:
+        raise RuntimeError("CUDA bfloat16 was requested but is not supported")
+    return torch.bfloat16
+
+
 class ContextualPretrainingModel(torch.nn.Module):
     def __init__(
         self,
@@ -182,6 +211,7 @@ class ContextualPretrainingModel(torch.nn.Module):
         channel_pooling: str = "mean_all",
         hyper_projection_init_scale: float = 0.05,
         tangent_scale_mode: str = "fixed",
+        max_tangent_norm: float | None = None,
         hyperbolic_level_encoding: str = "learned_euclidean",
     ) -> None:
         super().__init__()
@@ -198,6 +228,7 @@ class ContextualPretrainingModel(torch.nn.Module):
             use_hyperbolic_refinement=use_hyperbolic_relations,
             hyper_projection_init_scale=hyper_projection_init_scale,
             tangent_scale_mode=tangent_scale_mode,
+            max_tangent_norm=max_tangent_norm,
             hyperbolic_level_encoding=hyperbolic_level_encoding,
         )
         self.relation_head = TreeRelationHead(d_model)
@@ -346,6 +377,14 @@ def train_hyperbolic_pretraining(
         raise ValueError("log_every must be positive")
     if not math.isfinite(config.amp_init_scale) or config.amp_init_scale <= 0:
         raise ValueError("amp_init_scale must be finite and positive")
+    if not math.isfinite(config.gradient_clip) or config.gradient_clip <= 0:
+        raise ValueError("gradient_clip must be finite and positive")
+    if config.amp_dtype not in {"float16", "bfloat16"}:
+        raise ValueError("amp_dtype must be float16 or bfloat16")
+    if config.max_tangent_norm is not None and (
+        not math.isfinite(config.max_tangent_norm) or config.max_tangent_norm <= 0
+    ):
+        raise ValueError("max_tangent_norm must be finite and positive when supplied")
     if config.best_mode not in {"min", "max"}:
         raise ValueError("best_mode must be 'min' or 'max'")
     if config.best_metric not in {
@@ -371,6 +410,13 @@ def train_hyperbolic_pretraining(
         raise ValueError("pilot objective preflight requires gradient diagnostics")
     if config.objective_dominance_ratio <= 1:
         raise ValueError("objective dominance ratio must exceed one")
+    if (
+        not math.isfinite(config.objective_weighted_loss_tolerance)
+        or config.objective_weighted_loss_tolerance < 0
+    ):
+        raise ValueError(
+            "objective weighted loss tolerance must be finite and non-negative"
+        )
     if config.pilot_objective_violation_action not in {"warn", "fail"}:
         raise ValueError("pilot objective violation action must be warn or fail")
     seed_everything(config.seed)
@@ -423,6 +469,7 @@ def train_hyperbolic_pretraining(
         tangent_variance_target=config.tangent_variance_target,
         hyper_projection_init_scale=config.hyper_projection_init_scale,
         tangent_scale_mode=config.tangent_scale_mode,
+        max_tangent_norm=config.max_tangent_norm,
     )
     model = ContextualPretrainingModel(
         d_model=architecture.d_model,
@@ -439,6 +486,7 @@ def train_hyperbolic_pretraining(
         channel_pooling=config.channel_pooling,
         hyper_projection_init_scale=architecture.hyper_projection_init_scale,
         tangent_scale_mode=architecture.tangent_scale_mode,
+        max_tangent_norm=architecture.max_tangent_norm,
         hyperbolic_level_encoding=architecture.hyperbolic_level_encoding,
     ).to(device)
     model.set_runtime_feature_normalizer(
@@ -468,9 +516,14 @@ def train_hyperbolic_pretraining(
     scheduler.hypertagging_contract = lr_contract
     phase_schedule = _resolve_phase_schedule(config, resume_payload)
     model.curriculum_schedule_contract = phase_schedule.contract()
+    amp_dtype = _resolve_amp_dtype(
+        device=device,
+        mixed_precision=config.mixed_precision,
+        amp_dtype=config.amp_dtype,
+    )
     scaler = torch.amp.GradScaler(
         "cuda",
-        enabled=device.type == "cuda" and config.mixed_precision,
+        enabled=amp_dtype is torch.float16,
         init_scale=config.amp_init_scale,
     )
     start_step = 0
@@ -660,7 +713,10 @@ def train_hyperbolic_pretraining(
                 run_validation(pending_validation_step)
         except PendingValidationInterrupted:
             signal_controller.exit_after_checkpoint()
+    previous_phase_index: int | None = None
+    pending_preflight_objectives: set[str] = set()
     for step in range(start_step, config.max_steps):
+        step_started = time.perf_counter()
         if (
             phase_schedule.mode == "progressive"
             and (
@@ -675,6 +731,7 @@ def train_hyperbolic_pretraining(
             )
         ):
             break
+        data_wait_started = time.perf_counter()
         try:
             next_batch = next(batch_iterator)
         except StopIteration:
@@ -689,6 +746,8 @@ def train_hyperbolic_pretraining(
                 next_batch = next(batch_iterator)
             except StopIteration as error:
                 raise ValueError("training split produced no batches") from error
+        data_wait_seconds = time.perf_counter() - data_wait_started
+        batch_prepare_started = time.perf_counter()
         cursor.batch_index += 1
         cursor.events_consumed += int(next_batch["node_mask"].shape[0])
         batch = _to_device(next_batch, device)
@@ -696,6 +755,7 @@ def train_hyperbolic_pretraining(
         phase_index = phase_schedule.phase_index(
             step=step, events=phase_events_completed
         )
+        phase_entry = previous_phase_index != phase_index
         phase = phase_schedule.phases[phase_index]
         stage = phase.view
         final_phase_entered |= phase_index == len(phase_schedule.phases) - 1
@@ -707,9 +767,12 @@ def train_hyperbolic_pretraining(
             ),
         )
         optimizer.zero_grad(set_to_none=True)
+        batch_prepare_seconds = time.perf_counter() - batch_prepare_started
+        forward_started = time.perf_counter()
         with torch.autocast(
             device_type=device.type,
-            enabled=device.type == "cuda" and config.mixed_precision,
+            dtype=amp_dtype,
+            enabled=amp_dtype is not None,
         ):
             encoded, leaf_pid_logits, train_batch = model.encode_runtime(
                 curriculum.batch,
@@ -880,7 +943,7 @@ def train_hyperbolic_pretraining(
             or step == start_step
             or step + 1 == config.max_steps
         )
-        gradient_metrics: dict[str, float] = {}
+        gradient_metrics: dict[str, Any] = {}
         if should_log_gradients:
             hyper_parameters = tuple(model.encoder.hyper_projection.parameters())
             per_loss = {
@@ -908,13 +971,15 @@ def train_hyperbolic_pretraining(
                 ] = _gradient_cosine(
                     loss_gradients["depth"], loss_gradients["tree_distance"]
                 )
-        if (
-            config.objective_gradient_diagnostics
-            and (
-                (step + 1) % config.objective_gradient_diagnostics_every == 0
-                or step == start_step
-                or step + 1 == config.max_steps
-            )
+        if _objective_diagnostics_due(
+            enabled=config.objective_gradient_diagnostics,
+            completed_step=step + 1,
+            start_step=start_step,
+            max_steps=config.max_steps,
+            cadence=config.objective_gradient_diagnostics_every,
+            preflight_enabled=config.pilot_objective_preflight,
+            phase_entry=phase_entry,
+            preflight_retry_pending=bool(pending_preflight_objectives),
         ):
             objective_values = {
                 "lca": loss_output.components["lca"],
@@ -987,7 +1052,10 @@ def train_hyperbolic_pretraining(
                     "leaf_pid": float(
                         (
                             train_batch["node_mask"]
-                            & (train_batch["level_ids"] == 0)
+                            & (
+                                train_batch["leaf_kinematics_mode_ids"]
+                                == LEAF_MODE_TO_ID["raw_track_predicted_pid"]
+                            )
                             & train_batch["truth_pid_available"]
                         ).sum().detach().cpu()
                     ),
@@ -1001,22 +1069,47 @@ def train_hyperbolic_pretraining(
                     objective_denominators,
                     objective_report,
                     dominance_ratio=config.objective_dominance_ratio,
+                    weighted_loss_tolerance=(
+                        config.objective_weighted_loss_tolerance
+                    ),
                     action=config.pilot_objective_violation_action,
+                )
+                pending_preflight_objectives = set(
+                    preflight["not_evaluable_objectives"]
                 )
                 gradient_metrics["objective_preflight_pass"] = float(preflight["pass"])
                 gradient_metrics["objective_weighted_dominance_ratio"] = float(
                     preflight["weighted_dominance_ratio"]
                 )
+                gradient_metrics["objective_preflight_weighted_loss_tolerance"] = (
+                    preflight["weighted_loss_tolerance"]
+                )
                 gradient_metrics["objective_preflight_violation_count"] = float(
                     len(preflight["violations"])
                 )
+                gradient_metrics["objective_preflight_evaluation_status"] = (
+                    preflight["evaluation_status"]
+                )
+                gradient_metrics["objective_preflight_evaluated_count"] = float(
+                    len(preflight["evaluated_objectives"])
+                )
+                gradient_metrics["objective_preflight_not_evaluable_count"] = float(
+                    len(preflight["not_evaluable_objectives"])
+                )
+                gradient_metrics["objective_preflight_pending_objectives"] = sorted(
+                    pending_preflight_objectives
+                )
                 for objective_name, row in preflight["objectives"].items():
                     for field, value in row.items():
-                        gradient_metrics[
-                            f"objective_preflight_{objective_name}_{field}"
-                        ] = float(value)
+                        if isinstance(value, (bool, float, int, str)) or value is None:
+                            gradient_metrics[
+                                f"objective_preflight_{objective_name}_{field}"
+                            ] = value
+        forward_host_submit_seconds = time.perf_counter() - forward_started
+        backward_started = time.perf_counter()
         scaler.scale(loss).backward()
         scaler.unscale_(optimizer)
+        backward_host_submit_seconds = time.perf_counter() - backward_started
         if should_log_gradients:
             for name in (
                 "tree_head",
@@ -1029,15 +1122,59 @@ def train_hyperbolic_pretraining(
                 gradient_metrics[f"gradient_projection_{name}"] = (
                     _parameter_gradient_norm(module.parameters())
                 )
-        torch.nn.utils.clip_grad_norm_(
-            model.parameters(), config.gradient_clip, error_if_nonfinite=True
-        )
+        optimizer_started = time.perf_counter()
+        try:
+            raw_gradient_norm = torch.nn.utils.clip_grad_norm_(
+                model.parameters(), config.gradient_clip, error_if_nonfinite=True
+            )
+        except RuntimeError as error:
+            report = {
+                "event": "nonfinite_gradient",
+                "attempted_step": step + 1,
+                "completed_optimizer_steps": completed_steps,
+                "curriculum_phase": phase.name,
+                "stage": stage.value,
+                "amp_dtype": config.amp_dtype if amp_dtype is not None else "float32",
+                "grad_scaler_enabled": bool(scaler.is_enabled()),
+                "grad_scaler_scale": float(scaler.get_scale()),
+                "loss": float(loss.detach().float().cpu()),
+                "loss_components": {
+                    **{
+                        name: float(value.detach().float().cpu())
+                        for name, value in loss_output.components.items()
+                    },
+                    "leaf_pid": float(leaf_pid_loss.detach().float().cpu()),
+                    "corruption": float(corruption_loss.detach().float().cpu()),
+                    "candidate_correctness": float(
+                        correctness_loss.detach().float().cpu()
+                    ),
+                    "hard_negative": float(hard_negative_loss.detach().float().cpu()),
+                },
+                "parameter_gradients": _nonfinite_gradient_report(
+                    model.named_parameters()
+                ),
+            }
+            logger.log(**report)
+            _write_json_atomic(
+                output_dir / f"nonfinite-gradient-step-{step + 1}.json",
+                report,
+            )
+            raise RuntimeError(
+                f"non-finite gradient at attempted optimizer step {step + 1}; "
+                "wrote parameter diagnostics before aborting"
+            ) from error
+        gradient_metrics["raw_gradient_norm"] = float(raw_gradient_norm.cpu())
         scaler.step(optimizer)
         scaler.update()
         scheduler.step()
+        clip_and_optimizer_seconds = time.perf_counter() - optimizer_started
         phase_events_completed += int(next_batch["node_mask"].shape[0])
+        previous_phase_index = phase_index
         completed_steps = step + 1
         final_loss = float(loss.detach().cpu())
+        step_seconds = time.perf_counter() - step_started
+        batch_events = int(next_batch["node_mask"].shape[0])
+        batch_nodes = int(next_batch["node_mask"].sum())
         final_metrics = {
             "loss": final_loss,
             "leaf_pid_loss": float(leaf_pid_loss.detach().cpu()),
@@ -1046,6 +1183,20 @@ def train_hyperbolic_pretraining(
             "hard_negative_loss": float(hard_negative_loss.detach().cpu()),
             "hard_negative_count": float(curriculum.hard_negative_pairs.shape[0]),
             "learning_rate": float(optimizer.param_groups[0]["lr"]),
+            "amp_dtype": config.amp_dtype if amp_dtype is not None else "float32",
+            "grad_scaler_enabled": float(scaler.is_enabled()),
+            "grad_scaler_scale": float(scaler.get_scale()),
+            "batch_events": float(batch_events),
+            "batch_active_nodes": float(batch_nodes),
+            "data_wait_seconds": data_wait_seconds,
+            "batch_prepare_seconds": batch_prepare_seconds,
+            "forward_host_submit_seconds": forward_host_submit_seconds,
+            "backward_host_submit_seconds": backward_host_submit_seconds,
+            "clip_and_optimizer_seconds": clip_and_optimizer_seconds,
+            "step_seconds": step_seconds,
+            "events_per_second": batch_events / max(step_seconds, 1e-9),
+            "active_nodes_per_second": batch_nodes / max(step_seconds, 1e-9),
+            **_resource_metrics(device),
             "curriculum_phase_index": float(phase_index),
             "curriculum_phase_events_completed": float(phase_events_completed),
             "curriculum_final_phase_entered": float(final_phase_entered),
@@ -1287,7 +1438,13 @@ def _validate_pretraining(
         tangent_variance_target=config.tangent_variance_target,
         hyper_projection_init_scale=config.hyper_projection_init_scale,
         tangent_scale_mode=config.tangent_scale_mode,
+        max_tangent_norm=config.max_tangent_norm,
         hyperbolic_level_encoding=config.hyperbolic_level_encoding,
+    )
+    amp_dtype = _resolve_amp_dtype(
+        device=device,
+        mixed_precision=config.mixed_precision,
+        amp_dtype=config.amp_dtype,
     )
     split = "validation" if data_module.split_counts.get("validation", 0) else "train"
     if config.scientific_mode and split != "validation":
@@ -1363,11 +1520,16 @@ def _validate_pretraining(
                 config.truth_guided_structural_relation_inputs
             ),
         )
-        encoded, leaf_pid_logits, validation_batch = model.encode_runtime(
-            curriculum.batch,
-            attention_mask=curriculum.batch["curriculum_attention_mask"],
-        )
-        relation_logits = model.relation_head(encoded.tree_projection)
+        with torch.autocast(
+            device_type=device.type,
+            dtype=amp_dtype,
+            enabled=amp_dtype is not None,
+        ):
+            encoded, leaf_pid_logits, validation_batch = model.encode_runtime(
+                curriculum.batch,
+                attention_mask=curriculum.batch["curriculum_attention_mask"],
+            )
+            relation_logits = model.relation_head(encoded.tree_projection)
         targets, relation_mask = build_tree_relation_targets(
             parent_ids=validation_batch["parent_ids"],
             lca_depth=validation_batch["lca_depth"],
@@ -1508,24 +1670,33 @@ def _validate_pretraining(
         # Always evaluate the two scientifically distinct representation
         # views, even when a bounded validation loader contains fewer batches
         # than the training curriculum has stages.
-        for diagnostic_stage in (
-            PretrainingStage.FSP_ONLY,
-            PretrainingStage.TRUTH_GUIDED_MULTILEVEL,
-        ):
-            accuracy, denominator = _stage_relation_validation(
-                model,
-                batch,
-                stage=diagnostic_stage,
-                config=config,
-                seed=config.seed + 10_000 + evaluation_count,
-            )
-            diagnostic_prefix = f"validation_{diagnostic_stage.value}"
-            totals.setdefault(
-                f"{diagnostic_prefix}_relation_accuracy_separate", []
-            ).append(accuracy)
-            totals.setdefault(
-                f"{diagnostic_prefix}_relation_denominator_separate", []
-            ).append(denominator)
+        # These two deterministic views depend only on the raw batch, not on
+        # the outer validation view. Compute them once per batch instead of four
+        # identical times.
+        if view_index == 1:
+            for diagnostic_stage in (
+                PretrainingStage.FSP_ONLY,
+                PretrainingStage.TRUTH_GUIDED_MULTILEVEL,
+            ):
+                with torch.autocast(
+                    device_type=device.type,
+                    dtype=amp_dtype,
+                    enabled=amp_dtype is not None,
+                ):
+                    accuracy, denominator = _stage_relation_validation(
+                        model,
+                        batch,
+                        stage=diagnostic_stage,
+                        config=config,
+                        seed=config.seed + 10_000 + batch_index,
+                    )
+                diagnostic_prefix = f"validation_{diagnostic_stage.value}"
+                totals.setdefault(
+                    f"{diagnostic_prefix}_relation_accuracy_separate", []
+                ).append(accuracy)
+                totals.setdefault(
+                    f"{diagnostic_prefix}_relation_denominator_separate", []
+                ).append(denominator)
         totals.setdefault("validation_full_training_objective", []).append(
             float(full_objective)
         )
@@ -1623,6 +1794,14 @@ def _validate_pretraining(
     metrics["validation_batches"] = float(batch_count)
     metrics["validation_events"] = float(event_count)
     metrics["validation_named_view_evaluations"] = float(len(validation_work))
+    validation_seconds = max(time.monotonic() - validation_started, 1e-9)
+    metrics["validation_seconds"] = validation_seconds
+    metrics["validation_event_views_per_second"] = (
+        completed_event_views / validation_seconds
+    )
+    metrics["validation_model_forwards"] = float(
+        len(validation_work) + 2 * batch_count
+    )
     return metrics
 
 
@@ -1707,6 +1886,85 @@ def _tensor_gradient_norm(
         if gradient is not None
     ]
     return float(torch.stack(squares).sum().sqrt().cpu()) if squares else 0.0
+
+
+@torch.no_grad()
+def _nonfinite_gradient_report(
+    named_parameters: Any,
+) -> dict[str, Any]:
+    """Return compact, JSON-safe counts for parameters with non-finite gradients."""
+
+    offenders: list[dict[str, Any]] = []
+    parameters_with_grad = 0
+    gradient_elements = 0
+    nonfinite_elements = 0
+    for name, parameter in named_parameters:
+        gradient = parameter.grad
+        if gradient is None:
+            continue
+        parameters_with_grad += 1
+        detached = gradient.detach()
+        gradient_elements += detached.numel()
+        finite = torch.isfinite(detached)
+        count = int((~finite).sum().cpu())
+        if not count:
+            continue
+        nonfinite_elements += count
+        finite_values = detached[finite]
+        offenders.append(
+            {
+                "name": name,
+                "dtype": str(detached.dtype).removeprefix("torch."),
+                "shape": list(detached.shape),
+                "nonfinite_elements": count,
+                "nan_elements": int(torch.isnan(detached).sum().cpu()),
+                "positive_inf_elements": int(torch.isposinf(detached).sum().cpu()),
+                "negative_inf_elements": int(torch.isneginf(detached).sum().cpu()),
+                "maximum_finite_absolute_value": (
+                    float(finite_values.abs().max().float().cpu())
+                    if finite_values.numel()
+                    else None
+                ),
+            }
+        )
+    return {
+        "parameters_with_grad": parameters_with_grad,
+        "gradient_elements": gradient_elements,
+        "nonfinite_elements": nonfinite_elements,
+        "offending_parameter_count": len(offenders),
+        "first_offending_parameter": offenders[0]["name"] if offenders else None,
+        "offending_parameters": offenders,
+    }
+
+
+def _resource_metrics(device: torch.device) -> dict[str, float]:
+    metrics = {
+        "process_peak_rss_bytes": float(
+            resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 1024
+        )
+    }
+    if device.type == "cuda":
+        metrics.update(
+            {
+                "cuda_memory_allocated_bytes": float(torch.cuda.memory_allocated(device)),
+                "cuda_memory_reserved_bytes": float(torch.cuda.memory_reserved(device)),
+                "cuda_peak_memory_allocated_bytes": float(
+                    torch.cuda.max_memory_allocated(device)
+                ),
+                "cuda_peak_memory_reserved_bytes": float(
+                    torch.cuda.max_memory_reserved(device)
+                ),
+            }
+        )
+    return metrics
+
+
+def _write_json_atomic(path: Path, payload: dict[str, Any]) -> None:
+    temporary = path.with_name(f".{path.name}.partial")
+    temporary.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    temporary.replace(path)
 
 
 def _gradient_cosine(
@@ -1849,68 +2107,181 @@ def objective_preflight_report(
     gradient_report: dict[str, Any],
     *,
     dominance_ratio: float = 100.0,
+    weighted_loss_tolerance: float = 1e-7,
     action: str = "warn",
 ) -> dict[str, Any]:
-    """Validate intended pilot objectives without changing optimization."""
+    """Validate supported pilot objectives without changing optimization.
+
+    Denominators are batch-local support counts. An active objective without
+    enough support is auditably skipped because a zero loss and gradient are then
+    expected; it is not evidence that the objective's gradient path is broken.
+    """
 
     if action not in {"warn", "fail"}:
         raise ValueError("objective preflight action must be warn or fail")
-    rows: dict[str, dict[str, float]] = {}
+    if not math.isfinite(weighted_loss_tolerance) or weighted_loss_tolerance < 0:
+        raise ValueError("weighted loss tolerance must be finite and non-negative")
+    rows: dict[str, dict[str, Any]] = {}
     violations: list[str] = []
+    evaluated_objectives: list[str] = []
+    not_evaluable_objectives: dict[str, str] = {}
+    inactive_objectives: list[str] = []
+    invalid_objectives: list[str] = []
+    satisfied_within_tolerance_objectives: list[str] = []
     all_projection_norms = gradient_report.get("gradient_norms", {})
     monitored_groups = (
         "shared_encoder",
         "tree_projection",
         "hyperbolic_projection",
     )
-    weighted_nonzero: list[tuple[str, float]] = []
+    principal_objectives = {
+        "lca",
+        "parent",
+        "tree_distance",
+        "radius",
+        "channel",
+        "leaf_pid",
+        "corruption_class",
+        "candidate_correctness",
+        "hard_negative",
+    }
+    weighted_principal_gradients: list[tuple[str, float]] = []
     for name, value in objectives.items():
         raw = float(value.detach().cpu())
         weight = float(weights.get(name, 0.0))
         weighted = raw * weight
         denominator = float(denominators.get(name, 0.0))
+        minimum_support = 2.0 if name in {"variance", "covariance"} else 1.0
+        configured_active = weight != 0.0
+        denominator_is_finite = math.isfinite(denominator)
+        support_is_valid = denominator_is_finite and denominator >= 0.0
+        has_sufficient_support = support_is_valid and denominator >= minimum_support
+        finite_weighted_loss = math.isfinite(raw) and math.isfinite(weighted)
+        exact_nonzero_loss = math.isfinite(weighted) and abs(weighted) > 0.0
+        meaningful_nonzero_loss = (
+            finite_weighted_loss and abs(weighted) > weighted_loss_tolerance
+        )
         group_norms = {
             group: float(all_projection_norms.get(group, {}).get(name, 0.0))
             for group in monitored_groups
         }
+        if not configured_active:
+            support_status = "inactive"
+            evaluation_status = "inactive"
+            skipped = True
+            skip_reason = "zero_configured_weight"
+            inactive_objectives.append(name)
+        elif not support_is_valid:
+            support_status = "invalid"
+            evaluation_status = "invalid"
+            skipped = False
+            skip_reason = None
+            invalid_objectives.append(name)
+        elif not has_sufficient_support:
+            support_status = "insufficient_support"
+            evaluation_status = "not_evaluable"
+            skipped = True
+            skip_reason = "insufficient_support"
+            not_evaluable_objectives[name] = skip_reason
+        else:
+            support_status = "supported"
+            skipped = False
+            skip_reason = None
+            if finite_weighted_loss and not meaningful_nonzero_loss:
+                evaluation_status = "satisfied_within_tolerance"
+                satisfied_within_tolerance_objectives.append(name)
+            else:
+                evaluation_status = "evaluated"
+                evaluated_objectives.append(name)
         rows[name] = {
             "raw_loss": raw,
             "configured_weight": weight,
-            "weighted_magnitude": weighted,
+            "configured_active": configured_active,
+            "weighted_magnitude": abs(weighted),
+            "weighted_loss_tolerance": float(weighted_loss_tolerance),
+            "weighted_shared_encoder_gradient_norm": (
+                abs(weight) * group_norms["shared_encoder"]
+            ),
             "active_denominator": denominator,
+            "minimum_support": minimum_support,
+            "support_status": support_status,
+            "has_sufficient_support": has_sufficient_support,
+            "meaningful_nonzero_loss": meaningful_nonzero_loss,
+            "evaluation_status": evaluation_status,
+            "skipped": skipped,
+            "skip_reason": skip_reason,
             **{
                 f"{group}_gradient_norm": norm
                 for group, norm in group_norms.items()
             },
         }
-        if weight == 0:
+        if not configured_active:
+            continue
+        if not support_is_valid:
+            violations.append(
+                f"{name}:non_finite"
+                if not denominator_is_finite
+                else f"{name}:invalid_denominator"
+            )
+            continue
+        if not has_sufficient_support:
+            if not math.isfinite(weighted):
+                violations.append(f"{name}:non_finite")
+            elif exact_nonzero_loss:
+                violations.append(f"{name}:loss_without_support")
+            if any(
+                not math.isfinite(norm) or norm != 0.0
+                for norm in group_norms.values()
+            ):
+                violations.append(f"{name}:gradient_without_support")
             continue
         if not all(
             math.isfinite(number)
             for number in (raw, weighted, *group_norms.values())
         ):
             violations.append(f"{name}:non_finite")
-        if denominator <= 0:
-            violations.append(f"{name}:zero_denominator")
-        if not any(norm > 0 for norm in group_norms.values()):
+        if meaningful_nonzero_loss and group_norms["shared_encoder"] == 0.0:
             violations.append(f"{name}:zero_gradient")
-        if abs(weighted) > 0:
-            weighted_nonzero.append((name, abs(weighted)))
-    if len(weighted_nonzero) >= 2:
-        largest_name, largest = max(weighted_nonzero, key=lambda item: item[1])
-        smallest_name, smallest = min(weighted_nonzero, key=lambda item: item[1])
-        ratio = largest / max(smallest, 1e-30)
+        if (
+            name in principal_objectives
+            and meaningful_nonzero_loss
+            and math.isfinite(group_norms["shared_encoder"])
+            and group_norms["shared_encoder"] > 0.0
+        ):
+            weighted_principal_gradients.append(
+                (name, abs(weight) * group_norms["shared_encoder"])
+            )
+    if len(weighted_principal_gradients) >= 2:
+        largest_name, largest = max(
+            weighted_principal_gradients, key=lambda item: item[1]
+        )
+        reference_name = "lca"
+        reference = next(
+            (
+                value
+                for name, value in weighted_principal_gradients
+                if name == reference_name
+            ),
+            0.0,
+        )
+        if reference <= 0:
+            reference_name, reference = min(
+                weighted_principal_gradients, key=lambda item: item[1]
+            )
+        ratio = largest / max(reference, 1e-30)
         if ratio > dominance_ratio:
             violations.append(
-                f"weighted_dominance:{largest_name}/{smallest_name}={ratio:.6g}"
+                f"weighted_gradient_dominance:"
+                f"{largest_name}/{reference_name}={ratio:.6g}"
             )
     else:
         ratio = 1.0
-    for name in ("variance", "covariance"):
-        if weights.get(name, 0.0) and denominators.get(name, 0.0) < 2:
-            violations.append(f"{name}:insufficient_samples")
-    if weights.get("channel", 0.0) and denominators.get("channel", 0.0) <= 0:
-        violations.append("channel:no_positive_pairs")
+    if violations:
+        overall_status = "failed"
+    elif not_evaluable_objectives:
+        overall_status = "passed_with_skips"
+    else:
+        overall_status = "passed"
     report = {
         "objectives": rows,
         "projection_gradient_norms": {
@@ -1924,6 +2295,15 @@ def objective_preflight_report(
         ),
         "weighted_dominance_ratio": ratio,
         "dominance_threshold": float(dominance_ratio),
+        "weighted_loss_tolerance": float(weighted_loss_tolerance),
+        "evaluation_status": overall_status,
+        "evaluated_objectives": sorted(evaluated_objectives),
+        "satisfied_within_tolerance_objectives": sorted(
+            satisfied_within_tolerance_objectives
+        ),
+        "not_evaluable_objectives": dict(sorted(not_evaluable_objectives.items())),
+        "inactive_objectives": sorted(inactive_objectives),
+        "invalid_objectives": sorted(invalid_objectives),
         "violations": sorted(set(violations)),
         "pass": not violations,
     }
@@ -1933,6 +2313,27 @@ def objective_preflight_report(
             raise RuntimeError(message)
         warnings.warn(message, RuntimeWarning, stacklevel=2)
     return report
+
+
+def _objective_diagnostics_due(
+    *,
+    enabled: bool,
+    completed_step: int,
+    start_step: int,
+    max_steps: int,
+    cadence: int,
+    preflight_enabled: bool,
+    phase_entry: bool,
+    preflight_retry_pending: bool,
+) -> bool:
+    """Run diagnostics at cadence and until each active objective is evaluable."""
+
+    return enabled and (
+        completed_step % cadence == 0
+        or completed_step == start_step + 1
+        or completed_step == max_steps
+        or (preflight_enabled and (phase_entry or preflight_retry_pending))
+    )
 
 
 def _parameter_gradient_norm(parameters) -> float:
@@ -2124,6 +2525,7 @@ def _save_pretrain_checkpoint(
             tangent_variance_target=config.tangent_variance_target,
             hyper_projection_init_scale=config.hyper_projection_init_scale,
             tangent_scale_mode=config.tangent_scale_mode,
+            max_tangent_norm=config.max_tangent_norm,
             hyperbolic_level_encoding=config.hyperbolic_level_encoding,
             n_heads=config.n_heads,
             n_context_layers=config.n_context_layers,
