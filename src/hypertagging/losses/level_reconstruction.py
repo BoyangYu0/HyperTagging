@@ -117,7 +117,22 @@ def level_reconstruction_loss(
         )
     else:
         target_types, target_masks, target_p4, target_charge = target_override
+    allowed_types = batch.get("allowed_type_mask")
+    if allowed_types is None:
+        policy = constraint_policy or ReconstructionConstraintPolicy()
+        allowed_types, _bias = policy.type_constraints(
+            target_level, device=output.type_logits.device
+        )
+    if allowed_types.shape != (output.type_logits.shape[-1],):
+        raise ValueError("allowed_type_mask must have one entry per reduced PID token")
     for event_index, types in enumerate(target_types):
+        validate_pid_tokens(types, name=f"event {event_index} target PID labels")
+        rejected = types[~allowed_types[types]]
+        if rejected.numel():
+            raise ValueError(
+                f"event {event_index} target level {target_level} contains mother "
+                f"types excluded by the decoder mask: {sorted(set(rejected.tolist()))}"
+            )
         if types.numel() > output.object_logits.shape[1]:
             raise OverflowError(
                 f"event {event_index} target level {target_level} has {types.numel()} truth "

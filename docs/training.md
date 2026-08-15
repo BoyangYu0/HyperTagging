@@ -255,8 +255,10 @@ bounded evaluation comparators, never training or production defaults.
 
 The default target policy is `complete_only`; `reconstructable_partial` and
 `diagnostic_all` are explicit alternatives. A versioned static reduced-PID
-mother ontology always rejects unknown and leaf-only species; eligible
-training-target frequencies add hard, soft, or off empirical level priors.
+mother ontology always rejects unknown and species that occur only as leaves;
+K_L and electron tokens remain eligible when the retained truth node is a
+complete composite target. Eligible training-target frequencies add hard,
+soft, or off empirical level priors.
 Pointer decoding applies target-level
 and node masks, recursive-source conflicts, charge/type compatibility where
 configured, and a minimum pointer probability in addition to cardinality.

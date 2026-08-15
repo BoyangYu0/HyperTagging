@@ -103,12 +103,14 @@ PID_VOCABULARY_VERSION = "legacy-reduced-pdg-v1"
 
 # Static reconstruction ontology.  These are reduced-PID species which can be
 # retained composite mothers after the documented pruning/contraction step.
-# Stable detector leaves (gamma, K_L, e, mu, pi, K, p) and unknown token 0 are
-# deliberately absent.  Empirical frequency priors may further constrain this
-# set, but can never make a leaf-only or unknown token reconstructable.
-MOTHER_ONTOLOGY_VERSION = "reduced-mother-ontology-v1"
+# Unknown, gamma, charged hadrons, muons, positrons, and protons are deliberately
+# absent. K_L and electron tokens are admitted because production truth contains
+# complete composite instances of those species; node kind/topology, rather than
+# the PID token alone, distinguishes those targets from detector leaves.
+MOTHER_ONTOLOGY_VERSION = "reduced-mother-ontology-v2"
 STATIC_MOTHER_PDGS: tuple[int, ...] = (
     300553,
+    130,
     111,
     443,
     310,
@@ -124,6 +126,7 @@ STATIC_MOTHER_PDGS: tuple[int, ...] = (
     511,
     521,
     531,
+    11,
     -3122,
     -3222,
     -411,

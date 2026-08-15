@@ -1977,7 +1977,16 @@ def _select_nodes(
             continue
         if key == "recursive_leaf_source_mask":
             selected[key] = value[:, indices]
-        elif value.ndim >= 3 and value.shape[1:3] == (n_nodes, n_nodes):
+        elif key in {
+            "daughter_adjacency",
+            "source_conflict_matrix",
+            "lca_depth",
+            "lca_node_id",
+            "edges_to_lca_from_i",
+            "edges_to_lca_from_j",
+            "exact_tree_path_distance",
+            "ancestor_descendant_relation",
+        }:
             selected[key] = value[:, indices][:, :, indices]
         elif value.ndim >= 2 and value.shape[1] == n_nodes:
             selected[key] = value[:, indices]
