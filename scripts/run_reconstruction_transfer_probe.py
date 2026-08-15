@@ -133,8 +133,14 @@ def main() -> int:
             rollout_validation_events=int(probe["rollout_validation_events"]),
             validation_batch_size=int(probe["validation_batch_size"]),
             model_preset=str(probe["model_preset"]),
+            max_cardinality=int(probe["max_cardinality"]),
+            max_cardinality_by_level=tuple(
+                (int(level), int(value))
+                for level, value in probe["max_cardinality_by_level"]
+            ),
             best_metric=str(probe["best_metric"]),
             best_mode=str(probe["best_mode"]),
+            initial_state_policy=str(probe["initial_state_policy"]),
             mixed_precision=True,
             scientific_mode=True,
             allow_tiny_bruteforce_matching=False,

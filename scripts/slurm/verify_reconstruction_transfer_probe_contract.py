@@ -33,7 +33,10 @@ REQUIRED_PROBE = {
     "freeze_leaf_pid_head_steps": 100,
     "transfer_leaf_pid_head": True,
     "model_preset": "production_baseline",
+    "max_cardinality": 16,
+    "max_cardinality_by_level": [[1, 16], [2, 16], [3, 16]],
     "target_policy": "complete_only",
+    "initial_state_policy": "upsilon4s",
     "best_metric": "predicted_edge_f1",
     "best_mode": "max",
 }
