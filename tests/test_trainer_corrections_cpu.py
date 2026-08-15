@@ -36,6 +36,7 @@ from hypertagging.training.pretraining_curriculum import (
 )
 from hypertagging.training.pretrain_trainer import (
     PretrainConfig,
+    _allow_empty_channel_memory_expansion,
     _nonfinite_gradient_report,
     _objective_diagnostics_due,
     _resolve_phase_schedule,
@@ -74,6 +75,28 @@ def test_progressive_phase_boundaries_and_resume_contract_are_explicit():
     )
     assert resumed.contract() == schedule.contract()
     assert resumed.phase(step=11, events=37).name == sequence[11]
+
+
+def test_empty_channel_memory_expansion_requires_exact_channel_phase_boundary():
+    schedule = ProgressivePhaseSchedule(
+        unit="optimizer_step", durations=(1094, 1094, 1094, 1094)
+    )
+    config = PretrainConfig(
+        data="unused",
+        output_dir="unused",
+        channel_memory_size=4096,
+    )
+    payload = {
+        "step": 2188,
+        "config": {"channel_memory_size": 0},
+    }
+    assert _allow_empty_channel_memory_expansion(config, schedule, payload)
+    with pytest.raises(ValueError, match="exact channel-phase boundary step 2188"):
+        _allow_empty_channel_memory_expansion(
+            config,
+            schedule,
+            {**payload, "step": 2189},
+        )
 
 
 def test_scientific_short_curriculum_is_rejected_and_legacy_is_named():
@@ -531,6 +554,7 @@ def test_corrected_scientific_configs_and_small_candidate_contract():
     assert h100_rerun["pilot_objective_violation_action"] == "fail"
     assert h100_rerun["objective_dominance_ratio"] == 20.0
     assert h100_rerun["objective_weighted_loss_tolerance"] == 1e-7
+    assert h100_rerun["channel_memory_size"] == 4096
     rerun_schedule = learning_rate_schedule_contract(
         total_steps=h100_rerun["lr_schedule_total_steps"],
         warmup_fraction=h100_rerun["warmup_fraction"],

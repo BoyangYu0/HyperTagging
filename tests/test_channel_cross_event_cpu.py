@@ -1,3 +1,4 @@
+import pytest
 import torch
 
 from hypertagging.losses.hyperbolic_pretraining import cross_event_channel_metric_loss
@@ -8,6 +9,10 @@ from hypertagging.preprocessing.channels import (
 )
 from hypertagging.preprocessing.mdst_tree_builder import EventTree, FourVector, TreeNode
 from hypertagging.training.pretrain_trainer import ChannelMemoryBank
+from hypertagging.training.checkpointing import (
+    restore_training_checkpoint,
+    save_training_checkpoint,
+)
 
 
 def _tree(include_second=True, bs=False):
@@ -101,3 +106,44 @@ def test_channel_memory_bank_has_resume_stable_state_shape():
     assert embeddings.shape == (2, 4)
     assert full_ids.tolist() == [7, 8]
     assert reco_ids.tolist() == [17, 18]
+
+
+class _MemoryModel(torch.nn.Module):
+    def __init__(self, capacity: int) -> None:
+        super().__init__()
+        self.weight = torch.nn.Parameter(torch.tensor(1.0))
+        self.channel_memory = ChannelMemoryBank(capacity=capacity, embedding_dim=4)
+
+
+def test_empty_zero_capacity_channel_memory_can_expand_on_explicit_resume(tmp_path):
+    source = _MemoryModel(0)
+    path = save_training_checkpoint(
+        tmp_path / "empty-memory.pt", model=source, step=2188,
+        config={"channel_memory_size": 0},
+    )
+    target = _MemoryModel(3)
+    payload = restore_training_checkpoint(
+        path,
+        model=target,
+        allow_empty_channel_memory_expansion=True,
+    )
+    assert target.channel_memory.capacity == 3
+    assert target.channel_memory.contents()[0].shape == (0, 4)
+    assert payload["training_state"]["checkpoint_load_migrations"] == [
+        {
+            "kind": "empty_channel_memory_expansion_v1",
+            "checkpoint_step": 2188,
+            "source_capacity": 0,
+            "target_capacity": 3,
+            "preserved_entries": 0,
+        }
+    ]
+
+
+def test_zero_capacity_channel_memory_shape_mismatch_remains_fail_closed(tmp_path):
+    path = save_training_checkpoint(
+        tmp_path / "empty-memory.pt", model=_MemoryModel(0), step=2188,
+        config={"channel_memory_size": 0},
+    )
+    with pytest.raises(RuntimeError, match="size mismatch"):
+        restore_training_checkpoint(path, model=_MemoryModel(3))

@@ -69,6 +69,6 @@ radius_target_mode: generation_height_radius
 best_metric: validation_full_training_objective
 best_mode: min
 channel_pooling: mean_all
-channel_memory_size: 0
+channel_memory_size: 4096
 truth_guided_structural_relation_inputs: false
 scientific_mode: true

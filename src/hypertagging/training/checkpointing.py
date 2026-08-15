@@ -127,6 +127,7 @@ def restore_training_checkpoint(
     allow_contract_mismatch: bool = False,
     expected_data_order_contract: dict[str, Any] | None = None,
     expected_architecture: dict[str, Any] | None = None,
+    allow_empty_channel_memory_expansion: bool = False,
 ) -> dict[str, Any]:
     """Restore model/training state and return the complete checkpoint metadata."""
 
@@ -157,7 +158,24 @@ def restore_training_checkpoint(
                 mismatches.append(f"{label} ({', '.join(sorted(changed))})")
     if mismatches and not allow_contract_mismatch:
         raise ValueError(f"checkpoint contract mismatch: {', '.join(mismatches)}")
-    model.load_state_dict(payload["model_state_dict"], strict=strict)
+    model_state_dict = payload["model_state_dict"]
+    if allow_empty_channel_memory_expansion:
+        model_state_dict, migration = _expand_empty_channel_memory_state(
+            model_state_dict,
+            model.state_dict(),
+            checkpoint_step=int(payload.get("step", 0)),
+        )
+        training_state = dict(payload.get("training_state", {}))
+        migrations = list(training_state.get("checkpoint_load_migrations", []))
+        migrations.append(migration)
+        training_state["checkpoint_load_migrations"] = migrations
+        payload["training_state"] = training_state
+    model.load_state_dict(model_state_dict, strict=strict)
+    setattr(
+        model,
+        "checkpoint_load_migrations",
+        list(payload.get("training_state", {}).get("checkpoint_load_migrations", [])),
+    )
     if optimizer is not None and payload.get("optimizer_state_dict") is not None:
         optimizer.load_state_dict(payload["optimizer_state_dict"])
     if scheduler is not None and payload.get("scheduler_state_dict") is not None:
@@ -167,6 +185,52 @@ def restore_training_checkpoint(
     if restore_random_states and payload.get("random_states"):
         _restore_random_states(payload["random_states"])
     return payload
+
+
+def _expand_empty_channel_memory_state(
+    stored: dict[str, torch.Tensor],
+    current: dict[str, torch.Tensor],
+    *,
+    checkpoint_step: int,
+) -> tuple[dict[str, torch.Tensor], dict[str, Any]]:
+    """Initialize a larger bank only when the checkpoint bank is exactly empty."""
+
+    prefix = "channel_memory."
+    names = (
+        "embeddings",
+        "full_ids",
+        "reconstructable_ids",
+        "count",
+        "cursor",
+        "valid",
+    )
+    keys = tuple(prefix + name for name in names)
+    if any(key not in stored or key not in current for key in keys):
+        raise ValueError("channel memory expansion requires complete checkpoint buffers")
+    stored_capacity = int(stored[prefix + "embeddings"].shape[0])
+    current_capacity = int(current[prefix + "embeddings"].shape[0])
+    if stored_capacity != 0 or current_capacity <= 0:
+        raise ValueError(
+            "channel memory expansion requires an empty zero-capacity checkpoint "
+            "and a positive target capacity"
+        )
+    if int(stored[prefix + "count"].item()) != 0 or int(
+        stored[prefix + "cursor"].item()
+    ) != 0:
+        raise ValueError("channel memory expansion cannot discard populated state")
+    for name in ("embeddings", "full_ids", "reconstructable_ids", "valid"):
+        if stored[prefix + name].numel() != 0:
+            raise ValueError("channel memory expansion cannot discard populated buffers")
+    migrated = dict(stored)
+    for key in keys:
+        migrated[key] = current[key].detach().clone()
+    return migrated, {
+        "kind": "empty_channel_memory_expansion_v1",
+        "checkpoint_step": int(checkpoint_step),
+        "source_capacity": stored_capacity,
+        "target_capacity": current_capacity,
+        "preserved_entries": 0,
+    }
 
 
 def _restore_random_states(states: dict[str, Any]) -> None:

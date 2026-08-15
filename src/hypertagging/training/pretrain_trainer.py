@@ -516,6 +516,9 @@ def train_hyperbolic_pretraining(
     scheduler.hypertagging_contract = lr_contract
     phase_schedule = _resolve_phase_schedule(config, resume_payload)
     model.curriculum_schedule_contract = phase_schedule.contract()
+    allow_empty_channel_memory_expansion = _allow_empty_channel_memory_expansion(
+        config, phase_schedule, resume_payload
+    )
     amp_dtype = _resolve_amp_dtype(
         device=device,
         mixed_precision=config.mixed_precision,
@@ -546,6 +549,9 @@ def train_hyperbolic_pretraining(
                 config, data_module
             ),
             expected_architecture=architecture.to_dict(),
+            allow_empty_channel_memory_expansion=(
+                allow_empty_channel_memory_expansion
+            ),
         )
         start_step = int(payload.get("step", 0))
     (output_dir / "split_manifest.json").write_text(
@@ -2573,6 +2579,9 @@ def _save_pretrain_checkpoint(
                     metrics.get("curriculum_final_phase_entered", 0)
                 ),
             },
+            "checkpoint_load_migrations": list(
+                getattr(model, "checkpoint_load_migrations", [])
+            ),
             "termination_reason": termination_reason,
         },
         validation_selection={
@@ -2652,6 +2661,42 @@ def _resolve_phase_schedule(
             "scientific curriculum budget must allocate time to all four phases"
         )
     return schedule
+
+
+def _allow_empty_channel_memory_expansion(
+    config: PretrainConfig,
+    schedule: ProgressivePhaseSchedule,
+    resume_payload: dict[str, Any] | None,
+) -> bool:
+    """Authorize the one safe zero-capacity migration at channel-phase entry."""
+
+    if resume_payload is None:
+        return False
+    stored_capacity = int(
+        resume_payload.get("config", {}).get("channel_memory_size", 0)
+    )
+    if stored_capacity == config.channel_memory_size:
+        return False
+    if stored_capacity != 0 or config.channel_memory_size <= 0:
+        return False
+    channel_phase_index = next(
+        (
+            index
+            for index, phase in enumerate(schedule.phases)
+            if "channel" in phase.objectives
+        ),
+        None,
+    )
+    if channel_phase_index is None:
+        raise ValueError("channel memory expansion requires a channel curriculum phase")
+    channel_phase_start = sum(schedule.durations[:channel_phase_index])
+    checkpoint_step = int(resume_payload.get("step", -1))
+    if checkpoint_step != channel_phase_start:
+        raise ValueError(
+            "empty channel memory may only be expanded at the exact channel-phase "
+            f"boundary step {channel_phase_start}; checkpoint step is {checkpoint_step}"
+        )
+    return True
 
 
 def _legacy_alternating_phases(config: PretrainConfig) -> tuple[Any, ...]:
