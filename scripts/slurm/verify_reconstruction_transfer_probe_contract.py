@@ -16,6 +16,9 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 CONTRACT_VERSION = "hypertagging-reconstruction-transfer-probe-v1"
+HEADWARMUP_200_CONTRACT_VERSION = (
+    "hypertagging-reconstruction-transfer-probe-v2-headwarmup-200"
+)
 ALLOWED_GRES = {"gpu:h100nvl:1", "gpu:v100:1"}
 ALLOWED_STEPS = {2188, 3282, 4376}
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
@@ -39,6 +42,20 @@ REQUIRED_PROBE = {
     "initial_state_policy": "upsilon4s",
     "best_metric": "predicted_edge_f1",
     "best_mode": "max",
+}
+HEADWARMUP_200_REQUIRED_PROBE = {
+    **REQUIRED_PROBE,
+    "max_steps": 200,
+    "freeze_pretrained_encoder_steps": 200,
+    "freeze_leaf_pid_head_steps": 200,
+}
+REQUIRED_PROBES_BY_CONTRACT_VERSION = {
+    CONTRACT_VERSION: REQUIRED_PROBE,
+    HEADWARMUP_200_CONTRACT_VERSION: HEADWARMUP_200_REQUIRED_PROBE,
+}
+ALLOWED_STEPS_BY_CONTRACT_VERSION = {
+    CONTRACT_VERSION: ALLOWED_STEPS,
+    HEADWARMUP_200_CONTRACT_VERSION: {3282},
 }
 
 
@@ -89,26 +106,40 @@ def verify_hashed_inputs(inputs: list[dict[str, str]]) -> None:
             raise RuntimeError(f"hashed transfer-probe input changed: {path}")
 
 
+def required_probe_for_contract(contract: dict[str, Any]) -> dict[str, Any]:
+    """Resolve and validate the exact probe profile selected by the contract."""
+
+    version = str(contract.get("contract_version", ""))
+    required = REQUIRED_PROBES_BY_CONTRACT_VERSION.get(version)
+    if required is None:
+        raise RuntimeError("unsupported transfer-probe contract")
+    probe = dict(contract.get("probe", {}))
+    if probe != required:
+        raise RuntimeError(
+            "transfer-probe configuration differs from the registered contract profile"
+        )
+    if int(contract.get("optimizer_steps", -1)) != required["max_steps"]:
+        raise RuntimeError("transfer-probe optimizer-step count is inconsistent")
+    step = int(contract.get("checkpoint_step", -1))
+    if step not in ALLOWED_STEPS_BY_CONTRACT_VERSION[version]:
+        raise RuntimeError(
+            "transfer-probe step is not approved for the selected contract profile"
+        )
+    return dict(required)
+
+
 def verify_contract(path: Path) -> tuple[dict[str, Any], dict[str, str]]:
     contract = json.loads(path.read_text(encoding="utf-8"))
     verify_contract_hash(contract)
     verify_hashed_inputs(list(contract.get("hashed_inputs", [])))
-    if contract.get("contract_version") != CONTRACT_VERSION:
-        raise RuntimeError("unsupported transfer-probe contract")
+    required_probe = required_probe_for_contract(contract)
     if contract.get("mode") != "frozen_pretrained_reconstruction_transfer_probe":
         raise RuntimeError("contract is not a frozen transfer probe")
     if contract.get("training_role") != "train" or contract.get("evaluation_role") != "validation":
         raise RuntimeError("transfer probe must train on train and evaluate validation")
     if contract.get("sealed_test_role_access") != "forbidden":
         raise RuntimeError("transfer probe must forbid sealed-test access")
-    step = int(contract.get("checkpoint_step", -1))
-    if step not in ALLOWED_STEPS:
-        raise RuntimeError("transfer-probe step is not an approved lineage anchor")
-    probe = dict(contract.get("probe", {}))
-    if probe != REQUIRED_PROBE:
-        raise RuntimeError("transfer-probe configuration differs from the registered comparison")
-    if int(contract.get("optimizer_steps", -1)) != REQUIRED_PROBE["max_steps"]:
-        raise RuntimeError("transfer-probe optimizer-step count is inconsistent")
+    step = int(contract["checkpoint_step"])
     gres = str(contract.get("gres", ""))
     if gres not in ALLOWED_GRES:
         raise RuntimeError("transfer probe has unsupported exact GRES")
@@ -151,6 +182,7 @@ def verify_contract(path: Path) -> tuple[dict[str, Any], dict[str, str]]:
         "selection_manifest": str(selection),
         "dataset_index": str(dataset_index),
         "study_output_base": str(output_base),
+        "optimizer_steps": str(required_probe["max_steps"]),
     }
     return contract, runtime
 

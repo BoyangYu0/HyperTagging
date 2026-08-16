@@ -19,8 +19,9 @@ sys.path.insert(0, str(ROOT))
 from scripts.slurm.verify_reconstruction_transfer_probe_contract import (  # noqa: E402
     ALLOWED_GRES,
     ALLOWED_STEPS,
+    ALLOWED_STEPS_BY_CONTRACT_VERSION,
     CONTRACT_VERSION,
-    REQUIRED_PROBE,
+    REQUIRED_PROBES_BY_CONTRACT_VERSION,
 )
 
 
@@ -75,6 +76,11 @@ def _live_slurm(gres: str) -> dict[str, Any]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--gres", choices=sorted(ALLOWED_GRES), required=True)
+    parser.add_argument(
+        "--contract-version",
+        choices=sorted(REQUIRED_PROBES_BY_CONTRACT_VERSION),
+        default=CONTRACT_VERSION,
+    )
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--checkpoint-step", type=int, choices=sorted(ALLOWED_STEPS), required=True)
     parser.add_argument("--selection-manifest", type=Path, required=True)
@@ -89,6 +95,15 @@ def main() -> int:
         default=Path("/project/agkuhr/users/boyang/envs/hypertagging-gpu-cu126-v1"),
     )
     args = parser.parse_args()
+    if args.checkpoint_step not in ALLOWED_STEPS_BY_CONTRACT_VERSION[
+        args.contract_version
+    ]:
+        raise RuntimeError(
+            "checkpoint step is not approved for the selected contract profile"
+        )
+    required_probe = dict(
+        REQUIRED_PROBES_BY_CONTRACT_VERSION[args.contract_version]
+    )
     if args.output.exists():
         raise RuntimeError("refusing to overwrite an existing transfer-probe contract")
     if _run(("git", "rev-parse", "HEAD")) != args.expected_git_sha:
@@ -105,6 +120,7 @@ def main() -> int:
     if not (args.gpu_env / "bin/python").is_file():
         raise RuntimeError("GPU environment is unavailable")
     source_files = (
+        Path("scripts/slurm/render_reconstruction_transfer_probe_job.py"),
         Path("scripts/run_reconstruction_transfer_probe.py"),
         Path("scripts/slurm/run_reconstruction_transfer_probe.sbatch"),
         Path("scripts/slurm/verify_reconstruction_transfer_probe_contract.py"),
@@ -121,7 +137,7 @@ def main() -> int:
         args.checkpoint_step
     ]
     contract: dict[str, Any] = {
-        "contract_version": CONTRACT_VERSION,
+        "contract_version": args.contract_version,
         "mode": "frozen_pretrained_reconstruction_transfer_probe",
         "created_at": datetime.now(timezone.utc).isoformat(),
         "experiment": args.experiment,
@@ -140,9 +156,9 @@ def main() -> int:
         "training_role": "train",
         "evaluation_role": "validation",
         "sealed_test_role_access": "forbidden",
-        "optimizer_steps": REQUIRED_PROBE["max_steps"],
+        "optimizer_steps": required_probe["max_steps"],
         "source_checkpoint_mutation": "forbidden",
-        "probe": dict(REQUIRED_PROBE),
+        "probe": required_probe,
         "study_output_base": (
             f"artifacts/studies/reconstruction-transfer-probe/{args.experiment}"
         ),

@@ -105,6 +105,18 @@ validity is at least 0.999, p4 closure is complete at the serialized tolerance,
 and recursive-source conflicts are zero. Teacher-forced loss remains an
 independent diagnostic track.
 
+Source-bound frozen-encoder transfer contracts retain the original
+`hypertagging-reconstruction-transfer-probe-v1` 100-step profile. The versioned
+`hypertagging-reconstruction-transfer-probe-v2-headwarmup-200` profile is
+restricted to the step-3282 calibration and differs only by setting the
+optimizer/LR horizon, encoder-freeze horizon, and transferred-leaf-head freeze
+horizon to 200. It retains the v1 seed, batches, fixed validation/rollout
+cohorts and cadences, architecture, target policy, scientific primary-selection
+gates, source immutability, and sealed-test prohibition. Rendering emits an
+explicit `sbatch` command but never submits it; the terminal receipt validates
+the result's optimizer-step count against the selected version rather than a
+hard-coded horizon.
+
 `configs/hyperbolic_pretrain_pilot.yaml` requires bounded objective-gradient
 preflight evidence. It reports raw and weighted magnitudes, active denominators,
 projection-specific norms, and pairwise cosines, and checks zero/non-finite or
