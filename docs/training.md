@@ -138,6 +138,16 @@ counts, Hungarian costs and class margins, derived continue/stop probabilities
 (the architecture has no separate depth head), pre-/post-pruning node depth,
 representability/loss slices, and gradient reachability.
 
+The first v3 optimization rollout exposed a runtime-normalization support bug:
+the data-fitted composite normalizer has zero training observations for the
+runtime-only pointer-confidence mean/minimum slots, so its numerical 1e-6
+fallback scale mapped an ordinary 0.51 confidence to 510,000 and overflowed
+FP16 on the next scheduled-sampling pass. Runtime normalization now uses
+fitted statistics only for slots with positive training support and identity
+scaling for unsupported runtime-only slots. Available non-finite values still
+fail closed. This changes no query gate, threshold, cohort, denominator,
+schedule, focal weight, or PID decision.
+
 `configs/hyperbolic_pretrain_pilot.yaml` requires bounded objective-gradient
 preflight evidence. It reports raw and weighted magnitudes, active denominators,
 projection-specific norms, and pairwise cosines, and checks zero/non-finite or

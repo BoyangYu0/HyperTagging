@@ -126,6 +126,7 @@ def main() -> int:
         Path("scripts/slurm/run_reconstruction_transfer_probe.sbatch"),
         Path("scripts/slurm/verify_reconstruction_transfer_probe_contract.py"),
         Path("scripts/slurm/finalize_reconstruction_transfer_probe_receipt.py"),
+        Path("src/hypertagging/data/streaming.py"),
         Path("src/hypertagging/training/reconstruction_trainer.py"),
         Path("src/hypertagging/evaluation/query_activation.py"),
         Path("src/hypertagging/losses/level_reconstruction.py"),

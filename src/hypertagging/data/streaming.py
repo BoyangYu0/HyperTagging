@@ -274,8 +274,18 @@ class RuntimeFeatureNormalizer(nn.Module):
         common_std: torch.Tensor,
         composite_mean: torch.Tensor,
         composite_std: torch.Tensor,
+        common_count: torch.Tensor | None = None,
+        composite_count: torch.Tensor | None = None,
     ) -> None:
         super().__init__()
+        for name, mean, std in (
+            ("common", common_mean, common_std),
+            ("composite", composite_mean, composite_std),
+        ):
+            if mean.shape != std.shape:
+                raise ValueError(f"{name} runtime normalizer mean/std shapes differ")
+            if not torch.isfinite(mean).all() or not torch.isfinite(std).all():
+                raise ValueError(f"{name} runtime normalizer statistics must be finite")
         self.register_buffer("common_mean", common_mean.detach().clone().float())
         self.register_buffer(
             "common_std", common_std.detach().clone().float().clamp_min(1e-6)
@@ -284,6 +294,24 @@ class RuntimeFeatureNormalizer(nn.Module):
         self.register_buffer(
             "composite_std", composite_std.detach().clone().float().clamp_min(1e-6)
         )
+        for name, count, reference in (
+            ("common", common_count, self.common_mean),
+            ("composite", composite_count, self.composite_mean),
+        ):
+            values = (
+                torch.ones_like(reference)
+                if count is None
+                else count.detach().clone().to(device=reference.device, dtype=torch.float32)
+            )
+            if values.shape != reference.shape:
+                raise ValueError(f"{name} runtime normalizer count shape differs")
+            if not torch.isfinite(values).all() or (values < 0).any():
+                raise ValueError(
+                    f"{name} runtime normalizer counts must be finite and nonnegative"
+                )
+            # Observation support is supplied by the data contract rather than
+            # learned model state, so old checkpoints remain strict-loadable.
+            self.register_buffer(f"{name}_count", values, persistent=False)
 
     @classmethod
     def identity(
@@ -317,10 +345,23 @@ class RuntimeFeatureNormalizer(nn.Module):
         # while dynamic quantities may have just been rebuilt.  Applying the
         # same fitted transform to every continuous slot here prevents a
         # raw/normalized mixture in either contextual pass.
-        for index in CONTINUOUS_COMMON_INDICES:
-            common_out[..., index] = (
-                common[..., index] - self.common_mean[index].to(common)
-            ) / self.common_std[index].to(common)
+        common_indices = list(CONTINUOUS_COMMON_INDICES)
+        common_values = common[..., common_indices]
+        common_available = common_mask[..., common_indices]
+        if (common_available & ~torch.isfinite(common_values)).any():
+            raise ValueError("available runtime common features must be finite")
+        common_observed = self.common_count[common_indices].to(common) > 0
+        common_mean = torch.where(
+            common_observed,
+            self.common_mean[common_indices].to(common),
+            torch.zeros_like(common_observed, dtype=common.dtype),
+        )
+        common_std = torch.where(
+            common_observed,
+            self.common_std[common_indices].to(common),
+            torch.ones_like(common_observed, dtype=common.dtype),
+        )
+        common_out[..., common_indices] = (common_values - common_mean) / common_std
         common_names = feature_spec_v4()["common"]
         for name in CATEGORICAL_COMMON_FEATURE_NAMES:
             index = common_names.index(name)
@@ -328,11 +369,27 @@ class RuntimeFeatureNormalizer(nn.Module):
             common_mask[..., index] = False
         common_out = torch.where(common_mask, common_out, torch.zeros_like(common_out))
         composite_out = composite.clone()
-        for index in DYNAMIC_COMPOSITE_INDICES:
-            if index < composite.shape[-1]:
-                composite_out[..., index] = (
-                    composite[..., index] - self.composite_mean[index].to(composite)
-                ) / self.composite_std[index].to(composite)
+        composite_indices = [
+            index for index in DYNAMIC_COMPOSITE_INDICES if index < composite.shape[-1]
+        ]
+        composite_values = composite[..., composite_indices]
+        composite_available = composite_availability[..., composite_indices]
+        if (composite_available & ~torch.isfinite(composite_values)).any():
+            raise ValueError("available runtime composite features must be finite")
+        composite_observed = self.composite_count[composite_indices].to(composite) > 0
+        composite_mean = torch.where(
+            composite_observed,
+            self.composite_mean[composite_indices].to(composite),
+            torch.zeros_like(composite_observed, dtype=composite.dtype),
+        )
+        composite_std = torch.where(
+            composite_observed,
+            self.composite_std[composite_indices].to(composite),
+            torch.ones_like(composite_observed, dtype=composite.dtype),
+        )
+        composite_out[..., composite_indices] = (
+            composite_values - composite_mean
+        ) / composite_std
         composite_mask = composite_availability.clone()
         # Defense in depth: target-only compatibility slots are unavailable
         # even before the encoder's versioned selection adapter.

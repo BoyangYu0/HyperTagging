@@ -210,6 +210,8 @@ def load_trained_evaluation_context(
             common_std=data_module.normalizers["common"].std,
             composite_mean=data_module.normalizers["composite"].mean,
             composite_std=data_module.normalizers["composite"].std,
+            common_count=data_module.normalizers["common"].count,
+            composite_count=data_module.normalizers["composite"].count,
         )
     )
     device = torch.device(device)
