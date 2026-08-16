@@ -1,0 +1,79 @@
+{
+  "all_reported_numbers_finite": true,
+  "checkpoints": [
+    {
+      "all_tensors_finite": true,
+      "bytes": 20732267,
+      "element_count": 6428229,
+      "loadable": true,
+      "path": "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-object16-pointer8-calibration-20260816/15775225/training/best.pt",
+      "sha256": "a9ae4ebaac3e42bd9b9acb48098bcc485fc410ea7e3d9d458db38dc038128c6e",
+      "tensor_count": 855
+    },
+    {
+      "all_tensors_finite": true,
+      "bytes": 20745195,
+      "element_count": 6428229,
+      "loadable": true,
+      "path": "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-object16-pointer8-calibration-20260816/15775225/training/best_rollout_edge_f1.pt",
+      "sha256": "e5e0fc6b27c7558bf28692017ebb2d09d432bcd9074fc513bb7410875f1b0f0b",
+      "tensor_count": 855
+    },
+    {
+      "all_tensors_finite": true,
+      "bytes": 20750787,
+      "element_count": 6428229,
+      "loadable": true,
+      "path": "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-object16-pointer8-calibration-20260816/15775225/training/best_rollout_tree_validity.pt",
+      "sha256": "bb57f8a433829f846bef4a2492dd68b07e6d5bea1a34378c10636e8814244318",
+      "tensor_count": 855
+    },
+    {
+      "all_tensors_finite": true,
+      "bytes": 20738695,
+      "element_count": 6428229,
+      "loadable": true,
+      "path": "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-object16-pointer8-calibration-20260816/15775225/training/best_teacher_forced.pt",
+      "sha256": "0d51382561d1e79f24c99e1de330bc132b7d8e68ea9428fe7b2e25926ba53290",
+      "tensor_count": 855
+    },
+    {
+      "all_tensors_finite": true,
+      "bytes": 20744391,
+      "element_count": 6428229,
+      "loadable": true,
+      "path": "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-object16-pointer8-calibration-20260816/15775225/training/checkpoint-step-100.pt",
+      "sha256": "1225982a3e5c710162e7092024c0ed524e66b51fdc807be29c71f58626388087",
+      "tensor_count": 855
+    },
+    {
+      "all_tensors_finite": true,
+      "bytes": 20737475,
+      "element_count": 6428229,
+      "loadable": true,
+      "path": "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-object16-pointer8-calibration-20260816/15775225/training/checkpoint.pt",
+      "sha256": "3758e78d3b664601038c419950792e694b602ca30cf27d048f6f2ab84c39e8eb",
+      "tensor_count": 855
+    },
+    {
+      "all_tensors_finite": true,
+      "bytes": 20734067,
+      "element_count": 6428229,
+      "loadable": true,
+      "path": "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-object16-pointer8-calibration-20260816/15775225/training/latest.pt",
+      "sha256": "7309f585f42d60ab80002f2ac75b808836f6da7b5a035724699ee93f3d90a67c",
+      "tensor_count": 855
+    },
+    {
+      "all_tensors_finite": true,
+      "bytes": 20724863,
+      "element_count": 6428229,
+      "loadable": true,
+      "path": "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-object16-pointer8-calibration-20260816/15775225/training/signal-checkpoint.pt",
+      "sha256": "c239409059358b77c8157593e3a4ce1328522bcb7b024124e67bbc34bef940d3",
+      "tensor_count": 855
+    }
+  ],
+  "job_id": "15775225",
+  "schema_version": "hypertagging-checkpoint-tensor-finiteness-audit-v1"
+}

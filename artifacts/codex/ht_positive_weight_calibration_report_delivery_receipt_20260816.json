@@ -1,0 +1,37 @@
+{
+  "artifact_input": {
+    "path": "artifacts/codex/ht_positive_weight_calibration_report_artifact_20260816.json",
+    "sha256": "da51a391b5f00ff216ff1a9da5166df6ee109962216d887b320fb5c7b34a113e"
+  },
+  "browser_warning": {
+    "code": "browser_unavailable",
+    "message": "No installed Chromium headless-shell executable was found; portable tooling did not download or install one."
+  },
+  "counts": {
+    "blocks": 11,
+    "charts": 1,
+    "html": 0,
+    "metrics": 0,
+    "tables": 1
+  },
+  "html": {
+    "bytes": 461155,
+    "path": "artifacts/codex/ht_positive_weight_calibration_report_20260816.html",
+    "sha256": "970f32ce39db18de6d3e645201c0e5d6e52d105bc66fabb0e1700b0392c87cc4"
+  },
+  "ok": true,
+  "source_dialog": "not_verified",
+  "source_interaction": "not_verified",
+  "stages": {
+    "package": "passed",
+    "validation": "passed",
+    "verification": "structural_only"
+  },
+  "timings_ms": {
+    "static_chart_extraction": 6.9,
+    "structural_verification": 9.9,
+    "total": 221.2,
+    "validate_and_package": 208.0
+  },
+  "verification_scope": "Exact embedded-payload equality, canonical artifact validation, packaged runtime roots, semantic fallback, and source provenance passed. Enhanced-reader desktop/narrow viewport and interactive source-dialog checks did not run."
+}

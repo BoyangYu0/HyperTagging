@@ -1,0 +1,341 @@
+{
+  "manifest": {
+    "blocks": [
+      {
+        "body": "# HyperTagging Positive-Weight Calibration",
+        "id": "title",
+        "type": "markdown"
+      },
+      {
+        "body": "## Technical summary\n\n`object8_pointer16` is the deterministic winner among the three hard-eligible candidates. Both new arms tie at **6.640625% predicted-edge F1**, so the preregistered second primary metric decides the rank: `object8_pointer16` reaches **69.2308% level-1 micro object precision**, versus **6.0566%** for `object16_pointer8` and **5.9658%** for the 16/16 baseline.\n\nThis is a ranking result, not a promotion recommendation. The winner's level-1 object recall falls to **1.8538%**, query utilization to **0.1099%**, and predicted P4 closure denominator to **7**. It passes the registered hard gates but misses the 10% utilization preference by nearly two orders of magnitude.",
+        "id": "technical_summary",
+        "sourceId": "comparison_evidence",
+        "type": "markdown"
+      },
+      {
+        "body": "## The F1 tie makes object precision decisive\n\nThe two calibration arms improve predicted-edge F1 from 4.6875% to 6.640625%. Because their F1 values are exactly equal, the registered ordering advances to level-1 micro object precision and selects `object8_pointer16`; no duplicate-rate, teacher-loss, or node/depth tie-breaker is used.",
+        "id": "primary_finding",
+        "sourceId": "comparison_evidence",
+        "type": "markdown"
+      },
+      {
+        "chartId": "primary_metrics_chart",
+        "id": "primary_metrics_chart_block",
+        "type": "chart"
+      },
+      {
+        "id": "comparison_table_block",
+        "tableId": "comparison_table",
+        "type": "table"
+      },
+      {
+        "body": "## Scope and metric definitions\n\nAll candidates use checkpoint step 3282, seed 20260815, the same 35k train and 50k validation role cohorts, complete-only targets, 100 optimizer steps, frozen encoder and leaf PID head, 512-event teacher validation, 256-event rollout validation at step 100, and unchanged 0.5 object/pointer inference thresholds. Test-role count is zero. Predicted-edge F1 and level-1 micro object precision are the primary ordered metrics. Hard eligibility requires finite outputs, nonzero query utilization and closure denominator, 100% closure and tree validity, clean terminal execution, correct role separation, checkpoint immutability, and loadable finite tensors.",
+        "id": "scope_definitions",
+        "sourceId": "preregistration",
+        "type": "markdown"
+      },
+      {
+        "body": "## The registered sequencing and integrity contract held\n\nThe preregistration was committed and annotated-tagged before submission. Job 15775197 ran first to terminal completion and was audited before job 15775225 was submitted. Both jobs used one H100 NVL, exited 0 without restart, preserved the source checkpoint hash, retained identical split-manifest hashes, and produced eight loadable finite checkpoint files. No sealed-test records were accessed.",
+        "id": "methodology",
+        "sourceId": "comparison_evidence",
+        "type": "markdown"
+      },
+      {
+        "body": "## Eligibility passes, but activation breadth regresses\n\nAll three candidates pass the hard guardrails. The 16/16 baseline alone meets the nonblocking 10% utilization preference at 43.5181%. `object16_pointer8` reaches 6.2134% utilization with closure denominator 37; `object8_pointer16` reaches only 0.1099% with denominator 7. Both new arms also have larger node/depth gaps than baseline. These changes materially limit the generality of the F1 and precision improvements.",
+        "id": "guardrail_interpretation",
+        "sourceId": "comparison_evidence",
+        "type": "markdown"
+      },
+      {
+        "body": "## Limitations constrain promotion\n\nThis single-seed, 100-step study has no cross-seed uncertainty estimate. Its fixed rollout cohort makes the comparison controlled, but the tiny winning denominator and 1.85% object recall show that the apparent precision gain comes from extreme selectivity. The deterministic winner therefore should not replace 16/16 as a general reconstruction operating point on this evidence alone.",
+        "id": "limitations",
+        "sourceId": "comparison_evidence",
+        "type": "markdown"
+      },
+      {
+        "body": "## Next step: test the midpoint without rerunning existing arms\n\nDo not launch automatically. Preregister one `object12_pointer16` interpolation arm with all current settings frozen and compare it against the preserved 16/16 and 8/16 results. Elevate query utilization ≥10%, a nontrivial closure denominator, and reported level-1 precision-recall balance into the future promotion rule. This directly tests whether the object-weight transition can retain precision without activation collapse.",
+        "id": "next_step",
+        "sourceId": "comparison_evidence",
+        "type": "markdown"
+      },
+      {
+        "body": "## Further question\n\nDoes the transition between object weights 8 and 16 behave smoothly, or is there a sharp activation threshold near the midpoint? A single registered midpoint arm is the smallest experiment that can distinguish those possibilities while reusing all existing controls.",
+        "id": "further_question",
+        "type": "markdown"
+      }
+    ],
+    "description": "A source-bound technical comparison of the frozen 16/16 baseline and two one-factor positive-weight calibration arms.",
+    "generatedAt": "2026-08-16T11:26:11+00:00",
+    "charts": [
+      {
+        "dataset": "primary_metric_comparison",
+        "encodings": {
+          "color": {
+            "field": "metric",
+            "label": "Metric",
+            "type": "nominal"
+          },
+          "tooltip": [
+            {
+              "field": "query_utilization",
+              "format": "percent",
+              "label": "Query utilization",
+              "type": "quantitative"
+            },
+            {
+              "field": "closure_denominator",
+              "label": "Closure denominator",
+              "type": "quantitative"
+            }
+          ],
+          "x": {
+            "field": "candidate",
+            "label": "Candidate",
+            "type": "nominal"
+          },
+          "y": {
+            "field": "value",
+            "format": "percent",
+            "label": "Rate",
+            "type": "quantitative"
+          }
+        },
+        "id": "primary_metrics_chart",
+        "sourceId": "comparison_evidence",
+        "subtitle": "Fixed step-100 rollout and validation cohorts; rates share a 0-100% scale",
+        "title": "Primary metrics by candidate",
+        "type": "bar",
+        "valueFormat": "percent"
+      }
+    ],
+    "sources": [
+      {
+        "id": "comparison_evidence",
+        "label": "Positive-weight calibration comparison",
+        "path": "artifacts/codex/ht_positive_weight_calibration_comparison_20260816.json"
+      },
+      {
+        "id": "preregistration",
+        "label": "Positive-weight calibration preregistration",
+        "path": "artifacts/codex/ht_positive_weight_calibration_preregistration_20260816.json"
+      }
+    ],
+    "surface": "report",
+    "tables": [
+      {
+        "columns": [
+          {
+            "field": "rank",
+            "format": "number",
+            "label": "Rank"
+          },
+          {
+            "field": "arm",
+            "label": "Candidate",
+            "type": "text"
+          },
+          {
+            "field": "predicted_edge_f1",
+            "format": "percent",
+            "label": "Predicted-edge F1"
+          },
+          {
+            "field": "object_precision",
+            "format": "percent",
+            "label": "L1 object precision"
+          },
+          {
+            "field": "object_recall",
+            "format": "percent",
+            "label": "L1 object recall"
+          },
+          {
+            "field": "query_utilization",
+            "format": "percent",
+            "label": "Query utilization"
+          },
+          {
+            "field": "closure_denominator",
+            "format": "number",
+            "label": "Closure denominator"
+          },
+          {
+            "field": "duplicate_rate",
+            "format": "percent",
+            "label": "Duplicate rate"
+          },
+          {
+            "field": "teacher_loss",
+            "format": "number",
+            "label": "Teacher loss"
+          },
+          {
+            "field": "node_depth_gap",
+            "format": "number",
+            "label": "Node/depth gap"
+          },
+          {
+            "field": "eligibility",
+            "label": "Eligibility",
+            "type": "text"
+          }
+        ],
+        "dataset": "candidate_comparison",
+        "defaultSort": {
+          "direction": "asc",
+          "field": "rank"
+        },
+        "id": "comparison_table",
+        "sourceId": "comparison_evidence",
+        "subtitle": "Fixed validation/rollout cohorts; exact registered ranking order",
+        "title": "Baseline and calibration arms"
+      }
+    ],
+    "title": "HyperTagging Positive-Weight Calibration",
+    "version": 1
+  },
+  "snapshot": {
+    "accessIssues": [],
+    "datasets": {
+      "candidate_comparison": [
+        {
+          "arm": "object8_pointer16",
+          "closure_denominator": 7,
+          "duplicate_rate": 0.006673177083333333,
+          "eligibility": "Eligible; utilization below preference",
+          "node_depth_gap": 7.37890625,
+          "object_precision": 0.6923076923076923,
+          "object_recall": 0.018537590113285273,
+          "predicted_edge_f1": 0.06640625,
+          "query_utilization": 0.0010986328125,
+          "rank": 1,
+          "teacher_loss": 4.3463451349144355
+        },
+        {
+          "arm": "object16_pointer8",
+          "closure_denominator": 37,
+          "duplicate_rate": 0.06629605574661085,
+          "eligibility": "Eligible; utilization below preference",
+          "node_depth_gap": 7.14453125,
+          "object_precision": 0.06056636726546906,
+          "object_recall": 1.0,
+          "predicted_edge_f1": 0.06640625,
+          "query_utilization": 0.0621337890625,
+          "rank": 2,
+          "teacher_loss": 4.134724842031197
+        },
+        {
+          "arm": "baseline_object16_pointer16",
+          "closure_denominator": 225,
+          "duplicate_rate": 0.42221732761548914,
+          "eligibility": "Eligible; utilization preference met",
+          "node_depth_gap": 5.67578125,
+          "object_precision": 0.05965839272548538,
+          "object_recall": 1.0,
+          "predicted_edge_f1": 0.046875,
+          "query_utilization": 0.4351806640625,
+          "rank": 3,
+          "teacher_loss": 4.468826823835743
+        }
+      ],
+      "primary_metric_comparison": [
+        {
+          "candidate": "8/16",
+          "closure_denominator": 7,
+          "metric": "Predicted-edge F1",
+          "object_recall": 0.018537590113285273,
+          "query_utilization": 0.0010986328125,
+          "rank": 1,
+          "value": 0.06640625
+        },
+        {
+          "candidate": "8/16",
+          "closure_denominator": 7,
+          "metric": "L1 object precision",
+          "object_recall": 0.018537590113285273,
+          "query_utilization": 0.0010986328125,
+          "rank": 1,
+          "value": 0.6923076923076923
+        },
+        {
+          "candidate": "16/8",
+          "closure_denominator": 37,
+          "metric": "Predicted-edge F1",
+          "object_recall": 1.0,
+          "query_utilization": 0.0621337890625,
+          "rank": 2,
+          "value": 0.06640625
+        },
+        {
+          "candidate": "16/8",
+          "closure_denominator": 37,
+          "metric": "L1 object precision",
+          "object_recall": 1.0,
+          "query_utilization": 0.0621337890625,
+          "rank": 2,
+          "value": 0.06056636726546906
+        },
+        {
+          "candidate": "16/16 baseline",
+          "closure_denominator": 225,
+          "metric": "Predicted-edge F1",
+          "object_recall": 1.0,
+          "query_utilization": 0.4351806640625,
+          "rank": 3,
+          "value": 0.046875
+        },
+        {
+          "candidate": "16/16 baseline",
+          "closure_denominator": 225,
+          "metric": "L1 object precision",
+          "object_recall": 1.0,
+          "query_utilization": 0.4351806640625,
+          "rank": 3,
+          "value": 0.05965839272548538
+        }
+      ]
+    },
+    "generatedAt": "2026-08-16T11:26:11+00:00",
+    "status": "ready",
+    "version": 1
+  },
+  "sources": [
+    {
+      "id": "comparison_evidence",
+      "label": "Positive-weight calibration comparison",
+      "path": "artifacts/codex/ht_positive_weight_calibration_comparison_20260816.json",
+      "query": {
+        "description": "Loads the canonical comparison assembled from the three hashed result, receipt, telemetry, split, and tensor-audit bundles.",
+        "engine": "duckdb",
+        "executed_at": "2026-08-16T11:26:11+00:00",
+        "language": "sql",
+        "metric_definitions": [
+          "Predicted-edge F1 is the fixed 256-event rollout metric at optimizer step 100.",
+          "Level-1 object precision and recall are micro-aggregated over the fixed validation cohort.",
+          "Node/depth gap is abs(predicted nodes - truth nodes) + abs(predicted max level - truth max level)."
+        ],
+        "sql": "SELECT * FROM (VALUES ('8/16', 'Predicted-edge F1', 0.06640625, 0.0010986328125, 7, 0.018537590113285273, 1), ('8/16', 'L1 object precision', 0.6923076923076923, 0.0010986328125, 7, 0.018537590113285273, 1), ('16/8', 'Predicted-edge F1', 0.06640625, 0.0621337890625, 37, 1.0, 2), ('16/8', 'L1 object precision', 0.06056636726546906, 0.0621337890625, 37, 1.0, 2), ('16/16 baseline', 'Predicted-edge F1', 0.046875, 0.4351806640625, 225, 1.0, 3), ('16/16 baseline', 'L1 object precision', 0.05965839272548538, 0.4351806640625, 225, 1.0, 3)) AS t(candidate, metric, value, query_utilization, closure_denominator, object_recall, rank) ORDER BY rank, metric",
+        "tables_used": [
+          "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-query-activation-balance-retry-study-20260816/15774286/result.json",
+          "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-object8-pointer16-calibration-20260816/15775197/result.json",
+          "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-object16-pointer8-calibration-20260816/15775225/result.json"
+        ]
+      }
+    },
+    {
+      "id": "preregistration",
+      "label": "Positive-weight calibration preregistration",
+      "path": "artifacts/codex/ht_positive_weight_calibration_preregistration_20260816.json",
+      "query": {
+        "description": "Frozen two-arm settings, immutable baseline, submission sequence, hard guardrails, and deterministic ranking rule committed before submission.",
+        "engine": "filesystem",
+        "executed_at": "2026-08-16T10:53:35+00:00",
+        "language": "json",
+        "tables_used": [
+          "artifacts/codex/ht_positive_weight_calibration_preregistration_20260816.json"
+        ]
+      }
+    }
+  ],
+  "surface": "report"
+}

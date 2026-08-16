@@ -1,0 +1,339 @@
+{
+  "analysis_as_of": "2026-08-16T11:26:11+00:00",
+  "candidates": [
+    {
+      "arm_id": "baseline_object16_pointer16",
+      "artifacts": {
+        "allocation": {
+          "path": "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-query-activation-balance-retry-study-20260816/15774286/provenance/allocation.txt",
+          "sha256": "b0bd2e018688143c480205ab26d9eec89d784ed25a9480f0758509a68cf3ae18"
+        },
+        "contract": {
+          "canonical_sha256": "ae215efd52d58482cb74cb660ac02172b0f0f4fe8b7ad637783b827dc066042a",
+          "file_sha256": "525edb655c1d540e7d107cb076dacb3042ffade1e0a791ff731d518b1ce6e655",
+          "path": "artifacts/studies/contracts/pretrain-035k-transfer-step3282-query-activation-balance-retry-study-20260816.json"
+        },
+        "metrics_jsonl": {
+          "path": "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-query-activation-balance-retry-study-20260816/15774286/training/metrics.jsonl",
+          "sha256": "b700816a5e931fa38cbd57a76009b9aa7f8779953cec3009f793062b5eb0fa9b"
+        },
+        "receipt": {
+          "file_sha256": "4b1f63fa770d8f2cb92b34c122bb807305742d37eefedd053e8922d1225398ab",
+          "path": "artifacts/slurm/studies/reconstruction-transfer-probe/jobs/15774286/attempt-00/receipt.json",
+          "receipt_sha256": "30a36076a2330300f89e421875a90293fc89aed97275637a7c0127ec16058ac9"
+        },
+        "result": {
+          "path": "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-query-activation-balance-retry-study-20260816/15774286/result.json",
+          "sha256": "74c3da05e88dbe9d4d2d706f6424b2e5948c2ff993d004904a1b5a5ecab28479"
+        },
+        "split_manifest": {
+          "path": "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-query-activation-balance-retry-study-20260816/15774286/training/split_manifest.json",
+          "sha256": "9ad9571779008117488aaecf133ea223883d8498632e15e2a8af33224b477b2c"
+        },
+        "stderr": {
+          "path": "artifacts/slurm/pretrain-035k-transfer-step3282-query-activation-balance-retry-study-20260816-15774286.err",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "path": "artifacts/slurm/pretrain-035k-transfer-step3282-query-activation-balance-retry-study-20260816-15774286.out",
+          "sha256": "1ef91b35258e3947ff89523f700aa0fc626e15076748f8cd8174686543c18668"
+        },
+        "telemetry_jsonl": {
+          "path": "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-query-activation-balance-retry-study-20260816/15774286/provenance/gpu-telemetry.jsonl",
+          "sha256": "4a237ef179c688236d1975577263221015fc518ff417d44db93e5bf3fb13cf56"
+        },
+        "telemetry_summary": {
+          "path": "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-query-activation-balance-retry-study-20260816/15774286/provenance/gpu-telemetry-summary.json",
+          "sha256": "fd063089313fa738636a3ccf076388561879b92a31a5506bd494c24a2f0c7646"
+        },
+        "tensor_finiteness_audit": {
+          "path": "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-query-activation-balance-retry-study-20260816/15774286/integrity-audit.json",
+          "sha256": "955ace3e6ce844e9b105be36163b449cf79e5a8f9ad4845ad4474be31ed7cfdd"
+        }
+      },
+      "eligibility": {
+        "hard_eligible": true,
+        "query_utilization_preference_met": true,
+        "reasons": []
+      },
+      "job_id": "15774286",
+      "metrics": {
+        "duplicate_candidate_rate": 0.42221732761548914,
+        "micro_level_1_object_precision": 0.05965839272548538,
+        "micro_level_1_object_recall": 1.0,
+        "node_depth_gap": 5.67578125,
+        "predicted_edge_f1": 0.046875,
+        "predicted_p4_closure_denominator": 225.0,
+        "predicted_p4_closure_rate": 1.0,
+        "predicted_predicted_max_level": 0.87890625,
+        "predicted_predicted_nodes": 37.80859375,
+        "predicted_tree_validity_rate": 1.0,
+        "predicted_truth_max_level": 2.09765625,
+        "predicted_truth_nodes": 42.265625,
+        "query_utilization": 0.4351806640625,
+        "validation_loss_total": 4.468826823835743
+      },
+      "object_positive_weight": 16.0,
+      "output_checkpoint_sha256": "9af206178f88dea15482ce45ffe9fd4e6575732de665ece84e6a2bccee566026",
+      "pointer_positive_weight": 16.0,
+      "rank": 3,
+      "resources": {
+        "gpu": "NVIDIA H100 NVL",
+        "peak_gpu_memory_mib": 929,
+        "peak_gpu_utilization_percent": 33,
+        "peak_temperature_c": 53,
+        "result_elapsed_seconds": 641.7910425369628,
+        "slurm_elapsed": "00:10:50",
+        "slurm_max_rss_kib": 2786528
+      }
+    },
+    {
+      "arm_id": "object8_pointer16",
+      "artifacts": {
+        "allocation": {
+          "path": "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-object8-pointer16-calibration-20260816/15775197/provenance/allocation.txt",
+          "sha256": "1c762a7c86222708ea912878c5c13c8afd8c66c5b415d07b42d3862c96f7a630"
+        },
+        "contract": {
+          "canonical_sha256": "54ecde414a1f8f61ac3d028143c5c662bc7a2ab4b4c06461cc505c917574fe19",
+          "file_sha256": "edf60fc17e2a4c6c8cea1d8b2d2ff447936cffde57a46b556a096a4c1849e95f",
+          "path": "artifacts/studies/contracts/pretrain-035k-transfer-step3282-object8-pointer16-calibration-20260816.json"
+        },
+        "metrics_jsonl": {
+          "path": "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-object8-pointer16-calibration-20260816/15775197/training/metrics.jsonl",
+          "sha256": "17bd50408a4a2ed487b737241fabe918f6acff072ba246b97e233b405fb7b50d"
+        },
+        "receipt": {
+          "file_sha256": "a526cb296e7aae7f5edbc7a7e283bbf623822cc7cda0bca1059eaa38b85ea203",
+          "path": "artifacts/slurm/studies/reconstruction-transfer-probe/jobs/15775197/attempt-00/receipt.json",
+          "receipt_sha256": "e0dc09463630c51bd98a9f5dfa88b8cda53f69a426b6876d40df6bc6bf718dbf"
+        },
+        "result": {
+          "path": "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-object8-pointer16-calibration-20260816/15775197/result.json",
+          "sha256": "a8b403dde9c14dae25ac82db95738f0350de87fe0f0678c6a4c5e926668eb4dd"
+        },
+        "split_manifest": {
+          "path": "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-object8-pointer16-calibration-20260816/15775197/training/split_manifest.json",
+          "sha256": "9ad9571779008117488aaecf133ea223883d8498632e15e2a8af33224b477b2c"
+        },
+        "stderr": {
+          "path": "artifacts/slurm/pretrain-035k-transfer-step3282-object8-pointer16-calibration-20260816-15775197.err",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "path": "artifacts/slurm/pretrain-035k-transfer-step3282-object8-pointer16-calibration-20260816-15775197.out",
+          "sha256": "da29b38adc50be0ae0e70ab4d6a6641749e67a70ee4fd68bf6c62fbe30731c4f"
+        },
+        "telemetry_jsonl": {
+          "path": "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-object8-pointer16-calibration-20260816/15775197/provenance/gpu-telemetry.jsonl",
+          "sha256": "5008617257ab090279e2222f52f33e7c3f7e06461815dbe4dbcdb8f48f36d3d5"
+        },
+        "telemetry_summary": {
+          "path": "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-object8-pointer16-calibration-20260816/15775197/provenance/gpu-telemetry-summary.json",
+          "sha256": "657aedd7af7501ed97188a8e4391c903eaa51c9d0e0e128fabba7dc2c1d53bb4"
+        },
+        "tensor_finiteness_audit": {
+          "path": "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-object8-pointer16-calibration-20260816/15775197/tensor-finiteness-audit.json",
+          "sha256": "c5940087462829655b43630c9c0e821503e56a5a400b8c786dbec4abee93472c"
+        }
+      },
+      "eligibility": {
+        "hard_eligible": true,
+        "query_utilization_preference_met": false,
+        "reasons": [
+          "Query utilization 0.0010986328125 is nonzero but below the preregistered 0.10 preference."
+        ]
+      },
+      "job_id": "15775197",
+      "metrics": {
+        "duplicate_candidate_rate": 0.006673177083333333,
+        "micro_level_1_object_precision": 0.6923076923076923,
+        "micro_level_1_object_recall": 0.018537590113285273,
+        "node_depth_gap": 7.37890625,
+        "predicted_edge_f1": 0.06640625,
+        "predicted_p4_closure_denominator": 7.0,
+        "predicted_p4_closure_rate": 1.0,
+        "predicted_predicted_max_level": 0.02734375,
+        "predicted_predicted_nodes": 36.95703125,
+        "predicted_tree_validity_rate": 1.0,
+        "predicted_truth_max_level": 2.09765625,
+        "predicted_truth_nodes": 42.265625,
+        "query_utilization": 0.0010986328125,
+        "validation_loss_total": 4.3463451349144355
+      },
+      "object_positive_weight": 8.0,
+      "output_checkpoint_sha256": "2128f81699f8c91097670b3cb06cf301bc3e43886ca1c99e603a036b06706b18",
+      "pointer_positive_weight": 16.0,
+      "rank": 1,
+      "resources": {
+        "gpu": "NVIDIA H100 NVL",
+        "peak_gpu_memory_mib": 929,
+        "peak_gpu_utilization_percent": 35,
+        "peak_temperature_c": 53,
+        "result_elapsed_seconds": 607.4796619110275,
+        "slurm_elapsed": "00:10:16",
+        "slurm_max_rss_kib": 2747508
+      }
+    },
+    {
+      "arm_id": "object16_pointer8",
+      "artifacts": {
+        "allocation": {
+          "path": "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-object16-pointer8-calibration-20260816/15775225/provenance/allocation.txt",
+          "sha256": "e61c7195671a8dbf3d631032c0e2def530b651499fd7b4d42d4306f230510886"
+        },
+        "contract": {
+          "canonical_sha256": "dd5ee8c080817d2f48ac14887bd2cadd721530b6c421fe4bd43fee1eb8245bb7",
+          "file_sha256": "2467f2c0c53c8ef981f215fb145f15a8f2259039a602aa2023ee7073783a8e05",
+          "path": "artifacts/studies/contracts/pretrain-035k-transfer-step3282-object16-pointer8-calibration-20260816.json"
+        },
+        "metrics_jsonl": {
+          "path": "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-object16-pointer8-calibration-20260816/15775225/training/metrics.jsonl",
+          "sha256": "d420327ff42f5ef252c6e569f31e99ffc16a9a88101c105e200f832288cb0ee1"
+        },
+        "receipt": {
+          "file_sha256": "6bf1d956b4a805475bd2b6721ab8136a8ac6a5755651af9d4f37cc0ac9a1faef",
+          "path": "artifacts/slurm/studies/reconstruction-transfer-probe/jobs/15775225/attempt-00/receipt.json",
+          "receipt_sha256": "9473e4c12b983048a3f16377eaa3d985d1bb52931865dbab1171c91d15aed480"
+        },
+        "result": {
+          "path": "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-object16-pointer8-calibration-20260816/15775225/result.json",
+          "sha256": "86004dda62a39c39ed240bda487f7b64a805241a7855ac13833650ea80042d18"
+        },
+        "split_manifest": {
+          "path": "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-object16-pointer8-calibration-20260816/15775225/training/split_manifest.json",
+          "sha256": "9ad9571779008117488aaecf133ea223883d8498632e15e2a8af33224b477b2c"
+        },
+        "stderr": {
+          "path": "artifacts/slurm/pretrain-035k-transfer-step3282-object16-pointer8-calibration-20260816-15775225.err",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "path": "artifacts/slurm/pretrain-035k-transfer-step3282-object16-pointer8-calibration-20260816-15775225.out",
+          "sha256": "7903049c1bb0df052a031fde3ef689f55110f4cd40b96f83389bcff6b3de50a5"
+        },
+        "telemetry_jsonl": {
+          "path": "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-object16-pointer8-calibration-20260816/15775225/provenance/gpu-telemetry.jsonl",
+          "sha256": "9db77bc40fe8a016b0aa9fcc2acfa785cd4023db9303a38a0a725616f1d1e6e7"
+        },
+        "telemetry_summary": {
+          "path": "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-object16-pointer8-calibration-20260816/15775225/provenance/gpu-telemetry-summary.json",
+          "sha256": "794d8d7488200b63b0d168b59b4cb4eb572f38679d0d3ac34d960bd7f8f7a778"
+        },
+        "tensor_finiteness_audit": {
+          "path": "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-object16-pointer8-calibration-20260816/15775225/tensor-finiteness-audit.json",
+          "sha256": "c67454f073dc608bf4aa284dcd28a3ba3e1d9ecd280528d7821416a5e3e55b9b"
+        }
+      },
+      "eligibility": {
+        "hard_eligible": true,
+        "query_utilization_preference_met": false,
+        "reasons": [
+          "Query utilization 0.0621337890625 is nonzero but below the preregistered 0.10 preference."
+        ]
+      },
+      "job_id": "15775225",
+      "metrics": {
+        "duplicate_candidate_rate": 0.06629605574661085,
+        "micro_level_1_object_precision": 0.06056636726546906,
+        "micro_level_1_object_recall": 1.0,
+        "node_depth_gap": 7.14453125,
+        "predicted_edge_f1": 0.06640625,
+        "predicted_p4_closure_denominator": 37.0,
+        "predicted_p4_closure_rate": 1.0,
+        "predicted_predicted_max_level": 0.14453125,
+        "predicted_predicted_nodes": 37.07421875,
+        "predicted_tree_validity_rate": 1.0,
+        "predicted_truth_max_level": 2.09765625,
+        "predicted_truth_nodes": 42.265625,
+        "query_utilization": 0.0621337890625,
+        "validation_loss_total": 4.134724842031197
+      },
+      "object_positive_weight": 16.0,
+      "output_checkpoint_sha256": "3758e78d3b664601038c419950792e694b602ca30cf27d048f6f2ab84c39e8eb",
+      "pointer_positive_weight": 8.0,
+      "rank": 2,
+      "resources": {
+        "gpu": "NVIDIA H100 NVL",
+        "peak_gpu_memory_mib": 931,
+        "peak_gpu_utilization_percent": 36,
+        "peak_temperature_c": 53,
+        "result_elapsed_seconds": 618.0241839740193,
+        "slurm_elapsed": "00:10:27",
+        "slurm_max_rss_kib": 2790284
+      }
+    }
+  ],
+  "comparison_sha256": "fb6fe7c655808744bbf02569ea897fbfde23bec84ead8a7a54ee05b066a556e3",
+  "eligibility_definition": {
+    "hard_guardrails": [
+      "all reported numbers finite",
+      "query utilization > 0",
+      "predicted P4 closure denominator > 0",
+      "predicted P4 closure rate == 1",
+      "predicted tree validity rate == 1",
+      "terminal receipt completed with exit 0 and restart count 0",
+      "train role only for optimization, validation role only for evaluation, test count 0",
+      "source checkpoint unchanged",
+      "output checkpoints loadable and tensors finite"
+    ],
+    "nonblocking_preference": "query utilization >= 0.10"
+  },
+  "limitations": [
+    "This is a single-seed, 100-step calibration on one fixed validation and rollout cohort; no uncertainty interval or cross-seed stability estimate is available.",
+    "The winning object8_pointer16 arm raises precision by predicting very few level-1 objects: recall falls to 0.018537590113285273, query utilization to 0.0010986328125, and the closure denominator to 7.",
+    "Both new arms miss the preregistered 0.10 query-utilization preference, and both move the predicted node/depth summary farther from truth than the 16/16 baseline.",
+    "The deterministic rank answers the registered comparison; it is not sufficient evidence to promote object8_pointer16 as a general reconstruction operating point."
+  ],
+  "next_scientifically_justified_step": "Do not launch automatically. Preregister one midpoint interpolation arm object12_pointer16 against the frozen existing 16/16 baseline and object8_pointer16 result, with identical data/model/threshold settings and an explicit promotion rule that requires query utilization >= 0.10, a nontrivial closure denominator, and reported level-1 precision-recall balance. This tests whether the object-weight transition can recover precision without the observed activation collapse.",
+  "preregistration": {
+    "canonical_sha256": "3b40e3a5568dc673d5f0f7199471d055ea2d8fad1ce2aa5da062fbaba377dab3",
+    "commit": "ee0648f972f7da469f61d5b4f547d2b4633b010a",
+    "path": "artifacts/codex/ht_positive_weight_calibration_preregistration_20260816.json",
+    "tag": "pretrain-035k-transfer-positive-weight-calibration-preregistered-20260816"
+  },
+  "report_chart_map": {
+    "analytical_question": "Which hard-eligible candidate ranks first on the two registered primary metrics?",
+    "chart_type": "grouped vertical bar",
+    "dataset": "primary_metric_comparison",
+    "fields": [
+      "candidate",
+      "metric",
+      "value"
+    ],
+    "palette_policy": "hard two-root cap with candidate labels as the non-color distinction",
+    "reason": "The portable report contract requires a native chart. The grouped bar is limited to the two same-unit primary rates; the adjacent exact table carries guardrails, denominators, recall, loss, and node/depth gap.",
+    "report_segment": "The F1 tie makes object precision decisive",
+    "supported_claim": "The two new arms tie on predicted-edge F1 and object8_pointer16 wins on object precision."
+  },
+  "queue_state_after_jobs": {
+    "active_user_jobs": 0,
+    "captured_at": "2026-08-16T11:26:11+00:00"
+  },
+  "ranking": {
+    "ordered_arm_ids": [
+      "object8_pointer16",
+      "object16_pointer8",
+      "baseline_object16_pointer16"
+    ],
+    "ordered_criteria": [
+      "hard eligibility",
+      "descending predicted_edge_f1",
+      "descending micro_level_1_object_precision",
+      "ascending duplicate_candidate_rate",
+      "ascending validation_loss_total",
+      "ascending node_depth_gap",
+      "fixed final tie order"
+    ],
+    "outcome": "object8_pointer16",
+    "reason": "Both new arms tie exactly at predicted_edge_f1=0.06640625; object8_pointer16 wins on the next preregistered primary metric with micro_level_1_object_precision=0.6923076923076923 versus 0.06056636726546906. No tie-breaker was needed."
+  },
+  "schema_version": "hypertagging-reconstruction-positive-weight-calibration-comparison-v1",
+  "sealed_test_role_access": "forbidden",
+  "source_checkpoint": {
+    "path": "artifacts/runs/pretrain-035k-h100-channel-dominance-resume-20260815/20260812/15763706/checkpoint-step-3282.pt",
+    "sha256": "5afdae8ac943163631499674297d6f15986c825f00ccff2d39389f22ff383c79",
+    "unchanged_in_all_candidates": true
+  },
+  "validation_assessment": "Ready to share with caveats"
+}
