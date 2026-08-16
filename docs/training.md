@@ -148,6 +148,16 @@ scaling for unsupported runtime-only slots. Available non-finite values still
 fail closed. This changes no query gate, threshold, cohort, denominator,
 schedule, focal weight, or PID decision.
 
+The preregistered v4 positive-weight calibration retains the successful v3
+100-step profile and changes exactly one matched-positive focal weight per arm.
+`object8_pointer16` changes object positive weight from 16 to 8 while retaining
+pointer positive weight 16; `object16_pointer8` retains object positive weight
+16 and changes pointer positive weight from 16 to 8. Both profiles are limited
+to checkpoint step 3282, bind a hashed two-arm preregistration, preserve the v3
+seed, frozen encoder and leaf PID head, data roles/cohorts, complete-only policy,
+architecture, cardinalities, validation cadence and denominators, 0.5 inference
+thresholds, eligibility gates, source immutability, and sealed-test prohibition.
+
 `configs/hyperbolic_pretrain_pilot.yaml` requires bounded objective-gradient
 preflight evidence. It reports raw and weighted magnitudes, active denominators,
 projection-specific norms, and pairwise cosines, and checks zero/non-finite or

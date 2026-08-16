@@ -1,0 +1,172 @@
+{
+  "arms": [
+    {
+      "arm_id": "object8_pointer16",
+      "contract_version": "hypertagging-reconstruction-transfer-probe-v4-object8-pointer16",
+      "experiment": "pretrain-035k-transfer-step3282-object8-pointer16-calibration-20260816",
+      "object_positive_weight": 8.0,
+      "pointer_positive_weight": 16.0,
+      "submission_order": 1
+    },
+    {
+      "arm_id": "object16_pointer8",
+      "contract_version": "hypertagging-reconstruction-transfer-probe-v4-object16-pointer8",
+      "experiment": "pretrain-035k-transfer-step3282-object16-pointer8-calibration-20260816",
+      "object_positive_weight": 16.0,
+      "pointer_positive_weight": 8.0,
+      "submission_order": 2
+    }
+  ],
+  "canonicalization": "SHA256 of UTF-8 json.dumps(payload_without_preregistration_sha256, sort_keys=True, separators=(',', ':'))",
+  "created_at": "2026-08-16T10:53:35+00:00",
+  "decision_question": "Which single reduction from the successful 16/16 matched-positive focal weighting improves reconstruction precision without violating the frozen rollout eligibility contract?",
+  "eligibility_guardrails": {
+    "all_reported_numbers_finite": true,
+    "no_restart_or_corruption": true,
+    "output_checkpoints_finite_and_loadable": true,
+    "predicted_p4_closure_denominator": ">0",
+    "predicted_p4_closure_rate": "==1.0",
+    "predicted_tree_validity_rate": "==1.0",
+    "query_utilization_hard_gate": ">0.0",
+    "query_utilization_preferred": ">=0.10",
+    "roles": {
+      "evaluation": "validation",
+      "optimization": "train",
+      "test_count": 0
+    },
+    "source_checkpoint_unchanged": true
+  },
+  "frozen_probe": {
+    "batch_size": 4,
+    "best_metric": "predicted_edge_f1",
+    "best_mode": "max",
+    "complete_only_target_policy": true,
+    "fail_closed_checks": [
+      "target representability and finite loss",
+      "decoder gradient reachability",
+      "supported runtime normalization with finite values",
+      "exact source/config/input hashes",
+      "train-validation role separation",
+      "sealed-test absence",
+      "source-checkpoint immutability",
+      "output-checkpoint tensor finiteness"
+    ],
+    "freeze_leaf_pid_head_steps": 100,
+    "freeze_pretrained_encoder_steps": 100,
+    "inference_thresholds": {
+      "object": 0.5,
+      "pointer": 0.5
+    },
+    "initial_state_policy": "upsilon4s",
+    "max_cardinality": 16,
+    "max_cardinality_by_level": [
+      [
+        1,
+        16
+      ],
+      [
+        2,
+        16
+      ],
+      [
+        3,
+        16
+      ]
+    ],
+    "max_steps": 100,
+    "max_validation_events": 512,
+    "model_preset": "small_candidate",
+    "rollout_validate_every": 100,
+    "rollout_validation_events": 256,
+    "seed": 20260815,
+    "target_policy": "complete_only",
+    "transfer_leaf_pid_head": true,
+    "validate_every": 50,
+    "validation_batch_size": 4,
+    "validation_steps": [
+      50,
+      100
+    ]
+  },
+  "immutable_baseline": {
+    "contract_file_sha256": "525edb655c1d540e7d107cb076dacb3042ffade1e0a791ff731d518b1ce6e655",
+    "contract_path": "artifacts/studies/contracts/pretrain-035k-transfer-step3282-query-activation-balance-retry-study-20260816.json",
+    "contract_sha256": "ae215efd52d58482cb74cb660ac02172b0f0f4fe8b7ad637783b827dc066042a",
+    "integrity_audit_file_sha256": "955ace3e6ce844e9b105be36163b449cf79e5a8f9ad4845ad4474be31ed7cfdd",
+    "integrity_audit_path": "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-query-activation-balance-retry-study-20260816/15774286/integrity-audit.json",
+    "job_id": "15774286",
+    "metrics": {
+      "duplicate_candidate_rate": 0.42221732761548914,
+      "micro_level_1_object_precision": 0.05965839272548538,
+      "micro_level_1_object_recall": 1.0,
+      "predicted_edge_f1": 0.046875,
+      "predicted_p4_closure_denominator": 225.0,
+      "predicted_p4_closure_rate": 1.0,
+      "predicted_predicted_max_level": 0.87890625,
+      "predicted_predicted_nodes": 37.80859375,
+      "predicted_tree_validity_rate": 1.0,
+      "predicted_truth_max_level": 2.09765625,
+      "predicted_truth_nodes": 42.265625,
+      "query_utilization": 0.4351806640625,
+      "validation_loss_total": 4.468826823835743
+    },
+    "object_positive_weight": 16.0,
+    "pointer_positive_weight": 16.0,
+    "receipt_file_sha256": "4b1f63fa770d8f2cb92b34c122bb807305742d37eefedd053e8922d1225398ab",
+    "receipt_path": "artifacts/slurm/studies/reconstruction-transfer-probe/jobs/15774286/attempt-00/receipt.json",
+    "receipt_sha256": "30a36076a2330300f89e421875a90293fc89aed97275637a7c0127ec16058ac9",
+    "result_file_sha256": "74c3da05e88dbe9d4d2d706f6424b2e5948c2ff993d004904a1b5a5ecab28479",
+    "result_path": "artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-query-activation-balance-retry-study-20260816/15774286/result.json"
+  },
+  "one_factor_at_a_time": {
+    "object16_pointer8_differs_from_baseline_only_in": "pointer_positive_weight",
+    "object8_pointer16_differs_from_baseline_only_in": "object_positive_weight"
+  },
+  "preregistration_sha256": "3b40e3a5568dc673d5f0f7199471d055ea2d8fad1ce2aa5da062fbaba377dab3",
+  "primary_metrics": [
+    "predicted_edge_f1",
+    "micro_level_1_object_precision"
+  ],
+  "ranking_rule": {
+    "eligibility_first": true,
+    "fixed_final_tie_order": [
+      "baseline_object16_pointer16",
+      "object8_pointer16",
+      "object16_pointer8"
+    ],
+    "node_depth_gap_formula": "abs(predicted_predicted_nodes - predicted_truth_nodes) + abs(predicted_predicted_max_level - predicted_truth_max_level)",
+    "ordered_criteria": [
+      "descending predicted_edge_f1",
+      "descending micro_level_1_object_precision",
+      "ascending duplicate_candidate_rate",
+      "ascending validation_loss_total",
+      "ascending node_depth_gap",
+      "fixed_final_tie_order"
+    ],
+    "ties": "Exact numeric equality only; no post-outcome tolerance may be introduced.",
+    "unqualified_arms": "An arm failing any hard guardrail is excluded even if a primary metric improves. Query utilization below 0.10 but above 0 remains eligible and is flagged as below preference."
+  },
+  "resource_policy": {
+    "account": "others",
+    "cpus": 8,
+    "exactly_one_active_calibration_job": true,
+    "h100_gres": "gpu:h100nvl:1",
+    "memory": "64G",
+    "partition": "inter",
+    "preferred_gpu": "H100 NVL when promptly available",
+    "time": "03:00:00",
+    "v100_fallback_gres": "gpu:v100:1"
+  },
+  "schema_version": "hypertagging-reconstruction-positive-weight-calibration-preregistration-v1",
+  "sealed_test_role_access": "forbidden",
+  "source_checkpoint": {
+    "path": "artifacts/runs/pretrain-035k-h100-channel-dominance-resume-20260815/20260812/15763706/checkpoint-step-3282.pt",
+    "sha256": "5afdae8ac943163631499674297d6f15986c825f00ccff2d39389f22ff383c79",
+    "step": 3282
+  },
+  "submission_order": [
+    "object8_pointer16",
+    "object16_pointer8"
+  ],
+  "submission_policy": "Render and submit object8_pointer16 first; inspect and verify its authoritative artifacts only after terminal state; submit object16_pointer8 only after arm 1 is terminal; never cancel unrelated jobs; launch no unregistered experiment."
+}

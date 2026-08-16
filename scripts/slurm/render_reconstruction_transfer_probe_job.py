@@ -20,8 +20,10 @@ from scripts.slurm.verify_reconstruction_transfer_probe_contract import (  # noq
     ALLOWED_GRES,
     ALLOWED_STEPS,
     ALLOWED_STEPS_BY_CONTRACT_VERSION,
+    CALIBRATION_ARMS_BY_CONTRACT_VERSION,
     CONTRACT_VERSION,
     REQUIRED_PROBES_BY_CONTRACT_VERSION,
+    verify_calibration_preregistration,
 )
 
 
@@ -85,6 +87,7 @@ def main() -> int:
     parser.add_argument("--checkpoint-step", type=int, choices=sorted(ALLOWED_STEPS), required=True)
     parser.add_argument("--selection-manifest", type=Path, required=True)
     parser.add_argument("--dataset-index", type=Path, required=True)
+    parser.add_argument("--preregistration", type=Path)
     parser.add_argument("--expected-git-sha", required=True)
     parser.add_argument("--expected-git-tag", required=True)
     parser.add_argument("--experiment", required=True)
@@ -104,6 +107,19 @@ def main() -> int:
     required_probe = dict(
         REQUIRED_PROBES_BY_CONTRACT_VERSION[args.contract_version]
     )
+    calibration_preregistration = None
+    preregistration = None
+    if args.contract_version in CALIBRATION_ARMS_BY_CONTRACT_VERSION:
+        if args.preregistration is None:
+            raise RuntimeError("calibration contract requires --preregistration")
+        preregistration = _repo_path(args.preregistration)
+        calibration_preregistration = verify_calibration_preregistration(
+            preregistration,
+            contract_version=args.contract_version,
+        )
+        calibration_preregistration["path"] = str(preregistration.relative_to(ROOT))
+    elif args.preregistration is not None:
+        raise RuntimeError("--preregistration is restricted to calibration contracts")
     if args.output.exists():
         raise RuntimeError("refusing to overwrite an existing transfer-probe contract")
     if _run(("git", "rev-parse", "HEAD")) != args.expected_git_sha:
@@ -177,6 +193,9 @@ def main() -> int:
         "submission_authorized": True,
         "submission_performed": False,
     }
+    if calibration_preregistration is not None and preregistration is not None:
+        contract["calibration_preregistration"] = calibration_preregistration
+        contract["hashed_inputs"].append(_hashed(preregistration))
     canonical = json.dumps(contract, sort_keys=True, separators=(",", ":"))
     contract["contract_sha256"] = hashlib.sha256(canonical.encode()).hexdigest()
     args.output.parent.mkdir(parents=True, exist_ok=True)

@@ -22,6 +22,21 @@ HEADWARMUP_200_CONTRACT_VERSION = (
 QUERY_ACTIVATION_CONTRACT_VERSION = (
     "hypertagging-reconstruction-transfer-probe-v3-query-activation-balance"
 )
+OBJECT8_POINTER16_CONTRACT_VERSION = (
+    "hypertagging-reconstruction-transfer-probe-v4-object8-pointer16"
+)
+OBJECT16_POINTER8_CONTRACT_VERSION = (
+    "hypertagging-reconstruction-transfer-probe-v4-object16-pointer8"
+)
+POSITIVE_WEIGHT_CALIBRATION_PREREGISTRATION_VERSION = (
+    "hypertagging-reconstruction-positive-weight-calibration-preregistration-v1"
+)
+POSITIVE_WEIGHT_CALIBRATION_CHECKPOINT_SHA256 = (
+    "5afdae8ac943163631499674297d6f15986c825f00ccff2d39389f22ff383c79"
+)
+POSITIVE_WEIGHT_CALIBRATION_BASELINE_CONTRACT_SHA256 = (
+    "ae215efd52d58482cb74cb660ac02172b0f0f4fe8b7ad637783b827dc066042a"
+)
 ALLOWED_GRES = {"gpu:h100nvl:1", "gpu:v100:1"}
 ALLOWED_STEPS = {2188, 3282, 4376}
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
@@ -57,15 +72,39 @@ QUERY_ACTIVATION_REQUIRED_PROBE = {
     "object_positive_weight": 16.0,
     "pointer_positive_weight": 16.0,
 }
+OBJECT8_POINTER16_REQUIRED_PROBE = {
+    **REQUIRED_PROBE,
+    "object_positive_weight": 8.0,
+    "pointer_positive_weight": 16.0,
+}
+OBJECT16_POINTER8_REQUIRED_PROBE = {
+    **REQUIRED_PROBE,
+    "object_positive_weight": 16.0,
+    "pointer_positive_weight": 8.0,
+}
 REQUIRED_PROBES_BY_CONTRACT_VERSION = {
     CONTRACT_VERSION: REQUIRED_PROBE,
     HEADWARMUP_200_CONTRACT_VERSION: HEADWARMUP_200_REQUIRED_PROBE,
     QUERY_ACTIVATION_CONTRACT_VERSION: QUERY_ACTIVATION_REQUIRED_PROBE,
+    OBJECT8_POINTER16_CONTRACT_VERSION: OBJECT8_POINTER16_REQUIRED_PROBE,
+    OBJECT16_POINTER8_CONTRACT_VERSION: OBJECT16_POINTER8_REQUIRED_PROBE,
 }
 ALLOWED_STEPS_BY_CONTRACT_VERSION = {
     CONTRACT_VERSION: ALLOWED_STEPS,
     HEADWARMUP_200_CONTRACT_VERSION: {3282},
     QUERY_ACTIVATION_CONTRACT_VERSION: {3282},
+    OBJECT8_POINTER16_CONTRACT_VERSION: {3282},
+    OBJECT16_POINTER8_CONTRACT_VERSION: {3282},
+}
+CALIBRATION_ARMS_BY_CONTRACT_VERSION = {
+    OBJECT8_POINTER16_CONTRACT_VERSION: {
+        "arm_id": "object8_pointer16",
+        "submission_order": 1,
+    },
+    OBJECT16_POINTER8_CONTRACT_VERSION: {
+        "arm_id": "object16_pointer8",
+        "submission_order": 2,
+    },
 }
 
 
@@ -116,6 +155,83 @@ def verify_hashed_inputs(inputs: list[dict[str, str]]) -> None:
             raise RuntimeError(f"hashed transfer-probe input changed: {path}")
 
 
+def verify_preregistration_hash(preregistration: dict[str, Any]) -> str:
+    stored = str(preregistration.get("preregistration_sha256", ""))
+    canonical = {
+        key: value
+        for key, value in preregistration.items()
+        if key != "preregistration_sha256"
+    }
+    actual = hashlib.sha256(
+        json.dumps(canonical, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+    if stored != actual:
+        raise RuntimeError("positive-weight calibration preregistration hash mismatch")
+    return actual
+
+
+def verify_calibration_preregistration(
+    path: Path,
+    *,
+    contract_version: str,
+) -> dict[str, Any]:
+    preregistration = json.loads(path.read_text(encoding="utf-8"))
+    preregistration_sha256 = verify_preregistration_hash(preregistration)
+    if (
+        preregistration.get("schema_version")
+        != POSITIVE_WEIGHT_CALIBRATION_PREREGISTRATION_VERSION
+    ):
+        raise RuntimeError("unsupported positive-weight calibration preregistration")
+    checkpoint = dict(preregistration.get("source_checkpoint", {}))
+    if (
+        checkpoint.get("step") != 3282
+        or checkpoint.get("sha256")
+        != POSITIVE_WEIGHT_CALIBRATION_CHECKPOINT_SHA256
+    ):
+        raise RuntimeError("calibration preregistration checkpoint binding failed")
+    baseline = dict(preregistration.get("immutable_baseline", {}))
+    if (
+        baseline.get("job_id") != "15774286"
+        or baseline.get("contract_sha256")
+        != POSITIVE_WEIGHT_CALIBRATION_BASELINE_CONTRACT_SHA256
+    ):
+        raise RuntimeError("calibration preregistration baseline binding failed")
+    expected = CALIBRATION_ARMS_BY_CONTRACT_VERSION.get(contract_version)
+    if expected is None:
+        raise RuntimeError("contract is not a registered positive-weight calibration arm")
+    arms = {
+        str(arm.get("contract_version")): arm
+        for arm in preregistration.get("arms", [])
+        if isinstance(arm, dict)
+    }
+    arm = arms.get(contract_version)
+    required_probe = REQUIRED_PROBES_BY_CONTRACT_VERSION[contract_version]
+    if (
+        arm is None
+        or arm.get("arm_id") != expected["arm_id"]
+        or arm.get("submission_order") != expected["submission_order"]
+        or arm.get("object_positive_weight")
+        != required_probe["object_positive_weight"]
+        or arm.get("pointer_positive_weight")
+        != required_probe["pointer_positive_weight"]
+    ):
+        raise RuntimeError("calibration preregistration arm binding failed")
+    if preregistration.get("submission_order") != [
+        "object8_pointer16",
+        "object16_pointer8",
+    ]:
+        raise RuntimeError("calibration preregistration submission order changed")
+    if preregistration.get("sealed_test_role_access") != "forbidden":
+        raise RuntimeError("calibration preregistration must forbid sealed-test access")
+    return {
+        "path": str(path),
+        "sha256": preregistration_sha256,
+        "arm_id": expected["arm_id"],
+        "submission_order": expected["submission_order"],
+        "baseline_job_id": "15774286",
+    }
+
+
 def required_probe_for_contract(contract: dict[str, Any]) -> dict[str, Any]:
     """Resolve and validate the exact probe profile selected by the contract."""
 
@@ -143,6 +259,22 @@ def verify_contract(path: Path) -> tuple[dict[str, Any], dict[str, str]]:
     verify_contract_hash(contract)
     verify_hashed_inputs(list(contract.get("hashed_inputs", [])))
     required_probe = required_probe_for_contract(contract)
+    version = str(contract.get("contract_version", ""))
+    if version in CALIBRATION_ARMS_BY_CONTRACT_VERSION:
+        calibration = dict(contract.get("calibration_preregistration", {}))
+        preregistration_path = _inside_root(
+            str(calibration.get("path", "")), required_suffix=".json"
+        )
+        verified_calibration = verify_calibration_preregistration(
+            preregistration_path,
+            contract_version=version,
+        )
+        expected_calibration = {
+            **verified_calibration,
+            "path": str(preregistration_path.relative_to(ROOT.resolve())),
+        }
+        if calibration != expected_calibration:
+            raise RuntimeError("transfer-probe calibration binding changed")
     if contract.get("mode") != "frozen_pretrained_reconstruction_transfer_probe":
         raise RuntimeError("contract is not a frozen transfer probe")
     if contract.get("training_role") != "train" or contract.get("evaluation_role") != "validation":

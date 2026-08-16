@@ -146,6 +146,99 @@ def test_v3_profile_changes_only_matched_binary_positive_balance():
 
 
 @pytest.mark.parametrize(
+    ("version", "changed_key", "expected_value"),
+    [
+        (verifier.OBJECT8_POINTER16_CONTRACT_VERSION, "object_positive_weight", 8.0),
+        (verifier.OBJECT16_POINTER8_CONTRACT_VERSION, "pointer_positive_weight", 8.0),
+    ],
+)
+def test_v4_profiles_change_exactly_one_factor_from_successful_v3(
+    version,
+    changed_key,
+    expected_value,
+):
+    v3 = verifier.QUERY_ACTIVATION_REQUIRED_PROBE
+    v4 = verifier.REQUIRED_PROBES_BY_CONTRACT_VERSION[version]
+    assert {name for name in v3 if v3[name] != v4[name]} == {changed_key}
+    assert v4[changed_key] == expected_value
+    assert verifier.ALLOWED_STEPS_BY_CONTRACT_VERSION[version] == {3282}
+    assert set(verifier.CALIBRATION_ARMS_BY_CONTRACT_VERSION) == {
+        verifier.OBJECT8_POINTER16_CONTRACT_VERSION,
+        verifier.OBJECT16_POINTER8_CONTRACT_VERSION,
+    }
+
+
+def _calibration_preregistration() -> dict[str, object]:
+    payload: dict[str, object] = {
+        "schema_version": (
+            verifier.POSITIVE_WEIGHT_CALIBRATION_PREREGISTRATION_VERSION
+        ),
+        "source_checkpoint": {
+            "step": 3282,
+            "sha256": verifier.POSITIVE_WEIGHT_CALIBRATION_CHECKPOINT_SHA256,
+        },
+        "immutable_baseline": {
+            "job_id": "15774286",
+            "contract_sha256": (
+                verifier.POSITIVE_WEIGHT_CALIBRATION_BASELINE_CONTRACT_SHA256
+            ),
+        },
+        "arms": [
+            {
+                "arm_id": "object8_pointer16",
+                "contract_version": verifier.OBJECT8_POINTER16_CONTRACT_VERSION,
+                "submission_order": 1,
+                "object_positive_weight": 8.0,
+                "pointer_positive_weight": 16.0,
+            },
+            {
+                "arm_id": "object16_pointer8",
+                "contract_version": verifier.OBJECT16_POINTER8_CONTRACT_VERSION,
+                "submission_order": 2,
+                "object_positive_weight": 16.0,
+                "pointer_positive_weight": 8.0,
+            },
+        ],
+        "submission_order": ["object8_pointer16", "object16_pointer8"],
+        "sealed_test_role_access": "forbidden",
+    }
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    payload["preregistration_sha256"] = hashlib.sha256(canonical.encode()).hexdigest()
+    return payload
+
+
+@pytest.mark.parametrize(
+    "version",
+    [
+        verifier.OBJECT8_POINTER16_CONTRACT_VERSION,
+        verifier.OBJECT16_POINTER8_CONTRACT_VERSION,
+    ],
+)
+def test_v4_preregistration_binds_both_arms_and_submission_order(tmp_path, version):
+    path = tmp_path / "preregistration.json"
+    path.write_text(json.dumps(_calibration_preregistration()))
+    verified = verifier.verify_calibration_preregistration(
+        path,
+        contract_version=version,
+    )
+    expected = verifier.CALIBRATION_ARMS_BY_CONTRACT_VERSION[version]
+    assert verified["arm_id"] == expected["arm_id"]
+    assert verified["submission_order"] == expected["submission_order"]
+
+
+def test_v4_preregistration_fails_closed_on_tampering(tmp_path):
+    payload = _calibration_preregistration()
+    payload["submission_order"] = ["object16_pointer8", "object8_pointer16"]
+    path = tmp_path / "preregistration.json"
+    path.write_text(json.dumps(payload))
+    with pytest.raises(RuntimeError, match="hash mismatch"):
+        verifier.verify_calibration_preregistration(
+            path,
+            contract_version=verifier.OBJECT8_POINTER16_CONTRACT_VERSION,
+        )
+
+
+@pytest.mark.parametrize(
     ("version", "checkpoint_step", "optimizer_steps"),
     [
         (verifier.CONTRACT_VERSION, 2188, "100"),
@@ -221,6 +314,8 @@ def test_v2_verifier_rejects_non_step3282_and_horizon_drift():
         (verifier.CONTRACT_VERSION, 2188, 100),
         (verifier.HEADWARMUP_200_CONTRACT_VERSION, 3282, 200),
         (verifier.QUERY_ACTIVATION_CONTRACT_VERSION, 3282, 100),
+        (verifier.OBJECT8_POINTER16_CONTRACT_VERSION, 3282, 100),
+        (verifier.OBJECT16_POINTER8_CONTRACT_VERSION, 3282, 100),
     ],
 )
 def test_finalizer_validates_dynamic_versioned_optimizer_steps(
