@@ -117,6 +117,27 @@ explicit `sbatch` command but never submits it; the terminal receipt validates
 the result's optimizer-step count against the selected version rather than a
 hard-coded horizon.
 
+The follow-up
+`hypertagging-reconstruction-transfer-probe-v3-query-activation-balance`
+profile is restricted to step 3282 and the original 100-step horizon. A
+read-only saved-checkpoint diagnostic on restored fixed-validation UIDs found
+that every level-1 query was below the unchanged 0.5 object threshold at both
+steps 100 and 200; no query also supplied the two pointer probabilities above
+0.5 required by its predicted cardinality. The v3 arm therefore changes only
+the matched-positive focal weights for the two binary decoder decisions from
+2/4 (object/pointer) to 16/16. The value 16 is fixed from the registered
+32-query capacity and median two level-1 mothers. It does not change the
+encoder, checkpoint, horizon, data roles/cohorts, seed, inference thresholds,
+rollout denominators, or primary eligibility gates.
+
+`scripts/diagnose_reconstruction_query_activation.py` is a fail-closed,
+read-only validation diagnostic. It restores saved validation UIDs, rejects any
+data module with test rows, checks checkpoint hashes before and after use, and
+emits schema-versioned finite query/null probabilities, exact inference-stage
+counts, Hungarian costs and class margins, derived continue/stop probabilities
+(the architecture has no separate depth head), pre-/post-pruning node depth,
+representability/loss slices, and gradient reachability.
+
 `configs/hyperbolic_pretrain_pilot.yaml` requires bounded objective-gradient
 preflight evidence. It reports raw and weighted magnitudes, active denominators,
 projection-specific norms, and pairwise cosines, and checks zero/non-finite or

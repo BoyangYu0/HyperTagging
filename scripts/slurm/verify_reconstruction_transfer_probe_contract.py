@@ -19,6 +19,9 @@ CONTRACT_VERSION = "hypertagging-reconstruction-transfer-probe-v1"
 HEADWARMUP_200_CONTRACT_VERSION = (
     "hypertagging-reconstruction-transfer-probe-v2-headwarmup-200"
 )
+QUERY_ACTIVATION_CONTRACT_VERSION = (
+    "hypertagging-reconstruction-transfer-probe-v3-query-activation-balance"
+)
 ALLOWED_GRES = {"gpu:h100nvl:1", "gpu:v100:1"}
 ALLOWED_STEPS = {2188, 3282, 4376}
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
@@ -49,13 +52,20 @@ HEADWARMUP_200_REQUIRED_PROBE = {
     "freeze_pretrained_encoder_steps": 200,
     "freeze_leaf_pid_head_steps": 200,
 }
+QUERY_ACTIVATION_REQUIRED_PROBE = {
+    **REQUIRED_PROBE,
+    "object_positive_weight": 16.0,
+    "pointer_positive_weight": 16.0,
+}
 REQUIRED_PROBES_BY_CONTRACT_VERSION = {
     CONTRACT_VERSION: REQUIRED_PROBE,
     HEADWARMUP_200_CONTRACT_VERSION: HEADWARMUP_200_REQUIRED_PROBE,
+    QUERY_ACTIVATION_CONTRACT_VERSION: QUERY_ACTIVATION_REQUIRED_PROBE,
 }
 ALLOWED_STEPS_BY_CONTRACT_VERSION = {
     CONTRACT_VERSION: ALLOWED_STEPS,
     HEADWARMUP_200_CONTRACT_VERSION: {3282},
+    QUERY_ACTIVATION_CONTRACT_VERSION: {3282},
 }
 
 

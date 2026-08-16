@@ -130,11 +130,27 @@ def test_v2_profile_changes_only_optimizer_and_freeze_horizons():
     ] == {3282}
 
 
+def test_v3_profile_changes_only_matched_binary_positive_balance():
+    v1 = verifier.REQUIRED_PROBE
+    v3 = verifier.QUERY_ACTIVATION_REQUIRED_PROBE
+    assert {name for name in v3 if name not in v1} == {
+        "object_positive_weight",
+        "pointer_positive_weight",
+    }
+    assert v3["object_positive_weight"] == 16.0
+    assert v3["pointer_positive_weight"] == 16.0
+    assert {name: v3[name] for name in v1} == v1
+    assert verifier.ALLOWED_STEPS_BY_CONTRACT_VERSION[
+        verifier.QUERY_ACTIVATION_CONTRACT_VERSION
+    ] == {3282}
+
+
 @pytest.mark.parametrize(
     ("version", "checkpoint_step", "optimizer_steps"),
     [
         (verifier.CONTRACT_VERSION, 2188, "100"),
         (verifier.HEADWARMUP_200_CONTRACT_VERSION, 3282, "200"),
+        (verifier.QUERY_ACTIVATION_CONTRACT_VERSION, 3282, "100"),
     ],
 )
 def test_verifier_accepts_exact_v1_and_v2_profiles(
@@ -179,12 +195,32 @@ def test_v2_verifier_rejects_non_step3282_and_horizon_drift():
     with pytest.raises(RuntimeError, match="registered contract profile"):
         verifier.required_probe_for_contract(wrong_horizon)
 
+    wrong_activation_step = _contract(
+        version=verifier.QUERY_ACTIVATION_CONTRACT_VERSION,
+        checkpoint_step=2188,
+    )
+    with pytest.raises(RuntimeError, match="not approved"):
+        verifier.required_probe_for_contract(wrong_activation_step)
+    wrong_activation_weight = dict(
+        _contract(
+            version=verifier.QUERY_ACTIVATION_CONTRACT_VERSION,
+            checkpoint_step=3282,
+        )
+    )
+    wrong_activation_weight["probe"] = {
+        **wrong_activation_weight["probe"],
+        "object_positive_weight": 15.0,
+    }
+    with pytest.raises(RuntimeError, match="registered contract profile"):
+        verifier.required_probe_for_contract(wrong_activation_weight)
+
 
 @pytest.mark.parametrize(
     ("version", "checkpoint_step", "optimizer_steps"),
     [
         (verifier.CONTRACT_VERSION, 2188, 100),
         (verifier.HEADWARMUP_200_CONTRACT_VERSION, 3282, 200),
+        (verifier.QUERY_ACTIVATION_CONTRACT_VERSION, 3282, 100),
     ],
 )
 def test_finalizer_validates_dynamic_versioned_optimizer_steps(

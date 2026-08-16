@@ -158,6 +158,8 @@ class ReconstructionConfig:
     hyper_projection_init_scale: float | None = None
     tangent_scale_mode: str | None = None
     query_repulsion_weight: float = 0.0
+    object_positive_weight: float = 2.0
+    pointer_positive_weight: float = 4.0
     rollout_pid_kinematics_mode: str = "soft_decision_hard_construction"
     rollout_pid_temperature: float = 0.5
     best_metric: str = "validation_loss_total"
@@ -235,6 +237,12 @@ def train_level_reconstruction(
             "gradient_accumulation other than 1 is not implemented; refusing to "
             "claim an exact-resume order for an unsupported optimizer cadence"
         )
+    if config.object_positive_weight <= 0 or config.pointer_positive_weight <= 0:
+        raise ValueError("decoder positive weights must be finite and positive")
+    if not math.isfinite(config.object_positive_weight) or not math.isfinite(
+        config.pointer_positive_weight
+    ):
+        raise ValueError("decoder positive weights must be finite and positive")
     seed_everything(config.seed)
     if config.resume and config.num_workers > 0:
         raise ValueError(
@@ -516,6 +524,8 @@ def train_level_reconstruction(
             selected_event_uids=validation_uids,
             scientific_mode=config.scientific_mode,
             p4_closure_tolerance=config.rollout_p4_tolerance,
+            object_positive_weight=config.object_positive_weight,
+            pointer_positive_weight=config.pointer_positive_weight,
         )
         final_metrics.update(validation_metrics)
         logger.log(step=validation_step, split="validation", **validation_metrics)
@@ -820,28 +830,32 @@ def train_level_reconstruction(
             )
     if last_validation_step != completed_steps:
         validation_metrics = validate_reconstruction(
-        model,
-        data_module,
-        device=device,
-        scheduled_sampling_probability=(
-            config.scheduled_sampling_probability if ablation.scheduled_sampling else 0.0
-        ),
-        seed=config.seed,
-        max_validation_events=config.max_validation_events,
-        rollout_validation_events=config.rollout_validation_events,
-        validation_batch_size=config.validation_batch_size,
-        target_policy=config.target_policy,
-        constraint_policy=constraint_policy,
-        rollout_pid_kinematics_mode=config.rollout_pid_kinematics_mode,
-        rollout_pid_temperature=config.rollout_pid_temperature,
-        pilot_allow_train_validation_fallback=(
-            config.pilot_allow_train_validation_fallback
-            or config.allow_legacy_conflated
-            or config.pilot_split_repair
-        ),
-        selected_event_uids=validation_uids,
-        scientific_mode=config.scientific_mode,
-        p4_closure_tolerance=config.rollout_p4_tolerance,
+            model,
+            data_module,
+            device=device,
+            scheduled_sampling_probability=(
+                config.scheduled_sampling_probability
+                if ablation.scheduled_sampling
+                else 0.0
+            ),
+            seed=config.seed,
+            max_validation_events=config.max_validation_events,
+            rollout_validation_events=config.rollout_validation_events,
+            validation_batch_size=config.validation_batch_size,
+            target_policy=config.target_policy,
+            constraint_policy=constraint_policy,
+            rollout_pid_kinematics_mode=config.rollout_pid_kinematics_mode,
+            rollout_pid_temperature=config.rollout_pid_temperature,
+            pilot_allow_train_validation_fallback=(
+                config.pilot_allow_train_validation_fallback
+                or config.allow_legacy_conflated
+                or config.pilot_split_repair
+            ),
+            selected_event_uids=validation_uids,
+            scientific_mode=config.scientific_mode,
+            p4_closure_tolerance=config.rollout_p4_tolerance,
+            object_positive_weight=config.object_positive_weight,
+            pointer_positive_weight=config.pointer_positive_weight,
         )
         final_metrics.update(validation_metrics)
         logger.log(step=completed_steps, split="validation", **validation_metrics)
@@ -1134,6 +1148,8 @@ def _optimization_loss(
                 constraint_policy=constraint_policy,
                 unrepresentable_target_counts=[masked_missing],
                 weights={"query_repulsion": config.query_repulsion_weight},
+                object_positive_weight=config.object_positive_weight,
+                pointer_positive_weight=config.pointer_positive_weight,
             )
             recovery_loss = loss_output.total * 0.0
             if recovery_missing:
@@ -1178,6 +1194,8 @@ def _optimization_loss(
                         matching_production=not config.allow_tiny_bruteforce_matching,
                         constraint_policy=constraint_policy,
                         weights={"query_repulsion": config.query_repulsion_weight},
+                        object_positive_weight=config.object_positive_weight,
+                        pointer_positive_weight=config.pointer_positive_weight,
                     ).total
                 )
         for name, values in per_level_components.items():
@@ -1199,6 +1217,8 @@ def _optimization_loss(
                 matching_production=not config.allow_tiny_bruteforce_matching,
                 constraint_policy=constraint_policy,
                 weights={"query_repulsion": config.query_repulsion_weight},
+                object_positive_weight=config.object_positive_weight,
+                pointer_positive_weight=config.pointer_positive_weight,
             )
           level_outputs.append((target_level, diagnostic_output, diagnostic_loss))
     primary_loss = (
@@ -1480,6 +1500,8 @@ def validate_reconstruction(
     selected_event_uids: list[str] | None = None,
     scientific_mode: bool = False,
     p4_closure_tolerance: float = 1e-6,
+    object_positive_weight: float = 2.0,
+    pointer_positive_weight: float = 4.0,
 ) -> dict[str, float]:
     model.eval()
     source = data_module.iter_events("validation", shuffle=False)
@@ -1540,6 +1562,8 @@ def validate_reconstruction(
                 target_level=target_level,
                 target_policy=target_policy,
                 constraint_policy=constraint_policy,
+                object_positive_weight=object_positive_weight,
+                pointer_positive_weight=pointer_positive_weight,
             )
             accumulated.setdefault("validation_loss_total", []).append(
                 float(loss_output.total.detach().cpu())

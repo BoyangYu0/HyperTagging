@@ -138,6 +138,8 @@ def main() -> int:
                 (int(level), int(value))
                 for level, value in probe["max_cardinality_by_level"]
             ),
+            object_positive_weight=float(probe.get("object_positive_weight", 2.0)),
+            pointer_positive_weight=float(probe.get("pointer_positive_weight", 4.0)),
             best_metric=str(probe["best_metric"]),
             best_mode=str(probe["best_mode"]),
             initial_state_policy=str(probe["initial_state_policy"]),
