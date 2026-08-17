@@ -1,0 +1,41 @@
+{
+  "decision": "NOT_EXECUTABLE_UNTIL_PARAMETERS_RESOLVED",
+  "submission_authorized": false,
+  "frozen_settings": {
+    "source_commit": "3bd394d",
+    "source_tag": "pretrain-035k-transfer-positive-weight-calibration-midpoint-v100-results-20260817",
+    "source_checkpoint_step": 3282,
+    "source_checkpoint_sha256": "5afdae8ac943163631499674297d6f15986c825f00ccff2d39389f22ff383c79",
+    "object_positive_weight": 12,
+    "pointer_positive_weight": 16,
+    "sealed_test_role_access": "forbidden",
+    "source_checkpoint_mutation": "forbidden",
+    "training_role": "train",
+    "evaluation_role": "validation",
+    "corrected_runtime_only_normalization": "identity_scaling_for_untrained_normalizer_slots",
+    "resource_policy": {
+      "preferred_gres": "gpu:h100nvl:1",
+      "fallback_gres": "gpu:v100:1"
+    }
+  },
+  "unresolved_parameters": [
+    "No tracked full-scale (object12/pointer16) reconstruction contract with execution-bound max_steps, validation cohort sizes, validate cadence, and output paths.",
+    "No tracked full-scale launch renderer that can emit and verify a contract with those full-scale values.",
+    "No authoritative contract/schema entry for full-scale checkpoint interval/time/cadence tied to 35k reconstruction transfer launch.",
+    "Required executable contract file name/location is not present in tracked contract set."
+  ],
+  "evidence_paths": [
+    "artifacts/studies/contracts/pretrain-035k-transfer-step3282-object12-pointer16-calibration-20260816.json",
+    "artifacts/studies/contracts/pretrain-035k-transfer-step3282-object12-pointer16-calibration-v100-results-20260817.json",
+    "artifacts/codex/ht_positive_weight_midpoint_readiness_20260817.json",
+    "artifacts/codex/ht_positive_weight_midpoint_audit_20260817.md",
+    "artifacts/codex/ht_positive_weight_calibration_preregistration_20260816.json",
+    "scripts/slurm/verify_reconstruction_transfer_probe_contract.py",
+    "scripts/slurm/render_reconstruction_transfer_probe_job.py",
+    "docs/training_execution_plan_20260812.md",
+    "docs/training.md"
+  ],
+  "preferred_gres": "gpu:h100nvl:1",
+  "fallback_gres": "gpu:v100:1",
+  "exact_next_action": "Do not create a new full-scale contract. Add tracked full-scale reconstruction-preregistration + contract schema + verifier/render path for object12/pointer16 with explicit max_steps, validation_events, rollout_validation_events, validate cadence, checkpoint cadence, checkpoint_path, study/output root, and resource/time settings before rendering/verifying pretrain-035k-reconstruction-object12-pointer16-fullscale-ready-20260817.json."
+}
