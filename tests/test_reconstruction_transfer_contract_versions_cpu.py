@@ -240,6 +240,11 @@ def test_v5_midpoint_preregistration_binds_single_arm(tmp_path):
         },
     ]
     payload["submission_order"] = ["object12_pointer16"]
+    payload.pop("preregistration_sha256")
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    payload["preregistration_sha256"] = hashlib.sha256(
+        canonical.encode()
+    ).hexdigest()
     path = tmp_path / "preregistration_midpoint.json"
     path.write_text(json.dumps(payload))
     verified = verifier.verify_calibration_preregistration(
