@@ -150,6 +150,7 @@ def test_v3_profile_changes_only_matched_binary_positive_balance():
     [
         (verifier.OBJECT8_POINTER16_CONTRACT_VERSION, "object_positive_weight", 8.0),
         (verifier.OBJECT16_POINTER8_CONTRACT_VERSION, "pointer_positive_weight", 8.0),
+        (verifier.OBJECT12_POINTER16_CONTRACT_VERSION, "object_positive_weight", 12.0),
     ],
 )
 def test_v4_profiles_change_exactly_one_factor_from_successful_v3(
@@ -165,6 +166,7 @@ def test_v4_profiles_change_exactly_one_factor_from_successful_v3(
     assert set(verifier.CALIBRATION_ARMS_BY_CONTRACT_VERSION) == {
         verifier.OBJECT8_POINTER16_CONTRACT_VERSION,
         verifier.OBJECT16_POINTER8_CONTRACT_VERSION,
+        verifier.OBJECT12_POINTER16_CONTRACT_VERSION,
     }
 
 
@@ -222,6 +224,31 @@ def test_v4_preregistration_binds_both_arms_and_submission_order(tmp_path, versi
         contract_version=version,
     )
     expected = verifier.CALIBRATION_ARMS_BY_CONTRACT_VERSION[version]
+    assert verified["arm_id"] == expected["arm_id"]
+    assert verified["submission_order"] == expected["submission_order"]
+
+
+def test_v5_midpoint_preregistration_binds_single_arm(tmp_path):
+    payload = _calibration_preregistration()
+    payload["arms"] = [
+        {
+            "arm_id": "object12_pointer16",
+            "contract_version": verifier.OBJECT12_POINTER16_CONTRACT_VERSION,
+            "submission_order": 1,
+            "object_positive_weight": 12.0,
+            "pointer_positive_weight": 16.0,
+        },
+    ]
+    payload["submission_order"] = ["object12_pointer16"]
+    path = tmp_path / "preregistration_midpoint.json"
+    path.write_text(json.dumps(payload))
+    verified = verifier.verify_calibration_preregistration(
+        path,
+        contract_version=verifier.OBJECT12_POINTER16_CONTRACT_VERSION,
+    )
+    expected = verifier.CALIBRATION_ARMS_BY_CONTRACT_VERSION[
+        verifier.OBJECT12_POINTER16_CONTRACT_VERSION
+    ]
     assert verified["arm_id"] == expected["arm_id"]
     assert verified["submission_order"] == expected["submission_order"]
 

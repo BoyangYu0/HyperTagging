@@ -28,6 +28,9 @@ OBJECT8_POINTER16_CONTRACT_VERSION = (
 OBJECT16_POINTER8_CONTRACT_VERSION = (
     "hypertagging-reconstruction-transfer-probe-v4-object16-pointer8"
 )
+OBJECT12_POINTER16_CONTRACT_VERSION = (
+    "hypertagging-reconstruction-transfer-probe-v5-object12-pointer16"
+)
 POSITIVE_WEIGHT_CALIBRATION_PREREGISTRATION_VERSION = (
     "hypertagging-reconstruction-positive-weight-calibration-preregistration-v1"
 )
@@ -82,12 +85,18 @@ OBJECT16_POINTER8_REQUIRED_PROBE = {
     "object_positive_weight": 16.0,
     "pointer_positive_weight": 8.0,
 }
+OBJECT12_POINTER16_REQUIRED_PROBE = {
+    **REQUIRED_PROBE,
+    "object_positive_weight": 12.0,
+    "pointer_positive_weight": 16.0,
+}
 REQUIRED_PROBES_BY_CONTRACT_VERSION = {
     CONTRACT_VERSION: REQUIRED_PROBE,
     HEADWARMUP_200_CONTRACT_VERSION: HEADWARMUP_200_REQUIRED_PROBE,
     QUERY_ACTIVATION_CONTRACT_VERSION: QUERY_ACTIVATION_REQUIRED_PROBE,
     OBJECT8_POINTER16_CONTRACT_VERSION: OBJECT8_POINTER16_REQUIRED_PROBE,
     OBJECT16_POINTER8_CONTRACT_VERSION: OBJECT16_POINTER8_REQUIRED_PROBE,
+    OBJECT12_POINTER16_CONTRACT_VERSION: OBJECT12_POINTER16_REQUIRED_PROBE,
 }
 ALLOWED_STEPS_BY_CONTRACT_VERSION = {
     CONTRACT_VERSION: ALLOWED_STEPS,
@@ -95,6 +104,7 @@ ALLOWED_STEPS_BY_CONTRACT_VERSION = {
     QUERY_ACTIVATION_CONTRACT_VERSION: {3282},
     OBJECT8_POINTER16_CONTRACT_VERSION: {3282},
     OBJECT16_POINTER8_CONTRACT_VERSION: {3282},
+    OBJECT12_POINTER16_CONTRACT_VERSION: {3282},
 }
 CALIBRATION_ARMS_BY_CONTRACT_VERSION = {
     OBJECT8_POINTER16_CONTRACT_VERSION: {
@@ -105,6 +115,15 @@ CALIBRATION_ARMS_BY_CONTRACT_VERSION = {
         "arm_id": "object16_pointer8",
         "submission_order": 2,
     },
+    OBJECT12_POINTER16_CONTRACT_VERSION: {
+        "arm_id": "object12_pointer16",
+        "submission_order": 1,
+    },
+}
+SUBMISSION_ORDER_BY_CONTRACT_VERSION: dict[str, list[str]] = {
+    OBJECT8_POINTER16_CONTRACT_VERSION: ["object8_pointer16", "object16_pointer8"],
+    OBJECT16_POINTER8_CONTRACT_VERSION: ["object8_pointer16", "object16_pointer8"],
+    OBJECT12_POINTER16_CONTRACT_VERSION: ["object12_pointer16"],
 }
 
 
@@ -216,10 +235,10 @@ def verify_calibration_preregistration(
         != required_probe["pointer_positive_weight"]
     ):
         raise RuntimeError("calibration preregistration arm binding failed")
-    if preregistration.get("submission_order") != [
-        "object8_pointer16",
-        "object16_pointer8",
-    ]:
+    expected_submission_order = SUBMISSION_ORDER_BY_CONTRACT_VERSION.get(contract_version)
+    if expected_submission_order is None:
+        raise RuntimeError("calibration preregistration missing submission order")
+    if preregistration.get("submission_order") != expected_submission_order:
         raise RuntimeError("calibration preregistration submission order changed")
     if preregistration.get("sealed_test_role_access") != "forbidden":
         raise RuntimeError("calibration preregistration must forbid sealed-test access")
