@@ -430,8 +430,10 @@ def main() -> int:
         if contract.get("submission_authorized", True) and not (
             isinstance(user_authorization, dict)
             and user_authorization.get("authorized") is True
-            and contract.get("verification_scope")
-            == "user_authorized_execution_with_recorded_provenance_limitations"
+            and contract.get("verification_scope") in {
+                "user_authorized_execution_with_recorded_provenance_limitations",
+                "operator_authorized_execution_with_provenance_exception",
+            }
             and contract.get("scientific_submission_blockers")
         ):
             raise RuntimeError("scientific render is blocked by provenance status")
