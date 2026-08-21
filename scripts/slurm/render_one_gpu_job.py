@@ -32,6 +32,16 @@ ACCELERATOR_PRIORITY = (
     "gpu:v100:1",
 )
 
+OPERATOR_AUTHORIZATION_DATE = "2026-08-21"
+OPERATOR_AUTHORIZATION_SOURCE = "interactive_user_instruction"
+OPERATOR_AUTHORIZATION_SCOPE = (
+    "exactly_one_production_1m_pretraining_job_on_gpu:h100nvl:1"
+)
+EXPECTED_MISSING_PROVENANCE_COMMIT = (
+    "f4e54df23b5c60115e475c5d68df4651899d678e"
+)
+EXPECTED_MISSING_PROVENANCE_TREE = "b6e3a4118b960e3a4676a61af9601438d56cef96"
+
 from hypertagging.utils.gpu_safety import (  # noqa: E402
     ALLOWED_SLURM_GRES,
     load_local_microtest_completion_receipt,
@@ -169,7 +179,7 @@ def main() -> int:
     parser.add_argument(
         "--fullscale",
         action="store_true",
-        help="render the blocked/no-submit production-1m H100 contract",
+        help="render the production-1m H100 contract",
     )
     parser.add_argument("--seed", type=int, default=20260812)
     parser.add_argument("--max-restarts", type=int, default=2)
@@ -202,9 +212,11 @@ def main() -> int:
         raise RuntimeError("--blocked-no-submit is only valid for scientific contracts")
     if args.fullscale and args.mode != "scientific":
         raise RuntimeError("--fullscale requires scientific mode")
-    if args.fullscale and not args.blocked_no_submit:
+    if args.fullscale and not (
+        args.blocked_no_submit or args.user_authorized_scientific_submit
+    ):
         raise RuntimeError(
-            "full-scale rendering is blocked until provenance and all launch gates pass"
+            "full-scale rendering requires blocked mode or explicit operator authorization"
         )
     if args.fullscale and args.gres != "gpu:h100nvl:1":
         raise RuntimeError("full-scale production is authorized only on gpu:h100nvl:1")
@@ -279,6 +291,20 @@ def main() -> int:
             raise RuntimeError(
                 "blocked no-submit render requires an active scientific blocker"
             )
+        if args.fullscale:
+            blockers = provenance_result.get("blockers", [])
+            if provenance_result.get("scientific_slurm_submission_allowed") is not False:
+                raise RuntimeError(
+                    "full-scale contract requires the structural provenance gate to remain false"
+                )
+            if not any(
+                EXPECTED_MISSING_PROVENANCE_COMMIT in str(blocker)
+                and EXPECTED_MISSING_PROVENANCE_TREE in str(blocker)
+                for blocker in blockers
+            ):
+                raise RuntimeError(
+                    "full-scale contract lacks the exact unresolved provenance blocker"
+                )
         if (
             not args.blocked_no_submit
             and not args.user_authorized_scientific_submit
@@ -419,11 +445,25 @@ def main() -> int:
         ),
         "submission_performed": False,
         "submission_authorized": not args.blocked_no_submit,
+        "execution_authorization": {
+            "execution_authorized": not args.blocked_no_submit,
+            "basis": (
+                "operator_provenance_exception"
+                if args.fullscale and args.user_authorized_scientific_submit
+                else (
+                    "blocked_no_submit"
+                    if args.blocked_no_submit
+                    else "scientific_provenance_gate"
+                )
+            ),
+        },
         "verification_scope": (
             "blocked_no_submit"
             if args.blocked_no_submit
             else (
-                "user_authorized_execution_with_recorded_provenance_limitations"
+                "operator_authorized_execution_with_provenance_exception"
+                if args.fullscale and args.user_authorized_scientific_submit
+                else "user_authorized_execution_with_recorded_provenance_limitations"
                 if args.user_authorized_scientific_submit
                 else "execution"
             )
@@ -435,16 +475,39 @@ def main() -> int:
             else []
         ),
         "provenance_status": provenance_result,
+        "provenance_validation": (
+            {
+                "status": provenance_result.get("status"),
+                "scientific_slurm_submission_allowed": provenance_result.get(
+                    "scientific_slurm_submission_allowed"
+                ),
+                "blockers": provenance_result.get("blockers", []),
+                "expected_missing_source_commit": EXPECTED_MISSING_PROVENANCE_COMMIT,
+                "expected_missing_source_tree": EXPECTED_MISSING_PROVENANCE_TREE,
+                "execution_authorization_does_not_modify_validator": True,
+            }
+            if args.mode == "scientific"
+            else None
+        ),
         "user_submission_authorization": (
             {
                 "authorized": True,
-                "recorded_at": datetime.now(timezone.utc).isoformat(),
-                "source": "interactive_user_instruction",
+                "recorded_at": (
+                    OPERATOR_AUTHORIZATION_DATE
+                    if args.fullscale
+                    else datetime.now(timezone.utc).isoformat()
+                ),
+                "authorization_date": (
+                    OPERATOR_AUTHORIZATION_DATE if args.fullscale else None
+                ),
+                "source": OPERATOR_AUTHORIZATION_SOURCE,
                 "scope": (
-                    "single_production_1m_h100_scientific_submission"
+                    OPERATOR_AUTHORIZATION_SCOPE
                     if args.fullscale
                     else "single_35k_small_candidate_scientific_submission"
                 ),
+                "job_count": 1 if args.fullscale else None,
+                "gres": args.gres if args.fullscale else None,
                 "provenance_limitations_must_remain_recorded": True,
             }
             if args.user_authorized_scientific_submit
@@ -456,6 +519,7 @@ def main() -> int:
             "live_usable_priority": live.get("usable_priority", []),
             "reason": live.get("selection_reason", "live exact-GRES validation passed"),
         },
+        "operator_provenance_exception": None,
     }
     if args.fullscale:
         validation_events = int(config_payload["validation_events"])
@@ -505,11 +569,33 @@ def main() -> int:
                     "technical_and_scientific_gates_preserved": True,
                     "limitation": (
                         "This override does not waive provenance, data-role, UID/source, "
-                        "finite-gradient, objective, checkpoint, runtime, or contract gates."
+                        "finite-gradient, objective, checkpoint, runtime, or contract gates; "
+                        "the separate operator provenance exception authorizes only this "
+                        "exact single production-1M H100 execution scope and does not alter "
+                        "the validator or the missing object/tree."
                     ),
                 },
             }
         )
+        if args.user_authorized_scientific_submit:
+            limitation = str(provenance_result["blockers"][0])
+            contract["operator_provenance_exception"] = {
+                "status": "explicit_operator_authorized_exception",
+                "authorization_date": OPERATOR_AUTHORIZATION_DATE,
+                "source": OPERATOR_AUTHORIZATION_SOURCE,
+                "scope": OPERATOR_AUTHORIZATION_SCOPE,
+                "job_count": 1,
+                "gres": "gpu:h100nvl:1",
+                "execution_authorized": True,
+                "structural_provenance_validation": {
+                    "status": provenance_result["status"],
+                    "scientific_slurm_submission_allowed": False,
+                    "validator_unchanged": True,
+                    "missing_source_commit": EXPECTED_MISSING_PROVENANCE_COMMIT,
+                    "missing_source_tree": EXPECTED_MISSING_PROVENANCE_TREE,
+                },
+                "limitation": limitation,
+            }
     canonical = json.dumps(contract, sort_keys=True, separators=(",", ":"))
     contract["contract_sha256"] = hashlib.sha256(canonical.encode()).hexdigest()
     args.output.parent.mkdir(parents=True, exist_ok=True)

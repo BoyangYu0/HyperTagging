@@ -43,6 +43,15 @@ def load_local_microtest_completion_receipt(*args, **kwargs):
     )
 
 CONTRACT_VERSION = "hypertagging-slurm-one-gpu-contract-v2"
+OPERATOR_AUTHORIZATION_DATE = "2026-08-21"
+OPERATOR_AUTHORIZATION_SOURCE = "interactive_user_instruction"
+OPERATOR_AUTHORIZATION_SCOPE = (
+    "exactly_one_production_1m_pretraining_job_on_gpu:h100nvl:1"
+)
+EXPECTED_MISSING_PROVENANCE_COMMIT = (
+    "f4e54df23b5c60115e475c5d68df4651899d678e"
+)
+EXPECTED_MISSING_PROVENANCE_TREE = "b6e3a4118b960e3a4676a61af9601438d56cef96"
 RUNTIME_FIELDS = (
     "gpu_environment",
     "gres",
@@ -243,8 +252,8 @@ def verify_contract(
         ):
             if resume_policy.get(key) is not True:
                 raise RuntimeError(f"full-scale resume policy lacks {key}")
-        if contract.get("submission_authorized") is not False:
-            raise RuntimeError("blocked full-scale contract cannot authorize submission")
+        if contract.get("submission_performed") is not False:
+            raise RuntimeError("full-scale handoff must not record a performed submission")
         provenance = contract.get("provenance_status", {})
         if provenance.get("scientific_slurm_submission_allowed") is not False:
             raise RuntimeError("full-scale contract lacks the blocked provenance status")
@@ -259,6 +268,64 @@ def verify_contract(
             raise RuntimeError("full-scale contract lacks the stage-gate override record")
         if override.get("technical_and_scientific_gates_preserved") is not True:
             raise RuntimeError("stage-gate override weakens required safety gates")
+        provenance_validation = contract.get("provenance_validation")
+        if contract.get("submission_authorized") is True:
+            if not isinstance(provenance_validation, dict):
+                raise RuntimeError(
+                    "authorized full-scale contract lacks structural provenance status"
+                )
+            if provenance_validation.get("status") != "valid":
+                raise RuntimeError("full-scale contract lacks valid structural provenance status")
+            if provenance_validation.get("scientific_slurm_submission_allowed") is not False:
+                raise RuntimeError("full-scale contract changes the structural provenance gate")
+            if provenance_validation.get("expected_missing_source_commit") != EXPECTED_MISSING_PROVENANCE_COMMIT:
+                raise RuntimeError("full-scale contract changes the missing provenance object")
+            if provenance_validation.get("expected_missing_source_tree") != EXPECTED_MISSING_PROVENANCE_TREE:
+                raise RuntimeError("full-scale contract changes the missing provenance tree")
+            if provenance_validation.get("execution_authorization_does_not_modify_validator") is not True:
+                raise RuntimeError("full-scale contract does not separate execution authorization from validation")
+        if contract.get("submission_authorized") is False:
+            if contract.get("verification_scope") != "blocked_no_submit":
+                raise RuntimeError("blocked full-scale contract lacks blocked scope")
+        else:
+            if not contract.get("expected_git_tag"):
+                raise RuntimeError("authorized full-scale contract requires an immutable Git tag")
+            if contract.get("verification_scope") != "operator_authorized_execution_with_provenance_exception":
+                raise RuntimeError("authorized full-scale contract lacks the operator exception scope")
+            execution_authorization = contract.get("execution_authorization", {})
+            if execution_authorization != {
+                "basis": "operator_provenance_exception",
+                "execution_authorized": True,
+            }:
+                raise RuntimeError("execution authorization is not bound to the operator exception")
+            operator_exception = contract.get("operator_provenance_exception")
+            if not isinstance(operator_exception, dict):
+                raise RuntimeError("authorized full-scale contract lacks operator exception")
+            if operator_exception.get("status") != "explicit_operator_authorized_exception":
+                raise RuntimeError("operator provenance exception status is not exact")
+            if operator_exception.get("authorization_date") != OPERATOR_AUTHORIZATION_DATE:
+                raise RuntimeError("operator provenance exception date is not exact")
+            if operator_exception.get("source") != OPERATOR_AUTHORIZATION_SOURCE:
+                raise RuntimeError("operator provenance exception source is not exact")
+            if operator_exception.get("scope") != OPERATOR_AUTHORIZATION_SCOPE:
+                raise RuntimeError("operator provenance exception scope is not exact")
+            if operator_exception.get("job_count") != 1:
+                raise RuntimeError("operator provenance exception must bind exactly one job")
+            if operator_exception.get("gres") != "gpu:h100nvl:1":
+                raise RuntimeError("operator provenance exception GRES is not exact")
+            if operator_exception.get("execution_authorized") is not True:
+                raise RuntimeError("operator provenance exception does not authorize execution")
+            if operator_exception.get("limitation") not in provenance.get("blockers", []):
+                raise RuntimeError("operator exception does not retain the provenance limitation verbatim")
+            structural = operator_exception.get("structural_provenance_validation", {})
+            if structural != {
+                "missing_source_commit": EXPECTED_MISSING_PROVENANCE_COMMIT,
+                "missing_source_tree": EXPECTED_MISSING_PROVENANCE_TREE,
+                "scientific_slurm_submission_allowed": False,
+                "status": "valid",
+                "validator_unchanged": True,
+            }:
+                raise RuntimeError("operator exception changes structural provenance evidence")
     return contract, runtime, stored
 
 
