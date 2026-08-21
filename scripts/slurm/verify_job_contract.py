@@ -317,6 +317,17 @@ def verify_contract(
                 raise RuntimeError("operator provenance exception does not authorize execution")
             if operator_exception.get("limitation") not in provenance.get("blockers", []):
                 raise RuntimeError("operator exception does not retain the provenance limitation verbatim")
+            if contract.get("user_submission_authorization") != {
+                "authorized": True,
+                "authorization_date": OPERATOR_AUTHORIZATION_DATE,
+                "recorded_at": OPERATOR_AUTHORIZATION_DATE,
+                "source": OPERATOR_AUTHORIZATION_SOURCE,
+                "scope": OPERATOR_AUTHORIZATION_SCOPE,
+                "job_count": 1,
+                "gres": "gpu:h100nvl:1",
+                "provenance_limitations_must_remain_recorded": True,
+            }:
+                raise RuntimeError("user authorization is not bound to the exact operator scope")
             structural = operator_exception.get("structural_provenance_validation", {})
             if structural != {
                 "missing_source_commit": EXPECTED_MISSING_PROVENANCE_COMMIT,
