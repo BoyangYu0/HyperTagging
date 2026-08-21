@@ -405,6 +405,15 @@ def train_hyperbolic_pretraining(
         raise ValueError("channel_zero_positive_action must be warn, fail, or ignore")
     if config.channel_zero_positive_validation_window <= 0:
         raise ValueError("channel zero-positive validation window must be positive")
+    if config.scientific_mode and config.channel_memory_size <= 0:
+        raise ValueError(
+            "scientific pretraining requires positive channel_memory_size so the "
+            "channel objective cannot silently run without cross-event support"
+        )
+    if config.scientific_mode and config.channel_zero_positive_action != "fail":
+        raise ValueError(
+            "scientific pretraining requires channel_zero_positive_action=fail"
+        )
     if config.objective_gradient_diagnostics_every <= 0:
         raise ValueError("objective gradient diagnostic cadence must be positive")
     if config.pilot_objective_preflight and not config.objective_gradient_diagnostics:

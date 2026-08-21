@@ -15,6 +15,21 @@ from hypertagging.training.slurm_signal import (
 )
 
 
+NONDETERMINISTIC_RUNTIME_METRICS = {
+    "data_wait_seconds",
+    "batch_prepare_seconds",
+    "forward_host_submit_seconds",
+    "backward_host_submit_seconds",
+    "clip_and_optimizer_seconds",
+    "step_seconds",
+    "events_per_second",
+    "active_nodes_per_second",
+    "process_peak_rss_bytes",
+    "validation_seconds",
+    "validation_event_views_per_second",
+}
+
+
 def _requested_controller():
     controller = SafeBoundarySignalController()
     controller._handle(10, None)
@@ -137,7 +152,23 @@ def test_pretrain_pending_scheduled_validation_is_serialized_and_replayed(tmp_pa
     resumed_payload = load_training_checkpoint(resumed.checkpoint)
     assert resumed_payload["training_state"]["pending_validation_step"] is None
     assert resumed_payload["training_state"]["last_validation_step"] == 1
-    assert full_payload["metrics"] == resumed_payload["metrics"]
+    # Scientific metrics and state must replay exactly.  Host timing, throughput,
+    # and RSS telemetry are deliberately excluded because they vary between
+    # otherwise identical CPU processes and are not scientific claims.
+    full_scientific_metrics = {
+        key: value
+        for key, value in full_payload["metrics"].items()
+        if key not in NONDETERMINISTIC_RUNTIME_METRICS
+    }
+    resumed_scientific_metrics = {
+        key: value
+        for key, value in resumed_payload["metrics"].items()
+        if key not in NONDETERMINISTIC_RUNTIME_METRICS
+    }
+    assert full_scientific_metrics == resumed_scientific_metrics
+    for key in NONDETERMINISTIC_RUNTIME_METRICS:
+        if key in full_payload["metrics"]:
+            assert key in resumed_payload["metrics"]
 
 
 def test_reconstruction_pending_validation_is_serialized_and_replayed(tmp_path):

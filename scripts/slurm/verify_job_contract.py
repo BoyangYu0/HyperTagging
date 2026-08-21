@@ -205,6 +205,60 @@ def verify_contract(
             completion_path,
             admission_path=admission_path,
         )
+    if contract.get("fullscale"):
+        if contract.get("mode") != "scientific":
+            raise RuntimeError("full-scale contract must be scientific")
+        if contract.get("gres") != "gpu:h100nvl:1":
+            raise RuntimeError("full-scale contract must target exactly H100 NVL")
+        if contract.get("initialization_policy") != "from_scratch":
+            raise RuntimeError("full-scale scientific pretraining must start from scratch")
+        if contract.get("partition_max_time") != "2-00:00:00":
+            raise RuntimeError("full-scale contract must bind the two-day partition limit")
+        if contract.get("resource_contract") != {
+            "cpus_per_task": 8,
+            "gres": "gpu:h100nvl:1",
+            "memory": "64G",
+            "partition": "inter",
+            "requested_time": "2-00:00:00",
+        }:
+            raise RuntimeError("full-scale resource contract is not exact")
+        if contract.get("output_contract") != {
+            "attempt_root_template": "artifacts/slurm/jobs/{slurm_job_id}/attempt-{restart_count:02d}",
+            "contract_copy": "provenance/job-contract.json",
+            "no_silent_overwrite": True,
+            "required_attempt_receipt": "receipt.json",
+            "required_checkpoint": "checkpoint.pt",
+            "required_metrics": "metrics.jsonl",
+            "required_signal_checkpoint": "signal-checkpoint.pt",
+            "run_root_template": "artifacts/runs/{experiment}/{seed}/{slurm_job_id}",
+        }:
+            raise RuntimeError("full-scale output and receipt contract is not exact")
+        resume_policy = contract.get("checkpoint_resume_policy", {})
+        for key in (
+            "checkpoint_at_optimizer_boundary",
+            "pending_validation_serialized",
+            "requeue_uses_signal_checkpoint",
+            "no_silent_restart",
+            "no_double_counting",
+        ):
+            if resume_policy.get(key) is not True:
+                raise RuntimeError(f"full-scale resume policy lacks {key}")
+        if contract.get("submission_authorized") is not False:
+            raise RuntimeError("blocked full-scale contract cannot authorize submission")
+        provenance = contract.get("provenance_status", {})
+        if provenance.get("scientific_slurm_submission_allowed") is not False:
+            raise RuntimeError("full-scale contract lacks the blocked provenance status")
+        if not any(
+            "f4e54df23b5c60115e475c5d68df4651899d678e" in str(blocker)
+            and "b6e3a4118b960e3a4676a61af9601438d56cef96" in str(blocker)
+            for blocker in provenance.get("blockers", [])
+        ):
+            raise RuntimeError("full-scale contract lacks the exact provenance blocker")
+        override = contract.get("stage_gate_override", {})
+        if override.get("status") != "operator_directed_fullscale_advancement":
+            raise RuntimeError("full-scale contract lacks the stage-gate override record")
+        if override.get("technical_and_scientific_gates_preserved") is not True:
+            raise RuntimeError("stage-gate override weakens required safety gates")
     return contract, runtime, stored
 
 
@@ -257,6 +311,31 @@ def main() -> int:
         "validation",
     ]:
         raise RuntimeError("job index must be restricted to train and validation roles")
+    if contract.get("fullscale"):
+        if selection.get("selection_name") != "train_865k":
+            raise RuntimeError("full-scale contract is not bound to train_865k")
+        if selection.get("selection_includes_test") is not False:
+            raise RuntimeError("full-scale selection includes sealed test")
+        if selection.get("split_counts") != {
+            "test": 0,
+            "train": 865000,
+            "validation": 50000,
+        }:
+            raise RuntimeError("full-scale selection counts are not exact")
+        index_counts = index.get("split_counts", {})
+        if (
+            index_counts.get("train") != 865000
+            or index_counts.get("validation") != 50000
+            or index_counts.get("test", 0) != 0
+            or set(index_counts) - {"train", "validation", "test"}
+        ):
+            raise RuntimeError("full-scale index counts are not exact")
+        if contract.get("expected_optimizer_steps") != 108128:
+            raise RuntimeError("full-scale optimizer-step contract is not exact")
+        if contract.get("expected_presentations") != 1730048:
+            raise RuntimeError("full-scale presentation contract is not exact")
+        if contract.get("expected_validation_events") != 5000:
+            raise RuntimeError("full-scale validation cohort is not exact")
     readiness = _load_hashed_manifest(
         ROOT
         / "configs/training_selection/production_1m_20260812/training_readiness.json",

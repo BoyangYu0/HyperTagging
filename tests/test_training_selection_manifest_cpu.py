@@ -124,6 +124,26 @@ def test_sources_and_tasks_are_isolated_and_training_sets_are_nested(tmp_path):
     assert large["split_counts"] == {"test": 15, "train": 30, "validation": 15}
 
 
+def test_full_training_selection_excludes_sealed_test_by_construction(tmp_path):
+    inventory = _inventory(tmp_path)
+    roles = _roles(inventory)
+    selection = build_training_selection(
+        inventory,
+        roles,
+        selection_name="train_865k",
+        training_quotas={"a": 3, "b": 3, "c": 3},
+        include_test=False,
+    )
+    assert selection["selection_includes_test"] is False
+    assert selection["excluded_roles"] == ["stress", "test"]
+    assert {entry["split"] for entry in selection["entries"]} == {
+        "train",
+        "validation",
+    }
+    assert selection["split_counts"]["test"] == 0
+    assert selection["split_shard_counts"]["test"] == 0
+
+
 def test_loader_rejects_manifest_tampering_and_raw_prefix(tmp_path):
     from hypertagging.training.data_module import build_real_data_module
 

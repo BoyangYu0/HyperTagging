@@ -98,23 +98,65 @@ TRAINING_QUOTAS = {
         "taupair": 8,
         "uubar": 10,
     },
+    # The full production training role is the complete 173-shard pool.
+    # These quotas are derived from the canonical role allocation and keep
+    # selection generation deterministic without hand-authoring shard paths.
+    "train_865k": {
+        "ccbar": 15,
+        "charged": 15,
+        "ddbar": 13,
+        "mixed": 61,
+        "ssbar": 13,
+        "taupair": 16,
+        "uubar": 40,
+    },
+}
+
+SELECTION_INCLUDES_TEST = {
+    "train_035k": True,
+    "train_100k": True,
+    "train_250k": True,
+    "train_865k": False,
 }
 
 
-def build(data_root: Path, output_dir: Path, seed: int) -> None:
-    inventory = inventory_publications(data_root)
+def build(
+    data_root: Path,
+    output_dir: Path,
+    seed: int,
+    *,
+    reuse_manifests: bool = False,
+) -> None:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    if reuse_manifests:
+        inventory = load_hashed_manifest(
+            output_dir / "inventory.json", expected_version=INVENTORY_VERSION
+        )
+        roles = load_hashed_manifest(
+            output_dir / "roles.json", expected_version=ROLE_MANIFEST_VERSION
+        )
+    else:
+        inventory = inventory_publications(data_root)
+        inventory_path = write_hashed_manifest(inventory, output_dir / "inventory.json")
+        inventory = load_hashed_manifest(
+            inventory_path, expected_version=INVENTORY_VERSION
+        )
+        roles = assign_source_roles(
+            inventory,
+            seed=seed,
+            validation_quotas=HELD_OUT_QUOTAS["validation"],
+            test_quotas=HELD_OUT_QUOTAS["test"],
+            stress_quotas=HELD_OUT_QUOTAS["stress"],
+        )
+        roles_path = write_hashed_manifest(roles, output_dir / "roles.json")
+        roles = load_hashed_manifest(
+            roles_path, expected_version=ROLE_MANIFEST_VERSION
+        )
     _validate_reduced_campaign(inventory)
-    inventory_path = write_hashed_manifest(inventory, output_dir / "inventory.json")
-    inventory = load_hashed_manifest(inventory_path, expected_version=INVENTORY_VERSION)
-    roles = assign_source_roles(
-        inventory,
-        seed=seed,
-        validation_quotas=HELD_OUT_QUOTAS["validation"],
-        test_quotas=HELD_OUT_QUOTAS["test"],
-        stress_quotas=HELD_OUT_QUOTAS["stress"],
-    )
-    roles_path = write_hashed_manifest(roles, output_dir / "roles.json")
-    roles = load_hashed_manifest(roles_path, expected_version=ROLE_MANIFEST_VERSION)
+    if roles["inventory_hash"] != inventory["manifest_hash"]:
+        raise ValueError("roles manifest does not reference the inventory hash")
+    if int(roles["selection_seed"]) != int(seed):
+        raise ValueError("canonical roles manifest was generated with a different seed")
     selections = []
     selection_hashes = {}
     for name, quotas in TRAINING_QUOTAS.items():
@@ -123,15 +165,20 @@ def build(data_root: Path, output_dir: Path, seed: int) -> None:
             roles,
             selection_name=name,
             training_quotas=quotas,
+            include_test=SELECTION_INCLUDES_TEST[name],
         )
         path = write_hashed_manifest(selection, output_dir / f"{name}.json")
         checked = load_hashed_manifest(
             path, expected_version=SELECTION_MANIFEST_VERSION
         )
-        load_training_selection(path)
+        load_training_selection(path, include_splits=("train", "validation"))
         selections.append(checked)
         selection_hashes[name] = checked["manifest_hash"]
-    validate_nested_selections(selections)
+    validate_nested_selections(
+        selection
+        for selection in selections
+        if selection.get("selection_includes_test", True)
+    )
     roles_by_name = {entry["role"]: [] for entry in roles["entries"]}
     for entry in roles["entries"]:
         roles_by_name[entry["role"]].append(entry)
@@ -171,6 +218,7 @@ def build(data_root: Path, output_dir: Path, seed: int) -> None:
         ],
         "nested_source_sets": "validated",
         "fixed_validation_test_sets": "validated",
+        "sealed_test_selection": "excluded_from_train_865k",
         "uid_validation": "pending_full_index_build",
         "category_representativeness_note": (
             "The 1M reduced campaign is source-task sampled and skewed, especially "
@@ -201,9 +249,30 @@ def validate(output_dir: Path) -> None:
             raise ValueError(f"{name} does not reference the inventory hash")
         if selection["roles_hash"] != roles["manifest_hash"]:
             raise ValueError(f"{name} does not reference the roles hash")
-        load_training_selection(path)
+        # Do not open sealed-test payloads during manifest validation.  The
+        # production selection excludes that role; historical smaller
+        # selections retain their old schema but are checked only on the
+        # train/validation roles here.
+        load_training_selection(path, include_splits=("train", "validation"))
+        if name == "train_865k":
+            if selection.get("selection_includes_test") is not False:
+                raise ValueError("train_865k must exclude the sealed-test role")
+            if selection.get("split_counts", {}).get("train") != 865_000:
+                raise ValueError("train_865k must contain exactly 865000 train events")
+            if selection.get("split_counts", {}).get("validation") != 50_000:
+                raise ValueError("train_865k must contain exactly 50000 validation events")
+            if selection.get("split_counts", {}).get("test", 0) != 0:
+                raise ValueError("train_865k contains sealed-test events")
+            if set(selection.get("excluded_roles", [])) != {"stress", "test"}:
+                raise ValueError("train_865k excluded-role contract is incomplete")
+        elif selection.get("selection_includes_test", True) is not True:
+            raise ValueError(f"{name} must retain its historical test-role schema")
         selections.append(selection)
-    validate_nested_selections(selections)
+    validate_nested_selections(
+        selection
+        for selection in selections
+        if selection.get("selection_includes_test", True)
+    )
     summary = load_hashed_manifest(
         output_dir / "summary.json", expected_version=SUMMARY_VERSION
     )
@@ -250,11 +319,24 @@ def main() -> int:
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
     parser.add_argument("--validate-only", action="store_true")
+    parser.add_argument(
+        "--reuse-manifests",
+        action="store_true",
+        help=(
+            "reuse the validated inventory.json and roles.json; this is the "
+            "sealed-test-safe path for deterministic selection generation"
+        ),
+    )
     args = parser.parse_args()
     if args.validate_only:
         validate(args.output_dir)
     else:
-        build(args.data_root, args.output_dir, args.seed)
+        build(
+            args.data_root,
+            args.output_dir,
+            args.seed,
+            reuse_manifests=args.reuse_manifests,
+        )
         validate(args.output_dir)
     print(json.dumps({"status": "valid", "output_dir": str(args.output_dir.resolve())}))
     return 0

@@ -1,0 +1,91 @@
+{
+  "audit_version": "hypertagging-1m-provenance-and-failure-audit-v1",
+  "audit_date": "2026-08-21",
+  "repository": {
+    "root": "/home/b/Boyang.Yu/HyperTagging_uni/HyperTagging",
+    "baseline_commit": "39abb57a9a7cde11072496a6e1a831231edbcfc7",
+    "baseline_annotated_tag": "pretrain-035k-reconstruction-object12-pointer16-fullscale-readiness-20260817",
+    "baseline_worktree_clean": true
+  },
+  "historical_failures": [
+    {
+      "job_id": "15762258",
+      "gpu": "NVIDIA H100 NVL",
+      "terminal_state": "FAILED",
+      "terminal_mechanism": "nonfinite_gradient",
+      "attempted_step": 1155,
+      "completed_optimizer_steps": 1154,
+      "curriculum_phase": "truth_guided_distance_radius",
+      "amp_dtype": "bfloat16",
+      "grad_scaler_enabled": false,
+      "evidence": {
+        "stdout": "artifacts/slurm/pretrain-035k-h100-bf16-stable-20260815-15762258.out",
+        "stderr": "artifacts/slurm/pretrain-035k-h100-bf16-stable-20260815-15762258.err",
+        "diagnostic": "artifacts/runs/pretrain-035k-h100-bf16-stable-20260815/20260812/15762258/nonfinite-gradient-step-1155.json",
+        "metrics": "artifacts/runs/pretrain-035k-h100-bf16-stable-20260815/20260812/15762258/metrics.jsonl",
+        "diagnostic_sha256": "a342b7d642bfd89afacb158c18b57e515b43efb490fc841f8cd41d6886b9628c",
+        "metrics_sha256": "8b75a89a7a27794cbeb3199f2cbeb9fcc4dd101c85fdefd0865929a057337854"
+      },
+      "mechanism_detail": "clip_grad_norm_ with error_if_nonfinite=true rejected a nonfinite total gradient norm; the persisted report identifies encoder.other_encoder as the first offending parameter and 119 parameters with nonfinite gradients.",
+      "current_code_controls": [
+        "commit 3305f9b adds smooth float32 tangent-norm bounding and keeps the finite-gradient abort/report",
+        "configs/slurm/pretrain_1m_h100_20260821.yaml binds max_tangent_norm=1.5",
+        "src/hypertagging/training/pretrain_trainer.py preserves raw-gradient clipping with error_if_nonfinite=true",
+        "tests/test_trainer_corrections_cpu.py covers the corrected full-scale geometry and finite-gradient configuration"
+      ]
+    },
+    {
+      "job_id": "15763038",
+      "gpu": "Tesla V100-SXM2-32GB",
+      "terminal_state": "FAILED",
+      "terminal_mechanism": "objective_preflight_without_channel_support",
+      "curriculum_phase": "truth_guided_distance_radius",
+      "channel_memory_size": 0,
+      "evidence": {
+        "stdout": "artifacts/slurm/pretrain-035k-v100-mass-safe-resume-20260815-15763038.out",
+        "stderr": "artifacts/slurm/pretrain-035k-v100-mass-safe-resume-20260815-15763038.err",
+        "metrics": "artifacts/runs/pretrain-035k-v100-mass-safe-resume-20260815/20260812/15763038/metrics.jsonl",
+        "stderr_sha256": "25e5b3518301c309107b8b635712df9bcf0439c5ae18bf684e432e1859f58666",
+        "metrics_sha256": "12a3b7f4cf7ad01e448285455afb69446d1f2180ed693c2833b9d2b6d909b6bd"
+      },
+      "mechanism_detail": "the trainer raised objective pilot preflight: channel:gradient_without_support, channel:loss_without_support after repeated zero-positive channel windows with channel_memory_size=0",
+      "current_code_controls": [
+        "commit 5d22f14 restores bounded channel memory only at the exact channel-phase checkpoint boundary",
+        "commit f039869 counts structured channel loss support terms in preflight",
+        "commit b857909 retains the measured late-phase leaf-PID taper without weakening objective gates",
+        "scientific pretraining now rejects non-positive channel_memory_size and non-failing zero-positive action before data access",
+        "full-scale config binds channel_memory_size=4096, channel_zero_positive_action=fail, and pilot_objective_violation_action=fail"
+      ]
+    }
+  ],
+  "provenance_recovery": {
+    "expected_commit": "f4e54df23b5c60115e475c5d68df4651899d678e",
+    "expected_tree": "b6e3a4118b960e3a4676a61af9601438d56cef96",
+    "configured_remote": "origin git@github.com:BoyangYu0/HyperTagging.git",
+    "exact_fetch_attempt": {
+      "command": "git fetch --no-tags origin f4e54df23b5c60115e475c5d68df4651899d678e",
+      "result": "failed: remote error: upload-pack: not our ref f4e54df23b5c60115e475c5d68df4651899d678e"
+    },
+    "remote_ref_search": "no configured origin ref matched the expected object or production-1m source naming",
+    "local_recovery_search": {
+      "reachable_history": "not found",
+      "reflogs": "not found",
+      "alternates": "none",
+      "bundles": "none",
+      "additional_git_repositories_under_workspace": "none",
+      "packed_object_search": "not found",
+      "git_fsck_unreachable": "only two unreachable tag objects and two unreachable blobs; expected commit/tree absent"
+    },
+    "source_object_available": false,
+    "source_tree_verified_from_object": false,
+    "scientific_slurm_submission_allowed": false,
+    "blocker": "external provenance provider must supply the exact commit object f4e54df23b5c60115e475c5d68df4651899d678e and it must resolve to tree b6e3a4118b960e3a4676a61af9601438d56cef96",
+    "remediation": "obtain the exact Git object or a ref/bundle containing it from the production provenance owner; import only with git cat-file verification of both object ID and tree ID, then rerun scripts/validate_training_provenance.py"
+  },
+  "sealed_test_access": {
+    "status": "not_opened",
+    "rule": "sealed-test payloads are prohibited"
+  },
+  "decision": "blocked_pending_external_provenance",
+  "submission_authorized": false
+}

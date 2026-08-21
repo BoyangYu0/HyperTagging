@@ -24,7 +24,7 @@
     "trainer_tranche_complete": true,
     "uv_environment_workflow_complete": true
   },
-  "manifest_hash": "d952eacf4cf2f55683419dd8b76189f68adffe81f13603bf33ebc01c2d4e9bc7",
+  "manifest_hash": "14c4b8099e533e25e73200ddf1348478dc4b50269d9ac56c8f493e44eae6e1ec",
   "manifest_version": "hypertagging-training-provenance-status-v1",
   "preserved_tips": {
     "focused-post-audit-consolidation-20260802": {
@@ -42,7 +42,15 @@
     "Pass a fresh exact in-allocation CUDA/GPU environment preflight in the eventual scientific job on the chosen H200 or V100.",
     "Commit and review this readiness tranche, create the immutable experiment tag, and pass the clean scientific render gates."
   ],
-  "status_date": "2026-08-14",
+  "status_date": "2026-08-21",
+  "latest_recovery_audit": {
+    "machine_readable": "artifacts/codex/ht_pretraining_1m_provenance_blocker_20260821.json",
+    "human_readable": "artifacts/codex/ht_pretraining_1m_provenance_blocker_20260821.md",
+    "exact_fetch_result": "not our ref",
+    "source_object_available": false,
+    "source_tree_verified_from_object": false,
+    "scope": "workspace checkout, configured remotes, reachable history, reflogs, alternates, bundles, and packed objects"
+  },
   "training_integration": {
     "base_commit": "83776a2c4f9e7edd776915edf30816730881f9eb",
     "branch": "training-integration-20260812",

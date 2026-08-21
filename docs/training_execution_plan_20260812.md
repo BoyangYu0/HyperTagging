@@ -474,3 +474,24 @@ allocation prologue refuses to emit runtime values. Recover and independently
 verify source object `f4e54df...`/tree `b6e3a411...`, create the reviewed final
 experiment tag, recheck the queue/GRES, and re-render without
 `--blocked-no-submit` before any scientific submission.
+
+## 2026-08-21 operator-directed full-scale override (blocked)
+
+The operator explicitly directs preparation to advance to the production 1M
+campaign, with training restricted to the canonical 865,000 train-role events,
+validation restricted to the validation role, and sealed-test/stress payloads
+closed. This is an explicit override of the staged 100k candidate and optional
+250k confirmation sequence above; it records authorization to prepare the
+full-scale path, not authorization to submit or to waive any gate. The
+full-scale contract remains blocked until the exact production source object
+`f4e54df23b5c60115e475c5d68df4651899d678e` is independently recovered and
+verified to resolve to tree `b6e3a4118b960e3a4676a61af9601438d56cef96`.
+
+All technical and scientific gates remain binding: clean source and immutable
+hashes, UID/source/category validation, train-only normalizers, role separation,
+finite-gradient aborts, objective-support and dominance preflights, checkpoint
+integrity, exact optimizer/scheduler/scaler-disabled/curriculum/sampler/RNG
+resume, fixed validation cadence, H100 NVL resource binding, and complete
+execution receipts. No V100 full-scale launch is authorized; V100 remains only
+an explicitly bounded diagnostic fallback. The exact no-submit handoff and
+machine-readable blocker audit are retained under `artifacts/codex/`.

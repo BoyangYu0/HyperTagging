@@ -23,6 +23,7 @@ DIAGNOSTIC_CONFIGS = (
 SCIENTIFIC_CONFIGS = (
     "configs/slurm/pretrain_035k_scientific.yaml",
     "configs/slurm/pretrain_035k_h100_rerun_20260815.yaml",
+    "configs/slurm/pretrain_1m_h100_20260821.yaml",
 )
 
 ACCELERATOR_PRIORITY = (
@@ -53,7 +54,9 @@ def _resolve(path: str | Path) -> Path:
     return candidate if candidate.is_absolute() else ROOT / candidate
 
 
-def validate_live_slurm(gres: str) -> dict[str, Any]:
+def validate_live_slurm(
+    gres: str, *, require_highest_priority: bool = True
+) -> dict[str, Any]:
     version = _run(("/opt/slurm/bin/sbatch", "--version")).strip()
     help_text = _run(("/opt/slurm/bin/sbatch", "--help"))
     required_flags = (
@@ -90,7 +93,9 @@ def validate_live_slurm(gres: str) -> dict[str, Any]:
             for line in usable_lines
         )
     ]
-    if not usable_priority or usable_priority[0] != gres:
+    if not usable_priority or (
+        require_highest_priority and usable_priority[0] != gres
+    ):
         raise RuntimeError(
             f"selected GRES {gres!r} violates live accelerator priority; "
             f"usable priority is {usable_priority}"
@@ -122,8 +127,15 @@ def validate_live_slurm(gres: str) -> dict[str, Any]:
         "user_requested_accelerator_priority": list(ACCELERATOR_PRIORITY),
         "usable_priority": usable_priority,
         "selection_reason": (
-            f"selected {gres} as the highest-priority exact usable GRES "
-            "advertised by the live inter partition"
+            (
+                f"selected {gres} as the explicit authorized full-scale target; "
+                "the exact GRES is live in partition inter"
+            )
+            if not require_highest_priority
+            else (
+                f"selected {gres} as the highest-priority exact usable GRES "
+                "advertised by the live inter partition"
+            )
         ),
     }
 
@@ -154,6 +166,11 @@ def main() -> int:
         choices=SCIENTIFIC_CONFIGS,
         default=SCIENTIFIC_CONFIGS[0],
     )
+    parser.add_argument(
+        "--fullscale",
+        action="store_true",
+        help="render the blocked/no-submit production-1m H100 contract",
+    )
     parser.add_argument("--seed", type=int, default=20260812)
     parser.add_argument("--max-restarts", type=int, default=2)
     parser.add_argument("--local-admission-receipt", type=Path)
@@ -183,6 +200,14 @@ def main() -> int:
     args = parser.parse_args()
     if args.blocked_no_submit and args.mode != "scientific":
         raise RuntimeError("--blocked-no-submit is only valid for scientific contracts")
+    if args.fullscale and args.mode != "scientific":
+        raise RuntimeError("--fullscale requires scientific mode")
+    if args.fullscale and not args.blocked_no_submit:
+        raise RuntimeError(
+            "full-scale rendering is blocked until provenance and all launch gates pass"
+        )
+    if args.fullscale and args.gres != "gpu:h100nvl:1":
+        raise RuntimeError("full-scale production is authorized only on gpu:h100nvl:1")
     if args.user_authorized_scientific_submit and args.mode != "scientific":
         raise RuntimeError(
             "--user-authorized-scientific-submit is only valid for scientific contracts"
@@ -224,6 +249,7 @@ def main() -> int:
             raise RuntimeError("resume checkpoint rendering is scientific-only")
 
     expected_sha = args.expected_git_sha or _run(("git", "rev-parse", "HEAD")).strip()
+    provenance_result: dict[str, Any] | None = None
     if args.mode == "scientific":
         if admission_receipt is None or completion_receipt is None:
             raise RuntimeError(
@@ -264,18 +290,35 @@ def main() -> int:
         if not (Path(args.gpu_env) / "bin/python").is_file():
             raise RuntimeError("frozen GPU environment has not been installed")
 
-    live = validate_live_slurm(args.gres)
+    live = (
+        validate_live_slurm(args.gres)
+        if not args.fullscale
+        else validate_live_slurm(args.gres, require_highest_priority=False)
+    )
     config = (
         args.diagnostic_config
         if args.mode == "diagnostic"
         else args.scientific_config
     )
-    dataset_index = (
-        "artifacts/experiment_readiness/production_1m_20260812/train_035k/"
-        "train_035k.complete_only.index.json"
-    )
+    if args.fullscale:
+        import yaml
+
+        config_payload = yaml.safe_load(
+            _resolve(config).read_text(encoding="utf-8")
+        )
+        dataset_index = str(config_payload["dataset_index"])
+        selection_manifest = str(config_payload["data"])
+    else:
+        config_payload = {}
+        dataset_index = (
+            "artifacts/experiment_readiness/production_1m_20260812/train_035k/"
+            "train_035k.complete_only.index.json"
+        )
+        selection_manifest = (
+            "configs/training_selection/production_1m_20260812/train_035k.json"
+        )
     hashed_paths = (
-        "configs/training_selection/production_1m_20260812/train_035k.json",
+        selection_manifest,
         dataset_index,
         config,
         "environment/gpu/requirements-cu126.lock",
@@ -297,7 +340,11 @@ def main() -> int:
         "label": (
             "NON-SCIENTIFIC DIAGNOSTIC; NO SCIENTIFIC CLAIMS"
             if args.mode == "diagnostic"
-            else "SCIENTIFIC 35K PRETRAINING"
+            else (
+                "SCIENTIFIC PRODUCTION 1M PRETRAINING"
+                if args.fullscale
+                else "SCIENTIFIC 35K PRETRAINING"
+            )
         ),
         "account": "others",
         "partition": "inter",
@@ -311,11 +358,51 @@ def main() -> int:
         ).is_file(),
         "train_config": config,
         "experiment": args.experiment
-        or ("ht-nonsci-diag" if args.mode == "diagnostic" else "ht-pretrain-035k"),
+        or (
+            "ht-nonsci-diag"
+            if args.mode == "diagnostic"
+            else ("ht-pretrain-production-1m-h100-20260821" if args.fullscale else "ht-pretrain-035k")
+        ),
         "seed": args.seed,
         "max_restarts": args.max_restarts,
+        "fullscale": bool(args.fullscale),
+        "initialization_policy": "from_scratch" if args.fullscale else (
+            "resume_checkpoint" if resume_checkpoint is not None else "from_scratch"
+        ),
+        "partition_max_time": "2-00:00:00" if args.fullscale else None,
+        "checkpoint_resume_policy": (
+            {
+                "signal": "USR1",
+                "signal_seconds_before_limit": 300,
+                "checkpoint_at_optimizer_boundary": True,
+                "pending_validation_serialized": True,
+                "requeue_uses_signal_checkpoint": True,
+                "bounded_max_restarts": args.max_restarts,
+                "no_silent_restart": True,
+                "no_double_counting": True,
+            }
+            if args.fullscale
+            else None
+        ),
+        "resource_contract": {
+            "gres": args.gres,
+            "cpus_per_task": 8,
+            "memory": "64G",
+            "requested_time": "2-00:00:00" if args.fullscale else "12:00:00",
+            "partition": "inter",
+        },
+        "output_contract": {
+            "run_root_template": "artifacts/runs/{experiment}/{seed}/{slurm_job_id}",
+            "attempt_root_template": "artifacts/slurm/jobs/{slurm_job_id}/attempt-{restart_count:02d}",
+            "contract_copy": "provenance/job-contract.json",
+            "required_attempt_receipt": "receipt.json",
+            "required_metrics": "metrics.jsonl",
+            "required_checkpoint": "checkpoint.pt",
+            "required_signal_checkpoint": "signal-checkpoint.pt",
+            "no_silent_overwrite": True,
+        },
         "dataset_index": dataset_index,
-        "selection_manifest": hashed_paths[0],
+        "selection_manifest": selection_manifest,
         "sealed_test_role_access": "forbidden",
         "hashed_inputs": hashed_inputs,
         "live_slurm": live,
@@ -347,12 +434,17 @@ def main() -> int:
             and (args.blocked_no_submit or args.user_authorized_scientific_submit)
             else []
         ),
+        "provenance_status": provenance_result,
         "user_submission_authorization": (
             {
                 "authorized": True,
                 "recorded_at": datetime.now(timezone.utc).isoformat(),
                 "source": "interactive_user_instruction",
-                "scope": "single_35k_small_candidate_scientific_submission",
+                "scope": (
+                    "single_production_1m_h100_scientific_submission"
+                    if args.fullscale
+                    else "single_35k_small_candidate_scientific_submission"
+                ),
                 "provenance_limitations_must_remain_recorded": True,
             }
             if args.user_authorized_scientific_submit
@@ -365,6 +457,59 @@ def main() -> int:
             "reason": live.get("selection_reason", "live exact-GRES validation passed"),
         },
     }
+    if args.fullscale:
+        validation_events = int(config_payload["validation_events"])
+        batch_size = int(config_payload["batch_size"])
+        contract.update(
+            {
+                "expected_optimizer_steps": int(config_payload["max_steps"]),
+                "expected_train_events": 865000,
+                "expected_validation_events": validation_events,
+                "expected_presentations": int(config_payload["max_steps"])
+                * batch_size,
+                "expected_two_pool_presentations": 2 * 865000,
+                "presentation_excess_over_two_pools": 48,
+                "expected_curriculum_phase_steps": list(
+                    config_payload["curriculum_phase_steps"]
+                ),
+                "expected_validation_interval_steps": int(
+                    config_payload["validate_every"]
+                ),
+                "expected_checkpoint_interval_steps": int(
+                    config_payload["checkpoint_every"]
+                ),
+                "expected_validation_batches": int(
+                    config_payload["validation_batches"]
+                ),
+                "validation_final_partial_batch_events": validation_events % batch_size,
+                "learning_rate_schedule": {
+                    "type": "linear_warmup_cosine_decay",
+                    "total_steps": int(config_payload["lr_schedule_total_steps"]),
+                    "learning_rate": float(config_payload["learning_rate"]),
+                    "warmup_fraction": float(config_payload["warmup_fraction"]),
+                    "warmup_steps": 10000,
+                    "max_warmup_steps": int(config_payload["max_warmup_steps"]),
+                    "min_lr_ratio": float(config_payload["min_lr_ratio"]),
+                    "minimum_learning_rate": float(config_payload["learning_rate"])
+                    * float(config_payload["min_lr_ratio"]),
+                },
+                "fullscale_gpu_preflight": {
+                    "status": "pending_in_allocation",
+                    "required_gres": "gpu:h100nvl:1",
+                    "required_runtime_lock": "environment/gpu/requirements-cu126.lock",
+                    "submission_blocked_until_pass": True,
+                },
+                "stage_gate_override": {
+                    "status": "operator_directed_fullscale_advancement",
+                    "overrides_repository_plan": "100k/250k promotion sequence",
+                    "technical_and_scientific_gates_preserved": True,
+                    "limitation": (
+                        "This override does not waive provenance, data-role, UID/source, "
+                        "finite-gradient, objective, checkpoint, runtime, or contract gates."
+                    ),
+                },
+            }
+        )
     canonical = json.dumps(contract, sort_keys=True, separators=(",", ":"))
     contract["contract_sha256"] = hashlib.sha256(canonical.encode()).hexdigest()
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -373,7 +518,11 @@ def main() -> int:
     temporary.write_text(json.dumps(contract, indent=2, sort_keys=True) + "\n")
     temporary.replace(args.output)
 
-    walltime = "00:30:00" if args.mode == "diagnostic" else "12:00:00"
+    walltime = (
+        "00:30:00"
+        if args.mode == "diagnostic"
+        else ("2-00:00:00" if args.fullscale else "12:00:00")
+    )
     job_name = str(contract["experiment"])
     command = [
         "/opt/slurm/bin/sbatch",

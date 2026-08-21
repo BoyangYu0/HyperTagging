@@ -100,6 +100,33 @@ def test_empty_channel_memory_expansion_requires_exact_channel_phase_boundary():
         )
 
 
+def test_scientific_pretraining_rejects_missing_channel_support_before_data_access(
+    tmp_path,
+):
+    from hypertagging.training.pretrain_trainer import train_hyperbolic_pretraining
+
+    with pytest.raises(ValueError, match="requires positive channel_memory_size"):
+        train_hyperbolic_pretraining(
+            PretrainConfig(
+                data=str(tmp_path / "not-read.parquet"),
+                output_dir=str(tmp_path / "output"),
+                scientific_mode=True,
+                channel_memory_size=0,
+                channel_zero_positive_action="fail",
+            )
+        )
+    with pytest.raises(ValueError, match="requires channel_zero_positive_action=fail"):
+        train_hyperbolic_pretraining(
+            PretrainConfig(
+                data=str(tmp_path / "not-read.parquet"),
+                output_dir=str(tmp_path / "output"),
+                scientific_mode=True,
+                channel_memory_size=4096,
+                channel_zero_positive_action="warn",
+            )
+        )
+
+
 def test_leaf_pid_phase_weights_preserve_early_training_and_taper_late_phases():
     config = PretrainConfig(
         data="unused",
@@ -571,6 +598,11 @@ def test_corrected_scientific_configs_and_small_candidate_contract():
             encoding="utf-8"
         )
     )
+    fullscale = yaml.safe_load(
+        Path("configs/slurm/pretrain_1m_h100_20260821.yaml").read_text(
+            encoding="utf-8"
+        )
+    )
     assert pilot["model_preset"] == "gpu_debug"
     assert pilot["objective_dominance_ratio"] == 20.0
     assert pilot["pilot_objective_violation_action"] == "fail"
@@ -605,6 +637,24 @@ def test_corrected_scientific_configs_and_small_candidate_contract():
     assert h100_rerun["objective_weighted_loss_tolerance"] == 1e-7
     assert h100_rerun["channel_memory_size"] == 4096
     assert h100_rerun["leaf_pid_phase_weights"] == [1.0, 1.0, 0.5, 0.5]
+    assert fullscale["data"].endswith("train_865k.json")
+    assert fullscale["dataset_index"].endswith("train_865k.complete_only.index.json")
+    assert fullscale["max_steps"] == 108128
+    assert fullscale["max_steps"] * fullscale["batch_size"] == 1_730_048
+    assert fullscale["max_steps"] * fullscale["batch_size"] - 2 * 865_000 == 48
+    assert fullscale["curriculum_phase_steps"] == [27032] * 4
+    assert fullscale["checkpoint_every"] == fullscale["validate_every"] == 13516
+    assert fullscale["validation_events"] == 5000
+    assert fullscale["validation_batches"] == 313
+    assert fullscale["amp_dtype"] == "bfloat16"
+    assert fullscale["channel_memory_size"] == 4096
+    assert fullscale["channel_zero_positive_action"] == "fail"
+    parsed_fullscale = parse_args(
+        ["--config", "configs/slurm/pretrain_1m_h100_20260821.yaml"]
+    )
+    assert parsed_fullscale.max_steps == fullscale["max_steps"]
+    assert parsed_fullscale.validation_events == fullscale["validation_events"]
+    assert parsed_fullscale.validation_batches == fullscale["validation_batches"]
     rerun_schedule = learning_rate_schedule_contract(
         total_steps=h100_rerun["lr_schedule_total_steps"],
         warmup_fraction=h100_rerun["warmup_fraction"],

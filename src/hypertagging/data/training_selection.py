@@ -329,13 +329,17 @@ def build_training_selection(
     *,
     selection_name: str,
     training_quotas: Mapping[str, int],
+    include_test: bool = True,
 ) -> dict[str, Any]:
     inventory_entries = {
         str(entry["inventory_entry_hash"]): entry for entry in inventory["entries"]
     }
     role_entries = list(roles["entries"])
     selected: list[dict[str, Any]] = []
-    for role, split in (("validation", "validation"), ("test", "test")):
+    held_out_roles = [("validation", "validation")]
+    if include_test:
+        held_out_roles.append(("test", "test"))
+    for role, split in held_out_roles:
         selected.extend(
             _selection_entry(inventory_entries[entry["inventory_entry_hash"]], split)
             for entry in role_entries
@@ -365,6 +369,10 @@ def build_training_selection(
     for entry in selected:
         split_counts[entry["split"]] += int(entry["event_count"])
         split_shards[entry["split"]] += 1
+    if not include_test:
+        # Keep the excluded role explicit in the machine-readable contract.
+        split_counts["test"] = 0
+        split_shards["test"] = 0
     return {
         "manifest_version": SELECTION_MANIFEST_VERSION,
         "selection_name": selection_name,
@@ -374,6 +382,14 @@ def build_training_selection(
         "selection_seed": roles["selection_seed"],
         "training_category_shard_quotas": dict(sorted(training_quotas.items())),
         "selection_mode": "explicit_whole_shard_source_roles",
+        **(
+            {
+                "selection_includes_test": False,
+                "excluded_roles": ["stress", "test"],
+            }
+            if not include_test
+            else {}
+        ),
         "max_events_prefix_allowed": False,
         "normalizer_scope": "train_split_only",
         "uid_validation": {

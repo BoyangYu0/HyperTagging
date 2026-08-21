@@ -15,7 +15,7 @@
   "inventory_events": 1000000,
   "inventory_hash": "6b65445cdf3e43fde053bd26694b7b7977a378541009e4b0ae41dcd4334c9480",
   "inventory_shards": 200,
-  "manifest_hash": "1c9fcf66325f59a2c63932affa4da1b740dc36b7d3cb8556d257270476359b47",
+  "manifest_hash": "3869148199d5748208669ffc13012c8841ec969dfddce2029e1638766bc11b93",
   "manifest_version": "hypertagging-training-selection-summary-v1",
   "nested_source_sets": "validated",
   "nested_training_selections": [
@@ -66,6 +66,22 @@
       "train_events": 250000,
       "train_shards": 50,
       "validation_events": 50000
+    },
+    {
+      "category_train_shards": {
+        "ccbar": 15,
+        "charged": 15,
+        "ddbar": 13,
+        "mixed": 61,
+        "ssbar": 13,
+        "taupair": 16,
+        "uubar": 40
+      },
+      "name": "train_865k",
+      "test_events": 0,
+      "train_events": 865000,
+      "train_shards": 173,
+      "validation_events": 50000
     }
   ],
   "reduced_campaign_contract": "validated",
@@ -82,10 +98,12 @@
     "validation": 10
   },
   "roles_hash": "90627c77197dc7d9a9c27b90502162995e24fb3f174f896ccaef384023e067d8",
+  "sealed_test_selection": "excluded_from_train_865k",
   "selection_hashes": {
     "train_035k": "b55cebee16b6dfa55b7fee943e28cca0de325132547b34dc13fffc24c418df72",
     "train_100k": "018612eed8b48d180b0ee5a2ab992d7679296b19772bb55a60860607be325a3d",
-    "train_250k": "2e3d4a819bd25dc7369c7c4e1ae002e12e3e78e3b4871b2410fbcb45998466a7"
+    "train_250k": "2e3d4a819bd25dc7369c7c4e1ae002e12e3e78e3b4871b2410fbcb45998466a7",
+    "train_865k": "fe250b707242377cbdfea5936a1b7ff160241fb3c223a37b4f3285613062dba2"
   },
   "selection_seed": 20260812,
   "training_pool_category_shards": {
