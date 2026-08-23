@@ -1,0 +1,346 @@
+{
+  "accelerator_selection": {
+    "live_usable_priority": [
+      "gpu:h200nvl:1",
+      "gpu:h100nvl:1",
+      "gpu:v100:1"
+    ],
+    "priority": [
+      "gpu:h200nvl:1",
+      "gpu:h100nvl:1",
+      "gpu:v100:1"
+    ],
+    "reason": "selected gpu:h100nvl:1 as the explicit authorized full-scale target; the exact GRES is live in partition inter",
+    "selected": "gpu:h100nvl:1"
+  },
+  "account": "others",
+  "artifact_git_sha": "88b4fcdbd8bec2c1cd772c3e45742aa39ff077b7",
+  "checkpoint_resume_policy": {
+    "bounded_max_restarts": 2,
+    "checkpoint_at_optimizer_boundary": true,
+    "no_double_counting": true,
+    "no_silent_restart": true,
+    "pending_validation_serialized": true,
+    "requeue_uses_signal_checkpoint": true,
+    "signal": "USR1",
+    "signal_seconds_before_limit": 300
+  },
+  "contract_sha256": "20805cd37f914ea9ffb85789a200188bf23b1f6ee23e38067e5512f16393ac94",
+  "contract_version": "hypertagging-slurm-one-gpu-contract-v2",
+  "dataset_index": "artifacts/experiment_readiness/production_1m_20260812/train_865k/train_865k.complete_only.index.json",
+  "execution_authorization": {
+    "basis": "operator_provenance_exception",
+    "execution_authorized": true
+  },
+  "expected_checkpoint_interval_steps": 13516,
+  "expected_curriculum_phase_steps": [
+    27032,
+    27032,
+    27032,
+    27032
+  ],
+  "expected_git_sha": "88b4fcdbd8bec2c1cd772c3e45742aa39ff077b7",
+  "expected_git_tag": "ht-pretraining-1m-phase3-recovery-implementation-v2-20260823",
+  "expected_optimizer_steps": 108128,
+  "expected_presentations": 1730048,
+  "expected_train_events": 865000,
+  "expected_two_pool_presentations": 1730000,
+  "expected_validation_batches": 313,
+  "expected_validation_checkpoint_milestones": [
+    {
+      "kind": "validation",
+      "step": 13516
+    },
+    {
+      "kind": "checkpoint",
+      "step": 13516
+    },
+    {
+      "kind": "validation",
+      "step": 27032
+    },
+    {
+      "kind": "checkpoint",
+      "step": 27032
+    },
+    {
+      "kind": "validation",
+      "step": 40548
+    },
+    {
+      "kind": "checkpoint",
+      "step": 40548
+    },
+    {
+      "kind": "validation",
+      "step": 54064
+    },
+    {
+      "kind": "checkpoint",
+      "step": 54064
+    },
+    {
+      "kind": "validation",
+      "step": 67580
+    },
+    {
+      "kind": "checkpoint",
+      "step": 67580
+    },
+    {
+      "kind": "validation",
+      "step": 81096
+    },
+    {
+      "kind": "checkpoint",
+      "step": 81096
+    },
+    {
+      "kind": "validation",
+      "step": 94612
+    },
+    {
+      "kind": "checkpoint",
+      "step": 94612
+    },
+    {
+      "kind": "validation",
+      "step": 108128
+    },
+    {
+      "kind": "checkpoint",
+      "step": 108128
+    }
+  ],
+  "expected_validation_events": 5000,
+  "expected_validation_interval_steps": 13516,
+  "experiment": "ht-pretrain-1m-phase3-recovery-20260823",
+  "export_policy": "NIL",
+  "fullscale": true,
+  "fullscale_gpu_preflight": {
+    "required_gres": "gpu:h100nvl:1",
+    "required_runtime_lock": "environment/gpu/requirements-cu126.lock",
+    "status": "pending_in_allocation",
+    "submission_blocked_until_pass": true
+  },
+  "gpu_environment": "/project/agkuhr/users/boyang/envs/hypertagging-gpu-cu126-v1",
+  "gpu_environment_present_at_render": true,
+  "gres": "gpu:h100nvl:1",
+  "hashed_inputs": [
+    {
+      "path": "configs/training_selection/production_1m_20260812/train_865k.json",
+      "sha256": "989ac429d7d7cc444d8278b2f3443999999c481c4e202d249e57cdeb1d58a390"
+    },
+    {
+      "path": "artifacts/experiment_readiness/production_1m_20260812/train_865k/train_865k.complete_only.index.json",
+      "sha256": "8b307fe9c7c359b6c2d36908c393aa82fa13afca5ec53144311b5d592eed7be5"
+    },
+    {
+      "path": "configs/slurm/pretrain_1m_phase3_recovery_20260823.yaml",
+      "sha256": "eced70932466ea07783122f7d2bce7fb344c87f45e72e57622e6363df3a2ad3f"
+    },
+    {
+      "path": "environment/gpu/requirements-cu126.lock",
+      "sha256": "2d34539c79f144f133c39f9ae86c0a34dafaab554c8fe263c28e01fe766576fc"
+    },
+    {
+      "path": "environment/gpu/runtime-contract.json",
+      "sha256": "411facd82bb25d64dd17106a2f79d6fe1b23c40a5ed9d502f5fe7cfa11c33c25"
+    },
+    {
+      "path": "environment/gpu/environment-lock.sha256",
+      "sha256": "6c35af3eaac25ecf7bff12cb13bacefe4e8ee275aa40689adca6ed5f20d7d66d"
+    },
+    {
+      "path": "configs/training_selection/production_1m_20260812/training_readiness.json",
+      "sha256": "ef812f5e82a7efae442e861bded21bce5399cd3ab1370650c60d4e520a1f4e24"
+    },
+    {
+      "path": "configs/training_selection/production_1m_20260812/provenance_status.json",
+      "sha256": "e7d645dcb1d0a177284439e269033b8e3e77c1f76737910419353fb5dae5bc85"
+    },
+    {
+      "path": "artifacts/slurm/ht-pretrain-production-1m-h100-20260821.operator-authorized.job-contract.json",
+      "sha256": "8dfa6b2320c8992e69c68f7d570bcb0e562306b928be57c2ece0c8f8626f5a0d"
+    },
+    {
+      "path": "/home/b/Boyang.Yu/HyperTagging_uni/HyperTagging/artifacts/experiment_readiness/production_1m_20260812/v100_nonfinite_resume_smoke_20260815_02/admission.json",
+      "sha256": "bcc6b0a762c0df51c9926525c0aa46afd4110a3f8519a1d734a5d4df0c5cd456"
+    },
+    {
+      "path": "/home/b/Boyang.Yu/HyperTagging_uni/HyperTagging/artifacts/experiment_readiness/production_1m_20260812/v100_nonfinite_resume_smoke_20260815_02/completion.json",
+      "sha256": "9463ddc2b2bbaec5e4586149dc5b9be6fb1fb8a6b7903969c11fd9c88b852ea7"
+    },
+    {
+      "path": "/home/b/Boyang.Yu/HyperTagging_uni/HyperTagging/artifacts/runs/ht-pretrain-production-1m-h100-20260821/20260812/15933802/checkpoint-step-54064.pt",
+      "sha256": "997241deb841033598846dea8b3650d31b9511c4241aad44798d83fe0ac5ad7d"
+    }
+  ],
+  "implementation_git_sha": "88b4fcdbd8bec2c1cd772c3e45742aa39ff077b7",
+  "initialization_policy": "exact_resume_from_checkpoint",
+  "label": "SCIENTIFIC PRODUCTION 1M PRETRAINING",
+  "learning_rate_schedule": {
+    "learning_rate": 0.0005,
+    "max_warmup_steps": 10000,
+    "min_lr_ratio": 0.1,
+    "minimum_learning_rate": 5e-05,
+    "total_steps": 108128,
+    "type": "linear_warmup_cosine_decay",
+    "warmup_fraction": 0.1,
+    "warmup_steps": 10000
+  },
+  "live_slurm": {
+    "account": "others",
+    "exact_gres": "gpu:h100nvl:1",
+    "partition": "inter",
+    "required_flags_verified": [
+      "--account",
+      "--partition",
+      "--gres",
+      "--signal",
+      "--requeue",
+      "--export"
+    ],
+    "sbatch_test_only_supported": false,
+    "selection_reason": "selected gpu:h100nvl:1 as the explicit authorized full-scale target; the exact GRES is live in partition inter",
+    "sinfo_snapshot": [
+      "kng-cl-nv01|mixed|gpu:a40:9(S:0-1)",
+      "kng-cl-nv02|mixed|gpu:a40:8,gpu:a100:2",
+      "kng-cl-nv03|mixed|gpu:h200nvl:4",
+      "met-cl-vis01|mixed|gpu:rtx2080ti:4",
+      "met-cl-vis02|mixed|gpu:p5000:4",
+      "th-cl-1024us01|idle|(null)",
+      "th-cl-1024us02|idle|(null)",
+      "th-cl-1024us03|mixed|(null)",
+      "th-cl-nv01|mixed|gpu:v100:4",
+      "th-cl-nv02|mixed|gpu:v100:4(S:0-1)",
+      "usm-cl-nv01|mixed|gpu:h100nvl:7"
+    ],
+    "usable_priority": [
+      "gpu:h200nvl:1",
+      "gpu:h100nvl:1",
+      "gpu:v100:1"
+    ],
+    "user_requested_accelerator_priority": [
+      "gpu:h200nvl:1",
+      "gpu:h100nvl:1",
+      "gpu:v100:1"
+    ],
+    "version": "slurm 23.02.8"
+  },
+  "local_admission_receipt": "/home/b/Boyang.Yu/HyperTagging_uni/HyperTagging/artifacts/experiment_readiness/production_1m_20260812/v100_nonfinite_resume_smoke_20260815_02/admission.json",
+  "local_completion_receipt": "/home/b/Boyang.Yu/HyperTagging_uni/HyperTagging/artifacts/experiment_readiness/production_1m_20260812/v100_nonfinite_resume_smoke_20260815_02/completion.json",
+  "max_restarts": 2,
+  "mode": "scientific",
+  "operator_provenance_exception": {
+    "authorization_date": "2026-08-21",
+    "execution_authorized": true,
+    "gres": "gpu:h100nvl:1",
+    "job_count": 1,
+    "limitation": "The production source object f4e54df23b5c60115e475c5d68df4651899d678e remains unavailable locally; independently recover it and verify tree b6e3a4118b960e3a4676a61af9601438d56cef96.",
+    "scope": "exactly_one_production_1m_pretraining_job_on_gpu:h100nvl:1",
+    "source": "interactive_user_instruction",
+    "status": "explicit_operator_authorized_exception",
+    "structural_provenance_validation": {
+      "missing_source_commit": "f4e54df23b5c60115e475c5d68df4651899d678e",
+      "missing_source_tree": "b6e3a4118b960e3a4676a61af9601438d56cef96",
+      "scientific_slurm_submission_allowed": false,
+      "status": "valid",
+      "validator_unchanged": true
+    }
+  },
+  "output_contract": {
+    "attempt_root_template": "artifacts/slurm/jobs/{slurm_job_id}/attempt-{restart_count:02d}",
+    "contract_copy": "provenance/job-contract.json",
+    "no_silent_overwrite": true,
+    "required_attempt_receipt": "receipt.json",
+    "required_checkpoint": "checkpoint.pt",
+    "required_metrics": "metrics.jsonl",
+    "required_signal_checkpoint": "signal-checkpoint.pt",
+    "run_root_template": "artifacts/runs/{experiment}/{seed}/{slurm_job_id}"
+  },
+  "partition": "inter",
+  "partition_max_time": "2-00:00:00",
+  "presentation_excess_over_two_pools": 48,
+  "provenance_status": {
+    "blockers": [
+      "The production source object f4e54df23b5c60115e475c5d68df4651899d678e remains unavailable locally; independently recover it and verify tree b6e3a4118b960e3a4676a61af9601438d56cef96.",
+      "Pass a fresh exact in-allocation CUDA/GPU environment preflight in the eventual scientific job on the chosen H200 or V100.",
+      "Commit and review this readiness tranche, create the immutable experiment tag, and pass the clean scientific render gates."
+    ],
+    "cpu_implementation_allowed": true,
+    "manifest_hash": "14c4b8099e533e25e73200ddf1348478dc4b50269d9ac56c8f493e44eae6e1ec",
+    "scientific_slurm_submission_allowed": false,
+    "status": "valid"
+  },
+  "provenance_validation": {
+    "blockers": [
+      "The production source object f4e54df23b5c60115e475c5d68df4651899d678e remains unavailable locally; independently recover it and verify tree b6e3a4118b960e3a4676a61af9601438d56cef96.",
+      "Pass a fresh exact in-allocation CUDA/GPU environment preflight in the eventual scientific job on the chosen H200 or V100.",
+      "Commit and review this readiness tranche, create the immutable experiment tag, and pass the clean scientific render gates."
+    ],
+    "execution_authorization_does_not_modify_validator": true,
+    "expected_missing_source_commit": "f4e54df23b5c60115e475c5d68df4651899d678e",
+    "expected_missing_source_tree": "b6e3a4118b960e3a4676a61af9601438d56cef96",
+    "scientific_slurm_submission_allowed": false,
+    "status": "valid"
+  },
+  "recovery_lineage": {
+    "historical_attempt_root": "artifacts/slurm/jobs/15933802/attempt-00",
+    "historical_commit": "93b71c5d7c1bc20181640aafb4e918abb9267362",
+    "historical_contract": {
+      "canonical_sha256": "2af2b8fc51c7f1bceb26e5013c822967316a0f2b1d09671eb8b10fc0e8fd3406",
+      "file_sha256": "8dfa6b2320c8992e69c68f7d570bcb0e562306b928be57c2ece0c8f8626f5a0d",
+      "path": "artifacts/slurm/ht-pretrain-production-1m-h100-20260821.operator-authorized.job-contract.json"
+    },
+    "historical_experiment": "ht-pretrain-production-1m-h100-20260821",
+    "historical_job_id": "15933802",
+    "historical_tag": "ht-pretraining-production-1m-h100-operator-authorized-20260821",
+    "kind": "production_1m_phase3_exact_resume_v1",
+    "replacement_attempt_root_must_not_be": "artifacts/slurm/jobs/15933802/attempt-00",
+    "replacement_experiment": "ht-pretrain-1m-phase3-recovery-20260823",
+    "source_checkpoint": "artifacts/runs/ht-pretrain-production-1m-h100-20260821/20260812/15933802/checkpoint-step-54064.pt",
+    "source_checkpoint_bytes": 19371763,
+    "source_checkpoint_sha256": "997241deb841033598846dea8b3650d31b9511c4241aad44798d83fe0ac5ad7d",
+    "source_checkpoint_step": 54064,
+    "source_checkpoint_unchanged": true
+  },
+  "resource_contract": {
+    "cpus_per_task": 8,
+    "gres": "gpu:h100nvl:1",
+    "memory": "64G",
+    "partition": "inter",
+    "requested_time": "2-00:00:00"
+  },
+  "resume_checkpoint": "artifacts/runs/ht-pretrain-production-1m-h100-20260821/20260812/15933802/checkpoint-step-54064.pt",
+  "resume_checkpoint_sha256": "997241deb841033598846dea8b3650d31b9511c4241aad44798d83fe0ac5ad7d",
+  "scientific_submission_blockers": [
+    "The production source object f4e54df23b5c60115e475c5d68df4651899d678e remains unavailable locally; independently recover it and verify tree b6e3a4118b960e3a4676a61af9601438d56cef96.",
+    "Pass a fresh exact in-allocation CUDA/GPU environment preflight in the eventual scientific job on the chosen H200 or V100.",
+    "Commit and review this readiness tranche, create the immutable experiment tag, and pass the clean scientific render gates."
+  ],
+  "sealed_test_role_access": "forbidden",
+  "seed": 20260812,
+  "selection_manifest": "configs/training_selection/production_1m_20260812/train_865k.json",
+  "stage_gate_override": {
+    "limitation": "This override does not waive provenance, data-role, UID/source, finite-gradient, objective, checkpoint, runtime, or contract gates; the separate operator provenance exception authorizes only this exact single production-1M H100 execution scope and does not alter the validator or the missing object/tree.",
+    "overrides_repository_plan": "100k/250k promotion sequence",
+    "status": "operator_directed_fullscale_advancement",
+    "technical_and_scientific_gates_preserved": true
+  },
+  "submission_authorized": true,
+  "submission_performed": false,
+  "train_config": "configs/slurm/pretrain_1m_phase3_recovery_20260823.yaml",
+  "user_submission_authorization": {
+    "authorization_date": "2026-08-21",
+    "authorized": true,
+    "gres": "gpu:h100nvl:1",
+    "job_count": 1,
+    "provenance_limitations_must_remain_recorded": true,
+    "recorded_at": "2026-08-21",
+    "scope": "exactly_one_production_1m_pretraining_job_on_gpu:h100nvl:1",
+    "source": "interactive_user_instruction"
+  },
+  "validation_final_partial_batch_events": 8,
+  "verification_scope": "operator_authorized_execution_with_provenance_exception"
+}

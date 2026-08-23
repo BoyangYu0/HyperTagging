@@ -1,0 +1,105 @@
+{
+  "artifact_tag": "ht-pretraining-1m-phase3-recovery-20260823",
+  "checkpoint": {
+    "bytes": 19371763,
+    "path": "artifacts/runs/ht-pretrain-production-1m-h100-20260821/20260812/15933802/checkpoint-step-54064.pt",
+    "sha256": "997241deb841033598846dea8b3650d31b9511c4241aad44798d83fe0ac5ad7d",
+    "step": 54064,
+    "loadable_read_only": true,
+    "finite_model_optimizer_scheduler_normalizer_training_streaming_tensors": true
+  },
+  "diagnosis": {
+    "classification": "deterministic_sample_conditioned_objective_gate_event",
+    "code_defect": false,
+    "normalization_defect": false,
+    "scientifically_invalid_phase_weight": true,
+    "gate_action": "fail",
+    "gate_ratio": 20.0,
+    "failure_weighted_gradient_dominance": 22.894,
+    "historical_phase_weights": [1.0, 1.0, 0.5, 0.5],
+    "correction_phase_weights": [1.0, 1.0, 0.4, 0.4],
+    "corrected_ratio_by_linear_weight_scaling": 18.3152,
+    "denominators_are_support_checks_not_gradient_rescaling": true,
+    "source_batch_payload_opened": false,
+    "sealed_test_or_stress_payload_accessed": false
+  },
+  "evidence": {
+    "failed_job_id": "15933802",
+    "failed_job_name": "ht-pretrain-production-1m-h100-20260821",
+    "failed_job_terminal": "FAILED",
+    "failed_job_exit": "1:0",
+    "failed_job_node": "usm-cl-nv01",
+    "failed_job_gres": "gpu:h100nvl:1",
+    "failed_job_restarts": 0,
+    "historical_commit": "93b71c5d7c1bc20181640aafb4e918abb9267362",
+    "historical_tag": "ht-pretraining-production-1m-h100-operator-authorized-20260821",
+    "historical_contract": {
+      "path": "artifacts/slurm/ht-pretrain-production-1m-h100-20260821.operator-authorized.job-contract.json",
+      "canonical_sha256": "2af2b8fc51c7f1bceb26e5013c822967316a0f2b1d09671eb8b10fc0e8fd3406",
+      "file_sha256": "8dfa6b2320c8992e69c68f7d570bcb0e562306b928be57c2ece0c8f8626f5a0d"
+    },
+    "historical_config_sha256": "dd1947cdb50ffa0c4150ec5ab2a9032f4e6dab3d7f6a6c68bd2f245c2e43b8ad",
+    "selection_manifest": {
+      "semantic_sha256": "fe250b707242377cbdfea5936a1b7ff160241fb3c223a37b4f3285613062dba2",
+      "file_sha256": "989ac429d7d7cc444d8278b2f3443999999c481c4e202d249e57cdeb1d58a390"
+    },
+    "index": {
+      "semantic_sha256": "eba2a5498e09d82e1ca1e8d9841ba117423b99b540190088ed4875a8aa296809",
+      "file_sha256": "8b307fe9c7c359b6c2d36908c393aa82fa13afca5ec53144311b5d592eed7be5"
+    },
+    "step_54064_validation": {
+      "events": 5000,
+      "batches": 313,
+      "full_objective": 8.664798735239254,
+      "principal_loss": 8.494534350955448,
+      "relation_accuracy": 0.8384483626570565,
+      "parent_ranking": 0.6717389677755368,
+      "leaf_pid_accuracy": 0.8452743453720507
+    },
+    "metrics": {
+      "path": "artifacts/runs/ht-pretrain-production-1m-h100-20260821/20260812/15933802/metrics.jsonl",
+      "records": 2176,
+      "max_logged_step": 54275,
+      "sha256": "c580668451360a1374d5530b9acdf7f15dbbbd728572912cce6d0ab30ad9df6c"
+    },
+    "no_silent_restart": true,
+    "receipt_restart_count": 0,
+    "usr1_received": 0,
+    "termination_received": 0
+  },
+  "resume": {
+    "initialization_policy": "exact_resume_from_checkpoint",
+    "completed_optimizer_steps": 54064,
+    "next_phase_index": 2,
+    "next_phase": "multilevel_channel_memory",
+    "later_phase": "corrupted_composites_hard_negatives",
+    "max_steps": 108128,
+    "phase_steps": [27032, 27032, 27032, 27032],
+    "remaining_optimizer_steps": 54064,
+    "validation_checkpoint_step_boundaries": [13516, 27032, 40548, 54064, 67580, 81096, 94612, 108128],
+    "all_eight_boundaries_have_validation_and_checkpoint_expectations": true
+  },
+  "replacement": {
+    "experiment": "ht-pretrain-1m-phase3-recovery-20260823",
+    "config": "configs/slurm/pretrain_1m_phase3_recovery_20260823.yaml",
+    "config_sha256": "eced70932466ea07783122f7d2bce7fb344c87f45e72e57622e6363df3a2ad3f",
+    "contract": "artifacts/slurm/ht-pretrain-1m-phase3-recovery-20260823.operator-authorized.job-contract.json",
+    "contract_canonical_sha256": "20805cd37f914ea9ffb85789a200188bf23b1f6ee23e38067e5512f16393ac94",
+    "contract_file_sha256": "2dec2fc5c793230d9decde5f41a6b9e2c83cdc6b6237c1cd5a9145cd1f46857c",
+    "implementation_commit": "88b4fcdbd8bec2c1cd772c3e45742aa39ff077b7",
+    "implementation_tag": "ht-pretraining-1m-phase3-recovery-implementation-v2-20260823",
+    "output_attempt_root_must_not_be": "artifacts/slurm/jobs/15933802/attempt-00",
+    "sealed_test_role_access": "forbidden",
+    "submission_performed": false,
+    "submission_authorized": false,
+    "execution_contract_operator_exception_recorded": true,
+    "structural_scientific_slurm_submission_allowed": false,
+    "uncertainty": "No new GPU pilot was run; later execution must pass fresh GPU preflight and all retained gates."
+  },
+  "tests": {
+    "focused_pytest_command": "uv run pytest -q tests/test_trainer_corrections_cpu.py tests/test_phase3_recovery_cpu.py tests/test_slurm_requeue_and_render_contract_cpu.py tests/test_production_1m_operator_authorization_cpu.py",
+    "focused_pytest_passed": 64,
+    "cpu_training_run": false,
+    "slurm_mutation": false
+  }
+}
