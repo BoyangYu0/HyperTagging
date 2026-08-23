@@ -272,7 +272,16 @@ def verify_contract(
                 raise RuntimeError("recovery would reuse the failed output experiment")
             expected_milestones = [
                 {"kind": kind, "step": step}
-                for step in (13516, 27032, 40548, 54064)
+                for step in (
+                    13516,
+                    27032,
+                    40548,
+                    54064,
+                    67580,
+                    81096,
+                    94612,
+                    108128,
+                )
                 for kind in ("validation", "checkpoint")
             ]
             if contract.get("expected_validation_checkpoint_milestones") != expected_milestones:

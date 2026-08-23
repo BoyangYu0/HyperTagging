@@ -645,7 +645,16 @@ def main() -> int:
                         "kind": kind,
                         "step": step,
                     }
-                    for step in (13516, 27032, 40548, 54064)
+                    for step in (
+                        13516,
+                        27032,
+                        40548,
+                        54064,
+                        67580,
+                        81096,
+                        94612,
+                        108128,
+                    )
                     for kind in ("validation", "checkpoint")
                 ],
                 "stage_gate_override": {

@@ -19,7 +19,7 @@ CHECKPOINT = (
     "15933802/checkpoint-step-54064.pt"
 )
 CHECKPOINT_SHA256 = "997241deb841033598846dea8b3650d31b9511c4241aad44798d83fe0ac5ad7d"
-IMPLEMENTATION_TAG = "ht-pretraining-1m-phase3-recovery-implementation-20260823"
+IMPLEMENTATION_TAG = "ht-pretraining-1m-phase3-recovery-implementation-v2-20260823"
 CONFIG = "configs/slurm/pretrain_1m_phase3_recovery_20260823.yaml"
 EXPERIMENT = "ht-pretrain-1m-phase3-recovery-20260823"
 ADMISSION = (

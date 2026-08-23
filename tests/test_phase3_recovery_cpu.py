@@ -127,6 +127,16 @@ def test_recovery_config_changes_only_late_leaf_pid_taper_and_preserves_gates():
     assert recovery["channel_zero_positive_action"] == "fail"
 
 
+def test_recovery_binds_all_eight_validation_checkpoint_step_boundaries():
+    steps = (13516, 27032, 40548, 54064, 67580, 81096, 94612, 108128)
+    verifier = (ROOT / "scripts/slurm/verify_job_contract.py").read_text()
+    renderer = (ROOT / "scripts/slurm/render_one_gpu_job.py").read_text()
+    for step in steps:
+        assert str(step) in verifier
+        assert str(step) in renderer
+    assert "108128" in renderer
+
+
 def test_exact_resume_enters_phase3_at_next_optimizer_step():
     schedule = ProgressivePhaseSchedule(
         unit="optimizer_step", durations=(27032, 27032, 27032, 27032)
