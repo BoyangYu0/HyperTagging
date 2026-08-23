@@ -171,20 +171,27 @@ def submit(
     else:
         if not replacement_of_job_id.isdigit():
             raise RuntimeError("replacement source job ID must be numeric")
-        manifest = paths["tuple_root"] / "slurm" / "replacement-1.json"
-        if manifest.exists() or list((paths["tuple_root"] / "slurm").glob("replacement-*.json")):
-            raise RuntimeError("exactly one replacement is already recorded; refusing duplicate")
-        previous = _terminal_failed_record(replacement_of_job_id, calibration_id)
+        replacement_manifests = sorted((paths["tuple_root"] / "slurm").glob("replacement-*.json"))
+        replacement_number = len(replacement_manifests) + 1
+        if replacement_number > 2:
+            raise RuntimeError("replacement chain exceeds the bounded recovery limit")
+        expected_prior_name = calibration_id
+        if replacement_manifests:
+            prior_payload = json.loads(replacement_manifests[-1].read_text())
+            if str(prior_payload.get("slurm_job_id")) != replacement_of_job_id:
+                raise RuntimeError("replacement source is not the latest recorded lineage")
+            expected_prior_name = str(prior_payload.get("job_name", ""))
+        manifest = paths["tuple_root"] / "slurm" / f"replacement-{replacement_number}.json"
+        previous = _terminal_failed_record(replacement_of_job_id, expected_prior_name)
         if any(paths[key].exists() for key in ("output_root", "attempt_root", "checkpoint_copy", "metrics", "receipt")):
             raise RuntimeError("failed tuple has artifacts; refusing replacement overwrite")
         if not (paths["tuple_root"] / "slurm").is_dir():
             raise RuntimeError("replacement tuple evidence root is missing")
-        replacement_number = 1
-        job_name = f"{calibration_id}-repl1"
+        job_name = f"{calibration_id}-repl{replacement_number}"
         if _job_name_is_present(job_name):
             raise RuntimeError("replacement job name already exists in Slurm history; refusing duplicate")
-        stdout_name = "stdout-repl1-%j.log"
-        stderr_name = "stderr-repl1-%j.log"
+        stdout_name = f"stdout-repl{replacement_number}-%j.log"
+        stderr_name = f"stderr-repl{replacement_number}-%j.log"
     submitted_epoch = int(time.time())
     token = secrets.token_hex(32)
     command, output, error = build_sbatch_command(

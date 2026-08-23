@@ -93,7 +93,7 @@ export HT_PHASE3_CALIBRATION_ACTIVE=1
   --receipt "${HT_PHASE3_RECEIPT}" \
   --queue-delay-seconds "${queue_delay_seconds}" \
   --execute-pilot \
-  --pilot-command -- \
+  --pilot-command \
   "${gpu_environment}/bin/python" scripts/run_phase3_batch_efficiency_stability_pilot.py \
     --profile "${HT_PHASE3_PROFILE}" \
     --batch-size "${HT_PHASE3_BATCH_SIZE}" \
