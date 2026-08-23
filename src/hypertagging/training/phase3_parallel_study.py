@@ -462,6 +462,7 @@ def claim_production_contract(
     *,
     identity: str,
     output_path: Path,
+    allow_existing_identity: bool = False,
     root: Path = ROOT,
 ) -> None:
     assert_no_active_calibrations(plan, root=root)
@@ -477,7 +478,25 @@ def claim_production_contract(
         if not isinstance(contracts, dict):
             raise RuntimeError("production contract registry is malformed")
         if identity in contracts:
-            raise RuntimeError("duplicate production contract identity")
+            if not allow_existing_identity:
+                raise RuntimeError("duplicate production contract identity")
+            prior = contracts[identity]
+            prior_path = Path(str(prior.get("output_path", "")))
+            if not prior_path.is_absolute():
+                prior_path = (root / prior_path).resolve()
+            if not prior_path.is_file() or prior_path.resolve() == output_path.resolve():
+                raise RuntimeError("existing production identity cannot be safely reused")
+            try:
+                prior_contract = json.loads(prior_path.read_text())
+            except (OSError, json.JSONDecodeError) as error:
+                raise RuntimeError("existing production identity contract is unreadable") from error
+            if (
+                prior_contract.get("production_contract_identity_sha256") != identity
+                or prior_contract.get("submission_performed") is not False
+                or prior_contract.get("job_count") != 1
+            ):
+                raise RuntimeError("existing production identity is not an unsubmitted contract")
+            return
         output_key = str(output_path.resolve())
         if any(value.get("output_path") == output_key for value in contracts.values() if isinstance(value, dict)):
             raise RuntimeError("duplicate production contract output path")

@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import subprocess
 import sys
 from typing import Any
 
@@ -35,6 +36,37 @@ def _hash(payload: dict[str, Any]) -> str:
     return canonical_hash(payload)
 
 
+def _verify_failed_production_job(job_id: str, expected_job_name: str) -> dict[str, str]:
+    result = subprocess.run(
+        [
+            "/opt/slurm/bin/sacct",
+            "-X",
+            "-P",
+            "-n",
+            "-j",
+            job_id,
+            "-o",
+            "JobID,JobName,State,ExitCode",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        raise RuntimeError("cannot verify the failed production source job")
+    for line in result.stdout.splitlines():
+        fields = line.strip().split("|")
+        if len(fields) == 4 and fields[0] == job_id and fields[1] == expected_job_name:
+            if fields[2] == "FAILED" and fields[3] != "0:0":
+                return {
+                    "job_id": fields[0],
+                    "job_name": fields[1],
+                    "state": fields[2],
+                    "exit_code": fields[3],
+                }
+    raise RuntimeError("production retry source is not proven terminally failed")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--selection", type=Path, required=True)
@@ -45,6 +77,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--experiment", default="ht-pretrain-1m-phase3-selected-20260823")
+    parser.add_argument("--retry-of-job-id")
+    parser.add_argument("--retry-reason")
     args = parser.parse_args(argv)
     if args.output.exists():
         raise RuntimeError("production contract exists; refusing overwrite")
@@ -119,6 +153,14 @@ def main(argv: list[str] | None = None) -> int:
     )
     if production_identity != expected_identity:
         raise RuntimeError("production contract identity hash mismatch")
+    retry_source = None
+    if args.retry_of_job_id is not None:
+        if not args.retry_of_job_id.isdigit() or not args.retry_reason:
+            raise RuntimeError("production retry requires a numeric failed job ID and reason")
+        retry_source = _verify_failed_production_job(
+            args.retry_of_job_id,
+            f"ht3-production-resume-{variant['production_variant_id'].removeprefix('ht3-production-resume-')}",
+        )
     contract: dict[str, Any] = {
         "contract_version": "hypertagging-slurm-one-gpu-contract-v2",
         "batch_efficiency_contract_version": "ht-pretraining-1m-phase3-batch-efficiency-production-v2",
@@ -198,10 +240,14 @@ def main(argv: list[str] | None = None) -> int:
         "exactly_one_submission_command_required": True,
         "duplicate_production_contracts_forbidden": True,
     }
+    if retry_source is not None:
+        contract["retry_of_slurm_job"] = retry_source
+        contract["retry_reason"] = args.retry_reason
     claim_production_contract(
         plan,
         identity=production_identity,
         output_path=args.output,
+        allow_existing_identity=retry_source is not None,
         root=ROOT,
     )
     contract["contract_sha256"] = _hash(contract)

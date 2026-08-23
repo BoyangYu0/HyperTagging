@@ -51,7 +51,7 @@ validation_views:
   - multilevel_channel_memory
   - corrupted_composites_hard_negatives
 curriculum_mode: progressive
-curriculum_phase_steps: []
+curriculum_phase_steps: [27032, 27032, 27032, 27032]
 curriculum_phase_events: []
 require_final_curriculum_phase: true
 objective_gradient_diagnostics: true

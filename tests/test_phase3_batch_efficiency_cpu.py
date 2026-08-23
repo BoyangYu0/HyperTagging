@@ -215,6 +215,7 @@ def test_profile_configs_preserve_exact_validation_accounting():
         assert "batch_size: 64" in text
         assert "presentation_total_presentations: 1730048" in text
         assert "validation_batches: 79" in text
+        assert "curriculum_phase_steps: [27032, 27032, 27032, 27032]" in text
         assert f"amp_dtype: {amp}" in text
 
 
