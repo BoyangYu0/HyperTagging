@@ -69,4 +69,4 @@ Tracked implementation/support file hashes at this audit:
 
 The delivery tag is `ht-pretraining-1m-phase3-execution-authorization-20260823-final`; the final clean commit and annotated-tag object are recorded in the handoff after commit creation. The authorization artifact itself is versioned separately and does not rewrite the prior report.
 
-Canonical SHA256 of this Markdown audit, excluding this sentence: `d031cb7e2f4f5fb81eff85711cef5861c1648ec05fda1847202501ada6bdd23b`.
+Canonical SHA256 of this Markdown audit, excluding this sentence: `a9cdae9ed6ae599b0e07f0442f31046aeeb2cfc076bc699d270108b0197fd8ff`.
