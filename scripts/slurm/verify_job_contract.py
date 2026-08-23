@@ -183,19 +183,43 @@ def verify_contract(
     ) != "blocked_no_submit":
         raise RuntimeError("unauthorized contract lacks blocked no-submit scope")
     runtime = validated_runtime_values(contract)
-    if _git("rev-parse", "HEAD") != contract["expected_git_sha"]:
-        raise RuntimeError("job source Git SHA differs from rendered contract")
     if _git("status", "--porcelain"):
         raise RuntimeError("scientific/diagnostic Slurm jobs require a clean worktree")
-    expected_tag = contract.get("expected_git_tag")
-    if (
-        expected_tag
-        and _git("rev-list", "-n", "1", str(expected_tag))
-        != contract["expected_git_sha"]
-    ):
-        raise RuntimeError(
-            "immutable experiment tag does not identify expected Git SHA"
+    recovery = contract.get("recovery_lineage")
+    if isinstance(recovery, dict):
+        artifact_sha = str(contract.get("artifact_git_sha", ""))
+        implementation_sha = str(contract.get("implementation_git_sha", ""))
+        if not artifact_sha or not implementation_sha:
+            raise RuntimeError("recovery contract lacks artifact/implementation Git SHAs")
+        current_sha = _git("rev-parse", "HEAD")
+        ancestor = subprocess.run(
+            ("git", "merge-base", "--is-ancestor", artifact_sha, current_sha),
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
         )
+        if ancestor.returncode != 0:
+            raise RuntimeError(
+                "recovery worktree is not descended from the rendered artifact SHA"
+            )
+        expected_tag = contract.get("expected_git_tag")
+        if not expected_tag or _git("rev-list", "-n", "1", str(expected_tag)) != artifact_sha:
+            raise RuntimeError("recovery immutable tag does not identify artifact SHA")
+        if contract.get("expected_git_sha") != implementation_sha:
+            raise RuntimeError("recovery expected_git_sha is not the implementation SHA")
+    else:
+        if _git("rev-parse", "HEAD") != contract["expected_git_sha"]:
+            raise RuntimeError("job source Git SHA differs from rendered contract")
+        expected_tag = contract.get("expected_git_tag")
+        if (
+            expected_tag
+            and _git("rev-list", "-n", "1", str(expected_tag))
+            != contract["expected_git_sha"]
+        ):
+            raise RuntimeError(
+                "immutable experiment tag does not identify expected Git SHA"
+            )
     verify_hashed_inputs(contract["hashed_inputs"])
     if contract.get("mode") == "scientific":
         admission_path = contract.get("local_admission_receipt")
@@ -215,12 +239,46 @@ def verify_contract(
             admission_path=admission_path,
         )
     if contract.get("fullscale"):
+        recovery = contract.get("recovery_lineage")
         if contract.get("mode") != "scientific":
             raise RuntimeError("full-scale contract must be scientific")
         if contract.get("gres") != "gpu:h100nvl:1":
             raise RuntimeError("full-scale contract must target exactly H100 NVL")
-        if contract.get("initialization_policy") != "from_scratch":
+        if recovery is None and contract.get("initialization_policy") != "from_scratch":
             raise RuntimeError("full-scale scientific pretraining must start from scratch")
+        if isinstance(recovery, dict):
+            if recovery.get("kind") != "production_1m_phase3_exact_resume_v1":
+                raise RuntimeError("unsupported production-1m recovery lineage")
+            if contract.get("initialization_policy") != "exact_resume_from_checkpoint":
+                raise RuntimeError("recovery contract must use exact checkpoint resume")
+            source = str(recovery.get("source_checkpoint", ""))
+            if contract.get("resume_checkpoint") != source:
+                raise RuntimeError("recovery resume source differs from lineage binding")
+            checkpoint = ROOT / source
+            if not checkpoint.is_file():
+                raise RuntimeError("recovery resume checkpoint is missing")
+            checkpoint_sha = str(recovery.get("source_checkpoint_sha256", ""))
+            if _sha256(checkpoint) != checkpoint_sha:
+                raise RuntimeError("recovery resume checkpoint hash changed")
+            if contract.get("resume_checkpoint_sha256") != checkpoint_sha:
+                raise RuntimeError("recovery resume checkpoint hash is not mirrored")
+            if recovery.get("source_checkpoint_step") != 54064:
+                raise RuntimeError("recovery resume checkpoint step is not 54064")
+            if recovery.get("historical_job_id") != "15933802":
+                raise RuntimeError("recovery lineage does not identify failed job 15933802")
+            if recovery.get("historical_commit") != "93b71c5d7c1bc20181640aafb4e918abb9267362":
+                raise RuntimeError("recovery lineage does not preserve failed commit")
+            if contract.get("experiment") == "ht-pretrain-production-1m-h100-20260821":
+                raise RuntimeError("recovery would reuse the failed output experiment")
+            expected_milestones = [
+                {"kind": kind, "step": step}
+                for step in (13516, 27032, 40548, 54064)
+                for kind in ("validation", "checkpoint")
+            ]
+            if contract.get("expected_validation_checkpoint_milestones") != expected_milestones:
+                raise RuntimeError(
+                    "recovery contract does not bind all eight fixed milestones"
+                )
         if contract.get("partition_max_time") != "2-00:00:00":
             raise RuntimeError("full-scale contract must bind the two-day partition limit")
         if contract.get("resource_contract") != {

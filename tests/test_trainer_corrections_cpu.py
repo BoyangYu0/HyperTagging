@@ -175,6 +175,43 @@ def test_late_leaf_pid_weight_has_margin_for_measured_h100_dominance():
     assert report["dominance_threshold"] / report["weighted_dominance_ratio"] > 1.98
 
 
+def test_phase3_recovery_weight_passes_exact_terminal_ratio_without_weakening_gate():
+    """The measured failed pilot is reproduced, then corrected by linear weighting."""
+
+    objectives = {"lca": torch.tensor(0.47), "leaf_pid": torch.tensor(0.74)}
+    denominators = {"lca": 1.0, "leaf_pid": 1.0}
+    gradients = {
+        "gradient_norms": {
+            # The terminal report is weighted at the historical 0.5 phase
+            # weight, so the raw shared-encoder norm is 45.788.
+            "shared_encoder": {"lca": 1.0, "leaf_pid": 45.788},
+            "tree_projection": {"lca": 1.0, "leaf_pid": 1.0},
+            "hyperbolic_projection": {"lca": 1.0, "leaf_pid": 1.0},
+        }
+    }
+    with pytest.raises(RuntimeError, match="leaf_pid/lca=22.894"):
+        objective_preflight_report(
+            objectives,
+            {"lca": 1.0, "leaf_pid": 0.5},
+            denominators,
+            gradients,
+            dominance_ratio=20.0,
+            action="fail",
+        )
+    report = objective_preflight_report(
+        objectives,
+        {"lca": 1.0, "leaf_pid": 0.4},
+        denominators,
+        gradients,
+        dominance_ratio=20.0,
+        action="fail",
+    )
+    assert report["pass"]
+    assert report["weighted_dominance_ratio"] == pytest.approx(18.3152)
+    assert report["dominance_threshold"] == 20.0
+    assert report["dominance_threshold"] / report["weighted_dominance_ratio"] > 1.09
+
+
 def test_scientific_short_curriculum_is_rejected_and_legacy_is_named():
     with pytest.raises(ValueError, match="all four phases"):
         _resolve_phase_schedule(

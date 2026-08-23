@@ -24,6 +24,7 @@ SCIENTIFIC_CONFIGS = (
     "configs/slurm/pretrain_035k_scientific.yaml",
     "configs/slurm/pretrain_035k_h100_rerun_20260815.yaml",
     "configs/slurm/pretrain_1m_h100_20260821.yaml",
+    "configs/slurm/pretrain_1m_phase3_recovery_20260823.yaml",
 )
 
 ACCELERATOR_PRIORITY = (
@@ -191,6 +192,15 @@ def main() -> int:
         help="repository-local checkpoint for the initial scientific attempt",
     )
     parser.add_argument(
+        "--resume-checkpoint-step",
+        type=int,
+        help="exact optimizer step recorded by the initial scientific checkpoint",
+    )
+    parser.add_argument(
+        "--resume-checkpoint-sha256",
+        help="sha256 of the exact initial scientific checkpoint",
+    )
+    parser.add_argument(
         "--blocked-no-submit",
         action="store_true",
         help=(
@@ -259,6 +269,21 @@ def main() -> int:
             raise RuntimeError("resume checkpoint must be an existing .pt file")
         if args.mode != "scientific":
             raise RuntimeError("resume checkpoint rendering is scientific-only")
+        if args.fullscale and (
+            args.resume_checkpoint_step != 54064
+            or args.resume_checkpoint_sha256
+            != "997241deb841033598846dea8b3650d31b9511c4241aad44798d83fe0ac5ad7d"
+        ):
+            raise RuntimeError(
+                "production-1m recovery must bind checkpoint step 54064 and its "
+                "immutable sha256"
+            )
+        if args.resume_checkpoint_sha256 != _sha256(resume_checkpoint):
+            raise RuntimeError("resume checkpoint sha256 does not match the file")
+    elif args.resume_checkpoint_step is not None or args.resume_checkpoint_sha256:
+        raise RuntimeError(
+            "resume checkpoint step and sha256 require --resume-checkpoint"
+        )
 
     expected_sha = args.expected_git_sha or _run(("git", "rev-parse", "HEAD")).strip()
     provenance_result: dict[str, Any] | None = None
@@ -353,6 +378,10 @@ def main() -> int:
         "configs/training_selection/production_1m_20260812/training_readiness.json",
         "configs/training_selection/production_1m_20260812/provenance_status.json",
     )
+    if args.fullscale and resume_checkpoint is not None:
+        hashed_paths = hashed_paths + (
+            "artifacts/slurm/ht-pretrain-production-1m-h100-20260821.operator-authorized.job-contract.json",
+        )
     hashed_inputs = [_hashed_input(path) for path in hashed_paths]
     if admission_receipt is not None and completion_receipt is not None:
         hashed_inputs.extend(
@@ -387,13 +416,29 @@ def main() -> int:
         or (
             "ht-nonsci-diag"
             if args.mode == "diagnostic"
-            else ("ht-pretrain-production-1m-h100-20260821" if args.fullscale else "ht-pretrain-035k")
+            else (
+                "ht-pretrain-production-1m-phase3-recovery-20260823"
+                if args.fullscale and resume_checkpoint is not None
+                else (
+                    "ht-pretrain-production-1m-h100-20260821"
+                    if args.fullscale
+                    else "ht-pretrain-035k"
+                )
+            )
         ),
         "seed": args.seed,
         "max_restarts": args.max_restarts,
         "fullscale": bool(args.fullscale),
-        "initialization_policy": "from_scratch" if args.fullscale else (
-            "resume_checkpoint" if resume_checkpoint is not None else "from_scratch"
+        "initialization_policy": (
+            "exact_resume_from_checkpoint"
+            if args.fullscale and resume_checkpoint is not None
+            else "from_scratch"
+            if args.fullscale
+            else (
+                "resume_checkpoint"
+                if resume_checkpoint is not None
+                else "from_scratch"
+            )
         ),
         "partition_max_time": "2-00:00:00" if args.fullscale else None,
         "checkpoint_resume_policy": (
@@ -521,6 +566,38 @@ def main() -> int:
         },
         "operator_provenance_exception": None,
     }
+    if args.fullscale and resume_checkpoint is not None:
+        contract["resume_checkpoint_sha256"] = args.resume_checkpoint_sha256
+        # The recovery contract is rendered from the implementation commit and
+        # may then be committed together with its immutable contract/report
+        # artifacts.  The verifier requires the final worktree to descend from
+        # this exact source commit; it never permits an unrelated source.
+        contract["implementation_git_sha"] = expected_sha
+        contract["artifact_git_sha"] = expected_sha
+        contract["recovery_lineage"] = {
+            "kind": "production_1m_phase3_exact_resume_v1",
+            "historical_job_id": "15933802",
+            "historical_experiment": "ht-pretrain-production-1m-h100-20260821",
+            "historical_commit": "93b71c5d7c1bc20181640aafb4e918abb9267362",
+            "historical_tag": "ht-pretraining-production-1m-h100-operator-authorized-20260821",
+            "historical_contract": {
+                "path": "artifacts/slurm/ht-pretrain-production-1m-h100-20260821.operator-authorized.job-contract.json",
+                "canonical_sha256": "2af2b8fc51c7f1bceb26e5013c822967316a0f2b1d09671eb8b10fc0e8fd3406",
+                "file_sha256": "8dfa6b2320c8992e69c68f7d570bcb0e562306b928be57c2ece0c8f8626f5a0d",
+            },
+            "source_checkpoint": str(
+                resume_checkpoint.relative_to(ROOT.resolve())
+            ),
+            "source_checkpoint_step": args.resume_checkpoint_step,
+            "source_checkpoint_sha256": args.resume_checkpoint_sha256,
+            "source_checkpoint_bytes": resume_checkpoint.stat().st_size,
+            "source_checkpoint_unchanged": True,
+            "historical_attempt_root": "artifacts/slurm/jobs/15933802/attempt-00",
+            "replacement_experiment": contract["experiment"],
+            "replacement_attempt_root_must_not_be": (
+                "artifacts/slurm/jobs/15933802/attempt-00"
+            ),
+        }
     if args.fullscale:
         validation_events = int(config_payload["validation_events"])
         batch_size = int(config_payload["batch_size"])
@@ -563,6 +640,14 @@ def main() -> int:
                     "required_runtime_lock": "environment/gpu/requirements-cu126.lock",
                     "submission_blocked_until_pass": True,
                 },
+                "expected_validation_checkpoint_milestones": [
+                    {
+                        "kind": kind,
+                        "step": step,
+                    }
+                    for step in (13516, 27032, 40548, 54064)
+                    for kind in ("validation", "checkpoint")
+                ],
                 "stage_gate_override": {
                     "status": "operator_directed_fullscale_advancement",
                     "overrides_repository_plan": "100k/250k promotion sequence",
