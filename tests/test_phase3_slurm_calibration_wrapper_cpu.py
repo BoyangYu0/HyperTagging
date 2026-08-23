@@ -27,6 +27,8 @@ def test_tracked_wrapper_is_gpu_only_and_exactly_preflights_allocation():
     assert "--pilot-command" in wrapper
     assert "--max-steps 256" in wrapper
     assert 'HT_PHASE3_EXPECTED_GRES}' in wrapper
+    assert 'SLURM_JOB_GRES' not in wrapper
+    assert 'preflight_gpu_environment.py' in wrapper
     assert "sbatch" not in wrapper
     assert "srun" not in wrapper
     assert "scancel" not in wrapper

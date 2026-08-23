@@ -49,12 +49,15 @@ def build_sbatch_command(
     gpu_environment: str,
     submitted_epoch: int,
     token: str,
+    job_name: str | None = None,
+    stdout_name: str = "stdout-%j.log",
+    stderr_name: str = "stderr-%j.log",
 ) -> tuple[list[str], Path, Path]:
     paths = _entry_paths(entry)
     calibration_id = str(entry["calibration_id"])
     log_root = paths["tuple_root"] / "slurm"
-    output = log_root / "stdout-%j.log"
-    error = log_root / "stderr-%j.log"
+    output = log_root / stdout_name
+    error = log_root / stderr_name
     policy = entry["precision_policy"]
     export = {
         "HT_PHASE3_CALIBRATION_ACTIVE": "1",
@@ -88,7 +91,7 @@ def build_sbatch_command(
         "--time=00:25:00",
         "--no-requeue",
         f"--gres={entry['exact_gres']}",
-        f"--job-name={calibration_id}",
+        f"--job-name={job_name or calibration_id}",
         f"--output={output}",
         f"--error={error}",
         f"--export={export_arg}",
@@ -105,7 +108,7 @@ def _job_name_is_present(calibration_id: str) -> bool:
             "--allocations",
             f"--name={calibration_id}",
             "--starttime=2026-08-23T00:00:00",
-            "--format=JobNameRaw",
+            "--format=JobName",
             "--noheader",
         ],
     ):
@@ -115,16 +118,73 @@ def _job_name_is_present(calibration_id: str) -> bool:
     return False
 
 
-def submit(entry: dict[str, Any], *, plan_path: Path, gpu_environment: str) -> dict[str, Any]:
+def _terminal_failed_record(job_id: str, expected_job_name: str) -> dict[str, str]:
+    result = subprocess.run(
+        [
+            "/opt/slurm/bin/sacct",
+            "-X",
+            "-P",
+            "-n",
+            "-j",
+            job_id,
+            "-o",
+            "JobID,JobName,State,ExitCode",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(f"cannot verify failed replacement source job {job_id}")
+    for line in result.stdout.splitlines():
+        fields = line.strip().split("|")
+        if len(fields) != 4 or fields[0] != job_id or fields[1] != expected_job_name:
+            continue
+        if fields[2] != "FAILED" or fields[3] == "0:0":
+            continue
+        return {"job_id": fields[0], "job_name": fields[1], "state": fields[2], "exit_code": fields[3]}
+    raise RuntimeError("replacement source job is not proven terminally failed")
+
+
+def submit(
+    entry: dict[str, Any],
+    *,
+    plan_path: Path,
+    gpu_environment: str,
+    replacement_of_job_id: str | None = None,
+) -> dict[str, Any]:
     paths = _entry_paths(entry)
-    manifest = paths["tuple_root"] / "slurm" / "submission.json"
-    if manifest.exists() or any(paths[key].exists() for key in ("output_root", "attempt_root", "checkpoint_copy", "metrics", "receipt")):
-        raise RuntimeError("calibration tuple already has an artifact or submission manifest; refusing duplicate")
     calibration_id = str(entry["calibration_id"])
-    if _job_name_is_present(calibration_id):
-        raise RuntimeError("calibration job name already exists in Slurm history; refusing duplicate")
-    paths["tuple_root"].mkdir(parents=True, exist_ok=False)
-    (paths["tuple_root"] / "slurm").mkdir(exist_ok=False)
+    previous: dict[str, str] | None = None
+    if replacement_of_job_id is None:
+        manifest = paths["tuple_root"] / "slurm" / "submission.json"
+        if manifest.exists() or any(paths[key].exists() for key in ("output_root", "attempt_root", "checkpoint_copy", "metrics", "receipt")):
+            raise RuntimeError("calibration tuple already has an artifact or submission manifest; refusing duplicate")
+        if _job_name_is_present(calibration_id):
+            raise RuntimeError("calibration job name already exists in Slurm history; refusing duplicate")
+        paths["tuple_root"].mkdir(parents=True, exist_ok=False)
+        (paths["tuple_root"] / "slurm").mkdir(exist_ok=False)
+        replacement_number = None
+        job_name = calibration_id
+        stdout_name = "stdout-%j.log"
+        stderr_name = "stderr-%j.log"
+    else:
+        if not replacement_of_job_id.isdigit():
+            raise RuntimeError("replacement source job ID must be numeric")
+        manifest = paths["tuple_root"] / "slurm" / "replacement-1.json"
+        if manifest.exists() or list((paths["tuple_root"] / "slurm").glob("replacement-*.json")):
+            raise RuntimeError("exactly one replacement is already recorded; refusing duplicate")
+        previous = _terminal_failed_record(replacement_of_job_id, calibration_id)
+        if any(paths[key].exists() for key in ("output_root", "attempt_root", "checkpoint_copy", "metrics", "receipt")):
+            raise RuntimeError("failed tuple has artifacts; refusing replacement overwrite")
+        if not (paths["tuple_root"] / "slurm").is_dir():
+            raise RuntimeError("replacement tuple evidence root is missing")
+        replacement_number = 1
+        job_name = f"{calibration_id}-repl1"
+        if _job_name_is_present(job_name):
+            raise RuntimeError("replacement job name already exists in Slurm history; refusing duplicate")
+        stdout_name = "stdout-repl1-%j.log"
+        stderr_name = "stderr-repl1-%j.log"
     submitted_epoch = int(time.time())
     token = secrets.token_hex(32)
     command, output, error = build_sbatch_command(
@@ -133,6 +193,9 @@ def submit(entry: dict[str, Any], *, plan_path: Path, gpu_environment: str) -> d
         gpu_environment=gpu_environment,
         submitted_epoch=submitted_epoch,
         token=token,
+        job_name=job_name,
+        stdout_name=stdout_name,
+        stderr_name=stderr_name,
     )
     result = subprocess.run(command, check=False, capture_output=True, text=True)
     if result.returncode != 0:
@@ -143,6 +206,7 @@ def submit(entry: dict[str, Any], *, plan_path: Path, gpu_environment: str) -> d
     payload = {
         "artifact_version": "ht-pretraining-1m-phase3-calibration-submission-v1",
         "calibration_id": calibration_id,
+        "job_name": job_name,
         "tuple_sha256": entry["tuple_sha256"],
         "exact_gres": entry["exact_gres"],
         "slurm_job_id": match.group(1),
@@ -152,6 +216,8 @@ def submit(entry: dict[str, Any], *, plan_path: Path, gpu_environment: str) -> d
         "stderr_pattern": str(error),
         "adapter": "scripts/slurm/run_phase3_batch_efficiency_calibration.sbatch",
         "gpu_environment": gpu_environment,
+        "replacement_number": replacement_number,
+        "replacement_of": previous,
         "submission_command_sha256": hashlib.sha256(
             json.dumps(command, separators=(",", ":")).encode()
         ).hexdigest(),
@@ -168,10 +234,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--study-plan", type=Path, default=DEFAULT_PLAN)
     parser.add_argument("--calibration-id", required=True)
     parser.add_argument("--gpu-environment", default=DEFAULT_GPU_ENVIRONMENT)
+    parser.add_argument("--replacement-of-job-id")
     args = parser.parse_args(argv)
     plan = load_study_plan(args.study_plan, root=ROOT)
     entry = entry_by_id(plan, args.calibration_id)
-    payload = submit(entry, plan_path=args.study_plan.resolve(), gpu_environment=args.gpu_environment)
+    payload = submit(
+        entry,
+        plan_path=args.study_plan.resolve(),
+        gpu_environment=args.gpu_environment,
+        replacement_of_job_id=args.replacement_of_job_id,
+    )
     print(json.dumps(payload, sort_keys=True))
     return 0
 

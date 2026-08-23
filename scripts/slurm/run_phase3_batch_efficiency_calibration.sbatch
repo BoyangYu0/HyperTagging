@@ -58,21 +58,6 @@ export PYTHONNOUSERSITE=1
 unset PYTHONPATH PYTHONHOME PYTHONSTARTUP PYTHONUSERBASE PYTHONINSPECT
 unset PYTHONWARNINGS PYTHONBREAKPOINT LD_PRELOAD LD_AUDIT LD_DEBUG
 
-job_gres="${SLURM_JOB_GRES:-}"
-tres_gres="${SLURM_TRES_PER_NODE:-}"
-[[ -n "${job_gres}" || -n "${tres_gres}" ]] || {
-  echo "Slurm did not expose an allocated typed GRES" >&2
-  exit 78
-}
-if [[ -n "${job_gres}" && "${job_gres}" != "${HT_PHASE3_EXPECTED_GRES}" ]]; then
-  echo "SLURM_JOB_GRES does not match the exact requested GRES" >&2
-  exit 78
-fi
-if [[ -n "${tres_gres}" && "${tres_gres}" != "gres:${HT_PHASE3_EXPECTED_GRES}" && "${tres_gres}" != "${HT_PHASE3_EXPECTED_GRES}" ]]; then
-  echo "SLURM_TRES_PER_NODE does not match the exact requested GRES" >&2
-  exit 78
-fi
-
 allocation_epoch="$(date +%s)"
 (( allocation_epoch >= HT_PHASE3_SUBMIT_EPOCH )) || {
   echo "allocation clock precedes submission clock; queue delay is not measurable" >&2
