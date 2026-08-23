@@ -1,15 +1,15 @@
 #!/usr/bin/env python
-"""Run one bounded, train-role-only phase-3 GPU calibration.
+"""Run one bounded, train-role-only phase-3 calibration in an allocation.
 
-This command is intentionally interactive/in-allocation only.  It never calls
-Slurm and never submits a job.  The later Spark operator must invoke it once
-for H100 NVL and then once for V100, with separate output directories.
+This command never calls a scheduler or submits a job.  The later operator
+invokes four distinct instances, one per immutable matrix tuple.  The shared
+coordination registry admits at most four active instances and marks every
+instance non-production until its self-hashed receipt is terminal healthy.
 """
 
 from __future__ import annotations
 
 import argparse
-from contextlib import contextmanager
 import hashlib
 import json
 import os
@@ -17,54 +17,67 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
-import tempfile
 import time
-from typing import Any, Iterator
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from hypertagging.training.device_profiles import get_device_profile  # noqa: E402
+from hypertagging.training.phase3_parallel_study import (  # noqa: E402
+    CHECKPOINT_SHA256,
+    OBJECTIVE_DOMINANCE_LIMIT,
+    RECEIPT_VERSION,
+    calibration_slot,
+    canonical_hash,
+    entry_by_id,
+    file_sha256,
+    load_study_plan,
+    resolve_plan_path,
+)
 from hypertagging.training.presentation_progress import (  # noqa: E402
     PHASE3_RESUME_PRESENTATIONS,
     VIRTUAL_STEP_PRESENTATIONS,
     validate_batch_profile,
 )
 
-CHECKPOINT = ROOT / (
-    "artifacts/runs/ht-pretrain-production-1m-h100-20260821/20260812/"
-    "15933802/checkpoint-step-54064.pt"
+
+DEFAULT_PLAN = ROOT / "configs/batch_efficiency/ht_pretraining_1m_phase3_parallel_study_v1.json"
+MAX_PILOT_STEPS = 256
+MAX_PILOT_SECONDS = 900
+FORBIDDEN_TOKENS = (
+    "sealed",
+    "stress",
+    "validation",
+    "srun",
+    "salloc",
+    "sbatch",
+    "scancel",
+    "requeue",
+    "--device cpu",
+    "device=cpu",
+    "--scientific-mode",
 )
-CHECKPOINT_SHA256 = "997241deb841033598846dea8b3650d31b9511c4241aad44798d83fe0ac5ad7d"
-CALIBRATION_VERSION = "ht-pretraining-1m-phase3-gpu-calibration-receipt-v1"
-FORBIDDEN_TOKENS = ("sealed", "stress", "srun", "salloc", "sbatch", "scancel", "requeue")
+# The shared receipt validator enforces the exact fail-closed message:
+# objective dominance ratio exceeded fail-closed limit 20.0
 
 
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
-
-
-def _canonical_hash(payload: dict[str, Any]) -> str:
-    return hashlib.sha256(
-        json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
-    ).hexdigest()
+def _assert_command_safe(command: list[str]) -> None:
+    joined = " ".join(command).lower()
+    for token in FORBIDDEN_TOKENS:
+        if token in joined:
+            raise RuntimeError(f"calibration command contains forbidden token {token!r}")
 
 
 def _require_fresh_exact_allocation(gres: str) -> dict[str, Any]:
-    expected = str(gres)
     observed = (
         os.environ.get("HT_PHASE3_ALLOCATION_GRES")
         or os.environ.get("SLURM_JOB_GRES")
         or os.environ.get("SLURM_TRES_PER_NODE")
         or ""
     )
-    if observed != expected:
+    if observed != gres:
         raise RuntimeError(
-            f"fresh exact-GRES preflight requires {expected!r}; observed {observed!r}"
+            f"fresh exact-GRES preflight requires {gres!r}; observed {observed!r}"
         )
     token = os.environ.get("HT_PHASE3_FRESH_PREFLIGHT_TOKEN", "")
     if not token or token.lower() in {"stale", "reuse", "false"}:
@@ -91,7 +104,7 @@ def _require_fresh_exact_allocation(gres: str) -> dict[str, Any]:
     if len(rows) != 1:
         raise RuntimeError("calibration requires exactly one visible GPU")
     return {
-        "exact_gres": expected,
+        "exact_gres": gres,
         "preflight_token_sha256": hashlib.sha256(token.encode()).hexdigest(),
         "nvidia_smi_row": rows[0],
         "observed_at_unix": time.time(),
@@ -106,7 +119,7 @@ def _assert_profile_device(profile_name: str, preflight: dict[str, Any]) -> None
 
 
 def _run_fixture_probe(batch_size: int, profile_name: str) -> dict[str, Any]:
-    """Bounded synthetic allocation/throughput probe; no scientific training."""
+    """Run only a bounded synthetic CUDA allocation/throughput probe."""
 
     try:
         import torch
@@ -117,9 +130,6 @@ def _run_fixture_probe(batch_size: int, profile_name: str) -> dict[str, Any]:
     device = torch.device("cuda")
     if profile_name == "h100nvl" and not torch.cuda.is_bf16_supported():
         raise RuntimeError("H100 profile requires validated CUDA BF16 support")
-    if profile_name == "v100" and torch.cuda.is_bf16_supported():
-        # BF16 availability is not a reason to use it on the V100 profile.
-        pass
     dtype = torch.bfloat16 if profile_name == "h100nvl" else torch.float16
     torch.cuda.reset_peak_memory_stats(device)
     width = 1024
@@ -143,89 +153,110 @@ def _run_fixture_probe(batch_size: int, profile_name: str) -> dict[str, Any]:
     }
 
 
-def _assert_command_safe(command: list[str]) -> None:
-    joined = " ".join(command).lower()
-    for token in FORBIDDEN_TOKENS:
-        if token in joined:
-            raise RuntimeError(f"calibration command contains forbidden token {token!r}")
-
-
-def _read_metrics(path: Path) -> list[dict[str, Any]]:
-    if not path.is_file():
-        raise RuntimeError(f"pilot metrics file is missing: {path}")
-    records = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
-    if not records:
-        raise RuntimeError("pilot metrics file is empty")
-    for record in records:
-        if str(record.get("split", "train")) != "train":
-            raise RuntimeError("train-role-only calibration emitted a non-train record")
-        if any(str(key).lower().startswith("validation") for key in record):
-            raise RuntimeError("calibration pilot must not tune against validation metrics")
-        for key in ("loss", "raw_gradient_norm", "learning_rate"):
-            if key in record and not isinstance(record[key], (int, float)):
-                raise RuntimeError(f"pilot metric {key} is not numeric")
-            if key in record and not (float("-inf") < float(record[key]) < float("inf")):
-                raise RuntimeError(f"pilot metric {key} is non-finite")
-        if "objective_preflight_pass" in record and not bool(record["objective_preflight_pass"]):
-            raise RuntimeError("objective dominance preflight failed")
-        if "objective_weighted_dominance_ratio" in record and float(
-            record["objective_weighted_dominance_ratio"]
-        ) > 20.0:
-            raise RuntimeError("objective dominance ratio exceeded fail-closed limit 20.0")
-    return records
-
-
-def _copy_checkpoint(destination: Path) -> dict[str, Any]:
-    if not CHECKPOINT.is_file() or _sha256(CHECKPOINT) != CHECKPOINT_SHA256:
+def _copy_checkpoint(source: Path, destination: Path) -> dict[str, Any]:
+    if not source.is_file() or file_sha256(source) != CHECKPOINT_SHA256:
         raise RuntimeError("immutable source checkpoint hash/path gate failed")
     if destination.exists():
         raise RuntimeError("calibration checkpoint copy already exists; refusing overwrite")
     destination.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(CHECKPOINT, destination)
-    if _sha256(destination) != CHECKPOINT_SHA256:
+    shutil.copy2(source, destination)
+    copied_hash = file_sha256(destination)
+    if copied_hash != CHECKPOINT_SHA256:
         raise RuntimeError("checkpoint copy hash mismatch")
     return {
-        "source": str(CHECKPOINT.relative_to(ROOT)),
-        "copy": str(destination.relative_to(ROOT)),
-        "sha256": CHECKPOINT_SHA256,
-        "source_unchanged": _sha256(CHECKPOINT) == CHECKPOINT_SHA256,
+        "source_path": str(source.relative_to(ROOT)),
+        "copy_path": str(destination.relative_to(ROOT)),
+        "source_sha256": CHECKPOINT_SHA256,
+        "copy_sha256": copied_hash,
+        "source_unchanged": True,
     }
 
 
-@contextmanager
-def _exclusive_lock(path: Path) -> Iterator[None]:
-    import fcntl
+def _write_json(path: Path, payload: dict[str, Any]) -> None:
+    temporary = path.with_name(f".{path.name}.partial")
+    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    temporary.replace(path)
 
-    path.parent.mkdir(parents=True, exist_ok=True)
-    handle = path.open("a+")
-    try:
-        fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except BlockingIOError as error:
-        handle.close()
-        raise RuntimeError("another phase-3 calibration is active; run sequentially") from error
-    try:
-        yield
-    finally:
-        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
-        handle.close()
+
+def _assert_new_paths(paths: list[Path]) -> None:
+    resolved = [path.resolve() for path in paths]
+    if len(set(resolved)) != len(resolved):
+        raise RuntimeError("calibration output, attempt, metrics, copy, or receipt paths collide")
+    if any(path.exists() for path in resolved):
+        raise RuntimeError("calibration output/attempt path exists; refusing overwrite")
+
+
+def _assert_cli_matches_plan(args: argparse.Namespace, entry: dict[str, Any], plan: dict[str, Any]) -> None:
+    policy = entry["precision_policy"]
+    expected_scaler = "enabled" if policy["grad_scaler_enabled"] else "disabled"
+    checks = {
+        "profile": entry["profile"],
+        "batch_size": entry["batch_size"],
+        "amp_dtype": policy["amp_dtype"],
+        "grad_scaler": expected_scaler,
+        "owner": plan["owner"],
+    }
+    for key, expected in checks.items():
+        if getattr(args, key) != expected:
+            raise RuntimeError(f"{key} does not match immutable calibration tuple")
+    path_checks = {
+        "checkpoint_copy": entry["checkpoint_copy_path"],
+        "output_root": entry["output_root"],
+        "attempt_root": entry["attempt_root"],
+        "pilot_metrics": entry["metrics_path"],
+        "receipt": entry["receipt_path"],
+    }
+    for argument, configured in path_checks.items():
+        if Path(getattr(args, argument)).resolve() != resolve_plan_path(configured, root=ROOT):
+            raise RuntimeError(f"{argument} does not match immutable calibration tuple")
+    if args.queue_delay_seconds < 0 or not float(args.queue_delay_seconds) < float("inf"):
+        raise RuntimeError("queue delay must be finite and non-negative")
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--study-plan", type=Path, default=DEFAULT_PLAN)
+    parser.add_argument("--calibration-id", required=True)
+    parser.add_argument("--owner", required=True)
     parser.add_argument("--profile", choices=("h100nvl", "v100"), required=True)
     parser.add_argument("--batch-size", type=int, choices=(32, 64), required=True)
-    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--amp-dtype", choices=("float16", "bfloat16"), required=True)
+    parser.add_argument("--grad-scaler", choices=("enabled", "disabled"), required=True)
     parser.add_argument("--checkpoint-copy", type=Path, required=True)
-    parser.add_argument("--pilot-metrics", type=Path, default=None)
-    parser.add_argument("--expected-learning-rate", type=float, default=0.0005)
+    parser.add_argument("--output-root", type=Path, required=True)
+    parser.add_argument("--attempt-root", type=Path, required=True)
+    parser.add_argument("--pilot-metrics", type=Path, required=True)
+    parser.add_argument("--receipt", type=Path, required=True)
+    parser.add_argument("--queue-delay-seconds", type=float, required=True)
+    parser.add_argument("--execute-pilot", action="store_true")
     parser.add_argument(
         "--pilot-command",
         nargs=argparse.REMAINDER,
-        help="optional train-role-only pilot command; execute only in the later Spark session",
+        help="bounded train-role-only pilot command, executed only inside this allocation",
     )
-    parser.add_argument("--execute-pilot", action="store_true")
     args = parser.parse_args(argv)
-    profile = get_device_profile(args.profile)
+    plan = load_study_plan(args.study_plan, root=ROOT)
+    entry = entry_by_id(plan, args.calibration_id)
+    _assert_cli_matches_plan(args, entry, plan)
+    command = list(args.pilot_command or [])
+    if command and command[0] == "--":
+        command = command[1:]
+    if args.execute_pilot and not command:
+        raise RuntimeError("--execute-pilot requires --pilot-command")
+    if args.execute_pilot:
+        _assert_command_safe(command)
+    elif command:
+        raise RuntimeError("a pilot command requires --execute-pilot")
+    if args.pilot_metrics.resolve().parent != args.attempt_root.resolve():
+        raise RuntimeError("pilot metrics must be owned by the configured attempt root")
+    paths = [
+        args.output_root,
+        args.attempt_root,
+        args.checkpoint_copy,
+        args.pilot_metrics,
+        args.receipt,
+    ]
+    _assert_new_paths(paths)
     validate_batch_profile(
         args.batch_size,
         total_presentations=1_730_048,
@@ -234,68 +265,103 @@ def main(argv: list[str] | None = None) -> int:
             for value in (13516, 27032, 40548, 54064, 67580, 81096, 94612, 108128)
         ),
     )
-    if args.output.exists():
-        raise RuntimeError("receipt output exists; immutable calibration receipts cannot be overwritten")
-    with _exclusive_lock(args.output.parent / ".phase3-calibration.lock"):
-        preflight = _require_fresh_exact_allocation(profile.gres)
+    with calibration_slot(plan, args.calibration_id, owner=args.owner, root=ROOT):
+        preflight = _require_fresh_exact_allocation(entry["exact_gres"])
         _assert_profile_device(args.profile, preflight)
+        args.output_root.mkdir(parents=True, exist_ok=False)
+        args.attempt_root.mkdir(parents=True, exist_ok=False)
         fixture = _run_fixture_probe(args.batch_size, args.profile)
-        checkpoint = _copy_checkpoint(args.checkpoint_copy)
-        command = list(args.pilot_command or [])
-        if command and command[0] == "--":
-            command = command[1:]
+        checkpoint_source = resolve_plan_path(entry["source_checkpoint_path"], root=ROOT)
+        checkpoint = _copy_checkpoint(checkpoint_source, args.checkpoint_copy)
+        records: list[dict[str, Any]] = []
+        throughput = None
+        objective_ratio = None
         if args.execute_pilot:
-            if not command:
-                raise RuntimeError("--execute-pilot requires --pilot-command")
-            _assert_command_safe(command)
-            if args.pilot_metrics is None:
-                raise RuntimeError("--execute-pilot requires --pilot-metrics")
             env = dict(os.environ)
             env.update(
                 {
                     "HT_PHASE3_ROLE": "train",
+                    "HT_PHASE3_NONPRODUCTION": "1",
                     "HT_PHASE3_VALIDATION_ACCESS": "forbidden",
                     "HT_PHASE3_SEALED_TEST_ACCESS": "forbidden",
                     "HT_PHASE3_STRESS_ACCESS": "forbidden",
+                    "HT_PHASE3_CALIBRATION_ID": args.calibration_id,
+                    "HT_PHASE3_OWNER": args.owner,
                     "HT_PHASE3_CHECKPOINT_COPY": str(args.checkpoint_copy),
+                    "HT_PHASE3_PILOT_MAX_STEPS": str(MAX_PILOT_STEPS),
+                    "HT_PHASE3_PILOT_MAX_SECONDS": str(MAX_PILOT_SECONDS),
                 }
             )
-            completed = subprocess.run(command, env=env, cwd=ROOT, check=False)
+            try:
+                completed = subprocess.run(
+                    command,
+                    env=env,
+                    cwd=ROOT,
+                    check=False,
+                    timeout=MAX_PILOT_SECONDS,
+                )
+            except subprocess.TimeoutExpired as error:
+                raise RuntimeError("bounded train-role stability pilot exceeded 900 seconds") from error
             if completed.returncode != 0:
                 raise RuntimeError(f"train-role stability pilot failed: {completed.returncode}")
-            records = _read_metrics(args.pilot_metrics)
+            from hypertagging.training.phase3_parallel_study import _read_metrics
+
+            records, throughput, objective_ratio = _read_metrics(args.pilot_metrics)
+        if file_sha256(checkpoint_source) != CHECKPOINT_SHA256:
+            raise RuntimeError("source checkpoint changed during calibration")
+        if not args.execute_pilot:
+            terminal_state = "incomplete"
         else:
-            records = []
+            terminal_state = "healthy"
         receipt: dict[str, Any] = {
-            "artifact_version": CALIBRATION_VERSION,
-            "profile": profile.contract(),
+            "artifact_version": RECEIPT_VERSION,
+            "calibration_id": args.calibration_id,
+            "tuple_sha256": entry["tuple_sha256"],
+            "owner": args.owner,
+            "hypothesis_id": entry["hypothesis_id"],
+            "hypothesis": entry["hypothesis"],
+            "profile": {
+                "name": entry["profile"],
+                "exact_gres": entry["exact_gres"],
+                "batch_size": entry["batch_size"],
+                "precision_policy": entry["precision_policy"],
+            },
             "allocation_preflight": preflight,
             "fixture_probe": fixture,
             "checkpoint_copy": checkpoint,
+            "output_root": entry["output_root"],
+            "attempt_root": entry["attempt_root"],
+            "queue_delay_seconds": args.queue_delay_seconds,
             "pilot": {
                 "executed": bool(args.execute_pilot),
                 "role": "train",
                 "validation_access": "forbidden",
                 "sealed_test_access": "forbidden",
                 "stress_access": "forbidden",
-                "metrics_path": str(args.pilot_metrics) if args.pilot_metrics else None,
+                "metrics_path": entry["metrics_path"],
                 "record_count": len(records),
-                "expected_learning_rate": args.expected_learning_rate,
+                "max_steps": MAX_PILOT_STEPS,
+                "max_seconds": MAX_PILOT_SECONDS,
+                "expected_learning_rate": 0.0005,
+                "command_sha256": canonical_hash(command) if command else None,
+                "throughput_events_per_second": throughput,
+                "objective_weighted_dominance_ratio": objective_ratio,
             },
             "scientific_contract": {
                 "resume_presentations": PHASE3_RESUME_PRESENTATIONS,
                 "remaining_presentations": 865_024,
-                "objective_dominance_limit": 20.0,
+                "objective_dominance_limit": OBJECTIVE_DOMINANCE_LIMIT,
                 "submission_performed": False,
+                "production_submission_performed": False,
             },
+            "production_allowed": False,
+            "production_submission_performed": False,
             "calibration_complete": bool(args.execute_pilot and records),
+            "terminal_state": terminal_state,
             "created_at_unix": time.time(),
         }
-        receipt["receipt_sha256"] = _canonical_hash(receipt)
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        temporary = args.output.with_name(f".{args.output.name}.partial")
-        temporary.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
-        temporary.replace(args.output)
+        receipt["receipt_sha256"] = canonical_hash(receipt)
+        _write_json(args.receipt, receipt)
     return 0
 
 

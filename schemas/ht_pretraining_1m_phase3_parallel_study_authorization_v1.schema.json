@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ht-pretraining-1m-phase3-parallel-study-authorization-v1",
+  "type": "object",
+  "required": [
+    "artifact_version",
+    "owner",
+    "parent_implementation_commit",
+    "parent_implementation_tag",
+    "max_concurrent_calibration_jobs",
+    "calibration_matrix",
+    "required_receipt_policy",
+    "coordination",
+    "production_policy",
+    "plan_sha256"
+  ],
+  "properties": {
+    "artifact_version": {"const": "ht-pretraining-1m-phase3-parallel-study-authorization-v1"},
+    "owner": {"const": "sole-authorized-phase3-follow-up-programming-operator"},
+    "parent_implementation_commit": {"pattern": "^[0-9a-f]{40}$"},
+    "parent_implementation_tag": {"type": "string", "minLength": 1},
+    "calibration_type": {"const": "non_production_train_role_only"},
+    "max_concurrent_calibration_jobs": {"const": 4},
+    "calibration_matrix": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "required": [
+          "calibration_id",
+          "hypothesis_id",
+          "hypothesis",
+          "profile",
+          "exact_gres",
+          "batch_size",
+          "precision_policy",
+          "source_checkpoint_path",
+          "source_checkpoint_sha256",
+          "checkpoint_copy_path",
+          "output_root",
+          "attempt_root",
+          "metrics_path",
+          "receipt_path",
+          "tuple_sha256"
+        ],
+        "properties": {
+          "calibration_id": {"type": "string", "minLength": 1},
+          "hypothesis_id": {"type": "string", "minLength": 1},
+          "hypothesis": {"type": "string", "minLength": 1},
+          "profile": {"enum": ["h100nvl", "v100"]},
+          "exact_gres": {"enum": ["gpu:h100nvl:1", "gpu:v100:1"]},
+          "batch_size": {"enum": [32, 64]},
+          "precision_policy": {
+            "type": "object",
+            "required": ["amp_dtype", "grad_scaler_enabled", "bf16_policy"],
+            "properties": {
+              "amp_dtype": {"enum": ["bfloat16", "float16"]},
+              "grad_scaler_enabled": {"type": "boolean"},
+              "bf16_policy": {"type": "string", "minLength": 1}
+            },
+            "additionalProperties": false
+          },
+          "source_checkpoint_sha256": {"pattern": "^[0-9a-f]{64}$"},
+          "tuple_sha256": {"pattern": "^[0-9a-f]{64}$"}
+        },
+        "additionalProperties": true
+      }
+    },
+    "required_receipt_policy": {
+      "type": "object",
+      "required": ["mode", "required_calibration_ids", "missing_or_nonhealthy_action", "authorized_subset_policy"],
+      "properties": {
+        "mode": {"const": "exact_configured_set"},
+        "required_calibration_ids": {"type": "array", "minItems": 4, "maxItems": 4},
+        "missing_or_nonhealthy_action": {"const": "fail_closed"},
+        "authorized_subset_policy": {"const": "none"}
+      }
+    },
+    "coordination": {"type": "object", "required": ["root", "production_contract_registry"]},
+    "production_policy": {
+      "type": "object",
+      "required": ["default_resume_count", "max_explicit_variants", "duplicate_contracts_forbidden", "production_during_active_calibration"],
+      "properties": {
+        "default_resume_count": {"const": 1},
+        "max_explicit_variants": {"const": 1},
+        "duplicate_contracts_forbidden": {"const": true},
+        "production_during_active_calibration": {"const": "forbidden"}
+      }
+    },
+    "plan_sha256": {"pattern": "^[0-9a-f]{64}$"}
+  },
+  "additionalProperties": true
+}

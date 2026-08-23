@@ -7,7 +7,19 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import sys
 from typing import Any
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+
+from hypertagging.training.phase3_parallel_study import (  # noqa: E402
+    assert_no_active_calibrations,
+    entry_by_id,
+    file_sha256,
+    load_study_plan,
+    resolve_plan_path,
+)
 
 TOTAL_PRESENTATIONS = 1_730_048
 CHECKPOINT_SHA256 = "997241deb841033598846dea8b3650d31b9511c4241aad44798d83fe0ac5ad7d"
@@ -40,6 +52,46 @@ def verify(path: Path) -> dict[str, Any]:
         raise RuntimeError("production contract runtime mode/export policy is not exact")
     if payload.get("production_submission_authorized") is not True:
         raise RuntimeError("contract lacks post-calibration production authorization")
+    if payload.get("parallel_study_authorization_version") != (
+        "ht-pretraining-1m-phase3-parallel-study-authorization-v1"
+    ):
+        raise RuntimeError("contract lacks the parallel-study authorization binding")
+    plan_path = resolve_plan_path(payload.get("parallel_study_plan", ""), root=ROOT)
+    plan = load_study_plan(plan_path, root=ROOT)
+    assert_no_active_calibrations(plan, root=ROOT)
+    if payload.get("calibration_active_count") != 0:
+        raise RuntimeError("production contract was rendered while calibration was active")
+    selected_id = str(payload.get("selected_calibration_id", ""))
+    entry = entry_by_id(plan, selected_id)
+    if payload.get("batch_size") != entry.get("batch_size"):
+        raise RuntimeError("production batch size is not bound to the selected calibration")
+    if payload.get("gres") != entry.get("exact_gres"):
+        raise RuntimeError("production GRES is not bound to the selected calibration")
+    if payload.get("precision_policy") != entry.get("precision_policy"):
+        raise RuntimeError("production precision/scaler policy is not bound to the selected calibration")
+    aggregation = resolve_plan_path(
+        payload.get("calibration_receipt_aggregation", ""), root=ROOT
+    )
+    if not aggregation.is_file():
+        raise RuntimeError("production contract receipt aggregation is missing")
+    hashed_aggregation = [
+        item for item in payload.get("hashed_inputs", [])
+        if item.get("path") == str(aggregation)
+    ]
+    if not hashed_aggregation or hashed_aggregation[0].get("sha256") != file_sha256(aggregation):
+        raise RuntimeError("production contract receipt aggregation hash is not bound")
+    variants = payload.get("production_variant_id")
+    if not variants or payload.get("duplicate_production_contracts_forbidden") is not True:
+        raise RuntimeError("production contract identity/duplicate gate is missing")
+    registry_path = resolve_plan_path(
+        plan["coordination"]["production_contract_registry"], root=ROOT
+    )
+    if not registry_path.is_file():
+        raise RuntimeError("production contract identity was not registered")
+    registry = json.loads(registry_path.read_text())
+    identity = payload.get("production_contract_identity_sha256")
+    if identity not in registry.get("contracts", {}):
+        raise RuntimeError("production contract identity registry binding is missing")
     if payload.get("operator_authorization_parent") is not True:
         raise RuntimeError("parent operator authorization is not preserved")
     if payload.get("parent_operator_authorization_artifact") != PARENT_AUTHORIZATION:

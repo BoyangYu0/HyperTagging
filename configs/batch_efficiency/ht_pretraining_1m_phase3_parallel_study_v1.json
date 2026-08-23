@@ -1,0 +1,141 @@
+{
+  "artifact_version": "ht-pretraining-1m-phase3-parallel-study-authorization-v1",
+  "plan_date": "2026-08-23",
+  "owner": "sole-authorized-phase3-follow-up-programming-operator",
+  "parent_implementation_commit": "aa54b4efdf99f7853df480a1dded44214faac770",
+  "parent_implementation_tag": "ht-pretraining-1m-phase3-batch-efficiency-implementation-20260823",
+  "calibration_type": "non_production_train_role_only",
+  "max_concurrent_calibration_jobs": 4,
+  "calibration_matrix": [
+    {
+      "calibration_id": "ht3-cal-h100nvl-b32-20260823",
+      "hypothesis_id": "h100nvl-b32-throughput-stability-v1",
+      "hypothesis": "H100-NVL batch 32 is finite and stable with BF16 and no GradScaler while preserving the bounded train-role objective policy.",
+      "profile": "h100nvl",
+      "exact_gres": "gpu:h100nvl:1",
+      "batch_size": 32,
+      "precision_policy": {
+        "amp_dtype": "bfloat16",
+        "grad_scaler_enabled": false,
+        "bf16_policy": "require_cuda_bf16_supported"
+      },
+      "source_checkpoint_path": "artifacts/runs/ht-pretrain-production-1m-h100-20260821/20260812/15933802/checkpoint-step-54064.pt",
+      "source_checkpoint_sha256": "997241deb841033598846dea8b3650d31b9511c4241aad44798d83fe0ac5ad7d",
+      "checkpoint_copy_path": "artifacts/codex/calibration/parallel-study-20260823/h100nvl-b32/attempt/checkpoint-step-54064.copy.pt",
+      "output_root": "artifacts/codex/calibration/parallel-study-20260823/h100nvl-b32/output",
+      "attempt_root": "artifacts/codex/calibration/parallel-study-20260823/h100nvl-b32/attempt",
+      "metrics_path": "artifacts/codex/calibration/parallel-study-20260823/h100nvl-b32/attempt/metrics.jsonl",
+      "receipt_path": "artifacts/codex/calibration/parallel-study-20260823/h100nvl-b32/attempt/receipt.json",
+      "production_config": "configs/batch_efficiency/pretrain_1m_phase3_batch_efficiency_h100nvl_b32_20260823.yaml",
+      "tuple_sha256": "2045ed28717569fa09e930d27d08d6a8c74abf32fd8c05ad0ac65f613a3899ea"
+    },
+    {
+      "calibration_id": "ht3-cal-h100nvl-b64-20260823",
+      "hypothesis_id": "h100nvl-b64-throughput-stability-v1",
+      "hypothesis": "H100-NVL batch 64 is finite and stable with BF16 and no GradScaler while preserving the bounded train-role objective policy.",
+      "profile": "h100nvl",
+      "exact_gres": "gpu:h100nvl:1",
+      "batch_size": 64,
+      "precision_policy": {
+        "amp_dtype": "bfloat16",
+        "grad_scaler_enabled": false,
+        "bf16_policy": "require_cuda_bf16_supported"
+      },
+      "source_checkpoint_path": "artifacts/runs/ht-pretrain-production-1m-h100-20260821/20260812/15933802/checkpoint-step-54064.pt",
+      "source_checkpoint_sha256": "997241deb841033598846dea8b3650d31b9511c4241aad44798d83fe0ac5ad7d",
+      "checkpoint_copy_path": "artifacts/codex/calibration/parallel-study-20260823/h100nvl-b64/attempt/checkpoint-step-54064.copy.pt",
+      "output_root": "artifacts/codex/calibration/parallel-study-20260823/h100nvl-b64/output",
+      "attempt_root": "artifacts/codex/calibration/parallel-study-20260823/h100nvl-b64/attempt",
+      "metrics_path": "artifacts/codex/calibration/parallel-study-20260823/h100nvl-b64/attempt/metrics.jsonl",
+      "receipt_path": "artifacts/codex/calibration/parallel-study-20260823/h100nvl-b64/attempt/receipt.json",
+      "production_config": "configs/slurm/pretrain_1m_phase3_batch_efficiency_h100nvl_20260823.yaml",
+      "tuple_sha256": "881938b03aadf9f5121ec9bfcb0a18576ff361bc0673d11febe187d6ded01c52"
+    },
+    {
+      "calibration_id": "ht3-cal-v100-b32-20260823",
+      "hypothesis_id": "v100-b32-throughput-stability-v1",
+      "hypothesis": "V100 batch 32 is finite and stable with FP16 and GradScaler while preserving the bounded train-role objective policy.",
+      "profile": "v100",
+      "exact_gres": "gpu:v100:1",
+      "batch_size": 32,
+      "precision_policy": {
+        "amp_dtype": "float16",
+        "grad_scaler_enabled": true,
+        "bf16_policy": "forbid_bf16_use_float16_gradscaler"
+      },
+      "source_checkpoint_path": "artifacts/runs/ht-pretrain-production-1m-h100-20260821/20260812/15933802/checkpoint-step-54064.pt",
+      "source_checkpoint_sha256": "997241deb841033598846dea8b3650d31b9511c4241aad44798d83fe0ac5ad7d",
+      "checkpoint_copy_path": "artifacts/codex/calibration/parallel-study-20260823/v100-b32/attempt/checkpoint-step-54064.copy.pt",
+      "output_root": "artifacts/codex/calibration/parallel-study-20260823/v100-b32/output",
+      "attempt_root": "artifacts/codex/calibration/parallel-study-20260823/v100-b32/attempt",
+      "metrics_path": "artifacts/codex/calibration/parallel-study-20260823/v100-b32/attempt/metrics.jsonl",
+      "receipt_path": "artifacts/codex/calibration/parallel-study-20260823/v100-b32/attempt/receipt.json",
+      "production_config": "configs/batch_efficiency/pretrain_1m_phase3_batch_efficiency_v100_b32_20260823.yaml",
+      "tuple_sha256": "cb84bd2daf1dd0120349a1ce3a3faae13343f47fe48428fe2c610ffc434850a9"
+    },
+    {
+      "calibration_id": "ht3-cal-v100-b64-20260823",
+      "hypothesis_id": "v100-b64-throughput-stability-v1",
+      "hypothesis": "V100 batch 64 is finite and stable with FP16 and GradScaler while preserving the bounded train-role objective policy.",
+      "profile": "v100",
+      "exact_gres": "gpu:v100:1",
+      "batch_size": 64,
+      "precision_policy": {
+        "amp_dtype": "float16",
+        "grad_scaler_enabled": true,
+        "bf16_policy": "forbid_bf16_use_float16_gradscaler"
+      },
+      "source_checkpoint_path": "artifacts/runs/ht-pretrain-production-1m-h100-20260821/20260812/15933802/checkpoint-step-54064.pt",
+      "source_checkpoint_sha256": "997241deb841033598846dea8b3650d31b9511c4241aad44798d83fe0ac5ad7d",
+      "checkpoint_copy_path": "artifacts/codex/calibration/parallel-study-20260823/v100-b64/attempt/checkpoint-step-54064.copy.pt",
+      "output_root": "artifacts/codex/calibration/parallel-study-20260823/v100-b64/output",
+      "attempt_root": "artifacts/codex/calibration/parallel-study-20260823/v100-b64/attempt",
+      "metrics_path": "artifacts/codex/calibration/parallel-study-20260823/v100-b64/attempt/metrics.jsonl",
+      "receipt_path": "artifacts/codex/calibration/parallel-study-20260823/v100-b64/attempt/receipt.json",
+      "production_config": "configs/slurm/pretrain_1m_phase3_batch_efficiency_v100_20260823.yaml",
+      "tuple_sha256": "1408067822d05c6eebeb313647902b198fcec977433fac4b563f1cbd90717d60"
+    }
+  ],
+  "required_receipt_policy": {
+    "mode": "exact_configured_set",
+    "required_calibration_ids": [
+      "ht3-cal-h100nvl-b32-20260823",
+      "ht3-cal-h100nvl-b64-20260823",
+      "ht3-cal-v100-b32-20260823",
+      "ht3-cal-v100-b64-20260823"
+    ],
+    "missing_or_nonhealthy_action": "fail_closed",
+    "duplicate_receipt_action": "fail_closed",
+    "authorized_subset_policy": "none"
+  },
+  "queue_policy": {
+    "queue_delay_seconds_required": true,
+    "queue_delay_source": "fresh-allocation-operator-recorded",
+    "selection_metric": "queue_delay_seconds_plus_remaining_presentations_divided_by_train_throughput"
+  },
+  "bounded_pilot_policy": {
+    "max_steps": 256,
+    "max_seconds": 900,
+    "role": "train",
+    "validation_access": "forbidden",
+    "sealed_test_access": "forbidden",
+    "stress_access": "forbidden",
+    "cpu_scientific_training": "forbidden",
+    "slurm_submission": "forbidden",
+    "fixture_required": true,
+    "source_checkpoint_mutation": "forbidden"
+  },
+  "coordination": {
+    "root": "artifacts/codex/calibration/parallel-study-20260823/coordination",
+    "production_contract_registry": "artifacts/codex/calibration/parallel-study-20260823/coordination/production-contracts.json"
+  },
+  "production_policy": {
+    "default_resume_count": 1,
+    "max_explicit_variants": 1,
+    "scientifically_distinct_variants_must_be_enumerated": true,
+    "duplicate_contracts_forbidden": true,
+    "production_during_active_calibration": "forbidden",
+    "submission_performed": false
+  },
+  "plan_sha256": "3c38fcf9362b8474aacc31031218c2ef91a41af7757db8abb99fb75d5d5a8f84"
+}

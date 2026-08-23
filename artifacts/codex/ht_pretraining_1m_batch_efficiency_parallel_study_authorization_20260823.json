@@ -1,0 +1,130 @@
+{
+  "artifact_version": "ht-pretraining-1m-phase3-parallel-study-readiness-v1",
+  "readiness_hash": "30f8da422c8aede970b59c9893a89339055bf014042af1e10941d147e5819b6a",
+  "readiness_date": "2026-08-23",
+  "amendment": {
+    "name": "bounded_parallel_calibration_matrix",
+    "version": "ht-pretraining-1m-phase3-parallel-study-authorization-v1",
+    "parent_implementation_commit": "aa54b4efdf99f7853df480a1dded44214faac770",
+    "parent_implementation_tag": "ht-pretraining-1m-phase3-batch-efficiency-implementation-20260823",
+    "history_preserved": true,
+    "submission_performed": false,
+    "gpu_calibration_completed": false
+  },
+  "study_plan": "configs/batch_efficiency/ht_pretraining_1m_phase3_parallel_study_v1.json",
+  "study_plan_sha256": "b3a8c3936426f3da89623600a3948b3bca05a89c785bd1501990d2ac127cd836",
+  "source_authorization": {
+    "parent_operator_authorization_artifact": "artifacts/codex/ht_pretraining_1m_phase3_execution_authorization_20260823.json",
+    "parent_operator_authorization_canonical_sha256": "c952524ce32b1c504cc6210cc8bc540bb6180a928c145fe29109b89b3fe3b5e3",
+    "parent_operator_authorization_file_sha256": "1af20420655a95aa7ce0a3d1ad4a6e357c7fe45510c3f8bafaf80ad3fdbb7991",
+    "calibration_amendment_authorized": true,
+    "production_amendment_authorized": false,
+    "submission_performed": false
+  },
+  "scientific_contract": {
+    "total_presentations": 1730048,
+    "resume_checkpoint_step": 54064,
+    "resume_presentations": 865024,
+    "remaining_presentations": 865024,
+    "virtual_step_unit_presentations": 16,
+    "validation_events": 5000,
+    "completed_milestones_not_repeated": [13516, 27032, 40548, 54064],
+    "remaining_milestones": [67580, 81096, 94612, 108128],
+    "objective_dominance_limit": 20.0,
+    "late_phase_leaf_pid_weight": 0.4,
+    "finite_raw_gradient_required": true,
+    "finite_checkpoint_tensors_required": true,
+    "train_validation_role_isolation": true,
+    "sealed_test_role_access": "forbidden",
+    "stress_payload_access": "forbidden",
+    "cpu_scientific_training": "forbidden",
+    "scientific_slurm_submission_allowed": false
+  },
+  "calibration": {
+    "gpu_calibration_completed": false,
+    "max_concurrent_jobs": 4,
+    "configured_calibration_count": 4,
+    "calibration_ids": [
+      "ht3-cal-h100nvl-b32-20260823",
+      "ht3-cal-h100nvl-b64-20260823",
+      "ht3-cal-v100-b32-20260823",
+      "ht3-cal-v100-b64-20260823"
+    ],
+    "matrix": "h100nvl-batch32,h100nvl-batch64,v100-batch32,v100-batch64",
+    "sequential_only": false,
+    "queue_policy": "subject_to_queue_and_resources; at_most_four_concurrent",
+    "receipt_policy": "exact_configured_set",
+    "authorized_subset_policy": "none",
+    "missing_or_nonhealthy_receipt_action": "fail_closed",
+    "duplicate_tuple_hash_action": "fail_closed",
+    "shared_output_root_action": "fail_closed",
+    "ambiguous_ownership_action": "fail_closed",
+    "production_during_active_calibration": "forbidden",
+    "harness": "scripts/run_phase3_batch_efficiency_calibration.py",
+    "stability_pilot": "scripts/run_phase3_batch_efficiency_stability_pilot.py",
+    "receipt_aggregator": "scripts/aggregate_phase3_batch_efficiency_receipts.py",
+    "receipt_version": "ht-pretraining-1m-phase3-gpu-calibration-receipt-v2",
+    "requirements": [
+      "unique immutable calibration ID and tuple hash",
+      "exact GRES and exact batch size",
+      "exact precision and GradScaler policy",
+      "distinct checkpoint-copy path, output root, attempt root, metrics path, and receipt path",
+      "fresh exact-GRES in-allocation preflight with one matching GPU",
+      "synthetic fixture throughput and peak-memory probe",
+      "bounded train-role-only stability pilot with 256-step/900-second limits",
+      "finite loss, raw gradients, train throughput, and objective dominance ratio <= 20.0",
+      "LR continuity at 0.0005 unless separately evidenced",
+      "self-hashed receipt and source checkpoint unchanged",
+      "no validation tuning, sealed/stress access, CPU scientific training, or scheduler submission"
+    ]
+  },
+  "selection": {
+    "receipt_aggregation": "scripts/aggregate_phase3_batch_efficiency_receipts.py",
+    "selection_script": "scripts/select_phase3_batch_efficiency_profile.py",
+    "requires_exact_configured_receipt_set": true,
+    "requires_all_terminal_healthy": true,
+    "validates_finiteness": true,
+    "validates_objective_dominance": true,
+    "validates_checkpoint_immutability": true,
+    "winner": null,
+    "winner_metric": "queue_delay_seconds_plus_remaining_presentations_divided_by_train_throughput",
+    "tie_break": "lower_fixture_peak_memory_then_h100nvl_then_calibration_id",
+    "production_resume_policy": "default_exactly_one",
+    "production_variants_must_be_explicitly_enumerated": true,
+    "duplicate_production_contracts_forbidden": true
+  },
+  "renderer_verifier": {
+    "renderer": "scripts/render_phase3_batch_efficiency_production_contract.py",
+    "verifier": "scripts/verify_phase3_batch_efficiency_contract.py",
+    "readiness_verifier": "scripts/verify_phase3_batch_efficiency_readiness.py",
+    "schema": "schemas/ht_pretraining_1m_phase3_parallel_study_authorization_v1.schema.json",
+    "production_submission_authorized": false,
+    "structural_scientific_slurm_submission_allowed": false
+  },
+  "later_spark_commands": {
+    "operator_note": "Run these four commands as separate fresh interactive/in-allocation Spark sessions; no scheduler command is part of this amendment. Set HT_PHASE3_QUEUE_DELAY_SECONDS from the fresh allocation record before each invocation.",
+    "shared_environment": "export HT_PHASE3_OWNER=sole-authorized-phase3-follow-up-programming-operator HT_PHASE3_QUEUE_DELAY_SECONDS=<fresh-allocation-queue-delay-seconds>",
+    "h100nvl_batch32": "HT_PHASE3_CALIBRATION_ACTIVE=1 HT_PHASE3_ALLOCATION_GRES=gpu:h100nvl:1 HT_PHASE3_FRESH_PREFLIGHT_TOKEN=<fresh-token> uv run python scripts/run_phase3_batch_efficiency_calibration.py --study-plan configs/batch_efficiency/ht_pretraining_1m_phase3_parallel_study_v1.json --calibration-id ht3-cal-h100nvl-b32-20260823 --owner sole-authorized-phase3-follow-up-programming-operator --profile h100nvl --batch-size 32 --amp-dtype bfloat16 --grad-scaler disabled --checkpoint-copy artifacts/codex/calibration/parallel-study-20260823/h100nvl-b32/attempt/checkpoint-step-54064.copy.pt --output-root artifacts/codex/calibration/parallel-study-20260823/h100nvl-b32/output --attempt-root artifacts/codex/calibration/parallel-study-20260823/h100nvl-b32/attempt --pilot-metrics artifacts/codex/calibration/parallel-study-20260823/h100nvl-b32/attempt/metrics.jsonl --receipt artifacts/codex/calibration/parallel-study-20260823/h100nvl-b32/attempt/receipt.json --queue-delay-seconds <fresh-allocation-queue-delay-seconds> --execute-pilot --pilot-command -- uv run python scripts/run_phase3_batch_efficiency_stability_pilot.py --profile h100nvl --batch-size 32 --checkpoint-copy artifacts/codex/calibration/parallel-study-20260823/h100nvl-b32/attempt/checkpoint-step-54064.copy.pt --metrics artifacts/codex/calibration/parallel-study-20260823/h100nvl-b32/attempt/metrics.jsonl --max-steps 256",
+    "h100nvl_batch64": "HT_PHASE3_CALIBRATION_ACTIVE=1 HT_PHASE3_ALLOCATION_GRES=gpu:h100nvl:1 HT_PHASE3_FRESH_PREFLIGHT_TOKEN=<fresh-token> uv run python scripts/run_phase3_batch_efficiency_calibration.py --study-plan configs/batch_efficiency/ht_pretraining_1m_phase3_parallel_study_v1.json --calibration-id ht3-cal-h100nvl-b64-20260823 --owner sole-authorized-phase3-follow-up-programming-operator --profile h100nvl --batch-size 64 --amp-dtype bfloat16 --grad-scaler disabled --checkpoint-copy artifacts/codex/calibration/parallel-study-20260823/h100nvl-b64/attempt/checkpoint-step-54064.copy.pt --output-root artifacts/codex/calibration/parallel-study-20260823/h100nvl-b64/output --attempt-root artifacts/codex/calibration/parallel-study-20260823/h100nvl-b64/attempt --pilot-metrics artifacts/codex/calibration/parallel-study-20260823/h100nvl-b64/attempt/metrics.jsonl --receipt artifacts/codex/calibration/parallel-study-20260823/h100nvl-b64/attempt/receipt.json --queue-delay-seconds <fresh-allocation-queue-delay-seconds> --execute-pilot --pilot-command -- uv run python scripts/run_phase3_batch_efficiency_stability_pilot.py --profile h100nvl --batch-size 64 --checkpoint-copy artifacts/codex/calibration/parallel-study-20260823/h100nvl-b64/attempt/checkpoint-step-54064.copy.pt --metrics artifacts/codex/calibration/parallel-study-20260823/h100nvl-b64/attempt/metrics.jsonl --max-steps 256",
+    "v100_batch32": "HT_PHASE3_CALIBRATION_ACTIVE=1 HT_PHASE3_ALLOCATION_GRES=gpu:v100:1 HT_PHASE3_FRESH_PREFLIGHT_TOKEN=<fresh-token> uv run python scripts/run_phase3_batch_efficiency_calibration.py --study-plan configs/batch_efficiency/ht_pretraining_1m_phase3_parallel_study_v1.json --calibration-id ht3-cal-v100-b32-20260823 --owner sole-authorized-phase3-follow-up-programming-operator --profile v100 --batch-size 32 --amp-dtype float16 --grad-scaler enabled --checkpoint-copy artifacts/codex/calibration/parallel-study-20260823/v100-b32/attempt/checkpoint-step-54064.copy.pt --output-root artifacts/codex/calibration/parallel-study-20260823/v100-b32/output --attempt-root artifacts/codex/calibration/parallel-study-20260823/v100-b32/attempt --pilot-metrics artifacts/codex/calibration/parallel-study-20260823/v100-b32/attempt/metrics.jsonl --receipt artifacts/codex/calibration/parallel-study-20260823/v100-b32/attempt/receipt.json --queue-delay-seconds <fresh-allocation-queue-delay-seconds> --execute-pilot --pilot-command -- uv run python scripts/run_phase3_batch_efficiency_stability_pilot.py --profile v100 --batch-size 32 --checkpoint-copy artifacts/codex/calibration/parallel-study-20260823/v100-b32/attempt/checkpoint-step-54064.copy.pt --metrics artifacts/codex/calibration/parallel-study-20260823/v100-b32/attempt/metrics.jsonl --max-steps 256",
+    "v100_batch64": "HT_PHASE3_CALIBRATION_ACTIVE=1 HT_PHASE3_ALLOCATION_GRES=gpu:v100:1 HT_PHASE3_FRESH_PREFLIGHT_TOKEN=<fresh-token> uv run python scripts/run_phase3_batch_efficiency_calibration.py --study-plan configs/batch_efficiency/ht_pretraining_1m_phase3_parallel_study_v1.json --calibration-id ht3-cal-v100-b64-20260823 --owner sole-authorized-phase3-follow-up-programming-operator --profile v100 --batch-size 64 --amp-dtype float16 --grad-scaler enabled --checkpoint-copy artifacts/codex/calibration/parallel-study-20260823/v100-b64/attempt/checkpoint-step-54064.copy.pt --output-root artifacts/codex/calibration/parallel-study-20260823/v100-b64/output --attempt-root artifacts/codex/calibration/parallel-study-20260823/v100-b64/attempt --pilot-metrics artifacts/codex/calibration/parallel-study-20260823/v100-b64/attempt/metrics.jsonl --receipt artifacts/codex/calibration/parallel-study-20260823/v100-b64/attempt/receipt.json --queue-delay-seconds <fresh-allocation-queue-delay-seconds> --execute-pilot --pilot-command -- uv run python scripts/run_phase3_batch_efficiency_stability_pilot.py --profile v100 --batch-size 64 --checkpoint-copy artifacts/codex/calibration/parallel-study-20260823/v100-b64/attempt/checkpoint-step-54064.copy.pt --metrics artifacts/codex/calibration/parallel-study-20260823/v100-b64/attempt/metrics.jsonl --max-steps 256",
+    "aggregate_all_receipts": "uv run python scripts/aggregate_phase3_batch_efficiency_receipts.py --study-plan configs/batch_efficiency/ht_pretraining_1m_phase3_parallel_study_v1.json --output artifacts/codex/calibration/parallel-study-20260823/receipt-aggregation.json",
+    "select_default_one": "uv run python scripts/select_phase3_batch_efficiency_profile.py --study-plan configs/batch_efficiency/ht_pretraining_1m_phase3_parallel_study_v1.json --receipt-aggregation artifacts/codex/calibration/parallel-study-20260823/receipt-aggregation.json --output artifacts/codex/calibration/parallel-study-20260823/selection.json --authorize-production"
+  },
+  "submission": {
+    "production_submission_authorized": false,
+    "default_production_resume_count": 1,
+    "submission_performed": false,
+    "job_count": 1,
+    "slurm_mutated_in_this_session": false,
+    "gpu_calibration_completed": false
+  },
+  "implementation": {
+    "parent_commit_preserved": "aa54b4efdf99f7853df480a1dded44214faac770",
+    "source_payloads_opened": false,
+    "sealed_test_payloads_opened": false,
+    "stress_payloads_opened": false,
+    "scientific_training_run": false,
+    "cpu_static_tests_only": true
+  }
+}

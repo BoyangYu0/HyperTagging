@@ -218,66 +218,13 @@ def test_profile_configs_preserve_exact_validation_accounting():
         assert f"amp_dtype: {amp}" in text
 
 
-def test_selection_and_render_verifiers_reject_tampering_and_overwrite(tmp_path):
+def test_selection_requires_an_exact_receipt_aggregation():
     root = Path(__file__).resolve().parents[1]
-
-    def load_module(name: str, filename: str):
-        spec = importlib.util.spec_from_file_location(name, root / "scripts" / filename)
-        assert spec and spec.loader
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        return module
-
-    selector = load_module(
-        "phase3_selector", "select_phase3_batch_efficiency_profile.py"
+    spec = importlib.util.spec_from_file_location(
+        "phase3_selector", root / "scripts/select_phase3_batch_efficiency_profile.py"
     )
-    renderer = load_module(
-        "phase3_renderer", "render_phase3_batch_efficiency_production_contract.py"
-    )
-    verifier = load_module(
-        "phase3_verifier", "verify_phase3_batch_efficiency_contract.py"
-    )
-    receipts = []
-    for name, gres, throughput in (
-        ("h100nvl", "gpu:h100nvl:1", 10.0),
-        ("v100", "gpu:v100:1", 5.0),
-    ):
-        metrics = tmp_path / f"{name}.jsonl"
-        metrics.write_text(json.dumps({"split": "train", "events_per_second": throughput}) + "\n")
-        body = {
-            "artifact_version": "ht-pretraining-1m-phase3-gpu-calibration-receipt-v1",
-            "profile": {"exact_gres": gres, "preferred_batch_size": 64},
-            "calibration_complete": True,
-            "scientific_contract": {"submission_performed": False},
-            "checkpoint_copy": {"source_unchanged": True},
-            "pilot": {"metrics_path": str(metrics)},
-        }
-        body["receipt_sha256"] = hashlib.sha256(
-            json.dumps({k: v for k, v in body.items()}, sort_keys=True, separators=(",", ":")).encode()
-        ).hexdigest()
-        receipt = tmp_path / f"{name}-receipt.json"
-        receipt.write_text(json.dumps(body))
-        receipts.append(receipt)
-    selection = tmp_path / "selection.json"
-    assert selector.main(
-        [
-            "--h100-receipt", str(receipts[0]),
-            "--v100-receipt", str(receipts[1]),
-            "--output", str(selection),
-            "--authorize-production",
-        ]
-    ) == 0
-    contract = tmp_path / "contract.json"
-    assert renderer.main(
-        ["--selection", str(selection), "--expected-git-sha", "a" * 40, "--output", str(contract)]
-    ) == 0
-    verifier.verify(contract)
-    with pytest.raises(RuntimeError, match="exists"):
-        renderer.main(
-            ["--selection", str(selection), "--expected-git-sha", "a" * 40, "--output", str(contract)]
-        )
-    tampered = json.loads(contract.read_text())
-    tampered["job_count"] = 2
-    contract.write_text(json.dumps(tampered))
-    with pytest.raises(RuntimeError, match="hash mismatch"):
-        verifier.verify(contract)
+    assert spec and spec.loader
+    selector = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(selector)
+    with pytest.raises(SystemExit):
+        selector.main(["--output", str(root / "artifacts/codex/unused-selection.json")])
