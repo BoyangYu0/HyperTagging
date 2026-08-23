@@ -156,6 +156,7 @@ def _run_fixture_probe(batch_size: int, profile_name: str) -> dict[str, Any]:
 def _copy_checkpoint(source: Path, destination: Path) -> dict[str, Any]:
     if not source.is_file() or file_sha256(source) != CHECKPOINT_SHA256:
         raise RuntimeError("immutable source checkpoint hash/path gate failed")
+    loadability = _load_checkpoint_finite(source)
     if destination.exists():
         raise RuntimeError("calibration checkpoint copy already exists; refusing overwrite")
     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -169,6 +170,55 @@ def _copy_checkpoint(source: Path, destination: Path) -> dict[str, Any]:
         "source_sha256": CHECKPOINT_SHA256,
         "copy_sha256": copied_hash,
         "source_unchanged": True,
+        "loadability": loadability,
+    }
+
+
+def _load_checkpoint_finite(path: Path) -> dict[str, Any]:
+    """Prove the exact immutable checkpoint is loadable and tensor-finite.
+
+    This is a read-only metadata probe.  It never performs scientific training;
+    the bounded pilot remains CUDA-only and synthetic.
+    """
+
+    try:
+        import torch
+    except ImportError as error:  # pragma: no cover - exercised in GPU env
+        raise RuntimeError("checkpoint loadability requires torch in the frozen environment") from error
+    try:
+        payload = torch.load(path, map_location="cpu", weights_only=False)
+    except TypeError:  # pragma: no cover - compatibility with older torch
+        payload = torch.load(path, map_location="cpu")
+    except Exception as error:
+        raise RuntimeError("immutable checkpoint is not loadable") from error
+
+    tensors: list[Any] = []
+
+    def collect(value: Any) -> None:
+        if torch.is_tensor(value):
+            tensors.append(value)
+        elif isinstance(value, dict):
+            for child in value.values():
+                collect(child)
+        elif isinstance(value, (list, tuple)):
+            for child in value:
+                collect(child)
+
+    collect(payload)
+    if not tensors:
+        raise RuntimeError("immutable checkpoint contains no tensors")
+    for tensor in tensors:
+        try:
+            finite = bool(torch.isfinite(tensor).all().item())
+        except Exception as error:
+            raise RuntimeError("immutable checkpoint tensor finiteness probe failed") from error
+        if not finite:
+            raise RuntimeError("immutable checkpoint contains a non-finite tensor")
+    return {
+        "loadable": True,
+        "finite_tensors": True,
+        "tensor_count": len(tensors),
+        "tensor_numel": sum(int(tensor.numel()) for tensor in tensors),
     }
 
 

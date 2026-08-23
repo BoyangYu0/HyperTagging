@@ -163,6 +163,12 @@ def _write_healthy_receipts(plan: dict, tmp_path: Path) -> None:
                 "source_sha256": entry["source_checkpoint_sha256"],
                 "copy_sha256": entry["source_checkpoint_sha256"],
                 "source_unchanged": True,
+                "loadability": {
+                    "loadable": True,
+                    "finite_tensors": True,
+                    "tensor_count": 1,
+                    "tensor_numel": 1,
+                },
             },
             "output_root": entry["output_root"],
             "attempt_root": entry["attempt_root"],

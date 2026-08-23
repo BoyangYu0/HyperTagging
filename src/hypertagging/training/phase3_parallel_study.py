@@ -422,6 +422,14 @@ def load_healthy_receipt(
         != resolve_plan_path(entry["checkpoint_copy_path"], root=root)
     ):
         raise RuntimeError("calibration checkpoint immutability binding failed")
+    loadability = checkpoint.get("loadability", {})
+    if (
+        loadability.get("loadable") is not True
+        or loadability.get("finite_tensors") is not True
+        or int(loadability.get("tensor_count", 0)) <= 0
+        or int(loadability.get("tensor_numel", 0)) <= 0
+    ):
+        raise RuntimeError("calibration checkpoint loadability/finiteness evidence is missing")
     pilot = receipt.get("pilot", {})
     if (
         pilot.get("executed") is not True
