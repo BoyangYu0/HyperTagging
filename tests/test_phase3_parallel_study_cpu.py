@@ -238,3 +238,17 @@ def test_selection_uses_all_receipts_and_defaults_to_one_production_resume(tmp_p
         ]
     ) == 0
     verifier.verify(contract_path)
+
+
+def test_production_retry_verifies_explicit_retry_source_job_name(monkeypatch):
+    renderer = _load_module("phase3_renderer_retry_source", "render_phase3_batch_efficiency_production_contract.py")
+
+    class Result:
+        returncode = 0
+        stdout = "15971073|ht3-production-resume-h100nvl-b64-step54064-v1-retry1|FAILED|1:0\n"
+
+    monkeypatch.setattr(renderer.subprocess, "run", lambda *args, **kwargs: Result())
+    assert renderer._verify_failed_production_job(
+        "15971073",
+        "ht3-production-resume-h100nvl-b64-step54064-v1-retry1",
+    )["state"] == "FAILED"

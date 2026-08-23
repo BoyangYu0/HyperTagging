@@ -78,6 +78,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--experiment", default="ht-pretrain-1m-phase3-selected-20260823")
     parser.add_argument("--retry-of-job-id")
+    parser.add_argument("--retry-source-job-name")
     parser.add_argument("--retry-reason")
     args = parser.parse_args(argv)
     if args.output.exists():
@@ -157,9 +158,15 @@ def main(argv: list[str] | None = None) -> int:
     if args.retry_of_job_id is not None:
         if not args.retry_of_job_id.isdigit() or not args.retry_reason:
             raise RuntimeError("production retry requires a numeric failed job ID and reason")
+        expected_retry_job_name = (
+            args.retry_source_job_name
+            or f"ht3-production-resume-{variant['production_variant_id'].removeprefix('ht3-production-resume-')}"
+        )
+        if not expected_retry_job_name:
+            raise RuntimeError("production retry source job name is missing")
         retry_source = _verify_failed_production_job(
             args.retry_of_job_id,
-            f"ht3-production-resume-{variant['production_variant_id'].removeprefix('ht3-production-resume-')}",
+            expected_retry_job_name,
         )
     contract: dict[str, Any] = {
         "contract_version": "hypertagging-slurm-one-gpu-contract-v2",
