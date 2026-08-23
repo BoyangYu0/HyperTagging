@@ -46,7 +46,7 @@ Expected continuation: 54,064 completed steps are resumed; the next optimizer st
 
 - Implementation commit: `88b4fcdbd8bec2c1cd772c3e45742aa39ff077b7`.
 - Implementation tag: `ht-pretraining-1m-phase3-recovery-implementation-v2-20260823`.
-- Final artifact tag to be created on the clean artifact commit: `ht-pretraining-1m-phase3-recovery-20260823-final`.
+- Final artifact tag on the clean artifact commit: `ht-pretraining-1m-phase3-recovery-20260823-final-v2`.
 - Replacement contract: `artifacts/slurm/ht-pretrain-1m-phase3-recovery-20260823.operator-authorized.job-contract.json`.
 - Replacement contract canonical SHA256: `20805cd37f914ea9ffb85789a200188bf23b1f6ee23e38067e5512f16393ac94`.
 - Replacement contract file SHA256: `2dec2fc5c793230d9decde5f41a6b9e2c83cdc6b6237c1cd5a9145cd1f46857c`.
