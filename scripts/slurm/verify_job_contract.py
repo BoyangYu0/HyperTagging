@@ -158,6 +158,19 @@ def validated_runtime_values(contract: dict[str, object]) -> dict[str, str]:
         resume_path = ROOT / resume_checkpoint
         if resume_path.suffix != ".pt" or not resume_path.is_file():
             raise RuntimeError("contract resume checkpoint is not an existing .pt file")
+    authorization_artifact = ""
+    if contract.get("experiment") == "ht-pretrain-1m-phase3-recovery-20260823":
+        authorization_artifact = str(
+            contract.get(
+                "execution_authorization_artifact",
+                "artifacts/codex/ht_pretraining_1m_phase3_execution_authorization_20260823.json",
+            )
+        )
+        authorization_artifact = _safe_relative_path(
+            authorization_artifact, field="execution_authorization_artifact"
+        )
+        if not (ROOT / authorization_artifact).is_file():
+            raise RuntimeError("phase-3 execution authorization artifact is missing")
     return {
         "gpu_environment": gpu_environment,
         "gres": str(contract["gres"]),
@@ -166,6 +179,7 @@ def validated_runtime_values(contract: dict[str, object]) -> dict[str, str]:
         "seed": str(seed),
         "max_restarts": str(max_restarts),
         "resume_checkpoint": resume_checkpoint,
+        "execution_authorization_artifact": authorization_artifact,
     }
 
 
@@ -221,6 +235,16 @@ def verify_contract(
                 "immutable experiment tag does not identify expected Git SHA"
             )
     verify_hashed_inputs(contract["hashed_inputs"])
+    if contract.get("experiment") == "ht-pretrain-1m-phase3-recovery-20260823":
+        from scripts.slurm.phase3_execution_authorization_v1 import (
+            verify_authorization_artifact,
+        )
+
+        verify_authorization_artifact(
+            ROOT
+            / validated_runtime_values(contract)["execution_authorization_artifact"],
+            contract_path=contract_path,
+        )
     if contract.get("mode") == "scientific":
         admission_path = contract.get("local_admission_receipt")
         completion_path = contract.get("local_completion_receipt")
@@ -416,6 +440,7 @@ def write_shell_runtime(values: dict[str, str], destination: Path) -> None:
         "seed": "seed",
         "max_restarts": "max_restarts",
         "resume_checkpoint": "resume_checkpoint",
+        "execution_authorization_artifact": "execution_authorization_artifact",
     }
     lines = [
         f"readonly {names[key]}={shlex.quote(value)}" for key, value in values.items()

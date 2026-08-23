@@ -137,8 +137,22 @@ nvidia-smi -q > "${attempt_root}/nvidia-smi.txt"
 env | sort > "${attempt_root}/environment.txt"
 log_stage allocation_telemetry complete
 log_stage gpu_preflight started
+preflight_args=(--expected-gres "${expected_gres}")
+if [[ -n "${execution_authorization_artifact:-}" ]]; then
+  preflight_args+=(
+    --execution-contract "${job_contract}"
+    --authorization-artifact "${execution_authorization_artifact}"
+  )
+fi
 "${gpu_environment}/bin/python" scripts/slurm/preflight_gpu_environment.py \
-  --expected-gres "${expected_gres}" | tee "${attempt_root}/gpu-preflight.json"
+  "${preflight_args[@]}" | tee "${attempt_root}/gpu-preflight.json"
+if [[ -n "${execution_authorization_artifact:-}" ]]; then
+  /usr/bin/python3 scripts/slurm/verify_phase3_execution_authorization_v1.py \
+    --authorization "${execution_authorization_artifact}" \
+    --contract "${job_contract}" \
+    --preflight "${attempt_root}/gpu-preflight.json" \
+    --require-fresh-in-allocation-preflight
+fi
 log_stage gpu_preflight passed
 
 run_root="artifacts/runs/${experiment}/${seed}/${SLURM_JOB_ID}"

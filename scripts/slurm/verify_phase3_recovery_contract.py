@@ -12,6 +12,10 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from scripts.slurm.verify_job_contract import verify_contract  # noqa: E402
+from scripts.slurm.phase3_execution_authorization_v1 import (  # noqa: E402
+    AUTHORIZATION_ARTIFACT,
+    verify_authorization_artifact,
+)
 
 EXPECTED_CHECKPOINT = (
     "artifacts/runs/ht-pretrain-production-1m-h100-20260821/20260812/"
@@ -34,6 +38,11 @@ def main() -> int:
     )
     args = parser.parse_args()
     contract, _, contract_hash = verify_contract(args.contract)
+    authorization_path = ROOT / AUTHORIZATION_ARTIFACT
+    verify_authorization_artifact(
+        authorization_path,
+        contract_path=args.contract,
+    )
     lineage = contract.get("recovery_lineage")
     if not isinstance(lineage, dict):
         raise RuntimeError("recovery lineage is missing")
@@ -51,7 +60,17 @@ def main() -> int:
         raise RuntimeError("replacement attempt root is not protected from historical attempt-00")
     if contract.get("sealed_test_role_access") != "forbidden":
         raise RuntimeError("sealed-test role isolation is not preserved")
-    print(json.dumps({"contract": str(args.contract), "contract_sha256": contract_hash}))
+    print(
+        json.dumps(
+            {
+                "authorization_artifact": str(authorization_path),
+                "contract": str(args.contract),
+                "contract_sha256": contract_hash,
+                "fresh_in_allocation_preflight_required": True,
+                "submission_performed": False,
+            }
+        )
+    )
     return 0
 
 

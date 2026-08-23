@@ -4,10 +4,12 @@
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
 import hashlib
 import importlib
 import importlib.metadata
 import json
+import os
 from pathlib import Path
 import sys
 
@@ -36,8 +38,22 @@ def verify_lock_hashes(root: Path) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--expected-gres", choices=ALLOWED_SLURM_GRES)
+    parser.add_argument(
+        "--execution-contract",
+        type=Path,
+        help="bind the preflight attestation to a recovery execution contract",
+    )
+    parser.add_argument(
+        "--authorization-artifact",
+        type=Path,
+        help="bind the preflight attestation to a phase-3 authorization artifact",
+    )
     parser.add_argument("--lock-only", action="store_true")
     args = parser.parse_args()
+    if (args.execution_contract is None) != (args.authorization_artifact is None):
+        raise RuntimeError(
+            "execution contract and authorization artifact must be supplied together"
+        )
     contract_path = ROOT / "environment/gpu/runtime-contract.json"
     verify_lock_hashes(ROOT)
     contract = json.loads(contract_path.read_text(encoding="utf-8"))
@@ -67,7 +83,47 @@ def main() -> int:
         args.expected_gres,
         gpu_name=torch.cuda.get_device_name(0),
     )
-    print(json.dumps({"environment_verified": True, "gpu": torch.cuda.get_device_name(0)}))
+    payload = {
+        "preflight_version": "ht-pretraining-1m-phase3-in-allocation-preflight-v1",
+        "status": "passed",
+        "fresh_in_allocation": True,
+        "gpu_pilot_completed": False,
+        "never_cpu": True,
+        "expected_gres": args.expected_gres,
+        "observed_gres": args.expected_gres,
+        "gpu": torch.cuda.get_device_name(0),
+        "slurm_job_id": os.environ["SLURM_JOB_ID"],
+        "slurm_gpus_on_node": os.environ["SLURM_GPUS_ON_NODE"],
+        "cuda_visible_devices": os.environ["CUDA_VISIBLE_DEVICES"],
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+    if args.execution_contract is not None:
+        contract_payload = json.loads(
+            args.execution_contract.read_text(encoding="utf-8")
+        )
+        authorization_payload = json.loads(
+            args.authorization_artifact.read_text(encoding="utf-8")
+        )
+        payload.update(
+            {
+                "execution_contract_file_sha256": sha256(args.execution_contract),
+                "authorization_artifact_file_sha256": sha256(
+                    args.authorization_artifact
+                ),
+                "authorization_artifact_canonical_sha256": authorization_payload.get(
+                    "artifact_sha256"
+                ),
+                "execution_contract_canonical_sha256": contract_payload.get(
+                    "contract_sha256"
+                ),
+            }
+        )
+    payload["preflight_sha256"] = hashlib.sha256(
+        json.dumps(
+            payload, sort_keys=True, separators=(",", ":")
+        ).encode()
+    ).hexdigest()
+    print(json.dumps(payload, sort_keys=True))
     return 0
 
 

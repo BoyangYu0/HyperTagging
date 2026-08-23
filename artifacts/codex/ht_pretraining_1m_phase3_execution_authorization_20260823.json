@@ -1,0 +1,233 @@
+{
+  "artifact_sha256": "c952524ce32b1c504cc6210cc8bc540bb6180a928c145fe29109b89b3fe3b5e3",
+  "artifact_tag": "ht-pretraining-1m-phase3-execution-authorization-20260823-final",
+  "artifact_version": "ht-pretraining-1m-phase3-execution-authorization-v1",
+  "audit": {
+    "cpu_training_run": false,
+    "focused_test_command": "uv run pytest -q tests/test_phase3_execution_authorization_cpu.py tests/test_phase3_recovery_cpu.py tests/test_production_1m_operator_authorization_cpu.py tests/test_slurm_requeue_and_render_contract_cpu.py",
+    "slurm_mutation": false,
+    "source_batch_payload_opened": false,
+    "old_report_preserved_unchanged": true,
+    "old_report_verdict": "submission_authorized=false",
+    "notes": "This artifact resolves only the formal readiness authorization blocker under the explicit operator instruction. It does not assert that a new GPU pilot ran or that a submission occurred."
+  },
+  "authorization_basis": "explicit_user_operator_instruction",
+  "sealed_test_or_stress_payload_accessed": false,
+  "structural_scientific_slurm_submission_allowed": false,
+  "authorization_scope": {
+    "authorized_job_count": 1,
+    "authorized_contract_gres": "gpu:h100nvl:1",
+    "allowed_accelerators": [
+      "gpu:h100nvl:1",
+      "gpu:v100:1"
+    ],
+    "selection_rule": "evidence_based_earliest_completion",
+    "never_cpu": true,
+    "experiment": "ht-pretrain-1m-phase3-recovery-20260823"
+  },
+  "checkpoint_binding": {
+    "path": "artifacts/runs/ht-pretrain-production-1m-h100-20260821/20260812/15933802/checkpoint-step-54064.pt",
+    "sha256": "997241deb841033598846dea8b3650d31b9511c4241aad44798d83fe0ac5ad7d",
+    "step": 54064,
+    "initialization_policy": "exact_resume_from_checkpoint",
+    "loadable_read_only": true,
+    "finite_tensors_verified": true
+  },
+  "execution_preflight_policy": {
+    "fresh_in_allocation_required": true,
+    "must_pass_before": "trainer_launch",
+    "must_match": [
+      "authorization artifact file and canonical hash",
+      "execution contract file and canonical hash",
+      "exact typed one-GPU GRES",
+      "one allocated and visible CUDA device",
+      "frozen CUDA runtime lock"
+    ],
+    "mismatch_or_tamper_action": "fail_closed",
+    "preflight_artifact_version": "ht-pretraining-1m-phase3-in-allocation-preflight-v1",
+    "preflight_is_not_a_pilot": true
+  },
+  "execution_role_required": "gpt-5.3-codex-spark medium",
+  "exact_bindings": {
+    "failed_job_id": "15933802",
+    "failed_attempt_root": "artifacts/slurm/jobs/15933802/attempt-00",
+    "replacement_attempt_root_must_not_be": "artifacts/slurm/jobs/15933802/attempt-00",
+    "replacement_experiment": "ht-pretrain-1m-phase3-recovery-20260823",
+    "recovery_config": {
+      "path": "configs/slurm/pretrain_1m_phase3_recovery_20260823.yaml",
+      "sha256": "eced70932466ea07783122f7d2bce7fb344c87f45e72e57622e6363df3a2ad3f"
+    },
+    "recovery_contract": {
+      "path": "artifacts/slurm/ht-pretrain-1m-phase3-recovery-20260823.operator-authorized.job-contract.json",
+      "canonical_sha256": "20805cd37f914ea9ffb85789a200188bf23b1f6ee23e38067e5512f16393ac94",
+      "file_sha256": "2dec2fc5c793230d9decde5f41a6b9e2c83cdc6b6237c1cd5a9145cd1f46857c"
+    },
+    "output_contract": {
+      "run_root_template": "artifacts/runs/{experiment}/{seed}/{slurm_job_id}",
+      "attempt_root_template": "artifacts/slurm/jobs/{slurm_job_id}/attempt-{restart_count:02d}",
+      "no_silent_overwrite": true,
+      "contract_copy": "provenance/job-contract.json"
+    },
+    "implementation": {
+      "commit": "88b4fcdbd8bec2c1cd772c3e45742aa39ff077b7",
+      "tag": "ht-pretraining-1m-phase3-recovery-implementation-v2-20260823"
+    }
+  },
+  "gpu_pilot_completed": false,
+  "fresh_in_allocation_preflight_required": true,
+  "immutable_parent_files": [
+    {
+      "path": "artifacts/codex/ht_pretraining_1m_phase3_recovery_20260823.md",
+      "sha256": "a9639523e775b59a691abc29b1c0fae99be4f8f452c270f80a9a4decafa3bf7a",
+      "role": "prior_human_report_preserved"
+    },
+    {
+      "path": "artifacts/codex/ht_pretraining_1m_phase3_recovery_20260823.json",
+      "sha256": "90e119c1fb121d9cc985d47a6914ac82a67ffc7ee85e6a28a750652d2caf3e75",
+      "role": "prior_machine_report_preserved"
+    },
+    {
+      "path": "artifacts/slurm/ht-pretrain-1m-phase3-recovery-20260823.operator-authorized.job-contract.json",
+      "sha256": "2dec2fc5c793230d9decde5f41a6b9e2c83cdc6b6237c1cd5a9145cd1f46857c",
+      "role": "immutable_recovery_contract_parent"
+    },
+    {
+      "path": "artifacts/runs/ht-pretrain-production-1m-h100-20260821/20260812/15933802/checkpoint-step-54064.pt",
+      "sha256": "997241deb841033598846dea8b3650d31b9511c4241aad44798d83fe0ac5ad7d",
+      "role": "exact_resume_checkpoint"
+    },
+    {
+      "path": "configs/slurm/pretrain_1m_phase3_recovery_20260823.yaml",
+      "sha256": "eced70932466ea07783122f7d2bce7fb344c87f45e72e57622e6363df3a2ad3f",
+      "role": "corrected_recovery_config"
+    },
+    {
+      "path": "configs/training_selection/production_1m_20260812/train_865k.json",
+      "sha256": "989ac429d7d7cc444d8278b2f3443999999c481c4e202d249e57cdeb1d58a390",
+      "role": "train_validation_selection"
+    },
+    {
+      "path": "artifacts/experiment_readiness/production_1m_20260812/train_865k/train_865k.complete_only.index.json",
+      "sha256": "8b307fe9c7c359b6c2d36908c393aa82fa13afca5ec53144311b5d592eed7be5",
+      "role": "complete_only_train_validation_index"
+    },
+    {
+      "path": "configs/training_selection/production_1m_20260812/provenance_status.json",
+      "sha256": "e7d645dcb1d0a177284439e269033b8e3e77c1f76737910419353fb5dae5bc85",
+      "role": "structural_provenance_status"
+    },
+    {
+      "path": "environment/gpu/requirements-cu126.lock",
+      "sha256": "2d34539c79f144f133c39f9ae86c0a34dafaab554c8fe263c28e01fe766576fc",
+      "role": "frozen_gpu_runtime_lock"
+    },
+    {
+      "path": "environment/gpu/runtime-contract.json",
+      "sha256": "411facd82bb25d64dd17106a2f79d6fe1b23c40a5ed9d502f5fe7cfa11c33c25",
+      "role": "frozen_gpu_runtime_contract"
+    },
+    {
+      "path": "environment/gpu/environment-lock.sha256",
+      "sha256": "6c35af3eaac25ecf7bff12cb13bacefe4e8ee275aa40689adca6ed5f20d7d66d",
+      "role": "frozen_gpu_environment_hash_receipt"
+    }
+  ],
+  "immutable_parent_hashes": {
+    "artifact_parent_commit": "fcf19adf16b1492fc1c0478fc79fe358e13d1809",
+    "historical_failed_commit": "93b71c5d7c1bc20181640aafb4e918abb9267362",
+    "implementation_commit": "88b4fcdbd8bec2c1cd772c3e45742aa39ff077b7",
+    "parent_report_json_sha256": "90e119c1fb121d9cc985d47a6914ac82a67ffc7ee85e6a28a750652d2caf3e75",
+    "parent_report_md_sha256": "a9639523e775b59a691abc29b1c0fae99be4f8f452c270f80a9a4decafa3bf7a",
+    "preserved_tags": {
+      "ht-pretraining-1m-phase3-recovery-20260823-final-v2": "fcf19adf16b1492fc1c0478fc79fe358e13d1809",
+      "ht-pretraining-1m-phase3-recovery-implementation-v2-20260823": "88b4fcdbd8bec2c1cd772c3e45742aa39ff077b7",
+      "ht-pretraining-production-1m-h100-operator-authorized-20260821": "93b71c5d7c1bc20181640aafb4e918abb9267362"
+    }
+  },
+  "provenance_exception": {
+    "status": "explicit_operator_authorized_exception",
+    "execution_authorized": true,
+    "scope": "exactly_one_production_1m_pretraining_job_on_gpu:h100nvl:1",
+    "structural_scientific_slurm_submission_allowed": false,
+    "validator_unchanged": true,
+    "authorization_does_not_modify_validator": true,
+    "expected_missing_source_commit": "f4e54df23b5c60115e475c5d68df4651899d678e",
+    "expected_missing_source_tree": "b6e3a4118b960e3a4676a61af9601438d56cef96",
+    "limitation": "The production source object remains unavailable locally; the explicit operator instruction authorizes the corrected recovery lineage but does not waive the structural provenance status or any technical/scientific gate."
+  },
+  "retained_gates": {
+    "objective_dominance": {
+      "limit": 20.0,
+      "violation_action": "fail",
+      "fail_closed": true,
+      "historical_observed_ratio": 22.894,
+      "late_phase_leaf_pid_weight": 0.4,
+      "projected_exact_ratio": 18.3152
+    },
+    "late_phase_leaf_pid": {
+      "phase_weights": [
+        1.0,
+        1.0,
+        0.4,
+        0.4
+      ],
+      "validation_leaf_pid_weight": 1.0,
+      "denominators_are_support_checks_not_gradient_rescaling": true
+    },
+    "train_validation_role_isolation": {
+      "included_splits": [
+        "train",
+        "validation"
+      ],
+      "selection_includes_test": false,
+      "test_count": 0,
+      "sealed_test_role_access": "forbidden",
+      "stress_payload_access": "forbidden"
+    },
+    "exact_resume_and_output_isolation": {
+      "checkpoint_step": 54064,
+      "no_silent_restart": true,
+      "no_double_counting": true,
+      "no_silent_overwrite": true,
+      "failed_attempt_root_reuse": false
+    },
+    "curriculum_and_milestones": {
+      "phase_count": 4,
+      "phase_steps": [
+        27032,
+        27032,
+        27032,
+        27032
+      ],
+      "milestone_count": 8,
+      "validation_and_checkpoint_steps": [
+        13516,
+        27032,
+        40548,
+        54064,
+        67580,
+        81096,
+        94612,
+        108128
+      ]
+    },
+    "finite_gradient_checkpoint": {
+      "finite_gradient_gate": "enabled_fail_closed",
+      "finite_checkpoint_gate": "enabled_fail_closed",
+      "checkpoint_loadable_read_only": true,
+      "checkpoint_tensors_finite": true
+    },
+    "accelerator": {
+      "allowed_gres": [
+        "gpu:h100nvl:1",
+        "gpu:v100:1"
+      ],
+      "selection_rule": "evidence_based_earliest_completion",
+      "never_cpu": true,
+      "fresh_exact_in_allocation_preflight": true
+    }
+  },
+  "submission_authorized": true,
+  "submission_performed": false,
+  "timestamp": "2026-08-23T21:45:06+02:00"
+}

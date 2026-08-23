@@ -43,6 +43,13 @@ EXPECTED_MISSING_PROVENANCE_COMMIT = (
 )
 EXPECTED_MISSING_PROVENANCE_TREE = "b6e3a4118b960e3a4676a61af9601438d56cef96"
 
+PHASE3_EXECUTION_AUTHORIZATION_ARTIFACT = (
+    "artifacts/codex/ht_pretraining_1m_phase3_execution_authorization_20260823.json"
+)
+PHASE3_AUTHORIZATION_PARENT_CONTRACT = (
+    "artifacts/slurm/ht-pretrain-1m-phase3-recovery-20260823.operator-authorized.job-contract.json"
+)
+
 from hypertagging.utils.gpu_safety import (  # noqa: E402
     ALLOWED_SLURM_GRES,
     load_local_microtest_completion_receipt,
@@ -381,6 +388,7 @@ def main() -> int:
     if args.fullscale and resume_checkpoint is not None:
         hashed_paths = hashed_paths + (
             "artifacts/slurm/ht-pretrain-production-1m-h100-20260821.operator-authorized.job-contract.json",
+            PHASE3_EXECUTION_AUTHORIZATION_ARTIFACT,
         )
     hashed_inputs = [_hashed_input(path) for path in hashed_paths]
     if admission_receipt is not None and completion_receipt is not None:
@@ -690,6 +698,21 @@ def main() -> int:
                 },
                 "limitation": limitation,
             }
+    if args.fullscale and resume_checkpoint is not None:
+        contract.update(
+            {
+                "execution_authorization_artifact": PHASE3_EXECUTION_AUTHORIZATION_ARTIFACT,
+                "authorization_artifact_sha256": _sha256(
+                    _resolve(PHASE3_EXECUTION_AUTHORIZATION_ARTIFACT)
+                ),
+                "authorization_parent_contract": PHASE3_AUTHORIZATION_PARENT_CONTRACT,
+                "authorization_parent_contract_file_sha256": _sha256(
+                    _resolve(PHASE3_AUTHORIZATION_PARENT_CONTRACT)
+                ),
+                "fresh_in_allocation_preflight_required": True,
+                "gpu_pilot_completed": False,
+            }
+        )
     canonical = json.dumps(contract, sort_keys=True, separators=(",", ":"))
     contract["contract_sha256"] = hashlib.sha256(canonical.encode()).hexdigest()
     args.output.parent.mkdir(parents=True, exist_ok=True)
