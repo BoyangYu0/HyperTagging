@@ -45,10 +45,10 @@ def main() -> int:
         raise RuntimeError("recovery checkpoint hash is not the exact source hash")
     if lineage.get("historical_job_id") != "15933802":
         raise RuntimeError("historical failed job binding is missing")
-    if lineage.get("replacement_attempt_root_must_not_be") == lineage.get(
+    if lineage.get("replacement_attempt_root_must_not_be") != lineage.get(
         "historical_attempt_root"
     ):
-        raise RuntimeError("replacement attempt root may overwrite historical attempt-00")
+        raise RuntimeError("replacement attempt root is not protected from historical attempt-00")
     if contract.get("sealed_test_role_access") != "forbidden":
         raise RuntimeError("sealed-test role isolation is not preserved")
     print(json.dumps({"contract": str(args.contract), "contract_sha256": contract_hash}))

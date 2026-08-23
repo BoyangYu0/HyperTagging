@@ -1,5 +1,5 @@
 {
-  "artifact_tag": "ht-pretraining-1m-phase3-recovery-20260823",
+  "artifact_tag": "ht-pretraining-1m-phase3-recovery-20260823-final",
   "checkpoint": {
     "bytes": 19371763,
     "path": "artifacts/runs/ht-pretrain-production-1m-h100-20260821/20260812/15933802/checkpoint-step-54064.pt",
