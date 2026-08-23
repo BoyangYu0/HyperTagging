@@ -245,7 +245,9 @@ def verify_contract(
             / validated_runtime_values(contract)["execution_authorization_artifact"],
             contract_path=contract_path,
         )
-    if contract.get("mode") == "scientific":
+    if contract.get("mode") == "scientific" and not contract.get(
+        "batch_efficiency_production", False
+    ):
         admission_path = contract.get("local_admission_receipt")
         completion_path = contract.get("local_completion_receipt")
         if not admission_path or not completion_path:
@@ -526,7 +528,22 @@ def main() -> int:
     )
     if not provenance.get("cpu_implementation_allowed", False):
         raise RuntimeError("training provenance status blocks all integration work")
-    if contract["mode"] == "scientific" and not provenance.get(
+    if contract["mode"] == "scientific" and contract.get(
+        "batch_efficiency_production", False
+    ):
+        if contract.get("production_submission_authorized") is not True:
+            raise RuntimeError(
+                "batch-efficiency contract lacks post-calibration authorization"
+            )
+        if contract.get("submission_performed") is not False:
+            raise RuntimeError("batch-efficiency contract records a submission")
+        if contract.get("scientific_slurm_submission_allowed") is not False:
+            raise RuntimeError("batch-efficiency contract weakens structural provenance")
+        if contract.get("job_count") != 1:
+            raise RuntimeError("batch-efficiency contract must bind exactly one job")
+        if not contract.get("calibration_selection_evidence"):
+            raise RuntimeError("batch-efficiency contract lacks calibration evidence")
+    elif contract["mode"] == "scientific" and not provenance.get(
         "scientific_slurm_submission_allowed", False
     ):
         user_authorization = contract.get("user_submission_authorization", {})

@@ -1,0 +1,153 @@
+{
+  "artifact_version": "ht-pretraining-1m-phase3-batch-efficiency-readiness-v1",
+  "readiness_hash": "056906ca787f8044f8d7cca8f8f98a804b9326c4b16cb5df41b42651ed8c7332",
+  "readiness_date": "2026-08-23",
+  "source_authorization": {
+    "parent_commit": "de0c54f762aa8ac46484ae28bfb950d035f4e51b",
+    "parent_tag": "ht-pretraining-1m-phase3-execution-authorization-20260823-final",
+    "submission_authorized_by_parent": true,
+    "gpu_pilot_completed": false,
+    "fresh_in_allocation_preflight_required": true,
+    "submission_performed": false,
+    "authorization_artifact": "artifacts/codex/ht_pretraining_1m_phase3_execution_authorization_20260823.json",
+    "authorization_canonical_sha256": "c952524ce32b1c504cc6210cc8bc540bb6180a928c145fe29109b89b3fe3b5e3",
+    "authorization_file_sha256": "1af20420655a95aa7ce0a3d1ad4a6e357c7fe45510c3f8bafaf80ad3fdbb7991"
+  },
+  "scientific_contract": {
+    "total_presentations": 1730048,
+    "resume_checkpoint_step": 54064,
+    "resume_presentations": 865024,
+    "remaining_presentations": 865024,
+    "virtual_step_unit_presentations": 16,
+    "original_optimizer_steps": 108128,
+    "original_batch_size": 16,
+    "validation_events": 5000,
+    "validation_batches_original": 313,
+    "validation_batches_batch64": 79,
+    "validation_metric_identity": "same_fixed_5000_event_uids_and_named_views; only_collation_batching_changes",
+    "completed_milestones_not_repeated": [13516, 27032, 40548, 54064],
+    "remaining_milestones": [67580, 81096, 94612, 108128],
+    "phase_starts_virtual_steps": [0, 27032, 54064, 81096],
+    "phase_durations_virtual_steps": [27032, 27032, 27032, 27032],
+    "objective_dominance_limit": 20.0,
+    "late_phase_leaf_pid_weight": 0.4,
+    "finite_raw_gradient_required": true,
+    "finite_checkpoint_tensors_required": true,
+    "train_validation_role_isolation": true,
+    "sealed_test_role_access": "forbidden",
+    "stress_payload_access": "forbidden",
+    "provenance_exception_preserved": true,
+    "scientific_slurm_submission_allowed": false
+  },
+  "audit_paths": {
+    "trainer": "src/hypertagging/training/pretrain_trainer.py",
+    "scheduler": "src/hypertagging/training/learning_rate.py",
+    "checkpoint_resume": "src/hypertagging/training/checkpointing.py",
+    "presentation_progress": "src/hypertagging/training/presentation_progress.py",
+    "data_stream": ["src/hypertagging/training/data_module.py", "src/hypertagging/data/streaming.py"],
+    "validation": "src/hypertagging/training/fixed_validation.py",
+    "precision": "src/hypertagging/training/device_profiles.py",
+    "renderer": "scripts/render_phase3_batch_efficiency_production_contract.py",
+    "verifier": ["scripts/verify_phase3_batch_efficiency_contract.py", "scripts/slurm/verify_job_contract.py"],
+    "telemetry": ["src/hypertagging/training/pretrain_trainer.py", "scripts/slurm/monitor_gpu_telemetry.py", "scripts/run_phase3_batch_efficiency_calibration.py"]
+  },
+  "device_profiles": {
+    "h100nvl": {
+      "config": "configs/slurm/pretrain_1m_phase3_batch_efficiency_h100nvl_20260823.yaml",
+      "exact_gres": "gpu:h100nvl:1",
+      "candidate_batch_ladder": [32, 64],
+      "candidate_batch_size": 64,
+      "amp_dtype": "bfloat16",
+      "grad_scaler_enabled": false,
+      "measured": {
+        "source_batch_size": 16,
+        "source_peak_memory_mib": 4459,
+        "source_peak_utilization_percent": 54,
+        "source_finite_throughput_events_per_second": 8.0
+      },
+      "inferred": {
+        "batch64_safety": "not_authorized_until_calibration",
+        "lr": 0.0005,
+        "lr_scaling": "none_at_resume"
+      }
+    },
+    "v100": {
+      "config": "configs/slurm/pretrain_1m_phase3_batch_efficiency_v100_20260823.yaml",
+      "exact_gres": "gpu:v100:1",
+      "candidate_batch_ladder": [32, 64],
+      "candidate_batch_size": 64,
+      "amp_dtype": "float16",
+      "grad_scaler_enabled": true,
+      "bf16_policy": "forbid_bf16_use_float16_gradscaler",
+      "measured": {
+        "existing_diagnostic_peak_memory_mib": 554,
+        "existing_diagnostic_peak_utilization_percent": 11,
+        "production_batch_memory": "not_measured"
+      },
+      "inferred": {
+        "batch64_safety": "not_authorized_until_calibration",
+        "lr": 0.0005,
+        "lr_scaling": "none_at_resume"
+      }
+    }
+  },
+  "calibration": {
+    "gpu_calibration_completed": false,
+    "calibration_order": ["h100nvl", "v100"],
+    "sequential_only": true,
+    "harness": "scripts/run_phase3_batch_efficiency_calibration.py",
+    "contract_version": "ht-pretraining-1m-phase3-gpu-calibration-receipt-v1",
+    "requirements": [
+      "fresh exact-GRES in-allocation preflight",
+      "one visible matching GPU",
+      "synthetic fixture throughput and peak-memory probe",
+      "short train-role-only stability pilot from a COPY of the immutable checkpoint",
+      "finite loss and raw gradients",
+      "objective dominance ratio <= 20.0",
+      "LR continuity at 0.0005 unless a bounded later change is separately evidenced",
+      "self-hashed receipt and source checkpoint unchanged"
+    ],
+    "validation_tuning_access": "forbidden",
+    "sealed_test_access": "forbidden",
+    "stress_access": "forbidden"
+  },
+  "selection": {
+    "initial_manifest": "artifacts/codex/ht_pretraining_1m_phase3_batch_efficiency_selection_20260823.json",
+    "selection_script": "scripts/select_phase3_batch_efficiency_profile.py",
+    "winner": null,
+    "winner_metric": "earliest_expected_completion_seconds",
+    "tie_break": "lower_peak_memory_then_h100nvl",
+    "requires_both_receipts": true,
+    "one_viable_scientific_lineage": true
+  },
+  "renderer_verifier": {
+    "renderer": "scripts/render_phase3_batch_efficiency_production_contract.py",
+    "verifier": "scripts/verify_phase3_batch_efficiency_contract.py",
+    "schema": "schemas/ht_pretraining_1m_batch_efficiency_readiness_v1.schema.json",
+    "profiles_manifest": "configs/batch_efficiency/ht_pretraining_1m_phase3_device_profiles_v1.json",
+    "production_submission_authorized": false,
+    "structural_scientific_slurm_submission_allowed": false
+  },
+  "later_commands": {
+    "h100_calibration_first": "HT_PHASE3_CALIBRATION_ACTIVE=1 HT_PHASE3_ALLOCATION_GRES=gpu:h100nvl:1 HT_PHASE3_FRESH_PREFLIGHT_TOKEN=<fresh-token> uv run python scripts/run_phase3_batch_efficiency_calibration.py --profile h100nvl --batch-size 64 --checkpoint-copy artifacts/codex/calibration/h100nvl/checkpoint-step-54064.copy.pt --output artifacts/codex/calibration/h100nvl/receipt.json --pilot-metrics artifacts/codex/calibration/h100nvl/metrics.jsonl --execute-pilot --pilot-command -- <later train-role-only pilot command>",
+    "v100_calibration_second": "HT_PHASE3_CALIBRATION_ACTIVE=1 HT_PHASE3_ALLOCATION_GRES=gpu:v100:1 HT_PHASE3_FRESH_PREFLIGHT_TOKEN=<fresh-token> uv run python scripts/run_phase3_batch_efficiency_calibration.py --profile v100 --batch-size 64 --checkpoint-copy artifacts/codex/calibration/v100/checkpoint-step-54064.copy.pt --output artifacts/codex/calibration/v100/receipt.json --pilot-metrics artifacts/codex/calibration/v100/metrics.jsonl --execute-pilot --pilot-command -- <later train-role-only pilot command>",
+    "selection": "uv run python scripts/select_phase3_batch_efficiency_profile.py --h100-receipt artifacts/codex/calibration/h100nvl/receipt.json --v100-receipt artifacts/codex/calibration/v100/receipt.json --output artifacts/codex/calibration/selection-20260823.json --authorize-production",
+    "render": "uv run python scripts/render_phase3_batch_efficiency_production_contract.py --selection artifacts/codex/calibration/selection-20260823.json --expected-git-sha <clean-calibration-commit> --expected-git-tag ht-pretraining-1m-phase3-batch-efficiency-implementation-20260823 --output artifacts/slurm/ht-pretrain-1m-phase3-selected-20260823.job-contract.json",
+    "verify": "uv run python scripts/verify_phase3_batch_efficiency_contract.py artifacts/slurm/ht-pretrain-1m-phase3-selected-20260823.job-contract.json",
+    "exactly_one_submission": "/opt/slurm/bin/sbatch --account=others --partition=inter --gres=<selected-exact-gres> --cpus-per-task=8 --mem=64G --time=2-00:00:00 --signal=B:USR1@300 --requeue --job-name=ht-pretrain-1m-phase3-selected-20260823 --export=NIL /home/b/Boyang.Yu/HyperTagging_uni/HyperTagging/scripts/slurm/train_one_gpu.sbatch /home/b/Boyang.Yu/HyperTagging_uni/HyperTagging/artifacts/slurm/ht-pretrain-1m-phase3-selected-20260823.job-contract.json"
+  },
+  "submission": {
+    "production_submission_authorized": false,
+    "submission_performed": false,
+    "job_count": 1,
+    "viable_scientific_production_jobs": 1,
+    "slurm_mutated_in_this_session": false
+  },
+  "implementation": {
+    "planned_annotated_tag": "ht-pretraining-1m-phase3-batch-efficiency-implementation-20260823",
+    "source_payloads_opened": false,
+    "scientific_training_run": false,
+    "cpu_static_tests_only": true,
+    "artifact_generation": "cpu_static_only_before_gpu_calibration"
+  }
+}

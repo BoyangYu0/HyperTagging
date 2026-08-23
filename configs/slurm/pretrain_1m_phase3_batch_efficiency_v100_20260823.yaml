@@ -1,0 +1,83 @@
+# Candidate only: later calibration must select/authorize this profile.
+data: configs/training_selection/production_1m_20260812/train_865k.json
+dataset_index: artifacts/experiment_readiness/production_1m_20260812/train_865k/train_865k.complete_only.index.json
+model_preset: small_candidate
+device: cuda
+gpu_execution_mode: scientific_slurm
+device_profile: v100
+seed: 20260812
+max_steps: 108128
+lr_schedule_total_steps: 108128
+learning_rate: 0.0005
+weight_decay: 0.0001
+gradient_clip: 0.5
+warmup_fraction: 0.1
+max_warmup_steps: 10000
+min_lr_ratio: 0.1
+batch_size: 64
+presentation_unit_presentations: 16
+presentation_total_presentations: 1730048
+presentation_milestones: [216256, 432512, 648768, 865024, 1081280, 1297536, 1513792, 1730048]
+presentation_phase_presentations: [432512, 432512, 432512, 432512]
+allow_resume_batch_size_migration: true
+num_workers: 0
+prefetch_factor: 2
+shuffle_buffer_size: 1024
+persistent_workers: false
+log_every: 25
+amp_dtype: float16
+amp_init_scale: 4096.0
+max_tangent_norm: 1.5
+d_model: 128
+hyper_dim: 32
+n_heads: 4
+n_context_layers: 4
+ffn_dim: 512
+dropout: 0.1
+curvature: 1.0
+n_queries: 32
+max_cardinality: 16
+tangent_variance_target: 0.06
+hyper_projection_init_scale: 0.055
+tangent_scale_mode: fixed
+hyperbolic_level_encoding: learned_euclidean
+checkpoint_every: 13516
+validate_every: 13516
+validation_batches: 79
+validation_events: 5000
+validation_views:
+  - fsp_topology_anticollapse
+  - truth_guided_distance_radius
+  - multilevel_channel_memory
+  - corrupted_composites_hard_negatives
+curriculum_mode: progressive
+curriculum_phase_steps: []
+curriculum_phase_events: []
+require_final_curriculum_phase: true
+objective_gradient_diagnostics: true
+objective_gradient_diagnostics_every: 13516
+pilot_objective_preflight: true
+objective_dominance_ratio: 20.0
+objective_weighted_loss_tolerance: 1.0e-7
+pilot_objective_violation_action: fail
+lca_relation_weight: 1.0
+parent_ranking_weight: 1.0
+exact_tree_distance_weight: 1.0
+radius_depth_weight: 0.02
+channel_weight: 0.2
+variance_weight: 0.1
+covariance_weight: 0.01
+leaf_pid_weight: 1.0
+leaf_pid_phase_weights: [1.0, 1.0, 0.4, 0.4]
+corruption_class_weight: 0.1
+candidate_correctness_weight: 0.1
+hard_negative_weight: 0.1
+radius_target_mode: generation_height_radius
+best_metric: validation_full_training_objective
+best_mode: min
+channel_pooling: mean_all
+channel_memory_size: 4096
+channel_zero_positive_validation_window: 3
+channel_zero_positive_action: fail
+truth_guided_structural_relation_inputs: false
+scientific_mode: true

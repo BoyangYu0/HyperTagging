@@ -117,9 +117,17 @@ class RealDataModule:
         batch_size: int,
         shuffle: bool,
         epoch: int = 0,
+        start_events: int = 0,
+        cycle_epochs: bool = False,
     ) -> Iterator[dict[str, torch.Tensor]]:
         if batch_size <= 0:
             raise ValueError("batch_size must be positive")
+        if start_events < 0:
+            raise ValueError("start_events must be non-negative")
+        if cycle_epochs and self.num_workers > 0:
+            raise ValueError(
+                "exact presentation batching with epoch carry requires num_workers=0"
+            )
         if self.num_workers > 0:
             dataset = _StreamingHeterogeneousDataset(self, split, shuffle, epoch)
             loader = DataLoader(
@@ -134,13 +142,29 @@ class RealDataModule:
                 yield self.normalize_batch(batch)
             return
         pending: list[HeterogeneousEvent] = []
-        for event in self.iter_events(split, shuffle=shuffle, epoch=epoch):
-            pending.append(event)
-            if len(pending) == batch_size:
-                yield self.normalize_batch(collate_heterogeneous_events(pending))
-                pending.clear()
-        if pending:
-            yield self.normalize_batch(collate_heterogeneous_events(pending))
+        current_epoch = int(epoch)
+        skip = int(start_events)
+        while True:
+            for event in self.iter_events(
+                split, shuffle=shuffle, epoch=current_epoch
+            ):
+                if skip:
+                    skip -= 1
+                    continue
+                pending.append(event)
+                if len(pending) == batch_size:
+                    yield self.normalize_batch(collate_heterogeneous_events(pending))
+                    pending.clear()
+            if not cycle_epochs:
+                if pending:
+                    yield self.normalize_batch(collate_heterogeneous_events(pending))
+                return
+            # Presentation-based production resumes carry the terminal tail
+            # into the next deterministically shuffled epoch.  This prevents a
+            # non-divisible source-split tail from becoming an undersized
+            # optimizer update while preserving every presentation.
+            current_epoch += 1
+            skip = 0
 
     def normalize_batch(
         self, batch: dict[str, torch.Tensor]

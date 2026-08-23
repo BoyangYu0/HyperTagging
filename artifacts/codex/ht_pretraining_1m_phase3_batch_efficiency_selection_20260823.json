@@ -1,0 +1,50 @@
+{
+  "artifact_version": "ht-pretraining-1m-phase3-batch-efficiency-selection-v1",
+  "calibration_order": ["h100nvl", "v100"],
+  "calibration_sequential_only": true,
+  "candidates": {
+    "h100nvl": {
+      "exact_gres": "gpu:h100nvl:1",
+      "candidate_batch_ladder": [32, 64],
+      "current_candidate_batch_size": 64,
+      "precision": "bfloat16_no_grad_scaler",
+      "measured_evidence": {
+        "batch_size": 16,
+        "peak_memory_mib": 4459,
+        "peak_gpu_utilization_percent": 54,
+        "finite_throughput_events_per_second": 8.0
+      },
+      "status": "calibration_pending"
+    },
+    "v100": {
+      "exact_gres": "gpu:v100:1",
+      "candidate_batch_ladder": [32, 64],
+      "current_candidate_batch_size": 64,
+      "precision": "float16_with_grad_scaler",
+      "measured_evidence": {
+        "exact_gres_diagnostic": "gpu:v100:1",
+        "diagnostic_peak_memory_mib": 554,
+        "diagnostic_peak_gpu_utilization_percent": 11,
+        "production_batch_memory": "not_measured"
+      },
+      "status": "calibration_pending"
+    }
+  },
+  "selection_policy": {
+    "winner_metric": "earliest_expected_completion_seconds",
+    "tie_break": "lower_peak_memory_then_h100nvl",
+    "requires_both_sequential_receipts": true,
+    "one_production_lineage": true
+  },
+  "measured_vs_inferred": {
+    "measured": ["h100_batch16_memory_and_utilization", "h100_finite_throughput", "v100_diagnostic_runtime_memory"],
+    "inferred": ["batch32_and_batch64_candidate_safety", "winner", "production_completion_time", "any_lr_change"],
+    "lr_policy": "preserve_0.0005_at_resume_until_short_stability_pilot_passes"
+  },
+  "selected_profile": null,
+  "production_submission_authorized": false,
+  "submission_performed": false,
+  "job_count": 1,
+  "created_from_parent_authorization": "ht-pretraining-1m-phase3-execution-authorization-20260823-final",
+  "selection_sha256": "52e6bec60b2f9e558029644be9f4dfe6e3eee49cc41c59150a92206a11299203"
+}

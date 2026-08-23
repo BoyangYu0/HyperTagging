@@ -81,6 +81,21 @@ def build_warmup_cosine_scheduler(
     )
 
 
+def step_scheduler_at_virtual_step(
+    scheduler: torch.optim.lr_scheduler.LambdaLR, virtual_step: int
+) -> None:
+    """Advance a LambdaLR using presentation-equivalent progress.
+
+    ``LambdaLR.step()`` otherwise counts physical optimizer updates, which
+    silently shortens the warmup/cosine schedule after a batch-size change.
+    """
+
+    virtual_step = int(virtual_step)
+    if virtual_step < 0:
+        raise ValueError("virtual_step must be non-negative")
+    scheduler.step(epoch=virtual_step)
+
+
 def resolve_resume_schedule_contract(
     *,
     resume_payload: Mapping[str, Any] | None,
@@ -134,4 +149,5 @@ __all__ = [
     "learning_rate_schedule_contract",
     "lr_multiplier",
     "resolve_resume_schedule_contract",
+    "step_scheduler_at_virtual_step",
 ]

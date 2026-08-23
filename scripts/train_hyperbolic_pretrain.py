@@ -72,6 +72,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--max-events", type=int, default=None)
     parser.add_argument("--batch-size", type=int, default=2)
+    parser.add_argument("--presentation-unit-presentations", type=int, default=16)
+    parser.add_argument("--presentation-total-presentations", type=int, default=None)
+    parser.add_argument("--presentation-milestones", type=_int_tuple, default=())
+    parser.add_argument(
+        "--presentation-phase-presentations", type=_int_tuple, default=()
+    )
+    parser.add_argument(
+        "--allow-resume-batch-size-migration", action="store_true"
+    )
+    parser.add_argument("--device-profile", choices=("h100nvl", "v100"), default=None)
     parser.add_argument("--num-workers", type=int, default=0)
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--output-dir", default="outputs/hyperbolic_pretrain")
@@ -196,6 +206,16 @@ def main(argv: list[str] | None = None) -> int:
                 amp_init_scale=args.amp_init_scale,
                 amp_dtype=args.amp_dtype,
                 batch_size=args.batch_size,
+                presentation_unit_presentations=args.presentation_unit_presentations,
+                presentation_total_presentations=args.presentation_total_presentations,
+                presentation_milestones=tuple(args.presentation_milestones),
+                presentation_phase_presentations=tuple(
+                    args.presentation_phase_presentations
+                ),
+                allow_resume_batch_size_migration=(
+                    args.allow_resume_batch_size_migration
+                ),
+                device_profile=args.device_profile,
                 max_events=args.max_events,
                 seed=args.seed,
                 checkpoint_every=args.checkpoint_every,

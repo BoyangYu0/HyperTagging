@@ -52,7 +52,20 @@ from hypertagging.training.fixed_validation import select_validation_events
 from hypertagging.training.learning_rate import (
     build_warmup_cosine_scheduler,
     resolve_resume_schedule_contract,
+    step_scheduler_at_virtual_step,
 )
+from hypertagging.training.presentation_progress import (
+    PHASE3_PHASE_PRESENTATION_DURATIONS,
+    PHASE3_TOTAL_PRESENTATIONS,
+    PHASE3_VALIDATION_PRESENTATIONS,
+    PRESENTATION_PROGRESS_VERSION,
+    VIRTUAL_STEP_PRESENTATIONS,
+    crossed_milestones,
+    progress_from_checkpoint,
+    progress_from_presentations,
+    validate_batch_profile,
+)
+from hypertagging.training.device_profiles import get_device_profile, validate_device_profile_batch
 from hypertagging.training.slurm_signal import (
     PendingValidationInterrupted,
     SafeBoundarySignalController,
@@ -72,6 +85,12 @@ class PretrainConfig:
     device: str = "cpu"
     max_steps: int = 2
     batch_size: int = 2
+    presentation_unit_presentations: int = VIRTUAL_STEP_PRESENTATIONS
+    presentation_total_presentations: int | None = None
+    presentation_milestones: tuple[int, ...] = ()
+    presentation_phase_presentations: tuple[int, ...] = ()
+    allow_resume_batch_size_migration: bool = False
+    device_profile: str | None = None
     max_events: int | None = None
     seed: int = 7
     learning_rate: float = 1e-3
@@ -438,6 +457,55 @@ def train_hyperbolic_pretraining(
         for weight in config.leaf_pid_phase_weights
     ):
         raise ValueError("leaf PID phase weights must be finite and non-negative")
+    presentation_mode = config.presentation_total_presentations is not None
+    presentation_milestones = tuple(
+        int(value)
+        for value in (
+            config.presentation_milestones
+            or (PHASE3_VALIDATION_PRESENTATIONS if presentation_mode else ())
+        )
+    )
+    if presentation_mode:
+        if config.device_profile is not None:
+            profile = get_device_profile(config.device_profile)
+            if config.amp_dtype != profile.amp_dtype:
+                raise ValueError(
+                    f"{config.device_profile} requires amp_dtype={profile.amp_dtype}"
+                )
+            if config.device_profile == "v100" and config.amp_dtype == "bfloat16":
+                raise ValueError("V100 scientific profile forbids BF16")
+            validate_device_profile_batch(
+                config.device_profile,
+                config.batch_size,
+                total_presentations=int(config.presentation_total_presentations),
+                milestone_presentations=presentation_milestones,
+            )
+        validate_batch_profile(
+            config.batch_size,
+            unit_presentations=config.presentation_unit_presentations,
+            total_presentations=config.presentation_total_presentations,
+            milestone_presentations=presentation_milestones,
+        )
+        if config.validation_events is not None:
+            expected_validation_batches = math.ceil(
+                config.validation_events / config.batch_size
+            )
+            if config.validation_batches != expected_validation_batches:
+                raise ValueError(
+                    "presentation profile validation_batches must equal the exact "
+                    "ceil(validation_events / batch_size) accounting"
+                )
+        if not config.allow_resume_batch_size_migration and config.resume:
+            raise ValueError(
+                "presentation-based checkpoint resume must explicitly enable "
+                "allow_resume_batch_size_migration"
+            )
+        if config.presentation_phase_presentations and tuple(
+            config.presentation_phase_presentations
+        ) != PHASE3_PHASE_PRESENTATION_DURATIONS:
+            raise ValueError(
+                "phase-3 presentation phase budgets are immutable in this profile"
+            )
     seed_everything(config.seed)
     if config.resume and config.num_workers > 0:
         raise ValueError("exact streaming resume currently requires num_workers=0")
@@ -446,6 +514,26 @@ def train_hyperbolic_pretraining(
         load_training_checkpoint(config.resume, map_location="cpu")
         if config.resume
         else None
+    )
+    presentation_progress = (
+        progress_from_checkpoint(
+            resume_payload,
+            target_batch_size=config.batch_size,
+            unit_presentations=config.presentation_unit_presentations,
+            total_presentations=int(config.presentation_total_presentations),
+            milestone_presentations=presentation_milestones,
+        )
+        if presentation_mode and resume_payload is not None
+        else (
+            progress_from_presentations(
+                0,
+                optimizer_steps=0,
+                batch_size=config.batch_size,
+                unit_presentations=config.presentation_unit_presentations,
+            )
+            if presentation_mode
+            else None
+        )
     )
     data_module = build_real_data_module(
         config.data,
@@ -467,6 +555,13 @@ def train_hyperbolic_pretraining(
         scientific_mode=config.scientific_mode,
     )
     output_dir = Path(config.output_dir)
+    if config.resume:
+        resume_parent = Path(config.resume).resolve().parent
+        if output_dir.resolve() == resume_parent:
+            raise ValueError(
+                "exact resume output must be a fresh directory; refusing to "
+                "overwrite the source checkpoint lineage"
+            )
     output_dir.mkdir(parents=True, exist_ok=True)
     logger = JsonlLogger(output_dir / "metrics.jsonl")
     if config.ablation not in ALL_ABLATIONS:
@@ -567,34 +662,92 @@ def train_hyperbolic_pretraining(
             expected_split_manifest_hash=data_module.split_manifest_hash,
             expected_feature_spec_hash=feature_spec_v4()["feature_spec_hash"],
             expected_data_order_contract=_pretrain_data_order_contract(
-                config, data_module
+                config,
+                data_module,
+                include_presentation=not (
+                    presentation_mode
+                    and resume_payload is not None
+                    and "presentation_progress_version"
+                    not in resume_payload.get("data_order_contract", {})
+                ),
             ),
             expected_architecture=architecture.to_dict(),
             allow_empty_channel_memory_expansion=(
                 allow_empty_channel_memory_expansion
             ),
+            allow_batch_size_migration=(
+                presentation_mode and config.allow_resume_batch_size_migration
+            ),
+            allow_precision_policy_migration=(
+                presentation_mode
+                and config.device_profile == "v100"
+                and str((resume_payload or {}).get("config", {}).get("amp_dtype"))
+                != config.amp_dtype
+            ),
         )
         start_step = int(payload.get("step", 0))
+        if presentation_mode:
+            presentation_progress = progress_from_checkpoint(
+                payload,
+                target_batch_size=config.batch_size,
+                unit_presentations=config.presentation_unit_presentations,
+                total_presentations=int(config.presentation_total_presentations),
+                milestone_presentations=presentation_milestones,
+            )
     (output_dir / "split_manifest.json").write_text(
         json.dumps(data_module.split_manifest, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
-    cursor = StreamingCursor.from_state_dict(
-        (resume_payload or {}).get("streaming_cursor", {})
-    )
-    epoch = cursor.epoch
-    batch_iterator = data_module.batches(
-        "train", batch_size=config.batch_size, shuffle=True, epoch=epoch
-    )
-    for _ in range(cursor.batch_index):
-        if next(batch_iterator, None) is None:
-            raise ValueError("streaming resume cursor exceeds the saved epoch")
+    if presentation_mode:
+        train_count = int(data_module.split_counts.get("train", 0))
+        if train_count <= 0:
+            raise ValueError("presentation resume requires a non-empty train split")
+        stream_position = presentation_progress.presentations % train_count
+        cursor = StreamingCursor(
+            epoch=presentation_progress.presentations // train_count,
+            events_consumed=stream_position,
+            batch_index=0,
+        )
+        epoch = cursor.epoch
+        batch_iterator = data_module.batches(
+            "train",
+            batch_size=config.batch_size,
+            shuffle=True,
+            epoch=epoch,
+            start_events=cursor.events_consumed,
+            cycle_epochs=True,
+        )
+    else:
+        cursor = StreamingCursor.from_state_dict(
+            (resume_payload or {}).get("streaming_cursor", {})
+        )
+        epoch = cursor.epoch
+        batch_iterator = data_module.batches(
+            "train", batch_size=config.batch_size, shuffle=True, epoch=epoch
+        )
+        for _ in range(cursor.batch_index):
+            if next(batch_iterator, None) is None:
+                raise ValueError("streaming resume cursor exceeds the saved epoch")
     final_metrics: dict[str, float] = dict((resume_payload or {}).get("metrics", {}))
     final_loss = float(final_metrics.get("loss", 0.0))
     restored_training_state = (resume_payload or {}).get("training_state", {})
-    phase_events_completed = int(
-        restored_training_state.get("curriculum_phase_cursor", {}).get(
-            "events_completed", 0
+    if presentation_mode:
+        final_metrics.setdefault(
+            "optimizer_steps_completed", float(presentation_progress.optimizer_steps)
+        )
+        final_metrics.setdefault(
+            "presentation_progress", float(presentation_progress.presentations)
+        )
+        final_metrics.setdefault(
+            "presentation_virtual_step", float(presentation_progress.virtual_step)
+        )
+    phase_events_completed = (
+        presentation_progress.presentations
+        if presentation_mode
+        else int(
+            restored_training_state.get("curriculum_phase_cursor", {}).get(
+                "events_completed", 0
+            )
         )
     )
     final_phase_entered = bool(
@@ -639,6 +792,9 @@ def train_hyperbolic_pretraining(
     def run_validation(validation_step: int) -> None:
         nonlocal best_validation_loss, diagnostic_track_values
         nonlocal final_metrics, last_validation_step, zero_positive_windows
+        checkpoint_step = int(
+            final_metrics.get("optimizer_steps_completed", start_step)
+        )
         validation_metrics = _validate_pretraining(
             model,
             data_module,
@@ -666,7 +822,7 @@ def train_hyperbolic_pretraining(
                 scaler=scaler,
                 config=config,
                 data_module=data_module,
-                step=validation_step,
+                step=checkpoint_step,
                 metrics=final_metrics,
                 streaming_cursor=cursor.state_dict(),
                 best_metric_value=best_validation_loss,
@@ -697,7 +853,7 @@ def train_hyperbolic_pretraining(
                 scaler=scaler,
                 config=config,
                 data_module=data_module,
-                step=validation_step,
+                step=checkpoint_step,
                 metrics=final_metrics,
                 streaming_cursor=cursor.state_dict(),
                 best_metric_value=best_validation_loss,
@@ -721,7 +877,7 @@ def train_hyperbolic_pretraining(
             scaler=scaler,
             config=config,
             data_module=data_module,
-            step=validation_step,
+            step=checkpoint_step,
             metrics=final_metrics,
             streaming_cursor=cursor.state_dict(),
             best_metric_value=best_validation_loss,
@@ -733,7 +889,10 @@ def train_hyperbolic_pretraining(
     pending_validation_step = restored_training_state.get("pending_validation_step")
     if pending_validation_step is not None:
         pending_validation_step = int(pending_validation_step)
-        if pending_validation_step != start_step or last_validation_step >= start_step:
+        expected_pending = (
+            presentation_progress.virtual_step if presentation_mode else start_step
+        )
+        if pending_validation_step != expected_pending or last_validation_step >= expected_pending:
             raise ValueError("resume checkpoint contains inconsistent pending validation")
         try:
             with signal_controller.restartable_validation():
@@ -748,12 +907,18 @@ def train_hyperbolic_pretraining(
             phase_schedule.mode == "progressive"
             and (
                 (
+                    presentation_mode
+                    and presentation_progress.virtual_step >= phase_schedule.total_budget
+                )
+                or (
+                (
                     phase_schedule.unit == "event"
                     and phase_events_completed >= phase_schedule.total_budget
                 )
                 or (
                     phase_schedule.unit == "optimizer_step"
                     and step >= phase_schedule.total_budget
+                )
                 )
             )
         ):
@@ -762,6 +927,11 @@ def train_hyperbolic_pretraining(
         try:
             next_batch = next(batch_iterator)
         except StopIteration:
+            if presentation_mode:
+                raise RuntimeError(
+                    "presentation batch iterator ended before the exact total "
+                    "presentation budget"
+                )
             epoch += 1
             cursor.epoch = epoch
             cursor.batch_index = 0
@@ -775,12 +945,15 @@ def train_hyperbolic_pretraining(
                 raise ValueError("training split produced no batches") from error
         data_wait_seconds = time.perf_counter() - data_wait_started
         batch_prepare_started = time.perf_counter()
-        cursor.batch_index += 1
-        cursor.events_consumed += int(next_batch["node_mask"].shape[0])
+        if not presentation_mode:
+            cursor.batch_index += 1
+            cursor.events_consumed += int(next_batch["node_mask"].shape[0])
         batch = _to_device(next_batch, device)
         _add_topology_labels(batch)
         phase_index = phase_schedule.phase_index(
-            step=step, events=phase_events_completed
+            step=step,
+            events=phase_events_completed,
+            virtual_step=(presentation_progress.virtual_step if presentation_mode else None),
         )
         phase_entry = previous_phase_index != phase_index
         phase = phase_schedule.phases[phase_index]
@@ -790,7 +963,10 @@ def train_hyperbolic_pretraining(
         stage = phase.view
         final_phase_entered |= phase_index == len(phase_schedule.phases) - 1
         curriculum = build_curriculum_batch(
-            batch, stage, seed=config.seed + step,
+            batch,
+            stage,
+            seed=config.seed
+            + (presentation_progress.virtual_step if presentation_mode else step),
             corruption_objective=config.corruption_objective,
             truth_guided_structural_relation_inputs=(
                 config.truth_guided_structural_relation_inputs
@@ -1200,14 +1376,41 @@ def train_hyperbolic_pretraining(
         gradient_metrics["raw_gradient_norm"] = float(raw_gradient_norm.cpu())
         scaler.step(optimizer)
         scaler.update()
-        scheduler.step()
+        batch_events = int(next_batch["node_mask"].shape[0])
+        previous_presentations = (
+            presentation_progress.presentations if presentation_mode else None
+        )
+        if presentation_mode:
+            if batch_events != config.batch_size:
+                raise RuntimeError(
+                    "presentation-based training received an undersized device batch"
+                )
+            presentation_progress = progress_from_presentations(
+                presentation_progress.presentations + batch_events,
+                optimizer_steps=step + 1,
+                batch_size=config.batch_size,
+                unit_presentations=config.presentation_unit_presentations,
+            )
+            step_scheduler_at_virtual_step(
+                scheduler, presentation_progress.virtual_step
+            )
+            train_count = int(data_module.split_counts["train"])
+            cursor_position = cursor.events_consumed + batch_events
+            cursor.epoch += cursor_position // train_count
+            cursor.events_consumed = cursor_position % train_count
+            cursor.batch_index = (
+                cursor.batch_index + 1
+                if cursor.events_consumed
+                else 0
+            )
+        else:
+            scheduler.step()
         clip_and_optimizer_seconds = time.perf_counter() - optimizer_started
-        phase_events_completed += int(next_batch["node_mask"].shape[0])
+        phase_events_completed += batch_events
         previous_phase_index = phase_index
         completed_steps = step + 1
         final_loss = float(loss.detach().cpu())
         step_seconds = time.perf_counter() - step_started
-        batch_events = int(next_batch["node_mask"].shape[0])
         batch_nodes = int(next_batch["node_mask"].sum())
         final_metrics = {
             "loss": final_loss,
@@ -1222,6 +1425,18 @@ def train_hyperbolic_pretraining(
             "grad_scaler_enabled": float(scaler.is_enabled()),
             "grad_scaler_scale": float(scaler.get_scale()),
             "batch_events": float(batch_events),
+            "optimizer_steps_completed": float(completed_steps),
+            "presentation_progress": float(
+                presentation_progress.presentations
+                if presentation_mode
+                else completed_steps * config.batch_size
+            ),
+            "presentation_virtual_step": float(
+                presentation_progress.virtual_step
+                if presentation_mode
+                else completed_steps * config.batch_size
+                // max(config.presentation_unit_presentations, 1)
+            ),
             "batch_active_nodes": float(batch_nodes),
             "data_wait_seconds": data_wait_seconds,
             "batch_prepare_seconds": batch_prepare_seconds,
@@ -1255,14 +1470,57 @@ def train_hyperbolic_pretraining(
             },
             **gradient_metrics,
         }
-        if (step + 1) % config.log_every == 0 or step == start_step or step + 1 == config.max_steps:
+        log_step = (
+            presentation_progress.virtual_step if presentation_mode else step + 1
+        )
+        if (
+            (log_step % config.log_every == 0)
+            or step == start_step
+            or step + 1 == config.max_steps
+        ):
             logger.log(
-                step=step + 1,
+                step=log_step,
                 stage=stage.value,
                 curriculum_phase=phase.name,
                 **final_metrics,
             )
-        if (step + 1) % config.validate_every == 0:
+        if presentation_mode:
+            due_presentations = crossed_milestones(
+                int(previous_presentations),
+                presentation_progress.presentations,
+                presentation_milestones,
+            )
+            for due_presentation in due_presentations:
+                due_virtual_step = due_presentation // config.presentation_unit_presentations
+                _save_pretrain_checkpoint(
+                    output_dir / "signal-checkpoint.pt",
+                    model=model, optimizer=optimizer, scheduler=scheduler, scaler=scaler,
+                    config=config, data_module=data_module, step=step + 1,
+                    metrics=final_metrics, streaming_cursor=cursor.state_dict(),
+                    best_metric_value=best_validation_loss,
+                    last_validation_step=last_validation_step,
+                    zero_positive_windows=zero_positive_windows,
+                    diagnostic_track_values=diagnostic_track_values,
+                    pending_validation_step=due_virtual_step,
+                    termination_reason="presentation_milestone_validation_pending",
+                )
+                try:
+                    with signal_controller.restartable_validation():
+                        run_validation(due_virtual_step)
+                except PendingValidationInterrupted:
+                    signal_controller.exit_after_checkpoint()
+                _save_pretrain_checkpoint(
+                    output_dir / f"checkpoint-virtual-step-{due_virtual_step}.pt",
+                    model=model, optimizer=optimizer, scheduler=scheduler, scaler=scaler,
+                    config=config, data_module=data_module, step=step + 1,
+                    metrics=final_metrics, streaming_cursor=cursor.state_dict(),
+                    best_metric_value=best_validation_loss,
+                    last_validation_step=last_validation_step,
+                    zero_positive_windows=zero_positive_windows,
+                    diagnostic_track_values=diagnostic_track_values,
+                    termination_reason="presentation_milestone_checkpoint",
+                )
+        elif (step + 1) % config.validate_every == 0:
             _save_pretrain_checkpoint(
                 output_dir / "signal-checkpoint.pt",
                 model=model, optimizer=optimizer, scheduler=scheduler, scaler=scaler,
@@ -1299,7 +1557,7 @@ def train_hyperbolic_pretraining(
                 termination_reason="sigusr1_safe_optimizer_boundary",
             )
             signal_controller.exit_after_checkpoint()
-        if (step + 1) % config.checkpoint_every == 0:
+        if not presentation_mode and (step + 1) % config.checkpoint_every == 0:
             _save_pretrain_checkpoint(
                 output_dir / f"checkpoint-step-{step + 1}.pt",
                 model=model,
@@ -1316,14 +1574,17 @@ def train_hyperbolic_pretraining(
                 zero_positive_windows=zero_positive_windows,
                 diagnostic_track_values=diagnostic_track_values,
             )
-    if last_validation_step != completed_steps:
+    final_progress_step = (
+        presentation_progress.virtual_step if presentation_mode else completed_steps
+    )
+    if last_validation_step != final_progress_step:
         validation_metrics = _validate_pretraining(
             model, data_module, device=device, config=config,
             selected_event_uids=validation_uids,
         )
         final_metrics.update(validation_metrics)
-        logger.log(step=completed_steps, split="validation", **validation_metrics)
-        last_validation_step = completed_steps
+        logger.log(step=final_progress_step, split="validation", **validation_metrics)
+        last_validation_step = final_progress_step
         zero_positive_windows = _check_channel_positive_window(
             validation_metrics, zero_positive_windows, config
         )
@@ -2533,11 +2794,58 @@ def _save_pretrain_checkpoint(
         metrics=metrics,
         schedule_state={
             "step": int(step),
+            "optimizer_steps_completed": int(step),
+            "progress_unit": (
+                "presentation_virtual_step"
+                if config.presentation_total_presentations is not None
+                else "optimizer_step"
+            ),
+            "presentation_progress": int(
+                metrics.get("presentation_progress", step * config.batch_size)
+            ),
+            "presentation_virtual_step": int(
+                metrics.get(
+                    "presentation_virtual_step",
+                    step * config.batch_size
+                    // max(config.presentation_unit_presentations, 1),
+                )
+            ),
             "learning_rates": [
                 float(group["lr"]) for group in optimizer.param_groups
             ],
             "lr_schedule_contract": dict(
                 getattr(scheduler, "hypertagging_contract", {})
+            ),
+            "presentation_lr_schedule_contract": (
+                {
+                    "version": PRESENTATION_PROGRESS_VERSION,
+                    "unit": "virtual_step",
+                    "unit_presentations": int(config.presentation_unit_presentations),
+                    "total_presentations": int(config.presentation_total_presentations),
+                    "total_virtual_steps": int(
+                        config.presentation_total_presentations
+                        // config.presentation_unit_presentations
+                    ),
+                    "current_virtual_step": int(
+                        metrics.get(
+                            "presentation_virtual_step",
+                            step * config.batch_size
+                            // max(config.presentation_unit_presentations, 1),
+                        )
+                    ),
+                    "base_lrs": [
+                        float(value)
+                        for value in getattr(
+                            scheduler, "hypertagging_contract", {}
+                        ).get(
+                            "base_lrs",
+                            [group["lr"] for group in optimizer.param_groups],
+                        )
+                    ],
+                    "trajectory": "legacy_linear_warmup_cosine_v1_at_virtual_step",
+                }
+                if config.presentation_total_presentations is not None
+                else {}
             ),
         },
         normalizer_state=data_module.normalization_state(),
@@ -2605,6 +2913,26 @@ def _save_pretrain_checkpoint(
             "lr_schedule_contract": dict(
                 getattr(scheduler, "hypertagging_contract", {})
             ),
+            "presentation_progress": {
+                "version": PRESENTATION_PROGRESS_VERSION,
+                "unit": "virtual_step",
+                "unit_presentations": int(config.presentation_unit_presentations),
+                "presentations_completed": int(
+                    metrics.get(
+                        "presentation_progress",
+                        step * config.batch_size,
+                    )
+                ),
+                "virtual_step": int(
+                    metrics.get(
+                        "presentation_virtual_step",
+                        step * config.batch_size
+                        // max(config.presentation_unit_presentations, 1),
+                    )
+                ),
+                "optimizer_steps_completed": int(step),
+                "device_batch_size": int(config.batch_size),
+            },
             "curriculum_schedule_contract": dict(
                 getattr(model, "curriculum_schedule_contract", {})
             ),
@@ -2616,6 +2944,13 @@ def _save_pretrain_checkpoint(
                 "phase_index": int(metrics.get("curriculum_phase_index", 0)),
                 "final_phase_entered": bool(
                     metrics.get("curriculum_final_phase_entered", 0)
+                ),
+                "virtual_step": int(
+                    metrics.get(
+                        "presentation_virtual_step",
+                        step * config.batch_size
+                        // max(config.presentation_unit_presentations, 1),
+                    )
                 ),
             },
             "checkpoint_load_migrations": list(
@@ -2650,6 +2985,18 @@ def _resolve_phase_schedule(
         if stored.get("mode") != config.curriculum_mode:
             raise ValueError("resume curriculum mode differs from the checkpoint")
         stored_durations = tuple(int(value) for value in stored["durations"])
+        if config.presentation_total_presentations is not None:
+            expected_durations = tuple(
+                int(value) // int(config.presentation_unit_presentations)
+                for value in (
+                    config.presentation_phase_presentations
+                    or PHASE3_PHASE_PRESENTATION_DURATIONS
+                )
+            )
+            if stored_durations != expected_durations:
+                raise ValueError(
+                    "resume presentation phase boundaries differ from the checkpoint"
+                )
         if config.curriculum_phase_steps and (
             stored.get("unit") != "optimizer_step"
             or stored_durations != config.curriculum_phase_steps
@@ -2665,13 +3012,26 @@ def _resolve_phase_schedule(
             if config.curriculum_mode == "legacy_alternating_ablation"
             else DEFAULT_PRETRAINING_PHASES
         )
+        stored_unit = str(stored["unit"])
+        if config.presentation_total_presentations is not None:
+            if stored_unit not in {"optimizer_step", "presentation_virtual_step"}:
+                raise ValueError(
+                    "presentation resume requires an optimizer-step or "
+                    "presentation-virtual-step phase contract"
+                )
+            if stored_unit == "optimizer_step":
+                # The source batch was exactly 16 presentations per update, so
+                # the old step boundaries are already the canonical virtual-
+                # step boundaries.  Record the unit migration in the new
+                # checkpoint.
+                stored_unit = "presentation_virtual_step"
         schedule = ProgressivePhaseSchedule(
-            unit=str(stored["unit"]),
+            unit=stored_unit,
             durations=stored_durations,
             phases=phases,
             mode=config.curriculum_mode,
         )
-        if schedule.contract() != stored:
+        if config.presentation_total_presentations is None and schedule.contract() != stored:
             raise ValueError("resume curriculum phase contract differs from the checkpoint")
         return schedule
     if config.curriculum_mode == "legacy_alternating_ablation":
@@ -2681,6 +3041,18 @@ def _resolve_phase_schedule(
             durations=tuple(1 for _ in phases),
             phases=phases,
             mode=config.curriculum_mode,
+        )
+    if config.presentation_total_presentations is not None:
+        durations = tuple(
+            config.presentation_phase_presentations
+            or PHASE3_PHASE_PRESENTATION_DURATIONS
+        )
+        return ProgressivePhaseSchedule(
+            unit="presentation_virtual_step",
+            durations=tuple(
+                int(value) // int(config.presentation_unit_presentations)
+                for value in durations
+            ),
         )
     if config.curriculum_phase_events:
         schedule = ProgressivePhaseSchedule(
@@ -2778,9 +3150,12 @@ def _check_channel_positive_window(
 
 
 def _pretrain_data_order_contract(
-    config: PretrainConfig, data_module: RealDataModule
+    config: PretrainConfig,
+    data_module: RealDataModule,
+    *,
+    include_presentation: bool = True,
 ) -> dict[str, Any]:
-    return {
+    contract = {
         "batch_size": config.batch_size,
         "shuffle_buffer_size": config.shuffle_buffer_size,
         "seed": config.seed,
@@ -2803,6 +3178,22 @@ def _pretrain_data_order_contract(
         "gradient_accumulation": 1,
         "num_workers": config.num_workers,
     }
+    if include_presentation and config.presentation_total_presentations is not None:
+        contract.update(
+            {
+                "presentation_progress_version": PRESENTATION_PROGRESS_VERSION,
+                "presentation_unit_presentations": config.presentation_unit_presentations,
+                "presentation_total_presentations": config.presentation_total_presentations,
+                "presentation_milestones": list(
+                    config.presentation_milestones or PHASE3_VALIDATION_PRESENTATIONS
+                ),
+                "presentation_phase_presentations": list(
+                    config.presentation_phase_presentations
+                    or PHASE3_PHASE_PRESENTATION_DURATIONS
+                ),
+            }
+        )
+    return contract
 
 
 def _hard_negative_tree_loss(

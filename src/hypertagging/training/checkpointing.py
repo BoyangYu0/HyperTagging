@@ -128,6 +128,8 @@ def restore_training_checkpoint(
     expected_data_order_contract: dict[str, Any] | None = None,
     expected_architecture: dict[str, Any] | None = None,
     allow_empty_channel_memory_expansion: bool = False,
+    allow_batch_size_migration: bool = False,
+    allow_precision_policy_migration: bool = False,
 ) -> dict[str, Any]:
     """Restore model/training state and return the complete checkpoint metadata."""
 
@@ -148,12 +150,35 @@ def restore_training_checkpoint(
         mismatches.append("split manifest")
     if payload.get("pid_vocabulary_version") != PID_VOCABULARY_VERSION:
         mismatches.append("PID vocabulary")
+    migrations: list[dict[str, Any]] = []
     for label, expected, stored in (
         ("data-order", expected_data_order_contract, payload.get("data_order_contract", {})),
         ("architecture", expected_architecture, payload.get("architecture", {})),
     ):
         if expected is not None:
             changed = [key for key, value in expected.items() if stored.get(key) != value]
+            if (
+                label == "data-order"
+                and allow_batch_size_migration
+                and changed == ["batch_size"]
+            ):
+                old_batch_size = int(stored.get("batch_size", 0))
+                new_batch_size = int(expected.get("batch_size", 0))
+                if old_batch_size <= 0 or new_batch_size <= 0:
+                    raise ValueError("batch-size migration requires positive batch sizes")
+                migrations.append(
+                    {
+                        "kind": "presentation_batch_size_migration_v1",
+                        "source_batch_size": old_batch_size,
+                        "target_batch_size": new_batch_size,
+                        "preserves": [
+                            "optimizer_moments",
+                            "stream_order_contract",
+                            "presentation_progress",
+                        ],
+                    }
+                )
+                continue
             if changed:
                 mismatches.append(f"{label} ({', '.join(sorted(changed))})")
     if mismatches and not allow_contract_mismatch:
@@ -170,6 +195,24 @@ def restore_training_checkpoint(
         migrations.append(migration)
         training_state["checkpoint_load_migrations"] = migrations
         payload["training_state"] = training_state
+    if migrations:
+        training_state = dict(payload.get("training_state", {}))
+        existing = list(training_state.get("checkpoint_load_migrations", []))
+        existing.extend(migrations)
+        training_state["checkpoint_load_migrations"] = existing
+        payload["training_state"] = training_state
+    if allow_precision_policy_migration:
+        training_state = dict(payload.get("training_state", {}))
+        existing = list(training_state.get("checkpoint_load_migrations", []))
+        existing.append(
+            {
+                "kind": "device_precision_policy_migration_v1",
+                "scaler_state_restored": False,
+                "reason": "target_device_profile_requires_explicit_precision_policy",
+            }
+        )
+        training_state["checkpoint_load_migrations"] = existing
+        payload["training_state"] = training_state
     model.load_state_dict(model_state_dict, strict=strict)
     setattr(
         model,
@@ -180,7 +223,11 @@ def restore_training_checkpoint(
         optimizer.load_state_dict(payload["optimizer_state_dict"])
     if scheduler is not None and payload.get("scheduler_state_dict") is not None:
         scheduler.load_state_dict(payload["scheduler_state_dict"])
-    if scaler is not None and payload.get("scaler_state_dict") is not None:
+    if (
+        scaler is not None
+        and payload.get("scaler_state_dict") is not None
+        and not allow_precision_policy_migration
+    ):
         scaler.load_state_dict(payload["scaler_state_dict"])
     if restore_random_states and payload.get("random_states"):
         _restore_random_states(payload["random_states"])

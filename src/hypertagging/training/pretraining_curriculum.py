@@ -75,8 +75,11 @@ class ProgressivePhaseSchedule:
     mode: str = "progressive"
 
     def __post_init__(self) -> None:
-        if self.unit not in {"optimizer_step", "event"}:
-            raise ValueError("curriculum phase unit must be optimizer_step or event")
+        if self.unit not in {"optimizer_step", "presentation_virtual_step", "event"}:
+            raise ValueError(
+                "curriculum phase unit must be optimizer_step, "
+                "presentation_virtual_step, or event"
+            )
         if self.mode not in {"progressive", "legacy_alternating_ablation"}:
             raise ValueError("unknown curriculum mode")
         if len(self.durations) != len(self.phases):
@@ -88,8 +91,19 @@ class ProgressivePhaseSchedule:
     def total_budget(self) -> int:
         return sum(self.durations)
 
-    def phase_index(self, *, step: int, events: int) -> int:
-        cursor = step if self.unit == "optimizer_step" else events
+    def phase_index(
+        self, *, step: int, events: int, virtual_step: int | None = None
+    ) -> int:
+        if self.unit == "optimizer_step":
+            cursor = step
+        elif self.unit == "presentation_virtual_step":
+            if virtual_step is None:
+                raise ValueError(
+                    "presentation_virtual_step schedules require virtual_step"
+                )
+            cursor = virtual_step
+        else:
+            cursor = events
         if self.mode == "legacy_alternating_ablation":
             return cursor % len(self.phases)
         cumulative = 0
@@ -99,8 +113,12 @@ class ProgressivePhaseSchedule:
                 return index
         return len(self.phases) - 1
 
-    def phase(self, *, step: int, events: int) -> PretrainingPhase:
-        return self.phases[self.phase_index(step=step, events=events)]
+    def phase(
+        self, *, step: int, events: int, virtual_step: int | None = None
+    ) -> PretrainingPhase:
+        return self.phases[
+            self.phase_index(step=step, events=events, virtual_step=virtual_step)
+        ]
 
     def contract(self) -> dict[str, object]:
         return {

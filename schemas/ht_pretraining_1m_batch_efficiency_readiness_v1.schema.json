@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ht-pretraining-1m-batch-efficiency-readiness-v1",
+  "type": "object",
+  "required": [
+    "artifact_version",
+    "source_authorization",
+    "scientific_contract",
+    "device_profiles",
+    "calibration",
+    "selection",
+    "submission"
+  ],
+  "properties": {
+    "artifact_version": {"const": "ht-pretraining-1m-batch-efficiency-readiness-v1"},
+    "source_authorization": {"type": "object"},
+    "scientific_contract": {"type": "object"},
+    "device_profiles": {"type": "object", "required": ["h100nvl", "v100"]},
+    "calibration": {
+      "type": "object",
+      "required": ["gpu_calibration_completed", "calibration_order"],
+      "properties": {
+        "gpu_calibration_completed": {"type": "boolean"},
+        "calibration_order": {"const": ["h100nvl", "v100"]}
+      }
+    },
+    "selection": {"type": "object"},
+    "submission": {
+      "type": "object",
+      "required": ["production_submission_authorized", "submission_performed", "job_count"],
+      "properties": {
+        "production_submission_authorized": {"type": "boolean"},
+        "submission_performed": {"const": false},
+        "job_count": {"const": 1}
+      }
+    },
+    "readiness_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "additionalProperties": true
+}

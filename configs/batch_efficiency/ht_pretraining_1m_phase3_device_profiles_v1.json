@@ -1,0 +1,65 @@
+{
+  "artifact_version": "ht-pretraining-1m-phase3-device-profiles-v1",
+  "scientific_contract": {
+    "total_presentations": 1730048,
+    "resume_step": 54064,
+    "resume_presentations": 865024,
+    "remaining_presentations": 865024,
+    "virtual_step_presentations": 16,
+    "validation_events": 5000,
+    "validation_milestones_virtual_steps": [13516, 27032, 40548, 54064, 67580, 81096, 94612, 108128],
+    "phase_virtual_durations": [27032, 27032, 27032, 27032],
+    "objective_dominance_limit": 20.0,
+    "late_phase_leaf_pid_weight": 0.4,
+    "sealed_test_role_access": "forbidden",
+    "stress_payload_access": "forbidden",
+    "scientific_slurm_submission_allowed": false
+  },
+  "profiles": {
+    "h100nvl": {
+      "exact_gres": "gpu:h100nvl:1",
+      "candidate_batch_ladder": [32, 64],
+      "current_candidate_batch_size": 64,
+      "amp_dtype": "bfloat16",
+      "grad_scaler_enabled": false,
+      "bf16_policy": "require_cuda_bf16_supported",
+      "measured": {
+        "source_batch_size": 16,
+        "source_peak_memory_mib": 4459,
+        "source_peak_gpu_utilization_percent": 54,
+        "source_finite_throughput_events_per_second": 8.0
+      },
+      "inferred": {
+        "batch_64_memory_safety": "candidate_only; must be measured",
+        "lr": 0.0005,
+        "lr_change": "none_until_stability_evidence"
+      }
+    },
+    "v100": {
+      "exact_gres": "gpu:v100:1",
+      "candidate_batch_ladder": [32, 64],
+      "current_candidate_batch_size": 64,
+      "amp_dtype": "float16",
+      "grad_scaler_enabled": true,
+      "bf16_policy": "forbid_bf16_use_float16_gradscaler",
+      "measured": {
+        "existing_diagnostic_exact_gres": "gpu:v100:1",
+        "existing_diagnostic_peak_memory_mib": 554,
+        "existing_diagnostic_peak_gpu_utilization_percent": 11,
+        "production_batch_memory": "not_measured"
+      },
+      "inferred": {
+        "batch_64_memory_safety": "candidate_only; must be measured",
+        "lr": 0.0005,
+        "lr_change": "none_until_stability_evidence"
+      }
+    }
+  },
+  "selection_policy": {
+    "calibration_order": ["h100nvl", "v100"],
+    "sequential_only": true,
+    "winner_metric": "earliest_expected_completion_seconds",
+    "tie_break": "lower_peak_memory_then_h100nvl",
+    "one_production_lineage": true
+  }
+}
