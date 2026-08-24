@@ -1,0 +1,137 @@
+"""Data contracts and tiny fixtures for the HyperTagging migration."""
+
+from hypertagging.data.contracts import (
+    CONTRACTS,
+    GRAFEI_COMBINED_BATCH,
+    GRAFEI_PAIR_BATCH,
+    GPT_LINK_FLATTENED_BATCH,
+    GPT_RECONSTRUCTION_FLATTENED_BATCH,
+    TOY_MC_BATCH,
+    BatchContract,
+    FieldSpec,
+    get_contract,
+    validate_batch,
+)
+from hypertagging.data.fixtures import (
+    all_tiny_batches,
+    tiny_gpt_link_flattened_batch,
+    tiny_gpt_reconstruction_flattened_batch,
+    tiny_grafei_combined_batch,
+    tiny_grafei_pair_batch,
+    tiny_toy_mc_batch,
+)
+from hypertagging.data.direct_gpt import (
+    DIRECT_FEATURE_NAMES,
+    DirectGptEvent,
+    build_direct_multi_gpt_batch,
+    collate_direct_gpt_events,
+    load_direct_gpt_events,
+    validate_direct_multi_gpt_batch,
+)
+from hypertagging.data.gpt_like import (
+    collate_gpt_link,
+    collate_gpt_reconstruction,
+    get_level_mask,
+    prepare_gpt_like,
+    validate_gpt_batch,
+    validate_gpt_link_batch,
+    validate_gpt_reconstruction_batch,
+)
+from hypertagging.data.grafei import prepare_grafei
+from hypertagging.data.heterogeneous import (
+    HeterogeneousEvent,
+    collate_heterogeneous_events,
+    heterogeneous_from_level_event,
+    load_heterogeneous_events,
+)
+from hypertagging.data.level_batch import LevelBatch, LevelEvent
+from hypertagging.data.level_collate import collate_level_events
+from hypertagging.data.level_dataset import LevelReconstructionDataset
+from hypertagging.data.tree_geometry import (
+    EXACT_TREE_GEOMETRY_CONTRACT_VERSION,
+    ExactTreeGeometry,
+    build_exact_tree_geometry,
+)
+from hypertagging.data.preprocessing import (
+    DEFAULT_GRAFEI_INPUT_ROOT,
+    DEFAULT_TOY_MC_INPUT_ROOT,
+    DryRunResult,
+    PreprocessingPlan,
+    assert_legacy_scripts_exist,
+    build_preprocessing_plan,
+    build_gpt_like_plan,
+    build_grafei_plan,
+    build_toy_mc_dataprod_plan,
+    build_toy_mc_preprocess_plan,
+    prepare_legacy_dataset,
+    run_legacy_preprocessing,
+)
+from hypertagging.data.toy_mc import prepare_toy_mc, prepare_toy_mc_dataprod
+from hypertagging.data.splitting import (
+    MaskedFeatureNormalizer,
+    SourceAwareSplitConfig,
+    split_records,
+    stable_split_name,
+)
+
+__all__ = [
+    "BatchContract",
+    "CONTRACTS",
+    "DEFAULT_GRAFEI_INPUT_ROOT",
+    "DEFAULT_TOY_MC_INPUT_ROOT",
+    "DryRunResult",
+    "FieldSpec",
+    "GRAFEI_COMBINED_BATCH",
+    "GRAFEI_PAIR_BATCH",
+    "GPT_LINK_FLATTENED_BATCH",
+    "GPT_RECONSTRUCTION_FLATTENED_BATCH",
+    "LevelBatch",
+    "LevelEvent",
+    "HeterogeneousEvent",
+    "LevelReconstructionDataset",
+    "EXACT_TREE_GEOMETRY_CONTRACT_VERSION",
+    "ExactTreeGeometry",
+    "PreprocessingPlan",
+    "TOY_MC_BATCH",
+    "all_tiny_batches",
+    "assert_legacy_scripts_exist",
+    "build_preprocessing_plan",
+    "build_exact_tree_geometry",
+    "build_gpt_like_plan",
+    "build_grafei_plan",
+    "build_toy_mc_dataprod_plan",
+    "build_toy_mc_preprocess_plan",
+    "collate_gpt_link",
+    "collate_gpt_reconstruction",
+    "collate_level_events",
+    "collate_heterogeneous_events",
+    "heterogeneous_from_level_event",
+    "load_heterogeneous_events",
+    "MaskedFeatureNormalizer",
+    "SourceAwareSplitConfig",
+    "split_records",
+    "stable_split_name",
+    "get_level_mask",
+    "get_contract",
+    "prepare_gpt_like",
+    "prepare_grafei",
+    "prepare_legacy_dataset",
+    "prepare_toy_mc",
+    "prepare_toy_mc_dataprod",
+    "run_legacy_preprocessing",
+    "tiny_gpt_link_flattened_batch",
+    "tiny_gpt_reconstruction_flattened_batch",
+    "tiny_grafei_combined_batch",
+    "tiny_grafei_pair_batch",
+    "tiny_toy_mc_batch",
+    "validate_batch",
+    "validate_gpt_batch",
+    "validate_gpt_link_batch",
+    "validate_gpt_reconstruction_batch",
+    "DIRECT_FEATURE_NAMES",
+    "DirectGptEvent",
+    "build_direct_multi_gpt_batch",
+    "collate_direct_gpt_events",
+    "load_direct_gpt_events",
+    "validate_direct_multi_gpt_batch",
+]

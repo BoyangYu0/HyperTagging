@@ -1,0 +1,511 @@
+{
+  "manifest_version": "reconstruction-snapshot-manifest-v1",
+  "snapshot_id": "recon_val_b64_h100nvl_baseline_20260824_v2",
+  "contract_sha256": "b55f4a5621c1fedd411133ee66526617dcd3321c8965ba4455c94d439d78588c",
+  "files": [
+    {
+      "path": "arm_preregistration.json",
+      "sha256": "010e9b2cbac717ece26e7a07d023c1890bf3ae0df88aaf8f0a0cdbdc5b751703"
+    },
+    {
+      "path": "followup_config.json",
+      "sha256": "3e94adf95358fe15f4a36adae4226ce8ca409e6dcf9bfaea4bf3ed8bcb9d523a"
+    },
+    {
+      "path": "pointer_validation_20260824.json",
+      "sha256": "593e1cbe6f923e0027b71848274468f7eb7282f5e50656d4114e9c8266258979"
+    },
+    {
+      "path": "readiness_20260824.json",
+      "sha256": "048086c91f501be974683b0b4d68af29e668826762794a8b2953f304015141e9"
+    },
+    {
+      "path": "run_validation_followup.sbatch",
+      "sha256": "a67620270a2e0a13520d3b8517b36d6bf0c26ef038843f29360185c10446e99f"
+    },
+    {
+      "path": "runtime/artifacts/experiment_readiness/production_1m_20260812/train_035k/train_035k.complete_only.index.json",
+      "sha256": "f8e09763ca6f33cc54a023fe4d9a626c40533c62c8107724e85cfcd313a8a0bc"
+    },
+    {
+      "path": "runtime/configs/training_selection/production_1m_20260812/train_035k.json",
+      "sha256": "48108c18e61f5c7494fd11958f9e93911ac21df4e47f8e518025f8a99929a6eb"
+    },
+    {
+      "path": "runtime/environment/gpu/environment-lock.sha256",
+      "sha256": "6547fef244c6c72b14e86bbcdd9001d1b8d49875ab3dd5b7ce688c66a954c1b4"
+    },
+    {
+      "path": "runtime/environment/gpu/requirements-cu126.lock",
+      "sha256": "2d34539c79f144f133c39f9ae86c0a34dafaab554c8fe263c28e01fe766576fc"
+    },
+    {
+      "path": "runtime/environment/gpu/runtime-contract.json",
+      "sha256": "ed1a1d76ca6da74df9ccaa8f669b6a51a4e1b6f14f71aaaa0258dd7e57959fd9"
+    },
+    {
+      "path": "runtime/schemas/ht_reconstruction_fullscale_v1.schema.json",
+      "sha256": "6fc49a9348a3055a2beb92c0fbb4f29dbe9d633da2b4ba438b364e814c36356b"
+    },
+    {
+      "path": "runtime/scripts/run_reconstruction_fullscale.py",
+      "sha256": "50f241beb1f0e96314ea6f7ba1ceca5d703d006ab67760055ae97f1c4823a985"
+    },
+    {
+      "path": "runtime/scripts/slurm/finalize_reconstruction_fullscale_receipt.py",
+      "sha256": "890e2473a60182dabb7e0a730619539f4d3d009fe90e0a9121f960b052c14fcb"
+    },
+    {
+      "path": "runtime/scripts/slurm/monitor_gpu_telemetry.py",
+      "sha256": "5755f58813ca07ada8def8921d0694842338483000c99fbf1f0ae4287ae0ea3d"
+    },
+    {
+      "path": "runtime/scripts/slurm/preflight_gpu_environment.py",
+      "sha256": "7f82037a600d91f24f4b6b9e5358e2234bd21599ece06a246f6bb9ccc4439e07"
+    },
+    {
+      "path": "runtime/scripts/slurm/run_with_bounded_requeue.sh",
+      "sha256": "05e688da8161c7e057dd10dd3e52881936fea7408298194d01122dfffc082042"
+    },
+    {
+      "path": "runtime/scripts/slurm/verify_snapshot_contract.py",
+      "sha256": "f5284d7ac71f326f8c0fdd4dbf3974d355fca5dbd6aa893e89df2b2598438950"
+    },
+    {
+      "path": "runtime/src/hypertagging/__init__.py",
+      "sha256": "867bc1f60deacd8def1c9a9cf0c2e5e7a2568adba67cd83a8113e71223a57b5e"
+    },
+    {
+      "path": "runtime/src/hypertagging/data/__init__.py",
+      "sha256": "fc1a227a233c4136886ae7b7664eeaba60a27f7000f970bbd0db1d9077445ec5"
+    },
+    {
+      "path": "runtime/src/hypertagging/data/capacity.py",
+      "sha256": "129e27a269b76c1de14a6cb57c7d5138d1f83146fe82a5bc6a6ea12b33e8a1b0"
+    },
+    {
+      "path": "runtime/src/hypertagging/data/contracts.py",
+      "sha256": "29c6e4d50cfc9859ba843a46edbc748cf915f8cf317c8d73438bd116fb324dcf"
+    },
+    {
+      "path": "runtime/src/hypertagging/data/dataset_index.py",
+      "sha256": "9a31eca87a6ed0196c64e928e15d8c1271efd75909466fc31ced79ba493f516a"
+    },
+    {
+      "path": "runtime/src/hypertagging/data/direct_gpt.py",
+      "sha256": "c9e44d69222b94307481603e1b304a6d3cd4e9700da2930ff064e4cbb5e7b3fe"
+    },
+    {
+      "path": "runtime/src/hypertagging/data/fixtures.py",
+      "sha256": "a1675b3008a428aea2f3e479ca1a41622053f064d5dd6ef24753741351c5f5e5"
+    },
+    {
+      "path": "runtime/src/hypertagging/data/gpt_like.py",
+      "sha256": "7b52bfc2a02ed56f973b227f4c6ae589c3b7595219b55bad5bda301a95bf7246"
+    },
+    {
+      "path": "runtime/src/hypertagging/data/grafei.py",
+      "sha256": "c0e75ece9a3033d7153fcd1221eff91654047d367b2e9720ad55e1f65b9e1fbf"
+    },
+    {
+      "path": "runtime/src/hypertagging/data/heterogeneous.py",
+      "sha256": "6e350cc05b82d27055126ccaf11d63e5d42d45af86d28ec9d4641d2ce5f05b46"
+    },
+    {
+      "path": "runtime/src/hypertagging/data/level_batch.py",
+      "sha256": "07e67ac0572bcb68ef8350d73c7e6ba7f80820717316e7a1af68e7b1a487da9b"
+    },
+    {
+      "path": "runtime/src/hypertagging/data/level_collate.py",
+      "sha256": "677a9cdaddca2dfde06cb9823224ee8aedf7fbbbd72fe35ffe6e431118ef600f"
+    },
+    {
+      "path": "runtime/src/hypertagging/data/level_dataset.py",
+      "sha256": "6d352c67e2b0ba063982e323c6d470a7d0fe8e5b611963120a0e1af5c28d9b35"
+    },
+    {
+      "path": "runtime/src/hypertagging/data/notebook_fixtures.py",
+      "sha256": "33c94a18da60633220a7ab10134bc21e174e982634da3c764133fdca2c82ca57"
+    },
+    {
+      "path": "runtime/src/hypertagging/data/preprocessing.py",
+      "sha256": "2b5a1bd8d95fa5ec3e759eac5bbaebc820c58d54e3771ea011c6921e8e377678"
+    },
+    {
+      "path": "runtime/src/hypertagging/data/splitting.py",
+      "sha256": "42d453b85380c8896c9eec5eae08c7f202417ffa9aaa02544afdde567ba596ee"
+    },
+    {
+      "path": "runtime/src/hypertagging/data/streaming.py",
+      "sha256": "0576c02eb3e08b5bde4bac9cf390999f62dd4df50ca2a075658a9898a1cf9cd2"
+    },
+    {
+      "path": "runtime/src/hypertagging/data/tiny_level_fixtures.py",
+      "sha256": "e85d692c1cdd5ea6789d49963f3512442f7a38c3a1ff8c421aa44f2efe551803"
+    },
+    {
+      "path": "runtime/src/hypertagging/data/toy_mc.py",
+      "sha256": "56b377dc87e1d438334c10d56e80a05b607435590fd1cab4bbef14aa4a2dc66c"
+    },
+    {
+      "path": "runtime/src/hypertagging/data/training_selection.py",
+      "sha256": "cf081bb09a72109e3c83efc9df74a2d28424436d321ba78ad9ea905ccc212133"
+    },
+    {
+      "path": "runtime/src/hypertagging/data/tree_geometry.py",
+      "sha256": "25e29513fe2336952abc034f0766945f8ce3fdd32187d6ed0df68ae363986fca"
+    },
+    {
+      "path": "runtime/src/hypertagging/evaluation/__init__.py",
+      "sha256": "2544b58f4c72050c4350b861b432619048f6b190ecd85a982c416818d5c1757a"
+    },
+    {
+      "path": "runtime/src/hypertagging/evaluation/grafei_metrics.py",
+      "sha256": "5d07756fd8c731e3dea7344e6e748a62305977d9011a8d5799b15511fadb2d7b"
+    },
+    {
+      "path": "runtime/src/hypertagging/evaluation/hierarchical_metrics.py",
+      "sha256": "6a8c3cc51907b68039816a9988284917b5e10263f7209f3e9693ee5d90080dff"
+    },
+    {
+      "path": "runtime/src/hypertagging/evaluation/pretraining_validation.py",
+      "sha256": "b8acf05f7969d2ff0fcee38d93662ff9eaac2483b5f8d3c122098180ffec1c79"
+    },
+    {
+      "path": "runtime/src/hypertagging/evaluation/query_activation.py",
+      "sha256": "cec0b62ff3521dccdb8967ff54748bafe745661605ae32ffc73e73502c6dc52f"
+    },
+    {
+      "path": "runtime/src/hypertagging/evaluation/trained_context.py",
+      "sha256": "0947bc20bf362c4b311671fce318528fa34328bf5373591fb04ef0922e75ee86"
+    },
+    {
+      "path": "runtime/src/hypertagging/legacy/README.md",
+      "sha256": "efffa801a78b8fb889776eaa2177072fd9606ae5d75ebc2edef5dba346bdb3c0"
+    },
+    {
+      "path": "runtime/src/hypertagging/losses/__init__.py",
+      "sha256": "2d6ef63b11510060f22a70cbd83ea3c13a6581285483420bb97ec2e4b6d9efa0"
+    },
+    {
+      "path": "runtime/src/hypertagging/losses/embedding_losses.py",
+      "sha256": "d84cb37e92bc73bfe7f148b88f189026c041eb1fabdbe8673f0a2a62f01a8eec"
+    },
+    {
+      "path": "runtime/src/hypertagging/losses/gpt_losses.py",
+      "sha256": "ecd976d4738b16b9943861e7245fa078f91b2590a5cfeb147018cdeb161b9886"
+    },
+    {
+      "path": "runtime/src/hypertagging/losses/hyperbolic_pretraining.py",
+      "sha256": "f862909eb55242670e8a92c4d7cc907dd1a2b7823c4fcbfe952eb38b36133a50"
+    },
+    {
+      "path": "runtime/src/hypertagging/losses/level_reconstruction.py",
+      "sha256": "156ea8d9cfaf8cd99265fe3550a596ea3fd22387c4310a2fbfcd08d73755d892"
+    },
+    {
+      "path": "runtime/src/hypertagging/losses/link_losses.py",
+      "sha256": "5fd0468b236cd0af863cfb9655bd040f515e1e345e307d99d0e8138db73ebf1f"
+    },
+    {
+      "path": "runtime/src/hypertagging/losses/physics.py",
+      "sha256": "c85d2b29a87dabc02d1afb828b463b96eaf8b6bbe5f8076f901342e2b1423fc6"
+    },
+    {
+      "path": "runtime/src/hypertagging/losses/reconstruction_losses.py",
+      "sha256": "c77fc2ba6734b7e8e94fe823440630d94d232800b9415ff63ac4522f5fe23a41"
+    },
+    {
+      "path": "runtime/src/hypertagging/losses/set_matching.py",
+      "sha256": "eea50b405ec9892b202172997c9330fd99d47cac90fadec63b75712dc91da649"
+    },
+    {
+      "path": "runtime/src/hypertagging/models/__init__.py",
+      "sha256": "246c856ea851e34094e5ba868f3cdf12dcb2a576a1a6701bd8338eef5d76ceac"
+    },
+    {
+      "path": "runtime/src/hypertagging/models/ablation.py",
+      "sha256": "0ad7fa6408454798219529378a0b0553d321b8bc910c46f4550c87b83f487e6b"
+    },
+    {
+      "path": "runtime/src/hypertagging/models/common.py",
+      "sha256": "8536ae83512b2651c21ba132925c5468f13c8e90f3137d47b89ef297a959e851"
+    },
+    {
+      "path": "runtime/src/hypertagging/models/first_level_ablations.py",
+      "sha256": "311e106445d0d95ffed6b22281a76b6dac0f0aa84ca569e0fb7e1d809bdf99d5"
+    },
+    {
+      "path": "runtime/src/hypertagging/models/gpt_like.py",
+      "sha256": "e2eeb2510c3364a5761db4d2f8a7c47007ae3348b48440796648a1d45168308b"
+    },
+    {
+      "path": "runtime/src/hypertagging/models/grafei_embedding.py",
+      "sha256": "e705de8d9edba811581f44585731a1da4adefe72c534b2d12b4201962e460560"
+    },
+    {
+      "path": "runtime/src/hypertagging/models/heterogeneous.py",
+      "sha256": "5b75ae3b66e379aa5bec8ee7ccadd8f9843290f1006829af3a05ba8f8f9ef1c1"
+    },
+    {
+      "path": "runtime/src/hypertagging/models/hyperbolic.py",
+      "sha256": "58c51366e042b038e4d697541219f03011ad61a2d18067ec6e07c9eb7e122012"
+    },
+    {
+      "path": "runtime/src/hypertagging/models/level_autoregressive.py",
+      "sha256": "5954ef65c136a8cb4be145ad82bee2a8b67d332b85fe06bc5c93a11d09b8502b"
+    },
+    {
+      "path": "runtime/src/hypertagging/models/link_prediction.py",
+      "sha256": "f4bcef042ae63171cbfb86f4064cfd8fc97bab9da845cedd6d33d332b19342e4"
+    },
+    {
+      "path": "runtime/src/hypertagging/models/mother_pointer.py",
+      "sha256": "a2b8fcc3f3eda1ac19c0bee421fa7227a7dbbe131d2b9323c1d95ec6d444ff2f"
+    },
+    {
+      "path": "runtime/src/hypertagging/models/reconstruction.py",
+      "sha256": "222b1ad1b33225092e7ede227e8255dd97d67dea6a9ee1a059fd0d3d772ad38a"
+    },
+    {
+      "path": "runtime/src/hypertagging/models/relation_attention.py",
+      "sha256": "027022dc7842e02b2e64ee5a6983cc66bbe5be2a8e11749bb5e3b9e4205bd5c2"
+    },
+    {
+      "path": "runtime/src/hypertagging/models/relations.py",
+      "sha256": "4a89cba3f8721cfd6d879db4f8b2b1479f2e32490bdb535ad858c6d00e8f065c"
+    },
+    {
+      "path": "runtime/src/hypertagging/models/stair_masks.py",
+      "sha256": "c42521434f48fad7205361af1d4d6622a1c9176e6944c9faaf64ce6fd1d92300"
+    },
+    {
+      "path": "runtime/src/hypertagging/models/toy_embedding.py",
+      "sha256": "1db05f2a56c72a64dd962cc3e7599ce370ea26ccfcb7791ffee760df7f9b34d2"
+    },
+    {
+      "path": "runtime/src/hypertagging/preprocessing/__init__.py",
+      "sha256": "d8340d0afef371873a75793bcc1b2c360820eaea316effea797df4d6f8af2650"
+    },
+    {
+      "path": "runtime/src/hypertagging/preprocessing/basf2_mdst.py",
+      "sha256": "0944bf2a0a4d2d4b2651addb461803d35d138d5ce026986b07dc6ee45f648b14"
+    },
+    {
+      "path": "runtime/src/hypertagging/preprocessing/channels.py",
+      "sha256": "cf156065bed806e99b8d414c2217ee27f9ecc76235f20949463f1cfd8de05b4a"
+    },
+    {
+      "path": "runtime/src/hypertagging/preprocessing/export_dataset.py",
+      "sha256": "5cb3e1760a73d78d740c65471b20aee2358355c0f9f11b8578b9b365972677c4"
+    },
+    {
+      "path": "runtime/src/hypertagging/preprocessing/export_level_dataset.py",
+      "sha256": "794db73c52cef88055ec3228f76e7bacdd403cf33db4a7098aab3a8ccd8a040f"
+    },
+    {
+      "path": "runtime/src/hypertagging/preprocessing/levelize_tree.py",
+      "sha256": "e9b5438e048759b99f227c07d1efa76873f3ae45277e7a678e3958e67261c551"
+    },
+    {
+      "path": "runtime/src/hypertagging/preprocessing/mdst_tree_builder.py",
+      "sha256": "bbd5f3ee50a4272436057cb4397c7d2313f66ce463dedb3486aebe78de471ef8"
+    },
+    {
+      "path": "runtime/src/hypertagging/preprocessing/pid_filter.py",
+      "sha256": "e8b9efdd7857803faff732c75caac2dcdc4c6230b97628b9cad5c850e08b420f"
+    },
+    {
+      "path": "runtime/src/hypertagging/preprocessing/reco_kinematics.py",
+      "sha256": "945ef99ad0580a88916fcf63f9abd7a27aec3b53836c01095ef5c96a5ae926a1"
+    },
+    {
+      "path": "runtime/src/hypertagging/preprocessing/schema.py",
+      "sha256": "6debb51ab294add60125541abce03270e4751952bbfb1c6559600fad67627cc3"
+    },
+    {
+      "path": "runtime/src/hypertagging/preprocessing/schema_v2.py",
+      "sha256": "14f354f914e7d9210f0f4096c847503aa38ce3c3b7f90c5758c7c7ca3ceba2ca"
+    },
+    {
+      "path": "runtime/src/hypertagging/preprocessing/schema_v3.py",
+      "sha256": "db93bed32d9422fbdf545a466771df7d68ffaeaecb4ec2d46b2a958b1b5df9e5"
+    },
+    {
+      "path": "runtime/src/hypertagging/preprocessing/schema_v4.py",
+      "sha256": "312ea29a841f9a77985e310d84f2119b8672dd016370acb60a8e3538a2345ead"
+    },
+    {
+      "path": "runtime/src/hypertagging/preprocessing/schema_v5.py",
+      "sha256": "1b5edeb57372cd2aee2f40cc91ed8349d6ab17be8b88f19cdd60f52065433456"
+    },
+    {
+      "path": "runtime/src/hypertagging/reconstruction/__init__.py",
+      "sha256": "65c75806bfe811f1de2fb16d8a3b7eb03cb3bf838b64e53687b83789b1179ecb"
+    },
+    {
+      "path": "runtime/src/hypertagging/reconstruction/constraints.py",
+      "sha256": "017e0d8fa9d92e46aac671f74438f4e6249c465c0db52a1361b920078c752753"
+    },
+    {
+      "path": "runtime/src/hypertagging/reconstruction/full_reconstruction.py",
+      "sha256": "a5be6f09343eb7dd3b13fc73423474699eb210dd8ee8aeca76a81a36c5d23a5c"
+    },
+    {
+      "path": "runtime/src/hypertagging/reconstruction/kinematics.py",
+      "sha256": "eac82ee8443807378242f35091b59efc9d80dbaf7add5f0c2bb0fda8c592dca4"
+    },
+    {
+      "path": "runtime/src/hypertagging/reconstruction/level_rollout.py",
+      "sha256": "829894930700190ca692bf0d772717f4a4881fc2ed3ef8046c2906b457092e52"
+    },
+    {
+      "path": "runtime/src/hypertagging/reconstruction/pid_state.py",
+      "sha256": "142d63e3458ac901f29f491cb1206fe280488377c099c9dbb77a70a94425f6b7"
+    },
+    {
+      "path": "runtime/src/hypertagging/reconstruction/single_level.py",
+      "sha256": "9516bd080c8ed1607af458b36424662edfe25bf15331122823fb9507e988e6bb"
+    },
+    {
+      "path": "runtime/src/hypertagging/training/__init__.py",
+      "sha256": "9134a5221d7f38b65e5c3c6b537ee5d88ae0076765efe7cc8cec367cf4d029c1"
+    },
+    {
+      "path": "runtime/src/hypertagging/training/checkpoint_selection.py",
+      "sha256": "4900f526490ab386d19b19307fcebcf7e5a1613863bad8cc150dae709649268f"
+    },
+    {
+      "path": "runtime/src/hypertagging/training/checkpointing.py",
+      "sha256": "5be05545dc7f66234bede4c5607628ec0dd3600bb0fcf740aa1d937e1eaac5e1"
+    },
+    {
+      "path": "runtime/src/hypertagging/training/config.py",
+      "sha256": "654cf1ee585682f7d702821ec12c167c7ec5fdde396437d65dd65b2cc2750dc6"
+    },
+    {
+      "path": "runtime/src/hypertagging/training/data_module.py",
+      "sha256": "de7511b9a223bd7c1d7088d8ef6c37266cf5a55ae206ae08ea72ea154b078147"
+    },
+    {
+      "path": "runtime/src/hypertagging/training/device_profiles.py",
+      "sha256": "d33c4451342d2bc35852352f93db6fb14b1590fe97f65574629b9e7d7a57ba80"
+    },
+    {
+      "path": "runtime/src/hypertagging/training/dry_run.py",
+      "sha256": "08756bde62fd36c3f7e10a2491d3de80b5a48005b8c98730a77af3112cae8bfb"
+    },
+    {
+      "path": "runtime/src/hypertagging/training/fixed_validation.py",
+      "sha256": "a907a2523320fd095be8680adef098a972c96ed7dd7fb114ebbccb19b97affb1"
+    },
+    {
+      "path": "runtime/src/hypertagging/training/hyperbolic_pretrain.py",
+      "sha256": "33f565b89493c37426a73644f3bdb85c915f4816ca91ca8d98ddf97617420fdb"
+    },
+    {
+      "path": "runtime/src/hypertagging/training/learning_rate.py",
+      "sha256": "e6ef57a5e4f8c32de28d2607c5aeec610508b38e9df4f51831a84be5c5485b79"
+    },
+    {
+      "path": "runtime/src/hypertagging/training/level_reconstruction_train.py",
+      "sha256": "dfc593e492ae649b39e3c48ff6da329a696c50dd84be3a9d712d39522205a8b6"
+    },
+    {
+      "path": "runtime/src/hypertagging/training/logging.py",
+      "sha256": "cf018ffd8952bf9e96724c93ce03b03c267c662a73b6e1da2e43e4527c269405"
+    },
+    {
+      "path": "runtime/src/hypertagging/training/loops.py",
+      "sha256": "976eacdefa51845356992d10c706626d25f6bd62148413900d50e873e5487ece"
+    },
+    {
+      "path": "runtime/src/hypertagging/training/model_config.py",
+      "sha256": "3a8d3f3d7929ad339c07a53824d1b84bddb2184dc70455c434aa876d93b9441d"
+    },
+    {
+      "path": "runtime/src/hypertagging/training/phase3_parallel_study.py",
+      "sha256": "5d9ce51b415cafe602c6b6b2b4fe657d92c8ba8554d9d5622038f7ba3e1a78f6"
+    },
+    {
+      "path": "runtime/src/hypertagging/training/presentation_progress.py",
+      "sha256": "f9b4a450a556cac9d7a3a36fb5b1b7b75d1b5d89aa327de18d38ef3d18d60939"
+    },
+    {
+      "path": "runtime/src/hypertagging/training/pretrain_trainer.py",
+      "sha256": "ee5c08f68603fe3802374139a4d537efed3648ccb9229b4f7cdc4a9270c09195"
+    },
+    {
+      "path": "runtime/src/hypertagging/training/pretrained_transfer.py",
+      "sha256": "c8ca78f8bb052caac14b399c44aec0daf06dc288e06a51150d906e97baa260f3"
+    },
+    {
+      "path": "runtime/src/hypertagging/training/pretraining_curriculum.py",
+      "sha256": "3e82185ed9c6a2196e4cd7a70ac82088a4b9aa789b25afff108fe56a2d915934"
+    },
+    {
+      "path": "runtime/src/hypertagging/training/reconstruction_trainer.py",
+      "sha256": "5b480a95ac87fef4427ca5ee6c212f0d48c3dc2013cfd03805a4da158177c1e0"
+    },
+    {
+      "path": "runtime/src/hypertagging/training/scheduled_sampling.py",
+      "sha256": "f327c377d819643a63d36e4598ab74a4276faf29935a5d9d1ca89f30926cd7eb"
+    },
+    {
+      "path": "runtime/src/hypertagging/training/slurm_signal.py",
+      "sha256": "351a27ca4ea91803060fd8718eadd79f229681017bc5217e13b2774a7812174e"
+    },
+    {
+      "path": "runtime/src/hypertagging/training/train_embedding.py",
+      "sha256": "ebc67427f701be7a2b41b11ee3ee4974d0827ed96b10cd98b7df0bfe74c2b26d"
+    },
+    {
+      "path": "runtime/src/hypertagging/training/train_link.py",
+      "sha256": "23f272fc5a039373ca2c07c9295448ff08e858101b68438ab57d1f820d66c475"
+    },
+    {
+      "path": "runtime/src/hypertagging/training/train_reconstruction.py",
+      "sha256": "04ea8a0dae9bbc5acfd6f83bf728e0c6064c852507999a5e77b3d5832d2a5fa4"
+    },
+    {
+      "path": "runtime/src/hypertagging/training/validation.py",
+      "sha256": "93015e38ee26a9742f2ec2483d1858d001447d941c939014d86522282e1bfd63"
+    },
+    {
+      "path": "runtime/src/hypertagging/utils/__init__.py",
+      "sha256": "45e0fbc1e21f66bc93622f1c048d7638ae21b3f70c966e953cef912adab10ec1"
+    },
+    {
+      "path": "runtime/src/hypertagging/utils/checkpoint.py",
+      "sha256": "39e8bc54b009ca0e9341349c2020fd5905192307d5b1401922f4fc046f1fa02a"
+    },
+    {
+      "path": "runtime/src/hypertagging/utils/device.py",
+      "sha256": "dbe2e9b6e0ed009058c711856fe05325422a6ee803f8be82c2477ae06d0abd41"
+    },
+    {
+      "path": "runtime/src/hypertagging/utils/gpu_safety.py",
+      "sha256": "ae11f433e9560c3bcc24a403a13d7cbed8b01ec7b5edd809eeedcfb2d0094feb"
+    },
+    {
+      "path": "runtime/src/hypertagging/utils/io.py",
+      "sha256": "d218d86903f201c45c9bb323f330956d41fc7179323a5265bc776c06332563ab"
+    },
+    {
+      "path": "runtime/src/hypertagging/utils/padding.py",
+      "sha256": "3b7c1073b2a0f432cabd94f9a54c1b6ad788e7253470e43f1edd681b2b917ee1"
+    },
+    {
+      "path": "runtime/src/hypertagging/utils/seeds.py",
+      "sha256": "f8d234a17800fbfcb828bb66952a8f3127109d57cd854822333e47177f6aad49"
+    },
+    {
+      "path": "runtime/src/hypertagging/utils/tensor_contractions.py",
+      "sha256": "f98dce036d69797862c05678d1622eb2b1df4fff577fc3d43c3b4ef0d08b2e3f"
+    },
+    {
+      "path": "source_preregistration.json",
+      "sha256": "500bafcfda989da48de6d97668f531c6c09c2fecd880247598a5cf9c93a27563"
+    }
+  ]
+}

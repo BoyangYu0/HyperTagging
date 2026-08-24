@@ -1,0 +1,20 @@
+{
+  "readiness_version": "reconstruction-validation-followup-readiness-v2",
+  "arm_id": "recon_val_b64_h100nvl_baseline_20260824_v2",
+  "final_commit_binding_mode": "exact_tag_resolution",
+  "final_snapshot_tag": "ht-reconstruction-validation-followup-20260824-v2-immutable",
+  "operator_submission_authorized": true,
+  "classification": "exploratory_reconstruction_transfer",
+  "pretraining_success_claimed": false,
+  "scientific_gate_passed": false,
+  "production_readiness_passed": false,
+  "production_resume_authorized": false,
+  "cpu_scientific_training": false,
+  "restricted_payload_access": {"sealed_test": false, "stress": false, "restricted_raw_source": false},
+  "arm_gate": {"batch_size": 64, "optimizer_steps": 1094, "presentations": 70016, "encoder_frozen": true, "leaf_pid_head_frozen": true, "learning_rate": 0.001, "object_positive_weight": 12.0, "pointer_positive_weight": 16.0, "amp_dtype": "bfloat16", "grad_scaler_enabled": false, "exact_gres": "gpu:h100nvl:1", "max_restarts": 0, "validation_enabled": true, "training_role": "train", "evaluation_role": "validation", "train_validation_fallback": false},
+  "pointer_gate": {"pointer_sha256": "9fc76128e930cab3119354b1ab41b5654ff688d2af1898d231ea6de29e76d213", "checkpoint_step": 54064, "checkpoint_sha256": "997241deb841033598846dea8b3650d31b9511c4241aad44798d83fe0ac5ad7d", "pointer_valid_for_exploratory_reconstruction": true, "checkpoint_nonfinite_tensor_count": 0},
+  "runtime_gate": {"uv_binary": "/home/b/Boyang.Yu/.local/bin/uv", "uv_version": "0.5.20", "python": "3.11.11", "torch": "2.7.1+cu126", "cuda_build": "12.6", "python_pin_sha256": "49a506dd32096b010d75205acf3430c9ae6c40351888129499e5a5e487126c93", "pyproject_sha256": "607059fb7975f7bf52e7fd21ac848e00af31e08f926bee747470eb211c82a8c2", "uv_lock_sha256": "7a18fbd4feed4371fa8e8a740f87720462d58c3a8e283402870f375ab744ad18", "runtime_contract_sha256": "ed1a1d76ca6da74df9ccaa8f669b6a51a4e1b6f14f71aaaa0258dd7e57959fd9", "shared_manifest_json_sha256": "641d89bf6edafb044b90e98185d2171c568e1b9eb45c76aee3281716e22d5280", "shared_manifest_markdown_sha256": "77a93ed587db1cf840b0d55b4ab79bb23cacc155e37ed455f734eb076b7463c7"},
+  "validation_protocol": {"selection_metric": "predicted_edge_f1", "denominator": "predicted_edge_denominator", "validation_role_only": true, "no_train_fallback": true},
+  "fresh_in_allocation_preflight_required": true,
+  "submission_boundary": "recompute all hashes twice, prove queue uniqueness, use absolute contract path, then one sbatch only"
+}

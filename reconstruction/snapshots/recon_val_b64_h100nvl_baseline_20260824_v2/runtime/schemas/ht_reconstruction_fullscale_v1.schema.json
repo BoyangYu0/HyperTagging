@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ht-reconstruction-fullscale-v1",
+  "title": "HyperTagging reconstruction transfer full-scale contract",
+  "type": "object",
+  "required": [
+    "contract_version",
+    "mode",
+    "experiment",
+    "expected_git_sha",
+    "expected_git_tag",
+    "gres",
+    "checkpoint",
+    "checkpoint_sha256",
+    "checkpoint_step",
+    "selection_manifest",
+    "dataset_index",
+    "training_role",
+    "evaluation_role",
+    "sealed_test_role_access",
+    "source_checkpoint_mutation",
+    "provenance_validation",
+    "preregistration",
+    "config",
+    "resources",
+    "output_root",
+    "hashed_inputs",
+    "submission_authorized",
+    "contract_sha256"
+  ],
+  "properties": {
+    "contract_version": {"const": "hypertagging-reconstruction-fullscale-v1"},
+    "mode": {"enum": ["calibration", "production"]},
+    "gres": {"enum": ["gpu:h100nvl:1", "gpu:v100:1"]},
+    "checkpoint_step": {"type": "integer", "minimum": 1},
+    "checkpoint_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "training_role": {"const": "train"},
+    "evaluation_role": {"const": "validation"},
+    "sealed_test_role_access": {"const": "forbidden"},
+    "source_checkpoint_mutation": {"const": "forbidden"},
+    "preregistration": {
+      "type": "object",
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"const": "configs/reconstruction/ht_reconstruction_transfer_preregistration_20260824.json"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "submission_authorized": {"const": true},
+    "config": {
+      "type": "object",
+      "required": [
+        "batch_size",
+        "max_steps",
+        "presentations_target",
+        "object_positive_weight",
+        "pointer_positive_weight",
+        "amp_dtype",
+        "grad_scaler_enabled",
+        "validation_enabled"
+      ]
+    },
+    "resources": {
+      "type": "object",
+      "required": ["cpus", "memory", "time", "max_restarts"]
+    },
+    "hashed_inputs": {"type": "array", "minItems": 1},
+    "contract_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,22 @@
+{
+  "validation_version": "reconstruction-pointer-validation-v3",
+  "arm_id": "recon_val_b64_h100nvl_baseline_20260824_v2",
+  "final_commit_binding_mode": "exact_tag_resolution",
+  "final_snapshot_tag": "ht-reconstruction-validation-followup-20260824-v2-immutable",
+  "pointer_path": "artifacts/codex/joint_optimization_20260824/best_pretrained_for_reconstruction.json",
+  "pointer_sha256": "9fc76128e930cab3119354b1ab41b5654ff688d2af1898d231ea6de29e76d213",
+  "selected_checkpoint_path": "artifacts/runs/ht-pretrain-production-1m-h100-20260821/20260812/15933802/checkpoint-step-54064.pt",
+  "checkpoint_step": 54064,
+  "checkpoint_sha256_declared": "997241deb841033598846dea8b3650d31b9511c4241aad44798d83fe0ac5ad7d",
+  "checkpoint_sha256_observed": "997241deb841033598846dea8b3650d31b9511c4241aad44798d83fe0ac5ad7d",
+  "source_commit": "93b71c5d7c1bc20181640aafb4e918abb9267362",
+  "source_tag": "ht-pretraining-production-1m-h100-operator-authorized-20260821",
+  "config_sha256": "dd1947cdb50ffa0c4150ec5ab2a9032f4e6dab3d7f6a6c68bd2f245c2e43b8ad",
+  "training_contract_sha256": "1af20420655a95aa7ce0a3d1ad4a6e357c7fe45510c3f8bafaf80ad3fdbb7991",
+  "validation_metrics_sha256": "c580668451360a1374d5530b9acdf7f15dbbbd728572912cce6d0ab30ad9df6c",
+  "checkpoint_tensor_audit": {"recursive_tensor_count": 667, "nonfinite_tensor_count": 0, "all_tensors_finite": true},
+  "validation_only_role_evidence": {"source_pointer_validation_role": "validation", "train_fallback": false, "role_isolation": true},
+  "readiness_verdict": {"pointer_valid_for_exploratory_reconstruction": true, "scientific_gate_passed": false, "dominance_gate_passed": false, "production_readiness_passed": false, "production_resume_authorized": false, "pretraining_completion_claimed": false},
+  "runtime_binding": {"uv_binary": "/home/b/Boyang.Yu/.local/bin/uv", "uv_version": "0.5.20", "python": "3.11.11", "torch": "2.7.1+cu126", "cuda_build": "12.6", "python_pin_sha256": "49a506dd32096b010d75205acf3430c9ae6c40351888129499e5a5e487126c93", "pyproject_sha256": "607059fb7975f7bf52e7fd21ac848e00af31e08f926bee747470eb211c82a8c2", "uv_lock_sha256": "7a18fbd4feed4371fa8e8a740f87720462d58c3a8e283402870f375ab744ad18", "runtime_contract_sha256": "ed1a1d76ca6da74df9ccaa8f669b6a51a4e1b6f14f71aaaa0258dd7e57959fd9", "shared_manifest_json_sha256": "641d89bf6edafb044b90e98185d2171c568e1b9eb45c76aee3281716e22d5280", "shared_manifest_markdown_sha256": "77a93ed587db1cf840b0d55b4ab79bb23cacc155e37ed455f734eb076b7463c7"},
+  "fail_closed_policy": "Any pointer, checkpoint, referenced-input, role, finite-state, exact-GRES, runtime, or restart mismatch blocks submission; this pointer never authorizes pretraining resume or a pretraining-success claim."
+}

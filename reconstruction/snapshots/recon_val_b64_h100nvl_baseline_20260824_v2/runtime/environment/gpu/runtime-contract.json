@@ -1,0 +1,27 @@
+{
+  "contract_version": "hypertagging-one-gpu-runtime-v1",
+  "cuda_build": "12.6",
+  "environment_installation_permitted_by_this_tranche": false,
+  "expected_python": "3.11",
+  "package_indexes": {
+    "default": "https://pypi.org/simple",
+    "pytorch_cuda": "https://download.pytorch.org/whl/cu126"
+  },
+  "supported_exact_gres": [
+    "gpu:h200nvl:1",
+    "gpu:h100nvl:1",
+    "gpu:v100:1"
+  ],
+  "versions": {
+    "PyYAML": "6.0.2",
+    "awkward": "2.8.2",
+    "numpy": "2.2.6",
+    "onnx": "1.17.0",
+    "pandas": "2.2.3",
+    "pdg": "2026.0",
+    "pyarrow": "20.0.0",
+    "scipy": "1.15.3",
+    "torch": "2.7.1+cu126",
+    "uproot": "5.6.2"
+  }
+}

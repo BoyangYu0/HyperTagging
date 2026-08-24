@@ -1,0 +1,71 @@
+{
+  "preregistration_version": "hypertagging-reconstruction-transfer-preregistration-v1",
+  "study_date": "2026-08-24",
+  "study_classification": "exploratory_reconstruction_transfer",
+  "pretraining_success_gate_passed": false,
+  "pretraining_contract_exception": {
+    "intended_contract": "1m_not_completed",
+    "authorized_checkpoint_step": 54064,
+    "authorized_checkpoint": "artifacts/runs/ht-pretrain-production-1m-h100-20260821/20260812/15933802/checkpoint-step-54064.pt",
+    "authorized_checkpoint_sha256": "997241deb841033598846dea8b3650d31b9511c4241aad44798d83fe0ac5ad7d",
+    "reason": "most advanced immutable, loadable, structurally compatible, fully finite checkpoint actually available"
+  },
+  "scientific_scope": {
+    "training_role": "train",
+    "evaluation_role": "validation",
+    "sealed_test_role_access": "forbidden",
+    "stress_role_access": "forbidden",
+    "restricted_raw_source_access": "forbidden",
+    "source_checkpoint_mutation": "forbidden",
+    "encoder": "frozen",
+    "leaf_pid_head": "transferred_and_frozen",
+    "object_positive_weight": 12.0,
+    "pointer_positive_weight": 16.0,
+    "zero_training_support_normalizer_scaling": "identity",
+    "finite_gates": ["forward_and_loss", "raw_gradient", "model_state", "optimizer_state", "scheduler_state"],
+    "exact_resume_requeue_no_overwrite": true
+  },
+  "dataset_binding": {
+    "selection_manifest": "configs/training_selection/production_1m_20260812/train_035k.json",
+    "dataset_index": "artifacts/experiment_readiness/production_1m_20260812/train_035k/train_035k.complete_only.index.json",
+    "target_policy": "complete_only",
+    "expected_roles": ["train", "validation"],
+    "expected_split_counts": {"train": 35000, "validation": 50000, "test": 0}
+  },
+  "model_binding": {
+    "model_preset": "small_candidate",
+    "max_cardinality": 16,
+    "max_cardinality_by_level": [[1, 16], [2, 16], [3, 16]],
+    "transfer_leaf_pid_head": true,
+    "freeze_pretrained_encoder_for_full_horizon": true,
+    "freeze_leaf_pid_head_for_full_horizon": true
+  },
+  "calibration_matrix": [
+    {"gres": "gpu:h100nvl:1", "amp_dtype": "bfloat16", "grad_scaler_enabled": false, "per_device_batch_size": 32},
+    {"gres": "gpu:h100nvl:1", "amp_dtype": "bfloat16", "grad_scaler_enabled": false, "per_device_batch_size": 64},
+    {"gres": "gpu:v100:1", "amp_dtype": "float16", "grad_scaler_enabled": true, "per_device_batch_size": 32},
+    {"gres": "gpu:v100:1", "amp_dtype": "float16", "grad_scaler_enabled": true, "per_device_batch_size": 64}
+  ],
+  "calibration_bound": {
+    "optimizer_steps": 128,
+    "maximum_optimizer_steps": 256,
+    "maximum_wall_seconds": 900,
+    "validation_enabled": false,
+    "role": "train"
+  },
+  "production_plan": {
+    "presentation_target": 70016,
+    "validation_cohort_events": 2000,
+    "rollout_validation_cohort_events": 1000,
+    "validation_cadence_steps": 100,
+    "rollout_validation_cadence_steps": 500,
+    "checkpoint_cadence_steps": 500,
+    "candidate_batch_sizes": [32, 64],
+    "multi_gpu": "not_supported_by_tracked_reconstruction_trainer; do_not_submit"
+  },
+  "selection_rule": {
+    "primary": "useful_end_to_end_event_throughput",
+    "tie_breakers": ["time_to_completion", "gpu_utilization", "memory_headroom", "stability", "validation_cost"],
+    "reject_if": ["nonfinite", "role_leakage", "wrong_precision_or_gres", "checkpoint_corruption", "silent_restart_or_overwrite"]
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "preregistration_version": "reconstruction-validation-arm-v2",
+  "arm_id": "recon_val_b64_h100nvl_baseline_20260824_v2",
+  "experiment": "recon-val-b64-h100nvl-baseline-replacement-20260824",
+  "replacement_for_cancelled_job": "16007774",
+  "session_id": "01a033ae-b7e7-7be3-b27b-55ff51f9940d",
+  "final_commit_binding_mode": "exact_tag_resolution",
+  "final_snapshot_tag": "ht-reconstruction-validation-followup-20260824-v2-immutable",
+  "classification": "exploratory_reconstruction_transfer_pretraining_incomplete",
+  "hypothesis": "Increasing batch size from the cancelled predecessor's bound to 64 addresses low observed H100 utilization while keeping the frozen transfer and validation protocol fixed; no scientific benefit is assumed until validation-only evidence is available.",
+  "single_change": "batch_size_32_to_64",
+  "fixed_semantics": {
+    "encoder": "frozen_for_all_1094_steps",
+    "transferred_leaf_pid_head": "frozen_for_all_1094_steps",
+    "batch_size": 64,
+    "optimizer_steps": 1094,
+    "presentations": 70016,
+    "learning_rate": 0.001,
+    "object_positive_weight": 12.0,
+    "pointer_positive_weight": 16.0,
+    "amp_dtype": "bfloat16",
+    "grad_scaler_enabled": false,
+    "exact_gres": "gpu:h100nvl:1",
+    "max_restarts": 0,
+    "training_role": "train",
+    "evaluation_role": "validation",
+    "train_validation_fallback": false,
+    "sealed_test_stress_restricted_access": "forbidden"
+  },
+  "validation_protocol": {
+    "enabled": true,
+    "selection_metric": "predicted_edge_f1",
+    "denominator": "predicted_edge_denominator",
+    "tie_breakers": ["validation_loss_total", "predicted_full_tree_exact_match", "predicted_leaf_assignment_accuracy"],
+    "validation_batch_size": 4,
+    "validate_every": 100,
+    "rollout_validate_every": 500,
+    "max_validation_events": 2000,
+    "rollout_validation_events": 1000,
+    "validation_role_only": true,
+    "no_train_fallback": true,
+    "promotion_requires_comparable_validation": true
+  },
+  "budget_and_stopping": {
+    "wall_time": "06:00:00",
+    "cpus": 8,
+    "memory": "64G",
+    "hard_stop": "1094 optimizer steps or any failed finite/provenance/role/GPU/restart gate",
+    "early_stop": "fail closed on first nonfinite or provenance/role violation; no metric-based early stopping",
+    "no_overwrite": true
+  },
+  "pointer_binding": {
+    "pointer_sha256": "9fc76128e930cab3119354b1ab41b5654ff688d2af1898d231ea6de29e76d213",
+    "checkpoint_step": 54064,
+    "checkpoint_sha256": "997241deb841033598846dea8b3650d31b9511c4241aad44798d83fe0ac5ad7d",
+    "scientific_gate_passed": false,
+    "production_readiness_passed": false,
+    "production_resume_authorized": false,
+    "pretraining_success_claimed": false
+  },
+  "non_promotion_rules": [
+    "Do not promote on training loss, throughput, utilization, or calibration integrity alone.",
+    "Do not promote without validation-only predicted_edge_f1 with its denominator and comparable protocol.",
+    "Do not reinterpret the source checkpoint as completed pretraining or production readiness.",
+    "Keep best_reconstruction_result null unless all fail-closed evidence gates and validation comparison pass."
+  ]
+}
