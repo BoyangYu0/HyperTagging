@@ -9,6 +9,7 @@
   },
   "supported_exact_gres": [
     "gpu:h200nvl:1",
+    "gpu:h100nvl:1",
     "gpu:v100:1"
   ],
   "versions": {
