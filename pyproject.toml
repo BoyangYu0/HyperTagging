@@ -7,13 +7,13 @@ name = "hypertagging-unified"
 version = "0.0.0"
 description = "Unified HyperTagging migration skeleton"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.10,<3.14"
 dependencies = [
   "numpy",
   "pandas",
   "awkward",
   "pyarrow",
-  "torch",
+  "torch==2.7.1",
   "uproot",
   "pdg",
   "onnx",
@@ -35,12 +35,12 @@ notebook = [
 ]
 
 [[tool.uv.index]]
-name = "pytorch-cpu"
-url = "https://download.pytorch.org/whl/cpu"
+name = "pytorch-cuda"
+url = "https://download.pytorch.org/whl/cu126"
 explicit = true
 
 [tool.uv.sources]
-torch = { index = "pytorch-cpu" }
+torch = { index = "pytorch-cuda" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
