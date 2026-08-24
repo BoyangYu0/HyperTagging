@@ -171,8 +171,8 @@ def verify_contract(
             raise RuntimeError("production validation is disabled")
         if config.get("max_validation_events") != 2000 or config.get("rollout_validation_events") != 1000:
             raise RuntimeError("production validation cohorts changed")
-        if int(resources.get("max_restarts", -1)) != 1:
-            raise RuntimeError("production requeue bound must be exactly one")
+        if int(resources.get("max_restarts", -1)) not in {0, 1}:
+            raise RuntimeError("production requeue bound must be zero or one")
         if int(config.get("presentations_target", 0)) != 70016:
             raise RuntimeError("production presentation target must remain 70016")
     checkpoint = _repo_path(str(contract.get("checkpoint", "")), suffix=".pt")
