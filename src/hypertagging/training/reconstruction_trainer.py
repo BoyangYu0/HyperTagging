@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, fields, is_dataclass
 import json
 import math
 from pathlib import Path
@@ -111,6 +111,9 @@ class ReconstructionConfig:
     scheduled_sampling_probability: float = 0.25
     allow_tiny_bruteforce_matching: bool = True
     mixed_precision: bool = True
+    amp_dtype: str = "float32"
+    grad_scaler_enabled: bool = False
+    validation_enabled: bool = True
     ablation: str = "full_revised"
     transfer_leaf_pid_head: bool = False
     freeze_leaf_pid_head_steps: int = 0
@@ -237,6 +240,12 @@ def train_level_reconstruction(
             "gradient_accumulation other than 1 is not implemented; refusing to "
             "claim an exact-resume order for an unsupported optimizer cadence"
         )
+    if config.amp_dtype not in {"float16", "bfloat16", "float32"}:
+        raise ValueError("amp_dtype must be float16, bfloat16, or float32")
+    if config.grad_scaler_enabled and not config.mixed_precision:
+        raise ValueError("grad_scaler_enabled requires mixed_precision")
+    if not config.validation_enabled and config.scientific_mode:
+        raise ValueError("scientific reconstruction requires validation")
     if config.object_positive_weight <= 0 or config.pointer_positive_weight <= 0:
         raise ValueError("decoder positive weights must be finite and positive")
     if not math.isfinite(config.object_positive_weight) or not math.isfinite(
@@ -250,6 +259,11 @@ def train_level_reconstruction(
             "multiworker resume is intentionally not claimed"
         )
     device = torch.device(config.device)
+    if device.type != "cuda" and config.grad_scaler_enabled:
+        raise ValueError("GradScaler is only allowed for CUDA reconstruction")
+    if device.type == "cuda" and config.amp_dtype == "bfloat16":
+        if not torch.cuda.is_bf16_supported():
+            raise RuntimeError("BF16 reconstruction requires CUDA BF16 support")
     resume_payload = (
         load_training_checkpoint(config.resume, map_location="cpu")
         if config.resume
@@ -394,7 +408,14 @@ def train_level_reconstruction(
     )
     scheduler = build_warmup_cosine_scheduler(optimizer, lr_contract)
     scheduler.hypertagging_contract = lr_contract
-    scaler = torch.amp.GradScaler("cuda", enabled=device.type == "cuda" and config.mixed_precision)
+    scaler = torch.amp.GradScaler(
+        "cuda",
+        enabled=(
+            device.type == "cuda"
+            and config.mixed_precision
+            and config.grad_scaler_enabled
+        ),
+    )
     start_step = 0
     if config.resume:
         payload = restore_training_checkpoint(
@@ -688,7 +709,16 @@ def train_level_reconstruction(
         optimizer.zero_grad(set_to_none=True)
         with torch.autocast(
             device_type=device.type,
-            enabled=device.type == "cuda" and config.mixed_precision,
+            dtype={
+                "float16": torch.float16,
+                "bfloat16": torch.bfloat16,
+                "float32": torch.float32,
+            }[config.amp_dtype],
+            enabled=(
+                device.type == "cuda"
+                and config.mixed_precision
+                and config.amp_dtype != "float32"
+            ),
         ):
             optimization_started = time.perf_counter()
             (
@@ -710,12 +740,23 @@ def train_level_reconstruction(
             )
             optimization_seconds = max(time.perf_counter() - optimization_started, 1e-9)
             loss = reconstruction_loss + leaf_pid_loss
+        _require_finite_payload(
+            "forward_and_loss",
+            (reconstruction_loss, leaf_pid_loss, component_accumulator, level_outputs, loss),
+        )
         scaler.scale(loss).backward()
+        _require_finite_gradients(model, stage="raw_gradient")
         scaler.unscale_(optimizer)
-        torch.nn.utils.clip_grad_norm_(model.parameters(), config.gradient_clip)
+        raw_gradient_norm = torch.nn.utils.clip_grad_norm_(
+            model.parameters(), config.gradient_clip, error_if_nonfinite=True
+        )
+        _require_finite_payload("clipped_gradient_norm", raw_gradient_norm)
         scaler.step(optimizer)
         scaler.update()
+        _require_finite_payload("model_after_optimizer", model.state_dict())
+        _require_finite_payload("optimizer_state", optimizer.state_dict())
         scheduler.step()
+        _require_finite_payload("scheduler_state", scheduler.state_dict())
         final_loss = float(loss.detach().cpu())
         final_metrics = {
             "loss": final_loss,
@@ -728,6 +769,15 @@ def train_level_reconstruction(
             "events_per_second": batch["node_mask"].shape[0] / optimization_seconds,
             "target_levels_per_second": context_metrics["optimized_event_level_count"]
             / optimization_seconds,
+            "forward_finite": 1.0,
+            "loss_finite": 1.0,
+            "raw_gradient_finite": 1.0,
+            "model_finite": 1.0,
+            "optimizer_finite": 1.0,
+            "scheduler_finite": 1.0,
+            "amp_dtype": config.amp_dtype if device.type == "cuda" else "float32",
+            "grad_scaler_enabled": float(scaler.is_enabled()),
+            "grad_scaler_scale": float(scaler.get_scale()),
         }
         if step % max(config.diagnostic_forward_interval, 1) == 0:
             diagnostic_level = valid_levels[0]
@@ -762,7 +812,7 @@ def train_level_reconstruction(
         logger.log(step=step + 1, target_levels=valid_levels, **final_metrics)
         completed_steps = step + 1
         should_stop = False
-        if (step + 1) % config.validate_every == 0:
+        if config.validation_enabled and (step + 1) % config.validate_every == 0:
             _save_reconstruction_checkpoint(
                 output_dir / "signal-checkpoint.pt",
                 model=model,
@@ -830,7 +880,7 @@ def train_level_reconstruction(
                 checkpoint_track_values=checkpoint_track_values,
                 checkpoint_selection_contract=selection_contract,
             )
-    if last_validation_step != completed_steps:
+    if config.validation_enabled and last_validation_step != completed_steps:
         validation_metrics = validate_reconstruction(
             model,
             data_module,
@@ -2028,7 +2078,56 @@ def _data_order_contract(
         "gradient_accumulation": config.gradient_accumulation,
         "num_workers": config.num_workers,
         "scientific_mode": config.scientific_mode,
+        "validation_enabled": config.validation_enabled,
+        "amp_dtype": config.amp_dtype,
+        "grad_scaler_enabled": config.grad_scaler_enabled,
+        "object_positive_weight": config.object_positive_weight,
+        "pointer_positive_weight": config.pointer_positive_weight,
     }
+
+
+def _require_finite_payload(name: str, payload: Any) -> None:
+    """Fail closed when a forward/state payload contains any non-finite value."""
+
+    offenders: list[str] = []
+
+    def visit(value: Any, path: str) -> None:
+        if torch.is_tensor(value):
+            if not torch.isfinite(value).all().item():
+                offenders.append(path)
+            return
+        if is_dataclass(value):
+            for field in fields(value):
+                visit(getattr(value, field.name), f"{path}.{field.name}")
+            return
+        if isinstance(value, dict):
+            for key, item in value.items():
+                visit(item, f"{path}.{key}")
+            return
+        if isinstance(value, (list, tuple)):
+            for index, item in enumerate(value):
+                visit(item, f"{path}[{index}]")
+            return
+        if isinstance(value, float) and not math.isfinite(value):
+            offenders.append(path)
+
+    visit(payload, name)
+    if offenders:
+        raise RuntimeError(
+            f"non-finite {name} state; first offenders={offenders[:8]}"
+        )
+
+
+def _require_finite_gradients(model: torch.nn.Module, *, stage: str) -> None:
+    offenders = [
+        name
+        for name, parameter in model.named_parameters()
+        if parameter.grad is not None and not torch.isfinite(parameter.grad).all().item()
+    ]
+    if offenders:
+        raise RuntimeError(
+            f"non-finite {stage} values; first parameters={offenders[:8]}"
+        )
 
 
 def _architecture_contract(config: ReconstructionConfig) -> dict[str, Any]:

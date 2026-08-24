@@ -61,6 +61,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--scheduled-sampling-probability", type=float, default=None)
     parser.add_argument("--ablation", choices=sorted(ALL_ABLATIONS), default="full_revised")
     parser.add_argument("--device", default="cpu")
+    parser.add_argument(
+        "--amp-dtype", choices=("float16", "bfloat16", "float32"), default=None
+    )
+    parser.add_argument("--grad-scaler-enabled", action="store_true", default=None)
+    parser.add_argument(
+        "--no-validation", dest="validation_enabled", action="store_false", default=None
+    )
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--tiny", action="store_true")
     parser.add_argument("--max-steps", type=int, default=2)
@@ -186,6 +193,14 @@ def main(argv: list[str] | None = None) -> int:
                 output_dir=args.output_dir,
                 pretrained_encoder=args.pretrained_encoder,
                 device=args.device,
+                amp_dtype=(
+                    args.amp_dtype
+                    or ("float32" if args.device == "cpu" else "float16")
+                ),
+                grad_scaler_enabled=bool(args.grad_scaler_enabled),
+                validation_enabled=(
+                    True if args.validation_enabled is None else args.validation_enabled
+                ),
                 max_steps=args.max_steps,
                 lr_schedule_total_steps=args.lr_schedule_total_steps,
                 warmup_fraction=args.warmup_fraction,
