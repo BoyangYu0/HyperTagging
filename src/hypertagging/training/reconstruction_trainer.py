@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass, fields, is_dataclass
 import json
 import math
 from pathlib import Path
+import sys
 import time
 from typing import Any
 
@@ -487,19 +488,32 @@ def train_level_reconstruction(
     restored_state = (resume_payload or {}).get("training_state", {})
     if restored_state and restored_state.get("checkpoint_selection_contract") != selection_contract:
         raise ValueError("resume checkpoint-selection semantics differ from the checkpoint")
-    best_metric_value = float(
-        restored_state.get(
-            "best_metric_value",
-            float("inf") if config.best_mode == "min" else float("-inf"),
+    if config.validation_enabled:
+        best_metric_value = float(
+            restored_state.get(
+                "best_metric_value",
+                float("inf") if config.best_mode == "min" else float("-inf"),
+            )
         )
-    )
-    checkpoint_track_values = {
-        **initial_track_values(),
-        **{
+        checkpoint_track_values = {
+            **initial_track_values(),
+            **{
+                str(key): float(value)
+                for key, value in restored_state.get("checkpoint_track_values", {}).items()
+            },
+        }
+    else:
+        # Calibration checkpoints do not evaluate validation tracks. Keep their
+        # resumable selection state finite rather than serializing +/-inf
+        # sentinels that would fail the checkpoint finiteness gate.
+        best_metric_value = float(restored_state.get("best_metric_value", 0.0))
+        checkpoint_track_values = {
             str(key): float(value)
-            for key, value in restored_state.get("checkpoint_track_values", {}).items()
-        },
-    }
+            for key, value in restored_state.get(
+                "checkpoint_track_values",
+                {track.metric: 0.0 for track in RECONSTRUCTION_TRACK_BY_METRIC.values()},
+            ).items()
+        }
     patience_count = int(restored_state.get("early_stopping_patience_count", 0))
     completed_steps = start_step
     last_validation_step = int(restored_state.get("last_validation_step", 0))
@@ -1930,6 +1944,37 @@ def _save_reconstruction_checkpoint(
     pending_validation_step: int | None = None,
     termination_reason: str = "running_or_normal_checkpoint",
 ) -> Path:
+    rollout_eligibility = (
+        rollout_checkpoint_eligibility(metrics, _rollout_eligibility_contract(config))
+        if config.validation_enabled
+        else {
+            "eligible": False,
+            "failures": ["validation_disabled"],
+            "evaluated_metrics": {
+                "predicted_tree_validity_rate": 0.0,
+                "predicted_p4_closure_rate": 0.0,
+                "predicted_recursive_source_conflicts": 0.0,
+            },
+        }
+    )
+    finite_best_metric_value = float(best_metric_value)
+    if not math.isfinite(finite_best_metric_value):
+        finite_best_metric_value = (
+            sys.float_info.max if config.best_mode == "min" else -sys.float_info.max
+        )
+    finite_checkpoint_track_values = {
+        metric: (
+            float(value)
+            if math.isfinite(float(value))
+            else (
+                sys.float_info.max
+                if RECONSTRUCTION_TRACK_BY_METRIC[metric].mode == "min"
+                else -sys.float_info.max
+            )
+        )
+        for metric, value in (checkpoint_track_values or {}).items()
+        if metric in RECONSTRUCTION_TRACK_BY_METRIC
+    }
     return save_training_checkpoint(
         path,
         model=model,
@@ -2004,11 +2049,11 @@ def _save_reconstruction_checkpoint(
         training_state={
             "best_metric": config.best_metric,
             "best_mode": config.best_mode,
-            "best_metric_value": float(best_metric_value),
+            "best_metric_value": finite_best_metric_value,
             "early_stopping_patience_count": int(patience_count),
             "last_validation_step": int(last_validation_step),
             "pending_validation_step": pending_validation_step,
-            "checkpoint_track_values": dict(checkpoint_track_values or {}),
+            "checkpoint_track_values": finite_checkpoint_track_values,
             "checkpoint_selection_contract": dict(
                 checkpoint_selection_contract or {}
             ),
@@ -2022,9 +2067,7 @@ def _save_reconstruction_checkpoint(
             "lr_schedule_contract": dict(
                 getattr(scheduler, "hypertagging_contract", {})
             ),
-            "last_rollout_checkpoint_eligibility": rollout_checkpoint_eligibility(
-                metrics, _rollout_eligibility_contract(config)
-            ),
+            "last_rollout_checkpoint_eligibility": rollout_eligibility,
             "termination_reason": termination_reason,
         },
         validation_selection={
