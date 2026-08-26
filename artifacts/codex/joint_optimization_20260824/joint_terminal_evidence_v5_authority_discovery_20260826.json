@@ -1,0 +1,223 @@
+{
+  "artifact_version": "joint-terminal-evidence-v5-authority-discovery-v1",
+  "date_utc": "2026-08-26",
+  "scope": "Tracked config, code, contracts, and reports only; no scheduler calls, payload access, or scientific execution.",
+  "sealed_plan": {
+    "commit": "b10c65e02e36dcb5878d3aa932adc559d5676a70",
+    "tag": "ht-reconstruction-post-terminal-decision-plan-v1-20260826",
+    "path": "artifacts/codex/joint_optimization_20260824/reconstruction_post_terminal_exact_decision_plan_v1_20260826.json",
+    "sha256": "45747d32d5af2682f712c399d23f0a8f04f5f137757b93cc0664d4f5e556dfe2"
+  },
+  "authorities": {
+    "A01": {
+      "subject": "authoritative pretraining contract and hash",
+      "status": "AUTHORITATIVE_COMPATIBLE",
+      "v6_disposition": "CLOSE",
+      "evidence": [
+        {
+          "commit": "0c728e7c37ec933f5aad8c724e295e8788baa72a",
+          "tag": "ht-pretraining-balanced-resume-attempt9r4r23-transition-20260826-v1",
+          "path": "artifacts/codex/ht_pretraining_balanced_resume_contract_attempt9r4r23_transition_20260826.json",
+          "sha256": "b7be36440996bbb12e842c0cce7bc748ff3779a341873e7604cb2d57c7631e56",
+          "meaning": "Exact byte hash of the submitted job 16028845 transition contract."
+        },
+        {
+          "commit": "98ba2a0a7dfd6bda50da035a32cd2dfb61da9018",
+          "tag": "ht-pretraining-balanced-resume-attempt9r4r23-submission-20260826-v1",
+          "path": "artifacts/codex/ht_pretraining_balanced_resume_attempt9r4r23_submission_receipt_20260826.json",
+          "sha256": "b83ef816ffc6ea245a892fdb7cd86e255af261f8a79fbaef4977230023f2963b",
+          "meaning": "Executed one-shot receipt binds job 16028845, exact name, transition commit/tag, contract SHA, config SHA, wrapper SHA, and exact sbatch argv."
+        }
+      ],
+      "hash_policy": {
+        "artifact_file_sha256": "b7be36440996bbb12e842c0cce7bc748ff3779a341873e7604cb2d57c7631e56",
+        "embedded_canonical_payload_sha256": "a50408eee13132d7a2338ea1b3f38d9ffa13fecc49d8ade510e504cbf4a891a1",
+        "embedded_digest_algorithm_authority": {
+          "commit": "0c728e7c37ec933f5aad8c724e295e8788baa72a",
+          "tag": "ht-pretraining-balanced-resume-attempt9r4r23-transition-20260826-v1",
+          "path": "scripts/verify_pretraining_balanced_resume_r4r23_transition.py",
+          "rule": "Remove contract_sha256, serialize JSON with sort_keys=true and separators comma/colon, UTF-8 encode, then SHA-256."
+        },
+        "compatibility_note": "The two hashes have different domains and must remain separately named and checked."
+      }
+    },
+    "A02": {
+      "subject": "exact pretraining resource, TRES, and runtime fields",
+      "status": "AUTHORITATIVE_COMPATIBLE_FOR_CONTRACTED_FIELDS",
+      "v6_disposition": "CLOSE_WITH_SEMANTIC_TRES",
+      "evidence": [
+        {
+          "commit": "0c728e7c37ec933f5aad8c724e295e8788baa72a",
+          "tag": "ht-pretraining-balanced-resume-attempt9r4r23-transition-20260826-v1",
+          "path": "scripts/slurm/run_pretraining_balanced_resume_attempt9r4r23_transition.sbatch",
+          "sha256": "df31111644e38f8abdadf12cd39805fe8aed4e1426437109dafd3edcfc6720f4"
+        },
+        {
+          "commit": "0c728e7c37ec933f5aad8c724e295e8788baa72a",
+          "tag": "ht-pretraining-balanced-resume-attempt9r4r23-transition-20260826-v1",
+          "path": "configs/slurm/pretrain_capacity_calibration_balanced_resume_attempt9r4r23_20260826.yaml",
+          "sha256": "0d5a8556be87ba32e21e6b9ed9f6f0ce9b5ac45a0e32260f6be18afa0eb27db1"
+        }
+      ],
+      "exact_scheduler_contract": {
+        "partition": "inter",
+        "gres": "gpu:h100nvl:1",
+        "gpus": 1,
+        "cpus_per_task": 8,
+        "memory": "64G",
+        "walltime": "06:00:00",
+        "requeue": false,
+        "max_restarts": 0,
+        "ddp": false,
+        "two_gpu_comparison": false
+      },
+      "required_semantic_tres": {
+        "cpu": 8,
+        "mem": "64G",
+        "gres/gpu": 1,
+        "gres/gpu:h100nvl": 1
+      },
+      "runtime_closure": {
+        "python": "3.11.11",
+        "torch": "2.7.1+cu126",
+        "cuda_build": "12.6",
+        "uv_version": "uv 0.5.20",
+        "invocation_policy": ["uv", "run", "--project", "<exact_project_root>", "--frozen", "--no-sync", "python"],
+        "pyproject_sha256": "85cf6a6154f4569123a059d22750ee6284cc778d30ae52918c66553a0bf6fe03",
+        "python_pin_sha256": "49a506dd32096b010d75205acf3430c9ae6c40351888129499e5a5e487126c93",
+        "uv_lock_sha256": "acdbd38d7c0233cb85cb1db5806bb33df3c99a6228c2aa1d2316a58539111917",
+        "uv_executable_sha256": "ae859d6c2102b58381e9d508fc754ad5483c994aa1060da3fe8e29f4f9c70541",
+        "venv_python_sha256": "4f88a74c1b135771da9e4d6bce3d47713025c96944b24646d4dd5379152b246c"
+      },
+      "boundary": "No tracked authority fixes scheduler-added serialized TRES fields such as billing or node count for job 16028845. V6 may require the contracted semantic components above, but must not invent byte-exact full TRES text."
+    },
+    "A03": {
+      "subject": "sealed teacher direction and margin table across endpoints",
+      "status": "MISSING",
+      "v6_disposition": "REQUIRES_NEW_REVIEWED_SCIENTIFIC_DECISION",
+      "evidence": [
+        {
+          "commit": "b10c65e02e36dcb5878d3aa932adc559d5676a70",
+          "tag": "ht-reconstruction-post-terminal-decision-plan-v1-20260826",
+          "path": "artifacts/codex/joint_optimization_20260824/reconstruction_post_terminal_exact_decision_plan_v1_20260826.json",
+          "sha256": "45747d32d5af2682f712c399d23f0a8f04f5f137757b93cc0664d4f5e556dfe2",
+          "finding": "Requires a separately sealed table for teacher-forced accuracy, precision, recall, calibration, and loss endpoints, but does not define endpoint keys, directions, or margins."
+        },
+        {
+          "commit": "d7068ef529cd3c07764e545f0c83c700d783bdeb",
+          "tag": "ht-reconstruction-paired-stage-a-v2r3r2r8-final-authorization-20260826-v1",
+          "path": "reconstruction/snapshots/recon_stage_a_paired_q32_h100nvl_20260826_v2r3r2_atomic_restart_evidence_clearance/runtime/scripts/slurm/paired_stage_a_compare.py",
+          "sha256": "74cdf5e97a3cdf64c7f1d1fb74e3f87858adbc23ba9646b8a28e673fc7402eae",
+          "finding": "Compatible Stage-A comparator handles aggregate rollout edge F1 and structural invariants only; it supplies no teacher endpoint table."
+        }
+      ],
+      "search_result": "No exact tracked teacher direction/margin table was found in main or pretraining diagnostic provenance."
+    },
+    "A04": {
+      "subject": "exact secondary guard table",
+      "status": "MISSING_WITH_INCOMPATIBLE_NEARBY_ARTIFACT",
+      "v6_disposition": "REQUIRES_NEW_REVIEWED_SCIENTIFIC_DECISION",
+      "evidence": [
+        {
+          "commit": "b10c65e02e36dcb5878d3aa932adc559d5676a70",
+          "tag": "ht-reconstruction-post-terminal-decision-plan-v1-20260826",
+          "path": "artifacts/codex/joint_optimization_20260824/reconstruction_post_terminal_exact_decision_plan_v1_20260826.json",
+          "sha256": "45747d32d5af2682f712c399d23f0a8f04f5f137757b93cc0664d4f5e556dfe2",
+          "finding": "Requires secondary_metrics_nonregressed=true without an endpoint set, direction table, margins, or aggregation rule."
+        },
+        {
+          "commit": "ee0648f972f7da469f61d5b4f547d2b4633b010a",
+          "tag": null,
+          "path": "artifacts/codex/ht_positive_weight_calibration_preregistration_20260816.json",
+          "sha256": "1f99b05afd193ca7d20361b596ab5ff831da7ae5ca35058913bf07b5e3179801",
+          "finding": "Incompatible: preregisters a different object/pointer positive-weight calibration and ranking criteria, not the matched q32-versus-relbias Stage-A secondary guard table."
+        }
+      ],
+      "search_result": "No exact tracked q32-versus-relbias secondary guard table was found."
+    },
+    "A05": {
+      "subject": "exact efficiency definitions and thresholds for throughput, memory, and walltime",
+      "status": "PARTIAL_AUTHORITY_FAIL_CLOSED",
+      "v6_disposition": "PARTIAL_CLOSE; NEW_REVIEWED_MEASUREMENT_DECISION_REQUIRED",
+      "authoritative_parts": {
+        "plan_thresholds": {
+          "complete_target_efficiency_nonregressed": true,
+          "validation_events_per_second_at_least_fraction_of_q32": 0.9,
+          "peak_memory_within_contract": true,
+          "walltime_within_contract": true,
+          "source_commit": "b10c65e02e36dcb5878d3aa932adc559d5676a70",
+          "source_tag": "ht-reconstruction-post-terminal-decision-plan-v1-20260826",
+          "source_path": "artifacts/codex/joint_optimization_20260824/reconstruction_post_terminal_exact_decision_plan_v1_20260826.json",
+          "source_sha256": "45747d32d5af2682f712c399d23f0a8f04f5f137757b93cc0664d4f5e556dfe2"
+        },
+        "complete_target_efficiency_formula": {
+          "commit": "d7068ef529cd3c07764e545f0c83c700d783bdeb",
+          "tag": "ht-reconstruction-paired-stage-a-v2r3r2r8-final-authorization-20260826-v1",
+          "path": "reconstruction/snapshots/recon_stage_a_paired_q32_h100nvl_20260826_v2r3r2_atomic_restart_evidence_clearance/runtime/src/hypertagging/evaluation/hierarchical_metrics.py",
+          "sha256": "6a8c3cc51907b68039816a9988284917b5e10263f7209f3e9693ee5d90080dff",
+          "definition": "complete_target_efficiency_counts defines eligibility and exact multiset reconstruction matching; reconstruction_trainer reports numerator, denominator, and their ratio."
+        },
+        "resource_caps": {
+          "q32_contract_path": "reconstruction/snapshots/recon_stage_a_paired_q32_h100nvl_20260826_v2r3r2_atomic_restart_evidence_clearance/job_contract.json",
+          "q32_contract_sha256": "7298ddde4d7a0458dfda89f11e72e038ef4ed0146929cacfbdfa860ff5a653fe",
+          "relbias_contract_path": "reconstruction/snapshots/recon_stage_a_paired_relbias_h100nvl_20260826_v2r3r2_atomic_restart_evidence_clearance/job_contract.json",
+          "relbias_contract_sha256": "73142dc1dbbc4d96ef9989fb25d3333dd566df18979793161e5f82576cd333b7",
+          "commit": "d7068ef529cd3c07764e545f0c83c700d783bdeb",
+          "tag": "ht-reconstruction-paired-stage-a-v2r3r2r8-final-authorization-20260826-v1",
+          "gpus": 1,
+          "gres": "gpu:h100nvl:1",
+          "cpus": 8,
+          "memory": "64G",
+          "walltime": "02:00:00",
+          "requeue": false,
+          "max_restarts": 0
+        }
+      },
+      "non_authoritative_ambiguities": [
+        "No source selects the validation throughput numerator, timer, inclusion window, warmup policy, or aggregation rule. The trainer's per-optimization-step events_per_second is not named validation throughput and cannot be substituted.",
+        "No source selects peak-memory domain. Sampled nvidia-smi memory.used, CUDA allocated/reserved peaks, and scheduler MaxRSS are distinct available quantities.",
+        "No source selects walltime measurement origin and interval. Scheduler elapsed, wrapper elapsed, and scientific runner elapsed are distinct quantities.",
+        "The validation-efficiency diagnostic configuration concerns locator/data-loading benchmarking and is not an authority for the q32-versus-relbias promotion guard."
+      ],
+      "supporting_code": [
+        {
+          "commit": "d7068ef529cd3c07764e545f0c83c700d783bdeb",
+          "tag": "ht-reconstruction-paired-stage-a-v2r3r2r8-final-authorization-20260826-v1",
+          "path": "reconstruction/snapshots/recon_stage_a_paired_q32_h100nvl_20260826_v2r3r2_atomic_restart_evidence_clearance/runtime/src/hypertagging/training/reconstruction_trainer.py",
+          "sha256": "5b480a95ac87fef4427ca5ee6c212f0d48c3dc2013cfd03805a4da158177c1e0"
+        },
+        {
+          "commit": "d7068ef529cd3c07764e545f0c83c700d783bdeb",
+          "tag": "ht-reconstruction-paired-stage-a-v2r3r2r8-final-authorization-20260826-v1",
+          "path": "reconstruction/snapshots/recon_stage_a_paired_q32_h100nvl_20260826_v2r3r2_atomic_restart_evidence_clearance/runtime/scripts/slurm/monitor_gpu_telemetry.py",
+          "sha256": "5755f58813ca07ada8def8921d0694842338483000c99fbf1f0ae4287ae0ea3d"
+        },
+        {
+          "commit": "d7068ef529cd3c07764e545f0c83c700d783bdeb",
+          "tag": "ht-reconstruction-paired-stage-a-v2r3r2r8-final-authorization-20260826-v1",
+          "path": "reconstruction/snapshots/recon_stage_a_paired_q32_h100nvl_20260826_v2r3r2_atomic_restart_evidence_clearance/runtime/scripts/slurm/terminal_infrastructure.py",
+          "sha256": "3e4c160d6315e058d3dca815e2a60d28c68d371f4c1b5e864f2d829904778f93"
+        }
+      ]
+    }
+  },
+  "v6_summary": {
+    "close_from_existing_authority": ["A01", "A02"],
+    "partially_close_from_existing_authority": ["A05 complete-target formula, numeric ratio threshold, and resource caps only"],
+    "require_new_reviewed_scientific_decision": ["A03", "A04", "A05 operational throughput/memory/walltime definitions"],
+    "fail_closed_until_reviewed": true
+  },
+  "authorization": {
+    "execution_authorized": false,
+    "submission_authorized": false,
+    "scientific_execution_authorized": false,
+    "scheduler_calls_authorized": false,
+    "payload_access_authorized": false
+  },
+  "audit_counters": {
+    "scheduler_calls": 0,
+    "payload_reads": 0,
+    "tests_executed": 0,
+    "scientific_runs": 0
+  }
+}
