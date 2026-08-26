@@ -1,0 +1,233 @@
+{
+  "artifact_version": "joint-terminal-evidence-guard-authority-proposal-v3",
+  "date_utc": "2026-08-26",
+  "status": "REVISED_PROPOSAL_PENDING_THIRD_INDEPENDENT_REVIEW",
+  "authority": {
+    "authority_status": false,
+    "execution_authorized": false,
+    "submission_authorized": false,
+    "scientific_execution_authorized": false,
+    "scheduler_calls_authorized": false,
+    "payload_access_authorized": false,
+    "promotion_authorized": false,
+    "recovery_authorized": false
+  },
+  "supersedes_v2": {
+    "commit": "c1d5de434fd1a494d329055757855e55e92d8d71",
+    "tag": "ht-joint-terminal-evidence-guard-authority-proposal-v2-20260826-v1",
+    "json_sha256": "482a5587b2e913c0d7e0a9c5a8a91731523b7e414fa7ebd0046380b3b3845ae5",
+    "md_sha256": "8f80ff17e46d4cfe6051c45b09db36a61fe8ff2ee8b9b342d0fdc58b947b6f67",
+    "review_disposition": "REVISE"
+  },
+  "independent_rereview_binding": {
+    "verdict": "REVISE",
+    "tracked_review_artifact": null,
+    "provenance": "Independent rereview result relayed verbatim by root task /root to /root/recon_transaction_sol_final_audit on 2026-08-26; no separately tracked reviewer artifact was present at revision time.",
+    "verbatim_result": "Revise guard proposal to v3 exactly per independent REVISE. No scheduler/payload/tests/science; pending review/authfalse. Correct rollout formulas to frozen per-UID macro with exact empty conventions for subtree/type/leaf/source/tree-edit and per-UID edge P/R/F1; only complete-target pooled. Replay: pre-materialize/hash exact events/normalization/batch plan; four balanced measured blocks q32,rel,rel,q32 with unload/clear/sync/identical warmup each; geometric mean per arm throughput, max memory across blocks, identical event/stat receipt hashes per repeated arm; bind four-eval resource ceiling and require future feasibility evidence. Preserve teacher batch_size4, slice produced tensors per event/no second forward, batch4 warmup, ordered batch-boundary digest. Add receipt causal/data exact keys listed by reviewer incl terminal/controller/result/metrics hashes, manifests/index embedded hash/split/normalizer/checkpoint validation UID digest/relation-bias flag/data_access validation-only; exact UID equality. Define model-state digest name/dtype/shape/contiguous CPU bytes+length prefixes matching checkpoint. Specify PCG64 domain-separated seeds/matrices per cohort, 10k, float64/math.fsum/order/repeats, dtype/bin/serialization/tails. Restore scheduled_rollout_valid_all_uids true hard guard. Remove vague level_diagnostics or fully enumerate; prefer separate schema-bound descriptive artifact excluded from authority. Preserve all approved v2. Bind rereview provenance verbatim/hash. Commit/tag v3 JSON/MD pending third review, all flags false, list exact remaining feasibility blocker.",
+    "verbatim_result_utf8_sha256": "b42e1d902de1dbce681665d44901f4e91cf6ac9b3c70017183925b1366427e6d",
+    "third_independent_review_required": true
+  },
+  "source_bindings": {
+    "sealed_plan": {
+      "commit": "b10c65e02e36dcb5878d3aa932adc559d5676a70",
+      "tag": "ht-reconstruction-post-terminal-decision-plan-v1-20260826",
+      "json_sha256": "45747d32d5af2682f712c399d23f0a8f04f5f137757b93cc0664d4f5e556dfe2"
+    },
+    "authority_discovery": {
+      "commit": "1a5c26eab5f7649dac76b95b7c698e1658ce0170",
+      "tag": "ht-joint-terminal-evidence-v5-authority-discovery-20260826-v1",
+      "json_sha256": "81515669819e57b5628985b0422522ed2e1bc584da1af744ce7c0e0dbb2a2ee7"
+    },
+    "stage_a": {
+      "commit": "d7068ef529cd3c07764e545f0c83c700d783bdeb",
+      "tag": "ht-reconstruction-paired-stage-a-v2r3r2r8-final-authorization-20260826-v1",
+      "q32_contract_path": "reconstruction/snapshots/recon_stage_a_paired_q32_h100nvl_20260826_v2r3r2_atomic_restart_evidence_clearance/job_contract.json",
+      "q32_contract_file_sha256": "7298ddde4d7a0458dfda89f11e72e038ef4ed0146929cacfbdfa860ff5a653fe",
+      "q32_embedded_contract_sha256": "f24d447f90d5102d944c5b0cb0c9dcd3d7441d36f355dbe2319c34f78d9825bd",
+      "q32_config_sha256": "5f56d1645472f6d46cb7704ae326c94ef9b9de79da9348a099c0db0fa9f9a931",
+      "relbias_contract_path": "reconstruction/snapshots/recon_stage_a_paired_relbias_h100nvl_20260826_v2r3r2_atomic_restart_evidence_clearance/job_contract.json",
+      "relbias_contract_file_sha256": "73142dc1dbbc4d96ef9989fb25d3333dd566df18979793161e5f82576cd333b7",
+      "relbias_embedded_contract_sha256": "9b77b545762d2c26e68cd00b2b533650f46f961a3eb5261f4643d92c5e1fd40c",
+      "relbias_config_sha256": "5b5cafacc5ab540b565ef2ca088d47c58e120a5dadcc1b2af34b15e00b5ef29b",
+      "jobs": {"q32_primary":16030125,"relbias_primary":16030126,"q32_controller":16030127,"relbias_controller":16030128},
+      "treatment_only": "type_conditioned_daughter_relation_bias false for q32, true for relbias"
+    },
+    "frozen_code_sha256": {
+      "reconstruction_trainer.py":"5b480a95ac87fef4427ca5ee6c212f0d48c3dc2013cfd03805a4da158177c1e0",
+      "hierarchical_metrics.py":"6a8c3cc51907b68039816a9988284917b5e10263f7209f3e9693ee5d90080dff",
+      "level_reconstruction.py":"156ea8d9cfaf8cd99265fe3550a596ea3fd22387c4310a2fbfcd08d73755d892",
+      "logging.py":"cf018ffd8952bf9e96724c93ce03b03c267c662a73b6e1da2e43e4527c269405",
+      "run_stage_a.py":"d0cffc0997a8faf7b1f87789b79693f08da674a869562e7022d33baf5333684a",
+      "monitor_gpu_telemetry.py":"5755f58813ca07ada8def8921d0694842338483000c99fbf1f0ae4287ae0ea3d",
+      "terminal_infrastructure.py":"3e4c160d6315e058d3dca815e2a60d28c68d371f4c1b5e864f2d829904778f93"
+    },
+    "pretraining_A01_A02": {
+      "transition_commit":"0c728e7c37ec933f5aad8c724e295e8788baa72a",
+      "transition_tag":"ht-pretraining-balanced-resume-attempt9r4r23-transition-20260826-v1",
+      "contract_file_sha256":"b7be36440996bbb12e842c0cce7bc748ff3779a341873e7604cb2d57c7631e56",
+      "embedded_contract_sha256":"a50408eee13132d7a2338ea1b3f38d9ffa13fecc49d8ade510e504cbf4a891a1",
+      "job_id":16028845
+    }
+  },
+  "canonical_bytes": {
+    "json": "Python json.dumps(value,sort_keys=True,separators=(comma,colon),ensure_ascii=False,allow_nan=False).encode(UTF-8), no BOM/newline",
+    "receipt_sha256": "SHA-256 of canonical JSON after removing only top-level receipt_sha256",
+    "uid": "Nonempty NFC string; forbid CR, LF, NUL and leading/trailing whitespace",
+    "uid_sequence_sha256": "SHA-256 of concatenated UTF-8 UID then LF in exact array order",
+    "batch_boundary_sha256": "SHA-256 of ASCII domain HT-TEACHER-BATCH4-V3 followed by NUL, then for each batch in order uint64-be batch ordinal, uint64-be UID count=4, and for each UID uint64-be UTF-8 byte length plus bytes",
+    "numbers": "Counts/nanoseconds are JSON integers; statistics are finite IEEE-754 binary64 serialized by the bound Python JSON encoder; booleans forbidden as numbers; NaN, infinity and negative zero forbidden"
+  },
+  "causal_data_receipt_envelope": {
+    "schema_version":"joint-terminal-paired-evaluation-event-receipt-v3",
+    "exact_keys": [
+      "schema_version","schema_sha256","receipt_sha256","arm","relation_bias_enabled","block_id","block_ordinal","data_access","source_primary_job_id","source_controller_job_id","terminal_receipt_path","terminal_receipt_sha256","controller_receipt_path","controller_receipt_sha256","result_path","result_sha256","metrics_path","metrics_sha256","source_contract_path","source_contract_file_sha256","source_embedded_contract_sha256","config_sha256","selection_manifest_path","selection_manifest_sha256","dataset_index_path","dataset_index_file_sha256","dataset_index_embedded_sha256","split_manifest_path","split_manifest_sha256","normalizer_manifest_path","normalizer_manifest_sha256","terminal_checkpoint_path","terminal_checkpoint_file_sha256","terminal_checkpoint_state_sha256","checkpoint_validation_uid_sha256","runtime_closure_sha256","evaluator_commit","evaluator_sha256","frozen_code_sha256","optimizer_step","presentations","seed","teacher_batch_size","teacher_uid_count","teacher_uid_sha256","teacher_batch_boundary_sha256","rollout_uid_count","rollout_uid_sha256","prematerialized_event_manifest_path","prematerialized_event_manifest_sha256","normalized_tensor_manifest_path","normalized_tensor_manifest_sha256","batch_plan_path","batch_plan_sha256","teacher_statistics_path","teacher_statistics_sha256","rollout_statistics_path","rollout_statistics_sha256","timing_receipt_path","timing_receipt_sha256","cuda_memory_receipt_path","cuda_memory_receipt_sha256","model_state_before_sha256","model_state_after_sha256","checkpoint_before_sha256","checkpoint_after_sha256","training_operations","authorization"
+    ],
+    "fixed": {
+      "data_access":"validation_only",
+      "optimizer_step":512,
+      "presentations":32768,
+      "seed":20260826,
+      "teacher_batch_size":4,
+      "teacher_uid_count":2000,
+      "rollout_uid_count":1000,
+      "training_operations":{"backward_calls":0,"optimizer_constructed":false,"optimizer_steps":0,"scheduler_steps":0,"parameter_updates":0,"checkpoint_writes":0},
+      "authorization":{"authority_status":false,"execution_authorized":false,"submission_authorized":false,"promotion_authorized":false}
+    },
+    "arm_fixed": {
+      "q32":{"relation_bias_enabled":false,"source_primary_job_id":16030125,"source_controller_job_id":16030127},
+      "relbias":{"relation_bias_enabled":true,"source_primary_job_id":16030126,"source_controller_job_id":16030128}
+    },
+    "causal_closure": "Every path is absolute, canonical, regular, nonsymlink, inside the future authorized recovery root, owner UID 12184, and byte-hashed before evaluation; result/metrics/checkpoint hashes must be named by accepted terminal and controller receipts."
+  },
+  "data_materialization": {
+    "required_before_first_model_load": true,
+    "event_manifest": "Exactly 2000 ordered validation-role UID records. Each record binds event UID, source locator/index identity, source-record SHA-256, normalized-tensor record SHA-256, and teacher/rollout membership. Rollout membership is true exactly for indices 0..999.",
+    "normalization": "Run the exact frozen normalizer once before model loading. Persist a manifest of each normalized tensor key, dtype, shape, contiguous CPU byte length and SHA-256; models consume these immutable tensors without renormalization.",
+    "batch_plan": "Exactly 500 teacher batches of four consecutive ordered UIDs and exactly 1000 singleton rollout batches. Batch plan binds every batch ordinal, phase, UID list, normalized-record hashes, batch size, and ordered batch-boundary digest.",
+    "hash_equality": "All four blocks must bind identical event, normalized-tensor, batch-plan, teacher UID, rollout UID, and batch-boundary hashes.",
+    "UID_equality": [
+      "teacher UID array equals the exact checkpoint validation-selection UID array and its digest",
+      "teacher UID array equals selection-manifest ordered validation selector output",
+      "rollout UID array equals teacher indices 0..999",
+      "q32 and relbias arrays are byte-for-byte identical",
+      "all four block arrays and hashes are identical"
+    ]
+  },
+  "model_state_digest": {
+    "name":"ht-model-state-digest-v1",
+    "domain_prefix":"ASCII HT-MODEL-STATE-DIGEST-V1 followed by NUL",
+    "ordering":"Sort state_dict names by raw UTF-8 byte lexicographic order; duplicate names forbidden.",
+    "tensor_requirements":"Dense strided, nonquantized torch.Tensor only; detach, move to CPU, contiguous; reject sparse/meta/quantized tensors and storage alias ambiguity.",
+    "byte_order":"Evaluator must assert sys.byteorder==little. Tensor payload is the resulting little-endian contiguous logical storage viewed as torch.uint8; no pointer, stride, capacity or unused storage bytes are included.",
+    "entry_bytes":"uint64-be name_length + name UTF-8; uint64-be dtype_string_length + ASCII str(tensor.dtype); uint64-be ndim; each shape dimension uint64-be; uint64-be payload_length; payload is contiguous CPU tensor viewed as torch.uint8 and emitted in logical C order.",
+    "digest":"SHA-256 over domain prefix followed by every entry byte sequence; empty mapping forbidden.",
+    "checkpoint_match":"Apply the same algorithm to the checkpoint's exact model state mapping, loaded model state before evaluation, and loaded model state after evaluation. All three digests must equal terminal_checkpoint_state_sha256; checkpoint file hash must also be unchanged before/after."
+  },
+  "teacher_statistics_schema": {
+    "schema_version":"teacher-event-sufficient-statistics-v3",
+    "cardinality":2000,
+    "batch_size":4,
+    "exact_record_keys":["event_uid","event_index","source_role","validation_train_fallback_used","target_level_count","object_tp","object_fp","object_fn","pointer_tp","pointer_fp","pointer_fn","mother_type_correct","mother_type_total","cardinality_correct","cardinality_total","brier_sum","brier_count","ece_bins","loss_total_sum","loss_total_count"],
+    "ece_bin_keys":["bin_index","count","probability_sum","target_sum"],
+    "batch_preservation":"Perform each forward exactly once on the frozen batch of four. For per-event statistics and loss, slice the already-produced output tensors, matching data, confidence targets, and normalized batch tensors by event index. The exact frozen matching/loss calculation may be applied to the slices, but a second model forward, single-event renormalization, or changed batch boundary is forbidden.",
+    "loss":"For each event sum its sliced total loss over every positive target level and count those levels. Aggregate L=sum(loss_total_sum)/sum(loss_total_count); loss effect=L_relbias/L_q32-1 with boundary +0.02 and L_q32>0.",
+    "brier":"Bootstrap replicate=sum repeated-UID brier_sum/sum repeated-UID brier_count.",
+    "ece":"For each of ten bins [i/10,(i+1)/10), with final upper inclusive, sum repeated-UID count/probability_sum/target_sum. With N=sum counts, ECE=sum count/N*abs(probability_sum/count-target_sum/count), skipping count-zero bins only; N>0.",
+    "positive_cohort_denominators":["object predicted positives","object truth positives","pointer predicted positives","pointer truth positives","mother_type_total","cardinality_total","brier_count","ECE total count","loss_total_count"]
+  },
+  "rollout_statistics_schema": {
+    "schema_version":"rollout-event-sufficient-statistics-v3",
+    "cardinality":1000,
+    "exact_record_keys":["event_uid","event_index","source_role","validation_train_fallback_used","truth_edge_count","predicted_edge_count","common_edge_count","full_tree_exact","subtree_common_count","truth_node_count","predicted_node_count","mother_type_correct","mother_type_total","leaf_assignment_correct","leaf_assignment_total","source_jaccard_sum","source_jaccard_count","tree_edit_numerator","tree_edit_denominator","root_reconstruction_success","truth_root_count","representable_target_count","truth_target_count","complete_target_correct","complete_target_eligible","predicted_tree_valid","predicted_p4_closed_count","predicted_p4_composite_count","teacher_p4_closed_count","teacher_p4_composite_count","recursive_source_conflicts","leaf_source_retained_count","truth_leaf_source_count","reconstruction_valid","bounded_resolution_available","scheduled_rollout_valid"],
+    "per_UID_frozen_metrics": {
+      "edge_precision":"common_edge_count/predicted_edge_count if predicted>0 else float(truth_edge_count==0)",
+      "edge_recall":"common_edge_count/truth_edge_count if truth>0 else float(predicted_edge_count==0)",
+      "edge_f1":"2*precision*recall/(precision+recall) if precision+recall>0 else 0",
+      "full_tree_exact_match":"float(full_tree_exact)",
+      "canonical_subtree_exact_match":"subtree_common_count/max(truth_node_count,1)",
+      "mother_type_accuracy":"mother_type_correct/mother_type_total if mother_type_total>0 else 1",
+      "leaf_assignment_accuracy":"leaf_assignment_correct/leaf_assignment_total if leaf_assignment_total>0 else 1",
+      "recursive_source_overlap":"source_jaccard_sum/source_jaccard_count if source_jaccard_count>0 else 0",
+      "tree_edit_like_distance":"tree_edit_numerator/max(predicted_node_count+truth_node_count,1); stored tree_edit_denominator must equal that max",
+      "root_reconstruction_success":"float(root_reconstruction_success)",
+      "representable_target_rate":"representable_target_count/max(truth_target_count,1)"
+    },
+    "cohort_aggregation":"For every listed per-UID frozen metric, arithmetic macro mean=math.fsum(values in exact UID order)/1000. Do not pool subtree/type/leaf/source/edit/edge sufficient statistics.",
+    "only_pooled_secondary":"complete_target_efficiency=math.fsum(integer complete_target_correct)/math.fsum(integer complete_target_eligible), with positive pooled eligible denominator.",
+    "truth_edge_semantics":"truth_edge_count is canonical truth-edge Counter multiplicity cardinality. It may be zero for an individual UID under the frozen empty convention, but sum across 1000 UIDs must be positive.",
+    "teacher_P4":"Teacher-forced P4 closed/composite counts are recorded only for the 1000 rollout UIDs. Pooled composite denominator must be positive and all composites must close.",
+    "fallback":"source_role must be validation and validation_train_fallback_used false for every UID. Training fallback_teacher_count is outside this evidence domain and not constrained.",
+    "hard":"Every UID predicted_tree_valid, reconstruction_valid, scheduled_rollout_valid; every UID leaf retention numerator equals positive truth denominator; pooled teacher/predicted P4 closed equals positive composite denominator; recursive conflicts sum zero."
+  },
+  "descriptive_artifact_excluded_from_authority": {
+    "schema_version":"paired-evaluation-descriptive-diagnostics-v3",
+    "exact_record_keys":["arm","event_uid","event_index","target_level","object_no_object_accuracy","object_precision","object_recall","mother_type_accuracy","cardinality_accuracy","pointer_precision","pointer_recall","pointer_f1","loss_object","loss_type","loss_pointer","loss_cardinality","loss_confidence","loss_physics","loss_source_conflict","loss_mother_charge","loss_query_repulsion"],
+    "rules":"One record per observed positive target level, exact arm/UID/level ordering, finite values, separately canonicalized and hashed. No macro_* aliases. This artifact is never read by promotion inference and cannot add or waive a gate."
+  },
+  "bootstrap_reproducibility": {
+    "engine":"numpy.random.Generator(numpy.random.PCG64(seed_integer))",
+    "base_seed":20260826,
+    "teacher_domain":"ht-guard-v3/teacher/2000/pcg64/20260826",
+    "teacher_seed_integer":"0x4b004223af6f36bd1cb553952753a421 interpreted unsigned big-endian",
+    "teacher_matrix":"rng.integers(0,2000,size=(10000,2000),dtype=numpy.uint32,endpoint=False)",
+    "rollout_domain":"ht-guard-v3/rollout/1000/pcg64/20260826",
+    "rollout_seed_integer":"0xaf89e3bbe40d7dc29e4b3d6aaf8cc690 interpreted unsigned big-endian",
+    "rollout_matrix":"rng.integers(0,1000,size=(10000,1000),dtype=numpy.uint32,endpoint=False)",
+    "seed_derivation":"Seed hex is the first 16 bytes of SHA-256(domain UTF-8), interpreted unsigned big-endian; domain strings and derived hex must both be verified.",
+    "matrix_serialization":"C-order raw uint32 little-endian bytes, row 0 through 9999 and column 0 through N-1, no header; matrix SHA-256, byte length and shape required in inference receipt. A non-little-endian host must byteswap before hashing.",
+    "repeat_semantics":"Repeated matrix indices repeat the entire UID record and all its sufficient statistics; q32 and relbias use the identical matrix row. Iterate rows then columns in increasing order.",
+    "numeric_evaluation":"Convert stored finite scalars to Python float (binary64). Sum floating values with math.fsum in matrix-column order; sum integer counts as unbounded Python integers then divide once to binary64. Compute per-UID ratios first for macro endpoints, then math.fsum in resampled column order/N. Geometric means use math.sqrt(t1*t2) after checking finite positive inputs.",
+    "primary_raw_p":"For observed d, boundary h=0 and bootstrap d_b, z_b=d_b-d+h. p=(1+count(z_b>=d))/(10001); equality is in upper tail.",
+    "holm":"Sort (p,endpoint_id), p ties lexicographically. adjusted first=min(1,2*p1); adjusted second=max(adjusted first,p2). Both <=0.05.",
+    "CI":"Bonferroni simultaneous 95% familywise paired-percentile, not Holm: sorted bootstrap binary64 effects, ties retained, no interpolation, zero-based indices 124 and 9874; both primary lower bounds strictly >0 and point deltas >=0.01.",
+    "NI":"Intersection-union, no multiplicity adjustment. Higher endpoint h=-margin uses upper-tail centered-null p; lower endpoint h=+margin uses lower-tail p=(1+count(z_b<=d))/10001. Equality included. Require p<=0.05 and estimate strictly inside boundary.",
+    "JSON_serialization":"All inference effects, p-values, bounds and estimates use canonical JSON numeric serialization defined above; also store bootstrap matrix SHA and endpoint evaluation order."
+  },
+  "approved_v2_guard_margins_preserved": {
+    "primary":[{"endpoint":"rollout_macro_event_edge_f1","minimum_delta":0.01},{"endpoint":"teacher_micro_pointer_f1","minimum_delta":0.01}],
+    "teacher_NI":{"pointer_precision":0.005,"pointer_recall":0.005,"object_precision":0.005,"object_recall":0.005,"mother_type_accuracy":0.01,"cardinality_accuracy":0.01,"brier_score_lower":0.005,"ece_10bin_lower":0.005,"loss_ratio_lower":0.02},
+    "rollout_NI":{"full_tree_exact_match":0.005,"canonical_subtree_exact_match":0.005,"edge_precision":0.005,"edge_recall":0.005,"mother_type_accuracy":0.01,"leaf_assignment_accuracy":0.01,"recursive_source_overlap":0.005,"tree_edit_like_distance_lower":0.005,"root_reconstruction_success":0.01,"complete_target_efficiency":0.005},
+    "complete_target_single_test_reused":true
+  },
+  "four_block_recovery_contract": {
+    "status":"REQUIRED_FUTURE_CONTRACT_NOT_AUTHORIZED",
+    "block_order":["q32_A","relbias_A","relbias_B","q32_B"],
+    "block_order_rationale":"Balanced palindrome gives each arm one outer and one inner position and was fixed before receipts/outcomes.",
+    "before_each_block":["delete prior model references","gc.collect","torch.cuda.empty_cache","torch.cuda.synchronize","load only selected terminal checkpoint","verify checkpoint/model-state digest","model.eval and requires_grad false","run identical warmup","torch.cuda.synchronize","torch.cuda.reset_peak_memory_stats"],
+    "warmup":"Exactly two unmeasured teacher batches of four UIDs (teacher indices 0..7 with production batch boundaries) followed by eight singleton rollout UIDs (indices 0..7), using immutable prematerialized normalized tensors. Discard outputs. No normalization/model compilation/loading is inside measured timing.",
+    "measured":"Full 500 teacher batches of size four plus 1000 singleton rollouts, exact batch plan, contemporaneous monotonic_ns and process CUDA peak receipt.",
+    "between_blocks":"Receipt and artifacts full-write/fsync; verify state/checkpoint unchanged; unload model; gc.collect; empty CUDA cache; synchronize; require process allocated/reserved current bytes return to recorded baseline ceiling before next load.",
+    "repeated_arm_identity":"For q32_A versus q32_B and relbias_A versus relbias_B, teacher_statistics_sha256, rollout_statistics_sha256, model-state digest, UID digests, event/normalization/batch hashes, and every causal input hash must be identical. Timing, CUDA peaks, block ID/ordinal and envelope receipt hash are expected to differ and are excluded from statistic-content hashes.",
+    "throughput":"Each block rate=3000/positive measured seconds. q32 rate=math.sqrt(q32_A*q32_B); relbias rate=math.sqrt(relbias_A*relbias_B); require relbias/q32>=0.9.",
+    "memory":"For each block require 0<peak_allocated<=peak_reserved<=device_total. Arm peaks are maxima across its two blocks; both must remain within device total. Fifteen-second device-wide telemetry is required diagnostic only.",
+    "host_and_walltime":"For original and recovery jobs require exactly one <jobid>.batch row. MaxRSS must match ^([1-9][0-9]*)([KMGT]?)$ with no whitespace/decimal; empty unit is bytes and K/M/G/T are powers 1024^1/2/3/4; reject overflow above 2^63-1. Require MaxRSS<=68719476736 bytes. Recovery ElapsedRaw is positive and <=14400; original primary result.elapsed_seconds and ElapsedRaw are positive and <=7200.",
+    "resource_ceiling":{"allocations":1,"max_concurrent_models":1,"gpu":"gpu:h100nvl:1","gpus":1,"cpus":8,"memory":"64G","walltime":"04:00:00","requeue":false,"max_restarts":0,"maximum_H100_GPU_hours":4.0,"measured_blocks":4},
+    "feasibility_evidence_required":"Before any authorization, a separately reviewed tracked feasibility receipt must conservatively show four block upper-bound runtime plus load/warmup/fsync/unload overhead <=14400 seconds and host/GPU capacity within the stated ceilings, using only accepted non-outcome infrastructure evidence. No event scores or promotion outcome may inform feasibility.",
+    "no_training":{"backward_calls":0,"optimizer_constructed":false,"optimizer_steps":0,"scheduler_steps":0,"parameter_updates":0,"checkpoint_writes":0},
+    "scientific_equivalence":"Each block loads the accepted terminal step-512 checkpoint, exact treatment config and frozen evaluation functions; consumes identical prematerialized validation tensors and batch plan; no train/test/stress access, selection, parameter update, checkpoint choice or posthoc formula change.",
+    "no_posthoc_substitute":"Old aggregates, train logs, inferred timestamps, scheduler elapsed/event count, 15-second telemetry, single-arm or two-block replay, reordered UIDs, different batch size, second forwards, or reserialized receipts cannot satisfy v3."
+  },
+  "timing_and_memory_receipts": {
+    "timing_exact_keys":["block_id","clock","phase","teacher_batch_count","teacher_batch_size","rollout_event_count","start_monotonic_ns","end_monotonic_ns","duration_ns","work_units","work_units_per_second","event_manifest_sha256","normalized_tensor_manifest_sha256","batch_plan_sha256"],
+    "timing_rule":"clock literal time.monotonic_ns; phase literal final_step_512_validation_replay; synchronize immediately before start and immediately before end; capture contemporaneously in evaluator before serialization; duration=end-start>0; work_units=3000.",
+    "memory_exact_keys":["block_id","device_index","device_uuid","device_name","device_total_bytes","baseline_allocated_bytes","baseline_reserved_bytes","reset_after_identical_warmup","peak_allocated_bytes","peak_reserved_bytes"],
+    "memory_rule":"Use torch.cuda.reset_peak_memory_stats after warmup/sync and max_memory_allocated/max_memory_reserved after measured evaluation/sync; exactly one NVIDIA H100 NVL. Device-wide telemetry cannot replace this receipt."
+  },
+  "hard_guards": {
+    "scheduled_rollout_valid_all_uids":true,
+    "predicted_tree_valid_all_uids":true,
+    "reconstruction_valid_all_uids":true,
+    "leaf_retention_all_uids":true,
+    "recursive_source_conflicts_sum":0,
+    "teacher_P4_closed_equals_positive_composites":true,
+    "predicted_P4_closed_equals_positive_composites":true,
+    "validation_rollout_fallback_count":0,
+    "sealed_test_access":false,
+    "stress_role_access":false,
+    "all_required_values_finite":true
+  },
+  "decision_rule":"No promotion or recovery execution is authorized. After third review, a separately reviewed exact implementation/recovery contract and feasibility receipt are required. Promotion later requires terminal-valid current jobs/checkpoints, four-block identity, exact receipts, both primary tests, every intersection-union NI guard, hard/resource/efficiency gates, and explicit later promotion authority; otherwise retain q32.",
+  "remaining_feasibility_blocker": "No tracked independently reviewed non-outcome feasibility evidence currently demonstrates that four full measured validation blocks plus four identical warmups, checkpoint loads, unload/clear/sync cycles, durable receipts, and overhead fit one H100 NVL, 8 CPUs, 64 GiB, <=04:00:00 and <=4.0 H100 GPU-hours. Until that exact evidence and the future recovery implementation/contract exist and pass review, recovery_authorized=false.",
+  "other_unresolved_implementation_inputs":["accepted terminal checkpoint paths/hashes for jobs 16030125 and 16030126","future evaluator/wrapper/contract/schema hashes","future event/normalizer/batch manifests and their hashes","future controller/output paths and exclusive durable receipt protocol"],
+  "audit_counters":{"scheduler_calls":0,"payload_reads":0,"tests_executed":0,"scientific_runs":0}
+}
