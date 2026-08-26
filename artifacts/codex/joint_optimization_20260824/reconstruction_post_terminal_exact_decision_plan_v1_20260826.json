@@ -1,0 +1,198 @@
+{
+  "schema_version": "hyper-tagging.reconstruction-post-terminal-decision-plan.v1",
+  "plan_version": "v1",
+  "created_at": "2026-08-26T17:45:00+02:00",
+  "status": "planning_clearance_only_evidence_pending",
+  "scope": "post-terminal reconstruction architecture, transfer, bounded HPO, and one final validation-qualified reconstruction decision",
+  "authorization": {
+    "execution_authorized": false,
+    "submission_authorized": false,
+    "scheduler_authorized": false,
+    "scientific_submission_authorized": false,
+    "payload_access_authorized": false,
+    "sealed_test_access_authorized": false
+  },
+  "source_snapshots": {
+    "main": {
+      "root": "/home/b/Boyang.Yu/HyperTagging_uni/HyperTagging",
+      "commit": "ef5a9e5bc169408d862d8b69936e33400d7497c4",
+      "tracked_clean_at_planning": true
+    },
+    "reconstruction_clearance": {
+      "root": "/home/b/Boyang.Yu/HyperTagging_uni/HyperTagging_reconstruction_hpo_clearance_20260825",
+      "commit": "02d5f600fc274022184f3cded64b6fc562f5323b",
+      "tracked_clean_at_planning": true,
+      "known_untracked_tmp_upload_count": 22,
+      "known_untracked_tmp_upload_excluded": true
+    }
+  },
+  "evidence_bindings": [
+    {"repo":"main","path":"artifacts/codex/ht_reconstruction_fullscale_readiness_machine_20260817.json","sha256":"ce3f5abf9b8a82c7b80acead08bc341ea5ecb9c40d0d552dd3580f92689a26aa"},
+    {"repo":"main","path":"reconstruction/snapshots/recon_val_b64_h100nvl_baseline_20260824_v2/job_contract.json","sha256":"bf42c1628636e57692e05ffbb5194913b3e0f453fd0e0d8e57029f052d9fb956"},
+    {"repo":"main","path":"reconstruction/snapshots/recon_val_b64_h100nvl_baseline_20260824_v2/snapshot_manifest.json","sha256":"a5525308a09e6138bf579116b34302bbb69cdf368d4fb9749a0c96a176ef8d01"},
+    {"repo":"reconstruction_clearance","path":"artifacts/codex/reconstruction_hpo_clearance_20260825/paired_stage_a_v2r3r2r8_submission_handoff.json","sha256":"ee85575aa09c6697f33eaf5dfe20f70c894bfe779a056c0761dbefcdbb0fd2b6"},
+    {"repo":"reconstruction_clearance","path":"artifacts/codex/reconstruction_hpo_clearance_20260825/paired_stage_a_v2r3r2r8_final_authorization_transition.json","sha256":"124ff6e0dcf3ea56410c63da34cf83c2d8f6965a99dc0ead80f7e79552c36bc4"},
+    {"repo":"reconstruction_clearance","path":"reconstruction/snapshots/recon_stage_a_paired_q32_h100nvl_20260826_v2r3r2_atomic_restart_evidence_clearance/job_contract.json","sha256":"7298ddde4d7a0458dfda89f11e72e038ef4ed0146929cacfbdfa860ff5a653fe"},
+    {"repo":"reconstruction_clearance","path":"reconstruction/snapshots/recon_stage_a_paired_relbias_h100nvl_20260826_v2r3r2_atomic_restart_evidence_clearance/job_contract.json","sha256":"73142dc1dbbc4d96ef9989fb25d3333dd566df18979793161e5f82576cd333b7"},
+    {"repo":"reconstruction_clearance","path":"scripts/reconstruction_hpo/paired_stage_a_compare.py","sha256":"74cdf5e97a3cdf64c7f1d1fb74e3f87858adbc23ba9646b8a28e673fc7402eae"},
+    {"repo":"reconstruction_clearance","path":"artifacts/codex/reconstruction_hpo_clearance_20260825/conditional_hpo_harness_v2_clearance_20260825.json","sha256":"c7f399cc8c3e3a21a9f9bd20d94581e87de48c85474139ab093a4ae632d2a785"},
+    {"repo":"reconstruction_clearance","path":"scripts/reconstruction_hpo/hpo_conditional_v2.py","sha256":"8d86b2c8bacc8d38cdd4baa501441c87f8b21eef4a777dc8c78a49adefbe322a"},
+    {"repo":"reconstruction_clearance","path":"artifacts/codex/reconstruction_hpo_clearance_20260825/transfer_ladder_balanced_opt676_opt1352_scratch_v9r2_clearance_20260826.json","sha256":"f38ab5461919569cc21666b558ab764602dfe6c9ac8ceac20ed6976160782b7d"},
+    {"repo":"reconstruction_clearance","path":"reconstruction/hpo/transfer_ladder_balanced_opt676_opt1352_scratch_20260826_v9r1.template.json","sha256":"2311401b018601cfcbad77f8b4026023cfca2c06afcdb7c4e00999191f680fe5"},
+    {"repo":"reconstruction_clearance","path":"scripts/reconstruction_hpo/transfer_ladder_v9.py","sha256":"2ada9f3d8ff29100df8ac20c02869f26168b65c25d14361a33fded43e67505bb"},
+    {"repo":"reconstruction_clearance","path":"scripts/reconstruction_hpo/bound_scorer_v9.py","sha256":"54a6d12c77e90d09cd27ccd1459b95d50222f66d3f3fe2fb752fedf748ed61e6"},
+    {"repo":"reconstruction_clearance","path":"artifacts/codex/reconstruction_hpo_clearance_20260825/transfer_ladder_partial_production_binding_v2_20260826.json","sha256":"84d21cf69bf9f15af3100de7c8ff16fb4c94d831ebecb23386b4f4fd8d51285a"},
+    {"repo":"reconstruction_clearance","path":"artifacts/codex/reconstruction_hpo_clearance_20260825/promoted_uid_locator_binder_v1r2_20260826.json","sha256":"27570f83b521f7e9adfa64ad4611c46c584e28806437da95c8e67277a66af75a"},
+    {"repo":"reconstruction_clearance","path":"scripts/reconstruction_hpo/promoted_uid_locator_binder_v1r2.py","sha256":"b28f0751ff7345555ebf8e465cdea1ae939cc7750dd7559f8c13ad7f769dc895"},
+    {"repo":"reconstruction_clearance","path":"artifacts/codex/reconstruction_hpo_clearance_20260825/future_terminal_harness_v3r2.json","sha256":"cbef464382325f1a69be99b683eafb4159c62afb1aa420ea0dd09e2e9139be8f"}
+  ],
+  "already_clear": [
+    "The r8 one-shot transaction durably submitted and jointly released exactly jobs 16030125, 16030126, 16030127, and 16030128 with no retry or alternate command.",
+    "The q32 and relation-bias Stage-A contracts are immutable, matched except for the preregistered relation-bias treatment, use step 512 and 32768 presentations, seed 20260826, validation-only evaluation, one H100 NVL, no requeue, and no sealed/stress access.",
+    "The future terminal harness is code-cleared for exclusive atomic receipts, telemetry watchdog, signal handling, and afterany reconciliation, but its later scientific integrations remain separately unauthorized.",
+    "The conditional six-arm HPO builder/verifier is code-cleared and fail-closed on a selected step-1352 pointer and matched paired-promotion receipt; it cannot submit jobs and no real bundle exists.",
+    "The transfer-ladder v9r2 implementation and scorer are code-cleared, state-bound, telemetry-bound, and non-runnable until real production evidence is supplied.",
+    "The opt676 source closure is preserved: checkpoint 6c3aafc43767c6606fa32079fe16e1b5b04180c3c103a10e0de637748f01cf3a at optimizer step 676, config 3497ad8f29f1a0348bdd18359b07be45f914d226a4d1aa7a141edf672d36e2b6, split manifest f4cad4f0e8bd537228d4bfcd884113fe8d9c45aa1c6ec2c3ce40809ab192e2a9, dataset index eba2a5498e09d82e1ca1e8d9841ba117423b99b540190088ed4875a8aa296809, and selection manifest fe250b707242377cbdfea5936a1b7ff160241fb3c223a37b4f3285613062dba2.",
+    "UID-binder v1r2 and its provenance are sealed; the authoritative pretraining-validation ordered UID digest is 1e424f72a3d3a3efb4c1548579c46bd464794e2594444e36a36e4adbcbc68c8e under sha256-u64be-length-prefixed-utf8-v1. The legacy compact-JSON digest is non-authoritative.",
+    "The main worktree contains a tracked immutable validation replacement snapshot, but it is an implementation reference rather than authorization for this final program."
+  ],
+  "missing_before_any_new_science": [
+    "Terminal scheduler, local receipt, afterany reconciliation, result, telemetry, and artifact-manifest evidence for reconstruction jobs 16030125 through 16030128.",
+    "Terminal scheduler, checkpoint-step-1352, validation, provenance, and immutable pointer-candidate evidence for pretraining job 16028845.",
+    "Event-level paired score artifacts and a sealed promotion receipt implementing the Holm-adjusted paired-bootstrap gate; the current paired comparator reports only aggregate delta and cannot by itself authorize promotion.",
+    "A real promoted UID locator, four ordered-UID artifacts, their receipts and independent attestations, a successful metadata replay, and a bounded locator pilot.",
+    "A complete opt1352 candidate binding, deterministic production scratch state, train-only normalizer, runtime and telemetry receipts, and a terminal transfer-ladder result.",
+    "A real conditional-HPO bundle, exact CPU/memory/walltime scheduler contracts and wrappers, output paths, terminal controllers, and independent authorization.",
+    "A generalized conditional-HPO pointer contract if opt676 wins; the cleared builder hard-codes step 1352. A scratch winner has no authorized automatic HPO branch.",
+    "A new immutable final reconstruction snapshot and contract derived from the selected source and HPO arm."
+  ],
+  "terminal_evidence_gate": {
+    "scheduler_accounting_format": ["JobIDRaw","JobName","User","State","ExitCode","DerivedExitCode","Submit","Start","End","Elapsed","Timelimit","NodeList","ReqTRES","AllocTRES","Restarts"],
+    "identity": {"canonical_user":"boyang.yu","uid":12184},
+    "required_jobs": [
+      {"job_id":"16030125","role":"q32_primary","required_state":"COMPLETED","required_exit_code":"0:0","expected_name":"recon-stage-a-paired-q32-h100nvl-20260826-v2r3r2-atomic-restart-evidence-clearance"},
+      {"job_id":"16030126","role":"relbias_primary","required_state":"COMPLETED","required_exit_code":"0:0","expected_name":"recon-stage-a-paired-relbias-h100nvl-20260826-v2r3r2-atomic-restart-evidence-clearance"},
+      {"job_id":"16030127","role":"q32_afterany","required_state":"COMPLETED","required_exit_code":"0:0","required_parent":"16030125","expected_name":"recon-stage-a-paired-q32-afterany-20260826-v2r3r2-atomic-restart-evidence-clearance"},
+      {"job_id":"16030128","role":"relbias_afterany","required_state":"COMPLETED","required_exit_code":"0:0","required_parent":"16030126","expected_name":"recon-stage-a-paired-relbias-afterany-20260826-v2r3r2-atomic-restart-evidence-clearance"},
+      {"job_id":"16028845","role":"pretraining_opt1352_candidate","required_state":"COMPLETED","required_exit_code":"0:0","expected_name":"ht-pretraining-capacity-balanced-resume-attempt9r4r23-20260826"}
+    ],
+    "reconstruction_artifacts_per_arm": ["primary terminal receipt","afterany reconciliation receipt","result.json","metrics summary","event-level teacher-forced scores","event-level rollout scores","checkpoint at step 512","telemetry raw JSONL","telemetry recomputed summary","source manifest before","source manifest after"],
+    "pretraining_artifacts": ["terminal receipt","checkpoint at optimizer step 1352","checkpoint SHA256","architecture SHA256","config SHA256","data/dataset SHA256","selection manifest SHA256","validation receipt on the exact 5000-event cohort","finite-state audit","runtime and telemetry receipts"],
+    "hashing": {
+      "algorithm":"sha256",
+      "manifest_rule":"Every required regular file is listed by absolute path, byte length, SHA256, producing job ID, producing contract SHA256, and role; the canonical JSON manifest is itself SHA256-sealed and committed/tagged before use.",
+      "scheduler_evidence_rule":"Raw stdout and stderr bytes, argv, exit code, and normalized unique rows are separately SHA256-bound. Nonempty stderr, duplicate rows, missing fields, nonzero query exit, or identity/name/dependency mismatch blocks the program.",
+      "source_immutability_rule":"Source manifests before and after must be byte-identical; any mutation blocks promotion."
+    },
+    "failure_action":"Any absent, ambiguous, nonterminal, nonzero, restarted-without-exact-resume-proof, nonfinite, hash-mismatched, or structurally incomplete arm is nonpromotable. Do not infer success from train loss or logs and do not retry under this plan."
+  },
+  "paired_q32_relbias_decision": {
+    "required_horizon":{"optimizer_step":512,"presentations":32768,"teacher_forced_events":2000,"rollout_events":1000,"seed":20260826},
+    "matched_bindings":["training data order","seed manifest","validation cohort and UID order","source checkpoint","optimizer schedule","batch size","validation cadence","resource class","runtime closure"],
+    "treatment_only":"type_conditioned_daughter_relation_bias false for q32 and true for relbias",
+    "statistical_gate": {
+      "event_unit":"event_uid",
+      "bootstrap":"paired percentile",
+      "bootstrap_samples":10000,
+      "bootstrap_seed":20260826,
+      "confidence":0.95,
+      "holm_alpha":0.05,
+      "holm_family_size":2,
+      "family_members":["rollout predicted_edge_f1 relbias-minus-q32","teacher-forced edge/complete-target paired promotion endpoint relbias-minus-q32"],
+      "primary_effect":"rollout predicted_edge_f1 relbias-minus-q32",
+      "primary_minimum_delta":0.01,
+      "primary_holm_adjusted_ci_lower_must_exceed":0.0,
+      "primary_holm_adjusted_p_must_not_exceed":0.05,
+      "gate_rule":"All registered family members and guards must be recomputed from exact event-score artifacts. The current aggregate comparator is insufficient."
+    },
+    "structural_guards":{"tree_validity_rate":1.0,"reconstruction_validity_rate":1.0,"leaf_retention_rate":1.0,"p4_validity_rate":1.0,"fallback_count":0,"finite":true,"predicted_edge_denominator_positive":true},
+    "teacher_forced_guards":{"definition":"Every preregistered teacher-forced accuracy, precision, recall, calibration, and loss endpoint must be finite and nonregressed under a separately sealed direction/margin table; absent endpoint definitions or a failed boolean guard blocks promotion.","minimum_required_boolean":"teacher_forced_constraints_passed=true"},
+    "efficiency_guards":{"complete_target_efficiency_nonregressed":true,"validation_events_per_second_at_least_fraction_of_q32":0.9,"peak_memory_within_contract":true,"walltime_within_contract":true,"minimum_required_boolean":"efficiency_floor_passed=true"},
+    "secondary_guard":"secondary_metrics_nonregressed=true",
+    "admission":"Promote relation bias only if every gate passes. Otherwise retain q32 as the architecture baseline; neither a loss-only win nor an aggregate point estimate alone may promote relbias.",
+    "sealed_test_used":false
+  },
+  "post_terminal_locator": {
+    "replay": {
+      "implementation":"promoted_uid_locator_binder_v1r2.py",
+      "mode":"metadata-only fail-closed replay",
+      "required_locator_schema":"pretraining-validation-ordered-uids-locator-v1r2",
+      "required_status":"promoted_complete",
+      "required_scope":"production",
+      "required_source":{"optimizer_step":676,"checkpoint_sha256":"6c3aafc43767c6606fa32079fe16e1b5b04180c3c103a10e0de637748f01cf3a"},
+      "required_dataset_index_sha256":"eba2a5498e09d82e1ca1e8d9841ba117423b99b540190088ed4875a8aa296809",
+      "required_selection_manifest_sha256":"fe250b707242377cbdfea5936a1b7ff160241fb3c223a37b4f3285613062dba2",
+      "reject":["reordering","duplicates","missing UIDs","wrong role/count/seed/selector","legacy digest substitution","symlink or trusted-root escape","artifact/receipt/attestation hash mismatch"]
+    },
+    "cohorts": {
+      "train_order":{"role":"train","count":32768,"selector":"fixed_role_uid_selector","version":"v1","seed":20260826},
+      "pretraining_validation":{"role":"pretraining_validation_only","count":5000,"selector":"manifest_validation_role_uid_hash","version":"checkpoint-validation-selection-v1","seed":20260812,"ordered_uid_sha256":"1e424f72a3d3a3efb4c1548579c46bd464794e2594444e36a36e4adbcbc68c8e","digest_scheme":"sha256-u64be-length-prefixed-utf8-v1"},
+      "teacher_forced":{"role":"validation_only","count":2000,"selector":"fixed_role_uid_selector","version":"v1","seed":20260826},
+      "rollout":{"role":"validation_only","count":1000,"selector":"fixed_role_uid_selector","version":"v1","seed":20260826}
+    },
+    "pilot": {
+      "authorization_required_later":true,
+      "gpu_required":false,
+      "science_training":false,
+      "sample_rule":"For each ordered cohort, choose the 64 UIDs with the lowest SHA256 of UTF8('locator-pilot-v1\\0' || uid), breaking ties by raw UTF8 bytes.",
+      "checks":["exactly one role-index membership","exactly one locator resolution","resolved UID equals requested UID","no cross-role leakage","stable ordered digest before and after","sealed-test and stress indexes never opened"],
+      "receipt":"Canonical JSON containing cohort binding, selected 64 ordered UIDs, per-UID resolution status, source artifact hashes, zero duplicates/misses, and its own SHA256. Any miss, duplicate, instability, or role mismatch blocks the ladder."
+    }
+  },
+  "transfer_ladder": {
+    "arms":["balanced_opt676_post_validation","balanced_opt1352_final_selected_candidate","matched_scratch_no_transfer"],
+    "common_training":{"batch_size":64,"optimizer_steps":512,"presentations":32768,"learning_rate":0.001,"object_loss_weight":12.0,"pointer_loss_weight":16.0,"encoder_trainable":false,"head_trainable":true,"seed":20260826,"sealed_test_access":"forbidden"},
+    "source_pointer_requirements": {
+      "opt676":"Use only the already bound checkpoint/config/split/dataset/selection/terminal closure; fill all currently null architecture, normalizer, state-spec, validation-receipt, selection-receipt, and source-audit fields with exact paths and SHA256s.",
+      "opt1352":"After job 16028845 passes the terminal gate, create a candidate pointer with absolute checkpoint path; optimizer step 1352; checkpoint, architecture, config, data, normalizer and state-spec SHA256s; finite audit; exact 5000-UID validation receipt; terminal/runtime/telemetry receipts; and no train-loss selection claim.",
+      "scratch":"Create exactly one state with torch_generator_seeded_normal_v1, seed 20260826, the bound MultiGPT constructor/source closure, an architecture-state-spec SHA256, state SHA256, finite audit, and exclusive receipt."
+    },
+    "normalizer":"Fit once from train_order only, bind the train index and ordered-train UID digest, and use byte-identical normalizer parameters for all three arms.",
+    "statistics":{"modes":["teacher_forced","rollout"],"signed_contrasts":["opt1352_minus_opt676","opt1352_minus_scratch","opt676_minus_scratch"],"event_unit":"event_uid","bootstrap":"paired percentile","samples":10000,"seed":20260826,"confidence":0.95,"holm":"exact three contrasts separately per mode","promotion_per_contrast":"delta >= 0.01 and CI lower > 0 and Holm-adjusted p <= 0.05","joint_promotion":"contrast must pass in both modes"},
+    "resources":{"global_sequential_max_running":1,"gpus_per_arm":1,"gres":"gpu:h100nvl:1","cpus_per_arm":8,"memory_per_arm":"64G","walltime_per_arm":"02:00:00","requeue":false,"max_restarts":0,"maximum_h100_gpu_hours":6.0},
+    "decision": {
+      "opt1352":"Allowed only when opt1352_minus_opt676 and opt1352_minus_scratch pass jointly; then create the formal immutable selected-pretraining-pointer.v1 with criterion validation_plus_transfer and train_loss_used=false.",
+      "opt676":"Allowed only when opt676_minus_scratch passes jointly and opt1352_minus_opt676 does not. Stop before HPO because the current HPO builder hard-codes step 1352; require a reviewed generalized-pointer revision.",
+      "no_promotion":"If scratch is not beaten or evidence is ambiguous/incomplete, stop. Scratch is a diagnostic baseline, not an automatically promotable pretraining pointer."
+    }
+  },
+  "conditional_hpo": {
+    "entry_gate":["paired q32/relbias promotion receipt passed or q32-retention receipt sealed","formal selected step-1352 pointer passed validation_plus_transfer","promoted UID replay and pilot passed","frozen environment receipt passed","real bundle and scheduler/runtime contracts independently cleared"],
+    "current_builder_branch":"Only the opt1352-selected branch is compatible with the cleared v2r1 builder.",
+    "fixed_architecture":{"query_map_levels_1_to_6":[16,8,6,4,3,2],"global_query_fallback":16,"type_conditioned_daughter_relation_bias":true,"object_positive_weight":12.0,"pointer_positive_weight":16.0,"encoder_frozen":true,"leaf_head_frozen":true},
+    "grid_order":[
+      {"ordinal":1,"learning_rate":0.0003,"scheduled_sampling_max":0.1},
+      {"ordinal":2,"learning_rate":0.0003,"scheduled_sampling_max":0.3},
+      {"ordinal":3,"learning_rate":0.0007,"scheduled_sampling_max":0.1},
+      {"ordinal":4,"learning_rate":0.0007,"scheduled_sampling_max":0.3},
+      {"ordinal":5,"learning_rate":0.0015,"scheduled_sampling_max":0.1},
+      {"ordinal":6,"learning_rate":0.0015,"scheduled_sampling_max":0.3}
+    ],
+    "horizon":{"batch_size":32,"optimizer_steps":1094,"presentations":35008,"validation_events":5000,"validation_steps":[547,1094],"amp_dtype":"bfloat16","grad_scaler_enabled":false},
+    "resources":{"global_max_running_arms":1,"gpus_per_arm":1,"gres":"gpu:h100nvl:1","cpus_per_arm":8,"memory_per_arm":"64G","walltime_per_arm":"04:30:00","requeue":false,"max_restarts":0,"maximum_arms":6,"maximum_h100_gpu_hours":27.0,"controller_cpus":1,"controller_memory":"1G","controller_walltime":"00:10:00"},
+    "midpoint_stopping":{"step":547,"allowed_reasons_only":["nonfinite_or_hard_invariant_failure","paired_ci_projected_delta_upper_below_0.01","efficiency_floor_failure"],"projected_delta_upper_rule":"strictly less than 0.01","pruned_rankable":false,"pruned_promotable":false},
+    "global_stopping":["No adaptive grid expansion.","No automatic retry, requeue, or replacement arm.","A failed or pruned arm consumes its budget and is nonrankable.","Stop without selection if no arm completes step 1094 with finite metrics, hard invariants, and exact 5000-event validation at both steps."],
+    "final_selection_order":["predicted_edge_f1 descending","predicted_full_tree_exact_match descending","predicted_tree_edit_distance ascending","validation_efficiency descending","learning_rate ascending"],
+    "promotion_rule":"Selection is among completed validation-qualified arms only. Training loss is never a ranking, pruning, or promotion variable."
+  },
+  "one_final_reconstruction": {
+    "count":1,
+    "prerequisites":["one completed HPO arm selected by the exact order","immutable selected source pointer","immutable promoted architecture decision","all source/runtime/UID hashes frozen","new independently reviewed fullscale snapshot and contract","fresh output root"],
+    "configuration":"Use exactly the selected HPO configuration and source pointer without post-selection tuning; train 1094 optimizer steps and 35008 presentations with one final validation at steps 547 and 1094 on the bound 5000-event validation cohort plus the bound 1000-event rollout cohort.",
+    "resources":{"gpus":1,"gres":"gpu:h100nvl:1","cpus":8,"memory":"64G","walltime":"04:30:00","requeue":false,"max_restarts":0,"maximum_h100_gpu_hours":4.5},
+    "qualification":["terminal COMPLETED 0:0","finite model/optimizer/gradient/loss/forward checks","all structural rates equal 1.0","fallback count zero","validation metrics and denominators present","telemetry and terminal receipts verified","source manifest unchanged"],
+    "claim_limit":"This is validation-qualified, not sealed-test-qualified. It may update the validation-best reconstruction pointer but cannot support a final unbiased test-performance claim.",
+    "sealed_test_access":"forbidden",
+    "automatic_retry":false
+  },
+  "critical_path":[
+    "1. Wait for exact terminal evidence for 16030125-16030128 and 16028845; collect and seal manifests without opening sealed-test data.",
+    "2. Build event-level q32/relbias evidence and apply the exact matched Holm/bootstrap plus structural, teacher-forced, and efficiency gates.",
+    "3. Replay the promoted UID locator, run the deterministic 64-per-cohort locator pilot, and seal all four cohort artifacts.",
+    "4. Bind opt1352 and scratch evidence; run the sequential opt676/opt1352/scratch transfer ladder and seal its terminal recommendation.",
+    "5. Continue only on the opt1352 branch with the current HPO builder; otherwise stop for a new reviewed contract.",
+    "6. Run at most the six fixed HPO arms under midpoint and resource caps; select only among completed validation-qualified arms.",
+    "7. Render, review, and separately authorize exactly one fresh final reconstruction; never use train loss or sealed-test evidence for promotion."
+  ],
+  "aggregate_future_resource_ceiling":{"transfer_ladder_h100_hours":6.0,"conditional_hpo_h100_hours":27.0,"one_final_reconstruction_h100_hours":4.5,"total_h100_hours":37.5,"note":"Planning ceiling only; it grants no scheduler or execution authorization."}
+}
