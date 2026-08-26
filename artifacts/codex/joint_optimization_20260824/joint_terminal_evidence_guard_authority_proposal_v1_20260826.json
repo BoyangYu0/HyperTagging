@@ -1,0 +1,306 @@
+{
+  "artifact_version": "joint-terminal-evidence-guard-authority-proposal-v1",
+  "date_utc": "2026-08-26",
+  "status": "PROPOSAL_PENDING_INDEPENDENT_SCIENTIFIC_AND_STATISTICAL_REVIEW",
+  "scope": "Proposed A03, A04, and residual A05 authority only; derived solely from tracked contracts, code, schemas, and reports. This artifact is not execution authority.",
+  "bindings": {
+    "sealed_plan": {
+      "commit": "b10c65e02e36dcb5878d3aa932adc559d5676a70",
+      "tag": "ht-reconstruction-post-terminal-decision-plan-v1-20260826",
+      "path": "artifacts/codex/joint_optimization_20260824/reconstruction_post_terminal_exact_decision_plan_v1_20260826.json",
+      "sha256": "45747d32d5af2682f712c399d23f0a8f04f5f137757b93cc0664d4f5e556dfe2"
+    },
+    "authority_discovery": {
+      "commit": "1a5c26eab5f7649dac76b95b7c698e1658ce0170",
+      "tag": "ht-joint-terminal-evidence-v5-authority-discovery-20260826-v1",
+      "json_path": "artifacts/codex/joint_optimization_20260824/joint_terminal_evidence_v5_authority_discovery_20260826.json",
+      "json_sha256": "81515669819e57b5628985b0422522ed2e1bc584da1af744ce7c0e0dbb2a2ee7",
+      "md_sha256": "14d66703f82e6676627c67010b004f6aaeee7f2525f3f50bb891f77066e91061"
+    },
+    "stage_a_authorization_source": {
+      "commit": "d7068ef529cd3c07764e545f0c83c700d783bdeb",
+      "tag": "ht-reconstruction-paired-stage-a-v2r3r2r8-final-authorization-20260826-v1",
+      "q32_contract_path": "reconstruction/snapshots/recon_stage_a_paired_q32_h100nvl_20260826_v2r3r2_atomic_restart_evidence_clearance/job_contract.json",
+      "q32_contract_file_sha256": "7298ddde4d7a0458dfda89f11e72e038ef4ed0146929cacfbdfa860ff5a653fe",
+      "q32_embedded_contract_sha256": "f24d447f90d5102d944c5b0cb0c9dcd3d7441d36f355dbe2319c34f78d9825bd",
+      "q32_config_sha256": "5f56d1645472f6d46cb7704ae326c94ef9b9de79da9348a099c0db0fa9f9a931",
+      "relbias_contract_path": "reconstruction/snapshots/recon_stage_a_paired_relbias_h100nvl_20260826_v2r3r2_atomic_restart_evidence_clearance/job_contract.json",
+      "relbias_contract_file_sha256": "73142dc1dbbc4d96ef9989fb25d3333dd566df18979793161e5f82576cd333b7",
+      "relbias_embedded_contract_sha256": "9b77b545762d2c26e68cd00b2b533650f46f961a3eb5261f4643d92c5e1fd40c",
+      "relbias_config_sha256": "5b5cafacc5ab540b565ef2ca088d47c58e120a5dadcc1b2af34b15e00b5ef29b",
+      "treatment_only": "type_conditioned_daughter_relation_bias=false for q32 and true for relbias"
+    },
+    "metric_code": [
+      {
+        "path_suffix": "runtime/src/hypertagging/training/reconstruction_trainer.py",
+        "sha256": "5b480a95ac87fef4427ca5ee6c212f0d48c3dc2013cfd03805a4da158177c1e0"
+      },
+      {
+        "path_suffix": "runtime/src/hypertagging/evaluation/hierarchical_metrics.py",
+        "sha256": "6a8c3cc51907b68039816a9988284917b5e10263f7209f3e9693ee5d90080dff"
+      },
+      {
+        "path_suffix": "runtime/src/hypertagging/losses/level_reconstruction.py",
+        "sha256": "156ea8d9cfaf8cd99265fe3550a596ea3fd22387c4310a2fbfcd08d73755d892"
+      },
+      {
+        "path_suffix": "runtime/src/hypertagging/training/logging.py",
+        "sha256": "cf018ffd8952bf9e96724c93ce03b03c267c662a73b6e1da2e43e4527c269405"
+      },
+      {
+        "path_suffix": "runtime/scripts/run_stage_a.py",
+        "sha256": "d0cffc0997a8faf7b1f87789b79693f08da674a869562e7022d33baf5333684a"
+      },
+      {
+        "path_suffix": "runtime/scripts/slurm/monitor_gpu_telemetry.py",
+        "sha256": "5755f58813ca07ada8def8921d0694842338483000c99fbf1f0ae4287ae0ea3d"
+      },
+      {
+        "path_suffix": "runtime/scripts/slurm/terminal_infrastructure.py",
+        "sha256": "3e4c160d6315e058d3dca815e2a60d28c68d371f4c1b5e864f2d829904778f93"
+      }
+    ],
+    "pretraining_authority": {
+      "transition_commit": "0c728e7c37ec933f5aad8c724e295e8788baa72a",
+      "transition_tag": "ht-pretraining-balanced-resume-attempt9r4r23-transition-20260826-v1",
+      "contract_file_sha256": "b7be36440996bbb12e842c0cce7bc748ff3779a341873e7604cb2d57c7631e56",
+      "embedded_contract_sha256": "a50408eee13132d7a2338ea1b3f38d9ffa13fecc49d8ade510e504cbf4a891a1",
+      "submission_commit": "98ba2a0a7dfd6bda50da035a32cd2dfb61da9018",
+      "submission_tag": "ht-pretraining-balanced-resume-attempt9r4r23-submission-20260826-v1",
+      "job_id": 16028845
+    }
+  },
+  "common_evidence_requirements": {
+    "event_unit": "event_uid",
+    "paired_order_required": true,
+    "exact_uid_sequence_equality_required": true,
+    "teacher_forced_event_count": 2000,
+    "rollout_event_count": 1000,
+    "optimizer_step": 512,
+    "presentations": 32768,
+    "seed": 20260826,
+    "roles": {"training": "train", "evaluation": "validation", "sealed_test": "forbidden", "stress": "forbidden"},
+    "finite_required": true,
+    "denominators_positive_required": true,
+    "missing_duplicate_or_extra_uid": "BLOCK",
+    "mismatched_endpoint_key_set": "BLOCK",
+    "aggregate_only_evidence": "BLOCK",
+    "train_loss_only_evidence": "BLOCK"
+  },
+  "available_validation_surface": {
+    "teacher_fixed_next_level_gating_inputs": [
+      "object_precision_numerator/denominator",
+      "object_recall_numerator/denominator",
+      "pointer_precision_numerator/denominator",
+      "pointer_recall_numerator/denominator",
+      "mother_type_accuracy_numerator/denominator",
+      "cardinality_accuracy_numerator/denominator",
+      "validation_loss_total",
+      "brier_score",
+      "expected_calibration_error"
+    ],
+    "teacher_rollout_gating_input": ["teacher_forced_p4_closure_rate"],
+    "teacher_promotion_endpoint_resolution": "The frozen code emits no teacher-forced complete-target efficiency. Therefore the sealed plan's teacher-forced edge/complete-target member is proposed as teacher micro pointer F1 (the available direct edge-selection endpoint); predicted complete-target efficiency remains a separately mandatory secondary/efficiency guard and is not relabeled as teacher-forced.",
+    "available_but_descriptive_teacher_fields": [
+      "level_<L>_object_no_object_accuracy",
+      "level_<L>_object_precision",
+      "level_<L>_object_recall",
+      "level_<L>_mother_type_accuracy",
+      "level_<L>_cardinality_accuracy",
+      "level_<L>_pointer_precision",
+      "level_<L>_pointer_recall",
+      "level_<L>_pointer_f1",
+      "validation_loss_object",
+      "validation_loss_type",
+      "validation_loss_pointer",
+      "validation_loss_cardinality",
+      "validation_loss_confidence",
+      "validation_loss_physics",
+      "validation_loss_source_conflict",
+      "validation_loss_mother_charge",
+      "validation_loss_query_repulsion",
+      "macro_* aliases emitted by _aggregate_metric_lists"
+    ],
+    "predicted_rollout_inputs": [
+      "predicted_full_tree_exact_match",
+      "predicted_canonical_subtree_exact_match",
+      "predicted_edge_precision",
+      "predicted_edge_recall",
+      "predicted_edge_f1",
+      "predicted_mother_type_accuracy",
+      "predicted_leaf_assignment_accuracy",
+      "predicted_recursive_source_overlap",
+      "predicted_tree_edit_like_distance",
+      "predicted_root_reconstruction_success",
+      "representable_target_efficiency_numerator/denominator",
+      "complete_target_efficiency_numerator/denominator",
+      "predicted_tree_validity_rate",
+      "predicted_p4_closure_rate",
+      "predicted_recursive_source_conflicts",
+      "scheduled_rollout_valid"
+    ],
+    "descriptive_only_rationale": "Level-stratified endpoints may have sparse and data-dependent denominators; macro aliases duplicate the underlying values; individual weighted loss components can trade off by construction. They remain required finite diagnostics with exact key/denominator equality, but are not independent promotion vetoes."
+  },
+  "statistical_protocol": {
+    "bootstrap": "paired nonparametric event-UID bootstrap",
+    "samples": 10000,
+    "seed": 20260826,
+    "resampling": "Draw N UID indices with replacement from the exact ordered paired cohort; apply the identical index vector to q32 and relbias; recompute every ratio from resampled sufficient-statistic sums, never by averaging published aggregate ratios.",
+    "difference": "relbias_minus_q32",
+    "primary_family": {
+      "members": ["rollout_predicted_edge_f1", "teacher_micro_pointer_f1"],
+      "holm_alpha": 0.05,
+      "minimum_delta_each": 0.01,
+      "holm_adjusted_two_sided_confidence_lower_each": ">0.0",
+      "holm_adjusted_p_each": "<=0.05",
+      "rule": "Both members pass. Primary rollout predicted_edge_f1 retains its sealed-plan status."
+    },
+    "noninferiority_families": {
+      "teacher_discrimination": {"size": 6, "holm_alpha": 0.05},
+      "teacher_calibration_and_loss": {"size": 3, "holm_alpha": 0.05},
+      "secondary_rollout": {"size": 10, "holm_alpha": 0.05}
+    },
+    "noninferiority_test": "For higher-is-better endpoint j with margin m, boundary h=-m and H0: delta_j<=h. For bootstrap replicate delta_b and observed delta_hat, set null_b=delta_b-delta_hat+h and p=(1+count(null_b>=delta_hat))/(B+1). For lower-is-better, boundary h=+m and H0: delta_j>=h; set null_b=delta_b-delta_hat+h and p=(1+count(null_b<=delta_hat))/(B+1). Apply Holm step-down to these raw p-values within the declared family. Require Holm-adjusted p<=0.05 and observed delta_hat>h for higher or delta_hat<h for lower.",
+    "zero_denominator": "BLOCK",
+    "nonfinite_or_missing_resample": "BLOCK"
+  },
+  "A03_teacher_direction_margin_table": [
+    {"endpoint": "teacher_micro_pointer_f1", "formula": "2*P*R/(P+R), where P=sum(pointer_precision_numerator)/sum(pointer_precision_denominator) and R=sum(pointer_recall_numerator)/sum(pointer_recall_denominator); zero P+R gives 0", "direction": "higher", "margin_absolute": 0.01, "treatment": "PRIMARY_FAMILY_IMPROVEMENT", "rationale": "Direct teacher-forced edge-selection endpoint; a one-point improvement is commensurate with the rollout primary target."},
+    {"endpoint": "teacher_micro_pointer_precision", "formula": "sum(pointer_precision_numerator)/sum(pointer_precision_denominator)", "direction": "higher", "margin_absolute": 0.005, "family": "teacher_discrimination", "rationale": "Limits added false daughter assignments to one-half of the required primary gain."},
+    {"endpoint": "teacher_micro_pointer_recall", "formula": "sum(pointer_recall_numerator)/sum(pointer_recall_denominator)", "direction": "higher", "margin_absolute": 0.005, "family": "teacher_discrimination", "rationale": "Limits missed daughter assignments to one-half of the required primary gain."},
+    {"endpoint": "teacher_micro_object_precision", "formula": "sum(object_precision_numerator)/sum(object_precision_denominator)", "direction": "higher", "margin_absolute": 0.005, "family": "teacher_discrimination", "rationale": "Prevents relation bias from buying edge recall through excess active queries."},
+    {"endpoint": "teacher_micro_object_recall", "formula": "sum(object_recall_numerator)/sum(object_recall_denominator)", "direction": "higher", "margin_absolute": 0.005, "family": "teacher_discrimination", "rationale": "Protects mother proposal coverage."},
+    {"endpoint": "teacher_micro_mother_type_accuracy", "formula": "sum(mother_type_accuracy_numerator)/sum(mother_type_accuracy_denominator)", "direction": "higher", "margin_absolute": 0.01, "family": "teacher_discrimination", "rationale": "Conditional type denominator is smaller than edge denominators; one percentage point is a bounded but not brittle tolerance."},
+    {"endpoint": "teacher_micro_cardinality_accuracy", "formula": "sum(cardinality_accuracy_numerator)/sum(cardinality_accuracy_denominator)", "direction": "higher", "margin_absolute": 0.01, "family": "teacher_discrimination", "rationale": "Protects discrete daughter multiplicity while allowing a small trade for better topology."},
+    {"endpoint": "teacher_brier_score", "formula": "mean over UIDs of mean_q (sigmoid(confidence_logit_q)-confidence_target_q)^2; event is the resampling unit", "direction": "lower", "margin_absolute": 0.005, "family": "teacher_calibration_and_loss", "rationale": "Half a percentage point in squared probability error is a small calibration tolerance."},
+    {"endpoint": "teacher_expected_calibration_error_10bin", "formula": "sum over 10 bins of bin_fraction*abs(mean_probability-mean_target), using bins [0,.1),...,[.9,1.0] and event-UID paired recomputation", "direction": "lower", "margin_absolute": 0.005, "family": "teacher_calibration_and_loss", "rationale": "Matches the frozen ten-bin implementation and bounds confidence degradation."},
+    {"endpoint": "teacher_validation_loss_total", "formula": "per UID mean over its target-level validation_loss_total terms, then paired UID bootstrap; aggregate point estimate is the mean UID value", "direction": "lower", "margin_relative_to_q32": 0.02, "boundary": "relbias <= 1.02*q32", "family": "teacher_calibration_and_loss", "rationale": "The weighted objective scale is identical across arms; two percent catches broad optimization regression without vetoing beneficial component tradeoffs."},
+    {"endpoint": "teacher_forced_p4_closure_rate", "formula": "mean of per-UID teacher rollout p4_closure_rate at step 512", "direction": "higher", "margin_absolute": 0.0, "treatment": "HARD_INVARIANT", "required_value": 1.0, "rationale": "Four-momentum closure is a physical validity invariant, not a tradeable accuracy endpoint."}
+  ],
+  "A04_secondary_guard_table": [
+    {"endpoint": "predicted_full_tree_exact_match", "formula": "mean UID indicator that predicted and truth root-signature Counters are equal", "direction": "higher", "margin_absolute": 0.005, "family": "secondary_rollout"},
+    {"endpoint": "predicted_canonical_subtree_exact_match", "formula": "mean UID sum((predicted_signature_counter & truth_signature_counter).values)/max(sum(truth_signature_counter.values),1)", "direction": "higher", "margin_absolute": 0.005, "family": "secondary_rollout"},
+    {"endpoint": "predicted_edge_precision", "formula": "paired UID mean of canonical-edge multiset intersection/predicted-edge count, with frozen empty-set convention", "direction": "higher", "margin_absolute": 0.005, "family": "secondary_rollout"},
+    {"endpoint": "predicted_edge_recall", "formula": "paired UID mean of canonical-edge multiset intersection/truth-edge count, with frozen empty-set convention", "direction": "higher", "margin_absolute": 0.005, "family": "secondary_rollout"},
+    {"endpoint": "predicted_mother_type_accuracy", "formula": "paired UID mean type-correct/aligned-mother count with frozen no-mother convention", "direction": "higher", "margin_absolute": 0.01, "family": "secondary_rollout"},
+    {"endpoint": "predicted_leaf_assignment_accuracy", "formula": "paired UID mean exact-leaf-signature/aligned-leaf count with frozen no-leaf convention", "direction": "higher", "margin_absolute": 0.01, "family": "secondary_rollout"},
+    {"endpoint": "predicted_recursive_source_overlap", "formula": "paired UID mean of source-set Jaccard across source-aligned nodes; empty aligned set yields 0", "direction": "higher", "margin_absolute": 0.005, "family": "secondary_rollout"},
+    {"endpoint": "predicted_tree_edit_like_distance", "formula": "paired UID mean symmetric Counter difference/max(predicted_nodes+truth_nodes,1)", "direction": "lower", "margin_absolute": 0.005, "family": "secondary_rollout"},
+    {"endpoint": "predicted_root_reconstruction_success", "formula": "mean UID indicator that truth roots are nonempty and predicted/truth root-signature Counters intersect", "direction": "higher", "margin_absolute": 0.01, "family": "secondary_rollout"},
+    {"endpoint": "complete_target_efficiency", "formula": "sum(complete_target_efficiency_numerator)/sum(complete_target_efficiency_denominator), using exact recursive-source multiset plus PID matching", "direction": "higher", "margin_absolute": 0.005, "family": "secondary_rollout"}
+  ],
+  "A04_hard_and_diagnostic_treatment": {
+    "hard_exact_guards": {
+      "predicted_tree_validity_rate": 1.0,
+      "teacher_forced_p4_closure_rate": 1.0,
+      "predicted_p4_closure_rate": 1.0,
+      "predicted_recursive_source_conflicts": 0,
+      "scheduled_rollout_valid": 1.0,
+      "validation_used_train_fallback": 0.0,
+      "predicted_edge_denominator": ">0",
+      "all_fields_finite": true,
+      "reconstruction_validity_rate": 1.0,
+      "leaf_retention_rate": 1.0,
+      "fallback_count": 0
+    },
+    "descriptive_not_veto": [
+      "first_divergence_level",
+      "predicted_nodes",
+      "truth_nodes",
+      "predicted_max_level",
+      "truth_max_level",
+      "multiplicity_* strata",
+      "depth_* strata",
+      "bounded_full_tree_exact_match",
+      "greedy_bounded_tree_difference",
+      "proposal ambiguity metrics"
+    ],
+    "descriptive_policy": "Fields and denominators must be present, finite, schema-valid, and identically keyed across arms, but sparse/data-dependent strata do not create additional hypothesis tests.",
+    "excluded_outcome_authority": {
+      "path": "artifacts/codex/ht_positive_weight_calibration_preregistration_20260816.json",
+      "origin_commit": "ee0648f972f7da469f61d5b4f547d2b4633b010a",
+      "sha256": "1f99b05afd193ca7d20361b596ab5ff831da7ae5ca35058913bf07b5e3179801",
+      "reason": "Different object/pointer positive-weight intervention and ranking question; it may document metric existence but cannot supply q32-versus-relbias directions, margins, or outcomes."
+    }
+  },
+  "A05_efficiency_measurement_protocol": {
+    "throughput": {
+      "phase": "the step-512 validate_reconstruction call only",
+      "warmup_exclusion": "Exclude validation calls at steps 128, 256, and 384 and all model/data initialization. No events are discarded inside the step-512 call.",
+      "start": "time.monotonic_ns immediately before entering validate_reconstruction at optimizer step 512",
+      "end": "time.monotonic_ns immediately after validate_reconstruction returns and before JSONL serialization or checkpoint writing",
+      "numerator": "validation_events + rollout_validation_events = 2000 + 1000 = 3000 validation work units",
+      "denominator": "(end_monotonic_ns-start_monotonic_ns)/1e9 seconds",
+      "unit": "validation_work_units_per_second",
+      "gate": "relbias_throughput/q32_throughput >= 0.9",
+      "comparability": "Both arms must report exactly 2000 teacher events, 1000 rollout events, identical ordered UIDs, the same timing API/clock, and positive duration.",
+      "existing_evidence_limit": "The frozen trainer does not currently record these boundary timestamps. Aggregate training events_per_second and whole-run elapsed_seconds are not substitutes; absence of a reviewed bound timing receipt blocks this guard."
+    },
+    "gpu_peak_memory": {
+      "window": "all raw 15-second nvidia-smi samples collected while the trainer lifecycle command is running",
+      "source": "gpu-telemetry.jsonl recomputed under monitor_gpu_telemetry.py SHA 5755f58813ca07ada8def8921d0694842338483000c99fbf1f0ae4287ae0ea3d",
+      "domain": "device-wide NVIDIA memory.used in MiB, not PyTorch allocated/reserved and not host RSS",
+      "statistic": "max(memory_used_mib) over all valid raw samples",
+      "gate": "0 < peak_memory_used_mib <= min(memory_total_mib over the same samples)",
+      "minimum_samples": 2,
+      "sample_interval_seconds": 15,
+      "missing_error_or_zero": "BLOCK"
+    },
+    "host_peak_memory": {
+      "source": "terminal raw sacct record for the primary job .batch step, MaxRSS field",
+      "domain": "maximum resident host memory",
+      "normalization": "Parse Slurm binary suffixes K/M/G/T as powers of 1024 into integer bytes; reject unknown suffixes, decimals, overflow, duplicates, empty, zero, and non-batch records.",
+      "gate": "0 < MaxRSS_bytes <= 68719476736",
+      "contract_cap": "64 GiB",
+      "missing_or_zero": "BLOCK"
+    },
+    "walltime": {
+      "scientific_source": "result.json elapsed_seconds emitted by run_stage_a.py SHA d0cffc0997a8faf7b1f87789b79693f08da674a869562e7022d33baf5333684a",
+      "scientific_start": "time.perf_counter immediately before train_level_reconstruction",
+      "scientific_end": "time.perf_counter immediately after train_level_reconstruction returns",
+      "scheduler_source": "terminal raw sacct primary-job ElapsedRaw integer seconds",
+      "gates": ["0 < result.elapsed_seconds <= 7200", "0 < ElapsedRaw <= 7200"],
+      "contract_cap": "02:00:00",
+      "missing_zero_negative_nonfinite_or_inconsistent": "BLOCK",
+      "note": "The scientific interval includes training and every validation call but excludes preflight and post-return artifact checks; ElapsedRaw independently enforces the allocation cap."
+    },
+    "complete_target_efficiency": {
+      "formula": "sum(correctly reconstructed eligible complete targets)/sum(eligible complete targets) using complete_target_efficiency_counts",
+      "gate": "relbias_minus_q32 > -0.005 and passes its registered secondary-family noninferiority test",
+      "zero_denominator": "BLOCK"
+    },
+    "overall_gate": "All throughput, GPU memory, host memory, walltime, and complete-target conditions pass; no component can be waived or replaced by train-loss improvement."
+  },
+  "decision_rule": {
+    "promote_relbias": "Require terminal evidence completeness; exact pairing; both primary-family improvements; every teacher family noninferiority test; every secondary-family noninferiority test; all hard guards; and the full efficiency protocol.",
+    "otherwise": "Retain q32 as the architecture baseline. A missing measurement is a block, not evidence of equality.",
+    "optimization_rationale": "The required one-point improvements maintain the plan's optimization target. Half-point topology/edge tolerances and one-point conditional-classification tolerances bound scientifically meaningful regressions; two-percent total-loss tolerance permits component tradeoffs. Holm is applied only within compact prespecified families, while correlated aliases and sparse strata remain diagnostics, avoiding an unnecessarily brittle all-field veto."
+  },
+  "review_requirements": {
+    "independent_scientific_review_required": true,
+    "independent_statistical_review_required": true,
+    "review_must_explicitly_accept_or_replace": [
+      "teacher endpoint membership and margins",
+      "secondary family membership and margins",
+      "one-sided paired-bootstrap Holm protocol",
+      "validation work-unit throughput definition",
+      "GPU and host memory domains",
+      "scientific and scheduler walltime intervals"
+    ],
+    "becomes_authority_only_via": "A later separately reviewed and sealed authority artifact that binds this exact proposal SHA and records acceptance or exact amendments."
+  },
+  "authorization": {
+    "execution_authorized": false,
+    "submission_authorized": false,
+    "scientific_execution_authorized": false,
+    "scheduler_calls_authorized": false,
+    "payload_access_authorized": false,
+    "authority_status": false
+  },
+  "audit_counters": {
+    "scheduler_calls": 0,
+    "payload_reads": 0,
+    "tests_executed": 0,
+    "scientific_runs": 0
+  }
+}
