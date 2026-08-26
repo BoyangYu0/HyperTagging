@@ -1,0 +1,130 @@
+{
+  "artifact_version":"joint-terminal-evidence-guard-authority-proposal-v4",
+  "date_utc":"2026-08-26",
+  "status":"REVISED_PROPOSAL_PENDING_FOURTH_INDEPENDENT_REVIEW",
+  "authority":{"authority_status":false,"execution_authorized":false,"submission_authorized":false,"scientific_execution_authorized":false,"scheduler_calls_authorized":false,"payload_access_authorized":false,"promotion_authorized":false,"recovery_authorized":false,"feasibility_execution_authorized":false},
+  "supersedes_v3":{"commit":"06744aa60e5da9748a55b5ed2385322a046fdfe9","tag":"ht-joint-terminal-evidence-guard-authority-proposal-v3-20260826-v1","json_sha256":"2be54d832c357f0b53f092c6878cfd0889a59384db0a67558356fe1a42161489","md_sha256":"858666511a4bff75b84fd3275b97d70a1d8b87abf7417877be81fd40d760bfa4","review_disposition":"REVISE"},
+  "third_review_binding":{
+    "verdict":"REVISE",
+    "tracked_review_artifact":null,
+    "provenance":"Third independent review relayed verbatim by root task /root to /root/recon_transaction_sol_final_audit on 2026-08-26; no separately tracked reviewer artifact was present at revision time.",
+    "verbatim_result":"Revise proposal v3→v4 exactly per third REVISE, pending review/authfalse/no scheduler/payload/tests/science. Teacher: one forward per ordered(batch ordinal,positive target level), bind target-level lists/total count, warmup covers every signature selected, no duplicate/single-event. Materialize raw once; hash500 frozen collate4-then-normalize teacher batches and1000 separately normalized singleton rollout tensors with phase/ordinal/key/dtype/shape/len/SHA; consume immutable tensors. Four ABBA blocks each fresh evaluator subprocess/CUDA context; parent page-touches before first; identical warmup/measure/fsync/exit. Inline exact v2 structural definitions/types/ranges/edge inequality/denominators. Split authorized nonsymlink read-only input roots vs exclusive output root/no alias; exact data_access object counts/digest and zero train/test/stress opens. Specify frozen dtype sigmoid/comparison then binary64 contributions/math.fsum order for Brier/ECE/loss and receipt contract. Add separate future feasibility-only synthetic H100 gate (no terminal checkpoint/UID/label/event/endpoint): same4 fresh process ABBA/schedules/max rollout/control, checkpoint-sized reads/materialization byte movement/serialization/fsync/unload/sync; require end-to-end<=10800s, MaxRSS<=48GiB, CUDA reserved<=80%, under 14400s/64G; fail means resource amendment, never truncate. Bind reviewer provenance. Seal v4 proposal all flags false with exact hashes and disposition pending fourth review.",
+    "verbatim_result_utf8_sha256":"295ec549250c2b8ab59ccf273e9be92928d9616367522c2133babae70b45092b",
+    "fourth_independent_review_required":true
+  },
+  "normative_inheritance":"All v3 source/hash bindings, primary Holm/raw-p/Bonferroni rules, intersection-union NI rules, PCG64 matrices, margins, model-state digest, complete-target single-test reuse, host MaxRSS/original walltime gates, no-training rule and no-posthoc-substitute rule remain normative except where v4 explicitly replaces aggregation, materialization, replay lifecycle, receipt, or feasibility language.",
+  "source_bindings":{
+    "sealed_plan":{"commit":"b10c65e02e36dcb5878d3aa932adc559d5676a70","json_sha256":"45747d32d5af2682f712c399d23f0a8f04f5f137757b93cc0664d4f5e556dfe2"},
+    "discovery":{"commit":"1a5c26eab5f7649dac76b95b7c698e1658ce0170","json_sha256":"81515669819e57b5628985b0422522ed2e1bc584da1af744ce7c0e0dbb2a2ee7"},
+    "stage_a":{"commit":"d7068ef529cd3c07764e545f0c83c700d783bdeb","tag":"ht-reconstruction-paired-stage-a-v2r3r2r8-final-authorization-20260826-v1","q32_contract_file_sha256":"7298ddde4d7a0458dfda89f11e72e038ef4ed0146929cacfbdfa860ff5a653fe","q32_config_sha256":"5f56d1645472f6d46cb7704ae326c94ef9b9de79da9348a099c0db0fa9f9a931","relbias_contract_file_sha256":"73142dc1dbbc4d96ef9989fb25d3333dd566df18979793161e5f82576cd333b7","relbias_config_sha256":"5b5cafacc5ab540b565ef2ca088d47c58e120a5dadcc1b2af34b15e00b5ef29b","jobs":{"q32_primary":16030125,"q32_controller":16030127,"relbias_primary":16030126,"relbias_controller":16030128}},
+    "code_sha256":{"reconstruction_trainer.py":"5b480a95ac87fef4427ca5ee6c212f0d48c3dc2013cfd03805a4da158177c1e0","hierarchical_metrics.py":"6a8c3cc51907b68039816a9988284917b5e10263f7209f3e9693ee5d90080dff","level_reconstruction.py":"156ea8d9cfaf8cd99265fe3550a596ea3fd22387c4310a2fbfcd08d73755d892","run_stage_a.py":"d0cffc0997a8faf7b1f87789b79693f08da674a869562e7022d33baf5333684a"}
+  },
+  "path_security":{
+    "authorized_read_only_input_roots":[
+      "/home/b/Boyang.Yu/HyperTagging_uni/HyperTagging_reconstruction_hpo_clearance_20260825/reconstruction/snapshots/recon_stage_a_paired_q32_h100nvl_20260826_v2r3r2_atomic_restart_evidence_clearance",
+      "/home/b/Boyang.Yu/HyperTagging_uni/HyperTagging_reconstruction_hpo_clearance_20260825/reconstruction/snapshots/recon_stage_a_paired_relbias_h100nvl_20260826_v2r3r2_atomic_restart_evidence_clearance",
+      "/home/b/Boyang.Yu/HyperTagging_uni/HyperTagging_reconstruction_hpo_clearance_20260825/artifacts/runs/reconstruction-stage-a-paired-rerun-20260826-v2r3r2-atomic-restart-evidence-clearance"
+    ],
+    "future_exclusive_output_root":"/home/b/Boyang.Yu/HyperTagging_uni/HyperTagging_reconstruction_hpo_clearance_20260825/artifacts/runs/joint-terminal-paired-evaluation-recovery-v4-20260826",
+    "runtime_closure":"A separate exact future runtime manifest must enumerate every interpreter, shared library, CUDA library, Python module and system file opened outside the three scientific input roots, with absolute path/dev/inode/owner/mode/length/SHA. These files are read-only runtime dependencies, may contain no project data, and are not wildcard-authorized by a broad root.",
+    "input_policy":"Every input root and component resolves to the literal listed absolute path; every opened input is regular, nonsymlink, owner UID 12184, opened O_RDONLY|O_NOFOLLOW, mode unchanged, and included in a before/after byte manifest. No input may be opened writable.",
+    "output_policy":"Output root and canonical claim must both be absent. Create a parent-directory-fsynced O_CREAT|O_EXCL claim before mkdir; create only beneath the claimed root with O_NOFOLLOW, full-write loops, file fsync and parent fsync. No overwrite, retry root or alternate path.",
+    "no_alias":"Resolved output root is outside and not ancestor/descendant of every input root. Reject equal (st_dev,st_ino) between any input and output/claim file, input hardlink count changes, bind mounts, symlink components, mount crossing not prebound by contract, and any output path resolving into an input root.",
+    "read_only_verification":"Hash and stat every authorized input before parent page-touch and after final subprocess exit; any content, inode, owner, mode, link-count or canonical-path drift blocks."
+  },
+  "raw_once_materialization":{
+    "raw_decode":"Decode exactly 2000 unique validation logical event objects once, in the checkpoint/selection UID order, before any evaluator subprocess. Keep decoded objects only inside the materializer; never reopen raw sources after the materialization receipt fsync.",
+    "teacher_batches":"For batch ordinal 0..499, take consecutive decoded events [4b,4b+4), call the exact frozen collate_heterogeneous_events once, then exact frozen data_module.normalize_batch once. Persist every resulting tensor as an immutable teacher batch record. Exactly 500 batches, batch_size=4.",
+    "rollout_singletons":"For rollout ordinal 0..999, take decoded event at the same UID index, call collate_heterogeneous_events on a list of exactly one and normalize_batch separately. Persist every resulting tensor as an immutable singleton record. Do not slice teacher batch tensors as rollout inputs.",
+    "tensor_record_exact_keys":["phase","ordinal","batch_size","event_uids","tensor_key","dtype","shape","byte_length","tensor_sha256"],
+    "tensor_record_rules":"phase is teacher or rollout; ordinal is contiguous from zero; tensor keys are sorted by UTF-8 bytes; dtype is ASCII str(torch.dtype); shape is nonnegative integer array; tensor is detached contiguous CPU logical bytes in little-endian runtime; byte_length exactly equals payload length; hash is SHA-256 payload. One record per tensor key per phase/ordinal.",
+    "manifest_exact_keys":["schema_version","source_access_log_sha256","validation_uid_count","validation_uid_sha256","teacher_batch_count","teacher_batch_size","teacher_tensor_record_count","teacher_target_level_total_count","teacher_batch_boundary_sha256","rollout_singleton_count","rollout_tensor_record_count","records","manifest_sha256"],
+    "immutability":"Materialized payload files are fsynced, parent-fsynced, chmod read-only, rehashed, and never modified. All four subprocesses open only these tensors plus bound checkpoint/code/contract inputs; no raw source or normalizer call is allowed inside a block."
+  },
+  "teacher_forward_plan":{
+    "target_level_list":"For each normalized teacher batch, compute sorted unique integer level_ids>0 under node_mask exactly as frozen validate_reconstruction. List must be nonempty and is persisted with the batch plan.",
+    "forward_identity":"One and only one model forward for each ordered pair (teacher_batch_ordinal,positive_target_level), iterating batch ordinal 0..499 then that batch's target levels ascending. No repeated, omitted, singleton, reordered or diagnostic forward.",
+    "total_forward_count":"teacher_target_level_total_count=sum over 500 target_level_list lengths; bind the integer and SHA-256 of canonical ordered pairs in materialization, batch plan, every block and final receipt.",
+    "per_event_statistics":"For each produced batch-level/target-level output, slice produced pointer output, frozen matches, confidence targets and normalized tensors by event index 0..3. Compute per-event counts and total-loss contribution from those slices only. No second forward, no recollation, no renormalization and no singleton teacher evaluation.",
+    "ordered_batch_boundary_digest":"Use v3 uint64-be batch ordinal/count and length-prefixed UID bytes over exactly 500 four-UID batches; bind it in every block.",
+    "warmup_signature":"Teacher signature is the exact tuple(target_level_list). For each distinct signature choose its lowest measured batch ordinal; sort selected ordinals ascending. Warmup performs exactly the same one-forward-per-level loop on each selected immutable batch. Thus every selected signature is covered once and no signature/batch/level pair is duplicated.",
+    "rollout_warmup_signature":"Rollout signature is (truth_max_level, leaf_multiplicity_bucket), with bucket low<=4, medium<=8, high>8 as frozen. Choose lowest rollout ordinal for each distinct signature and run the exact frozen teacher/predicted/bounded/scheduled rollout controls on each selected immutable singleton once. Bind selected ordinals/signatures and their digest before block one."
+  },
+  "data_access_receipt":{
+    "exact_keys":["policy","validation_logical_objects_decoded","validation_unique_objects","validation_uid_sha256","validation_access_record_count","validation_access_log_sha256","physical_input_open_record_count","physical_input_open_log_sha256","raw_reopens_after_materialization","teacher_materialized_batches","rollout_materialized_singletons","teacher_tensor_batch_opens_per_block","rollout_tensor_singleton_opens_per_block","train_objects_opened","test_objects_opened","stress_objects_opened","other_role_objects_opened"],
+    "required_values":{"policy":"validation_only","validation_logical_objects_decoded":2000,"validation_unique_objects":2000,"validation_access_record_count":2000,"raw_reopens_after_materialization":0,"teacher_materialized_batches":500,"rollout_materialized_singletons":1000,"teacher_tensor_batch_opens_per_block":500,"rollout_tensor_singleton_opens_per_block":1000,"train_objects_opened":0,"test_objects_opened":0,"stress_objects_opened":0,"other_role_objects_opened":0},
+    "access_record":"Canonical record exact keys role,event_ordinal,event_uid,source_locator,source_record_sha256; role literal validation; ordered digest uses canonical JSON records with LF.",
+    "physical_open_record":"Canonical exact keys open_ordinal,absolute_path,st_dev,st_ino,byte_length,sha256,flags; flags literal O_RDONLY|O_NOFOLLOW. Count is data-layout-dependent but fixed before block one and digest-bound.",
+    "block_enforcement":"Seccomp/landlock or equivalently reviewed path-open mediation must make any raw, train, test, stress or unlisted-path open inside evaluator subprocess fatal and durably recorded."
+  },
+  "numeric_receipt_contract":{
+    "schema_version":"frozen-dtype-to-binary64-statistics-v4",
+    "exact_keys":["schema_version","torch_version","cuda_build","amp_policy","confidence_logits_dtype_by_batch_level_sha256","confidence_targets_dtype_by_batch_level_sha256","loss_total_dtype_by_batch_level_sha256","sigmoid_execution","comparison_execution","contribution_cast","summation","serialization","contract_sha256"],
+    "sigmoid_execution":"For each produced batch/target-level confidence_logits, execute torch.sigmoid on the original device and frozen logits dtype exactly once. Do not pre-cast logits.",
+    "comparison_execution":"ECE bin comparisons and confidence-target subtraction/square use the original frozen probability/target tensor device and dtypes and the frozen interval rules [i/10,(i+1)/10), final upper inclusive. Do not pre-cast tensors.",
+    "Brier_contribution":"After frozen-dtype square, iterate the event slice in logical C-order, cast each scalar result to Python float/binary64, store event brier_sum=math.fsum(values) and exact element count.",
+    "ECE_contribution":"After frozen-dtype sigmoid/comparison, for each event and bin iterate selected probabilities and targets in logical C-order, cast each scalar to Python float/binary64, and store count, math.fsum(probabilities), math.fsum(targets).",
+    "loss_contribution":"Compute exact frozen sliced-event total loss from already-produced tensors for each positive target level. Cast each scalar loss to Python float/binary64 only after frozen computation; event loss_total_sum=math.fsum(contributions in ascending target-level order), count=list length.",
+    "bootstrap":"Repeated UID records repeat stored binary64 contributions. Floating aggregation uses math.fsum in matrix-column order; integer counts sum exactly; divide once. Brier/ECE/loss formulas and loss ratio boundary remain v3 exact.",
+    "serialization":"Finite Python binary64 values only, no -0.0; canonical allow_nan=false JSON numeric rendering. Receipt binds original dtype lists, numeric contract SHA, Python/Torch/CUDA/runtime hashes and statistic content SHA.",
+    "mismatch":"Any dtype-list, traversal-order, bin, count, cast stage, serialization or contract-hash mismatch blocks."
+  },
+  "rollout_structural_contract_inline":{
+    "record_types":"event_uid nonempty string; event_index integer 0..999 equal array index; source_role literal validation; validation_train_fallback_used false; indicators strict booleans; all counts strict nonnegative JSON integers; source_jaccard_sum finite binary64.",
+    "ranges_and_inequalities":[
+      "0<=common_edge_count<=min(truth_edge_count,predicted_edge_count)",
+      "0<=subtree_common_count<=truth_node_count and truth_node_count>0 and predicted_node_count>0",
+      "0<=mother_type_correct<=mother_type_total",
+      "0<=leaf_assignment_correct<=leaf_assignment_total",
+      "0<=source_jaccard_sum<=source_jaccard_count",
+      "tree_edit_numerator>=0 and tree_edit_denominator=max(predicted_node_count+truth_node_count,1) and tree_edit_numerator<=tree_edit_denominator",
+      "truth_root_count>0",
+      "0<=representable_target_count<=truth_target_count",
+      "0<=complete_target_correct<=complete_target_eligible",
+      "0<=predicted_p4_closed_count<=predicted_p4_composite_count",
+      "0<=teacher_p4_closed_count<=teacher_p4_composite_count",
+      "recursive_source_conflicts>=0",
+      "0<=leaf_source_retained_count<=truth_leaf_source_count"
+    ],
+    "positive_cohort_denominators":["sum truth_edge_count","sum truth_node_count","sum mother_type_total","sum leaf_assignment_total","sum source_jaccard_count","sum tree_edit_denominator","sum truth_root_count","sum truth_target_count","sum complete_target_eligible","sum predicted_p4_composite_count","sum teacher_p4_composite_count","sum truth_leaf_source_count"],
+    "truth_edge":"truth_edge_count is the sum of multiplicities in the canonical truth-edge Counter. It may be zero per UID. precision=common/predicted if predicted>0 else float(truth==0); recall=common/truth if truth>0 else float(predicted==0); F1=2PR/(P+R) if P+R>0 else 0.",
+    "subtree":"Per UID subtree_common_count/max(truth_node_count,1).",
+    "mother_type":"Per UID correct/total if total>0 else 1.",
+    "leaf_assignment":"Per UID correct/total if total>0 else 1.",
+    "source_overlap":"Per UID source_jaccard_sum/source_jaccard_count if count>0 else 0.",
+    "tree_edit":"Per UID tree_edit_numerator/max(predicted_node_count+truth_node_count,1).",
+    "root_success":"Boolean: truth root Counter nonempty and predicted/truth root Counters intersect.",
+    "tree_valid":"No diagonal edge, no directed cycle, and every predicted edge has mother level strictly greater than child level.",
+    "reconstruction_valid":"tree_valid, recursive_source_conflicts==0, every active predicted non-leaf has at least one active daughter, and every active predicted leaf has a nonempty recursive leaf-source set.",
+    "leaf_retention":"truth_leaf_source_count is cardinality of union of truth active-leaf source IDs; retained is intersection cardinality with predicted active-leaf source union.",
+    "aggregation":"All frozen rollout endpoints are math.fsum(per-UID value in UID order)/1000. Only complete_target_efficiency pools sum(correct)/sum(eligible).",
+    "hard":"Every UID tree_valid, reconstruction_valid, scheduled_rollout_valid and full leaf retention; recursive conflicts sum zero; teacher and predicted P4 closed counts equal positive composite counts; validation fallback count zero."
+  },
+  "four_fresh_process_ABBA":{
+    "parent":"After materialization and before block one, the non-GPU parent sequentially reads every byte of every authorized immutable input and materialized tensor file in manifest order, verifies SHA/length, records page_touch_start/end_monotonic_ns and digest, fsyncs its receipt, then never opens GPU/CUDA.",
+    "order":["q32_A","relbias_A","relbias_B","q32_B"],
+    "freshness":"Each block is a newly execve'd evaluator subprocess with a new PID and fresh CUDA context. No Python interpreter, model object, CUDA allocation, module cache or process-local tensor survives between blocks.",
+    "identical_lifecycle":["open only bound read-only inputs","load and verify checkpoint/model digest","model.eval and requires_grad false","run exact signature-covering warmup","synchronize and reset CUDA peak stats","run exact measured teacher/rollout plan","synchronize and capture timing/memory","write/full-write/fsync all receipts and parent dirs","rehash state/checkpoint/input manifests","exit zero"],
+    "parent_between_blocks":"Wait for clean subprocess exit, verify durable block receipt and no surviving child/GPU process, then start next fresh subprocess; no page-touch refresh or scientific read between blocks.",
+    "repeated_arm_identity":"q32_A/q32_B and relbias_A/relbias_B must have identical teacher statistics SHA, rollout statistics SHA, dtype-contract SHA, model-state SHA, event/normalization/batch/UID/target-level hashes and causal input hashes. Timing, memory, PID, block identity and envelope hashes may differ.",
+    "throughput":"Block rate=3000/positive measured seconds. Arm rate=math.sqrt(first*second); require relbias/q32>=0.9.",
+    "memory":"Arm peak allocated/reserved is maximum across its blocks; each 0<allocated<=reserved<=device total.",
+    "resources":{"allocation_count":1,"fresh_subprocesses":4,"gpus":1,"gres":"gpu:h100nvl:1","cpus":8,"memory":"64G","walltime":"04:00:00","maximum_H100_GPU_hours":4.0,"requeue":false,"max_restarts":0}
+  },
+  "future_synthetic_feasibility_gate":{
+    "status":"REQUIRED_NOT_IMPLEMENTED_NOT_AUTHORIZED",
+    "future_exclusive_output_root":"/home/b/Boyang.Yu/HyperTagging_uni/HyperTagging_reconstruction_hpo_clearance_20260825/artifacts/runs/joint-terminal-synthetic-feasibility-v4-20260826",
+    "science_exclusion":"Must not open, name, hash, derive from, or contain any terminal checkpoint bytes, event UID, raw/normalized event, label, target, validation selection, model endpoint, metric or outcome. It produces infrastructure timing/memory only.",
+    "contract_inputs":"Reviewed public/config-only upper bounds: checkpoint file byte-size ceiling; tensor-materialization byte-movement ceiling; 500 batch4 teacher schedule with maximum configured positive-level control count; 1000 singleton maximum-eight-level rollout/control schedule; receipt/serialization byte ceiling; exact runtime and resource closure.",
+    "ABBA":"Four fresh subprocesses control_A,control_B,control_B,control_A. Each independently reads a nonscientific synthetic file of checkpoint-size ceiling, allocates deterministic synthetic tensors at shape/byte ceilings, executes maximum control-flow and CUDA arithmetic schedule without a model or labels, writes/serializes/fsyncs ceiling-sized dummy receipts, frees, synchronizes and exits. Parent performs the same pre-first-block page-touch and between-process checks.",
+    "byte_movement":"Move at least the proposed recovery materialization ceiling bytes host-to-host and host-to-device in the same ordered chunk sizes; serialize and fsync at least the proposed maximum receipt bytes per block. Synthetic bytes come from a domain-separated counter pattern, not project data.",
+    "gates":{"end_to_end_elapsed_seconds":"<=10800","unique_batch_MaxRSS_bytes":"<=51539607552 (48 GiB)","max_process_CUDA_reserved_bytes":"<=floor(0.80*device_total_bytes)","allocation_ceiling_seconds":14400,"allocation_memory_bytes":68719476736},
+    "headroom_rationale":"Three-hour/48-GiB/80%-VRAM feasibility gates reserve at least one hour, 16 GiB host memory and 20% device memory beneath recovery contract ceilings.",
+    "failure":"Any missing receipt, nonzero subprocess, exceeded threshold or lifecycle/hash mismatch means the proposed recovery resources are infeasible. Amend resources and repeat independent review; never truncate UIDs, batches, target levels, rollouts, warmup, receipts, hashes or ABBA blocks.",
+    "authorization":{"authority_status":false,"execution_authorized":false,"submission_authorized":false,"feasibility_execution_authorized":false}
+  },
+  "primary_and_NI_inference":"Unchanged from v3: two primary paired bootstrap endpoints, raw p_j(0), deterministic Holm step-down, correctly labeled Bonferroni simultaneous percentile bounds, delta>=0.01; every NI guard uses intersection-union raw one-sided p<=0.05 plus estimate strictly inside margin; complete-target test computed once and reused.",
+  "no_posthoc_substitute":"No old aggregate, raw re-read, renormalization, changed batch size/boundary, second teacher forward, reused evaluator process/CUDA context, two-block replay, inferred timestamp, 15-second telemetry, synthetic feasibility result as scientific evidence, or truncated plan can satisfy recovery evidence.",
+  "remaining_disposition":"Pending fourth independent review. Scientific recovery cannot be authorized until terminal checkpoint bindings, exact future evaluator/wrapper/schema/contract, synthetic feasibility implementation and accepted feasibility receipt exist and are independently reviewed.",
+  "audit_counters":{"scheduler_calls":0,"payload_reads":0,"tests_executed":0,"scientific_runs":0}
+}
