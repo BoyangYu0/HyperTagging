@@ -1,0 +1,158 @@
+{
+  "artifact_version":"joint-terminal-evidence-guard-authority-proposal-v5",
+  "date_utc":"2026-08-26",
+  "status":"REVISED_PROPOSAL_PENDING_FIFTH_INDEPENDENT_REVIEW",
+  "authority":{"authority_status":false,"execution_authorized":false,"submission_authorized":false,"scientific_execution_authorized":false,"scheduler_calls_authorized":false,"payload_access_authorized":false,"promotion_authorized":false,"recovery_authorized":false,"feasibility_execution_authorized":false},
+  "supersedes_v4":{"commit":"c9161c5108d9c9dc367f32c5eeb50b65f46ebf65","tag":"ht-joint-terminal-evidence-guard-authority-proposal-v4-20260826-v1","json_sha256":"0587f905fbe5fa8f7598383cc5101cd69e610135a88077596791dfab3a90b011","md_sha256":"02a36ee8a92d0aa7f7904de21b685b745dbb4576137166afcceb8a8c6dcfdc7c","review_disposition":"REVISE"},
+  "fourth_review_binding":{
+    "verdict":"REVISE",
+    "tracked_review_artifact":null,
+    "provenance":"Fourth independent review relayed verbatim by root task /root to /root/recon_transaction_sol_final_audit on 2026-08-26; no separately tracked reviewer artifact was present at revision time.",
+    "verbatim_result":"Revise proposal v4→v5 exactly per fourth REVISE, pending review/authfalse/no actions. Replace broad normative_inheritance with exact JSON-pointer replacement map and statement every v3 field survives unless listed; explicitly retain causal envelope, UID/event manifests, exact keys/formulas/denominators, bootstrap/inference, recovery0<ElapsedRaw<=14400, unique .batch MaxRSS<=64G, timing/memory exact keys, 15s diagnostic only, descriptive diagnostics excluded. Feasibility: exact ABBA names q32_synth_A, relbias_synth_A, relbias_synth_B, q32_synth_B; each fresh process instantiates exact frozen architecture/code and actual treatment config using domain-separated deterministic synthetic weights, exact evaluator/model-forward/control call graph at reviewed max shapes/level counts; bind config/code/shape hashes, synthetic generator domain/seed, call/byte counts/workload digest. Keep UIDs/events/labels/checkpoints/endpoints/outcomes prohibited, timing/memory only. If metric/loss paths excluded, add reviewed operation/byte dominance certificate. Bind review provenance. Seal v5 proposal all authority/auth false and return fifth review.",
+    "verbatim_result_utf8_sha256":"bc2835b8e8753fe49a94ef29ff9d1ec6e64e6c4824556d5a0b1add09eb85f433",
+    "fifth_independent_review_required":true
+  },
+  "normative_base":{
+    "commit":"06744aa60e5da9748a55b5ed2385322a046fdfe9",
+    "tag":"ht-joint-terminal-evidence-guard-authority-proposal-v3-20260826-v1",
+    "path":"artifacts/codex/joint_optimization_20260824/joint_terminal_evidence_guard_authority_proposal_v3_20260826.json",
+    "sha256":"2be54d832c357f0b53f092c6878cfd0889a59384db0a67558356fe1a42161489"
+  },
+  "overlay_semantics":{
+    "pointer_standard":"RFC 6901 JSON Pointer",
+    "application":"Verify the normative-base byte SHA, parse it, deep-copy it, then apply replacement_map entries in listed order. For replace, the base pointer must already exist exactly once. For add, the base pointer must not exist. replacement_pointer resolves inside this v5 document. Any violation blocks.",
+    "survival_rule":"Every v3 field and subfield survives with identical value and normative meaning unless its exact pointer is listed as a replace operation or is a descendant of a listed replaced pointer. Add operations do not weaken or override surviving v3 fields. No implicit prose inheritance, wildcard, prefix or latest-version rule exists.",
+    "no_remove_operations":true
+  },
+  "replacement_map":[
+    {"operation":"replace","base_pointer":"/artifact_version","replacement_pointer":"/replacement_nodes/artifact_version"},
+    {"operation":"replace","base_pointer":"/date_utc","replacement_pointer":"/replacement_nodes/date_utc"},
+    {"operation":"replace","base_pointer":"/status","replacement_pointer":"/replacement_nodes/status"},
+    {"operation":"replace","base_pointer":"/data_materialization","replacement_pointer":"/replacement_nodes/data_materialization"},
+    {"operation":"replace","base_pointer":"/teacher_statistics_schema","replacement_pointer":"/replacement_nodes/teacher_statistics_schema"},
+    {"operation":"replace","base_pointer":"/rollout_statistics_schema","replacement_pointer":"/replacement_nodes/rollout_statistics_schema"},
+    {"operation":"replace","base_pointer":"/four_block_recovery_contract","replacement_pointer":"/replacement_nodes/four_block_recovery_contract"},
+    {"operation":"replace","base_pointer":"/decision_rule","replacement_pointer":"/replacement_nodes/decision_rule"},
+    {"operation":"replace","base_pointer":"/remaining_feasibility_blocker","replacement_pointer":"/replacement_nodes/remaining_feasibility_blocker"},
+    {"operation":"replace","base_pointer":"/other_unresolved_implementation_inputs","replacement_pointer":"/replacement_nodes/other_unresolved_implementation_inputs"},
+    {"operation":"add","base_pointer":"/supersedes_v4","replacement_pointer":"/supersedes_v4"},
+    {"operation":"add","base_pointer":"/fourth_review_binding","replacement_pointer":"/fourth_review_binding"},
+    {"operation":"add","base_pointer":"/path_security_v5","replacement_pointer":"/replacement_nodes/path_security_v5"},
+    {"operation":"add","base_pointer":"/data_access_receipt_v5","replacement_pointer":"/replacement_nodes/data_access_receipt_v5"},
+    {"operation":"add","base_pointer":"/numeric_receipt_contract_v5","replacement_pointer":"/replacement_nodes/numeric_receipt_contract_v5"},
+    {"operation":"add","base_pointer":"/synthetic_feasibility_gate_v5","replacement_pointer":"/replacement_nodes/synthetic_feasibility_gate_v5"}
+  ],
+  "explicit_unchanged_v3_pointers":[
+    {"pointer":"/authority","retained":"all authority/auth/submission/recovery/feasibility flags false"},
+    {"pointer":"/source_bindings","retained":"exact plan/discovery/Stage-A/contracts/jobs/code/pretraining hashes"},
+    {"pointer":"/canonical_bytes","retained":"JSON, UID, batch-boundary and numeric canonicalization"},
+    {"pointer":"/causal_data_receipt_envelope","retained":"terminal/controller/result/metrics hashes; manifests/index embedded/split/normalizer/checkpoint/UID/treatment/data_access causal exact keys"},
+    {"pointer":"/model_state_digest","retained":"name/dtype/shape/length-prefixed contiguous CPU-byte checkpoint/state digest"},
+    {"pointer":"/descriptive_artifact_excluded_from_authority","retained":"schema-bound per-level diagnostics excluded from promotion authority"},
+    {"pointer":"/bootstrap_reproducibility","retained":"domain-separated PCG64 matrices, 10000 rows, dtype/order/repeats/math.fsum/serialization/tails, raw p, Holm, Bonferroni CI and NI rules"},
+    {"pointer":"/approved_v2_guard_margins_preserved","retained":"all primary and NI margins and one complete-target test reuse"},
+    {"pointer":"/timing_and_memory_receipts","retained":"exact timing and process-CUDA memory receipt keys/rules"},
+    {"pointer":"/hard_guards","retained":"scheduled rollout, tree/reconstruction/leaf/P4/fallback/finite exact guards"},
+    {"pointer":"/audit_counters","retained":"zero scheduler, payload, tests and science"}
+  ],
+  "retained_recovery_resource_clauses":[
+    "Recovery raw scheduler evidence has exactly one <recovery_job_id>.batch row and 0<ElapsedRaw<=14400 seconds.",
+    "Unique .batch MaxRSS matches ^([1-9][0-9]*)([KMGT]?)$, uses binary powers of 1024, and is 0<MaxRSS_bytes<=68719476736 (64 GiB).",
+    "Original primary result.elapsed_seconds and ElapsedRaw remain 0<value<=7200 seconds.",
+    "Fifteen-second device-wide nvidia-smi telemetry remains a required finite diagnostic only and never substitutes for reset process max_memory_allocated/max_memory_reserved.",
+    "Timing and memory exact key sets remain /timing_and_memory_receipts from v3 without modification."
+  ],
+  "replacement_nodes":{
+    "artifact_version":"joint-terminal-evidence-guard-authority-proposal-v5",
+    "date_utc":"2026-08-26",
+    "status":"REVISED_PROPOSAL_PENDING_FIFTH_INDEPENDENT_REVIEW",
+    "data_materialization":{
+      "required_before_first_evaluator":true,
+      "raw_once":"Decode exactly 2000 ordered validation logical objects once, then prohibit raw reopen.",
+      "teacher":"Exactly 500 immutable frozen collate_heterogeneous_events(four consecutive events) then normalize_batch tensor bundles.",
+      "rollout":"Exactly 1000 immutable separately collated-and-normalized singleton tensor bundles for teacher indices 0..999; never slice teacher tensors as rollout input.",
+      "tensor_record_exact_keys":["phase","ordinal","batch_size","event_uids","tensor_key","dtype","shape","byte_length","tensor_sha256"],
+      "teacher_batch_plan_exact_keys":["batch_ordinal","event_uids","target_level_list","target_level_count","tensor_bundle_sha256"],
+      "forward_plan":"For batch ordinal 0..499 and positive target levels ascending, exactly one model forward per ordered pair. Bind target-level-pair SHA and total count. No duplicate, omitted, singleton or diagnostic forward.",
+      "UID_equality":"Teacher arrays equal checkpoint validation UIDs and selection-manifest order; rollout equals teacher prefix 1000; both arms and all ABBA blocks byte-equal.",
+      "manifests":"Bind raw access, UID, event, tensor, 500 teacher batch, 1000 rollout singleton, target-level, normalization and ordered batch-boundary SHA-256 values in the surviving causal envelope.",
+      "immutable_consumption":"Payloads full-write/fsync/parent-fsync/chmod read-only/rehashed. Evaluators open only immutable tensor bundles; no raw source, collate or normalizer call."
+    },
+    "teacher_statistics_schema":{
+      "schema_version":"teacher-event-sufficient-statistics-v5",
+      "cardinality":2000,
+      "batch_size":4,
+      "exact_record_keys":["event_uid","event_index","source_role","validation_train_fallback_used","target_level_count","object_tp","object_fp","object_fn","pointer_tp","pointer_fp","pointer_fn","mother_type_correct","mother_type_total","cardinality_correct","cardinality_total","brier_sum","brier_count","ece_bins","loss_total_sum","loss_total_count"],
+      "ece_bin_exact_keys":["bin_index","count","probability_sum","target_sum"],
+      "one_forward":"Each ordered batch/target-level output is produced once at batch size four. Per-event matching/statistics/loss slice already-produced outputs, matches, confidence targets and normalized tensors; no second forward, recollation, renormalization or singleton teacher evaluation.",
+      "numeric":"Frozen-dtype sigmoid/comparisons/subtraction/square/loss first; then logical-order binary64 contributions, math.fsum, exact counts and canonical serialization under numeric_receipt_contract_v5.",
+      "formulas":"Brier/ECE resample sufficient statistics exactly as v3; event loss sums ascending target-level contributions; L=sum(loss_sum)/sum(loss_count), effect Lrel/Lq32-1, q32 positive, NI boundary +0.02.",
+      "positive_denominators":["object predicted","object truth","pointer predicted","pointer truth","mother type","cardinality","Brier count","ECE count","loss count"]
+    },
+    "rollout_statistics_schema":{
+      "schema_version":"rollout-event-sufficient-statistics-v5",
+      "cardinality":1000,
+      "exact_record_keys":["event_uid","event_index","source_role","validation_train_fallback_used","truth_edge_count","predicted_edge_count","common_edge_count","full_tree_exact","subtree_common_count","truth_node_count","predicted_node_count","mother_type_correct","mother_type_total","leaf_assignment_correct","leaf_assignment_total","source_jaccard_sum","source_jaccard_count","tree_edit_numerator","tree_edit_denominator","root_reconstruction_success","truth_root_count","representable_target_count","truth_target_count","complete_target_correct","complete_target_eligible","predicted_tree_valid","predicted_p4_closed_count","predicted_p4_composite_count","teacher_p4_closed_count","teacher_p4_composite_count","recursive_source_conflicts","leaf_source_retained_count","truth_leaf_source_count","reconstruction_valid","bounded_resolution_available","scheduled_rollout_valid"],
+      "types_ranges":"UID string/index exact; roles literal validation/false fallback; indicators booleans; counts nonnegative integers; 0<=common_edges<=min(truth,predicted), 0<=subtree_common<=truth_nodes, correct<=total for type/leaf/complete/P4/retention, 0<=source_jaccard_sum<=count, edit denominator=max(predicted_nodes+truth_nodes,1), edit numerator<=denominator, truth roots>0.",
+      "positive_cohort_denominators":["truth edges","truth nodes","mother type","leaf assignment","source alignment","tree edit","truth roots","truth targets","complete eligible","predicted P4 composites","teacher P4 composites","truth leaf sources"],
+      "per_UID_formulas":"Edge P/R/F1 exact empty conventions; subtree common/max(truth,1); type and leaf correct/total else 1; source sum/count else 0; edit numerator/max(predicted+truth,1); root boolean; representable/max(truth targets,1).",
+      "aggregation":"All rollout endpoints are math.fsum(per-UID values in UID order)/1000 except complete-target efficiency, the sole pooled sum(correct)/sum(eligible) endpoint.",
+      "structural":"tree_valid=no diagonal/cycle and mother level>child; reconstruction_valid adds zero recursive conflicts, daughters for nonleaves and nonempty sources for leaves; retention is source-union intersection; every UID scheduled rollout valid/tree/reconstruction/retention; P4 closed equals positive composites; fallback zero."
+    },
+    "four_block_recovery_contract":{
+      "status":"REQUIRED_FUTURE_CONTRACT_NOT_AUTHORIZED",
+      "order":["q32_A","relbias_A","relbias_B","q32_B"],
+      "fresh":"Each block is fresh execve evaluator/PID/CUDA context; parent page-touches and verifies all immutable inputs before block one only.",
+      "warmup":"Every distinct teacher target-level-list signature and rollout (truth depth,multiplicity bucket) signature is covered once per block from immutable tensors; identical hashes across blocks.",
+      "lifecycle":"load/verify accepted terminal checkpoint; eval/no-grad/no updates; warmup; sync/reset peaks; full 500 batch4 plus 1000 singleton measure; sync/timing/memory; full-write/fsync; state/input recheck; clean exit.",
+      "identity":"Repeated-arm teacher/rollout statistic, causal, UID/event/tensor/batch/target-level/numeric/model hashes identical; timing/memory/PID/block envelope excluded.",
+      "throughput":"Per block 3000/duration; per arm geometric mean; relbias/q32>=0.9.",
+      "memory":"Per-arm allocated/reserved maximum across its blocks; each 0<allocated<=reserved<=device total. 15-second device-wide telemetry diagnostic only.",
+      "resources":{"allocations":1,"fresh_subprocesses":4,"gres":"gpu:h100nvl:1","gpus":1,"cpus":8,"memory":"64G","walltime":"04:00:00","maximum_H100_GPU_hours":4.0,"requeue":false,"max_restarts":0},
+      "terminal_resources":"Exactly one recovery .batch row; 0<ElapsedRaw<=14400; strict binary-unit 0<MaxRSS<=64 GiB; original job time caps retained.",
+      "no_training":{"backward_calls":0,"optimizer_constructed":false,"optimizer_steps":0,"scheduler_steps":0,"parameter_updates":0,"checkpoint_writes":0},
+      "authorization":{"authority_status":false,"execution_authorized":false,"submission_authorized":false,"recovery_authorized":false}
+    },
+    "path_security_v5":{
+      "scientific_inputs":"Exact future contract lists nonsymlink read-only roots/files; regular owner UID12184, O_RDONLY|O_NOFOLLOW, before/after stat/hash manifest.",
+      "runtime":"Separate exact read-only runtime closure manifest enumerates interpreter/modules/shared/CUDA/system files and hashes; no wildcard project data root.",
+      "outputs":"Separate absent exclusively claimed recovery and feasibility output roots; O_CREAT|O_EXCL claim, full-write/fsync/parent-fsync, no overwrite/retry/alternate.",
+      "no_alias":"Reject path ancestry, symlink/bind ambiguity, or equal dev/inode between input and any claim/output."
+    },
+    "data_access_receipt_v5":{
+      "exact_keys":["policy","validation_logical_objects_decoded","validation_unique_objects","validation_uid_sha256","validation_access_record_count","validation_access_log_sha256","physical_input_open_record_count","physical_input_open_log_sha256","raw_reopens_after_materialization","teacher_materialized_batches","rollout_materialized_singletons","teacher_tensor_batch_opens_per_block","rollout_tensor_singleton_opens_per_block","train_objects_opened","test_objects_opened","stress_objects_opened","other_role_objects_opened"],
+      "fixed":{"policy":"validation_only","validation_logical_objects_decoded":2000,"validation_unique_objects":2000,"validation_access_record_count":2000,"raw_reopens_after_materialization":0,"teacher_materialized_batches":500,"rollout_materialized_singletons":1000,"teacher_tensor_batch_opens_per_block":500,"rollout_tensor_singleton_opens_per_block":1000,"train_objects_opened":0,"test_objects_opened":0,"stress_objects_opened":0,"other_role_objects_opened":0},
+      "digest":"Canonical ordered logical-access and physical O_RDONLY|O_NOFOLLOW open records, count and SHA bound before block one."
+    },
+    "numeric_receipt_contract_v5":{
+      "exact_keys":["schema_version","torch_version","cuda_build","amp_policy","confidence_logits_dtype_by_batch_level_sha256","confidence_targets_dtype_by_batch_level_sha256","loss_total_dtype_by_batch_level_sha256","sigmoid_execution","comparison_execution","contribution_cast","summation","serialization","contract_sha256"],
+      "rule":"Sigmoid, bin comparisons, confidence subtraction/square and sliced loss execute in frozen device/dtypes; contributions then cast individually to Python binary64 in logical order and accumulated by math.fsum; exact dtype/order/bin/count/serialization hashes bind every statistics receipt."
+    },
+    "synthetic_feasibility_gate_v5":{
+      "status":"REQUIRED_NOT_IMPLEMENTED_NOT_AUTHORIZED",
+      "block_order":["q32_synth_A","relbias_synth_A","relbias_synth_B","q32_synth_B"],
+      "fresh":"Each is a newly execve'd evaluator subprocess with fresh PID/CUDA context; identical page-touch/warmup/measure/serialization/fsync/unload/sync/exit lifecycle.",
+      "architecture":"Instantiate exact frozen LevelAutoregressiveReconstructor architecture and frozen evaluator/model-forward/rollout-control code at the reviewed maximum shapes and levels. q32 blocks load the exact q32 treatment config hash; relbias blocks load exact relbias treatment config hash. No terminal checkpoint is opened.",
+      "config_code_bindings":{"q32_config_sha256":"5f56d1645472f6d46cb7704ae326c94ef9b9de79da9348a099c0db0fa9f9a931","relbias_config_sha256":"5b5cafacc5ab540b565ef2ca088d47c58e120a5dadcc1b2af34b15e00b5ef29b","reconstruction_trainer_sha256":"5b480a95ac87fef4427ca5ee6c212f0d48c3dc2013cfd03805a4da158177c1e0","hierarchical_metrics_sha256":"6a8c3cc51907b68039816a9988284917b5e10263f7209f3e9693ee5d90080dff","level_loss_sha256":"156ea8d9cfaf8cd99265fe3550a596ea3fd22387c4310a2fbfcd08d73755d892"},
+      "reviewed_architecture_fields":{"d_model":128,"n_heads":4,"ffn_dim":512,"n_context_layers":4,"n_queries":32,"hyper_dim":32,"max_cardinality":16,"max_rollout_level":8,"teacher_batch_size":4},
+      "shape_manifest":"A future independently reviewed exact JSON manifest binds every synthetic tensor key/dtype/maximum shape/byte length, architecture parameter shape, teacher/rollout call shape and SHA-256. Its shape_manifest_sha256 is mandatory before feasibility authorization.",
+      "weight_generator":{"algorithm":"For each model state name sorted by raw UTF-8 bytes and logical C-order element index i, compute SHA-256(domain UTF-8 + NUL + uint64-be name_byte_length + name UTF-8 + uint64-be i). Floating value=((uint32-be first4 +0.5)/2^32)*0.02-0.01 computed binary64 then cast to target dtype; integer buffers zero; boolean buffers false. Dense contiguous only.","q32_domain":"ht-guard-v5/q32-synth/weights/20260826","q32_seed_hex":"7269f7935759f96f6dbb771fadb2ffb0","relbias_domain":"ht-guard-v5/relbias-synth/weights/20260826","relbias_seed_hex":"be0d52685dc23a3d3ca771a3d5876e30"},
+      "input_generator":{"algorithm":"Domain-separated SHA-256 counter stream mapped into finite maximum-shape control tensors required by the exact call graph; masks/control levels are deterministic synthetic control values and contain no project/event semantics.","domain":"ht-guard-v5/synthetic-inputs/max-shapes/20260826","seed_hex":"c93201219e3e1c91af1177afde777cbd"},
+      "byte_generator":{"domain":"ht-guard-v5/synthetic-bytes/20260826","seed_hex":"2e58e53ed67002984c0a06959a23ff88","use":"checkpoint-sized nonscientific reads, materialization byte movement and ceiling-sized serialized/fsynced dummy receipts"},
+      "maximum_call_counts_per_block":{"measured_teacher_model_forwards":4000,"measured_rollout_model_forwards":32000,"maximum_teacher_signature_warmup_forwards":1024,"maximum_rollout_signature_warmup_forwards":768,"total_model_forwards":37792,"teacher_batch_control_iterations":500,"rollout_event_control_iterations":1000},
+      "workload_receipt_exact_keys":["schema_version","block_name","pid","fresh_cuda_context","q32_or_relbias_config_sha256","code_manifest_sha256","shape_manifest_sha256","weight_generator_domain","weight_generator_seed_hex","input_generator_domain","input_generator_seed_hex","byte_generator_domain","byte_generator_seed_hex","teacher_forward_count","rollout_forward_count","warmup_forward_count","host_bytes_read","host_bytes_written","host_to_device_bytes","device_to_host_bytes","serialized_bytes","fsynced_files","fsynced_directories","workload_digest","elapsed_seconds","MaxRSS_bytes","peak_CUDA_reserved_bytes","device_total_bytes"],
+      "workload_digest":"SHA-256 of canonical ordered operation records exact keys ordinal,phase,operation,config_arm,tensor_shape_sha256,bytes_read,bytes_written,call_count; repeated-arm workload digests must match.",
+      "prohibited":"No terminal checkpoint path/bytes/hash, event UID, event/raw/normalized tensor, label, truth target, validation selector, metric endpoint, loss/metric value, result outcome or promotion statistic may be opened, derived, logged or serialized. Only infrastructure timing/memory/workload counts/hashes are outputs.",
+      "call_graph":"Run exact evaluator orchestration, model forward and teacher/predicted/bounded/scheduled rollout-control call graph at reviewed maxima. Model outputs are discarded without endpoint computation.",
+      "operation_byte_dominance_certificate":"Because labels/endpoints are prohibited, label-dependent matching, loss and metric branches are excluded. Before feasibility authorization, a separate independently reviewed certificate must enumerate each excluded frozen operation, its maximum call/element/byte counts under recovery, the synthetic replacement kernel/serialization work, and prove replacement operation count and bytes read/written are each >= excluded maxima. Bind certificate path/SHA and reviewer acceptance in feasibility contract; missing or failed dominance blocks.",
+      "gates":{"end_to_end_elapsed_seconds":"<=10800","unique_batch_MaxRSS_bytes":"<=51539607552","peak_CUDA_reserved_bytes":"<=floor(0.80*device_total_bytes)","allocation_ceiling_seconds":14400,"allocation_memory_bytes":68719476736},
+      "failure":"Any threshold, count, digest, fresh-process, dominance or lifecycle failure requires resource amendment and new review. Never truncate blocks, forwards, schedules, bytes, serialization or fsync work.",
+      "authorization":{"authority_status":false,"execution_authorized":false,"submission_authorized":false,"feasibility_execution_authorized":false}
+    },
+    "decision_rule":"No action is authorized. Fifth review must accept or exactly amend the v3-plus-v5 overlay. Later recovery additionally requires accepted terminal checkpoints, exact evaluator/wrapper/schema/contract, synthetic dominance certificate, authorized and passing synthetic feasibility receipt, four-block scientific receipts, all primary/NI/hard/resource gates and explicit later promotion authority; otherwise retain q32.",
+    "remaining_feasibility_blocker":"No implemented/reviewed synthetic v5 gate, reviewed maximum-shape manifest, workload digest schema instance, or operation/byte dominance certificate currently proves the exact four-fresh-process architecture/control workload fits <=10800 seconds, <=48 GiB MaxRSS and <=80% CUDA reserved within the 14400-second/64-GiB recovery ceiling.",
+    "other_unresolved_implementation_inputs":["accepted terminal checkpoint paths/hashes for jobs 16030125 and 16030126","future evaluator/wrapper/recovery contract/schema hashes","future raw access/event/tensor/batch/normalizer manifests","future synthetic shape manifest and generator implementation","future reviewed dominance certificate","future exclusive output paths and durable transaction protocol"]
+  },
+  "disposition":"PENDING_FIFTH_INDEPENDENT_REVIEW",
+  "audit_counters":{"scheduler_calls":0,"payload_reads":0,"tests_executed":0,"scientific_runs":0}
+}
