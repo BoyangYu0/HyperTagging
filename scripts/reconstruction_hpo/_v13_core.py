@@ -97,6 +97,30 @@ def require_hex(value: Any, label: str) -> None:
         raise VerificationError(f"{label} is not lowercase sha256")
 
 
+def validate_artifact_ref(ref: Mapping[str, Any], trusted_roots: Iterable[str] = ()) -> None:
+    """Validate an ArtifactRef.v5 before any content consumer opens it."""
+    exact_keys(ref, ("path", "byte_length", "sha256", "media_type", "schema", "version"), "ArtifactRef.v5")
+    path = ref["path"]
+    if not isinstance(path, str) or not path.startswith("/") or "\x00" in path or "/../" in (path + "/"):
+        raise VerificationError("ArtifactRef path is not an absolute normalized path")
+    if isinstance(ref["byte_length"], bool) or not isinstance(ref["byte_length"], int) or ref["byte_length"] <= 0:
+        raise VerificationError("ArtifactRef byte_length is not positive uint")
+    require_hex(ref["sha256"], "ArtifactRef sha256")
+    if isinstance(ref["version"], bool) or not isinstance(ref["version"], int) or ref["version"] <= 0:
+        raise VerificationError("ArtifactRef version is not positive uint")
+    roots = [Path(r).resolve() for r in trusted_roots]
+    target = Path(path)
+    if roots and not any(target.is_relative_to(root) for root in roots):
+        raise VerificationError("ArtifactRef escapes trusted root")
+    if not target.exists():
+        raise VerificationError("ArtifactRef target is absent")
+    st = target.lstat()
+    if stat.S_ISLNK(st.st_mode) or not stat.S_ISREG(st.st_mode):
+        raise VerificationError("ArtifactRef is not a regular nonsymlink file")
+    if st.st_size != ref["byte_length"] or sha256_bytes(target.read_bytes()) != ref["sha256"]:
+        raise VerificationError("ArtifactRef bytes do not match bound length/hash")
+
+
 def load_spec(repo: str | os.PathLike[str]) -> dict[str, Any]:
     path = Path(repo) / SPEC_FILE
     raw = path.read_bytes()
@@ -228,6 +252,9 @@ def validate_normalized_manifest(spec: Mapping[str, Any], manifest: Mapping[str,
         expected_dtype = next(name for name, vals in groups.items() if rec["tensor_key"] in vals)
         if rec["dtype"] != expected_dtype:
             raise VerificationError("record dtype partition mismatch")
+        if not isinstance(rec["tensor_file_ref"], Mapping):
+            raise VerificationError("record tensor_file_ref is not ArtifactRef.v5")
+        validate_artifact_ref(rec["tensor_file_ref"])
         require_hex(rec["tensor_sha256"], "tensor_sha256")
         require_hex(rec["record_sha256"], "record_sha256")
         if rec["record_sha256"] != digest_projection(rec, rec_proj):
@@ -321,6 +348,17 @@ def validate_abba(spec: Mapping[str, Any], receipt: Mapping[str, Any]) -> None:
         expected_arm = "q32" if block["block_id"].startswith("q32") else "relbias"
         if block["arm"] != expected_arm or block["relation_bias_enabled"] is not (expected_arm == "relbias"):
             raise VerificationError("ABBA arm/relation-bias projection mismatch")
+        for ref_name in ("source_contract_ref", "teacher_statistics_ref", "rollout_statistics_ref", "normalized_tensor_manifest_ref", "batch_plan_ref", "before_state_ref", "after_state_ref"):
+            if not isinstance(block[ref_name], Mapping):
+                raise VerificationError(f"ABBA {ref_name} is not an ArtifactRef.v5")
+            validate_artifact_ref(block[ref_name])
+        if block["block_ordinal"] != ("q32_A", "relbias_A", "relbias_B", "q32_B").index(block["block_id"]) + 1:
+            raise VerificationError("ABBA block ordinal mismatch")
+        exact_keys(block["timing"], schema["timing_exact_keys"], "ABBA timing")
+        exact_keys(block["process_memory"], schema["process_memory_exact_keys"], "ABBA process memory")
+        exact_keys(block["resource"], schema["resource_exact_keys"], "ABBA resource")
+        if block["fresh_execve"] is not True or block["fresh_cuda_context"] is not True:
+            raise VerificationError("ABBA block is not a fresh execution/context")
         ops = block["training_operations"]
         exact_keys(ops, schema["training_operations_exact_keys"], "ABBA training operations")
         if any(ops.get(k) not in (0, False) for k in ("backward_calls", "optimizer_constructed", "optimizer_steps", "scheduler_steps", "parameter_updates", "checkpoint_writes")):
