@@ -1,0 +1,22 @@
+{
+  "schema": "joint-terminal-evidence-verifier-v13-v3-implementation-report",
+  "version": 3,
+  "status": "auth_false_v3_capability_router_sealed_static_synthetic_only",
+  "implementation_commit": "462944635d7b5e1426450650516c298ab43da869",
+  "implementation_tag": "ht-joint-terminal-evidence-verifier-v13-implementation-20260827-v3",
+  "blocked_lineage_tags": ["ht-joint-terminal-evidence-verifier-v13-implementation-20260827-v1", "ht-joint-terminal-evidence-verifier-v13-implementation-20260827-v2"],
+  "spec_commit": "b1d75b73ad432bb176f9c1bf407c40a6d76850f7",
+  "spec_json_sha256": "63c230481a07408b9be68192e1ea3c2989f027906bd05d64a8abcd82c0ea3583",
+  "core_sha256": "ea949df496ddeb0896b5cd7a65dd292ff3fa503fb2d7b58db9634f07ec5f2d61",
+  "router_sha256": "60ce1959e9122fe47efe06625773dfff86c6b2ec4664c885d0b7061f017a38a8",
+  "public_api_sha256": "260c6273230eb5ce2d111f2a9e0162dac3eec4ff2d5017a3187e481ad0654d28",
+  "v3_tests_sha256": "462078f08e0ee962ac19a4812f7abcf11a1846934f5777580a2e72304f9fa1e0",
+  "uv": {"version": "0.5.20", "mode": "uv run --frozen --no-sync", "lock_sha256": "7a18fbd4feed4371fa8e8a740f87720462d58c3a8e283402870f375ab744ad18", "dependency_installs": 0},
+  "capability_api": {"verify_chain_arguments": "repo + exactly eight ArtifactRefs + keyword trusted_roots", "return_type": "private frozen _VerifiedChain", "decision": "same-process, unexpired, issued, single-use capability only", "mapping_forgery_rejected": true, "stale_rejected": true, "cross_process_rejected": true},
+  "router": {"order": ["terminal", "pair", "locator", "pilot", "ladder", "pointer", "hpo", "final"], "file_backed": true, "stable_open": "O_NOFOLLOW + lstat/open/fstat before and after + inode/device/size/mtime + SHA256", "exact_schema_keys": true, "required_values": true, "previous_digest_chain": true, "recursive_artifact_reopen": true, "authorization_false": true},
+  "tests": {"v3": "198 passed, no skips or xfails", "combined_v13": "203 passed", "oracle_cases": "T001-T194 parameter IDs collected", "full_collection": "772 tests collected and exactly 2 pre-existing nbformat import errors; reconciles prior 574 plus 198 v3 tests"},
+  "known_limit": "v3 remains auth-false and decision terminates at E_FEASIBILITY_SHAPE_AUTHORITY; no production or science claim is made",
+  "authorization": {"implementation_complete": false, "execution_complete": false, "feasibility": false, "submission_authorized": false, "scheduler_authorized": false, "payload_access_authorized": false, "scientific_execution_authorized": false, "root_final_go": false},
+  "usage_denials": {"sealed_test_used": false, "stress_used": false, "restricted_raw_used": false, "restricted_source_used": false, "train_loss_used": false},
+  "slurm_jobs_submitted": 0
+}
