@@ -198,6 +198,37 @@ def validate_common_receipt(spec: Mapping[str, Any], receipt: Mapping[str, Any],
         validate_usage_denials(receipt)
 
 
+def validate_schema_object(spec: Mapping[str, Any], value: Mapping[str, Any], schema_name: str) -> None:
+    """Compile the shared exact-key/required/null/digest rules for any schema."""
+    if schema_name not in spec["schemas"]:
+        raise VerificationError(f"unknown v13 schema: {schema_name}")
+    schema = spec["schemas"][schema_name]
+    keys = schema.get("exact_keys")
+    if keys is None and "common_plus_exact_keys" in schema:
+        keys = list(spec["schemas"]["CommonReceipt.v5"]["exact_keys"]) + list(schema["common_plus_exact_keys"])
+    if keys is None:
+        raise VerificationError(f"schema {schema_name} has no compiled exact keys")
+    exact_keys(value, keys, schema_name)
+    for key, expected in schema.get("required", {}).items():
+        if value[key] != expected:
+            raise VerificationError(f"{schema_name}.{key} required value mismatch")
+    type_map: dict[str, Any] = {}
+    type_map.update(schema.get("types", {}))
+    type_map.update(schema.get("base_types", {}))
+    type_map.update(schema.get("extension_types", {}))
+    for key, item in value.items():
+        if item is None and "null" not in str(type_map.get(key, "")).lower():
+            raise VerificationError(f"{schema_name}.{key} untyped None")
+    if "authorization" in value:
+        validate_authorization(value)
+    if "usage_denials" in value:
+        validate_usage_denials(value)
+    if "digest" in value:
+        require_hex(value["digest"], f"{schema_name}.digest")
+        if value["digest"] != sha256_bytes(jcs({k: v for k, v in value.items() if k != "digest"})):
+            raise VerificationError(f"{schema_name} digest mismatch")
+
+
 def validate_all_schema_objects(spec: Mapping[str, Any], objects: Mapping[str, Mapping[str, Any]]) -> None:
     """Apply exact-key validation to all 38 schemas supplied by a producer."""
     if set(objects) != set(spec["schemas"]):
@@ -222,6 +253,8 @@ def validate_normalized_manifest(spec: Mapping[str, Any], manifest: Mapping[str,
     for key, expected in schema["required"].items():
         if manifest.get(key) != expected:
             raise VerificationError(f"normalized manifest required value mismatch: {key}")
+    for ref_key in ("source_event_manifest_ref", "normalization_ref", "physical_open_log_ref"):
+        validate_artifact_ref(manifest[ref_key])
     universe = schema["compiled_tensor_key_universe"]
     groups = schema["compiled_tensor_dtype_groups"]
     if manifest["tensor_key_universe"] != universe:
@@ -241,6 +274,9 @@ def validate_normalized_manifest(spec: Mapping[str, Any], manifest: Mapping[str,
     expected_records += [("rollout", n, i) for n in range(1000) for i in range(79)]
     if len(manifest["records"]) != len(expected_records):
         raise VerificationError("record universe length mismatch")
+    grouped_records: dict[tuple[str, int], list[str]] = {}
+    grouped_uids: dict[tuple[str, int], list[str]] = {}
+    byte_width = schema["dtype_byte_width"]
     for rec, (phase, ordinal, tensor_index) in zip(manifest["records"], expected_records):
         exact_keys(rec, rec_keys, "normalized record")
         if (rec["phase"], rec["ordinal"], rec["tensor_index"]) != (phase, ordinal, tensor_index):
@@ -252,13 +288,31 @@ def validate_normalized_manifest(spec: Mapping[str, Any], manifest: Mapping[str,
         expected_dtype = next(name for name, vals in groups.items() if rec["tensor_key"] in vals)
         if rec["dtype"] != expected_dtype:
             raise VerificationError("record dtype partition mismatch")
+        shape = rec["shape"]
+        if rec["tensor_key"] == "runtime_features_are_raw":
+            if shape != []:
+                raise VerificationError("runtime_features_are_raw shape mismatch")
+            elements = 1
+        else:
+            if not isinstance(shape, list) or not shape or any(isinstance(x, bool) or not isinstance(x, int) or x <= 0 for x in shape) or shape[0] != rec["batch_size"]:
+                raise VerificationError("record shape mismatch")
+            elements = math.prod(shape)
+        if isinstance(rec["byte_length"], bool) or rec["byte_length"] != elements * byte_width[rec["dtype"]]:
+            raise VerificationError("record byte length/dtype/shape mismatch")
         if not isinstance(rec["tensor_file_ref"], Mapping):
             raise VerificationError("record tensor_file_ref is not ArtifactRef.v5")
         validate_artifact_ref(rec["tensor_file_ref"])
         require_hex(rec["tensor_sha256"], "tensor_sha256")
+        if rec["tensor_sha256"] != rec["tensor_file_ref"]["sha256"] or rec["byte_length"] != rec["tensor_file_ref"]["byte_length"]:
+            raise VerificationError("tensor file ref does not equal record bytes")
         require_hex(rec["record_sha256"], "record_sha256")
         if rec["record_sha256"] != digest_projection(rec, rec_proj):
             raise VerificationError("record digest mismatch")
+        key = (phase, ordinal)
+        grouped_records.setdefault(key, []).append(rec["record_sha256"])
+        if key in grouped_uids and grouped_uids[key] != rec["event_uids"]:
+            raise VerificationError("record event UID projection mismatch")
+        grouped_uids[key] = rec["event_uids"]
     batch_keys = schema["batch_index_exact_keys"]
     batch_proj = schema["batch_index_digest_projection_exact_keys"]
     expected_batches = [("teacher", n) for n in range(500)] + [("rollout", n) for n in range(1000)]
@@ -268,14 +322,19 @@ def validate_normalized_manifest(spec: Mapping[str, Any], manifest: Mapping[str,
             raise VerificationError("batch index order mismatch")
         if batch["batch_size"] != (4 if phase == "teacher" else 1):
             raise VerificationError("batch index size mismatch")
-        expected = [r["record_sha256"] for r in manifest["records"] if r["phase"] == phase and r["ordinal"] == ordinal]
+        expected = grouped_records[(phase, ordinal)]
         if batch["tensor_record_sha256s"] != expected:
             raise VerificationError("batch index record projection mismatch")
+        if batch["event_uids"] != grouped_uids[(phase, ordinal)]:
+            raise VerificationError("batch index UID projection mismatch")
         require_hex(batch["batch_sha256"], "batch_sha256")
         if batch["batch_sha256"] != digest_projection(batch, batch_proj):
             raise VerificationError("batch index digest mismatch")
     validate_authorization(manifest)
     validate_usage_denials(manifest)
+    require_hex(manifest["digest"], "normalized manifest digest")
+    if manifest["digest"] != sha256_bytes(jcs({k: v for k, v in manifest.items() if k != "digest"})):
+        raise VerificationError("normalized manifest digest mismatch")
 
 
 def validate_batch_plan(spec: Mapping[str, Any], plan: Mapping[str, Any], normalized: Mapping[str, Any]) -> None:
@@ -284,6 +343,10 @@ def validate_batch_plan(spec: Mapping[str, Any], plan: Mapping[str, Any], normal
     for key, expected in schema["required"].items():
         if plan.get(key) != expected:
             raise VerificationError(f"batch plan required value mismatch: {key}")
+    validate_artifact_ref(plan["event_manifest_ref"])
+    validate_artifact_ref(plan["normalized_tensor_manifest_ref"])
+    if plan["normalized_tensor_manifest_ref"]["sha256"] != normalized["digest"] and plan["normalized_tensor_manifest_ref"]["sha256"] != sha256_bytes(Path(plan["normalized_tensor_manifest_ref"]["path"]).read_bytes()):
+        raise VerificationError("batch plan normalized manifest ref mismatch")
     if len(plan["batches"]) != 1500:
         raise VerificationError("batch plan count mismatch")
     batch_schema = schema["batch_exact_keys"]
@@ -297,6 +360,9 @@ def validate_batch_plan(spec: Mapping[str, Any], plan: Mapping[str, Any], normal
             raise VerificationError("batch plan normalized digest mismatch")
     validate_authorization(plan)
     validate_usage_denials(plan)
+    require_hex(plan["digest"], "batch plan digest")
+    if plan["digest"] != sha256_bytes(jcs({k: v for k, v in plan.items() if k != "digest"})):
+        raise VerificationError("batch plan digest mismatch")
 
 
 RUNTIME_STATE_KEYS = ("checkpoint", "model_state", "event_manifest", "normalized_tensor_manifest", "batch_plan", "runtime_manifest")
@@ -310,8 +376,11 @@ RUNTIME_STATE_FIELDS = {
 def validate_state_integrity(spec: Mapping[str, Any], receipt: Mapping[str, Any]) -> None:
     schema = spec["schemas"]["StateIntegrityReceipt.v12"]
     exact_keys(receipt, schema["exact_keys"], "state integrity receipt")
-    if receipt["phase"] != "terminal":
-        raise VerificationError("state integrity receipt must be terminal")
+    for key, expected in schema["required"].items():
+        if receipt[key] != expected:
+            raise VerificationError(f"state integrity required value mismatch: {key}")
+    if receipt["phase"] not in ("before", "after") or receipt["block_id"] not in ("q32_A", "relbias_A", "relbias_B", "q32_B"):
+        raise VerificationError("state integrity phase/block mismatch")
     targets = receipt["targets"]
     if not isinstance(targets, Mapping) or list(targets.keys()) != list(RUNTIME_STATE_KEYS):
         raise VerificationError("state integrity targets differ from runtime mapping")
@@ -320,10 +389,37 @@ def validate_state_integrity(spec: Mapping[str, Any], receipt: Mapping[str, Any]
         entry = targets[name]
         exact_keys(entry, entry_keys, f"state target {name}")
         require_hex(entry["sha256"], f"state target {name} sha256")
-        if not entry["absolute_path"].startswith("/"):
+        if not isinstance(entry["absolute_path"], str) or not entry["absolute_path"].startswith("/") or Path(entry["absolute_path"]) != Path(os.path.normpath(entry["absolute_path"])):
             raise VerificationError("state target path must be absolute")
+        path = Path(entry["absolute_path"])
+        before = path.lstat()
+        if stat.S_ISLNK(before.st_mode) or not stat.S_ISREG(before.st_mode) or before.st_mode & (stat.S_IWGRP | stat.S_IWOTH):
+            raise VerificationError("state target type/mode mismatch")
+        expected_identity = (entry["st_dev"], entry["st_ino"], entry["owner_uid"], entry["mode"], entry["byte_length"])
+        actual_identity = (before.st_dev, before.st_ino, before.st_uid, stat.S_IMODE(before.st_mode), before.st_size)
+        if expected_identity != actual_identity or entry["owner_uid"] != 12184:
+            raise VerificationError("state target identity/owner mismatch")
+        fd = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+        try:
+            opened = os.fstat(fd)
+            raw_parts: list[bytes] = []
+            while True:
+                chunk = os.read(fd, 1 << 20)
+                if not chunk:
+                    break
+                raw_parts.append(chunk)
+            after = os.fstat(fd)
+        finally:
+            os.close(fd)
+        if (opened.st_dev, opened.st_ino, opened.st_size, opened.st_mtime_ns) != (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns):
+            raise VerificationError("state target changed during reopen")
+        if sha256_bytes(b"".join(raw_parts)) != entry["sha256"]:
+            raise VerificationError("state target content hash mismatch")
     validate_authorization(receipt)
     validate_usage_denials(receipt)
+    require_hex(receipt["digest"], "state integrity digest")
+    if receipt["digest"] != sha256_bytes(jcs({k: v for k, v in receipt.items() if k != "digest"})):
+        raise VerificationError("state integrity digest mismatch")
 
 
 def validate_abba(spec: Mapping[str, Any], receipt: Mapping[str, Any]) -> None:
@@ -331,16 +427,24 @@ def validate_abba(spec: Mapping[str, Any], receipt: Mapping[str, Any]) -> None:
     exact_keys(receipt, schema["exact_keys"], "ABBA receipt")
     if receipt["block_order"] != ["q32_A", "relbias_A", "relbias_B", "q32_B"]:
         raise VerificationError("ABBA block order mismatch")
+    for ref_name in ("recovery_contract_ref", "source_manifest_ref", "normalized_tensor_manifest_ref", "batch_plan_ref"):
+        validate_artifact_ref(receipt[ref_name])
+    normalized = parse_json_bytes(Path(receipt["normalized_tensor_manifest_ref"]["path"]).read_bytes())
+    batch_plan = parse_json_bytes(Path(receipt["batch_plan_ref"]["path"]).read_bytes())
+    validate_normalized_manifest(spec, normalized)
+    validate_batch_plan(spec, batch_plan, normalized)
     identity = receipt["repeated_arm_identity"]
-    if not isinstance(identity, Mapping) or any(v is not True for v in identity.values()):
+    exact_keys(identity, schema["repeated_arm_identity_exact_keys"], "ABBA repeated-arm identity")
+    if any(v is not True for v in identity.values()):
         raise VerificationError("ABBA repeated-arm identity is not proven")
     blocks = receipt["blocks"]
-    if len(blocks) != 4:
+    block_ids = ("q32_A", "relbias_A", "relbias_B", "q32_B")
+    if not isinstance(blocks, Mapping) or tuple(blocks) != block_ids:
         raise VerificationError("ABBA must contain four blocks")
     block_schema = schema["block_exact_keys"]
     content_schema = schema["scientific_content_exact_keys"]
     state_mapping = RUNTIME_STATE_FIELDS
-    for block in blocks:
+    for block in (blocks[name] for name in block_ids):
         exact_keys(block, block_schema, "ABBA block")
         exact_keys(block["scientific_content"], content_schema, "ABBA scientific content")
         if block["block_id"] not in ("q32_A", "relbias_A", "relbias_B", "q32_B"):
@@ -352,6 +456,17 @@ def validate_abba(spec: Mapping[str, Any], receipt: Mapping[str, Any]) -> None:
             if not isinstance(block[ref_name], Mapping):
                 raise VerificationError(f"ABBA {ref_name} is not an ArtifactRef.v5")
             validate_artifact_ref(block[ref_name])
+        before_state = parse_json_bytes(Path(block["before_state_ref"]["path"]).read_bytes())
+        after_state = parse_json_bytes(Path(block["after_state_ref"]["path"]).read_bytes())
+        validate_state_integrity(spec, before_state)
+        validate_state_integrity(spec, after_state)
+        if before_state["phase"] != "before" or after_state["phase"] != "after" or before_state["block_id"] != block["block_id"] or after_state["block_id"] != block["block_id"]:
+            raise VerificationError("ABBA state phase/block mismatch")
+        if before_state["targets"] != after_state["targets"]:
+            raise VerificationError("ABBA before/after state drift")
+        for target, field in state_mapping.items():
+            if before_state["targets"][target]["sha256"] != block["scientific_content"].get(field):
+                raise VerificationError(f"ABBA state/scientific mapping mismatch: {target}")
         if block["block_ordinal"] != ("q32_A", "relbias_A", "relbias_B", "q32_B").index(block["block_id"]) + 1:
             raise VerificationError("ABBA block ordinal mismatch")
         exact_keys(block["timing"], schema["timing_exact_keys"], "ABBA timing")
@@ -368,6 +483,14 @@ def validate_abba(spec: Mapping[str, Any], receipt: Mapping[str, Any]) -> None:
         require_hex(block["scientific_content"]["source_contract_sha256"], "ABBA source contract")
         require_hex(block["block_digest"], "ABBA block_digest")
         require_hex(block["scientific_content_digest"], "ABBA scientific_content_digest")
+        if block["scientific_content_digest"] != sha256_bytes(jcs(block["scientific_content"])):
+            raise VerificationError("ABBA scientific content digest mismatch")
+        if block["block_digest"] != sha256_bytes(jcs({k: v for k, v in block.items() if k != "block_digest"})):
+            raise VerificationError("ABBA block digest mismatch")
+    if blocks["q32_A"]["scientific_content"] != blocks["q32_B"]["scientific_content"] or blocks["q32_A"]["scientific_content_digest"] != blocks["q32_B"]["scientific_content_digest"]:
+        raise VerificationError("ABBA q32 repeated-arm content mismatch")
+    if blocks["relbias_A"]["scientific_content"] != blocks["relbias_B"]["scientific_content"] or blocks["relbias_A"]["scientific_content_digest"] != blocks["relbias_B"]["scientific_content_digest"]:
+        raise VerificationError("ABBA relbias repeated-arm content mismatch")
     validate_authorization(receipt)
     validate_usage_denials(receipt)
 

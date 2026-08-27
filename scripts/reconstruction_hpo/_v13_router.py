@@ -79,11 +79,11 @@ def _leaf(ref:Mapping[str,Any],roots:tuple[str,...],spec:Mapping[str,Any])->None
     value=_core.parse_json_bytes(raw)
     if not isinstance(value,Mapping): raise _core.VerificationError("E_API_TYPE")
     name=ref["schema"]; _reject_none(value,name)
+    if name in spec["schemas"]: _core.validate_schema_object(spec,value,name)
     if name=="NormalizedTensorManifest.v12": _core.validate_normalized_manifest(spec,value)
     elif name=="StateIntegrityReceipt.v12": _core.validate_state_integrity(spec,value)
     elif name=="ABBAEvaluationReceipt.v11": _core.validate_abba(spec,value)
     elif name in _NATIVE: _core.validate_native_receipt(name,spec,value)
-    elif name in spec["schemas"]: _core.validate_common_receipt(spec,value,name)
     for nested in _refs(value): _leaf(nested,roots,spec)
 
 def _make_api():
