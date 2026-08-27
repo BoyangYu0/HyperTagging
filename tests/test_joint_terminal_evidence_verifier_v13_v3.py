@@ -39,12 +39,10 @@ def test_public_api_is_exact_and_signature_requires_eight_refs():
     assert [n for n,v in inspect.getmembers(api,inspect.isfunction) if not n.startswith('_')] == ['decision','verify_chain']
     assert len(inspect.signature(verify_chain).parameters) == 10
 
-def test_live_capability_is_private_same_process_one_shot(tmp_path):
+def test_compiled_F01_prevents_capability_issuance(tmp_path):
     refs=chain(tmp_path)
-    cap=verify_chain(str(ROOT),*refs,trusted_roots=[str(tmp_path)])
-    assert cap.__class__.__name__ == '_VerifiedChain'
-    assert decision(cap) == 'E_FEASIBILITY_SHAPE_AUTHORITY'
-    with pytest.raises(VerificationError): decision(cap)
+    with pytest.raises(VerificationError, match='^E_FEASIBILITY_SHAPE_AUTHORITY$'):
+        verify_chain(str(ROOT),*refs,trusted_roots=[str(tmp_path)])
     with pytest.raises(VerificationError): decision({'_nonce':'forged'})
 
 def test_digest_or_previous_digest_mutation_rejects(tmp_path):
@@ -59,9 +57,6 @@ def test_trusted_root_and_symlink_fail_closed(tmp_path):
     refs=chain(tmp_path)
     with pytest.raises(VerificationError): verify_chain(str(ROOT),*refs,trusted_roots=[str(tmp_path/'other')])
 
-@pytest.mark.parametrize('case', SPEC['test_oracle'], ids=[c['id'] for c in SPEC['test_oracle']])
-def test_normative_oracle_case_is_named_unique_and_non_authorizing(case):
-    assert case['id'].startswith('T') and len(case['id']) == 4
-    assert isinstance(case['name'], str) and case['name']
-    assert 'expect' in case
+def test_normative_oracle_identity_is_delegated_to_substantive_v4_inventory():
+    assert [case['id'] for case in SPEC['test_oracle']] == [f'T{i:03d}' for i in range(1,195)]
     assert SPEC['authorization']['submission_authorized'] is False
