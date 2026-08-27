@@ -1,0 +1,52 @@
+{
+  "schema": "joint_terminal_evidence_verifier_v13_v4_implementation_report",
+  "verdict": "BLOCKED_EXACT_ORACLE_FIXTURES_AND_PER_CASE_SEMANTICS_INCOMPLETE",
+  "implementation_commit": "4d167110ea46a814c4e9ed5fcce5622fe26c234e",
+  "implementation_tag": "ht-joint-terminal-evidence-verifier-v13-implementation-20260827-v4",
+  "sealed_parent": "51e81d8f0bf717c0ba1b949126f4e86a84a7fecb",
+  "spec_commit": "b1d75b73ad432bb176f9c1bf407c40a6d76850f7",
+  "spec_tag": "ht-joint-terminal-evidence-verifier-v13-spec-20260827-v1",
+  "spec_sha256": "63c230481a07408b9be68192e1ea3c2989f027906bd05d64a8abcd82c0ea3583",
+  "hashes": {
+    "router": "d51f7d7db145dfa99156fc5506a493f45dbdd80c4698a25e3d290e4392be4884",
+    "public_api": "260c6273230eb5ce2d111f2a9e0162dac3eec4ff2d5017a3187e481ad0654d28",
+    "v3_regression": "698646aaf8e969c5c8e0eda7970760144361185d629384faf984710fc639158a",
+    "v4_tests": "c7735d1027d1e8d1b87ecb6a6dc14accae88a07c0acdf54bb13ceb119408b562",
+    "uv_lock": "7a18fbd4feed4371fa8e8a740f87720462d58c3a8e283402870f375ab744ad18",
+    "python_pin": "49a506dd32096b010d75205acf3430c9ae6c40351888129499e5a5e487126c93"
+  },
+  "implemented": {
+    "T001_terminal_pair_then_F01_no_capability": true,
+    "locator_not_opened_after_F01": true,
+    "closure_private_nonconstructible_capability": true,
+    "weak_live_identity_same_process_one_shot": true,
+    "trusted_root_component_lstat_nofollow_owner_mode": true,
+    "stable_open_fstat_identity": true,
+    "recursive_nested_ref_reopen": true,
+    "specialized_leaf_validator_dispatch": true,
+    "all_authorization_flags_false": true
+  },
+  "tests": {
+    "targeted_v13": "206 passed in 1.93s",
+    "v4_collection": "196 collected; T001-T194 names plus two API/capability tests; no skips or xfails",
+    "full_repository_collection": "BLOCKED: 2 ModuleNotFoundError nbformat collection errors",
+    "full_repository_excluding_known_collection_errors": "762 passed, 8 skipped, 5 unrelated pre-existing failures"
+  },
+  "remaining_blockers": [
+    "The repository contains no complete non-null synthetic terminal/pair/native receipt fixture corpus bound to compiled A01-A05.",
+    "T002-T194 currently traverse production with five real mutation families; they do not yet implement each oracle object's exact domain mutation and expected code.",
+    "Complete 38-schema statistical, 118500-record normalized-manifest, 1500-batch plan and ABBA recomputation fixtures and assertions remain required.",
+    "nbformat is not in the frozen environment; no dependency was installed or cache regenerated."
+  ],
+  "authorization": {
+    "implementation_complete": false,
+    "execution_complete": false,
+    "feasibility": false,
+    "submission_authorized": false,
+    "execution_authorized": false,
+    "scheduler_authorized": false,
+    "payload_access_authorized": false,
+    "scientific_execution_authorized": false,
+    "root_final_go": false
+  }
+}
