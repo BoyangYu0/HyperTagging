@@ -1,0 +1,244 @@
+{
+  "schema_version": "hyper-tagging.reconstruction-capacity-hpo-plan.v1",
+  "created_at": "2026-08-27T00:00:00+02:00",
+  "status": "planning_only_prerequisites_unmet",
+  "purpose": "Bounded validation-only reconstruction capacity and HPO plan after evidence-qualified q32/relation-bias promotion",
+  "authorization": {
+    "submission_authorized": false,
+    "operator_submission_authorized": false,
+    "scientific_training_authorized": false,
+    "throughput_calibration_authorized": false,
+    "scheduler_polling_authorized": false,
+    "scheduler_mutation_authorized": false,
+    "full_production_authorized": false
+  },
+  "forbidden_roles": [
+    "sealed_test",
+    "stress",
+    "restricted_raw_source_payload"
+  ],
+  "bound_evidence": {
+    "q32_terminal": {
+      "commit": "cd5e9942e05725ccf4e20b5ce6d43e93eeb25db4",
+      "tag": "ht-reconstruction-q32-16036155-terminal-audit-20260827",
+      "json_path": "artifacts/codex/reconstruction_hpo_clearance_20260825/q32_16036155_terminal.json",
+      "json_sha256": "0bbb91703a5b79a006f79a105b13281fdc60c392579da317694a31d27b2fdd9f",
+      "md_path": "artifacts/codex/reconstruction_hpo_clearance_20260825/q32_16036155_terminal.md",
+      "md_sha256": "45e2d0c11927d532fac6381c4a466584274a208ffe682da49021b191a5f61a7d",
+      "job_id": 16036155,
+      "hardware": "NVIDIA H100 NVL",
+      "batch_size": 64,
+      "optimizer_steps": 512,
+      "presentations": 32768,
+      "encoder_frozen": true,
+      "leaf_head_frozen": true,
+      "amp_dtype": "bfloat16",
+      "grad_scaler_enabled": false,
+      "peak_gpu_utilization_percent": 39,
+      "peak_memory_mib": 5045,
+      "peak_temperature_c": 38,
+      "validation_loss": 1.8195147991204736,
+      "predicted_edge_f1": 0.031,
+      "predicted_full_tree_exact_match": 0.031,
+      "tree_validity_rate": 1.0,
+      "predicted_p4_validity_rate": 1.0,
+      "teacher_p4_validity_rate": 1.0,
+      "fallback_count": 0,
+      "finite": true,
+      "aggregate_only": true,
+      "promotable": false
+    },
+    "pretraining_capacity_runnable": {
+      "commit": "f8ae47091aba8dbb77e4c12e142f11dc6529f684",
+      "tag": "ht-pretraining-post-r4r22-capacity-attempt9r5-runnable-20260825-v1",
+      "contract_path": "artifacts/codex/ht_pretraining_attempt9r5-post-r4r22-capacity-utilization-20260825_contract.json",
+      "contract_sha256": "eb6540ec81ab7991202d85320e8ff794af5fc4aac890443f2a12fdb772c861c0"
+    },
+    "pretraining_capacity_clearance": {
+      "commit": "1171dff3a7bab1a3edc123000b5033e125551021",
+      "tag": "ht-pretraining-post-r4r22-capacity-attempt9r5-clearance-20260825-v1",
+      "clearance_path": "artifacts/codex/ht_pretraining_attempt9r5-post-r4r22-capacity-utilization-20260825_clearance.json",
+      "clearance_sha256": "3f6c80980545125d1277d24b072f68e729e2df395c1dcf87ef4c92160a6ea5bf"
+    },
+    "conditional_hpo_harness": {
+      "commit": "4ee5d819e5586dcfdec0848d2e91b917494484cc",
+      "tag": "ht-reconstruction-conditional-hpo-v2r1-verifier-hardening-20260825",
+      "report_path": "artifacts/codex/reconstruction_hpo_clearance_20260825/conditional_hpo_harness_v2r1_verifier_hardening_20260825.json",
+      "report_sha256": "8276fdca49558160da097028a093031af67a03ece30269320d0bb74498a30785"
+    },
+    "planning_source_head": "49c80548a88bffceb3c361a12863e1d6ddf3c973"
+  },
+  "prerequisite_gate": {
+    "state": "closed",
+    "q32_aggregate_report_is_sufficient": false,
+    "live_relation_bias_artifacts_inspected": false,
+    "required": {
+      "both_arms_completed_step": 512,
+      "controller_approved_per_event_evidence": true,
+      "matched_data_order_seed_validation_cohort": true,
+      "minimum_delta_predicted_edge_f1": 0.01,
+      "paired_bootstrap_confidence": 0.95,
+      "holm_adjusted_lower_bound_must_exceed": 0.0,
+      "tree_reconstruction_leaf_p4_rates": 1.0,
+      "fallback_count": 0,
+      "teacher_forced_guards": true,
+      "efficiency_guards": true,
+      "sealed_test_used": false,
+      "stress_role_used": false
+    },
+    "branching": "If and only if the gate passes, fix relation bias on in every later arm; otherwise fix it off. Relation bias is not an HPO dimension."
+  },
+  "ranked_plan": [
+    {
+      "rank": 1,
+      "lane": "frozen_encoder_batch_utilization",
+      "architecture": "existing d_model=128, hyper_dim=32, heads=4, context_layers=4, ffn_dim=512, queries=32",
+      "parameter_count": 2135433,
+      "frozen_encoder_parameter_count": 1322658,
+      "decoder_and_heads_parameter_count": 812775,
+      "trainable_parameter_count_with_encoder_and_leaf_frozen": 807486,
+      "preferred_batch_size": 128,
+      "presentations": 65536,
+      "optimizer_steps": 512,
+      "reason": "Doubles batch and preserves q32 optimizer-update count while limiting exposure to approximately 1.87 train-selection passes."
+    },
+    {
+      "rank": 2,
+      "lane": "frozen_encoder_decoder_only_capacity",
+      "encoder_width": 128,
+      "target_total_parameters": [4000000, 6000000],
+      "target_trainable_parameters": [2700000, 4700000],
+      "upper_candidate_total_parameters": [9000000, 12000000],
+      "required_change": "Separate encoder and decoder width through a verified adapter and expose decoder depth; preserve exact width-128 encoder and leaf transfer."
+    },
+    {
+      "rank": 3,
+      "lane": "staged_encoder_unfreezing",
+      "architecture_parameter_count": 2135433,
+      "frozen_presentations": 32768,
+      "unfrozen_presentations": 32768,
+      "encoder_learning_rate_multiplier": 0.05,
+      "comparison": "paired same-seed frozen counterpart"
+    },
+    {
+      "rank": 4,
+      "lane": "matching_checkpoint_width_scaling",
+      "code_only_parameter_counts": {
+        "d192_h48_heads6_layers6_ffn768": 6219801,
+        "d256_h64_heads8_layers6_ffn1024": 10992297
+      },
+      "state": "blocked_until_matching_width_checkpoint_selected",
+      "partial_shape_mismatched_transfer_promotable": false
+    }
+  ],
+  "batch_calibration": {
+    "throwaway_ladder": [64, 128, 256],
+    "automatic_fallback": false,
+    "selection_default": 128,
+    "batch_256_required_gates": {
+      "peak_allocated_gib_max": 70,
+      "peak_reserved_gib_max": 76,
+      "minimum_unreserved_fraction": 0.1,
+      "median_gpu_utilization_percent_min": 60,
+      "median_presentations_per_second_ratio_vs_b64_min": 1.5,
+      "p10_presentations_per_second_ratio_vs_b64_min": 1.25,
+      "finite": true,
+      "oom": false
+    },
+    "planning_memory_estimates_gib": {
+      "current_model_b128": [9, 12],
+      "current_model_b256": [18, 24],
+      "decoder_capacity_candidates": [28, 65]
+    }
+  },
+  "optimization": {
+    "presentation_rungs": [16384, 32768, 65536],
+    "maximum_train_presentations": 65536,
+    "batch_128_learning_rates": [0.0007, 0.0014],
+    "batch_256_center_learning_rate_if_qualified": 0.002,
+    "warmup_fraction": 0.1,
+    "warmup_steps_cap": 64,
+    "scheduler": "cosine",
+    "min_lr_ratio": 0.1,
+    "dropout": [0.1, 0.2],
+    "adamw_weight_decay": [0.001, 0.01],
+    "q32_effective_adamw_default_weight_decay": 0.01,
+    "scheduled_sampling_max": [0.1, 0.25],
+    "scheduled_sampling_ramp_presentations_fraction": 0.5,
+    "design": "preregistered 12-arm maximin fractional design, not full Cartesian product"
+  },
+  "validation_and_selection": {
+    "role": "validation",
+    "fixed_manifest_and_event_uids": true,
+    "teacher_forced_every_presentations": 8192,
+    "rollout_at_each_rung": true,
+    "final_teacher_forced_events": 2000,
+    "final_rollout_events": 1000,
+    "metric_early_stopping_before_32768_presentations": false,
+    "patience_rollout_events": 2,
+    "minimum_edge_f1_early_stop_improvement": 0.002,
+    "ranking": [
+      "predicted_edge_f1_desc",
+      "predicted_full_tree_exact_match_desc",
+      "predicted_tree_edit_distance_asc",
+      "validation_efficiency_desc",
+      "parameter_count_asc",
+      "learning_rate_asc"
+    ],
+    "train_loss_used_for_selection": false,
+    "hard_guards": {
+      "all_finite": true,
+      "tree_validity_rate": 1.0,
+      "reconstruction_validity_rate": 1.0,
+      "leaf_retention_rate": 1.0,
+      "p4_validity_rate": 1.0,
+      "fallback_count": 0,
+      "teacher_forced_constraints_passed": true,
+      "efficiency_floor_passed": true
+    },
+    "final_promotion": {
+      "paired_same_seed": true,
+      "minimum_delta_predicted_edge_f1": 0.01,
+      "paired_bootstrap_confidence": 0.95,
+      "holm_adjusted_lower_bound_must_exceed": 0.0,
+      "holm_family": "all final candidate comparisons"
+    }
+  },
+  "allocation_upper_bound": {
+    "throwaway_gpu_primary_jobs": 3,
+    "frozen_lane_gpu_primary_jobs": 24,
+    "staged_unfreeze_gpu_primary_jobs": 18,
+    "total_gpu_primary_jobs": 45,
+    "afterany_controller_jobs": 45,
+    "total_scheduler_jobs_if_later_authorized": 90,
+    "nominal_gpu_hours": [35, 37],
+    "fail_closed_gpu_hour_cap": 45
+  },
+  "required_code_and_contract_repairs": [
+    "Extend the conditional v2r1 builder/verifier instead of creating a duplicate harness.",
+    "Parameterize batch, presentation rungs, architecture lane, learning rate, warmup, dropout, explicit weight decay, staged unfreezing, and multi-seed pairing.",
+    "Replace the hardcoded selected checkpoint step 1352 with an immutable validation-plus-transfer-selected pointer binding step and checkpoint/architecture/config/data SHA256 values.",
+    "Add separate encoder/decoder width and decoder-depth knobs with exact adapter and transfer contracts.",
+    "Add explicit weight_decay to ReconstructionConfig and AdamW; record q32 lineage as the existing default 0.01.",
+    "Bind exact total/trainable parameter counts, transfer coverage and shape-match reports, presentations, validation UIDs, and per-rung resume hashes.",
+    "Preserve frozen environment, no allocation sync/create, secure no-overwrite roots, no symlinks, atomic receipts, watchdog, signals, afterany reconciliation, no requeue, and zero restarts.",
+    "Add negative tests for gate bypass, checkpoint-step drift, partial-transfer claims, relation-branch drift, cohort/seed/presentation drift, incomplete-rung promotion, train-loss selection, and Holm-family undercount."
+  ],
+  "parallel_with_pretraining_ladder": {
+    "may_proceed_as_code_only_planning": [
+      "harness/schema/verifier repair",
+      "decoder adapter and parameter-count tests",
+      "inert config generation",
+      "validation cohort binding",
+      "throughput contract review"
+    ],
+    "may_not_proceed": [
+      "scheduler polling",
+      "job submission or cancellation",
+      "live relation-bias artifact inspection",
+      "payload access",
+      "scientific training"
+    ]
+  },
+  "recommendation": "Planning artifact only. Keep every execution gate closed until controller-approved per-event q32/relation-bias evidence passes the exact paired promotion gate and an immutable pretraining checkpoint pointer is selected by completed validation plus transfer."
+}
