@@ -2,9 +2,9 @@
 
 ## Binding
 
-The independently implemented verifier is sealed on `Boyang.Yu@10.153.232.4` in `/home/b/Boyang.Yu/HyperTagging_uni/HyperTagging` at commit `c4ee0da16d4df33570958e86b8cbd96b913ac7af`, tag `ht-joint-terminal-evidence-verifier-v13-implementation-20260827-v1`. It is bound to spec commit `b1d75b73ad432bb176f9c1bf407c40a6d76850f7`, tag `ht-joint-terminal-evidence-verifier-v13-spec-20260827-v1`, JSON SHA-256 `63c230481a07408b9be68192e1ea3c2989f027906bd05d64a8abcd82c0ea3583`, and Markdown SHA-256 `0d3a9fd66976fdcfc9e43ab5211a66cce1f072bc19e6873327259351ef805029`.
+The independently implemented verifier is sealed on `Boyang.Yu@10.153.232.4` in `/home/b/Boyang.Yu/HyperTagging_uni/HyperTagging` at hardening commit `911ace353fd7e1c84eb07c8d7dd188da297dff43`, tag `ht-joint-terminal-evidence-verifier-v13-implementation-20260827-v2`. It is bound to spec commit `b1d75b73ad432bb176f9c1bf407c40a6d76850f7`, tag `ht-joint-terminal-evidence-verifier-v13-spec-20260827-v1`, JSON SHA-256 `63c230481a07408b9be68192e1ea3c2989f027906bd05d64a8abcd82c0ea3583`, and Markdown SHA-256 `0d3a9fd66976fdcfc9e43ab5211a66cce1f072bc19e6873327259351ef805029`.
 
-The frozen runtime is `/home/b/Boyang.Yu/.local/bin/uv` 0.5.20 with Python 3.11.11 and `uv.lock` SHA-256 `7a18fbd4feed4371fa8e8a740f87720462d58c3a8e283402870f375ab744ad18`. Implementation source SHA-256 is `01e4292037ec2f9c1e39691fd6f241409825a7d240fe28dd901a8eea27fc7f4f`; public API wrapper SHA-256 is `1780178e42e0bbcca182297ff98b60e6b5741ce61cb554781f4691cd240309b1`; tests SHA-256 is `68d466783a492eb99dccea6b9f1265a0c39a9c19294cc9612763c61e8e718902`.
+The frozen runtime is `/home/b/Boyang.Yu/.local/bin/uv` 0.5.20 with Python 3.11.11 and `uv.lock` SHA-256 `7a18fbd4feed4371fa8e8a740f87720462d58c3a8e283402870f375ab744ad18`. Implementation source SHA-256 is `ea949df496ddeb0896b5cd7a65dd292ff3fa503fb2d7b58db9634f07ec5f2d61`; public API wrapper SHA-256 is `1780178e42e0bbcca182297ff98b60e6b5741ce61cb554781f4691cd240309b1`; tests SHA-256 is `68d466783a492eb99dccea6b9f1265a0c39a9c19294cc9612763c61e8e718902`.
 
 ## Implementation coverage
 
