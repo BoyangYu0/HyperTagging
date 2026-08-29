@@ -1,11 +1,21 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
+
+import pytest
 import torch
 
 from hypertagging.data.dataset_index import build_dataset_index, load_dataset_index
 from hypertagging.data.notebook_fixtures import write_notebook_fixture_v4
 from hypertagging.data.splitting import SourceAwareSplitConfig
 from hypertagging.evaluation import load_trained_evaluation_context
+from hypertagging.evaluation.trained_context import (
+    _evaluation_split_assignment,
+    _preflight_evaluation_data_binding,
+    _require_source_role_manifest_binding,
+    _resolve_checkpoint_event_selection,
+    _select_evaluation_events,
+)
 from hypertagging.models.ablation import build_ablation_model
 from hypertagging.preprocessing.pid_filter import PDG_TOKENS
 from hypertagging.preprocessing.schema_v4 import (
@@ -15,6 +25,132 @@ from hypertagging.reconstruction.constraints import ReconstructionConstraintPoli
 from hypertagging.training.checkpointing import save_training_checkpoint
 from hypertagging.training.data_module import build_real_data_module
 from hypertagging.training.model_config import MODEL_PRESETS
+
+
+def test_evaluation_split_assignment_honors_source_role_manifest():
+    config = SourceAwareSplitConfig()
+    event = SimpleNamespace(
+        event_uid="manifest-event",
+        source_file="manifest-validation.root",
+        source_category="mixed",
+    )
+    assert _evaluation_split_assignment(
+        event,
+        split_config=config,
+        event_split_overrides={},
+        source_split_overrides={event.source_file: "validation"},
+    ) == "validation"
+
+
+def test_evaluation_split_assignment_honors_event_override_first():
+    config = SourceAwareSplitConfig()
+    event = SimpleNamespace(
+        event_uid="pilot-repair-event",
+        source_file="manifest-validation.root",
+        source_category="mixed",
+    )
+    assert _evaluation_split_assignment(
+        event,
+        split_config=config,
+        event_split_overrides={event.event_uid: "train"},
+        source_split_overrides={event.source_file: "validation"},
+    ) == "train"
+
+
+def test_source_role_index_rejects_raw_parquet_data(tmp_path):
+    index = {"selection_contract": {"mode": "source_role_manifest"}}
+
+    with pytest.raises(ValueError, match="training-selection manifest"):
+        _require_source_role_manifest_binding([tmp_path / "events.parquet"], index)
+
+
+def test_trained_context_delegates_to_shared_metadata_preflight(
+    tmp_path, monkeypatch
+):
+    import hypertagging.evaluation.trained_context as trained_context_module
+
+    expected = {"selection_contract": {"mode": "source_role_manifest"}}
+    calls = []
+
+    def fake_preflight(data, dataset_index):
+        calls.append((data, dataset_index))
+        return expected
+
+    monkeypatch.setattr(
+        trained_context_module,
+        "preflight_dataset_index_data_binding",
+        fake_preflight,
+    )
+    data = tmp_path / "selection.json"
+    index = tmp_path / "index.json"
+
+    assert _preflight_evaluation_data_binding(data, index) is expected
+    assert calls == [(data, index)]
+
+
+def test_checkpoint_rollout_cohort_restores_uid_order_before_category_limit():
+    cohort = ("uid-a", "uid-b", "uid-c", "uid-d")
+    events = [
+        SimpleNamespace(event_uid="uid-d", source_category="mixed"),
+        SimpleNamespace(event_uid="uid-b", source_category="charged"),
+        SimpleNamespace(event_uid="uid-c", source_category="mixed"),
+        SimpleNamespace(event_uid="uid-a", source_category="mixed"),
+    ]
+
+    class Module:
+        selection_manifest_hash = "manifest-hash"
+
+        @staticmethod
+        def iter_events(split, shuffle=False):
+            assert split == "validation"
+            assert not shuffle
+            yield from events
+
+    payload = {
+        "validation_selection": {
+            "split": "validation",
+            "rollout_event_uids": list(cohort),
+            "event_uids": list(cohort),
+            "deterministic": True,
+            "selection_manifest_hash": "manifest-hash",
+        }
+    }
+    selected_uids, mode = _resolve_checkpoint_event_selection(
+        payload,
+        data_module=Module(),
+        split="validation",
+        requested="auto",
+    )
+    selected = _select_evaluation_events(
+        Module(),
+        split="validation",
+        max_events=2,
+        requested_categories={"mixed"},
+        cohort_uids=selected_uids,
+    )
+
+    assert mode == "checkpoint_rollout"
+    assert [event.event_uid for event in selected] == ["uid-a", "uid-c"]
+
+
+def test_checkpoint_rollout_cohort_rejects_missing_uid_when_stream_exhausts():
+    events = [SimpleNamespace(event_uid="uid-a", source_category="mixed")]
+
+    class Module:
+        @staticmethod
+        def iter_events(split, shuffle=False):
+            assert split == "validation"
+            assert not shuffle
+            yield from events
+
+    with pytest.raises(ValueError, match="uid-missing"):
+        _select_evaluation_events(
+            Module(),
+            split="validation",
+            max_events=2,
+            requested_categories=set(),
+            cohort_uids=("uid-a", "uid-missing"),
+        )
 
 
 def test_trained_evaluation_restores_normalization_and_heldout_contract(tmp_path):
@@ -71,6 +207,7 @@ def test_trained_evaluation_restores_normalization_and_heldout_contract(tmp_path
         config={
             "ablation": "full_revised", "seed": split_config.seed,
             "target_policy": "complete_only", "max_events": None,
+            "pid_kinematics_mode": None,
             "rollout_pid_kinematics_mode": "hard",
         },
         normalizer_state=module.normalization_state(),
@@ -78,6 +215,7 @@ def test_trained_evaluation_restores_normalization_and_heldout_contract(tmp_path
         feature_contract={
             "feature_spec_hash": feature_spec_v4()["feature_spec_hash"],
             "model_feature_contract_hash": feature_spec_v4()["model_feature_contract_hash"],
+            "pid_reconstruction_mode": "soft_expectation",
             "reconstruction_constraint_policy": policy.to_dict(),
         },
         data_order_contract={
@@ -96,6 +234,9 @@ def test_trained_evaluation_restores_normalization_and_heldout_contract(tmp_path
     ]
     assert context.constraint_policy.initial_state_policy == "upsilon4s"
     assert context.rollout_pid_kinematics_mode == "hard"
+    assert context.pid_kinematics_mode == "soft_expectation"
+    assert context.model.pid_kinematics_mode == "soft_expectation"
+    assert context.report_metadata["pid_kinematics_mode"] == "soft_expectation"
     assert torch.equal(
         context.model.runtime_feature_normalizer.common_mean,
         module.normalizers["common"].mean,
@@ -103,3 +244,29 @@ def test_trained_evaluation_restores_normalization_and_heldout_contract(tmp_path
     batch = context.collated_batch()
     assert batch["runtime_features_are_raw"]
     assert torch.isfinite(batch["track_features"]).all()
+
+    filtered = load_trained_evaluation_context(
+        checkpoint=checkpoint,
+        data=shards,
+        dataset_index=index_path,
+        split="validation",
+        max_events=2,
+        source_categories=(context.events[0].source_category,),
+    )
+    assert filtered.events
+    assert {
+        event.source_category for event in filtered.events
+    } == {context.events[0].source_category}
+
+    conflicting = torch.load(checkpoint, map_location="cpu", weights_only=False)
+    conflicting["config"]["pid_kinematics_mode"] = "hard"
+    conflicting_checkpoint = tmp_path / "conflicting-pid-mode.pt"
+    torch.save(conflicting, conflicting_checkpoint)
+    with pytest.raises(ValueError, match="conflicts with authoritative"):
+        load_trained_evaluation_context(
+            checkpoint=conflicting_checkpoint,
+            data=shards,
+            dataset_index=index_path,
+            split="validation",
+            max_events=2,
+        )

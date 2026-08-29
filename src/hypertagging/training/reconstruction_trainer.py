@@ -38,7 +38,7 @@ from hypertagging.models.ablation import ALL_ABLATIONS, build_ablation_model
 from hypertagging.preprocessing.pid_filter import PDG_TOKENS
 from hypertagging.reconstruction.level_rollout import (
     RolloutConfig, cached_context_for_level, level_rollout,
-    proposal_ambiguity_metrics,
+    proposal_ambiguity_metrics, rollout_policy_identity,
 )
 from hypertagging.reconstruction.constraints import ReconstructionConstraintPolicy
 from hypertagging.training.checkpointing import (
@@ -191,7 +191,7 @@ class ReconstructionTrainingResult:
     log_path: Path
     steps: int
     final_loss: float
-    metrics: dict[str, float]
+    metrics: dict[str, Any]
     transfer_report: EncoderTransferReport | None
     data_module: RealDataModule
 
@@ -483,7 +483,7 @@ def train_level_reconstruction(
             data_module.selection_manifest_hash or ""
         ),
     )
-    final_metrics: dict[str, float] = dict((resume_payload or {}).get("metrics", {}))
+    final_metrics: dict[str, Any] = dict((resume_payload or {}).get("metrics", {}))
     final_loss = float(final_metrics.get("loss", 0.0))
     restored_state = (resume_payload or {}).get("training_state", {})
     if restored_state and restored_state.get("checkpoint_selection_contract") != selection_contract:
@@ -1568,7 +1568,7 @@ def validate_reconstruction(
     p4_closure_tolerance: float = 1e-6,
     object_positive_weight: float = 2.0,
     pointer_positive_weight: float = 4.0,
-) -> dict[str, float]:
+) -> dict[str, float | str]:
     model.eval()
     source = data_module.iter_events("validation", shuffle=False)
     used_train_fallback = False
@@ -1841,6 +1841,16 @@ def validate_reconstruction(
             "p4_closure_tolerance": float(p4_closure_tolerance),
         }
     )
+    policy_identity = rollout_policy_identity(continue_through_empty_levels=False)
+    output_metrics.update(
+        {
+            "rollout_policy_version": str(policy_identity["version"]),
+            "rollout_policy_sha256": str(policy_identity["sha256"]),
+            "rollout_empty_level_policy": str(
+                policy_identity["empty_level_policy"]
+            ),
+        }
+    )
     return output_metrics
 
 
@@ -1932,7 +1942,7 @@ def _save_reconstruction_checkpoint(
     config: ReconstructionConfig,
     data_module: RealDataModule,
     step: int,
-    metrics: dict[str, float],
+    metrics: dict[str, Any],
     streaming_cursor: dict[str, int],
     best_metric_value: float = float("inf"),
     patience_count: int = 0,

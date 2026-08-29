@@ -215,6 +215,50 @@ class RealDataModule:
         ]
 
 
+def preflight_dataset_index_data_binding(
+    data: str | Path | Sequence[str | Path],
+    dataset_index: str | Path,
+) -> dict[str, object]:
+    """Validate source-role metadata before touching any selected shard."""
+
+    from hypertagging.data.dataset_index import load_dataset_index_metadata
+
+    index = load_dataset_index_metadata(dataset_index)
+    _require_source_role_manifest_binding(data, index)
+    return index
+
+
+def _require_source_role_manifest_binding(
+    data: str | Path | Sequence[str | Path],
+    index: dict[str, object],
+) -> None:
+    """Reject noncanonical data arguments using index/manifest metadata only."""
+
+    indexed_selection = index.get("selection_contract", {})
+    if indexed_selection.get("mode") != "source_role_manifest":
+        return
+    if not isinstance(data, (str, Path)) or Path(data).suffix.lower() != ".json":
+        raise ValueError(
+            "a source-role-bound dataset index requires its exact immutable "
+            "training-selection manifest; raw Parquet paths are forbidden"
+        )
+    from hypertagging.data.training_selection import (
+        HASH_FIELD,
+        SELECTION_MANIFEST_VERSION,
+        load_hashed_manifest,
+    )
+
+    manifest = load_hashed_manifest(
+        data,
+        expected_version=SELECTION_MANIFEST_VERSION,
+    )
+    if (
+        manifest.get(HASH_FIELD)
+        != indexed_selection.get("selection_manifest_hash")
+    ):
+        raise ValueError("dataset index training-selection hash mismatch")
+
+
 def build_real_data_module(
     data: str | Path | Sequence[str | Path],
     *,
@@ -250,24 +294,30 @@ def build_real_data_module(
         )
     if scientific_mode and "test" in required_splits:
         raise ValueError("scientific indexing/training cannot request the sealed test role")
+    preflight_index = None
+    if dataset_index is not None and not rescan_dataset:
+        preflight_index = preflight_dataset_index_data_binding(data, dataset_index)
     selection = None
-    if isinstance(data, (str, Path)) and is_training_selection_manifest(data):
+    source_role_bound = bool(
+        preflight_index
+        and preflight_index.get("selection_contract", {}).get("mode")
+        == "source_role_manifest"
+    )
+    if source_role_bound or (
+        isinstance(data, (str, Path)) and is_training_selection_manifest(data)
+    ):
         include_splits = None
-        if dataset_index is not None and not rescan_dataset:
-            try:
-                raw_index = json.loads(Path(dataset_index).read_text(encoding="utf-8"))
-                indexed_included = raw_index.get("selection_contract", {}).get(
-                    "included_splits"
-                )
-                if scientific_mode and indexed_included != ["train", "validation"]:
-                    raise ValueError(
-                        "scientific mode permits exactly train and validation roles"
-                    )
-                if indexed_included:
-                    include_splits = tuple(str(value) for value in indexed_included)
-            except (OSError, json.JSONDecodeError, TypeError):
-                # The authoritative index loader below provides the precise error.
-                pass
+        indexed_included = (
+            preflight_index.get("selection_contract", {}).get("included_splits")
+            if preflight_index is not None
+            else None
+        )
+        if scientific_mode and indexed_included != ["train", "validation"]:
+            raise ValueError(
+                "scientific mode permits exactly train and validation roles"
+            )
+        if indexed_included:
+            include_splits = tuple(str(value) for value in indexed_included)
         selection = load_training_selection(data, include_splits=include_splits)
     if scientific_mode and selection is None:
         raise ValueError(
@@ -297,6 +347,15 @@ def build_real_data_module(
         )
 
         index = load_dataset_index(dataset_index)
+        indexed_selection = index.get("selection_contract", {})
+        if (
+            indexed_selection.get("mode") == "source_role_manifest"
+            and selection is None
+        ):
+            raise ValueError(
+                "a source-role-bound dataset index requires its exact immutable "
+                "training-selection manifest; raw Parquet paths are forbidden"
+            )
         if selection is not None and split_config is None:
             config = SourceAwareSplitConfig(**index["split_config"])
         if scientific_mode:
@@ -318,7 +377,6 @@ def build_real_data_module(
                 "dataset index target policy does not match trainer target policy; "
                 "request an explicit rescan to change policy"
             )
-        indexed_selection = index.get("selection_contract", {})
         if selection is not None:
             if indexed_selection.get("mode") != "source_role_manifest":
                 raise ValueError(
@@ -778,5 +836,6 @@ __all__ = [
     "RealDataModule",
     "build_real_data_module",
     "fit_training_normalizers",
+    "preflight_dataset_index_data_binding",
     "resolve_data_paths",
 ]

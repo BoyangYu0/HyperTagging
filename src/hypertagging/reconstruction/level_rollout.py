@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
+import json
 import time
 from typing import Literal
 
@@ -27,6 +28,29 @@ from hypertagging.preprocessing.schema_v4 import LEAF_MODE_TO_ID
 from hypertagging.reconstruction.constraints import ReconstructionConstraintPolicy
 from hypertagging.reconstruction.constraints import REDUCED_TOKEN_CHARGE
 from hypertagging.utils.tensor_contractions import boolean_matmul
+
+
+LEVEL_ROLLOUT_POLICY_VERSION = "level-rollout-source-isolation-v2"
+
+
+def rollout_policy_identity(*, continue_through_empty_levels: bool) -> dict[str, object]:
+    """Return the comparable decoder-policy identity for persisted metrics."""
+
+    contract: dict[str, object] = {
+        "version": LEVEL_ROLLOUT_POLICY_VERSION,
+        "empty_level_policy": (
+            "continue_to_max_level"
+            if continue_through_empty_levels
+            else "stop_on_first_empty"
+        ),
+        "root_candidate_policy": "unparented_nodes_only",
+        "recursive_source_conflict_policy": "reject",
+        "evaluation_leaf_source_keys_axis": "source",
+    }
+    encoded = json.dumps(
+        contract, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")
+    return {**contract, "sha256": hashlib.sha256(encoded).hexdigest()}
 
 
 @dataclass(frozen=True)
@@ -60,6 +84,12 @@ class RolloutConfig:
     rollout_pid_kinematics_mode: str = "soft_decision_hard_construction"
     rollout_pid_temperature: float = 0.5
     profile_phases: bool = False
+    # Stored target levels can contain gaps after checkpoint-policy-ineligible
+    # unary mothers are suppressed.  Production/training callers retain the
+    # historical stop-on-first-empty behavior by default; strict offline
+    # full-tree evaluation opts in to advancing the target-level embedding
+    # across those empty generations.
+    continue_through_empty_levels: bool = False
 
 
 @dataclass(frozen=True)
@@ -91,6 +121,7 @@ class LevelRolloutResult:
     valid: bool
     teacher_forced: bool
     cached_states: tuple[tuple[int, dict[str, torch.Tensor]], ...] = ()
+    empty_level_count: int = 0
 
 
 @dataclass(frozen=True)
@@ -117,6 +148,7 @@ class BatchedRolloutResult:
     accepted_query_masks: tuple[torch.Tensor, ...]
     daughter_masks: tuple[torch.Tensor, ...]
     host_phase_seconds: dict[str, float] | None = None
+    empty_level_counts: torch.Tensor | None = None
 
 
 @dataclass(frozen=True)
@@ -128,16 +160,10 @@ class BeamRolloutHypothesis:
     accepted_by_level: tuple[tuple[CompositeProposal, ...], ...]
 
 
-def hard_decode_proposals(
-    output: LevelReconstructionOutput,
-    batch: dict[str, torch.Tensor],
+def _resolved_rollout_constraint_policy(
     config: RolloutConfig,
-) -> list[CompositeProposal]:
-    """Decode unordered query slots; daughter order never enters the result."""
-
-    if output.pointer.object_logits.shape[0] != 1:
-        raise ValueError("Tiny rollout currently requires batch size 1")
-    policy = config.constraint_policy or ReconstructionConstraintPolicy(
+) -> ReconstructionConstraintPolicy:
+    return config.constraint_policy or ReconstructionConstraintPolicy(
         minimum_pointer_probability=config.pointer_threshold,
         minimum_daughters=config.min_daughters,
         cardinality_insufficient_policy=config.cardinality_insufficient_policy,
@@ -147,7 +173,59 @@ def hard_decode_proposals(
         ),
         valid_composite_node_kinds=(NODE_KIND_TO_ID["composite"],),
     )
-    context = output.context_mask[0]
+
+
+def _constrained_rollout_model_batch(
+    batch: dict[str, torch.Tensor],
+    *,
+    target_level: int,
+    policy: ReconstructionConstraintPolicy,
+) -> dict[str, torch.Tensor]:
+    """Inject the serialized training constraints before decoder inference."""
+
+    result = dict(batch)
+    allowed, type_bias = policy.type_constraints(
+        target_level,
+        device=batch["node_mask"].device,
+    )
+    pointer_validity = policy.pointer_validity_mask(batch, target_level)
+    if "parent_ids" in batch:
+        pointer_validity &= batch["parent_ids"] < 0
+    result["allowed_type_mask"] = allowed
+    result["type_logit_bias"] = type_bias
+    result["pointer_validity_mask"] = pointer_validity
+    return result
+
+
+def hard_decode_proposals(
+    output: LevelReconstructionOutput,
+    batch: dict[str, torch.Tensor],
+    config: RolloutConfig,
+) -> list[CompositeProposal]:
+    """Decode unordered query slots; daughter order never enters the result."""
+
+    if output.pointer.object_logits.shape[0] != 1:
+        raise ValueError("Tiny rollout currently requires batch size 1")
+    policy = _resolved_rollout_constraint_policy(config)
+    # Decode over roots of the current reconstructed forest only.  Lower-level
+    # descendants remain visible encoder context, but cannot be daughters of a
+    # second predicted mother once their unique parent has been assigned.
+    if "parent_ids" in batch:
+        parentless = batch["parent_ids"][0] < 0
+    elif "daughter_adjacency" in batch:
+        parentless = ~batch["daughter_adjacency"][0].bool().any(dim=0)
+    elif bool(
+        (batch["level_ids"][0][output.context_mask[0]] == 0).all()
+    ):
+        # Backward-compatible tiny reference fixtures may omit all topology
+        # fields for an initial FSP-only level, where every node is a root.
+        parentless = torch.ones_like(output.context_mask[0])
+    else:
+        raise ValueError(
+            "reference inference requires parent_ids or daughter_adjacency "
+            "after the initial FSP-only level"
+        )
+    context = output.context_mask[0] & parentless
     context_positions = context.nonzero(as_tuple=False).flatten()
     proposals: list[CompositeProposal] = []
     for query_id in range(output.pointer.object_logits.shape[1]):
@@ -165,28 +243,29 @@ def hard_decode_proposals(
         probabilities = torch.sigmoid(
             output.pointer.pointer_logits[0, query_id, context_positions]
         )
+        conflict = (
+            batch.get("source_conflict_matrix")
+            if policy.reject_recursive_source_conflicts
+            else None
+        )
+        context_conflict = (
+            conflict[0][
+                context_positions[:, None],
+                context_positions[None, :],
+            ]
+            if conflict is not None
+            else torch.zeros(
+                (context_positions.numel(), context_positions.numel()),
+                dtype=torch.bool,
+                device=probabilities.device,
+            )
+        )
         if config.use_cardinality and policy.daughter_cardinality_policy == "predicted":
             cardinality = int(output.pointer.cardinality_logits[0, query_id].argmax())
             if cardinality > context_positions.numel():
                 # This is an invalid prediction, not a training-target
                 # overflow. Training truth overflows raise explicitly.
                 continue
-            conflict = (
-                batch.get("source_conflict_matrix")
-                if policy.reject_recursive_source_conflicts else None
-            )
-            context_conflict = (
-                conflict[0][
-                    context_positions[:, None],
-                    context_positions[None, :],
-                ]
-                if conflict is not None
-                else torch.zeros(
-                    (context_positions.numel(), context_positions.numel()),
-                    dtype=torch.bool,
-                    device=probabilities.device,
-                )
-            )
             selected_bool, valid_selection = constrained_daughter_decode(
                 probabilities,
                 cardinality=cardinality,
@@ -197,6 +276,16 @@ def hard_decode_proposals(
             )
             if not valid_selection:
                 continue
+            selected_local = selected_bool.nonzero(as_tuple=False).flatten()
+        elif policy.reject_recursive_source_conflicts:
+            selected_bool, _valid_selection = constrained_daughter_decode(
+                probabilities,
+                cardinality=int(context_positions.numel()),
+                pointer_mask=torch.ones_like(probabilities, dtype=torch.bool),
+                source_conflict=context_conflict,
+                min_probability=config.pointer_threshold,
+                insufficient_policy="reduce",
+            )
             selected_local = selected_bool.nonzero(as_tuple=False).flatten()
         else:
             selected_local = (probabilities >= config.pointer_threshold).nonzero(
@@ -421,6 +510,7 @@ def bounded_beam_rollout(
     config = config or RolloutConfig()
     if full_batch["node_mask"].shape[0] != 1:
         raise ValueError("bounded beam rollout is evaluation-only and batch size one")
+    policy = _resolved_rollout_constraint_policy(config)
     upgraded = _upgrade_flat_batch(full_batch)
     initial = _select_nodes(
         upgraded,
@@ -440,8 +530,13 @@ def bounded_beam_rollout(
     for target_level in range(1, lookahead_levels + 1):
         expanded: list[BeamRolloutHypothesis] = []
         for hypothesis in hypotheses:
-            output = model(
+            model_batch = _constrained_rollout_model_batch(
                 hypothesis.batch,
+                target_level=target_level,
+                policy=policy,
+            )
+            output = model(
+                model_batch,
                 target_level=target_level,
                 pid_kinematics_mode_override=forward_mode,
                 pid_temperature_override=config.rollout_pid_temperature,
@@ -641,6 +736,7 @@ def evaluation_reference_rollout(
     if full_batch["node_mask"].shape[0] != 1:
         raise ValueError("Tiny rollout currently requires batch size 1")
     full_batch = _upgrade_flat_batch(full_batch)
+    policy = _resolved_rollout_constraint_policy(config)
     truth_batch = {key: value for key, value in full_batch.items()}
     state = _select_nodes(full_batch, full_batch["node_mask"][0] & (full_batch["level_ids"][0] == 0))
     generator = torch.Generator(device=state["p4"].device).manual_seed(config.seed)
@@ -649,6 +745,7 @@ def evaluation_reference_rollout(
     steps: list[RolloutStep] = []
     stop_reason = "maximum_level"
     valid = True
+    empty_level_count = 0
 
     for target_level in range(1, config.max_level + 1):
         if not state["node_mask"].any():
@@ -660,8 +757,13 @@ def evaluation_reference_rollout(
             == "soft_decision_hard_construction"
             else config.rollout_pid_kinematics_mode
         )
-        output = model(
+        model_batch = _constrained_rollout_model_batch(
             state,
+            target_level=target_level,
+            policy=policy,
+        )
+        output = model(
+            model_batch,
             target_level=target_level,
             pid_kinematics_mode_override=forward_pid_mode,
             pid_temperature_override=config.rollout_pid_temperature,
@@ -691,7 +793,6 @@ def evaluation_reference_rollout(
             )
         proposals = _truth_proposals(truth_batch, state, target_level) if use_truth else predicted
         if not proposals:
-            stop_reason = "all_no_object" if not predicted else "no_valid_new_mother"
             steps.append(
                 RolloutStep(
                     target_level,
@@ -703,6 +804,11 @@ def evaluation_reference_rollout(
                     construction_pid_mode,
                 )
             )
+            empty_level_count += 1
+            if config.continue_through_empty_levels:
+                cached_states.append((target_level, state))
+                continue
+            stop_reason = "all_no_object" if not predicted else "no_valid_new_mother"
             break
         accepted = (
             _resolve_with_config(proposals, state, config)
@@ -710,6 +816,21 @@ def evaluation_reference_rollout(
             else proposals
         )
         if not accepted:
+            empty_level_count += 1
+            if config.continue_through_empty_levels:
+                steps.append(
+                    RolloutStep(
+                        target_level,
+                        output,
+                        tuple(predicted),
+                        (),
+                        use_truth,
+                        (),
+                        construction_pid_mode,
+                    )
+                )
+                cached_states.append((target_level, state))
+                continue
             stop_reason = "no_valid_new_mother"
             break
         if not validate_proposals(
@@ -754,6 +875,7 @@ def evaluation_reference_rollout(
         valid=valid,
         teacher_forced=mode == "teacher_forced",
         cached_states=tuple(cached_states),
+        empty_level_count=empty_level_count,
     )
 
 
@@ -1187,6 +1309,7 @@ def append_composite_proposals(
     result["node_mask"] = result["active"]
     result["node_features"] = result["common_features"]
     result.pop("allowed_type_mask", None)
+    result.pop("type_logit_bias", None)
     result.pop("pointer_validity_mask", None)
     # Record a unique parent only after exclusive resolution.
     for row, proposal in enumerate(proposals):
@@ -1247,6 +1370,10 @@ def batched_level_step(
     device = batch["p4"].device
     accepted = accepted_query_mask.bool()
     selected = daughter_mask.bool() & accepted[..., None] & batch["node_mask"][:, None]
+    if (selected & (batch["parent_ids"] >= 0)[:, None]).any():
+        raise ValueError(
+            "accepted batched daughters must be unparented forest roots"
+        )
     if mother_types is None:
         mother_types = model_output.pointer.type_logits.argmax(dim=-1)
     if mother_types.shape != accepted.shape:
@@ -1510,6 +1637,7 @@ def batched_level_step(
     result["node_mask"] = result["active"]
     result["node_features"] = result["common_features"]
     result.pop("allowed_type_mask", None)
+    result.pop("type_logit_bias", None)
     result.pop("pointer_validity_mask", None)
     return result
 
@@ -1575,6 +1703,10 @@ def _batched_initial_leaf_state(
     for name, value in tuple(batch.items()):
         if not isinstance(value, torch.Tensor):
             continue
+        if name == "evaluation_leaf_source_keys":
+            # This is source-axis evaluation metadata, not a node-aligned
+            # model input.  Its width happens to equal the initial FSP count.
+            continue
         if value.ndim >= 3 and value.shape[1:3] == (node_count, node_count):
             pair_mask = leaves[:, :, None] & leaves[:, None, :]
             batch[name] = torch.where(
@@ -1615,6 +1747,7 @@ def _batched_initial_leaf_state(
     batch["runtime_structurally_valid"] = torch.zeros_like(leaves)
     batch["node_features"] = batch["common_features"]
     batch.pop("allowed_type_mask", None)
+    batch.pop("type_logit_bias", None)
     batch.pop("pointer_validity_mask", None)
     return batch
 
@@ -1647,22 +1780,20 @@ def batched_decode_level(
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """Tensorized constrained daughter and proposal decoding for one level."""
 
-    policy = config.constraint_policy or ReconstructionConstraintPolicy(
-        minimum_pointer_probability=config.pointer_threshold,
-        minimum_daughters=config.min_daughters,
-        cardinality_insufficient_policy=config.cardinality_insufficient_policy,
-        valid_leaf_node_kinds=tuple(
-            kind
-            for kind in config.allowed_daughter_node_kinds
-            if kind != NODE_KIND_TO_ID["composite"]
-        ),
-        valid_composite_node_kinds=(NODE_KIND_TO_ID["composite"],),
-    )
+    policy = _resolved_rollout_constraint_policy(config)
     pointer_probabilities = torch.sigmoid(output.pointer.pointer_logits)
     batch_size, query_count, node_count = pointer_probabilities.shape
+    if "parent_ids" not in batch:
+        raise ValueError("batched inference requires explicit parent_ids")
+    # A free-rollout level may combine only roots of the current reconstructed
+    # forest.  Merely being visible at a lower level is insufficient: reusing
+    # an already-parented daughter would create an adjacency edge that
+    # disagrees with its unique parent and lets one detector source appear in
+    # multiple hierarchy levels.
     valid_nodes = (
         output.context_mask
         & policy.pointer_validity_mask(batch, output.target_level)
+        & (batch["parent_ids"] < 0)
     )
     candidates = (
         valid_nodes[:, None]
@@ -1670,7 +1801,16 @@ def batched_decode_level(
         & (pointer_probabilities >= float(config.pointer_threshold))
     )
     cardinality = output.pointer.cardinality_logits.argmax(dim=-1)
-    if config.use_cardinality and policy.daughter_cardinality_policy == "predicted":
+    bounded_by_cardinality = (
+        config.use_cardinality
+        and policy.daughter_cardinality_policy == "predicted"
+    )
+    # Source exclusivity is a structural constraint, not a side effect of using
+    # the cardinality head.  Greedily visit candidates in pointer-probability
+    # order whenever either a cardinality cap or recursive-source conflicts
+    # need to be resolved.  This keeps threshold/no-cardinality decoding from
+    # placing associated ECL/KLM objects in the same mother.
+    if bounded_by_cardinality or policy.reject_recursive_source_conflicts:
         order = torch.argsort(
             pointer_probabilities.masked_fill(~candidates, float("-inf")),
             dim=-1,
@@ -1695,19 +1835,19 @@ def batched_decode_level(
             candidate_available = candidates.gather(
                 -1, candidate_index[..., None]
             ).squeeze(-1)
-            candidate_conflicts = conflicts[
-                batch_indices, candidate_index
-            ]
-            can_select = (
-                candidate_available
-                & (selected_count < cardinality)
-                & ~(candidate_conflicts & selected).any(dim=-1)
-            )
+            can_select = candidate_available
+            if bounded_by_cardinality:
+                can_select &= selected_count < cardinality
+            if policy.reject_recursive_source_conflicts:
+                candidate_conflicts = conflicts[
+                    batch_indices, candidate_index
+                ]
+                can_select &= ~(candidate_conflicts & selected).any(dim=-1)
             selected.scatter_(
                 -1, candidate_index[..., None], can_select[..., None]
             )
             selected_count = selected_count + can_select.to(selected_count.dtype)
-        if policy.cardinality_insufficient_policy == "invalid":
+        if bounded_by_cardinality and policy.cardinality_insufficient_policy == "invalid":
             cardinality_valid = selected_count == cardinality
         else:
             cardinality_valid = selected_count >= int(policy.minimum_daughters)
@@ -1845,13 +1985,17 @@ def batched_free_rollout(
             "learned confidence was requested but is not marked trained"
         )
     batch = _batched_initial_leaf_state(full_batch)
+    policy = _resolved_rollout_constraint_policy(config)
     batch_size = batch["node_mask"].shape[0]
     device = batch["node_mask"].device
     active = batch["node_mask"].any(dim=-1)
     stopped = ~active
     root_completed = torch.zeros(batch_size, dtype=torch.bool, device=device)
-    event_valid = active.clone()
+    initial_event_nonempty = active.clone()
     levels_completed = torch.zeros(batch_size, dtype=torch.long, device=device)
+    empty_level_counts = torch.zeros(
+        batch_size, dtype=torch.long, device=device
+    )
     stop_code = torch.where(
         active,
         torch.zeros(batch_size, dtype=torch.long, device=device),
@@ -1864,7 +2008,7 @@ def batched_free_rollout(
         config.root_types, dtype=torch.long, device=device
     )
     forward_pid_mode = (
-        "temperature_softmax"
+        "soft_expectation"
         if config.rollout_pid_kinematics_mode
         == "soft_decision_hard_construction"
         else config.rollout_pid_kinematics_mode
@@ -1887,7 +2031,12 @@ def batched_free_rollout(
         # is an optional production-model extension, not a required mock kwarg.
         if config.profile_phases:
             model_kwargs["profile_phases"] = True
-        output = model(batch, **model_kwargs)
+        model_batch = _constrained_rollout_model_batch(
+            batch,
+            target_level=target_level,
+            policy=policy,
+        )
+        output = model(model_batch, **model_kwargs)
         if config.profile_phases and output.host_phase_seconds:
             for name, seconds in output.host_phase_seconds.items():
                 profile_totals[name] = profile_totals.get(name, 0.0) + seconds
@@ -1940,18 +2089,28 @@ def batched_free_rollout(
         ).any(dim=-1)
         no_object = active & ~appended
         completed = active & root_now
+        empty_level_counts = empty_level_counts + no_object.to(torch.long)
         levels_completed = levels_completed + active.to(torch.long)
-        stop_code = torch.where(no_object, torch.ones_like(stop_code), stop_code)
+        if not config.continue_through_empty_levels:
+            stop_code = torch.where(no_object, torch.ones_like(stop_code), stop_code)
         stop_code = torch.where(completed, torch.full_like(stop_code, 2), stop_code)
-        stopped |= no_object | completed
+        stopped |= completed
+        if not config.continue_through_empty_levels:
+            stopped |= no_object
         root_completed |= completed
-        active = active & appended & ~completed
+        if config.continue_through_empty_levels:
+            active = active & ~completed
+        else:
+            active = active & appended & ~completed
         if config.profile_phases:
             profile_totals["level_host_total"] = profile_totals.get(
                 "level_host_total", 0.0
             ) + (time.perf_counter() - level_start)
     stop_code = torch.where(active, torch.full_like(stop_code, 3), stop_code)
     stopped |= active
+    event_valid = _batched_event_structural_validity(
+        batch, initial_event_nonempty=initial_event_nonempty
+    )
     return BatchedRolloutResult(
         batch=batch,
         levels_completed=levels_completed,
@@ -1962,7 +2121,55 @@ def batched_free_rollout(
         accepted_query_masks=tuple(accepted_history),
         daughter_masks=tuple(daughter_history),
         host_phase_seconds=profile_totals if config.profile_phases else None,
+        empty_level_counts=empty_level_counts,
     )
+
+
+def _batched_event_structural_validity(
+    batch: dict[str, torch.Tensor],
+    *,
+    initial_event_nonempty: torch.Tensor,
+) -> torch.Tensor:
+    """Validate final adjacency, parents, levels, and used detector sources."""
+
+    output = initial_event_nonempty.clone().bool()
+    for batch_index in range(batch["node_mask"].shape[0]):
+        if not bool(output[batch_index]):
+            continue
+        nodes = batch["node_mask"][batch_index].bool()
+        adjacency = batch["daughter_adjacency"][batch_index].bool().clone()
+        adjacency &= nodes[:, None] & nodes[None, :]
+        indegree = adjacency.sum(dim=0)
+        if bool((indegree > 1).any()):
+            output[batch_index] = False
+            continue
+        parents = batch["parent_ids"][batch_index].long()
+        expected = torch.full_like(parents, -1)
+        has_parent = indegree == 1
+        if bool(has_parent.any()):
+            expected[has_parent] = adjacency[:, has_parent].long().argmax(dim=0)
+        if not torch.equal(parents[nodes], expected[nodes]):
+            output[batch_index] = False
+            continue
+        levels = batch["level_ids"][batch_index].long()
+        edges = adjacency.nonzero(as_tuple=False)
+        if edges.numel() and not bool(
+            (levels[edges[:, 0]] > levels[edges[:, 1]]).all()
+        ):
+            output[batch_index] = False
+            continue
+        provenance = batch.get("recursive_leaf_source_mask")
+        if provenance is None:
+            continue
+        event_sources = provenance[batch_index].bool()
+        for mother in nodes.nonzero(as_tuple=False).flatten().tolist():
+            daughters = adjacency[mother].nonzero(as_tuple=False).flatten()
+            if daughters.numel() < 2:
+                continue
+            if bool((event_sources[daughters].sum(dim=0) > 1).any()):
+                output[batch_index] = False
+                break
+    return output
 
 
 def _select_nodes(
@@ -1975,7 +2182,9 @@ def _select_nodes(
     for key, value in batch.items():
         if not isinstance(value, torch.Tensor):
             continue
-        if key == "recursive_leaf_source_mask":
+        if key == "evaluation_leaf_source_keys":
+            selected[key] = value
+        elif key == "recursive_leaf_source_mask":
             selected[key] = value[:, indices]
         elif key in {
             "daughter_adjacency",
@@ -2097,6 +2306,7 @@ __all__ = [
     "BatchedRolloutResult",
     "LevelRolloutResult",
     "RolloutConfig",
+    "LEVEL_ROLLOUT_POLICY_VERSION",
     "RolloutStep",
     "append_composite_proposals",
     "batched_level_step",
@@ -2114,5 +2324,6 @@ __all__ = [
     "proposal_ambiguity_metrics",
     "rollout_search_metrics",
     "resolver_difference_rate",
+    "rollout_policy_identity",
     "validate_proposals",
 ]

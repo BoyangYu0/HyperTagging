@@ -76,8 +76,9 @@ Derived/preprocessed folders such as `emb/`, `comb/`, `gpt/`, `ConstEmb/`, and
 - Losses: tensor-level embedding, reconstruction, link, and GPT-like losses.
 - Training: CPU dry-run loops for embedding, link, reconstruction, and GPT-like
   stages.
-- Reconstruction: single-level reconstruction helpers and GraFEI full
-  reconstruction evaluation on tiny events.
+- Reconstruction: single-level helpers, historical GraFEI compatibility
+  fixtures, and strict offline full/half-decay evaluation from physically
+  compacted schema-v4 detector FSPs.
 - Examples: minimal CPU examples for Toy-MC, GraFEI, and GPT-like workflows.
 
 ## Known Limitations
@@ -320,3 +321,27 @@ python scripts/benchmark_parquet_storage.py \
 
 The benchmark is a decision artifact, not evidence that native storage is
 faster for every shard size.
+
+## Offline full-decay model evaluation
+
+The current evaluator consumes the same `direct-mdst-tree-v4` preprocessed
+Parquet selection/index used for training. It is not a basf2 candidate builder
+and does not accept GraFEI `pairs`. Before each CPU rollout it physically
+removes all stored higher-level particles, retaining only track, ECL-cluster,
+and KLM-cluster FSP records; the untouched truth tree is held separately for
+metrics.
+
+Validate the pretraining/reconstruction checkpoint lineage with
+`scripts/validate_reconstruction_checkpoint_pair.py`, then run
+`scripts/evaluate_full_decay.py`. Full scope contributes one root unit per
+eligible event; B-half scope contributes exactly two units per eligible event
+plus an event-level both-halves result. Native schema-v4 has no truth-defined
+continuum sides, so each explicit top-level continuum truth particle is
+evaluated as a multiplicity-one component and no two-side conjunction is
+invented. Primary topology scoring keeps direct-target incompatibilities as
+failed trials; contracted topology is diagnostic only. See
+[`docs/full_decay_reconstruction_evaluation.md`](docs/full_decay_reconstruction_evaluation.md)
+for the algorithm, metric definitions, current checkpoint command, and output
+contract. The training/HPO compatibility audit is tracked in
+[`docs/full_decay_training_hpo_compatibility_handoff.md`](docs/full_decay_training_hpo_compatibility_handoff.md)
+with a machine-readable JSON companion.

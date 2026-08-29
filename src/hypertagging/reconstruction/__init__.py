@@ -51,6 +51,23 @@ _EXPORT_MODULE = {
             "bounded_beam_rollout",
         )
     },
+    **{
+        name: "hypertagging.reconstruction.hierarchical_inference"
+        for name in (
+            "DEFAULT_HALF_ROOT_TOKENS",
+            "DETECTOR_FSP_KIND_IDS",
+            "FULL_ROOT_TOKEN",
+            "FSPInputAudit",
+            "FSPProjection",
+            "HierarchicalInferenceConfig",
+            "HierarchicalInferenceResult",
+            "InferenceScope",
+            "OFFLINE_INFERENCE_POLICY_VERSION",
+            "project_preprocessed_mdst_fsps",
+            "project_schema_v4_fsps",
+            "reconstruct_full_tree_from_fsps",
+        )
+    },
 }
 
 __all__ = sorted(_EXPORT_MODULE)

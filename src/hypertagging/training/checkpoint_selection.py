@@ -6,6 +6,8 @@ from dataclasses import dataclass
 import math
 from typing import Mapping
 
+from hypertagging.reconstruction.level_rollout import rollout_policy_identity
+
 
 @dataclass(frozen=True)
 class CheckpointTrack:
@@ -130,7 +132,7 @@ def reconstruction_selection_contract(
     """Fields whose change makes checkpoint ranking incomparable on resume."""
 
     return {
-        "version": "reconstruction-checkpoint-selection-v4",
+        "version": "reconstruction-checkpoint-selection-v5",
         "primary_metric": best_metric,
         "primary_mode": best_mode,
         "tracks": [
@@ -151,6 +153,9 @@ def reconstruction_selection_contract(
             "exclusive_resolution": "greedy",
             "bounded_weighted_set_packing": "diagnostic_only",
             "learned_confidence": True,
+            "policy_identity": rollout_policy_identity(
+                continue_through_empty_levels=False
+            ),
         },
         "constraint_policy": dict(constraint_policy),
         "pid_mode": rollout_pid_kinematics_mode,

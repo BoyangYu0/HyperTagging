@@ -16,11 +16,15 @@ from hypertagging.preprocessing.basf2_mdst import (
 )
 from hypertagging.preprocessing.schema_v2 import NODE_KIND_TO_ID
 from hypertagging.reconstruction.constraints import ReconstructionConstraintPolicy
-from hypertagging.reconstruction.level_rollout import RolloutConfig
+from hypertagging.reconstruction.level_rollout import (
+    RolloutConfig,
+    rollout_policy_identity,
+)
 from hypertagging.training.checkpoint_selection import (
     PRETRAIN_CHECKPOINT_TRACKS,
     checkpoint_track_decisions,
     initial_track_values,
+    reconstruction_selection_contract,
 )
 from hypertagging.training.data_module import _track_fit_policies_from_publications
 from hypertagging.training.pretrain_trainer import objective_preflight_report
@@ -51,6 +55,27 @@ def test_teacher_loss_and_rollout_f1_select_independent_checkpoint_tracks():
     }
     assert state["validation_loss_total"] == pytest.approx(0.4)
     assert state["predicted_edge_f1"] == pytest.approx(0.75)
+
+
+def test_track_a_checkpoint_contract_binds_stop_on_empty_rollout_policy():
+    contract = reconstruction_selection_contract(
+        best_metric="predicted_edge_f1",
+        best_mode="max",
+        max_validation_events=32,
+        rollout_validation_events=8,
+        rollout_validate_every=100,
+        rollout_pid_kinematics_mode="soft_decision_hard_construction",
+        rollout_pid_temperature=0.5,
+        target_policy="complete_only",
+        constraint_policy={},
+    )
+    track_a = rollout_policy_identity(continue_through_empty_levels=False)
+    track_b = rollout_policy_identity(continue_through_empty_levels=True)
+    assert contract["version"] == "reconstruction-checkpoint-selection-v5"
+    assert contract["rollout_configuration"]["policy_identity"] == track_a
+    assert track_a["empty_level_policy"] == "stop_on_first_empty"
+    assert track_a["sha256"] != track_b["sha256"]
+    assert len(str(track_a["sha256"])) == 64
 
 
 def test_query_repulsion_masks_no_object_overlap_and_is_permutation_invariant():

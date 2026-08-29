@@ -513,15 +513,57 @@ def build_dataset_index(
     return destination
 
 
-def load_dataset_index(
-    path: str | Path, *, verify_sources: bool = True
-) -> dict[str, Any]:
-    payload = json.loads(Path(path).read_text())
+def load_dataset_index_metadata(path: str | Path) -> dict[str, Any]:
+    """Authenticate index metadata without resolving or opening shard paths."""
+
+    try:
+        payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise ValueError(f"invalid dataset index JSON: {path}") from error
+    if not isinstance(payload, dict):
+        raise ValueError("dataset index must be a JSON object")
     if payload.get("index_version") != DATASET_INDEX_VERSION:
         raise ValueError("unsupported dataset index version")
     stored_hash = payload.get("index_hash")
     if stored_hash != _index_hash(payload):
         raise ValueError("dataset index hash mismatch")
+    selection = payload.get("selection_contract")
+    if not isinstance(selection, dict):
+        raise ValueError("dataset index selection contract must be an object")
+    mode = selection.get("mode")
+    if mode not in {"all", "ordered_prefix", "source_role_manifest"}:
+        raise ValueError("dataset index selection mode is invalid")
+    fingerprint = selection.get("fingerprint")
+    if not _is_sha256_hex(fingerprint):
+        raise ValueError("dataset index selection fingerprint is invalid")
+    manifest_hash = selection.get("selection_manifest_hash")
+    included_splits = selection.get("included_splits")
+    if not isinstance(included_splits, list) or any(
+        split not in {"train", "validation", "test"}
+        for split in included_splits
+    ):
+        raise ValueError("dataset index included-split contract is invalid")
+    max_events = selection.get("max_events")
+    if mode == "source_role_manifest":
+        if not _is_sha256_hex(manifest_hash) or max_events is not None:
+            raise ValueError("dataset index source-role hash contract is invalid")
+    elif manifest_hash is not None or included_splits:
+        raise ValueError("dataset index raw-selection hash contract is invalid")
+    elif mode == "all" and max_events is not None:
+        raise ValueError("dataset index all-events selection is invalid")
+    elif mode == "ordered_prefix" and (
+        not isinstance(max_events, int)
+        or isinstance(max_events, bool)
+        or max_events <= 0
+    ):
+        raise ValueError("dataset index ordered-prefix selection is invalid")
+    return payload
+
+
+def load_dataset_index(
+    path: str | Path, *, verify_sources: bool = True
+) -> dict[str, Any]:
+    payload = load_dataset_index_metadata(path)
     if payload.get("pid_vocabulary_version") != PID_VOCABULARY_VERSION:
         raise ValueError("dataset index PID vocabulary mismatch")
     if not set(payload.get("schema_versions", ())).issubset(SUPPORTED_SCHEMAS):
@@ -543,6 +585,14 @@ def load_dataset_index(
     if verify_sources:
         _verify_indexed_shards(payload)
     return payload
+
+
+def _is_sha256_hex(value: object) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) == 64
+        and all(character in "0123456789abcdef" for character in value)
+    )
 
 
 def _update_capacity_slice(
@@ -985,5 +1035,6 @@ __all__ = [
     "build_dataset_index",
     "build_dataset_index_from_sidecars",
     "load_dataset_index",
+    "load_dataset_index_metadata",
     "tensor_normalizer_state",
 ]

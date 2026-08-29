@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from hashlib import sha256
 from pathlib import Path
 import subprocess
 from typing import Any, Sequence
@@ -14,7 +15,6 @@ from hypertagging.data.heterogeneous import (
     collate_heterogeneous_events,
 )
 from hypertagging.data.streaming import RuntimeFeatureNormalizer
-from hypertagging.data.dataset_index import load_dataset_index
 from hypertagging.data.splitting import SourceAwareSplitConfig, stable_split_name
 from hypertagging.models.ablation import ALL_ABLATIONS, build_ablation_model
 from hypertagging.models.level_autoregressive import LevelAutoregressiveReconstructor
@@ -22,7 +22,12 @@ from hypertagging.preprocessing.pid_filter import PDG_TOKENS, PID_VOCABULARY_VER
 from hypertagging.preprocessing.schema_v4 import feature_spec_v4
 from hypertagging.reconstruction.constraints import ReconstructionConstraintPolicy
 from hypertagging.training.checkpointing import load_training_checkpoint
-from hypertagging.training.data_module import RealDataModule, build_real_data_module
+from hypertagging.training.data_module import (
+    RealDataModule,
+    _require_source_role_manifest_binding as _shared_source_role_preflight,
+    build_real_data_module,
+    preflight_dataset_index_data_binding,
+)
 from hypertagging.training.model_config import ModelArchitecture
 
 
@@ -64,6 +69,8 @@ def load_trained_evaluation_context(
     max_events: int = 100,
     device: str | torch.device = "cpu",
     diagnostic_allow_external_independent_sample: bool = False,
+    source_categories: Sequence[str] | None = None,
+    event_selection: str = "auto",
 ) -> TrainedEvaluationContext:
     """Load a trained model and a deterministic held-out event selection.
 
@@ -76,6 +83,18 @@ def load_trained_evaluation_context(
         raise ValueError("trained evaluation split must be validation or test")
     if max_events <= 0:
         raise ValueError("max_events must be positive")
+    if event_selection not in {
+        "auto",
+        "checkpoint_rollout",
+        "checkpoint_validation",
+        "stream",
+    }:
+        raise ValueError(f"unknown evaluation event selection: {event_selection}")
+    requested_categories = {
+        str(category).strip() for category in (source_categories or ())
+    }
+    if "" in requested_categories:
+        raise ValueError("source_categories must not contain empty values")
     payload = load_training_checkpoint(checkpoint, map_location="cpu")
     current_spec = feature_spec_v4()
     checkpoint_spec = payload.get("feature_specification", {})
@@ -111,8 +130,20 @@ def load_trained_evaluation_context(
         )
 
     training_config = payload.get("config", {})
+    contract_pid_mode = contract.get("pid_reconstruction_mode")
+    if not isinstance(contract_pid_mode, str) or not contract_pid_mode:
+        raise ValueError("checkpoint has no authoritative PID reconstruction mode")
+    configured_pid_mode = training_config.get("pid_kinematics_mode")
+    if (
+        configured_pid_mode is not None
+        and str(configured_pid_mode) != contract_pid_mode
+    ):
+        raise ValueError(
+            "checkpoint PID mode conflicts with authoritative feature contract"
+        )
+    pid_mode = contract_pid_mode
     target_policy = str(training_config.get("target_policy", "complete_only"))
-    index_payload = load_dataset_index(dataset_index)
+    index_payload = _preflight_evaluation_data_binding(data, dataset_index)
     split_config = SourceAwareSplitConfig(**index_payload["split_config"])
     data_module = build_real_data_module(
         data,
@@ -147,24 +178,35 @@ def load_trained_evaluation_context(
             "independent external sample"
         )
 
-    events: list[HeterogeneousEvent] = []
-    for event in data_module.iter_events(split, shuffle=False):
-        events.append(event)
-        if len(events) >= max_events:
-            break
+    cohort_uids, resolved_event_selection = _resolve_checkpoint_event_selection(
+        payload,
+        data_module=data_module,
+        split=split,
+        requested=event_selection,
+    )
+    events = _select_evaluation_events(
+        data_module,
+        split=split,
+        max_events=max_events,
+        requested_categories=requested_categories,
+        cohort_uids=cohort_uids,
+    )
     if not events:
-        raise ValueError(f"held-out {split} selection is empty")
+        category_suffix = (
+            f" for source categories {sorted(requested_categories)}"
+            if requested_categories
+            else ""
+        )
+        raise ValueError(f"held-out {split} selection is empty{category_suffix}")
     evaluated_uids = [event.event_uid for event in events]
     if len(evaluated_uids) != len(set(evaluated_uids)):
         raise ValueError("evaluation event UIDs are not unique")
     assigned_splits = {
-        event.event_uid: stable_split_name(
-            {
-                "event_uid": event.event_uid,
-                "source_file": event.source_file,
-                "source_category": event.source_category,
-            },
-            split_config,
+        event.event_uid: _evaluation_split_assignment(
+            event,
+            split_config=split_config,
+            event_split_overrides=data_module.split_overrides,
+            source_split_overrides=data_module.source_split_overrides,
         )
         for event in events
     }
@@ -202,6 +244,7 @@ def load_trained_evaluation_context(
         type_conditioned_daughter_relation_bias=(
             architecture.type_conditioned_daughter_relation_bias
         ),
+        pid_kinematics_mode=pid_mode,
     )
     model.load_state_dict(payload["model_state_dict"], strict=True)
     model.set_runtime_feature_normalizer(
@@ -219,7 +262,8 @@ def load_trained_evaluation_context(
     policy = ReconstructionConstraintPolicy.from_dict(
         contract["reconstruction_constraint_policy"]
     )
-    pid_mode = str(training_config.get("pid_kinematics_mode", model.pid_kinematics_mode))
+    if model.pid_kinematics_mode != pid_mode:
+        raise ValueError("restored model PID mode differs from feature contract")
     rollout_pid_mode = str(
         training_config.get(
             "rollout_pid_kinematics_mode", "soft_decision_hard_construction"
@@ -238,10 +282,16 @@ def load_trained_evaluation_context(
         "pid_vocabulary_version": PID_VOCABULARY_VERSION,
         "architecture": payload["architecture"],
         "reconstruction_constraint_policy": policy.to_dict(),
-        "pid_kinematics_mode": pid_mode,
+        "pid_kinematics_mode": model.pid_kinematics_mode,
         "rollout_pid_kinematics_mode": rollout_pid_mode,
         "evaluation_split": split,
+        "evaluation_source_categories": sorted(requested_categories),
+        "evaluation_event_selection": resolved_event_selection,
+        "checkpoint_event_cohort_size": (
+            len(cohort_uids) if cohort_uids is not None else None
+        ),
         "evaluated_event_uids": evaluated_uids,
+        "evaluated_event_uid_sha256": _uid_sequence_sha256(evaluated_uids),
         "evaluated_uid_split_assignments": assigned_splits,
         "evaluation_uid_train_overlap": [],
         "external_independent_sample_override": bool(
@@ -259,15 +309,157 @@ def load_trained_evaluation_context(
         constraint_policy=policy,
         checkpoint=payload,
         split=split,
-        pid_kinematics_mode=pid_mode,
+        pid_kinematics_mode=model.pid_kinematics_mode,
         rollout_pid_kinematics_mode=rollout_pid_mode,
         report_metadata=metadata,
     )
 
 
+def _evaluation_split_assignment(
+    event: HeterogeneousEvent,
+    *,
+    split_config: SourceAwareSplitConfig,
+    event_split_overrides: dict[str, str],
+    source_split_overrides: dict[str, str],
+) -> str:
+    """Repeat the loader's split decision without bypassing source-role manifests."""
+
+    assigned = event_split_overrides.get(str(event.event_uid))
+    if assigned is not None:
+        return assigned
+    assigned = source_split_overrides.get(str(event.source_file))
+    if assigned is not None:
+        return assigned
+    return stable_split_name(
+        {
+            "event_uid": event.event_uid,
+            "source_file": event.source_file,
+            "source_category": event.source_category,
+        },
+        split_config,
+    )
+
+
+def _resolve_checkpoint_event_selection(
+    payload: dict[str, Any],
+    *,
+    data_module: RealDataModule,
+    split: str,
+    requested: str,
+) -> tuple[tuple[str, ...] | None, str]:
+    selection = payload.get("validation_selection", {})
+    has_checkpoint_cohort = (
+        split == "validation"
+        and selection.get("split") == "validation"
+        and bool(selection.get("rollout_event_uids"))
+    )
+    resolved = (
+        "checkpoint_rollout"
+        if requested == "auto" and has_checkpoint_cohort
+        else "stream" if requested == "auto" else requested
+    )
+    if resolved == "stream":
+        return None, "stream_order_diagnostic"
+    if split != "validation" or selection.get("split") != split:
+        raise ValueError(
+            f"{resolved} event selection is unavailable for split {split!r}"
+        )
+    if not bool(selection.get("deterministic", False)):
+        raise ValueError("checkpoint validation event selection is not deterministic")
+    checkpoint_manifest_hash = str(selection.get("selection_manifest_hash", ""))
+    data_manifest_hash = str(data_module.selection_manifest_hash or "")
+    if checkpoint_manifest_hash != data_manifest_hash:
+        raise ValueError(
+            "checkpoint validation cohort belongs to a different training-selection "
+            "manifest"
+        )
+    field = (
+        "rollout_event_uids"
+        if resolved == "checkpoint_rollout"
+        else "event_uids"
+    )
+    values = tuple(str(value) for value in selection.get(field, ()))
+    if not values or len(values) != len(set(values)):
+        raise ValueError(f"checkpoint {field} must be nonempty and unique")
+    return values, resolved
+
+
+def _select_evaluation_events(
+    data_module: RealDataModule,
+    *,
+    split: str,
+    max_events: int,
+    requested_categories: set[str],
+    cohort_uids: tuple[str, ...] | None,
+) -> list[HeterogeneousEvent]:
+    if cohort_uids is None:
+        output: list[HeterogeneousEvent] = []
+        for event in data_module.iter_events(split, shuffle=False):
+            if requested_categories and event.source_category not in requested_categories:
+                continue
+            output.append(event)
+            if len(output) >= max_events:
+                break
+        return output
+
+    rank = {uid: index for index, uid in enumerate(cohort_uids)}
+    found: dict[str, HeterogeneousEvent] = {}
+    seen: set[str] = set()
+    cutoff: int | None = None
+    for event in data_module.iter_events(split, shuffle=False):
+        uid = str(event.event_uid)
+        if uid not in rank:
+            continue
+        seen.add(uid)
+        if not requested_categories or event.source_category in requested_categories:
+            found[uid] = event
+        ordered_found = sorted(found, key=rank.__getitem__)
+        if len(ordered_found) >= max_events:
+            cutoff = rank[ordered_found[max_events - 1]]
+            if all(uid in seen for uid in cohort_uids[: cutoff + 1]):
+                break
+    ordered = sorted(found.values(), key=lambda event: rank[str(event.event_uid)])
+    selected = ordered[:max_events]
+    required = cohort_uids[: cutoff + 1] if cutoff is not None else cohort_uids
+    missing_prefix = [uid for uid in required if uid not in seen]
+    if missing_prefix:
+        raise ValueError(
+            "checkpoint validation cohort UIDs are absent from the bound "
+            f"dataset: {missing_prefix[:5]}"
+        )
+    return selected
+
+
+def _require_source_role_manifest_binding(
+    data: str | Path | Sequence[str | Path],
+    index_payload: dict[str, Any],
+) -> None:
+    """Prevent rehashing raw paths against a source-role-bound index."""
+
+    _shared_source_role_preflight(data, index_payload)
+
+
+def _preflight_evaluation_data_binding(
+    data: str | Path | Sequence[str | Path],
+    dataset_index: str | Path,
+) -> dict[str, object]:
+    """Delegate evaluation preflight to the shared metadata-only invariant."""
+
+    return preflight_dataset_index_data_binding(data, dataset_index)
+
+
 def _require_equal(name: str, observed: Any, expected: Any) -> None:
     if observed != expected:
         raise ValueError(f"checkpoint {name} mismatch: {observed!r} != {expected!r}")
+
+
+def _uid_sequence_sha256(values: Sequence[str]) -> str:
+    digest = sha256()
+    for value in values:
+        encoded = str(value).encode("utf-8")
+        digest.update(len(encoded).to_bytes(8, byteorder="big"))
+        digest.update(encoded)
+    return digest.hexdigest()
 
 
 def _git_sha() -> str:
