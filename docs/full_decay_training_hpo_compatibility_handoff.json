@@ -1,7 +1,92 @@
 {
   "schema_version": "hypertagging-training-hpo-compatibility-handoff-v1",
   "scope": "CPU-only offline full/half decay model evaluation from direct-mdst-tree-v4 preprocessed training input",
-  "repository_head": "2d5909d5e222874c610e5fd0678f732f9555c59a",
+  "repository_head": "4632c50cd363e5ee18fcea73c5320c853e9e583b",
+  "metadata_prebinding_candidate": {
+    "status": "BLOCKED_PENDING_INDEPENDENT_P0_REVIEW",
+    "audit_boundary": "exact_seven_path_staged_candidate_pending_independent_clear",
+    "handoff_generated_at": "2026-08-30T20:29:26+02:00",
+    "base_head": "4632c50cd363e5ee18fcea73c5320c853e9e583b",
+    "base_commit_author": "Boyang.Yu <boyang.yu@physik.uni-muenchen.de>",
+    "base_commit_subject": "add offline full decay reconstruction",
+    "history_rewritten": false,
+    "committed_or_tagged": false,
+    "files": [
+      "src/hypertagging/data/dataset_index.py",
+      "src/hypertagging/data/training_selection.py",
+      "src/hypertagging/training/data_module.py",
+      "tests/test_dataset_index_selection_contract_cpu.py",
+      "tests/test_training_selection_manifest_cpu.py",
+      "docs/full_decay_training_hpo_compatibility_handoff.md",
+      "docs/full_decay_training_hpo_compatibility_handoff.json"
+    ],
+    "source_test_file_sha256": {
+      "src/hypertagging/data/dataset_index.py": "b8fa8d27f12ef859b986f7a5bcbc30870c5b1a3969941ba9b2165dcd94a0a6c6",
+      "src/hypertagging/data/training_selection.py": "656bad9fda7933b1611fd7f91840d89b572960b4c45f88eb7a8fc47587ef35dc",
+      "src/hypertagging/training/data_module.py": "229b81ee6d410964269a81af0a2d17b479a6eb0d155dd98e3b9359fa26b865ea",
+      "tests/test_dataset_index_selection_contract_cpu.py": "d8fb6491547c0b481963157254540b780bd7cddd5fee9939b8ba0ffdff10c346",
+      "tests/test_training_selection_manifest_cpu.py": "0a7dedfa0be8237bd05e0051391947c3fe05f617e287b02d1de7d3153e2d5147"
+    },
+    "source_test_hash_manifest_sha256": "0ce4956251e572669a53edb93b566a3a8e6a457ee24cac0d43e14ae63a984283",
+    "validation": {
+      "focused": "252 passed in 8.37s across the two metadata-prebinding files",
+      "extended_data_evaluation": "276 passed in 18.11s",
+      "safe_broad_tracked_cpu": "866 passed, 8 skipped, 1 deselected in 105.84s; 17 warnings",
+      "authoritative_manifest_index_compatibility": "6 passed, 110 deselected in 3.12s",
+      "promoted_index_metadata_fingerprint": "passed: pure stored-string binding precedes one resolved-index fingerprint/path phase; no manifest path, publication, or source was touched",
+      "pilot_split_repair_preflight": "passed: indexed source-role callers reject before manifest loading; manifest-only callers authenticate/classify exactly once and reject max_events or pilot_split_repair before the full loader, resolution, or publication",
+      "py_compile": "passed for the exact five source/test paths",
+      "ruff_check": "passed",
+      "ruff_format_check": "optional check reported the five established candidate files would be reformatted; no broad mechanical formatting was applied",
+      "git_diff_check": "passed",
+      "broad_command_correction": "an initial pytest-entrypoint invocation collected zero tests and reported two scripts import errors; the authoritative python -m pytest rerun passed",
+      "known_preexisting_failure": "fresh isolated rerun: 1 failed in 2.88s because untouched training/checkpointing.py duplicates the empty_channel_memory_expansion_v1 receipt"
+    },
+    "terminal_test_commands": {
+      "focused": "PYTHONPATH=src /home/b/Boyang.Yu/.local/bin/uv --cache-dir /tmp/uv-cache run --frozen --no-sync python -m pytest -q tests/test_dataset_index_selection_contract_cpu.py tests/test_training_selection_manifest_cpu.py",
+      "extended": "PYTHONPATH=src /home/b/Boyang.Yu/.local/bin/uv --cache-dir /tmp/uv-cache run --frozen --no-sync python -m pytest -q tests/test_dataset_index_and_storage_cpu.py tests/test_dataset_index_completion_marker_cpu.py tests/test_dataset_index_hash_and_staleness_cpu.py tests/test_dataset_index_identity_gate_cpu.py tests/test_dataset_index_selection_contract_cpu.py tests/test_dataset_index_target_policy_cpu.py tests/test_partial_target_policy_cpu.py tests/test_production_manifest_training_integration_cpu.py tests/test_read_only_pretraining_validation_cpu.py tests/test_trained_evaluation_context_cpu.py tests/test_training_rejects_incomplete_v4_shard_cpu.py tests/test_training_selection_manifest_cpu.py tests/test_validation_target_policy_cpu.py",
+      "compatibility": "PYTHONPATH=src /home/b/Boyang.Yu/.local/bin/uv --cache-dir /tmp/uv-cache run --frozen --no-sync python -m pytest -q tests/test_training_selection_manifest_cpu.py -k 'selection_variants_and_projected_entry_shape_are_exact or tracked_authoritative_inventory_projects_exact_entry_schema_and_order or promoted_manifest_index_preflight_resolves_only_index_paths'",
+      "safe_broad": "mapfile -t safe_cpu_tests < <(git ls-files 'tests/test_*_cpu.py' | rg -v 'tests/test_(audit_integrity|revised_notebooks|phase3_execution_authorization)_cpu.py'); PYTHONPATH=src /home/b/Boyang.Yu/.local/bin/uv --cache-dir /tmp/uv-cache run --frozen --no-sync python -m pytest -q \"${safe_cpu_tests[@]}\" --deselect tests/test_channel_cross_event_cpu.py::test_empty_zero_capacity_channel_memory_can_expand_on_explicit_resume",
+      "known_preexisting": "PYTHONPATH=src /home/b/Boyang.Yu/.local/bin/uv --cache-dir /tmp/uv-cache run --frozen --no-sync python -m pytest -q tests/test_channel_cross_event_cpu.py::test_empty_zero_capacity_channel_memory_can_expand_on_explicit_resume",
+      "py_compile": "PYTHONPATH=src /home/b/Boyang.Yu/.local/bin/uv --cache-dir /tmp/uv-cache run --frozen --no-sync python -m py_compile src/hypertagging/data/dataset_index.py src/hypertagging/data/training_selection.py src/hypertagging/training/data_module.py tests/test_dataset_index_selection_contract_cpu.py tests/test_training_selection_manifest_cpu.py",
+      "ruff": "PYTHONPATH=src /home/b/Boyang.Yu/.local/bin/uv --cache-dir /tmp/uv-cache run --frozen --no-sync ruff check <exact five source/test paths>",
+      "promoted_index_metadata_fingerprint": "PYTHONPATH=src /home/b/Boyang.Yu/.local/bin/uv --cache-dir /tmp/uv-cache run --frozen --no-sync python -c <pure stored-string fingerprint comparison for train_035k index JSON>",
+      "diff_check": "git diff --check"
+    },
+    "excluded_files": [
+      "tests/test_audit_integrity_cpu.py",
+      "tests/test_revised_notebooks_cpu.py",
+      "tests/test_phase3_execution_authorization_cpu.py"
+    ],
+    "intentionally_deselected_test": "tests/test_channel_cross_event_cpu.py::test_empty_zero_capacity_channel_memory_can_expand_on_explicit_resume",
+    "execution_authorized": false,
+    "submission_authorized": false,
+    "science_authorized": false,
+    "raw_or_restricted_payloads_touched": false,
+    "jobs": [],
+    "commits_created": [],
+    "tags_created": [],
+    "blockers": [
+      "Independent auditor CLEAR has not yet been relayed; candidate must remain uncommitted and untagged.",
+      "The exact seven-path candidate is staged only for independent review and remains blocked against commit or tag until CLEAR.",
+      "The tracked production selection JSON files still contain the historical 15-key projection; this seven-path candidate enforces the independently confirmed exact 16-key schema by projecting campaign_config_digest from authenticated inventory metadata in compatibility tests, so production manifests/index hashes require an owner-authorized immutable repromotion before runtime use."
+    ],
+    "next_action": "Independent P0 audit of the exact staged seven-path candidate; do not edit, commit, tag, or finalize until CLEAR or a concrete finding is relayed.",
+    "concurrent_untracked_paths_ignored": [
+      "docs/basf2_onnx_full_decay.md",
+      "scripts/export_full_decay_onnx.py",
+      "scripts/run_basf2_full_decay.py",
+      "src/hypertagging/basf2_integration/",
+      "src/hypertagging/deployment/",
+      "tests/basf2_onnx_full_decay_smoke.py",
+      "tests/basf2_onnx_real_mdst_smoke.py",
+      "tests/basf2_onnx_real_track_smoke.py",
+      "tests/helpers/",
+      "tests/run_basf2_onnx_full_decay_smoke.sh",
+      "tests/test_basf2_feature_contract_cpu.py",
+      "tests/test_onnx_full_decay_beam_cpu.py"
+    ]
+  },
   "separate_checkpoint_selection_v4_worktree_touched": false,
   "slurm_jobs_polled_submitted_or_cancelled": false,
   "immutable_inputs": {
@@ -30,10 +115,10 @@
     "historical_broad_initial_failures": 6,
     "historical_broad_documented_preexisting_failures_after_rollout_fix": 5,
     "historical_broad_status": "superseded_by_current_explicit_source_validation",
-    "current_explicit_source_broad_passed": 842,
+    "current_explicit_source_broad_passed": 866,
     "current_explicit_source_broad_skipped": 8,
     "current_explicit_source_broad_intentionally_deselected": 1,
-    "current_explicit_source_broad_seconds": 101.50,
+    "current_explicit_source_broad_seconds": 105.84,
     "current_explicit_source_broad_ignored_files": [
       "tests/test_audit_integrity_cpu.py",
       "tests/test_revised_notebooks_cpu.py",
@@ -43,7 +128,8 @@
     "current_explicit_source_broad_status": "current",
     "final_alias_preflight_provenance_focused_passed": 59,
     "final_alias_preflight_provenance_focused_seconds": 5.15,
-    "final_staged_path_count": 28,
+    "final_staged_path_count": 7,
+    "historical_staged_path_count_before_exact_seven_path_candidate": 28,
     "final_alias_preflight_provenance_file_sha256": {
       "scripts/evaluate_full_decay.py": "1096c49d5a25bf97b366a31adea3c803cd1b1111c0d6e38be03cd79a9bb93862",
       "src/hypertagging/data/dataset_index.py": "1a404ebe1fb72dc481419efc924cd60c2ff09dad11a1ccaded70ecec11ca0450",
@@ -91,11 +177,11 @@
       "id": "DATA-02",
       "title": "Source-role index cannot use raw Parquet paths",
       "severity": "P0",
-      "status": "fixed_in_evaluator_and_shared_loader",
+      "status": "fixed_with_pure_index_and_manifest_metadata_prebinding",
       "fixed": true,
-      "evidence": "Stable rehash disagreed with promoted source roles for 7 of 17 sources. load_dataset_index_metadata authenticates only index JSON object/version/index_hash and selection-contract schema/mode/hash fields, without path canonicalization, selection fingerprint recomputation, shard stat/open, sidecars, or source verification. Evaluator and shared loader then authenticate the supplied manifest JSON/hash before full loading; raw lists, raw Parquet, and wrong manifests fail metadata-only.",
-      "affected_files": ["src/hypertagging/data/dataset_index.py", "src/hypertagging/evaluation/trained_context.py", "src/hypertagging/training/data_module.py"],
-      "tests": ["test_dataset_index_metadata_rejects_invalid_selection_schema", "test_dataset_index_metadata_requires_json_object", "test_source_role_index_rejects_raw_parquet_data", "test_source_role_bound_index_rejects_raw_parquet_before_source_reads", "test_source_role_bound_index_rejects_wrong_manifest_before_source_reads", "test_trained_context_delegates_to_shared_metadata_preflight"],
+      "evidence": "The authenticated metadata binder completes every stored-only index gate, then authenticates and purely cross-binds included event counts, derived shard counts, source groups, absolute paths constructed as PurePosixPath strings from canonical data_root plus direct-child entry names, and all matching parquet/sidecar/completion-marker digests before any Path.resolve or source read. All redundant post-verification cross-document comparisons and path re-resolutions were removed; the later resolved-path comparison now proves only symlink/canonical drift. Raw callers are also resolved as a batch and compared to the resolved authenticated index immediately before any publication or indexed-source verification. The authenticated preflight accepts the full caller contract and validates target_policy, max_events, explicit split_config/seed, required split_counts, legacy_fraction versus allow_legacy_conflated, and scientific identity/status/task-binding/sealed-test/included-role gates before returning and before any index or manifest path resolution, publication, or indexed-shard verification. JSON identified by manifest_version or selection-shape keys is authenticated and schema-validated before every filesystem fallback probe; wrong version, bad hash, missing/extra schema, or malformed selection metadata can never be reinterpreted as generic JSON, while genuinely non-selection generic JSON remains supported. A module-private frozen combined binding pins the one-read authenticated index and manifest bytes/payload identities; the full DataModule selection/publication and indexed-source loaders accept that token path and never reopen either metadata file. Public loaders expose no payload injection arguments, caller mappings cannot forge the token, and post-preflight file swaps cannot change pinned data. Pure manifest validation covers every role and retains canonical lexical values in a frozen private record. The manifest loader resolves and physically alias-checks only index included_splits, never excluded or sealed-test entries; all included parquet existence checks and the complete stat batch precede inode/hardlink uniqueness, which precedes every publication digest. Both index builders run the same pure loader validator against complete self-hashed output before publishing. The sidecar builder emits the required track_fit_policy descriptor key and matching aggregate, derives its normalizer state from train only or all open splits for the explicit no-train diagnostic scope, legacy sidecar-free indexes derive a supported nonempty schema and remain loadable, and unloadable sidecar-free v4 output is rejected before index creation. A missing later file produces zero publication calls. Exact true-test/false-test top-level schemas, exact 16-key projected entries including campaign_config_digest, lexical split/category/task ordering, exact quota/category/split aggregates, false-test excluded-role consistency, optional omitted excluded-test split_counts, and positive true-test counts/shards are enforced. Pure index invariants bind split, descriptor, and category sums; sorted-unique schema/feature/policy aggregates; exact finite normalizer blocks and widths with scope coherence; exact scientific identity fields; and normalized v4 completion-marker schema/count/feature/parquet/sidecar/range/policy cores before effects.",
+      "affected_files": ["src/hypertagging/data/dataset_index.py", "src/hypertagging/data/training_selection.py", "src/hypertagging/training/data_module.py"],
+      "tests": ["test_static_index_contracts_fail_before_manifest_or_source_effects", "test_allowed_types_are_purely_bound_before_manifest_or_source_effects", "test_dataset_index_top_level_schema_is_exact_before_all_effects", "test_training_selection_top_level_schema_is_exact_before_source_effects", "test_tracked_authoritative_inventory_projects_exact_entry_schema_and_order", "test_promoted_manifest_index_preflight_resolves_only_index_paths", "test_false_test_source_role_binding_may_omit_excluded_test_count", "test_indexed_pilot_repair_rejects_before_manifest_or_publication_effects", "test_manifest_only_caller_modes_reject_after_one_auth_before_full_load", "test_index_aggregate_and_descriptor_invariants_are_pure_before_effects", "test_pure_manifest_absolute_paths_bind_before_symlink_resolution", "test_sidecar_builder_emits_validator_required_track_fit_policy", "test_self_built_legacy_index_retains_derived_schema_without_sidecars", "test_builder_rejects_unloadable_v4_index_before_publication", "test_hardlink_aliases_fail_after_batch_stat_before_publication", "test_authenticated_preflight_binds_every_raw_caller_semantic_before_effects", "test_public_preflight_accepts_and_binds_caller_contract_inputs", "test_source_role_caller_semantics_precede_manifest_path_and_publication_effects", "test_scientific_identity_task_and_sealed_gates_precede_manifest_effects", "test_public_loaders_expose_no_payload_injection_escape_hatches", "test_manifest_shaped_json_never_falls_back_to_generic_resolution", "test_invalid_authenticated_looking_selection_never_reaches_generic_fallback", "test_non_selection_generic_json_fallback_remains_supported", "test_index_symlink_drift_fails_before_manifest_or_source_effects", "test_raw_resolved_caller_equality_precedes_publication_and_source_verification", "test_entry_paths_are_strict_builder_relative_before_source_effects", "test_data_root_is_absolute_byte_canonical_before_source_effects", "test_direct_child_paths_and_canonical_root_are_retained_by_pure_validation", "test_full_loader_consumes_the_pure_validator_canonical_path", "test_lexical_path_uniqueness_covers_excluded_roles_before_resolution", "test_excluded_and_sealed_roles_are_never_resolved_or_statted", "test_missing_later_included_file_causes_zero_publication_calls", "test_self_hashed_manifest_index_publication_mismatches_are_pure", "test_full_data_module_reads_each_bound_metadata_file_once", "test_forged_mapping_cannot_replace_private_combined_binding", "test_post_preflight_index_and_manifest_swaps_cannot_change_pinned_data", "test_post_preflight_metadata_swaps_are_pinned_before_source_phase", "test_wrong_but_shaped_selection_fingerprint_fails_before_manifest_or_sources", "test_selection_contract_requires_every_key_before_manifest_or_sources", "test_index_paths_fail_lexically_before_manifest_or_sources", "test_duplicate_index_paths_fail_before_manifest_or_sources", "test_reordered_index_paths_fail_fingerprint_before_any_source_effect", "test_source_role_index_included_splits_fail_closed_metadata_only", "test_matching_hash_malformed_manifest_fails_binding_before_source_effects", "test_true_test_builder_rejects_empty_test_role", "test_exact_metadata_binding_reaches_full_index_verification"],
       "smallest_safe_upstream_action": "Retain the shared fail-closed manifest requirement for every caller."
     },
     {

@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 from collections import Counter
+from copy import deepcopy
+from dataclasses import dataclass
 import hashlib
 import json
-from pathlib import Path
+import math
+import unicodedata
+from pathlib import Path, PurePosixPath
 from typing import Any, Iterable, Mapping
 
 import torch
@@ -24,7 +28,7 @@ from hypertagging.preprocessing.schema_v4 import (
 )
 from hypertagging.preprocessing.schema_v2 import SCHEMA_VERSION_V1, SCHEMA_VERSION_V2
 from hypertagging.preprocessing.schema_v3 import SCHEMA_VERSION_V3
-from hypertagging.preprocessing.pid_filter import PID_VOCABULARY_VERSION
+from hypertagging.preprocessing.pid_filter import PDG_TOKENS, PID_VOCABULARY_VERSION
 
 
 DATASET_INDEX_VERSION = "hypertagging-dataset-index-v3"
@@ -36,6 +40,73 @@ SUPPORTED_SCHEMAS = {
 }
 FEATURE_BLOCKS = ("common", "track", "cluster", "composite")
 MAX_CHANNEL_FREQUENCY_SLICE_SIGNATURES = 4096
+MAX_ALLOWED_TYPE_LEVEL = 32
+_COMMON_INDEX_KEYS = frozenset(
+    {
+        "index_version",
+        "paths",
+        "event_count",
+        "node_count",
+        "schema_versions",
+        "feature_spec_hashes",
+        "track_fit_policies",
+        "pid_vocabulary_version",
+        "split_config",
+        "split_counts",
+        "source_groups",
+        "category_counts",
+        "legacy_fraction",
+        "normalizer_state",
+        "normalizer_scope",
+        "allowed_types_by_level",
+        "mother_count_histograms_by_level",
+        "daughter_cardinality_histogram",
+        "daughter_cardinality_histograms_by_level",
+        "depth_distribution",
+        "target_policy",
+        "target_policy_counts",
+        "policy_capacity_statistics",
+        "shards",
+        "feature_spec_revision",
+        "feature_spec_hash",
+        "supported_schema_set",
+        "selection_contract",
+        "index_hash",
+    }
+)
+_FULL_INDEX_KEYS = _COMMON_INDEX_KEYS | frozenset(
+    {
+        "capacity_slices_by_level",
+        "channel_frequency_histogram",
+        "channel_frequency_slice_coverage",
+        "full_truth_to_reconstructable_channel_collisions",
+        "event_identity_validation",
+    }
+)
+_SIDECAR_INDEX_KEYS = _COMMON_INDEX_KEYS | frozenset({"index_source"})
+_INDEX_BINDING_PROVENANCE = object()
+_RESOLVED_INDEX_BINDING_PROVENANCE = object()
+
+
+@dataclass(frozen=True)
+class _AuthenticatedIndexBinding:
+    """Private one-read dataset-index provenance token."""
+
+    source: Path
+    canonical_bytes: bytes
+    payload: dict[str, Any]
+    index_hash: str
+    _provenance: object
+
+
+@dataclass(frozen=True)
+class _ResolvedIndexBinding:
+    """Private authenticated index token with a pinned path-resolution phase."""
+
+    authenticated: _AuthenticatedIndexBinding
+    resolved_paths: tuple[Path, ...]
+    resolved_shard_paths: tuple[Path, ...]
+    _provenance: object
 
 
 def build_dataset_index(
@@ -117,13 +188,10 @@ def build_dataset_index(
         marker_hash = _sha256_file(marker) if marker.exists() else ""
         shard_start_count = event_count
         shard_metadata: dict[str, Any] = {}
+        shard_schema_versions: set[str] = set()
         marker_payload: dict[str, Any] | None = None
         if sidecar.exists():
             shard_metadata = json.loads(sidecar.read_text(encoding="utf-8"))
-            if shard_metadata.get("feature_spec_hash"):
-                feature_spec_hashes.add(str(shard_metadata["feature_spec_hash"]))
-            if shard_metadata.get("track_fit_policy"):
-                track_fit_policies.add(str(shard_metadata["track_fit_policy"]))
             if shard_metadata.get("schema_version") == SCHEMA_VERSION_V4:
                 marker_payload = _validated_completion_marker(path, shard_metadata)
             if source_expectations:
@@ -146,6 +214,8 @@ def build_dataset_index(
                 )
                 if metadata_category != str(expectation["category"]):
                     raise ValueError("selection category disagrees with shard metadata")
+        feature_spec_hashes.add(str(shard_metadata.get("feature_spec_hash", "")))
+        track_fit_policies.add(str(shard_metadata.get("track_fit_policy", "")))
         for record in iter_event_records_v4(path):
             if max_events is not None and event_count >= max_events:
                 break
@@ -184,13 +254,13 @@ def build_dataset_index(
             previous = source_groups.setdefault(source, split)
             if previous != split:
                 raise ValueError(f"source group {source!r} leaks across splits")
-            schema_versions.add(
-                str(
-                    record.get(
-                        "source_schema_version", record.get("schema_version", "")
-                    )
+            record_schema = str(
+                record.get(
+                    "source_schema_version", record.get("schema_version", "")
                 )
             )
+            schema_versions.add(record_schema)
+            shard_schema_versions.add(record_schema)
             event = heterogeneous_event_from_record(record)
             for side in ("b1", "b2"):
                 full_id = int(getattr(event, f"{side}_full_truth_channel_id"))
@@ -337,6 +407,11 @@ def build_dataset_index(
             )
         if max_events is not None and event_count >= max_events:
             pass
+        descriptor_schema = str(shard_metadata.get("schema_version", ""))
+        if not descriptor_schema:
+            if len(shard_schema_versions) != 1:
+                raise ValueError(f"shard contains ambiguous schema metadata: {path}")
+            descriptor_schema = next(iter(shard_schema_versions))
         shards.append(
             {
                 "path": str(path),
@@ -345,14 +420,13 @@ def build_dataset_index(
                 "sidecar_hash": sidecar_hash,
                 "completion_marker_hash": marker_hash,
                 "event_count": event_count - shard_start_count,
-                "schema": str(shard_metadata.get("schema_version", "")),
+                "schema": descriptor_schema,
                 "feature_hash": str(shard_metadata.get("feature_spec_hash", "")),
                 "pid_vocabulary": str(shard_metadata.get("pid_vocabulary_version", "")),
                 "track_fit_policy": str(shard_metadata.get("track_fit_policy", "")),
-                "source_entry_range": [
-                    shard_metadata.get("entry_start"),
-                    shard_metadata.get("entry_stop_exclusive"),
-                ],
+                "source_entry_range": _source_entry_range(
+                    shard_metadata, event_count - shard_start_count
+                ),
                 "completion_marker_content": marker_payload,
             }
         )
@@ -505,21 +579,44 @@ def build_dataset_index(
         },
     }
     payload["index_hash"] = _index_hash(payload)
+    _validate_dataset_index_metadata_payload(payload)
     destination = Path(output)
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = destination.with_name(f".{destination.name}.partial")
-    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    temporary.write_text(json.dumps(payload, indent=2) + "\n")
     temporary.replace(destination)
     return destination
+
+
+def _load_dataset_index_binding(path: str | Path) -> _AuthenticatedIndexBinding:
+    if not isinstance(path, (str, Path)):
+        raise ValueError("dataset index path must be a string or Path")
+    source = Path(path)
+    try:
+        text = source.read_text(encoding="utf-8")
+        payload = json.loads(text)
+    except (OSError, json.JSONDecodeError) as error:
+        raise ValueError(f"invalid dataset index JSON: {path}") from error
+    if not isinstance(payload, dict):
+        raise ValueError("dataset index must be a JSON object")
+    _validate_dataset_index_metadata_payload(payload)
+    pinned = deepcopy(payload)
+    return _AuthenticatedIndexBinding(
+        source=source,
+        canonical_bytes=text.encode("utf-8"),
+        payload=pinned,
+        index_hash=str(pinned["index_hash"]),
+        _provenance=_INDEX_BINDING_PROVENANCE,
+    )
 
 
 def load_dataset_index_metadata(path: str | Path) -> dict[str, Any]:
     """Authenticate index metadata without resolving or opening shard paths."""
 
-    try:
-        payload = json.loads(Path(path).read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as error:
-        raise ValueError(f"invalid dataset index JSON: {path}") from error
+    return dict(_load_dataset_index_binding(path).payload)
+
+
+def _validate_dataset_index_metadata_payload(payload: object) -> None:
     if not isinstance(payload, dict):
         raise ValueError("dataset index must be a JSON object")
     if payload.get("index_version") != DATASET_INDEX_VERSION:
@@ -527,27 +624,537 @@ def load_dataset_index_metadata(path: str | Path) -> dict[str, Any]:
     stored_hash = payload.get("index_hash")
     if stored_hash != _index_hash(payload):
         raise ValueError("dataset index hash mismatch")
-    selection = payload.get("selection_contract")
-    if not isinstance(selection, dict):
-        raise ValueError("dataset index selection contract must be an object")
-    mode = selection.get("mode")
-    if mode not in {"all", "ordered_prefix", "source_role_manifest"}:
-        raise ValueError("dataset index selection mode is invalid")
-    fingerprint = selection.get("fingerprint")
-    if not _is_sha256_hex(fingerprint):
-        raise ValueError("dataset index selection fingerprint is invalid")
-    manifest_hash = selection.get("selection_manifest_hash")
-    included_splits = selection.get("included_splits")
-    if not isinstance(included_splits, list) or any(
-        split not in {"train", "validation", "test"}
-        for split in included_splits
+    if set(payload) not in {_FULL_INDEX_KEYS, _SIDECAR_INDEX_KEYS}:
+        raise ValueError("dataset index top-level schema is invalid")
+    if "index_source" in payload and payload.get("index_source") != "merged_shard_sidecars":
+        raise ValueError("dataset index source schema is invalid")
+    paths = _validate_index_no_source_gates(payload)
+    _validate_index_shard_descriptors(payload.get("shards"), paths, payload)
+    _validate_index_aggregate_invariants(payload)
+
+
+def _validate_index_aggregate_invariants(payload: Mapping[str, Any]) -> None:
+    descriptors = payload.get("shards")
+    if not isinstance(descriptors, list):
+        raise ValueError("dataset index shard descriptors are invalid")
+    if payload.get("event_count") != sum(
+        descriptor["event_count"] for descriptor in descriptors
     ):
+        raise ValueError("dataset index event count disagrees with shard descriptors")
+    split_counts = payload.get("split_counts")
+    if not isinstance(split_counts, Mapping) or sum(split_counts.values()) != payload.get(
+        "event_count"
+    ):
+        raise ValueError("dataset index split counts disagree with event count")
+    category_counts = payload.get("category_counts")
+    if (
+        not isinstance(category_counts, Mapping)
+        or any(
+            not isinstance(category, str)
+            or not isinstance(count, int)
+            or isinstance(count, bool)
+            or count < 0
+            for category, count in category_counts.items()
+        )
+        or sum(category_counts.values()) != payload.get("event_count")
+    ):
+        raise ValueError("dataset index category counts disagree with event count")
+    expected_normalizer_scope = (
+        "train"
+        if split_counts.get("train", 0) > 0
+        else "all_events_no_train_split_diagnostic"
+    )
+    if payload.get("normalizer_scope") != expected_normalizer_scope:
+        raise ValueError("dataset index normalizer scope disagrees with train count")
+    for field in ("schema_versions", "feature_spec_hashes", "track_fit_policies"):
+        if field == "schema_versions":
+            descriptor_values = [descriptor["schema"] for descriptor in descriptors]
+        elif field == "feature_spec_hashes":
+            descriptor_values = [descriptor["feature_hash"] for descriptor in descriptors]
+        else:
+            descriptor_values = [
+                descriptor["track_fit_policy"] for descriptor in descriptors
+            ]
+        if payload.get(field) != sorted(set(descriptor_values)):
+            raise ValueError(f"dataset index {field} disagree with shard descriptors")
+    normalizer_state = payload.get("normalizer_state")
+    expected_widths = {"common": 12, "track": 16, "cluster": 9, "composite": 13}
+    if not isinstance(normalizer_state, Mapping) or set(normalizer_state) != set(
+        expected_widths
+    ):
+        raise ValueError("dataset index normalizer blocks are invalid")
+    for block, width in expected_widths.items():
+        state = normalizer_state.get(block)
+        if not isinstance(state, Mapping) or set(state) != {"count", "mean", "m2"}:
+            raise ValueError("dataset index normalizer blocks are invalid")
+        for field in ("count", "mean", "m2"):
+            values = state.get(field)
+            if not isinstance(values, list) or len(values) != width:
+                raise ValueError("dataset index normalizer shapes are invalid")
+            if any(
+                not isinstance(value, (int, float))
+                or isinstance(value, bool)
+                or not math.isfinite(float(value))
+                or (field in {"count", "m2"} and float(value) < 0.0)
+                for value in values
+            ):
+                raise ValueError("dataset index normalizer values are invalid")
+    identity = payload.get("event_identity_validation")
+    if identity is not None:
+        if not isinstance(identity, Mapping):
+            raise ValueError(
+                "dataset index event-identity metadata is invalid; "
+                "identity/task-binding gate is not valid"
+            )
+        if set(identity) != {
+            "status",
+            "validation_scope",
+            "validated_events",
+            "unique_event_uids",
+            "duplicate_event_uids",
+            "source_mismatches",
+            "category_mismatches",
+            "task_binding",
+            "event_uid_stream_sha256",
+            "sealed_test_opened",
+        }:
+            raise ValueError(
+                "dataset index event-identity metadata is invalid; "
+                "identity/task-binding gate is not valid"
+            )
+        for field in (
+            "validated_events",
+            "unique_event_uids",
+            "duplicate_event_uids",
+            "source_mismatches",
+            "category_mismatches",
+        ):
+            value = identity.get(field)
+            if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+                raise ValueError(
+                    "dataset index event-identity metadata is invalid; "
+                    "identity/task-binding gate is not valid"
+                )
+        if (
+            identity["validated_events"] != payload["event_count"]
+            or identity["unique_event_uids"] != payload["event_count"]
+            or identity["duplicate_event_uids"] != 0
+            or identity["source_mismatches"] != 0
+            or identity["category_mismatches"] != 0
+            or identity.get("status") != "passed"
+            or identity.get("sealed_test_opened") is not False
+            or identity.get("validation_scope")
+            != "all_opened_train_and_validation_event_records"
+            or not _is_sha256_hex(identity.get("event_uid_stream_sha256"))
+            or identity.get("task_binding")
+            not in {
+                "selection_to_sidecar_to_completion_marker_validated",
+                "not_requested_legacy_index",
+            }
+        ):
+            raise ValueError(
+                "dataset index event-identity metadata is invalid; "
+                "identity/task-binding gate is not valid"
+            )
+
+
+def _validate_index_no_source_gates(payload: Mapping[str, Any]) -> list[str]:
+    """Validate every stored-only index contract and return lexical paths."""
+
+    if payload.get("pid_vocabulary_version") != PID_VOCABULARY_VERSION:
+        raise ValueError("dataset index PID vocabulary mismatch")
+    schema_versions = payload.get("schema_versions")
+    if (
+        not isinstance(schema_versions, list)
+        or not schema_versions
+        or any(
+            not isinstance(schema, str) or schema not in SUPPORTED_SCHEMAS
+            for schema in schema_versions
+        )
+    ):
+        raise ValueError("dataset index contains unsupported schemas")
+    if payload.get("supported_schema_set") != sorted(SUPPORTED_SCHEMAS):
+        raise ValueError("dataset index supported-schema contract mismatch")
+    if payload.get("feature_spec_revision") != FEATURE_SPEC_REVISION_V4:
+        raise ValueError("dataset index feature-spec revision mismatch")
+    feature_hash = payload.get("feature_spec_hash")
+    if not _is_sha256_hex(feature_hash) or feature_hash != feature_spec_v4()[
+        "feature_spec_hash"
+    ]:
+        raise ValueError("dataset index feature-spec hash mismatch")
+    for field in ("event_count", "node_count"):
+        value = payload.get(field)
+        if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+            raise ValueError(f"dataset index {field} is invalid")
+    for field in ("schema_versions", "feature_spec_hashes", "track_fit_policies"):
+        value = payload.get(field)
+        if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
+            raise ValueError(f"dataset index {field} is invalid")
+    if any(
+        not isinstance(item, str)
+        or (item and not _is_sha256_hex(item))
+        for item in payload["feature_spec_hashes"]
+    ):
+        raise ValueError("dataset index feature_spec_hashes is invalid")
+    if payload.get("target_policy") not in {
+        "complete_only",
+        "reconstructable_partial",
+        "diagnostic_all",
+    }:
+        raise ValueError("dataset index target policy is invalid")
+    if payload.get("normalizer_scope") not in {
+        "train",
+        "all_events_no_train_split_diagnostic",
+    }:
+        raise ValueError("dataset index normalizer scope is invalid")
+    legacy_fraction = payload.get("legacy_fraction")
+    if (
+        not isinstance(legacy_fraction, (int, float))
+        or isinstance(legacy_fraction, bool)
+        or not 0.0 <= float(legacy_fraction) <= 1.0
+    ):
+        raise ValueError("dataset index legacy fraction is invalid")
+    _validate_index_split_config(payload.get("split_config"))
+    split_counts = payload.get("split_counts")
+    if not isinstance(split_counts, Mapping):
+        raise ValueError("dataset index split_counts is invalid")
+    for split, count in split_counts.items():
+        if (
+            not isinstance(split, str)
+            or split not in {"train", "validation", "test"}
+            or not isinstance(count, int)
+            or isinstance(count, bool)
+            or count < 0
+        ):
+            raise ValueError("dataset index split_counts is invalid")
+    source_groups = payload.get("source_groups")
+    if not isinstance(source_groups, Mapping) or any(
+        not isinstance(source, str)
+        or not isinstance(split, str)
+        or split not in {"train", "validation", "test"}
+        for source, split in source_groups.items()
+    ):
+        raise ValueError("dataset index source_groups is invalid")
+    _validate_allowed_types_by_level(payload)
+    validate_dataset_index_selection_contract(payload.get("selection_contract"))
+    paths = _validate_index_paths(payload.get("paths"))
+    selection = payload["selection_contract"]
+    expected_fingerprint = _selection_fingerprint_from_strings(
+        paths,
+        mode=selection["mode"],
+        max_events=selection["max_events"],
+        selection_manifest_hash=selection["selection_manifest_hash"],
+    )
+    if selection["fingerprint"] != expected_fingerprint:
+        raise ValueError("dataset index selection fingerprint mismatch")
+    return paths
+
+
+def _validate_allowed_types_by_level(payload: Mapping[str, Any]) -> None:
+    """Validate the loader-consumed level/token map without touching sources."""
+
+    value = payload.get("allowed_types_by_level")
+    if not isinstance(value, dict):
+        raise ValueError("dataset index allowed-types mapping is invalid")
+    level_keys = list(value)
+    parsed_levels: list[int] = []
+    for key in level_keys:
+        if not isinstance(key, str) or not key or not key.isascii() or not key.isdecimal():
+            raise ValueError("dataset index allowed-types level key is invalid")
+        level = int(key)
+        if key != str(level) or not 1 <= level <= MAX_ALLOWED_TYPE_LEVEL:
+            raise ValueError("dataset index allowed-types level key is invalid")
+        parsed_levels.append(level)
+    if parsed_levels != sorted(parsed_levels):
+        raise ValueError("dataset index allowed-types levels are not ordered")
+
+    for tokens in value.values():
+        if not isinstance(tokens, list) or not tokens:
+            raise ValueError("dataset index allowed-types token list is invalid")
+        if any(
+            not isinstance(token, int)
+            or isinstance(token, bool)
+            or not 0 <= token < len(PDG_TOKENS)
+            for token in tokens
+        ):
+            raise ValueError("dataset index allowed-types token vocabulary is invalid")
+        if tokens != sorted(set(tokens)):
+            raise ValueError("dataset index allowed-types tokens are not ordered and unique")
+
+    mother_histograms = payload.get("mother_count_histograms_by_level")
+    daughter_histograms = payload.get("daughter_cardinality_histograms_by_level")
+    if not isinstance(mother_histograms, Mapping) or not isinstance(
+        daughter_histograms, Mapping
+    ):
+        raise ValueError("dataset index allowed-types cross-fields are invalid")
+    if any(
+        key not in mother_histograms or key not in daughter_histograms
+        for key in level_keys
+    ):
+        raise ValueError("dataset index allowed-types cross-fields are invalid")
+    target_counts = payload.get("target_policy_counts")
+    if not isinstance(target_counts, Mapping):
+        raise ValueError("dataset index allowed-types cross-fields are invalid")
+    for key in level_keys:
+        count_key = f"level_{key}"
+        if count_key in target_counts:
+            count = target_counts[count_key]
+            if not isinstance(count, int) or isinstance(count, bool) or count <= 0:
+                raise ValueError("dataset index allowed-types cross-fields are invalid")
+
+
+def _validate_index_paths(value: object) -> list[str]:
+    if not isinstance(value, list) or not value:
+        raise ValueError("dataset index paths are invalid")
+    paths: list[str] = []
+    for path in value:
+        canonical = _validate_canonical_index_path(path)
+        if canonical in paths:
+            raise ValueError("dataset index contains duplicate canonical paths")
+        paths.append(canonical)
+    return paths
+
+
+def _validate_canonical_index_path(value: object) -> str:
+    if (
+        not isinstance(value, str)
+        or not value
+        or "\\" in value
+        or "\x00" in value
+        or any(unicodedata.category(character) == "Cc" for character in value)
+        or unicodedata.normalize("NFC", value) != value
+    ):
+        raise ValueError("dataset index path is invalid")
+    try:
+        value.encode("utf-8", "strict")
+    except UnicodeEncodeError as error:
+        raise ValueError("dataset index path is invalid") from error
+    canonical = PurePosixPath(value)
+    if (
+        not canonical.is_absolute()
+        or value.startswith("//")
+        or str(canonical) != value
+    ):
+        raise ValueError("dataset index path is not canonical")
+    if any(part in {".", ".."} for part in canonical.parts):
+        raise ValueError("dataset index path is not canonical")
+    return value
+
+
+def _validate_index_split_config(value: object) -> None:
+    if not isinstance(value, Mapping) or set(value) != {
+        "train_fraction",
+        "validation_fraction",
+        "test_fraction",
+        "seed",
+        "group_by_source_file",
+        "group_by_category",
+    }:
+        raise ValueError("dataset index split configuration is invalid")
+    fractions = []
+    for field in ("train_fraction", "validation_fraction", "test_fraction"):
+        fraction = value.get(field)
+        if (
+            not isinstance(fraction, (int, float))
+            or isinstance(fraction, bool)
+            or not 0.0 <= float(fraction) <= 1.0
+        ):
+            raise ValueError("dataset index split configuration is invalid")
+        fractions.append(float(fraction))
+    if abs(sum(fractions) - 1.0) > 1e-8:
+        raise ValueError("dataset index split configuration is invalid")
+    if not isinstance(value.get("seed"), int) or isinstance(value.get("seed"), bool):
+        raise ValueError("dataset index split configuration is invalid")
+    for field in ("group_by_source_file", "group_by_category"):
+        if not isinstance(value.get(field), bool):
+            raise ValueError("dataset index split configuration is invalid")
+
+
+def _validate_index_shard_descriptors(
+    value: object, paths: list[str], payload: Mapping[str, Any]
+) -> None:
+    if not isinstance(value, list) or not value or len(value) > len(paths):
+        raise ValueError("dataset index shard descriptor cardinality is invalid")
+    selection = payload.get("selection_contract")
+    truncated = isinstance(selection, Mapping) and selection.get("max_events") is not None
+    if not truncated and len(value) != len(paths):
+        raise ValueError("dataset index shard descriptor cardinality is invalid")
+    required = {
+        "path",
+        "size",
+        "source_digest",
+        "sidecar_hash",
+        "completion_marker_hash",
+        "event_count",
+        "schema",
+        "feature_hash",
+        "pid_vocabulary",
+        "track_fit_policy",
+        "source_entry_range",
+        "completion_marker_content",
+    }
+    descriptor_paths: list[str] = []
+    for position, descriptor in enumerate(value):
+        if not isinstance(descriptor, Mapping) or set(descriptor) != required:
+            raise ValueError(f"dataset index shard descriptor {position} is invalid")
+        path = _validate_canonical_index_path(descriptor.get("path"))
+        if path != paths[position]:
+            raise ValueError("dataset index shard/path metadata disagree")
+        descriptor_paths.append(path)
+        for field in ("size", "event_count"):
+            number = descriptor.get(field)
+            if not isinstance(number, int) or isinstance(number, bool) or number < 0:
+                raise ValueError(f"dataset index shard {field} is invalid")
+        schema = descriptor.get("schema")
+        if not isinstance(schema, str) or schema not in SUPPORTED_SCHEMAS:
+            raise ValueError("dataset index shard schema is invalid")
+        if not _is_sha256_hex(descriptor.get("source_digest")):
+            raise ValueError("dataset index shard source digest is invalid")
+        for field in ("sidecar_hash", "completion_marker_hash", "feature_hash"):
+            digest = descriptor.get(field)
+            if schema == SCHEMA_VERSION_V4:
+                if not _is_sha256_hex(digest):
+                    raise ValueError(f"dataset index v4 shard {field} is invalid")
+            elif not isinstance(digest, str) or (
+                digest and not _is_sha256_hex(digest)
+            ):
+                raise ValueError(f"dataset index shard {field} is invalid")
+        pid_vocabulary = descriptor.get("pid_vocabulary")
+        if not isinstance(pid_vocabulary, str):
+            raise ValueError("dataset index shard PID vocabulary is invalid")
+        if schema == SCHEMA_VERSION_V4 and pid_vocabulary != PID_VOCABULARY_VERSION:
+            raise ValueError("dataset index v4 shard PID vocabulary is invalid")
+        if not isinstance(descriptor.get("track_fit_policy"), str):
+            raise ValueError("dataset index shard track-fit policy is invalid")
+        source_range = descriptor.get("source_entry_range")
+        if (
+            not isinstance(source_range, list)
+            or len(source_range) != 2
+            or any(
+                not isinstance(item, int)
+                or isinstance(item, bool)
+                or item < 0
+                for item in source_range
+            )
+            or source_range[1] <= source_range[0]
+        ):
+            raise ValueError("dataset index shard source-entry range is invalid")
+        marker_content = descriptor.get("completion_marker_content")
+        if schema == SCHEMA_VERSION_V4:
+            _validate_index_v4_marker_content(marker_content, descriptor)
+        elif marker_content is not None:
+            raise ValueError("dataset index non-v4 completion marker metadata is invalid")
+    if descriptor_paths != paths[: len(descriptor_paths)]:
+        raise ValueError("dataset index shard/path metadata disagree")
+
+
+def _validate_index_v4_marker_content(
+    value: object, descriptor: Mapping[str, Any]
+) -> None:
+    if not isinstance(value, Mapping):
+        raise ValueError("dataset index v4 completion marker metadata is invalid")
+    required = {
+        "marker_schema_version",
+        "schema_version",
+        "event_count",
+        "feature_spec_hash",
+        "model_feature_contract_hash",
+        "parquet_sha256",
+        "sidecar_sha256",
+        "entry_start",
+        "entry_stop_exclusive",
+        "track_fit_policy",
+    }
+    if not required.issubset(value):
+        raise ValueError("dataset index v4 completion marker metadata is invalid")
+    event_count = value.get("event_count")
+    if (
+        value.get("marker_schema_version") != COMPLETION_MARKER_VERSION
+        or value.get("schema_version") != SCHEMA_VERSION_V4
+        or not isinstance(event_count, int)
+        or isinstance(event_count, bool)
+        or event_count != descriptor.get("event_count")
+        or value.get("feature_spec_hash") != descriptor.get("feature_hash")
+        or not _is_sha256_hex(value.get("feature_spec_hash"))
+        or not _is_sha256_hex(value.get("model_feature_contract_hash"))
+        or value.get("parquet_sha256") != descriptor.get("source_digest")
+        or value.get("sidecar_sha256") != descriptor.get("sidecar_hash")
+    ):
+        raise ValueError("dataset index v4 completion marker metadata is invalid")
+    if any(
+        isinstance(item, (Mapping, list, tuple, set, frozenset))
+        for item in value.values()
+    ):
+        raise ValueError("dataset index v4 completion marker metadata is invalid")
+    marker_start = value.get("entry_start")
+    marker_stop = value.get("entry_stop_exclusive")
+    if (
+        not isinstance(marker_start, int)
+        or isinstance(marker_start, bool)
+        or marker_start < 0
+        or not isinstance(marker_stop, int)
+        or isinstance(marker_stop, bool)
+        or marker_stop <= marker_start
+        or [marker_start, marker_stop] != descriptor.get("source_entry_range")
+    ):
+        raise ValueError("dataset index v4 completion marker source range is invalid")
+    marker_policy = value.get("track_fit_policy")
+    descriptor_policy = descriptor.get("track_fit_policy")
+    if (
+        not isinstance(marker_policy, str)
+        or marker_policy != descriptor_policy
+    ):
+        raise ValueError("dataset index v4 completion marker policy is invalid")
+
+
+def validate_dataset_index_selection_contract(selection: object) -> None:
+    """Validate dataset-index selection metadata without touching sources."""
+
+    if not isinstance(selection, Mapping):
+        raise ValueError("dataset index selection contract must be an object")
+    if set(selection) != {
+        "mode",
+        "max_events",
+        "selection_manifest_hash",
+        "included_splits",
+        "fingerprint",
+    }:
+        raise ValueError("dataset index selection contract keys are invalid")
+    mode = selection.get("mode")
+    if not isinstance(mode, str) or mode not in (
+        "all",
+        "ordered_prefix",
+        "source_role_manifest",
+    ):
+        raise ValueError("dataset index selection mode is invalid")
+    if not _is_sha256_hex(selection.get("fingerprint")):
+        raise ValueError("dataset index selection fingerprint is invalid")
+    included_splits = selection.get("included_splits")
+    if not isinstance(included_splits, list):
         raise ValueError("dataset index included-split contract is invalid")
+    split_vocabulary = ("train", "validation", "test")
+    previous_index = -1
+    seen: list[str] = []
+    for split in included_splits:
+        if not isinstance(split, str) or split not in split_vocabulary:
+            raise ValueError("dataset index included-split contract is invalid")
+        if split in seen:
+            raise ValueError("dataset index included-split contract is invalid")
+        split_index = split_vocabulary.index(split)
+        if split_index <= previous_index:
+            raise ValueError("dataset index included-split contract is invalid")
+        previous_index = split_index
+        seen.append(split)
+    manifest_hash = selection.get("selection_manifest_hash")
     max_events = selection.get("max_events")
     if mode == "source_role_manifest":
-        if not _is_sha256_hex(manifest_hash) or max_events is not None:
+        if (
+            not included_splits
+            or not _is_sha256_hex(manifest_hash)
+            or max_events is not None
+        ):
             raise ValueError("dataset index source-role hash contract is invalid")
-    elif manifest_hash is not None or included_splits:
+    elif manifest_hash is not None or included_splits != []:
         raise ValueError("dataset index raw-selection hash contract is invalid")
     elif mode == "all" and max_events is not None:
         raise ValueError("dataset index all-events selection is invalid")
@@ -557,34 +1164,104 @@ def load_dataset_index_metadata(path: str | Path) -> dict[str, Any]:
         or max_events <= 0
     ):
         raise ValueError("dataset index ordered-prefix selection is invalid")
-    return payload
-
-
 def load_dataset_index(
-    path: str | Path, *, verify_sources: bool = True
+    path: str | Path,
+    *,
+    verify_sources: bool = True,
 ) -> dict[str, Any]:
-    payload = load_dataset_index_metadata(path)
-    if payload.get("pid_vocabulary_version") != PID_VOCABULARY_VERSION:
-        raise ValueError("dataset index PID vocabulary mismatch")
-    if not set(payload.get("schema_versions", ())).issubset(SUPPORTED_SCHEMAS):
-        raise ValueError("dataset index contains unsupported schemas")
-    if payload.get("supported_schema_set") != sorted(SUPPORTED_SCHEMAS):
-        raise ValueError("dataset index supported-schema contract mismatch")
-    if payload.get("feature_spec_revision") != FEATURE_SPEC_REVISION_V4:
-        raise ValueError("dataset index feature-spec revision mismatch")
-    if payload.get("feature_spec_hash") != feature_spec_v4()["feature_spec_hash"]:
-        raise ValueError("dataset index feature-spec hash mismatch")
-    selection = payload.get("selection_contract", {})
-    resolved = [Path(value).resolve() for value in payload.get("paths", ())]
-    if selection.get("fingerprint") != _selection_fingerprint(
-        resolved,
-        selection.get("max_events"),
-        selection_manifest_hash=selection.get("selection_manifest_hash"),
-    ):
-        raise ValueError("dataset index selection fingerprint mismatch")
+    return _load_dataset_index_bound(
+        _load_dataset_index_binding(path), verify_sources=verify_sources
+    )
+
+
+def _load_dataset_index_bound(
+    binding: _AuthenticatedIndexBinding, *, verify_sources: bool = True
+) -> dict[str, Any]:
+    return _load_resolved_dataset_index_bound(
+        _resolve_dataset_index_binding(binding), verify_sources=verify_sources
+    )
+
+
+def _load_resolved_dataset_index_bound(
+    binding: _ResolvedIndexBinding, *, verify_sources: bool = True
+) -> dict[str, Any]:
+    payload, resolved_paths, resolved_shard_paths = _require_resolved_index_binding(
+        binding
+    )
     if verify_sources:
-        _verify_indexed_shards(payload)
+        _verify_indexed_shards(
+            payload,
+            resolved_paths=resolved_paths,
+            resolved_shard_paths=resolved_shard_paths,
+        )
     return payload
+
+
+def _resolve_dataset_index_binding(
+    binding: _AuthenticatedIndexBinding,
+) -> _ResolvedIndexBinding:
+    """Resolve and rebind every authenticated index path without source reads."""
+
+    payload = _require_authenticated_index_binding(binding)
+    resolved_paths = tuple(Path(path).resolve() for path in payload["paths"])
+    resolved_shard_paths = tuple(
+        Path(shard["path"]).resolve() for shard in payload["shards"]
+    )
+    selection = payload["selection_contract"]
+    resolved_fingerprint = _selection_fingerprint_from_strings(
+        (str(path) for path in resolved_paths),
+        mode=selection["mode"],
+        max_events=selection["max_events"],
+        selection_manifest_hash=selection["selection_manifest_hash"],
+    )
+    if resolved_fingerprint != selection["fingerprint"]:
+        raise ValueError("dataset index resolved selection fingerprint mismatch")
+    truncated = selection["max_events"] is not None
+    paths_match = (
+        resolved_paths[: len(resolved_shard_paths)] == resolved_shard_paths
+        if truncated
+        else resolved_paths == resolved_shard_paths
+    )
+    if not paths_match:
+        raise ValueError("dataset index resolved shard/path list mismatch")
+    return _ResolvedIndexBinding(
+        authenticated=binding,
+        resolved_paths=resolved_paths,
+        resolved_shard_paths=resolved_shard_paths,
+        _provenance=_RESOLVED_INDEX_BINDING_PROVENANCE,
+    )
+
+
+def _require_resolved_index_binding(
+    binding: object,
+) -> tuple[dict[str, Any], tuple[Path, ...], tuple[Path, ...]]:
+    if (
+        type(binding) is not _ResolvedIndexBinding
+        or binding._provenance is not _RESOLVED_INDEX_BINDING_PROVENANCE
+    ):
+        raise ValueError("dataset index resolved provenance binding is invalid")
+    payload = _require_authenticated_index_binding(binding.authenticated)
+    return payload, binding.resolved_paths, binding.resolved_shard_paths
+
+
+def _require_authenticated_index_binding(
+    binding: object,
+) -> dict[str, Any]:
+    if (
+        type(binding) is not _AuthenticatedIndexBinding
+        or binding._provenance is not _INDEX_BINDING_PROVENANCE
+    ):
+        raise ValueError("dataset index provenance binding is invalid")
+    try:
+        pinned_payload = json.loads(binding.canonical_bytes.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError("dataset index provenance binding is invalid") from error
+    if pinned_payload != binding.payload or binding.index_hash != binding.payload.get(
+        "index_hash"
+    ):
+        raise ValueError("dataset index provenance binding was mutated")
+    _validate_dataset_index_metadata_payload(binding.payload)
+    return binding.payload
 
 
 def _is_sha256_hex(value: object) -> bool:
@@ -655,7 +1332,11 @@ def build_dataset_index_from_sidecars(
     source_groups: dict[str, str] = {}
     schema_versions: set[str] = set()
     feature_hashes: set[str] = set()
+    track_fit_policies: set[str] = set()
     normalizers = {name: StreamingMaskedFeatureNormalizer() for name in FEATURE_BLOCKS}
+    all_split_normalizers = {
+        name: StreamingMaskedFeatureNormalizer() for name in FEATURE_BLOCKS
+    }
     capacity = Counter()
     completeness = Counter()
     total_nodes = legacy_nodes = 0
@@ -706,6 +1387,7 @@ def build_dataset_index_from_sidecars(
         category_counts[pseudo_event["source_category"]] += event_count
         schema_versions.add(str(metadata.get("schema_version", "")))
         feature_hashes.add(str(metadata.get("feature_spec_hash", "")))
+        track_fit_policies.add(str(metadata.get("track_fit_policy", "")))
         shard_capacity = Counter(
             {
                 str(key): int(value)
@@ -725,18 +1407,19 @@ def build_dataset_index_from_sidecars(
         )
         total_nodes += int(shard_capacity.get("nodes", 0))
         legacy_nodes += int(shard_capacity.get("leaf_mode_legacy_conflated", 0))
-        if split == "train":
-            for block, state in metadata.get("aggregate_feature_welford", {}).items():
-                if block == "ecl_cluster":
-                    block = "cluster"
-                shard = StreamingMaskedFeatureNormalizer()
-                shard.load_state_dict(
-                    {
-                        "count": torch.tensor(state["count"], dtype=torch.float32),
-                        "mean": torch.tensor(state["mean"], dtype=torch.float32),
-                        "m2": torch.tensor(state["m2"], dtype=torch.float32),
-                    }
-                )
+        for block, state in metadata.get("aggregate_feature_welford", {}).items():
+            if block == "ecl_cluster":
+                block = "cluster"
+            shard = StreamingMaskedFeatureNormalizer()
+            shard.load_state_dict(
+                {
+                    "count": torch.tensor(state["count"], dtype=torch.float32),
+                    "mean": torch.tensor(state["mean"], dtype=torch.float32),
+                    "m2": torch.tensor(state["m2"], dtype=torch.float32),
+                }
+            )
+            all_split_normalizers[block].merge(shard)
+            if split == "train":
                 normalizers[block].merge(shard)
         supplied_policy = metadata.get("policy_capacity_statistics", {})
         for policy in policy_capacity:
@@ -758,22 +1441,23 @@ def build_dataset_index_from_sidecars(
                 "schema": str(metadata.get("schema_version", "")),
                 "feature_hash": str(metadata.get("feature_spec_hash", "")),
                 "pid_vocabulary": str(metadata.get("pid_vocabulary_version", "")),
-                "source_entry_range": [
-                    metadata.get("entry_start"),
-                    metadata.get("entry_stop_exclusive"),
-                ],
+                "track_fit_policy": str(metadata.get("track_fit_policy", "")),
+                "source_entry_range": _source_entry_range(metadata, event_count),
                 "completion_marker_content": marker_payload,
             }
         )
     if not capacity.get("events", 0):
         raise ValueError("cannot index empty shard metadata")
+    fitted_normalizers = (
+        normalizers if split_counts.get("train", 0) else all_split_normalizers
+    )
     normalizer_state = {
         block: {
             key: value.tolist()
             for key, value in normalizer.state_dict().items()
             if key in {"count", "mean", "m2"}
         }
-        for block, normalizer in normalizers.items()
+        for block, normalizer in fitted_normalizers.items()
     }
     mother_hist: dict[str, dict[str, int]] = {}
     allowed: dict[str, set[int]] = {}
@@ -804,6 +1488,7 @@ def build_dataset_index_from_sidecars(
         "node_count": total_nodes,
         "schema_versions": sorted(schema_versions),
         "feature_spec_hashes": sorted(feature_hashes),
+        "track_fit_policies": sorted(track_fit_policies),
         "pid_vocabulary_version": PID_VOCABULARY_VERSION,
         "split_config": config.__dict__,
         "split_counts": dict(split_counts),
@@ -811,9 +1496,12 @@ def build_dataset_index_from_sidecars(
         "category_counts": dict(category_counts),
         "legacy_fraction": legacy_nodes / max(total_nodes, 1),
         "normalizer_state": normalizer_state,
-        "normalizer_scope": "train",
+        "normalizer_scope": "train"
+        if split_counts.get("train", 0)
+        else "all_events_no_train_split_diagnostic",
         "allowed_types_by_level": {
-            level: sorted(tokens) for level, tokens in allowed.items()
+            level: sorted(allowed[level])
+            for level in sorted(allowed, key=int)
         },
         "mother_count_histograms_by_level": mother_hist,
         "daughter_cardinality_histogram": daughter_hist,
@@ -843,10 +1531,11 @@ def build_dataset_index_from_sidecars(
         ),
     }
     payload["index_hash"] = _index_hash(payload)
+    _validate_dataset_index_metadata_payload(payload)
     destination = Path(output)
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = destination.with_name(f".{destination.name}.partial")
-    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    temporary.write_text(json.dumps(payload, indent=2) + "\n")
     temporary.replace(destination)
     return destination
 
@@ -878,20 +1567,59 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _source_entry_range(metadata: Mapping[str, Any], event_count: int) -> list[int]:
+    start = metadata.get("entry_start")
+    stop = metadata.get("entry_stop_exclusive")
+    if (
+        isinstance(start, int)
+        and not isinstance(start, bool)
+        and isinstance(stop, int)
+        and not isinstance(stop, bool)
+        and stop > start
+    ):
+        return [start, stop]
+    return [0, max(int(event_count), 1)]
+
+
 def _selection_fingerprint(
     paths: Iterable[Path],
     max_events: int | None,
     *,
     selection_manifest_hash: str | None = None,
+    mode: str | None = None,
 ) -> str:
+    resolved_paths = [str(Path(path).resolve()) for path in paths]
+    resolved_mode = mode or (
+        "source_role_manifest"
+        if selection_manifest_hash is not None
+        else ("ordered_prefix" if max_events is not None else "all")
+    )
+    return _selection_fingerprint_from_strings(
+        resolved_paths,
+        mode=resolved_mode,
+        max_events=max_events,
+        selection_manifest_hash=selection_manifest_hash,
+    )
+
+
+def _selection_fingerprint_from_strings(
+    paths: Iterable[str],
+    *,
+    mode: str,
+    max_events: int | None,
+    selection_manifest_hash: str | None = None,
+) -> str:
+    """Hash exact authenticated path strings without filesystem operations."""
+
+    stored_paths = list(paths)
+    if any(not isinstance(path, str) for path in stored_paths):
+        raise ValueError("selection fingerprint paths must be strings")
     payload = {
-        "paths": [str(Path(path).resolve()) for path in paths],
+        "paths": stored_paths,
         "max_events": max_events,
-        "event_selection": "ordered_prefix",
+        "event_selection": mode,
+        "selection_manifest_hash": selection_manifest_hash,
     }
-    if selection_manifest_hash is not None:
-        payload["event_selection"] = "source_role_manifest"
-        payload["selection_manifest_hash"] = selection_manifest_hash
     return hashlib.sha256(
         json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()
@@ -905,12 +1633,13 @@ def _selection_contract(
     included_splits: Iterable[str] = (),
 ) -> dict[str, Any]:
     resolved = list(paths)
+    mode = (
+        "source_role_manifest"
+        if selection_manifest_hash is not None
+        else ("ordered_prefix" if max_events is not None else "all")
+    )
     return {
-        "mode": (
-            "source_role_manifest"
-            if selection_manifest_hash is not None
-            else ("ordered_prefix" if max_events is not None else "all")
-        ),
+        "mode": mode,
         "max_events": max_events,
         "selection_manifest_hash": selection_manifest_hash,
         "included_splits": list(included_splits),
@@ -918,15 +1647,16 @@ def _selection_contract(
             resolved,
             max_events,
             selection_manifest_hash=selection_manifest_hash,
+            mode=mode,
         ),
     }
 
 
 def _validated_completion_marker(
-    path: Path, metadata: dict[str, Any]
+    path: Path, metadata: dict[str, Any], *, _assume_present: bool = False
 ) -> dict[str, Any]:
     marker = path.with_suffix(path.suffix + ".complete")
-    if not marker.exists():
+    if not _assume_present and not marker.exists():
         raise ValueError(f"missing completion marker for {path}")
     try:
         payload = json.loads(marker.read_text(encoding="utf-8"))
@@ -980,25 +1710,49 @@ def _validated_completion_marker(
             raise ValueError(
                 f"completion marker {key} disagrees with sidecar for {path}"
             )
+    source_range = _source_entry_range(metadata, int(metadata.get("event_count", 0)))
+    payload["entry_start"], payload["entry_stop_exclusive"] = source_range
+    payload["track_fit_policy"] = str(metadata.get("track_fit_policy", ""))
     return payload
 
 
-def _verify_indexed_shards(index: dict[str, Any]) -> None:
-    expected_paths = [str(Path(path).resolve()) for path in index.get("paths", ())]
-    shard_paths = [
-        str(Path(shard["path"]).resolve()) for shard in index.get("shards", ())
+def _verify_indexed_shards(
+    index: dict[str, Any],
+    *,
+    resolved_paths: tuple[Path, ...],
+    resolved_shard_paths: tuple[Path, ...],
+) -> None:
+    resolved_shards = list(zip(resolved_shard_paths, index["shards"], strict=True))
+    file_checks = [path.is_file() for path, _shard in resolved_shards]
+    for (path, _shard), is_file in zip(resolved_shards, file_checks, strict=True):
+        if not is_file:
+            raise FileNotFoundError(f"missing indexed dataset shard: {path}")
+    stats = [path.stat() for path, _shard in resolved_shards]
+    inodes = [(stat.st_dev, stat.st_ino) for stat in stats]
+    if len(inodes) != len(set(inodes)):
+        raise ValueError("dataset index contains duplicate hardlink shard inodes")
+    publication_files = [
+        (
+            path.with_suffix(path.suffix + ".metadata.json"),
+            path.with_suffix(path.suffix + ".complete"),
+            shard,
+        )
+        for path, shard in resolved_shards
+        if shard.get("schema") == SCHEMA_VERSION_V4
     ]
-    truncated = index.get("selection_contract", {}).get("max_events") is not None
-    paths_match = (
-        expected_paths[: len(shard_paths)] == shard_paths
-        if truncated
-        else expected_paths == shard_paths
-    )
-    if not paths_match:
-        raise ValueError("dataset index shard/path list mismatch")
-    for shard in index.get("shards", ()):
-        path = Path(shard["path"])
-        if not path.is_file() or path.stat().st_size != int(shard["size"]):
+    sidecar_checks = [
+        sidecar.is_file() for sidecar, _marker, _shard in publication_files
+    ]
+    marker_checks = [
+        marker.is_file() for _sidecar, marker, _shard in publication_files
+    ]
+    for (sidecar, _marker, _shard), sidecar_present, marker_present in zip(
+        publication_files, sidecar_checks, marker_checks, strict=True
+    ):
+        if not sidecar_present or not marker_present:
+            raise ValueError(f"incomplete indexed v4 shard {sidecar}")
+    for (path, shard), stat in zip(resolved_shards, stats, strict=True):
+        if stat.st_size != shard["size"]:
             raise ValueError(f"stale dataset index source size for {path}")
         if _sha256_file(path) != shard.get("source_digest"):
             raise ValueError(f"stale dataset index source digest for {path}")
@@ -1006,14 +1760,14 @@ def _verify_indexed_shards(index: dict[str, Any]) -> None:
         marker = path.with_suffix(path.suffix + ".complete")
         schema = shard.get("schema")
         if schema == SCHEMA_VERSION_V4:
-            if not sidecar.exists() or not marker.exists():
-                raise ValueError(f"incomplete indexed v4 shard {path}")
             if _sha256_file(sidecar) != shard.get("sidecar_hash"):
                 raise ValueError(f"stale dataset index sidecar for {path}")
             if _sha256_file(marker) != shard.get("completion_marker_hash"):
                 raise ValueError(f"stale dataset index completion marker for {path}")
             metadata = json.loads(sidecar.read_text(encoding="utf-8"))
-            marker_payload = _validated_completion_marker(path, metadata)
+            marker_payload = _validated_completion_marker(
+                path, metadata, _assume_present=True
+            )
             if marker_payload != shard.get("completion_marker_content"):
                 raise ValueError(f"completion marker content changed for {path}")
             if int(shard.get("event_count", -1)) != int(
@@ -1037,4 +1791,5 @@ __all__ = [
     "load_dataset_index",
     "load_dataset_index_metadata",
     "tensor_normalizer_state",
+    "validate_dataset_index_selection_contract",
 ]

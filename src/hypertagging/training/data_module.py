@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 import hashlib
 import json
 from pathlib import Path
-from typing import Iterator, Sequence
+from typing import cast, Iterator, Mapping, Sequence
 import warnings
 
 import torch
@@ -27,6 +27,26 @@ from hypertagging.preprocessing.schema_v4 import (
 
 
 FEATURE_BLOCKS = ("common", "track", "cluster", "composite")
+_DATA_BINDING_PROVENANCE = object()
+_RESOLVED_DATA_BINDING_PROVENANCE = object()
+
+
+@dataclass(frozen=True)
+class _AuthenticatedDatasetDataBinding:
+    """Private one-read index/manifest provenance token."""
+
+    index: object
+    manifest: object | None
+    _provenance: object
+
+
+@dataclass(frozen=True)
+class _ResolvedDatasetDataBinding:
+    """Private combined token after the index-only resolution phase."""
+
+    authenticated: _AuthenticatedDatasetDataBinding
+    resolved_index: object
+    _provenance: object
 
 
 @dataclass
@@ -218,25 +238,209 @@ class RealDataModule:
 def preflight_dataset_index_data_binding(
     data: str | Path | Sequence[str | Path],
     dataset_index: str | Path,
+    *,
+    required_splits: Sequence[str] | None = None,
+    target_policy: str = "complete_only",
+    max_events: int | None = None,
+    split_config: SourceAwareSplitConfig | None = None,
+    seed: int | None = None,
+    allow_legacy_conflated: bool = False,
+    scientific_mode: bool = False,
+    pilot_split_repair: bool = False,
 ) -> dict[str, object]:
-    """Validate source-role metadata before touching any selected shard."""
+    """Bind authenticated index, manifest, and caller metadata before paths."""
 
-    from hypertagging.data.dataset_index import load_dataset_index_metadata
+    binding = _preflight_dataset_index_data_binding(
+        data,
+        dataset_index,
+        required_splits=required_splits,
+        target_policy=target_policy,
+        max_events=max_events,
+        split_config=split_config,
+        seed=seed,
+        allow_legacy_conflated=allow_legacy_conflated,
+        scientific_mode=scientific_mode,
+        pilot_split_repair=pilot_split_repair,
+    )
+    resolved = _resolve_dataset_index_data_binding(binding)
+    payload, _manifest = _require_resolved_dataset_data_binding(resolved)
+    return dict(payload)
 
-    index = load_dataset_index_metadata(dataset_index)
-    _require_source_role_manifest_binding(data, index)
-    return index
+
+def _preflight_dataset_index_data_binding(
+    data: str | Path | Sequence[str | Path],
+    dataset_index: str | Path,
+    *,
+    required_splits: Sequence[str] | None = None,
+    target_policy: str = "complete_only",
+    max_events: int | None = None,
+    split_config: SourceAwareSplitConfig | None = None,
+    seed: int = 20260730,
+    allow_legacy_conflated: bool = False,
+    scientific_mode: bool = False,
+    pilot_split_repair: bool = False,
+) -> _AuthenticatedDatasetDataBinding:
+    from hypertagging.data.dataset_index import _load_dataset_index_binding
+
+    index_binding = _load_dataset_index_binding(dataset_index)
+    _validate_source_role_caller_prefix(
+        index_binding.payload,
+        max_events=max_events,
+        pilot_split_repair=pilot_split_repair,
+    )
+    manifest_binding = _require_source_role_manifest_binding(
+        data, index_binding.payload, required_splits=required_splits
+    )
+    _validate_index_caller_contract(
+        index_binding.payload,
+        data=data,
+        target_policy=target_policy,
+        max_events=max_events,
+        split_config=split_config,
+        seed=seed,
+        required_splits=required_splits,
+        allow_legacy_conflated=allow_legacy_conflated,
+        scientific_mode=scientific_mode,
+        pilot_split_repair=pilot_split_repair,
+        manifest=(manifest_binding.payload if manifest_binding is not None else None),
+    )
+    return _AuthenticatedDatasetDataBinding(
+        index=index_binding,
+        manifest=manifest_binding,
+        _provenance=_DATA_BINDING_PROVENANCE,
+    )
+
+
+def _validate_source_role_caller_prefix(
+    index: Mapping[str, object],
+    *,
+    max_events: int | None,
+    pilot_split_repair: bool,
+) -> None:
+    """Reject source-role-only caller modes before opening its manifest JSON."""
+
+    if not isinstance(pilot_split_repair, bool):
+        raise ValueError("pilot_split_repair must be boolean")
+    selection = index.get("selection_contract")
+    if not isinstance(selection, Mapping):
+        raise ValueError("dataset index selection contract is missing")
+    if selection.get("mode") == "source_role_manifest":
+        if max_events is not None:
+            raise ValueError("training-selection manifests cannot use max_events")
+        if pilot_split_repair:
+            raise ValueError("selection manifests cannot use pilot_split_repair")
+
+
+def _require_authenticated_dataset_data_binding(
+    binding: object,
+) -> tuple[dict[str, object], object | None]:
+    """Validate the exact private combined token without reopening metadata."""
+
+    if (
+        type(binding) is not _AuthenticatedDatasetDataBinding
+        or binding._provenance is not _DATA_BINDING_PROVENANCE
+    ):
+        raise ValueError("dataset data provenance binding is invalid")
+    from hypertagging.data.dataset_index import _require_authenticated_index_binding
+
+    index = _require_authenticated_index_binding(binding.index)
+    manifest_binding = binding.manifest
+    mode = index["selection_contract"]["mode"]
+    if mode == "source_role_manifest":
+        if manifest_binding is None:
+            raise ValueError("source-role dataset data binding is missing its manifest")
+        from hypertagging.data.training_selection import (
+            _require_authenticated_manifest_binding,
+        )
+
+        _require_authenticated_manifest_binding(manifest_binding)
+    elif manifest_binding is not None:
+        raise ValueError("raw dataset data binding cannot contain a manifest")
+    return index, manifest_binding
+
+
+def _resolve_dataset_index_data_binding(
+    binding: _AuthenticatedDatasetDataBinding,
+) -> _ResolvedDatasetDataBinding:
+    """Resolve authenticated index paths while retaining pinned manifest identity."""
+
+    _require_authenticated_dataset_data_binding(binding)
+    from hypertagging.data.dataset_index import _resolve_dataset_index_binding
+
+    resolved_index = _resolve_dataset_index_binding(binding.index)
+    return _ResolvedDatasetDataBinding(
+        authenticated=binding,
+        resolved_index=resolved_index,
+        _provenance=_RESOLVED_DATA_BINDING_PROVENANCE,
+    )
+
+
+def _require_resolved_dataset_data_binding(
+    binding: object,
+) -> tuple[dict[str, object], object | None]:
+    """Validate both levels of the private combined provenance token."""
+
+    if (
+        type(binding) is not _ResolvedDatasetDataBinding
+        or binding._provenance is not _RESOLVED_DATA_BINDING_PROVENANCE
+    ):
+        raise ValueError("resolved dataset data provenance binding is invalid")
+    index, manifest = _require_authenticated_dataset_data_binding(
+        binding.authenticated
+    )
+    from hypertagging.data.dataset_index import _require_resolved_index_binding
+
+    resolved_index, _paths, _shard_paths = _require_resolved_index_binding(
+        binding.resolved_index
+    )
+    if resolved_index is not index:
+        raise ValueError("resolved dataset data provenance binding is inconsistent")
+    return index, manifest
+
+
+def _load_training_selection_from_dataset_data_binding(
+    binding: _ResolvedDatasetDataBinding,
+    *,
+    include_splits: Sequence[str] | None,
+    required_splits: Sequence[str] | None,
+):
+    """Load the pinned selection through the combined token only."""
+
+    _index, manifest = _require_resolved_dataset_data_binding(binding)
+    if manifest is None:
+        raise ValueError("dataset data binding does not contain a selection manifest")
+    from hypertagging.data.training_selection import _load_training_selection_bound
+
+    return _load_training_selection_bound(
+        manifest,
+        include_splits=include_splits,
+        required_splits=required_splits,
+        _index_binding=binding.resolved_index,
+    )
+
+
+def _load_dataset_index_from_dataset_data_binding(
+    binding: _ResolvedDatasetDataBinding,
+) -> dict[str, object]:
+    """Verify indexed sources through the combined pinned token only."""
+
+    _require_resolved_dataset_data_binding(binding)
+    from hypertagging.data.dataset_index import _load_resolved_dataset_index_bound
+
+    return _load_resolved_dataset_index_bound(binding.resolved_index)
 
 
 def _require_source_role_manifest_binding(
     data: str | Path | Sequence[str | Path],
     index: dict[str, object],
-) -> None:
+    *,
+    required_splits: Sequence[str] | None = None,
+) -> object | None:
     """Reject noncanonical data arguments using index/manifest metadata only."""
 
     indexed_selection = index.get("selection_contract", {})
     if indexed_selection.get("mode") != "source_role_manifest":
-        return
+        return None
     if not isinstance(data, (str, Path)) or Path(data).suffix.lower() != ".json":
         raise ValueError(
             "a source-role-bound dataset index requires its exact immutable "
@@ -244,19 +448,201 @@ def _require_source_role_manifest_binding(
         )
     from hypertagging.data.training_selection import (
         HASH_FIELD,
-        SELECTION_MANIFEST_VERSION,
-        load_hashed_manifest,
+        _load_selection_manifest_binding,
+        _validate_training_selection_index_metadata_pure,
     )
 
-    manifest = load_hashed_manifest(
-        data,
-        expected_version=SELECTION_MANIFEST_VERSION,
-    )
+    manifest_binding = _load_selection_manifest_binding(data)
+    manifest = manifest_binding.payload
     if (
         manifest.get(HASH_FIELD)
         != indexed_selection.get("selection_manifest_hash")
     ):
         raise ValueError("dataset index training-selection hash mismatch")
+    _validate_training_selection_index_metadata_pure(
+        manifest,
+        index,
+        include_splits=indexed_selection.get("included_splits"),
+        required_splits=required_splits,
+    )
+    return manifest_binding
+
+
+def _validate_index_caller_contract(
+    index: Mapping[str, object],
+    *,
+    data: str | Path | Sequence[str | Path],
+    target_policy: str,
+    max_events: int | None,
+    split_config: SourceAwareSplitConfig | None,
+    seed: int | None,
+    required_splits: Sequence[str] | None,
+    allow_legacy_conflated: bool,
+    scientific_mode: bool,
+    pilot_split_repair: bool,
+    manifest: Mapping[str, object] | None,
+) -> None:
+    """Check caller/index identity before resolving or reading source paths."""
+
+    if not isinstance(allow_legacy_conflated, bool):
+        raise ValueError("allow_legacy_conflated must be boolean")
+    if not isinstance(scientific_mode, bool):
+        raise ValueError("scientific_mode must be boolean")
+    if not isinstance(pilot_split_repair, bool):
+        raise ValueError("pilot_split_repair must be boolean")
+    if max_events is not None and (
+        not isinstance(max_events, int)
+        or isinstance(max_events, bool)
+        or max_events <= 0
+    ):
+        raise ValueError("max_events must be a positive integer or None")
+    if seed is not None and (
+        not isinstance(seed, int) or isinstance(seed, bool)
+    ):
+        raise ValueError("seed must be an integer")
+    if not isinstance(target_policy, str):
+        raise ValueError("target policy is invalid")
+    required = (
+        _validate_required_splits(required_splits)
+        if required_splits is not None
+        else ()
+    )
+
+    selection = index.get("selection_contract")
+    if not isinstance(selection, Mapping):
+        raise ValueError("dataset index selection contract is missing")
+    mode = selection.get("mode")
+    indexed_max_events = selection.get("max_events")
+    if scientific_mode:
+        identity = index.get("event_identity_validation")
+        if not isinstance(identity, Mapping):
+            raise ValueError(
+                "scientific mode requires the passed exact identity/task-binding gate"
+            )
+        if (
+            identity.get("status") != "passed"
+            or identity.get("task_binding")
+            != "selection_to_sidecar_to_completion_marker_validated"
+            or identity.get("sealed_test_opened") is not False
+            or selection.get("included_splits") != ["train", "validation"]
+        ):
+            raise ValueError(
+                "scientific mode requires the passed exact identity/task-binding "
+                "gate with sealed test excluded"
+            )
+    if mode == "source_role_manifest":
+        if max_events is not None:
+            raise ValueError("training-selection manifests cannot use max_events")
+        if pilot_split_repair:
+            raise ValueError("selection manifests cannot use pilot_split_repair")
+        if manifest is None:
+            raise ValueError("source-role index requires its bound selection manifest")
+        included = selection.get("included_splits")
+        if manifest.get("manifest_hash") != selection.get("selection_manifest_hash"):
+            raise ValueError("dataset index training-selection hash mismatch")
+        if manifest.get("selection_mode") != "explicit_whole_shard_source_roles":
+            raise ValueError("training selection mode is invalid")
+        if scientific_mode and included != ["train", "validation"]:
+            raise ValueError("scientific mode permits exactly train and validation roles")
+    else:
+        if manifest is not None:
+            raise ValueError("raw dataset indexes cannot be paired with a selection manifest")
+        if indexed_max_events != max_events:
+            raise ValueError(
+                "dataset index event-selection/max-events fingerprint mismatch"
+            )
+        indexed_paths = index.get("paths")
+        if isinstance(data, (str, Path)):
+            caller_values = [data]
+        elif isinstance(data, Sequence) and not isinstance(data, (str, bytes)):
+            caller_values = list(data)
+        else:
+            raise ValueError("indexed raw data must be explicit parquet paths")
+        caller_paths: list[str] = []
+        for value in caller_values:
+            if not isinstance(value, (str, Path)):
+                raise ValueError("indexed raw data must be explicit parquet paths")
+            lexical = str(value)
+            candidate = Path(lexical)
+            if (
+                not lexical
+                or "\x00" in lexical
+                or "\\" in lexical
+                or not candidate.is_absolute()
+                or str(candidate) != lexical
+                or any(part in {".", ".."} for part in candidate.parts)
+                or candidate.suffix != ".parquet"
+            ):
+                raise ValueError(
+                    "indexed raw data must use canonical absolute parquet paths"
+                )
+            caller_paths.append(lexical)
+        if not isinstance(indexed_paths, list) or caller_paths != indexed_paths:
+            raise ValueError("dataset index shard paths do not match requested data")
+
+    if index.get("target_policy") != target_policy:
+        raise ValueError(
+            "dataset index target policy does not match trainer target policy; "
+            "request an explicit rescan to change policy"
+        )
+    if split_config is not None:
+        if not isinstance(split_config, SourceAwareSplitConfig):
+            raise ValueError("dataset index split configuration mismatch")
+        if index.get("split_config") != split_config.__dict__:
+            raise ValueError("dataset index split configuration mismatch")
+    elif (
+        manifest is None
+        and seed is not None
+        and index.get("split_config") != SourceAwareSplitConfig(seed=seed).__dict__
+    ):
+        raise ValueError("dataset index split configuration mismatch")
+    legacy_fraction = index.get("legacy_fraction")
+    if not isinstance(legacy_fraction, (int, float)) or isinstance(legacy_fraction, bool):
+        raise ValueError("dataset index legacy fraction is invalid")
+    if float(legacy_fraction) and not allow_legacy_conflated:
+        raise ValueError("dataset index reports legacy-conflated nodes")
+
+    counts = index.get("split_counts")
+    if not isinstance(counts, Mapping):
+        raise ValueError("dataset index split counts are invalid")
+    for split in ("train", "validation", "test"):
+        count = counts.get(split, 0)
+        if not isinstance(count, int) or isinstance(count, bool) or count < 0:
+            raise ValueError("dataset index split counts are invalid")
+    if manifest is not None:
+        manifest_counts = manifest.get("split_counts")
+        manifest_shards = manifest.get("split_shard_counts")
+        included = selection.get("included_splits", ())
+        if not isinstance(manifest_counts, Mapping) or not isinstance(manifest_shards, Mapping):
+            raise ValueError("training selection split counts are invalid")
+        for split in ("train", "validation", "test"):
+            expected = manifest_counts.get(split, 0) if split in included else 0
+            if counts.get(split, 0) != expected:
+                raise ValueError("dataset index split counts disagree with training selection")
+    missing = [split for split in required if counts.get(split, 0) == 0]
+    if missing:
+        raise ValueError(f"indexed dataset has empty required split(s) {missing}")
+def _validate_required_splits(values: object) -> tuple[str, ...]:
+    vocabulary = ("train", "validation", "test")
+    if isinstance(values, (str, bytes, set, frozenset, Mapping)):
+        raise ValueError("required_splits must be an ordered sequence")
+    try:
+        required = tuple(values)  # type: ignore[arg-type]
+    except TypeError as error:
+        raise ValueError("required_splits must be an ordered sequence") from error
+    if not required:
+        raise ValueError("required_splits must be nonempty")
+    previous = -1
+    for split in required:
+        if not isinstance(split, str) or split not in vocabulary:
+            raise ValueError("required_splits contains an invalid split")
+        position = vocabulary.index(split)
+        if position <= previous:
+            raise ValueError(
+                "required_splits must be a unique order-preserving subsequence"
+            )
+        previous = position
+    return required
 
 
 def build_real_data_module(
@@ -284,28 +670,77 @@ def build_real_data_module(
     """Build a restartable streaming data module without retaining event lists."""
 
     from hypertagging.data.training_selection import (
-        is_training_selection_manifest,
-        load_training_selection,
+        _load_selection_manifest_binding_or_none,
+        _validated_training_selection_metadata,
     )
 
+    required_splits = _validate_required_splits(required_splits)
     if scientific_mode and (dataset_index is None or rescan_dataset):
         raise ValueError(
             "scientific mode requires a promoted full-record dataset index"
         )
     if scientific_mode and "test" in required_splits:
         raise ValueError("scientific indexing/training cannot request the sealed test role")
-    preflight_index = None
+    config = split_config or SourceAwareSplitConfig(seed=seed)
+    preflight_binding = None
+    resolved_binding = None
     if dataset_index is not None and not rescan_dataset:
-        preflight_index = preflight_dataset_index_data_binding(data, dataset_index)
+        preflight_binding = _preflight_dataset_index_data_binding(
+            data,
+            dataset_index,
+            required_splits=required_splits,
+            target_policy=target_policy,
+            max_events=max_events,
+            split_config=split_config,
+            seed=seed,
+            allow_legacy_conflated=allow_legacy_conflated,
+            scientific_mode=scientific_mode,
+            pilot_split_repair=pilot_split_repair,
+        )
+    preflight_index = None
+    preflight_manifest_binding = None
+    preflight_manifest = None
+    if preflight_binding is not None:
+        preflight_index, preflight_manifest_binding = (
+            _require_authenticated_dataset_data_binding(preflight_binding)
+        )
+        if preflight_manifest_binding is not None:
+            preflight_manifest = preflight_manifest_binding.payload
     selection = None
     source_role_bound = bool(
         preflight_index
         and preflight_index.get("selection_contract", {}).get("mode")
         == "source_role_manifest"
     )
-    if source_role_bound or (
-        isinstance(data, (str, Path)) and is_training_selection_manifest(data)
-    ):
+    manifest_binding = preflight_manifest_binding
+    manifest_metadata = preflight_manifest
+    if not source_role_bound and isinstance(data, (str, Path)):
+        candidate = Path(data)
+        if candidate.suffix == ".json":
+            candidate_binding = _load_selection_manifest_binding_or_none(candidate)
+            if candidate_binding is not None:
+                _validated_training_selection_metadata(candidate_binding.payload)
+            manifest_binding = candidate_binding
+            manifest_metadata = (
+                candidate_binding.payload if candidate_binding is not None else None
+            )
+    if manifest_metadata is not None and max_events is not None:
+        raise ValueError(
+            "training-selection manifests cannot be combined with raw max_events prefixes"
+        )
+    if manifest_metadata is not None and pilot_split_repair:
+        raise ValueError("selection manifests cannot use pilot_split_repair")
+    indexed_split_counts: dict[str, int] | None = None
+    indexed_legacy_fraction: float | None = None
+    if preflight_index is not None:
+        if source_role_bound and split_config is None:
+            config = SourceAwareSplitConfig(**preflight_index["split_config"])
+        indexed_split_counts = {
+            name: int(preflight_index["split_counts"].get(name, 0))
+            for name in ("train", "validation", "test")
+        }
+        indexed_legacy_fraction = float(preflight_index["legacy_fraction"])
+    if source_role_bound or manifest_metadata is not None:
         include_splits = None
         indexed_included = (
             preflight_index.get("selection_contract", {}).get("included_splits")
@@ -318,7 +753,24 @@ def build_real_data_module(
             )
         if indexed_included:
             include_splits = tuple(str(value) for value in indexed_included)
-        selection = load_training_selection(data, include_splits=include_splits)
+        if preflight_binding is not None:
+            resolved_binding = _resolve_dataset_index_data_binding(preflight_binding)
+        if source_role_bound:
+            selection = _load_training_selection_from_dataset_data_binding(
+                resolved_binding,
+                include_splits=include_splits,
+                required_splits=required_splits,
+            )
+        else:
+            from hypertagging.data.training_selection import (
+                _load_training_selection_bound,
+            )
+
+            selection = _load_training_selection_bound(
+                manifest_binding,
+                include_splits=include_splits,
+                required_splits=required_splits,
+            )
     if scientific_mode and selection is None:
         raise ValueError(
             "scientific mode requires an immutable training-selection manifest"
@@ -329,7 +781,17 @@ def build_real_data_module(
         )
     if selection is not None and pilot_split_repair:
         raise ValueError("selection manifests cannot use pilot_split_repair")
-    paths = list(selection.paths) if selection is not None else resolve_data_paths(data)
+    if selection is not None:
+        paths = list(selection.paths)
+    elif preflight_binding is not None:
+        if resolved_binding is None:
+            resolved_binding = _resolve_dataset_index_data_binding(preflight_binding)
+        _index, _manifest = _require_resolved_dataset_data_binding(resolved_binding)
+        paths = _resolve_indexed_raw_caller_paths(
+            data, resolved_binding.resolved_index.resolved_paths
+        )
+    else:
+        paths = resolve_data_paths(data)
     source_split_overrides = (
         dict(selection.source_split_overrides) if selection is not None else {}
     )
@@ -339,112 +801,12 @@ def build_real_data_module(
     # verification gate.
     if not allow_incomplete_v4_publication and selection is None:
         _require_complete_v4_publications(paths)
-    config = split_config or SourceAwareSplitConfig(seed=seed)
     if dataset_index is not None and not rescan_dataset:
-        from hypertagging.data.dataset_index import (
-            load_dataset_index,
-            tensor_normalizer_state,
-        )
+        from hypertagging.data.dataset_index import tensor_normalizer_state
 
-        index = load_dataset_index(dataset_index)
-        indexed_selection = index.get("selection_contract", {})
-        if (
-            indexed_selection.get("mode") == "source_role_manifest"
-            and selection is None
-        ):
-            raise ValueError(
-                "a source-role-bound dataset index requires its exact immutable "
-                "training-selection manifest; raw Parquet paths are forbidden"
-            )
-        if selection is not None and split_config is None:
-            config = SourceAwareSplitConfig(**index["split_config"])
-        if scientific_mode:
-            identity = index.get("event_identity_validation", {})
-            included = index.get("selection_contract", {}).get("included_splits")
-            if (
-                identity.get("status") != "passed"
-                or identity.get("task_binding")
-                != "selection_to_sidecar_to_completion_marker_validated"
-                or identity.get("sealed_test_opened") is not False
-                or included != ["train", "validation"]
-            ):
-                raise ValueError(
-                    "scientific mode requires the passed exact identity/task-binding "
-                    "gate with sealed test excluded"
-                )
-        if index.get("target_policy") != target_policy:
-            raise ValueError(
-                "dataset index target policy does not match trainer target policy; "
-                "request an explicit rescan to change policy"
-            )
-        if selection is not None:
-            if indexed_selection.get("mode") != "source_role_manifest":
-                raise ValueError(
-                    "dataset index was not built from a source-role manifest"
-                )
-            if (
-                indexed_selection.get("selection_manifest_hash")
-                != selection.manifest_hash
-            ):
-                raise ValueError("dataset index training-selection hash mismatch")
-            if tuple(indexed_selection.get("included_splits", ())) != tuple(
-                selection.included_splits
-            ):
-                raise ValueError("dataset index included-role contract mismatch")
-        elif indexed_selection.get("max_events") != max_events:
-            raise ValueError(
-                "dataset index event-selection/max-events fingerprint mismatch"
-            )
-        indexed_paths = {str(Path(path).resolve()) for path in index["paths"]}
-        if indexed_paths != {str(path.resolve()) for path in paths}:
-            raise ValueError("dataset index shard paths do not match requested data")
-        if selection is not None:
-            included_splits = set(selection.included_splits)
-            expected_source_groups = {
-                source: str(expectation["split"])
-                for source, expectation in selection.source_expectations.items()
-                if str(expectation["split"]) in included_splits
-            }
-            excluded_sources = {
-                source
-                for source, split in selection.source_split_overrides.items()
-                if split not in included_splits
-            }
-            excluded_sources.update(
-                source
-                for source, expectation in selection.source_expectations.items()
-                if str(expectation["split"]) not in included_splits
-            )
-            indexed_excluded_sources = excluded_sources.intersection(
-                index["source_groups"]
-            )
-            if indexed_excluded_sources:
-                raise ValueError(
-                    "dataset index contains sources from excluded training-selection "
-                    f"roles: {sorted(indexed_excluded_sources)}"
-                )
-            if index["source_groups"] != expected_source_groups:
-                raise ValueError(
-                    "dataset index source roles disagree with training selection"
-                )
-        if (selection is None or split_config is not None) and (
-            index["split_config"] != config.__dict__
-        ):
-            raise ValueError("dataset index split configuration mismatch")
-        legacy_fraction = float(index["legacy_fraction"])
-        if legacy_fraction and not allow_legacy_conflated:
-            raise ValueError("dataset index reports legacy-conflated nodes")
-        split_counts = {
-            name: int(index["split_counts"].get(name, 0))
-            for name in ("train", "validation", "test")
-        }
-        if selection is not None and split_counts != selection.split_counts:
-            raise ValueError(
-                "dataset index split counts disagree with training selection"
-            )
-        missing = [name for name in required_splits if split_counts[name] == 0]
-        if missing:
-            raise ValueError(f"indexed dataset has empty required split(s) {missing}")
+        index = _load_dataset_index_from_dataset_data_binding(resolved_binding)
+        split_counts = cast(dict[str, int], indexed_split_counts)
+        legacy_fraction = cast(float, indexed_legacy_fraction)
         split_manifest = {
             "seed": seed,
             "groups": index["source_groups"],
@@ -639,6 +1001,19 @@ def build_real_data_module(
     return module
 
 
+def _resolve_indexed_raw_caller_paths(
+    data: str | Path | Sequence[str | Path],
+    indexed_paths: Sequence[Path],
+) -> list[Path]:
+    """Resolve and bind raw caller paths before any publication/source read."""
+
+    caller_values = [data] if isinstance(data, (str, Path)) else list(data)
+    resolved = [Path(value).resolve() for value in caller_values]
+    if tuple(resolved) != tuple(indexed_paths):
+        raise ValueError("resolved dataset index paths do not match requested data")
+    return resolved
+
+
 def _require_complete_v4_publications(paths: Sequence[Path]) -> None:
     from hypertagging.data.dataset_index import _validated_completion_marker
 
@@ -710,26 +1085,28 @@ def resolve_data_paths(data: str | Path | Sequence[str | Path]) -> list[Path]:
     output: list[Path] = []
     for entry in entries:
         path = Path(entry)
-        if path.is_dir():
+        records = None
+        if path.suffix == ".json":
+            from hypertagging.data.training_selection import (
+                _load_selection_manifest_binding_or_none,
+                _load_training_selection_bound,
+            )
+
+            manifest_binding = _load_selection_manifest_binding_or_none(path)
+            if manifest_binding is not None:
+                output.extend(_load_training_selection_bound(manifest_binding).paths)
+                continue
+            records = json.loads(path.read_text(encoding="utf-8"))
+        elif path.is_dir():
             output.extend(sorted(path.glob("*.parquet")))
         elif path.suffix == ".parquet":
             output.append(path)
-        elif path.suffix in {".jsonl", ".json"}:
-            if path.suffix == ".json":
-                from hypertagging.data.training_selection import (
-                    is_training_selection_manifest,
-                    load_training_selection,
-                )
-
-                if is_training_selection_manifest(path):
-                    output.extend(load_training_selection(path).paths)
-                    continue
+        elif path.suffix == ".jsonl":
             text = path.read_text(encoding="utf-8")
-            records = (
-                [json.loads(line) for line in text.splitlines() if line.strip()]
-                if path.suffix == ".jsonl"
-                else json.loads(text)
-            )
+            records = [json.loads(line) for line in text.splitlines() if line.strip()]
+        else:
+            raise ValueError(f"unsupported data input: {path}")
+        if records is not None:
             if isinstance(records, dict):
                 records = records.get("shards", records.get("entries", []))
             for record in records:
@@ -750,8 +1127,6 @@ def resolve_data_paths(data: str | Path | Sequence[str | Path]) -> list[Path]:
                         if candidate_path.is_absolute()
                         else path.parent / candidate_path
                     )
-        else:
-            raise ValueError(f"unsupported data input: {path}")
     unique = sorted({path.resolve() for path in output})
     missing = [str(path) for path in unique if not path.exists()]
     if missing:

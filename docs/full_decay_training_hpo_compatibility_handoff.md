@@ -7,7 +7,41 @@ not a basf2 or GraFEI reconstruction path. The machine-readable mirror is
 
 ## Frozen evidence
 
-- Repository HEAD at audit: `2d5909d5e222874c610e5fd0678f732f9555c59a`;
+- Repository HEAD/base for this candidate:
+  `4632c50cd363e5ee18fcea73c5320c853e9e583b`, authored by Boyang.Yu as
+  `add offline full decay reconstruction`; history was not rewritten and this
+  candidate was not committed or tagged.
+- The bounded metadata-prebinding candidate changes only
+  `src/hypertagging/data/dataset_index.py`,
+  `src/hypertagging/data/training_selection.py`,
+  `src/hypertagging/training/data_module.py`, the two corresponding CPU test
+  files, and this MD/JSON handoff pair. Source/test SHA-256 values are:
+  `dataset_index.py`
+  `b8fa8d27f12ef859b986f7a5bcbc30870c5b1a3969941ba9b2165dcd94a0a6c6`,
+  `training_selection.py`
+  `656bad9fda7933b1611fd7f91840d89b572960b4c45f88eb7a8fc47587ef35dc`,
+  `data_module.py`
+  `229b81ee6d410964269a81af0a2d17b479a6eb0d155dd98e3b9359fa26b865ea`,
+  index tests
+  `d8fb6491547c0b481963157254540b780bd7cddd5fee9939b8ba0ffdff10c346`,
+  and selection tests
+  `0a7dedfa0be8237bd05e0051391947c3fe05f617e287b02d1de7d3153e2d5147`.
+- Execution authorization: **false**. Submission authorization: **false**.
+  Science authorization: **false**. No raw/restricted payload, GPU, Slurm,
+  checkpoint, or science execution was touched.
+- During the work, unrelated untracked basf2/ONNX/deployment material appeared
+  concurrently under `scripts/export_full_decay_onnx.py`,
+  `scripts/run_basf2_full_decay.py`, `src/hypertagging/basf2_integration/`,
+  `src/hypertagging/deployment/`, `tests/basf2_onnx_full_decay_smoke.py`,
+  `tests/basf2_onnx_real_mdst_smoke.py`,
+  `tests/basf2_onnx_real_track_smoke.py`, `tests/helpers/`,
+  `tests/run_basf2_onnx_full_decay_smoke.sh`,
+  `tests/test_basf2_feature_contract_cpu.py`, and
+  `tests/test_onnx_full_decay_beam_cpu.py`. These paths were absent from the
+  verified clean starting status and were not read, edited, deleted, tested,
+  or staged by this candidate.
+- Repository HEAD at the preceding evaluator audit was
+  `2d5909d5e222874c610e5fd0678f732f9555c59a`;
   every evaluation report hashes raw Git index metadata plus cached diff bytes,
   requires index/worktree equality, and lists untracked names only without
   reading their contents.
@@ -16,6 +50,12 @@ not a basf2 or GraFEI reconstruction path. The machine-readable mirror is
   hash `b55cebee16b6dfa55b7fee943e28cca0de325132547b34dc13fffc24c418df72`
   and file SHA-256
   `48108c18e61f5c7494fd11958f9e93911ac21df4e47f8e518025f8a99929a6eb`.
+  This tracked immutable file retains the historical 15-key entry projection.
+  The independently confirmed loader/builder contract is now exact 16-key with
+  `campaign_config_digest`; the compatibility test derives that field from the
+  authenticated tracked inventory and rehashes a temporary metadata-only copy.
+  Production use therefore requires owner-authorized manifest/index repromotion;
+  this seven-path candidate does not rewrite immutable inputs.
 - Promoted `complete_only` index:
   `artifacts/experiment_readiness/production_1m_20260812/train_035k/train_035k.complete_only.index.json`,
   index hash `5fc837315b2e6f5e4783cba2808bfba7672cf4ba12bff1fe5cf050f5d22b6de1`;
@@ -44,7 +84,7 @@ not a basf2 or GraFEI reconstruction path. The machine-readable mirror is
 | ID | Severity / status | Exact evidence and affected files | Tests | Smallest safe upstream action |
 |---|---|---|---|---|
 | DATA-01 | invariant / verified | `load_trained_evaluation_context` and `build_real_data_module` bind schema, feature/PID contracts, target policy, selection-manifest hash, index hash, source groups, normalizers, and split. Files: `src/hypertagging/evaluation/trained_context.py`, `src/hypertagging/training/data_module.py`, `src/hypertagging/data/dataset_index.py`. | `test_trained_evaluation_restores_normalization_and_heldout_contract`; index/identity suites; real smoke. | Keep the manifest and promoted index immutable and publish both hashes with every HPO result. |
-| DATA-02 | P0 fixed in evaluator and shared loader | `load_dataset_index_metadata` authenticates only index JSON object/version/index hash and selection-contract schema/mode/hash fields. It never canonicalizes shard paths, recomputes the selection fingerprint, stats/opens shards, or inspects sidecars. Evaluator and shared loader then authenticate the supplied manifest JSON/hash before full loading. Files: `dataset_index.py`, `trained_context.py`, `data_module.py`. | resolver, `_selection_fingerprint`, publication, selection-publication, and indexed-shard bombs stay at zero for raw-list/wrong-manifest rejection; trained context delegation and invalid metadata-schema tests pass. | Retain this central pre-effect invariant for every caller. |
+| DATA-02 | P0 draft complete, blocked pending independent review | Index and manifest hashes plus every pure projection bind first. Expected included absolute paths are constructed only from canonical `PurePosixPath(data_root)` and direct-child names, and counts, groups, paths, and publication digests compare before any `Path.resolve`; later resolution proves only symlink/canonical drift. Raw caller paths are then resolved and compared immediately before publication/indexed-source verification. A private frozen combined token pins one-read authenticated index/manifest identities; full DataModule selection and indexed-source loaders reuse it without reopening metadata, and caller mappings cannot inject payloads. Manifest-looking JSON never falls back to generic JSON after an authentication/schema error. Indexed source-role `pilot_split_repair`/`max_events` reject before manifest loading; manifest-only callers authenticate and classify once, then reject both modes before the full loader or publication. Pure validation covers all roles, while resolution/stat/physical aliases cover only `included_splits`; the complete file/stat batch and inode uniqueness precede publication digests. Both index builders validate complete self-hashed output. Exact true-test/false-test top-level variants, exact 16-key entries including `campaign_config_digest`, lexical `(split,category,task_id)` order, exact quota/category/split aggregates, false-test excluded-role consistency, positive included test counts/shards, and omitted excluded-test event counts are bound. Pure index gates bind split/descriptor/category sums, sorted-unique descriptor aggregates, exact finite normalizer blocks and scope, scientific identity, and normalized v4 completion-marker schema/count/feature/parquet/sidecar/range/policy cores. | 252 focused passes; 276 extended passes; bombs cover pure path/cross-document/caller/schema failures, caller-mode preflight, raw resolved-path drift, complete stat ordering, builder compatibility, excluded-role no-touch, combined-token swaps/forgery, aggregate/marker mutations, and valid full DataModule verification. | Independently audit the exact staged seven-path candidate; do not edit, commit, tag, or finalize until CLEAR. |
 | DATA-03 | fixed | Split precedence is event override, then source-role override, then stable hash; selected UIDs are checked for uniqueness, train overlap, and requested split. File: `trained_context.py::_evaluation_split_assignment`. | `test_evaluation_split_assignment_honors_source_role_manifest`; `...event_override_first`. | Retain these checks as fail-closed gates. |
 | DATA-04 | fixed | Validation `auto` restores the checkpoint's ordered 1,000-UID rollout cohort from its deterministic 2,000-event validation selection, validates selection-manifest identity, applies category filtering without changing cohort rank, and records UID list plus digest. File: `trained_context.py::_resolve_checkpoint_event_selection/_select_evaluation_events`. | `test_checkpoint_rollout_cohort_restores_uid_order_before_category_limit`; real smoke selected the stored first UID. | Use this cohort for comparisons; label `stream` runs diagnostic and never mix them in HPO ranking. |
 | DATA-05 | P1 open contract | The promoted index contains train/validation only. CLI `--split test` correctly fails with this index. | Dataset-index validation plus inspected promoted metadata. | Materialize a separate immutable test-role manifest/index after validation policy freeze; never relabel validation. |
@@ -79,7 +119,67 @@ not a basf2 or GraFEI reconstruction path. The machine-readable mirror is
 | BASE-02 | blocked external authorization, untouched | Phase-3 authorization binds runtime-contract SHA `411facd...`, while the current tracked file is `ed1a1d...`; four authorization tests fail before preflight assertions. Slurm files/jobs were not edited, polled, submitted, or cancelled. | four `test_phase3_execution_authorization_cpu.py` failures. | Re-materialize authorization through its owner workflow; do not hand-edit hashes in this task. |
 | BASE-03 | environment-only | Full-suite collection lacks optional `nbformat`; notebook-only audit tests cannot collect. | `test_audit_integrity_cpu.py`, `test_revised_notebooks_cpu.py`. | Run notebook tests in the declared notebook-extra environment. |
 
+## Overnight metadata-prebinding audit boundary
+
+- Base/HEAD remains `4632c50cd363e5ee18fcea73c5320c853e9e583b`, authored by
+  `Boyang.Yu <boyang.yu@physik.uni-muenchen.de>` with subject
+  `add offline full decay reconstruction`. History was not rewritten.
+- Candidate status is `BLOCKED_PENDING_INDEPENDENT_P0_REVIEW`. The exact seven
+  authorized paths are staged only as the independent-audit boundary. No commit,
+  tag, job,
+  scheduler query, submission, raw/restricted access, or science execution was
+  performed. Execution, submission, and science authorization are all false.
+- Exact stable source/test SHA-256 values are recorded in the paired JSON;
+  their deterministic hash-manifest SHA-256 is
+  `0ce4956251e572669a53edb93b566a3a8e6a457ee24cac0d43e14ae63a984283`.
+- Next action: independently audit the exact staged seven-path candidate. Do not
+  edit, commit, tag, or finalize until CLEAR or a concrete finding is relayed.
+
 ## Verification summary
+
+- Current bounded draft: 252 focused metadata tests passed in 8.37 s; the
+  extended synthetic data/index/evaluation boundary passed 276 tests in
+  18.11 s. The explicit authoritative inventory projection/promoted-index
+  compatibility selection passed 6 tests with 110 deselected in 3.12 s.
+- Current safe broad tracked CPU suite: 866 passed, 8 skipped, and 1
+  intentionally deselected in 105.84 s with 17 warnings. It used
+  `PYTHONPATH=src` and the authoritative frozen/no-sync uv environment. The
+  excluded files were the documented notebook-only
+  `test_audit_integrity_cpu.py`/`test_revised_notebooks_cpu.py` and external
+  phase-3 authorization file. Untracked concurrent test material was not
+  collected.
+- An initial broad command using the `pytest` entry point collected zero tests
+  and reported two repository-root `scripts` import errors; the authoritative
+  `python -m pytest` rerun above passed. This was a command-path correction,
+  not a candidate failure.
+- The deselected preexisting case was rerun alone and failed once in 2.88 s
+  because `empty_channel_memory_expansion_v1` is appended twice; this candidate
+  does not touch `training/checkpointing.py`.
+- Metadata-only compatibility for the promoted `train_035k` index passed: its
+  stored fingerprint first equals the pure-string core; after both metadata
+  documents bind, index and descriptor paths resolve as one source-free phase
+  and the resolved fingerprint/path equivalence is rechecked. Its authoritative
+  inventory projection supplies the exact 16th `campaign_config_digest` field;
+  the projected entry schema and lexical order bind exactly. No manifest path,
+  source, sidecar, marker, or publication was opened during public preflight.
+- Exact-path `py_compile`, Ruff lint, and `git diff --check` passed. Ruff's
+  optional formatter check reported that the five established candidate files
+  would be reformatted; no broad mechanical formatting was applied. Execution,
+  submission, and science authorization remain explicitly false; no
+  raw/restricted data was accessed.
+
+The authoritative commands for this candidate were:
+
+```text
+PYTHONPATH=src /home/b/Boyang.Yu/.local/bin/uv --cache-dir /tmp/uv-cache run --frozen --no-sync python -m pytest -q tests/test_dataset_index_selection_contract_cpu.py tests/test_training_selection_manifest_cpu.py
+PYTHONPATH=src /home/b/Boyang.Yu/.local/bin/uv --cache-dir /tmp/uv-cache run --frozen --no-sync python -m pytest -q tests/test_dataset_index_and_storage_cpu.py tests/test_dataset_index_completion_marker_cpu.py tests/test_dataset_index_hash_and_staleness_cpu.py tests/test_dataset_index_identity_gate_cpu.py tests/test_dataset_index_selection_contract_cpu.py tests/test_dataset_index_target_policy_cpu.py tests/test_partial_target_policy_cpu.py tests/test_production_manifest_training_integration_cpu.py tests/test_read_only_pretraining_validation_cpu.py tests/test_trained_evaluation_context_cpu.py tests/test_training_rejects_incomplete_v4_shard_cpu.py tests/test_training_selection_manifest_cpu.py tests/test_validation_target_policy_cpu.py
+PYTHONPATH=src /home/b/Boyang.Yu/.local/bin/uv --cache-dir /tmp/uv-cache run --frozen --no-sync python -m pytest -q tests/test_training_selection_manifest_cpu.py -k 'selection_variants_and_projected_entry_shape_are_exact or tracked_authoritative_inventory_projects_exact_entry_schema_and_order or promoted_manifest_index_preflight_resolves_only_index_paths'
+mapfile -t safe_cpu_tests < <(git ls-files 'tests/test_*_cpu.py' | rg -v 'tests/test_(audit_integrity|revised_notebooks|phase3_execution_authorization)_cpu.py'); PYTHONPATH=src /home/b/Boyang.Yu/.local/bin/uv --cache-dir /tmp/uv-cache run --frozen --no-sync python -m pytest -q "${safe_cpu_tests[@]}" --deselect tests/test_channel_cross_event_cpu.py::test_empty_zero_capacity_channel_memory_can_expand_on_explicit_resume
+PYTHONPATH=src /home/b/Boyang.Yu/.local/bin/uv --cache-dir /tmp/uv-cache run --frozen --no-sync python -m pytest -q tests/test_channel_cross_event_cpu.py::test_empty_zero_capacity_channel_memory_can_expand_on_explicit_resume
+PYTHONPATH=src /home/b/Boyang.Yu/.local/bin/uv --cache-dir /tmp/uv-cache run --frozen --no-sync python -m py_compile src/hypertagging/data/dataset_index.py src/hypertagging/data/training_selection.py src/hypertagging/training/data_module.py tests/test_dataset_index_selection_contract_cpu.py tests/test_training_selection_manifest_cpu.py
+PYTHONPATH=src /home/b/Boyang.Yu/.local/bin/uv --cache-dir /tmp/uv-cache run --frozen --no-sync ruff check <exact five source/test paths>
+git diff --check
+```
 
 - Post-audit synthetic/static boundaries: 33 focused tests and 59 extended
   rollout/checkpoint/report tests passed. No real smoke was rerun.
@@ -97,10 +197,6 @@ not a basf2 or GraFEI reconstruction path. The machine-readable mirror is
   metadata loader `1a404ebe...0450`, dataset-index selection tests
   `8b1c849b...4adb`, trained-context tests `b28eeda0...2691`, and evaluator CLI
   tests `ebaa6980...f0be`.
-- Current explicit-source broad suite, excluding only the documented notebook
-  dependency, BASE-01's single failing case, and BASE-02's file: 842 passed,
-  8 skipped, and 1 intentionally deselected in 101.50 s. The deselected node is
-  `tests/test_channel_cross_event_cpu.py::test_empty_zero_capacity_channel_memory_can_expand_on_explicit_resume`.
 - The earlier result of 813 passed, 8 skipped, and 1 deselected is historical
   and superseded. Its preceding unfiltered non-notebook run had 812 passed and
   six failures; it must not be quoted as the current validation boundary.
