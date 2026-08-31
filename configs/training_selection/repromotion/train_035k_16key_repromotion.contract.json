@@ -1,0 +1,123 @@
+{
+  "authorization": {
+    "execution_authorized": false,
+    "live_pointer_publish_authorized": false,
+    "raw_or_source_payload_access_authorized": false,
+    "science_authorized": false,
+    "slurm_actions_authorized": false,
+    "submission_authorized": false
+  },
+  "base_code": {
+    "clean_tagged_descendant_required": true,
+    "commit": "43dd53d9f1f93fa7fd942c3bbec411cf54181e91",
+    "tag": "ht-full-decay-data-loading-hardening-code-only-20260831-v1",
+    "tag_object": "fe6788cb5a5935ab900ae025ab353359083c886f",
+    "tree": "622c2fd37fe9429cb2d8b6f1dfa412c3010ffa97"
+  },
+  "contract_sha256": "c94302caad6b19df777f653f33c9f0863c41f15d36f647a71d48075490f6965e",
+  "inputs": {
+    "inventory": {
+      "file_sha256": "e115242f496705056ddb727313008a4fb878e4d57d86e540a6138765a1d5d577",
+      "internal_hash": "6b65445cdf3e43fde053bd26694b7b7977a378541009e4b0ae41dcd4334c9480",
+      "internal_hash_field": "manifest_hash",
+      "path": "configs/training_selection/production_1m_20260812/inventory.json"
+    },
+    "legacy_index": {
+      "file_sha256": "f8e09763ca6f33cc54a023fe4d9a626c40533c62c8107724e85cfcd313a8a0bc",
+      "internal_hash": "5fc837315b2e6f5e4783cba2808bfba7672cf4ba12bff1fe5cf050f5d22b6de1",
+      "internal_hash_field": "index_hash",
+      "path": "configs/training_selection/repromotion/inputs/train_035k.complete_only.index.legacy.json"
+    },
+    "legacy_selection": {
+      "file_sha256": "48108c18e61f5c7494fd11958f9e93911ac21df4e47f8e518025f8a99929a6eb",
+      "internal_hash": "b55cebee16b6dfa55b7fee943e28cca0de325132547b34dc13fffc24c418df72",
+      "internal_hash_field": "manifest_hash",
+      "path": "configs/training_selection/production_1m_20260812/train_035k.json"
+    },
+    "roles": {
+      "file_sha256": "243dc803984196c1eb77f62b2768834a442e1d34b06b2617ab900b20810c0674",
+      "internal_hash": "90627c77197dc7d9a9c27b90502162995e24fb3f174f896ccaef384023e067d8",
+      "internal_hash_field": "manifest_hash",
+      "path": "configs/training_selection/production_1m_20260812/roles.json"
+    }
+  },
+  "output_policy": {
+    "cas_filenames": true,
+    "claim": "sibling_dot_claim",
+    "claim_must_be_absent": true,
+    "create_flags": [
+      "O_CREAT",
+      "O_EXCL",
+      "O_NOFOLLOW"
+    ],
+    "exact_root_must_be_absent": true,
+    "hidden_staging_files": true,
+    "live_pointer_updates_allowed": false,
+    "overwrite_allowed": false,
+    "promotion_primitive": "renameat2_RENAME_NOREPLACE",
+    "receipt_written_last": true,
+    "retry_namespace_allowed": false
+  },
+  "package_id": "train-035k-16-key-metadata-repromotion-20260831-v1",
+  "schema_version": "hypertagging-training-selection-repromotion-contract-v1",
+  "target": {
+    "category_split_shard_counts": {
+      "ccbar": {"test": 2, "train": 1, "validation": 2},
+      "charged": {"test": 1, "train": 1, "validation": 1},
+      "ddbar": {"test": 1, "train": 1, "validation": 1},
+      "mixed": {"test": 1, "train": 1, "validation": 1},
+      "ssbar": {"test": 1, "train": 1, "validation": 1},
+      "taupair": {"test": 2, "train": 1, "validation": 2},
+      "uubar": {"test": 2, "train": 1, "validation": 2}
+    },
+    "dataset_index_file_bytes": 768146,
+    "dataset_index_file_sha256": "8d486304ba8018e03d4126271be24b5b43b15dd2c71f0e5dc8c847071b728097",
+    "dataset_index_hash": "45419bb2d4d70f5344072d70e0f7241d6f235d926ef5bf5dc013ebac9569295e",
+    "event_identity_status": "passed",
+    "index_included_splits": ["train", "validation"],
+    "index_event_count": 85000,
+    "index_path_count": 17,
+    "index_shard_count": 17,
+    "metadata_only_excluded_splits": ["test"],
+    "required_splits": ["train", "validation"],
+    "roles_hash": "90627c77197dc7d9a9c27b90502162995e24fb3f174f896ccaef384023e067d8",
+    "selection_entry_count": 27,
+    "selection_entry_keys": [
+      "campaign_config_digest",
+      "campaign_id",
+      "category",
+      "completion_marker_sha256",
+      "event_count",
+      "inventory_entry_hash",
+      "parquet_sha256_reference",
+      "path",
+      "schema_version",
+      "sidecar_sha256",
+      "source_file",
+      "source_git_commit",
+      "source_git_tree",
+      "split",
+      "task_id",
+      "task_record_hash"
+    ],
+    "selection_file_bytes": 33600,
+    "selection_file_sha256": "d0516ee4db09d7610a614475057af40282594882e03df1e9106e371a6710a660",
+    "selection_fingerprint": "75ede96314bf98ff3031cd7ad16aaafcb580370a9ec6b81811cd426d8848ef27",
+    "selection_manifest_hash": "9274e6412a25e8e900efca2c370565346c6d03926e845d7f63a2304a68e87ed4",
+    "selection_manifest_version": "hypertagging-training-selection-v1",
+    "selection_order": ["split", "category", "task_id", "inventory_entry_hash"],
+    "selection_order_sha256": "df23b08b879fcdc96a38e10eff65241b0815935819714cb660d5e1c06404486f",
+    "sealed_test_opened": false,
+    "split_counts": {"test": 50000, "train": 35000, "validation": 50000},
+    "split_shard_counts": {"test": 10, "train": 7, "validation": 10},
+    "training_category_shard_quotas": {
+      "ccbar": 1,
+      "charged": 1,
+      "ddbar": 1,
+      "mixed": 1,
+      "ssbar": 1,
+      "taupair": 1,
+      "uubar": 1
+    }
+  }
+}
