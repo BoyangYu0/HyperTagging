@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 import os
@@ -22,9 +22,15 @@ from hypertagging.data.selection_repromotion import (
     publish_repromotion_package,
 )
 
-AUTHORIZATION_VERSION = "hypertagging-training-selection-publication-authorization-v1"
+AUTHORIZATION_VERSION = "hypertagging-training-selection-publication-authorization-v2"
 LOCK_VERSION = "hypertagging-training-selection-publication-lock-v1"
 ACCEPTED_VERSION = "hypertagging-training-selection-publication-accepted-v1"
+LOCAL_CONTROLLER_VERSION = "hypertagging-external-local-controller-authorization-v1"
+TRUSTED_EXECUTION_UID = 12184
+AUTHORITY_PARENT = Path(
+    "/home/b/Boyang.Yu/.hypertagging-authority/"
+    "training-selection-repromotion-publication-v2"
+)
 AUTHORIZATION_HASH_FIELD = "authorization_sha256"
 LOCK_HASH_FIELD = "lock_sha256"
 ACCEPTED_HASH_FIELD = "accepted_sha256"
@@ -49,6 +55,8 @@ _TOP_LEVEL_KEYS = {
     "expires_at_utc",
     "one_use",
     "retry_authorized",
+    "trusted_execution",
+    "external_local_controller_authorization",
     "repository_root",
     "implementation",
     "contract",
@@ -62,6 +70,16 @@ _TOP_LEVEL_KEYS = {
     AUTHORIZATION_HASH_FIELD,
 }
 _HEX = frozenset("0123456789abcdef")
+_LOCAL_CONTROLLER_KEYS = {
+    "schema_version",
+    "controller_kind",
+    "controller_host_id",
+    "controller_principal",
+    "authorization_event_id",
+    "authorized_at_utc",
+    "authorized_request_sha256",
+    "decision",
+}
 
 
 @dataclass(frozen=True)
@@ -106,9 +124,70 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _read_authorization(path: Path) -> tuple[dict[str, Any], str]:
-    descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+def _trusted_execution(authority_parent: Path) -> dict[str, Any]:
+    return {
+        "uid": TRUSTED_EXECUTION_UID,
+        "authority_parent": str(authority_parent),
+        "authority_parent_mode": "0o700",
+        "authorization_file_mode": "0o444",
+        "authorization_file_must_be_direct_child": True,
+    }
+
+
+def _authority_parent_descriptor(authority_parent: Path) -> tuple[int, os.stat_result]:
+    if not authority_parent.is_absolute():
+        raise ValueError("authority parent must be absolute")
     try:
+        canonical_parent = authority_parent.resolve(strict=True)
+    except OSError as error:
+        raise ValueError("authority parent is unavailable") from error
+    if str(canonical_parent) != str(authority_parent):
+        raise ValueError("authority parent must be an exact canonical path")
+    flags = (
+        os.O_RDONLY
+        | getattr(os, "O_DIRECTORY", 0)
+        | getattr(os, "O_NOFOLLOW", 0)
+    )
+    try:
+        descriptor = os.open(authority_parent, flags)
+    except OSError as error:
+        raise ValueError("authority parent is unavailable or follows a symlink") from error
+    metadata = os.fstat(descriptor)
+    if (
+        not stat.S_ISDIR(metadata.st_mode)
+        or metadata.st_uid != os.geteuid()
+        or stat.S_IMODE(metadata.st_mode) != 0o700
+    ):
+        os.close(descriptor)
+        raise ValueError("authority parent must be owned mode-0700 directory")
+    try:
+        named = os.stat(authority_parent, follow_symlinks=False)
+    except OSError:
+        os.close(descriptor)
+        raise
+    if (named.st_dev, named.st_ino) != (metadata.st_dev, metadata.st_ino):
+        os.close(descriptor)
+        raise ValueError("authority parent identity mismatch")
+    return descriptor, metadata
+
+
+def _read_authorization(
+    path: Path, *, authority_parent: Path
+) -> tuple[dict[str, Any], str]:
+    if (
+        not path.is_absolute()
+        or path.parent != authority_parent
+        or path.name in {"", ".", ".."}
+    ):
+        raise ValueError("authorization must be a direct authority-parent child")
+    parent_descriptor, parent_metadata = _authority_parent_descriptor(authority_parent)
+    descriptor = -1
+    try:
+        descriptor = os.open(
+            path.name,
+            os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0),
+            dir_fd=parent_descriptor,
+        )
         metadata = os.fstat(descriptor)
         if (
             not stat.S_ISREG(metadata.st_mode)
@@ -127,8 +206,82 @@ def _read_authorization(path: Path) -> tuple[dict[str, Any], str]:
             raw.extend(chunk)
             if len(raw) > 1024 * 1024:
                 raise ValueError("authorization is too large")
+        final_metadata = os.fstat(descriptor)
+        final_parent_metadata = os.fstat(parent_descriptor)
+        named_authorization = os.stat(
+            path.name, dir_fd=parent_descriptor, follow_symlinks=False
+        )
+        named_parent = os.stat(authority_parent, follow_symlinks=False)
+        authorization_identity = (
+            metadata.st_dev,
+            metadata.st_ino,
+            metadata.st_uid,
+            stat.S_IMODE(metadata.st_mode),
+            metadata.st_nlink,
+            metadata.st_size,
+        )
+        if (
+            not stat.S_ISREG(final_metadata.st_mode)
+            or not stat.S_ISREG(named_authorization.st_mode)
+            or final_metadata.st_uid != os.geteuid()
+            or named_authorization.st_uid != os.geteuid()
+            or stat.S_IMODE(final_metadata.st_mode) != 0o444
+            or stat.S_IMODE(named_authorization.st_mode) != 0o444
+            or final_metadata.st_nlink != 1
+            or named_authorization.st_nlink != 1
+            or authorization_identity
+            != (
+                final_metadata.st_dev,
+                final_metadata.st_ino,
+                final_metadata.st_uid,
+                stat.S_IMODE(final_metadata.st_mode),
+                final_metadata.st_nlink,
+                final_metadata.st_size,
+            )
+            or authorization_identity
+            != (
+                named_authorization.st_dev,
+                named_authorization.st_ino,
+                named_authorization.st_uid,
+                stat.S_IMODE(named_authorization.st_mode),
+                named_authorization.st_nlink,
+                named_authorization.st_size,
+            )
+        ):
+            raise ValueError("authorization metadata changed while reading")
+        parent_identity = (
+            parent_metadata.st_dev,
+            parent_metadata.st_ino,
+            parent_metadata.st_uid,
+            stat.S_IMODE(parent_metadata.st_mode),
+        )
+        if (
+            not stat.S_ISDIR(final_parent_metadata.st_mode)
+            or not stat.S_ISDIR(named_parent.st_mode)
+            or final_parent_metadata.st_uid != os.geteuid()
+            or named_parent.st_uid != os.geteuid()
+            or stat.S_IMODE(final_parent_metadata.st_mode) != 0o700
+            or stat.S_IMODE(named_parent.st_mode) != 0o700
+            or parent_identity
+            != (
+                final_parent_metadata.st_dev,
+                final_parent_metadata.st_ino,
+                final_parent_metadata.st_uid,
+                stat.S_IMODE(final_parent_metadata.st_mode),
+            )
+            or parent_identity
+            != (
+                named_parent.st_dev,
+                named_parent.st_ino,
+                named_parent.st_uid,
+                stat.S_IMODE(named_parent.st_mode),
+            )
+        ):
+            raise ValueError("authority parent metadata changed while reading")
     finally:
-        os.close(descriptor)
+        if descriptor >= 0:
+            os.close(descriptor)
+        os.close(parent_descriptor)
     try:
         payload = json.loads(raw)
     except json.JSONDecodeError as error:
@@ -151,7 +304,11 @@ def _parse_utc(value: object) -> datetime:
 
 
 def _validate_authorization(
-    payload: Mapping[str, Any], *, now: datetime, context: CommandContext
+    payload: Mapping[str, Any],
+    *,
+    now: datetime,
+    context: CommandContext,
+    authority_parent: Path,
 ) -> None:
     if (
         set(payload) != _TOP_LEVEL_KEYS
@@ -168,6 +325,7 @@ def _validate_authorization(
         or payload.get("one_use") is not True
         or payload.get("retry_authorized") is not False
         or payload.get("authorization") != _AUTHORIZED_FLAGS
+        or payload.get("trusted_execution") != _trusted_execution(authority_parent)
     ):
         raise ValueError("publication authorization capability is invalid")
     created = _parse_utc(payload.get("created_at_utc"))
@@ -175,8 +333,34 @@ def _validate_authorization(
     if now.tzinfo is None:
         raise ValueError("authorization comparison time must be aware")
     now = now.astimezone(timezone.utc)
-    if not created <= now <= expires or not created < expires:
+    if (
+        not created <= now <= expires
+        or not created < expires
+        or expires - created > timedelta(hours=1)
+    ):
         raise ValueError("publication authorization is not currently valid")
+    controller = payload.get("external_local_controller_authorization")
+    if not isinstance(controller, Mapping) or set(controller) != _LOCAL_CONTROLLER_KEYS:
+        raise ValueError("external local-controller authorization is invalid")
+    controller_time = _parse_utc(controller.get("authorized_at_utc"))
+    if (
+        controller.get("schema_version") != LOCAL_CONTROLLER_VERSION
+        or controller.get("controller_kind") != "codex-desktop-local-controller"
+        or controller.get("decision")
+        != "authorize-one-metadata-package-publication"
+        or not all(
+            isinstance(controller.get(key), str) and bool(controller[key])
+            for key in (
+                "controller_host_id",
+                "controller_principal",
+                "authorization_event_id",
+            )
+        )
+        or not _is_hex(controller.get("authorized_request_sha256"), 64)
+        or not controller_time <= created
+        or created - controller_time > timedelta(minutes=15)
+    ):
+        raise ValueError("external local-controller authorization facts mismatch")
     command = payload.get("command")
     if command != {
         "cwd": context.cwd,
@@ -386,16 +570,23 @@ def publish_authorized_once(
     repository_root: str | Path,
     contract_path: str | Path,
     command_context: CommandContext,
+    authority_parent: str | Path = AUTHORITY_PARENT,
     now: datetime | None = None,
 ) -> dict[str, Path]:
     """Consume one exact capability and publish an inert package once."""
 
     auth_path = Path(authorization_path)
-    authorization, authorization_file_sha256 = _read_authorization(auth_path)
+    if os.geteuid() != TRUSTED_EXECUTION_UID:
+        raise ValueError("publication trusted execution uid mismatch")
+    authority_root = Path(authority_parent)
+    authorization, authorization_file_sha256 = _read_authorization(
+        auth_path, authority_parent=authority_root
+    )
     _validate_authorization(
         authorization,
         now=now or datetime.now(timezone.utc),
         context=command_context,
+        authority_parent=authority_root,
     )
     _validate_tool_bindings(authorization["tools"], command_context)
     root = Path(repository_root)
@@ -479,9 +670,12 @@ def publish_authorized_once(
 __all__ = [
     "ACCEPTED_HASH_FIELD",
     "ACCEPTED_VERSION",
+    "AUTHORITY_PARENT",
     "AUTHORIZATION_FLAGS",
     "AUTHORIZATION_HASH_FIELD",
     "AUTHORIZATION_VERSION",
     "CommandContext",
+    "LOCAL_CONTROLLER_VERSION",
+    "TRUSTED_EXECUTION_UID",
     "publish_authorized_once",
 ]

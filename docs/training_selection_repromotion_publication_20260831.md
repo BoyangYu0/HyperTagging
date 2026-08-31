@@ -3,17 +3,22 @@
 The sealed repromotion package remains inert. Its default authorization map is
 closed and entirely false. A package may be materialized only through the
 separate publish-once helper and an external, mode-0444, self-hashed capability
-whose exact metadata-publication flag alone is true. The command and capability
-must both be consumed by root; non-root execution or a non-root-owned
-capability is rejected.
+whose exact metadata-publication flag alone is true. The v2 command is sealed
+to trusted execution uid 12184. Its capability must be a direct child of the
+exact `/home/b/Boyang.Yu/.hypertagging-authority/training-selection-repromotion-publication-v2`
+authority parent, which must be a non-symlink directory owned by uid 12184 with
+mode 0700. The same opened descriptors bind parent and capability ownership and
+identity through the read, so path replacement fails closed.
 
 The capability binds one clean annotated implementation tag, repository and
 contract hashes, all four authenticated metadata inputs, one absolute fresh
 namespace, deterministic output hashes and byte sizes, the expected package
 receipt hash, the complete command/environment, and the exact `env`, Git, and
-Python executable closure. It expires, is one-use, and never authorizes retry,
-consumer pinning, pointer activation, payload access, science, submission, or
-Slurm.
+Python executable closure. A closed external local-controller record binds its
+controller kind, host, principal, event, timestamp, request digest, and exact
+one-publication decision. It expires within one hour, is one-use, and never
+authorizes retry, consumer pinning, pointer activation, payload access, science,
+submission, or Slurm.
 
 After all read-only checks and an in-memory deterministic build, the helper
 creates a sibling authorization lock with O_EXCL/O_NOFOLLOW. Any failure or

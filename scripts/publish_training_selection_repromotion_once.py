@@ -7,10 +7,13 @@ import argparse
 import json
 import os
 from pathlib import Path
+import stat
 import sys
 
 from hypertagging.data.selection_repromotion_publication import (
+    AUTHORITY_PARENT,
     CommandContext,
+    TRUSTED_EXECUTION_UID,
     publish_authorized_once,
 )
 
@@ -27,11 +30,25 @@ def main() -> int:
     args = parser.parse_args()
     if not args.authorization.is_absolute():
         parser.error("--authorization must be absolute")
-    if os.geteuid() != 0:
-        parser.error("publication authorization may be consumed only by root")
+    if os.geteuid() != TRUSTED_EXECUTION_UID:
+        parser.error("publication authorization trusted execution uid mismatch")
+    if args.authorization.parent != AUTHORITY_PARENT:
+        parser.error("publication authorization is outside the sealed authority parent")
+    authority_metadata = AUTHORITY_PARENT.stat(follow_symlinks=False)
+    if (
+        not stat.S_ISDIR(authority_metadata.st_mode)
+        or authority_metadata.st_uid != TRUSTED_EXECUTION_UID
+        or stat.S_IMODE(authority_metadata.st_mode) != 0o700
+    ):
+        parser.error("publication authority parent must be owned mode-0700 directory")
     authorization_metadata = args.authorization.stat(follow_symlinks=False)
-    if authorization_metadata.st_uid != 0:
-        parser.error("publication authorization must be root-owned")
+    if (
+        not stat.S_ISREG(authorization_metadata.st_mode)
+        or authorization_metadata.st_uid != TRUSTED_EXECUTION_UID
+        or authorization_metadata.st_nlink != 1
+        or stat.S_IMODE(authorization_metadata.st_mode) != 0o444
+    ):
+        parser.error("publication authorization wrapper precheck failed")
     missing = [key for key in BOUND_ENVIRONMENT_KEYS if key not in os.environ]
     if missing:
         parser.error(f"bound environment is incomplete: {missing}")
@@ -45,6 +62,7 @@ def main() -> int:
         repository_root=ROOT,
         contract_path=CONTRACT,
         command_context=context,
+        authority_parent=AUTHORITY_PARENT,
     )
     print(json.dumps({key: str(value) for key, value in paths.items()}, sort_keys=True))
     return 0

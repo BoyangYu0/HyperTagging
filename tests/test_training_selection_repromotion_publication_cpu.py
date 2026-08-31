@@ -79,6 +79,8 @@ def _write_authorization(path: Path, payload: dict) -> None:
 def _authorization(tmp_path: Path) -> tuple[Path, dict, publication.CommandContext]:
     contract = load_repromotion_contract(CONTRACT_PATH)
     output_root = tmp_path / "immutable-package"
+    authority_parent = tmp_path / "private-authority"
+    authority_parent.mkdir(mode=0o700)
     context = _context()
     provenance = _provenance(contract)
     package = build_repromotion_package(
@@ -95,6 +97,17 @@ def _authorization(tmp_path: Path) -> tuple[Path, dict, publication.CommandConte
         "expires_at_utc": "2026-08-31T11:00:00Z",
         "one_use": True,
         "retry_authorized": False,
+        "trusted_execution": publication._trusted_execution(authority_parent),
+        "external_local_controller_authorization": {
+            "schema_version": publication.LOCAL_CONTROLLER_VERSION,
+            "controller_kind": "codex-desktop-local-controller",
+            "controller_host_id": "fixture-local-host",
+            "controller_principal": "fixture-local-user",
+            "authorization_event_id": "fixture-authorization-event",
+            "authorized_at_utc": "2026-08-31T09:55:00Z",
+            "authorized_request_sha256": "4" * 64,
+            "decision": "authorize-one-metadata-package-publication",
+        },
         "repository_root": str(ROOT),
         "implementation": {
             "commit": provenance["repository_head"],
@@ -131,7 +144,7 @@ def _authorization(tmp_path: Path) -> tuple[Path, dict, publication.CommandConte
             "metadata_package_publication_authorized": True,
         },
     }
-    authorization_path = tmp_path / "authorization.json"
+    authorization_path = authority_parent / "authorization.json"
     _write_authorization(authorization_path, payload)
     return authorization_path, payload, context
 
@@ -149,6 +162,7 @@ def _publish(tmp_path: Path, monkeypatch):
         repository_root=ROOT,
         contract_path=CONTRACT_PATH,
         command_context=context,
+        authority_parent=authorization_path.parent,
         now=NOW,
     )
     return paths, payload
@@ -165,6 +179,7 @@ def _publish(tmp_path: Path, monkeypatch):
         "tool",
         "tool_path",
         "environment",
+        "trusted_uid",
     ),
 )
 def test_authorization_schema_and_context_fail_before_metadata_or_lock(
@@ -186,6 +201,8 @@ def test_authorization_schema_and_context_fail_before_metadata_or_lock(
         payload["tools"][0]["sha256"] = "0" * 64
     elif mutation == "tool_path":
         payload["tools"][1] = _tool("git", Path("/usr/bin/env"))
+    elif mutation == "trusted_uid":
+        payload["trusted_execution"]["uid"] = publication.TRUSTED_EXECUTION_UID + 1
     else:
         context.environment["PATH"] = "/tmp"
     _write_authorization(authorization_path, payload)
@@ -202,6 +219,7 @@ def test_authorization_schema_and_context_fail_before_metadata_or_lock(
             repository_root=ROOT,
             contract_path=CONTRACT_PATH,
             command_context=context,
+            authority_parent=authorization_path.parent,
             now=NOW,
         )
     assert not any(
@@ -226,6 +244,7 @@ def test_expected_receipt_mismatch_fails_before_lock(tmp_path, monkeypatch):
             repository_root=ROOT,
             contract_path=CONTRACT_PATH,
             command_context=context,
+            authority_parent=authorization_path.parent,
             now=NOW,
         )
     assert not any(
@@ -233,10 +252,11 @@ def test_expected_receipt_mismatch_fails_before_lock(tmp_path, monkeypatch):
     )
 
 
-def test_descriptor_owner_mismatch_fails_before_metadata_or_lock(tmp_path, monkeypatch):
+def test_wrong_execution_euid_fails_before_metadata_or_lock(tmp_path, monkeypatch):
     authorization_path, _payload, context = _authorization(tmp_path)
-    owner_uid = os.geteuid()
-    monkeypatch.setattr(publication.os, "geteuid", lambda: owner_uid + 1)
+    monkeypatch.setattr(
+        publication.os, "geteuid", lambda: publication.TRUSTED_EXECUTION_UID + 1
+    )
     monkeypatch.setattr(
         publication,
         "build_repromotion_package",
@@ -244,17 +264,208 @@ def test_descriptor_owner_mismatch_fails_before_metadata_or_lock(tmp_path, monke
             AssertionError("metadata opened after owner mismatch")
         ),
     )
+    with pytest.raises(ValueError, match="trusted execution uid"):
+        publication.publish_authorized_once(
+            authorization_path,
+            repository_root=ROOT,
+            contract_path=CONTRACT_PATH,
+            command_context=context,
+            authority_parent=authorization_path.parent,
+            now=NOW,
+        )
+    assert not any(
+        name.endswith("authorization.lock.json") for name in os.listdir(tmp_path)
+    )
+
+
+def test_authorization_descriptor_owner_fails_before_metadata_or_lock(
+    tmp_path, monkeypatch
+):
+    authorization_path, _payload, context = _authorization(tmp_path)
+    original_fstat = publication.os.fstat
+
+    def foreign_authorization(descriptor):
+        metadata = original_fstat(descriptor)
+        if stat.S_ISREG(metadata.st_mode):
+            values = list(metadata)
+            values[4] = publication.TRUSTED_EXECUTION_UID + 1
+            return os.stat_result(values)
+        return metadata
+
+    monkeypatch.setattr(publication.os, "fstat", foreign_authorization)
     with pytest.raises(ValueError, match="owned unique"):
         publication.publish_authorized_once(
             authorization_path,
             repository_root=ROOT,
             contract_path=CONTRACT_PATH,
             command_context=context,
+            authority_parent=authorization_path.parent,
+            now=NOW,
+        )
+
+
+@pytest.mark.parametrize("mutation", ("missing", "extra"))
+def test_local_controller_schema_is_closed_before_metadata_or_lock(
+    tmp_path, monkeypatch, mutation
+):
+    authorization_path, payload, context = _authorization(tmp_path)
+    authorization_path.chmod(0o644)
+    controller = payload["external_local_controller_authorization"]
+    if mutation == "missing":
+        controller.pop("controller_principal")
+    else:
+        controller["unexpected"] = False
+    _write_authorization(authorization_path, payload)
+    monkeypatch.setattr(
+        publication,
+        "build_repromotion_package",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("metadata opened after invalid controller facts")
+        ),
+    )
+    with pytest.raises(ValueError, match="local-controller"):
+        publication.publish_authorized_once(
+            authorization_path,
+            repository_root=ROOT,
+            contract_path=CONTRACT_PATH,
+            command_context=context,
+            authority_parent=authorization_path.parent,
             now=NOW,
         )
     assert not any(
         name.endswith("authorization.lock.json") for name in os.listdir(tmp_path)
     )
+
+
+def test_authority_parent_mode_fails_before_metadata_or_lock(tmp_path, monkeypatch):
+    authorization_path, _payload, context = _authorization(tmp_path)
+    authorization_path.parent.chmod(0o755)
+    monkeypatch.setattr(
+        publication,
+        "build_repromotion_package",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("metadata opened after unsafe authority parent")
+        ),
+    )
+    with pytest.raises(ValueError, match="mode-0700"):
+        publication.publish_authorized_once(
+            authorization_path,
+            repository_root=ROOT,
+            contract_path=CONTRACT_PATH,
+            command_context=context,
+            authority_parent=authorization_path.parent,
+            now=NOW,
+        )
+
+
+def test_authority_parent_owner_fails_before_metadata_or_lock(tmp_path, monkeypatch):
+    authorization_path, _payload, context = _authorization(tmp_path)
+    original_fstat = publication.os.fstat
+
+    def foreign_parent(descriptor):
+        metadata = original_fstat(descriptor)
+        if stat.S_ISDIR(metadata.st_mode):
+            values = list(metadata)
+            values[4] = publication.TRUSTED_EXECUTION_UID + 1
+            return os.stat_result(values)
+        return metadata
+
+    monkeypatch.setattr(publication.os, "fstat", foreign_parent)
+    with pytest.raises(ValueError, match="mode-0700"):
+        publication.publish_authorized_once(
+            authorization_path,
+            repository_root=ROOT,
+            contract_path=CONTRACT_PATH,
+            command_context=context,
+            authority_parent=authorization_path.parent,
+            now=NOW,
+        )
+
+
+def test_symlink_authority_parent_fails_before_metadata_or_lock(tmp_path, monkeypatch):
+    authorization_path, _payload, context = _authorization(tmp_path)
+    authority_parent = authorization_path.parent
+    real_parent = tmp_path / "real-private-authority"
+    authority_parent.rename(real_parent)
+    authority_parent.symlink_to(real_parent, target_is_directory=True)
+    with pytest.raises(ValueError, match="canonical|symlink"):
+        publication.publish_authorized_once(
+            authority_parent / authorization_path.name,
+            repository_root=ROOT,
+            contract_path=CONTRACT_PATH,
+            command_context=context,
+            authority_parent=authority_parent,
+            now=NOW,
+        )
+
+
+def test_authorization_replacement_during_read_fails_closed(tmp_path, monkeypatch):
+    authorization_path, _payload, context = _authorization(tmp_path)
+    original_read = publication.os.read
+    replaced = False
+
+    def replace_after_open(descriptor, count):
+        nonlocal replaced
+        if not replaced:
+            replaced = True
+            old = authorization_path.with_suffix(".opened.json")
+            authorization_path.rename(old)
+            authorization_path.write_bytes(old.read_bytes())
+            authorization_path.chmod(0o444)
+        return original_read(descriptor, count)
+
+    monkeypatch.setattr(publication.os, "read", replace_after_open)
+    with pytest.raises(ValueError, match="metadata changed"):
+        publication.publish_authorized_once(
+            authorization_path,
+            repository_root=ROOT,
+            contract_path=CONTRACT_PATH,
+            command_context=context,
+            authority_parent=authorization_path.parent,
+            now=NOW,
+        )
+    assert not any(
+        name.endswith("authorization.lock.json") for name in os.listdir(tmp_path)
+    )
+
+
+@pytest.mark.parametrize("mutation", ("authorization_mode", "parent_mode"))
+def test_same_inode_mode_change_during_read_fails_before_metadata_or_lock(
+    tmp_path, monkeypatch, mutation
+):
+    authorization_path, payload, context = _authorization(tmp_path)
+    original_read = publication.os.read
+    changed = False
+
+    def change_mode_after_open(descriptor, count):
+        nonlocal changed
+        if not changed:
+            changed = True
+            if mutation == "authorization_mode":
+                authorization_path.chmod(0o644)
+            else:
+                authorization_path.parent.chmod(0o755)
+        return original_read(descriptor, count)
+
+    monkeypatch.setattr(publication.os, "read", change_mode_after_open)
+    monkeypatch.setattr(
+        publication,
+        "build_repromotion_package",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("metadata opened after same-inode metadata drift")
+        ),
+    )
+    with pytest.raises(ValueError, match="metadata changed"):
+        publication.publish_authorized_once(
+            authorization_path,
+            repository_root=ROOT,
+            contract_path=CONTRACT_PATH,
+            command_context=context,
+            authority_parent=authorization_path.parent,
+            now=NOW,
+        )
+    assert not Path(payload["namespace"]["authorization_lock"]).exists()
+    assert not Path(payload["namespace"]["output_root"]).exists()
 
 
 @pytest.mark.parametrize("collision", ("regular", "symlink"))
@@ -279,6 +490,7 @@ def test_lock_collision_is_fail_closed_without_publication(
             repository_root=ROOT,
             contract_path=CONTRACT_PATH,
             command_context=context,
+            authority_parent=authorization_path.parent,
             now=NOW,
         )
     assert not Path(payload["namespace"]["output_root"]).exists()
@@ -303,6 +515,7 @@ def test_failure_after_lock_is_permanent_no_retry(tmp_path, monkeypatch):
             repository_root=ROOT,
             contract_path=CONTRACT_PATH,
             command_context=context,
+            authority_parent=authorization_path.parent,
             now=NOW,
         )
     assert Path(payload["namespace"]["authorization_lock"]).is_file()
@@ -313,6 +526,7 @@ def test_failure_after_lock_is_permanent_no_retry(tmp_path, monkeypatch):
             repository_root=ROOT,
             contract_path=CONTRACT_PATH,
             command_context=context,
+            authority_parent=authorization_path.parent,
             now=NOW,
         )
 
@@ -344,6 +558,7 @@ def test_success_writes_accepted_receipt_last_and_keeps_all_authority_inert(
         repository_root=ROOT,
         contract_path=CONTRACT_PATH,
         command_context=context,
+        authority_parent=authorization_path.parent,
         now=NOW,
     )
     assert order == [
@@ -392,6 +607,7 @@ def test_accepted_receipt_failure_strands_package_without_retry(tmp_path, monkey
             repository_root=ROOT,
             contract_path=CONTRACT_PATH,
             command_context=context,
+            authority_parent=authorization_path.parent,
             now=NOW,
         )
     assert Path(payload["expected_outputs"]["package_receipt"]["path"]).is_file()
@@ -402,6 +618,7 @@ def test_accepted_receipt_failure_strands_package_without_retry(tmp_path, monkey
             repository_root=ROOT,
             contract_path=CONTRACT_PATH,
             command_context=context,
+            authority_parent=authorization_path.parent,
             now=NOW,
         )
 
@@ -429,6 +646,7 @@ def test_wrapper_build_opens_only_four_authenticated_metadata_documents(
         repository_root=ROOT,
         contract_path=CONTRACT_PATH,
         command_context=context,
+        authority_parent=authorization_path.parent,
         now=NOW,
     )
     assert opened == ["inventory", "roles", "legacy_selection", "legacy_index"]
