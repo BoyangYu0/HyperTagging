@@ -24,6 +24,7 @@ CHECKPOINT_COMPARISON_CONTRACT_VERSION = (
     "hypertagging-reconstruction-fullscale-v2-phase34-checkpoint-comparison"
 )
 CHECKPOINT_COMPARISON_STUDY = "phase34-orderfix-downstream-reconstruction-20260904"
+CHECKPOINT_COMPARISON_INPUT_ROOT = "runtime_inputs/reconstruction_phase34_20260904"
 CHECKPOINT = (
     "artifacts/runs/ht-pretrain-production-1m-h100-20260821/20260812/"
     "15933802/checkpoint-step-54064.pt"
@@ -33,15 +34,14 @@ CHECKPOINT_SHA256 = (
 )
 CHECKPOINT_COMPARISON_SOURCES = {
     54064: {
-        "path": CHECKPOINT,
+        "path": f"{CHECKPOINT_COMPARISON_INPUT_ROOT}/checkpoint-step-54064.pt",
         "sha256": CHECKPOINT_SHA256,
         "role": "resume_source_baseline",
         "pretraining_success_gate_passed": False,
     },
     81096: {
         "path": (
-            "artifacts/runs/ht-pretrain-1m-phase3-orderfix-20260901/20260812/"
-            "16163961/checkpoint-step-81096.pt"
+            f"{CHECKPOINT_COMPARISON_INPUT_ROOT}/checkpoint-step-81096.pt"
         ),
         "sha256": "98e461ad5c5d0a82ce312f4e2c6e67f6f40212d9f0df038cae315296ec990869",
         "role": "parent_ranking_winner",
@@ -49,8 +49,7 @@ CHECKPOINT_COMPARISON_SOURCES = {
     },
     108128: {
         "path": (
-            "artifacts/runs/ht-pretrain-1m-phase3-orderfix-20260901/20260812/"
-            "16163961/checkpoint-step-108128.pt"
+            f"{CHECKPOINT_COMPARISON_INPUT_ROOT}/checkpoint-step-108128.pt"
         ),
         "sha256": "7385ce1cf1535910f12bda809b7201323cc8d841f6483a3ad3997dc816c4db3b",
         "role": "configured_objective_winner",
@@ -61,6 +60,9 @@ SELECTION = "configs/training_selection/production_1m_20260812/train_035k.json"
 INDEX = (
     "artifacts/experiment_readiness/production_1m_20260812/train_035k/"
     "train_035k.complete_only.index.json"
+)
+CHECKPOINT_COMPARISON_INDEX = (
+    f"{CHECKPOINT_COMPARISON_INPUT_ROOT}/train_035k.complete_only.index.json"
 )
 SOURCE_FILES = (
     "schemas/ht_reconstruction_fullscale_v1.schema.json",
@@ -215,6 +217,7 @@ def main() -> int:
     preregistration = (
         CHECKPOINT_COMPARISON_PREREGISTRATION if comparison else PREREGISTRATION
     )
+    dataset_index = CHECKPOINT_COMPARISON_INDEX if comparison else INDEX
     if args.output.exists():
         raise RuntimeError("refusing to overwrite reconstruction contract")
     if run(("git", "rev-parse", "HEAD")) != args.expected_git_sha:
@@ -264,7 +267,7 @@ def main() -> int:
             args.checkpoint_comparison_step if comparison else 54064
         ),
         "selection_manifest": SELECTION,
-        "dataset_index": INDEX,
+        "dataset_index": dataset_index,
         "training_role": "train",
         "evaluation_role": "validation",
         "validation_access_policy": "forbidden_during_calibration" if args.mode == "calibration" else "validation_only",
@@ -301,7 +304,7 @@ def main() -> int:
         "output_root": output_root,
         "hashed_inputs": [
             hashed(SELECTION),
-            hashed(INDEX),
+            hashed(dataset_index),
             *[hashed(path) for path in source_files],
         ],
         "live_slurm": live_slurm(args.gres),

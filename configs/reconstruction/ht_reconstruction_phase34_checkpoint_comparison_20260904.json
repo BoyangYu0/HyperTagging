@@ -8,19 +8,19 @@
     {
       "role": "resume_source_baseline",
       "step": 54064,
-      "path": "artifacts/runs/ht-pretrain-production-1m-h100-20260821/20260812/15933802/checkpoint-step-54064.pt",
+      "path": "runtime_inputs/reconstruction_phase34_20260904/checkpoint-step-54064.pt",
       "sha256": "997241deb841033598846dea8b3650d31b9511c4241aad44798d83fe0ac5ad7d"
     },
     {
       "role": "parent_ranking_winner",
       "step": 81096,
-      "path": "artifacts/runs/ht-pretrain-1m-phase3-orderfix-20260901/20260812/16163961/checkpoint-step-81096.pt",
+      "path": "runtime_inputs/reconstruction_phase34_20260904/checkpoint-step-81096.pt",
       "sha256": "98e461ad5c5d0a82ce312f4e2c6e67f6f40212d9f0df038cae315296ec990869"
     },
     {
       "role": "configured_objective_winner",
       "step": 108128,
-      "path": "artifacts/runs/ht-pretrain-1m-phase3-orderfix-20260901/20260812/16163961/checkpoint-step-108128.pt",
+      "path": "runtime_inputs/reconstruction_phase34_20260904/checkpoint-step-108128.pt",
       "sha256": "7385ce1cf1535910f12bda809b7201323cc8d841f6483a3ad3997dc816c4db3b"
     }
   ],
@@ -45,7 +45,7 @@
     "training_role": "train",
     "evaluation_role": "validation",
     "selection_manifest": "configs/training_selection/production_1m_20260812/train_035k.json",
-    "dataset_index": "artifacts/experiment_readiness/production_1m_20260812/train_035k/train_035k.complete_only.index.json",
+    "dataset_index": "runtime_inputs/reconstruction_phase34_20260904/train_035k.complete_only.index.json",
     "validation_events": 2000,
     "rollout_validation_events": 1000,
     "sealed_test_role_access": "forbidden",

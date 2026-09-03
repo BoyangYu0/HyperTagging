@@ -39,17 +39,17 @@ CHECKPOINT_COMPARISON_PREREGISTRATION = (
     "configs/reconstruction/ht_reconstruction_phase34_checkpoint_comparison_20260904.json"
 )
 CHECKPOINT_COMPARISON_STUDY = "phase34-orderfix-downstream-reconstruction-20260904"
+CHECKPOINT_COMPARISON_INPUT_ROOT = "runtime_inputs/reconstruction_phase34_20260904"
 CHECKPOINT_COMPARISON_SOURCES = {
     54064: {
-        "path": SOURCE_CHECKPOINT,
+        "path": f"{CHECKPOINT_COMPARISON_INPUT_ROOT}/checkpoint-step-54064.pt",
         "sha256": SOURCE_CHECKPOINT_SHA256,
         "role": "resume_source_baseline",
         "pretraining_success_gate_passed": False,
     },
     81096: {
         "path": (
-            "artifacts/runs/ht-pretrain-1m-phase3-orderfix-20260901/20260812/"
-            "16163961/checkpoint-step-81096.pt"
+            f"{CHECKPOINT_COMPARISON_INPUT_ROOT}/checkpoint-step-81096.pt"
         ),
         "sha256": "98e461ad5c5d0a82ce312f4e2c6e67f6f40212d9f0df038cae315296ec990869",
         "role": "parent_ranking_winner",
@@ -57,14 +57,16 @@ CHECKPOINT_COMPARISON_SOURCES = {
     },
     108128: {
         "path": (
-            "artifacts/runs/ht-pretrain-1m-phase3-orderfix-20260901/20260812/"
-            "16163961/checkpoint-step-108128.pt"
+            f"{CHECKPOINT_COMPARISON_INPUT_ROOT}/checkpoint-step-108128.pt"
         ),
         "sha256": "7385ce1cf1535910f12bda809b7201323cc8d841f6483a3ad3997dc816c4db3b",
         "role": "configured_objective_winner",
         "pretraining_success_gate_passed": True,
     },
 }
+CHECKPOINT_COMPARISON_INDEX = (
+    f"{CHECKPOINT_COMPARISON_INPUT_ROOT}/train_035k.complete_only.index.json"
+)
 HEX40 = re.compile(r"^[0-9a-f]{40}$")
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
 
@@ -250,7 +252,12 @@ def verify_contract(
         raise RuntimeError("source checkpoint SHA256 does not match the registered hash")
     selection = _repo_path(str(contract.get("selection_manifest", "")), suffix=".json")
     index = _repo_path(str(contract.get("dataset_index", "")), suffix=".json")
-    if str(selection.relative_to(ROOT)) != SELECTION_MANIFEST or str(index.relative_to(ROOT)) != DATASET_INDEX:
+    expected_index = (
+        CHECKPOINT_COMPARISON_INDEX
+        if contract.get("contract_version") == CHECKPOINT_COMPARISON_CONTRACT_VERSION
+        else DATASET_INDEX
+    )
+    if str(selection.relative_to(ROOT)) != SELECTION_MANIFEST or str(index.relative_to(ROOT)) != expected_index:
         raise RuntimeError("selection/index path binding changed")
     output_root = Path(str(contract.get("output_root", "")))
     if not output_root.is_absolute():
