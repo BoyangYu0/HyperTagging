@@ -40,6 +40,9 @@ CHECKPOINT_COMPARISON_PREREGISTRATION = (
 )
 CHECKPOINT_COMPARISON_STUDY = "phase34-orderfix-downstream-reconstruction-20260904"
 CHECKPOINT_COMPARISON_INPUT_ROOT = "runtime_inputs/reconstruction_phase34_20260904"
+CHECKPOINT_COMPARISON_SELECTION = (
+    f"{CHECKPOINT_COMPARISON_INPUT_ROOT}/train_035k.repromoted.json"
+)
 CHECKPOINT_COMPARISON_SOURCES = {
     54064: {
         "path": f"{CHECKPOINT_COMPARISON_INPUT_ROOT}/checkpoint-step-54064.pt",
@@ -65,7 +68,7 @@ CHECKPOINT_COMPARISON_SOURCES = {
     },
 }
 CHECKPOINT_COMPARISON_INDEX = (
-    f"{CHECKPOINT_COMPARISON_INPUT_ROOT}/train_035k.complete_only.index.json"
+    f"{CHECKPOINT_COMPARISON_INPUT_ROOT}/train_035k.complete_only.repromoted.index.json"
 )
 HEX40 = re.compile(r"^[0-9a-f]{40}$")
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
@@ -252,12 +255,17 @@ def verify_contract(
         raise RuntimeError("source checkpoint SHA256 does not match the registered hash")
     selection = _repo_path(str(contract.get("selection_manifest", "")), suffix=".json")
     index = _repo_path(str(contract.get("dataset_index", "")), suffix=".json")
+    expected_selection = (
+        CHECKPOINT_COMPARISON_SELECTION
+        if contract.get("contract_version") == CHECKPOINT_COMPARISON_CONTRACT_VERSION
+        else SELECTION_MANIFEST
+    )
     expected_index = (
         CHECKPOINT_COMPARISON_INDEX
         if contract.get("contract_version") == CHECKPOINT_COMPARISON_CONTRACT_VERSION
         else DATASET_INDEX
     )
-    if str(selection.relative_to(ROOT)) != SELECTION_MANIFEST or str(index.relative_to(ROOT)) != expected_index:
+    if str(selection.relative_to(ROOT)) != expected_selection or str(index.relative_to(ROOT)) != expected_index:
         raise RuntimeError("selection/index path binding changed")
     output_root = Path(str(contract.get("output_root", "")))
     if not output_root.is_absolute():

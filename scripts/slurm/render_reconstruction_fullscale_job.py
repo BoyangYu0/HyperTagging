@@ -25,6 +25,12 @@ CHECKPOINT_COMPARISON_CONTRACT_VERSION = (
 )
 CHECKPOINT_COMPARISON_STUDY = "phase34-orderfix-downstream-reconstruction-20260904"
 CHECKPOINT_COMPARISON_INPUT_ROOT = "runtime_inputs/reconstruction_phase34_20260904"
+CHECKPOINT_COMPARISON_SELECTION = (
+    f"{CHECKPOINT_COMPARISON_INPUT_ROOT}/train_035k.repromoted.json"
+)
+CHECKPOINT_COMPARISON_REPROMOTION_RECEIPT = (
+    f"{CHECKPOINT_COMPARISON_INPUT_ROOT}/repromotion.receipt.json"
+)
 CHECKPOINT = (
     "artifacts/runs/ht-pretrain-production-1m-h100-20260821/20260812/"
     "15933802/checkpoint-step-54064.pt"
@@ -62,7 +68,7 @@ INDEX = (
     "train_035k.complete_only.index.json"
 )
 CHECKPOINT_COMPARISON_INDEX = (
-    f"{CHECKPOINT_COMPARISON_INPUT_ROOT}/train_035k.complete_only.index.json"
+    f"{CHECKPOINT_COMPARISON_INPUT_ROOT}/train_035k.complete_only.repromoted.index.json"
 )
 SOURCE_FILES = (
     "schemas/ht_reconstruction_fullscale_v1.schema.json",
@@ -217,6 +223,7 @@ def main() -> int:
     preregistration = (
         CHECKPOINT_COMPARISON_PREREGISTRATION if comparison else PREREGISTRATION
     )
+    selection_manifest = CHECKPOINT_COMPARISON_SELECTION if comparison else SELECTION
     dataset_index = CHECKPOINT_COMPARISON_INDEX if comparison else INDEX
     if args.output.exists():
         raise RuntimeError("refusing to overwrite reconstruction contract")
@@ -246,6 +253,8 @@ def main() -> int:
     source_files = tuple(
         preregistration if path == PREREGISTRATION else path for path in SOURCE_FILES
     )
+    if comparison:
+        source_files = (*source_files, CHECKPOINT_COMPARISON_REPROMOTION_RECEIPT)
     contract: dict[str, Any] = {
         "contract_version": (
             CHECKPOINT_COMPARISON_CONTRACT_VERSION
@@ -266,7 +275,7 @@ def main() -> int:
         "checkpoint_step": (
             args.checkpoint_comparison_step if comparison else 54064
         ),
-        "selection_manifest": SELECTION,
+        "selection_manifest": selection_manifest,
         "dataset_index": dataset_index,
         "training_role": "train",
         "evaluation_role": "validation",
@@ -303,7 +312,7 @@ def main() -> int:
         "max_wall_seconds": 900 if args.mode == "calibration" else 43200,
         "output_root": output_root,
         "hashed_inputs": [
-            hashed(SELECTION),
+            hashed(selection_manifest),
             hashed(dataset_index),
             *[hashed(path) for path in source_files],
         ],

@@ -44,8 +44,11 @@
   "data_binding": {
     "training_role": "train",
     "evaluation_role": "validation",
-    "selection_manifest": "configs/training_selection/production_1m_20260812/train_035k.json",
-    "dataset_index": "runtime_inputs/reconstruction_phase34_20260904/train_035k.complete_only.index.json",
+    "selection_manifest": "runtime_inputs/reconstruction_phase34_20260904/train_035k.repromoted.json",
+    "selection_file_sha256": "d0516ee4db09d7610a614475057af40282594882e03df1e9106e371a6710a660",
+    "dataset_index": "runtime_inputs/reconstruction_phase34_20260904/train_035k.complete_only.repromoted.index.json",
+    "dataset_index_file_sha256": "8d486304ba8018e03d4126271be24b5b43b15dd2c71f0e5dc8c847071b728097",
+    "metadata_repromotion_receipt": "runtime_inputs/reconstruction_phase34_20260904/repromotion.receipt.json",
     "validation_events": 2000,
     "rollout_validation_events": 1000,
     "sealed_test_role_access": "forbidden",

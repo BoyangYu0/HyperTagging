@@ -39,6 +39,14 @@ def test_phase34_comparison_registry_matches_preregistration() -> None:
     } == registered
     assert set(registered) == {54064, 81096, 108128}
     assert preregistration["study_id"] == verify.CHECKPOINT_COMPARISON_STUDY
+    assert (
+        preregistration["data_binding"]["selection_manifest"]
+        == verify.CHECKPOINT_COMPARISON_SELECTION
+    )
+    assert (
+        preregistration["data_binding"]["dataset_index"]
+        == verify.CHECKPOINT_COMPARISON_INDEX
+    )
 
 
 def test_phase34_comparison_uses_identical_fullscale_configuration() -> None:
