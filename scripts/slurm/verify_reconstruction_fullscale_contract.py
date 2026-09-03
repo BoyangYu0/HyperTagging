@@ -16,6 +16,9 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 CONTRACT_VERSION = "hypertagging-reconstruction-fullscale-v1"
+CHECKPOINT_COMPARISON_CONTRACT_VERSION = (
+    "hypertagging-reconstruction-fullscale-v2-phase34-checkpoint-comparison"
+)
 ALLOWED_GRES = {"gpu:h100nvl:1", "gpu:v100:1"}
 SOURCE_CHECKPOINT = (
     "artifacts/runs/ht-pretrain-production-1m-h100-20260821/20260812/"
@@ -32,6 +35,36 @@ DATASET_INDEX = (
 PREREGISTRATION = (
     "configs/reconstruction/ht_reconstruction_transfer_preregistration_20260824.json"
 )
+CHECKPOINT_COMPARISON_PREREGISTRATION = (
+    "configs/reconstruction/ht_reconstruction_phase34_checkpoint_comparison_20260904.json"
+)
+CHECKPOINT_COMPARISON_STUDY = "phase34-orderfix-downstream-reconstruction-20260904"
+CHECKPOINT_COMPARISON_SOURCES = {
+    54064: {
+        "path": SOURCE_CHECKPOINT,
+        "sha256": SOURCE_CHECKPOINT_SHA256,
+        "role": "resume_source_baseline",
+        "pretraining_success_gate_passed": False,
+    },
+    81096: {
+        "path": (
+            "artifacts/runs/ht-pretrain-1m-phase3-orderfix-20260901/20260812/"
+            "16163961/checkpoint-step-81096.pt"
+        ),
+        "sha256": "98e461ad5c5d0a82ce312f4e2c6e67f6f40212d9f0df038cae315296ec990869",
+        "role": "parent_ranking_winner",
+        "pretraining_success_gate_passed": True,
+    },
+    108128: {
+        "path": (
+            "artifacts/runs/ht-pretrain-1m-phase3-orderfix-20260901/20260812/"
+            "16163961/checkpoint-step-108128.pt"
+        ),
+        "sha256": "7385ce1cf1535910f12bda809b7201323cc8d841f6483a3ad3997dc816c4db3b",
+        "role": "configured_objective_winner",
+        "pretraining_success_gate_passed": True,
+    },
+}
 HEX40 = re.compile(r"^[0-9a-f]{40}$")
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
 
@@ -86,7 +119,11 @@ def _git(*args: str) -> str:
 
 
 def _require_common_fields(contract: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
-    if contract.get("contract_version") != CONTRACT_VERSION:
+    contract_version = contract.get("contract_version")
+    if contract_version not in {
+        CONTRACT_VERSION,
+        CHECKPOINT_COMPARISON_CONTRACT_VERSION,
+    }:
         raise RuntimeError("unsupported reconstruction full-scale contract")
     if contract.get("training_role") != "train":
         raise RuntimeError("reconstruction training role must be train")
@@ -99,16 +136,33 @@ def _require_common_fields(contract: dict[str, Any]) -> tuple[dict[str, Any], di
     provenance = contract.get("provenance_validation")
     if not isinstance(provenance, dict):
         raise RuntimeError("exploratory-transfer provenance is missing")
-    if provenance.get("pretraining_success_gate_passed") is not False:
-        raise RuntimeError("contract must explicitly record failed/incomplete pretraining")
-    if provenance.get("transfer_classification") != "exploratory_reconstruction_transfer":
-        raise RuntimeError("contract is not classified as exploratory reconstruction transfer")
+    if contract_version == CONTRACT_VERSION:
+        if provenance.get("pretraining_success_gate_passed") is not False:
+            raise RuntimeError("contract must explicitly record failed/incomplete pretraining")
+        if provenance.get("transfer_classification") != "exploratory_reconstruction_transfer":
+            raise RuntimeError("contract is not classified as exploratory reconstruction transfer")
+        required_preregistration = PREREGISTRATION
+    else:
+        source = CHECKPOINT_COMPARISON_SOURCES.get(int(contract.get("checkpoint_step", -1)))
+        if source is None:
+            raise RuntimeError("checkpoint is not registered for the phase-3/4 comparison")
+        if provenance.get("pretraining_success_gate_passed") is not source[
+            "pretraining_success_gate_passed"
+        ]:
+            raise RuntimeError("pretraining completion status does not match checkpoint role")
+        if provenance.get("transfer_classification") != "controlled_checkpoint_comparison":
+            raise RuntimeError("contract is not a controlled checkpoint comparison")
+        if contract.get("comparison_study") != CHECKPOINT_COMPARISON_STUDY:
+            raise RuntimeError("checkpoint comparison study binding changed")
+        if contract.get("comparison_role") != source["role"]:
+            raise RuntimeError("checkpoint comparison role does not match checkpoint step")
+        required_preregistration = CHECKPOINT_COMPARISON_PREREGISTRATION
     preregistration = contract.get("preregistration")
     if not isinstance(preregistration, dict):
         raise RuntimeError("versioned reconstruction preregistration is missing")
-    if preregistration.get("path") != PREREGISTRATION:
+    if preregistration.get("path") != required_preregistration:
         raise RuntimeError("reconstruction preregistration path changed")
-    preregistration_path = _repo_path(PREREGISTRATION, suffix=".json")
+    preregistration_path = _repo_path(required_preregistration, suffix=".json")
     if preregistration.get("sha256") != sha256(preregistration_path):
         raise RuntimeError("reconstruction preregistration hash changed")
     if contract.get("gres") not in ALLOWED_GRES:
@@ -176,12 +230,24 @@ def verify_contract(
         if int(config.get("presentations_target", 0)) != 70016:
             raise RuntimeError("production presentation target must remain 70016")
     checkpoint = _repo_path(str(contract.get("checkpoint", "")), suffix=".pt")
-    if str(checkpoint.relative_to(ROOT)) != SOURCE_CHECKPOINT:
-        raise RuntimeError("source checkpoint path is not the authorized step-54064 checkpoint")
-    if contract.get("checkpoint_step") != 54064 or contract.get("checkpoint_sha256") != SOURCE_CHECKPOINT_SHA256:
-        raise RuntimeError("source checkpoint step/hash binding changed")
-    if sha256(checkpoint) != SOURCE_CHECKPOINT_SHA256:
-        raise RuntimeError("source checkpoint SHA256 does not match the authorized hash")
+    checkpoint_step = int(contract.get("checkpoint_step", -1))
+    if contract.get("contract_version") == CONTRACT_VERSION:
+        source = {
+            "path": SOURCE_CHECKPOINT,
+            "sha256": SOURCE_CHECKPOINT_SHA256,
+        }
+        if checkpoint_step != 54064:
+            raise RuntimeError("source checkpoint step changed")
+    else:
+        source = CHECKPOINT_COMPARISON_SOURCES.get(checkpoint_step)
+        if source is None:
+            raise RuntimeError("checkpoint step is not registered for comparison")
+    if str(checkpoint.relative_to(ROOT)) != source["path"]:
+        raise RuntimeError("source checkpoint path does not match its registered role")
+    if contract.get("checkpoint_sha256") != source["sha256"]:
+        raise RuntimeError("source checkpoint hash binding changed")
+    if sha256(checkpoint) != source["sha256"]:
+        raise RuntimeError("source checkpoint SHA256 does not match the registered hash")
     selection = _repo_path(str(contract.get("selection_manifest", "")), suffix=".json")
     index = _repo_path(str(contract.get("dataset_index", "")), suffix=".json")
     if str(selection.relative_to(ROOT)) != SELECTION_MANIFEST or str(index.relative_to(ROOT)) != DATASET_INDEX:
@@ -193,7 +259,14 @@ def verify_contract(
     if expected_parent not in output_root.parents and output_root != expected_parent:
         expected_parent = (ROOT / "artifacts" / "runs" / "ht-reconstruction-calibration-20260824").resolve()
         if expected_parent not in output_root.parents:
-            raise RuntimeError("reconstruction output root is outside the authorized study roots")
+            expected_parent = (
+                ROOT
+                / "artifacts"
+                / "runs"
+                / "ht-reconstruction-phase34-checkpoint-comparison-20260904"
+            ).resolve()
+            if expected_parent not in output_root.parents:
+                raise RuntimeError("reconstruction output root is outside the authorized study roots")
     gpu_environment = Path(str(contract.get("gpu_environment", "")))
     if not gpu_environment.is_absolute() or not (gpu_environment / "bin/python").is_file():
         raise RuntimeError("GPU environment is unavailable")
@@ -212,8 +285,8 @@ def verify_contract(
     runtime = {
         "contract_sha256": contract_hash,
         "checkpoint": str(checkpoint),
-        "checkpoint_sha256": SOURCE_CHECKPOINT_SHA256,
-        "checkpoint_step": "54064",
+        "checkpoint_sha256": str(source["sha256"]),
+        "checkpoint_step": str(checkpoint_step),
         "selection_manifest": str(selection),
         "dataset_index": str(index),
         "gpu_environment": str(gpu_environment),

@@ -17,6 +17,13 @@ ROOT = Path(__file__).resolve().parents[2]
 PREREGISTRATION = (
     "configs/reconstruction/ht_reconstruction_transfer_preregistration_20260824.json"
 )
+CHECKPOINT_COMPARISON_PREREGISTRATION = (
+    "configs/reconstruction/ht_reconstruction_phase34_checkpoint_comparison_20260904.json"
+)
+CHECKPOINT_COMPARISON_CONTRACT_VERSION = (
+    "hypertagging-reconstruction-fullscale-v2-phase34-checkpoint-comparison"
+)
+CHECKPOINT_COMPARISON_STUDY = "phase34-orderfix-downstream-reconstruction-20260904"
 CHECKPOINT = (
     "artifacts/runs/ht-pretrain-production-1m-h100-20260821/20260812/"
     "15933802/checkpoint-step-54064.pt"
@@ -24,6 +31,32 @@ CHECKPOINT = (
 CHECKPOINT_SHA256 = (
     "997241deb841033598846dea8b3650d31b9511c4241aad44798d83fe0ac5ad7d"
 )
+CHECKPOINT_COMPARISON_SOURCES = {
+    54064: {
+        "path": CHECKPOINT,
+        "sha256": CHECKPOINT_SHA256,
+        "role": "resume_source_baseline",
+        "pretraining_success_gate_passed": False,
+    },
+    81096: {
+        "path": (
+            "artifacts/runs/ht-pretrain-1m-phase3-orderfix-20260901/20260812/"
+            "16163961/checkpoint-step-81096.pt"
+        ),
+        "sha256": "98e461ad5c5d0a82ce312f4e2c6e67f6f40212d9f0df038cae315296ec990869",
+        "role": "parent_ranking_winner",
+        "pretraining_success_gate_passed": True,
+    },
+    108128: {
+        "path": (
+            "artifacts/runs/ht-pretrain-1m-phase3-orderfix-20260901/20260812/"
+            "16163961/checkpoint-step-108128.pt"
+        ),
+        "sha256": "7385ce1cf1535910f12bda809b7201323cc8d841f6483a3ad3997dc816c4db3b",
+        "role": "configured_objective_winner",
+        "pretraining_success_gate_passed": True,
+    },
+}
 SELECTION = "configs/training_selection/production_1m_20260812/train_035k.json"
 INDEX = (
     "artifacts/experiment_readiness/production_1m_20260812/train_035k/"
@@ -156,10 +189,32 @@ def main() -> int:
     parser.add_argument("--expected-git-tag", required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument(
+        "--checkpoint-comparison-step",
+        type=int,
+        choices=sorted(CHECKPOINT_COMPARISON_SOURCES),
+        help="Render the registered phase-3/4 checkpoint-comparison arm.",
+    )
+    parser.add_argument(
         "--gpu-env", type=Path,
         default=Path("/project/agkuhr/users/boyang/envs/hypertagging-gpu-cu126-v1"),
     )
     args = parser.parse_args()
+    comparison = args.checkpoint_comparison_step is not None
+    if comparison and args.mode != "production":
+        raise RuntimeError("phase-3/4 checkpoint comparison requires production mode")
+    source = (
+        CHECKPOINT_COMPARISON_SOURCES[args.checkpoint_comparison_step]
+        if comparison
+        else {
+            "path": CHECKPOINT,
+            "sha256": CHECKPOINT_SHA256,
+            "role": None,
+            "pretraining_success_gate_passed": False,
+        }
+    )
+    preregistration = (
+        CHECKPOINT_COMPARISON_PREREGISTRATION if comparison else PREREGISTRATION
+    )
     if args.output.exists():
         raise RuntimeError("refusing to overwrite reconstruction contract")
     if run(("git", "rev-parse", "HEAD")) != args.expected_git_sha:
@@ -170,19 +225,30 @@ def main() -> int:
         raise RuntimeError("tracked worktree must be clean before contract rendering")
     if not (args.gpu_env / "bin/python").is_file():
         raise RuntimeError("GPU environment is unavailable")
-    checkpoint = repo_path(CHECKPOINT)
-    if sha256(checkpoint) != CHECKPOINT_SHA256:
+    checkpoint = repo_path(source["path"])
+    if sha256(checkpoint) != source["sha256"]:
         raise RuntimeError("authorized source checkpoint hash changed")
     if args.batch_size not in {32, 64}:
         raise RuntimeError("calibration/production batch must be one of the measured ladder values 32/64")
     config = build_config(args.mode, args.gres, args.batch_size)
     output_root = (
-        f"artifacts/runs/ht-reconstruction-calibration-20260824/{args.experiment}"
-        if args.mode == "calibration"
-        else "artifacts/runs/ht-reconstruction-transfer-fullscale-20260824"
+        f"artifacts/runs/ht-reconstruction-phase34-checkpoint-comparison-20260904/{source['role']}"
+        if comparison
+        else (
+            f"artifacts/runs/ht-reconstruction-calibration-20260824/{args.experiment}"
+            if args.mode == "calibration"
+            else "artifacts/runs/ht-reconstruction-transfer-fullscale-20260824"
+        )
+    )
+    source_files = tuple(
+        preregistration if path == PREREGISTRATION else path for path in SOURCE_FILES
     )
     contract: dict[str, Any] = {
-        "contract_version": "hypertagging-reconstruction-fullscale-v1",
+        "contract_version": (
+            CHECKPOINT_COMPARISON_CONTRACT_VERSION
+            if comparison
+            else "hypertagging-reconstruction-fullscale-v1"
+        ),
         "mode": args.mode,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "experiment": args.experiment,
@@ -192,9 +258,11 @@ def main() -> int:
         "gpu_environment": str(args.gpu_env),
         "expected_git_sha": args.expected_git_sha,
         "expected_git_tag": args.expected_git_tag,
-        "checkpoint": CHECKPOINT,
-        "checkpoint_sha256": CHECKPOINT_SHA256,
-        "checkpoint_step": 54064,
+        "checkpoint": source["path"],
+        "checkpoint_sha256": source["sha256"],
+        "checkpoint_step": (
+            args.checkpoint_comparison_step if comparison else 54064
+        ),
         "selection_manifest": SELECTION,
         "dataset_index": INDEX,
         "training_role": "train",
@@ -203,12 +271,24 @@ def main() -> int:
         "sealed_test_role_access": "forbidden",
         "source_checkpoint_mutation": "forbidden",
         "provenance_validation": {
-            "transfer_classification": "exploratory_reconstruction_transfer",
-            "pretraining_success_gate_passed": False,
-            "intended_pretraining_contract": "1m_not_completed",
-            "exception": "authorized_step_54064_is_the_advanced_immutable_loadable_finite_checkpoint",
+            "transfer_classification": (
+                "controlled_checkpoint_comparison"
+                if comparison
+                else "exploratory_reconstruction_transfer"
+            ),
+            "pretraining_success_gate_passed": source[
+                "pretraining_success_gate_passed"
+            ],
+            "intended_pretraining_contract": (
+                "1m_phase3_phase4_completed" if comparison else "1m_not_completed"
+            ),
+            "exception": (
+                None
+                if comparison
+                else "authorized_step_54064_is_the_advanced_immutable_loadable_finite_checkpoint"
+            ),
         },
-        "preregistration": hashed(PREREGISTRATION),
+        "preregistration": hashed(preregistration),
         "config": config,
         "resources": {
             "cpus": 8,
@@ -219,11 +299,18 @@ def main() -> int:
         },
         "max_wall_seconds": 900 if args.mode == "calibration" else 43200,
         "output_root": output_root,
-        "hashed_inputs": [hashed(SELECTION), hashed(INDEX), *[hashed(path) for path in SOURCE_FILES]],
+        "hashed_inputs": [
+            hashed(SELECTION),
+            hashed(INDEX),
+            *[hashed(path) for path in source_files],
+        ],
         "live_slurm": live_slurm(args.gres),
         "submission_authorized": True,
         "submission_performed": False,
     }
+    if comparison:
+        contract["comparison_study"] = CHECKPOINT_COMPARISON_STUDY
+        contract["comparison_role"] = source["role"]
     canonical = json.dumps(contract, sort_keys=True, separators=(",", ":"))
     contract["contract_sha256"] = hashlib.sha256(canonical.encode()).hexdigest()
     args.output.parent.mkdir(parents=True, exist_ok=True)
