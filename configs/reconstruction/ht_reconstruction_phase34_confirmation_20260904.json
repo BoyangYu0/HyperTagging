@@ -1,0 +1,79 @@
+{
+  "preregistration_version": "hypertagging-reconstruction-phase34-confirmation-v1",
+  "study_date": "2026-09-04",
+  "study_id": "phase34-downstream-paired-confirmation-20260904",
+  "study_classification": "validation_only_paired_confirmation",
+  "scientific_question": "Does the step-54064 exploratory baseline retain its small rollout edge-F1 advantage over the best pretraining-complete step-81096 checkpoint on two new disjoint validation cohorts?",
+  "prior_decision": {
+    "path": "artifacts/codex/reconstruction_phase34_comparison_no_promotion_20260904.json",
+    "sha256": "25b8855368ffe1084ffeaf8a0ecf1f91d582ccaf0ba7ff5d1dad0046071a7501",
+    "verdict": "NO_PROMOTION",
+    "promotion_authorized": false,
+    "sealed_test_authorized": false
+  },
+  "arms": [
+    {
+      "role": "exploratory_baseline_54064",
+      "pretraining_step": 54064,
+      "pretraining_success_gate_passed": false,
+      "reconstruction_step": 500,
+      "checkpoint": "artifacts/runs/ht-reconstruction-phase34-checkpoint-comparison-20260904/resume_source_baseline/16251359/training/best.pt",
+      "checkpoint_sha256": "064265344cf6c2bd69fa57618a7ef11281edbc0775c99db5333beda1f9b3f24b"
+    },
+    {
+      "role": "eligible_parent_81096",
+      "pretraining_step": 81096,
+      "pretraining_success_gate_passed": true,
+      "reconstruction_step": 500,
+      "checkpoint": "artifacts/runs/ht-reconstruction-phase34-checkpoint-comparison-20260904/parent_ranking_winner/16251363/training/best.pt",
+      "checkpoint_sha256": "578e1a9508bdd3c423363d66c7b5e30aa48c680a03a9d1fc1c0b4175b24ec191"
+    }
+  ],
+  "data_binding": {
+    "selection_manifest": "runtime_inputs/reconstruction_phase34_20260904/train_035k.repromoted.json",
+    "selection_manifest_sha256": "d0516ee4db09d7610a614475057af40282594882e03df1e9106e371a6710a660",
+    "dataset_index": "runtime_inputs/reconstruction_phase34_20260904/train_035k.complete_only.repromoted.index.json",
+    "dataset_index_sha256": "8d486304ba8018e03d4126271be24b5b43b15dd2c71f0e5dc8c847071b728097",
+    "role": "validation",
+    "sealed_test_role_access": "forbidden",
+    "exclude_original_rollout_cohort": true
+  },
+  "cohorts": [
+    {
+      "role": "confirmation_a",
+      "selection_seed": 20260904,
+      "rank_offset": 0,
+      "event_count": 1000,
+      "bootstrap_seed": 2026090401
+    },
+    {
+      "role": "confirmation_b",
+      "selection_seed": 20260904,
+      "rank_offset": 1000,
+      "event_count": 1000,
+      "bootstrap_seed": 2026090402
+    }
+  ],
+  "analysis": {
+    "primary_metric": "predicted_edge_f1",
+    "contrast": "exploratory_baseline_54064_minus_eligible_parent_81096",
+    "paired_bootstrap_samples": 10000,
+    "confidence": 0.95,
+    "percentile_lower_index_zero_based": 249,
+    "percentile_upper_index_zero_based": 9749,
+    "minimum_effect_size": 0.01,
+    "automatic_promotion": false,
+    "training_performed": false,
+    "checkpoint_mutation": "forbidden"
+  },
+  "execution_policy": {
+    "task_count": 2,
+    "gres": "gpu:h100nvl:1",
+    "cpus_per_task": 8,
+    "memory": "32G",
+    "time": "06:00:00",
+    "requeue": false,
+    "maximum_restarts": 0,
+    "global_concurrency": 2
+  }
+}
