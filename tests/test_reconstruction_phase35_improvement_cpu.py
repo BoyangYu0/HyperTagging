@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import hashlib
 import json
 import shlex
@@ -19,6 +20,29 @@ from scripts.slurm import submit_reconstruction_phase35_campaign as submit
 from scripts.slurm import verify_reconstruction_phase35_contract as verify
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_phase35_system_python_entrypoints_avoid_zip_strict() -> None:
+    """Cluster /usr/bin/python3 is 3.9; zip(strict=...) arrived in 3.10."""
+
+    system_python_entrypoints = (
+        "scripts/slurm/finalize_reconstruction_fullscale_receipt.py",
+        "scripts/slurm/monitor_gpu_telemetry.py",
+        "scripts/slurm/render_reconstruction_phase35_job.py",
+        "scripts/slurm/submit_reconstruction_phase35_campaign.py",
+        "scripts/slurm/verify_reconstruction_phase35_contract.py",
+    )
+    for relative in system_python_entrypoints:
+        tree = ast.parse((ROOT / relative).read_text(encoding="utf-8"))
+        unsupported = [
+            node
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "zip"
+            and any(keyword.arg == "strict" for keyword in node.keywords)
+        ]
+        assert not unsupported, relative
 
 
 def digest(path: Path) -> str:

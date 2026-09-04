@@ -19,7 +19,7 @@ PREREGISTRATION = (
 )
 CONTRACT_VERSION = "hypertagging-reconstruction-phase35-improvement-contract-v1"
 STUDY_ID = "phase35-full-decay-reconstruction-improvement-20260904"
-IMPLEMENTATION_TAG = "ht-reconstruction-phase35-improvement-20260904-v2"
+IMPLEMENTATION_TAG = "ht-reconstruction-phase35-improvement-20260904-v3"
 OUTPUT_NAMESPACE = "artifacts/runs/ht-reconstruction-phase35-improvement-20260904"
 WRAPPER = "scripts/slurm/run_reconstruction_phase35.sbatch"
 CAMPAIGN_SUBMISSION_RECEIPT = (
@@ -714,7 +714,7 @@ def verify_campaign_submission_receipt(
         "scheduler_state_after_release",
     }
     for index, (item, planned, peer_entry) in enumerate(
-        zip(jobs, expected_planned_jobs, campaign_contracts, strict=True)
+        zip(jobs, expected_planned_jobs, campaign_contracts)
     ):
         if not isinstance(item, dict):
             raise RuntimeError("phase35 campaign job evidence is malformed")
@@ -770,7 +770,7 @@ def verify_campaign_submission_receipt(
         # it is executable only after every member is demonstrably no longer on
         # its user hold (or has already started and reached accounting history).
         for (peer_path, peer), recorded_job_id in zip(
-            campaign_contracts, job_ids, strict=True
+            campaign_contracts, job_ids
         ):
             verify_job_released_or_executed(
                 recorded_job_id,
@@ -784,7 +784,7 @@ def verify_campaign_submission_receipt(
             raise RuntimeError("phase35 post-release scheduler evidence is incomplete")
         allowed_released_states = {"PENDING", "CONFIGURING", "RUNNING"}
         for item, (peer_path, peer), recorded_job_id in zip(
-            jobs, campaign_contracts, job_ids, strict=True
+            jobs, campaign_contracts, job_ids
         ):
             record = str(release_records[recorded_job_id])
             state = _slurm_field(record, "JobState").split("+", 1)[0]

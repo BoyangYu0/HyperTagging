@@ -445,6 +445,10 @@ def main() -> int:
             atomic_json(output, receipt("held_job_verified"))
         status = "prepared_held"
         atomic_json(output, receipt(status))
+        if len(submissions) != len(ordered_verified):
+            raise RuntimeError(
+                "phase35 held-job evidence is incomplete before release"
+            )
         release_argv = [
             "/opt/slurm/bin/scontrol",
             "release",
@@ -460,7 +464,6 @@ def main() -> int:
         for (path, contract), submission in zip(
             ordered_verified,
             submissions,
-            strict=True,
         ):
             job_id = str(submission["job_id"])
             scheduler_record = slurm_job(job_id)
