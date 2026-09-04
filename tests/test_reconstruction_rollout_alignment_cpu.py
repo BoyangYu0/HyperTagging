@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import pytest
 import torch
 
@@ -22,6 +24,7 @@ from hypertagging.training.pretrain_trainer import ContextualPretrainingModel
 from hypertagging.training.pretrained_transfer import load_pretrained_encoder
 from hypertagging.training.reconstruction_trainer import (
     ReconstructionConfig,
+    _collate_context_batches,
     _predicted_context_rollout_max_level,
     train_level_reconstruction,
     validate_reconstruction,
@@ -147,6 +150,33 @@ def test_balanced_micro_rollout_stops_before_selected_level_and_obeys_cap() -> N
     ) == 6
 
 
+def test_dynamic_context_collation_pads_runtime_structural_validity() -> None:
+    """Reproduce the mixed 48/34-node phase-35 step-1690 collation."""
+
+    contexts = []
+    for node_count in (48, 34):
+        active = torch.ones((1, node_count), dtype=torch.bool)
+        structurally_valid = torch.zeros((1, node_count), dtype=torch.bool)
+        structurally_valid[:, : node_count // 2] = True
+        contexts.append(
+            {
+                "active": active,
+                "node_mask": active.clone(),
+                "common_features": torch.zeros((1, node_count, 12)),
+                "runtime_structurally_valid": structurally_valid,
+            }
+        )
+
+    batch = _collate_context_batches(contexts)
+
+    assert batch["runtime_structurally_valid"].shape == (2, 48)
+    assert batch["runtime_structurally_valid"][0, :24].all()
+    assert not batch["runtime_structurally_valid"][0, 24:].any()
+    assert batch["runtime_structurally_valid"][1, :17].all()
+    assert not batch["runtime_structurally_valid"][1, 17:].any()
+    assert not batch["node_mask"][1, 34:].any()
+
+
 def test_explicit_policy_forces_rollout_validation_at_final_step(
     tmp_path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -189,6 +219,34 @@ def test_explicit_policy_forces_rollout_validation_at_final_step(
     assert selection["version"] == "reconstruction-checkpoint-selection-v7"
     assert selection["rollout_validate_at_final_step"] is True
     assert checkpoint["validation_selection"]["rollout_was_run"] is True
+
+
+def test_non_rollout_validation_checkpoint_metadata_is_json_finite(
+    tmp_path,
+) -> None:
+    data = write_notebook_fixture_v3(tmp_path / "tiny-no-rollout.parquet")
+    result = train_level_reconstruction(
+        ReconstructionConfig(
+            data=str(data),
+            output_dir=str(tmp_path / "training-no-rollout"),
+            max_steps=1,
+            batch_size=2,
+            allow_legacy_conflated=True,
+            validate_every=1,
+            rollout_validate_every=2,
+            rollout_validation_events=1,
+            checkpoint_every=2,
+        )
+    )
+
+    checkpoint = load_training_checkpoint(result.checkpoint)
+    eligibility = checkpoint["training_state"][
+        "last_rollout_checkpoint_eligibility"
+    ]
+    assert not eligibility["eligible"]
+    assert set(eligibility["evaluated_metrics"].values()) == {None}
+    assert checkpoint["validation_selection"]["rollout_was_run"] is False
+    json.dumps(eligibility, allow_nan=False)
 
 
 def test_exact_leaf_pid_transfer_requires_every_destination_key(tmp_path) -> None:

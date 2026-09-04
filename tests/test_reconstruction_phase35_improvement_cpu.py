@@ -55,7 +55,7 @@ def preregistration() -> dict:
 
 def test_phase35_preregistration_binds_failure_evidence_and_sealed_data() -> None:
     prereg = preregistration()
-    assert prereg["study_id"] == verify.STUDY_ID
+    assert prereg["study_id"] == verify.PARENT_STUDY_ID
     assert (
         prereg["study_classification"]
         == "exploratory_validation_performance_screen"
@@ -97,6 +97,106 @@ def test_phase35_preregistration_binds_failure_evidence_and_sealed_data() -> Non
     assert digest(ROOT / runtime["requirements_lock"]) == runtime[
         "requirements_lock_sha256"
     ]
+
+
+def test_phase35_repair_preregistration_is_exactly_two_clean_restart_arms() -> None:
+    parent = preregistration()
+    repair = verify.load_repair_preregistration()
+    assert repair["study_id"] == verify.STUDY_ID
+    assert repair["parent_study_id"] == verify.PARENT_STUDY_ID
+    assert repair["eligible_arm_roles"] == list(verify.PHASE35_ARM_ROLES) == [
+        "depth_balanced_masked_aux_encoder_adapt",
+        "depth_balanced_masked_aux_frozen",
+    ]
+    assert repair["excluded_completed_arm_role"] == (
+        "depth_balanced_fallback_frozen"
+    )
+    assert repair["excluded_completed_arm_rerun_authorized"] is False
+    assert repair["clean_restart_required"] is True
+    assert repair["resume_from_failed_attempt_authorized"] is False
+    assert repair["reuse_failed_output_authorized"] is False
+    assert repair["restart_source_checkpoint"] == {
+        "path": parent["source_checkpoint"]["path"],
+        "step": parent["source_checkpoint"]["step"],
+        "sha256": parent["source_checkpoint"]["sha256"],
+    }
+    assert repair["execution_policy"] == {
+        **parent["execution_policy"],
+        "task_count": 2,
+        "global_concurrency": 2,
+    }
+    assert repair["hierarchy_supervision"] == (
+        verify.PHASE35_HIERARCHY_SUPERVISION
+    )
+    hierarchy = repair["hierarchy_supervision"]
+    assert hierarchy["target_levels"] == [1, 2, 3, 4, 5, 6]
+    assert hierarchy["eligible_mother_counts_by_level"] == {
+        "1": 75460,
+        "2": 32095,
+        "3": 20559,
+        "4": 11666,
+        "5": 6568,
+        "6": 885,
+    }
+    assert hierarchy["upsilon4s_root_count"] == 10000
+    assert sum(hierarchy["upsilon4s_roots_by_level"].values()) == 10000
+    assert hierarchy["continuum_forest_roots"] == {
+        "root_count": 37200,
+        "event_count": 17796,
+        "continuum_event_count": 25000,
+    }
+    assert hierarchy["artificial_continuum_resonance_token"] is False
+    assert hierarchy["inference_seed"] == "detector_fsps_only"
+    assert hierarchy["truth_targets"] == (
+        "eligible_complete_mothers_all_levels"
+    )
+    historical = {
+        item["arm_role"]: item for item in repair["historical_attempts"]
+    }
+    assert historical["depth_balanced_fallback_frozen"]["rerun_authorized"] is False
+    assert historical["depth_balanced_masked_aux_encoder_adapt"][
+        "rerun_authorized"
+    ] is True
+    assert historical["depth_balanced_masked_aux_frozen"][
+        "rerun_authorized"
+    ] is True
+    for item in historical.values():
+        assert digest(ROOT / item["contract"]["path"]) == item["contract"][
+            "sha256"
+        ]
+        assert digest(ROOT / item["attempt_receipt"]["path"]) == item[
+            "attempt_receipt"
+        ]["sha256"]
+        assert digest(ROOT / item["stderr"]["path"]) == item["stderr"][
+            "sha256"
+        ]
+    diagnostics = repair["step500_diagnostics"]
+    assert diagnostics["decision"] == "clean_restart_both_failed_arms"
+    assert len(diagnostics["reports"]) == 4
+    for report in diagnostics["reports"]:
+        assert report["arm_role"] in verify.PHASE35_ARM_ROLES
+        assert report["checkpoint_step"] == 500
+        assert digest(ROOT / report["path"]) == report["sha256"]
+
+
+def test_phase35_repair_identity_cannot_schedule_completed_fallback() -> None:
+    for arm_role in verify.PHASE35_ARM_ROLES:
+        assert verify.phase35_task_id(arm_role) == (
+            f"phase35-repair-{arm_role}-20260904"
+        )
+        assert verify.phase35_contract_relative_path(arm_role) == (
+            f"artifacts/codex/reconstruction_phase35_repair_{arm_role}_"
+            "contract_20260904.json"
+        )
+        config = verify.resolved_arm_config(preregistration(), arm_role)
+        assert config["unrepresentable_target_policy"] == (
+            "masked_representable_only"
+        )
+        assert config["auxiliary_teacher_weight"] == 0.25
+    with pytest.raises(RuntimeError, match="arm set changed"):
+        verify.phase35_task_id("depth_balanced_fallback_frozen")
+    with pytest.raises(RuntimeError, match="arm set changed"):
+        verify.phase35_contract_relative_path("depth_balanced_fallback_frozen")
 
 
 def test_phase35_excludes_every_previously_accessed_validation_event() -> None:
@@ -464,7 +564,7 @@ def test_phase35_validation_audit_requires_exact_manifest_order(
 
 
 def test_phase35_live_slurm_contract_is_exact_and_no_requeue(tmp_path: Path) -> None:
-    task_id = "phase35-depth_balanced_masked_aux_frozen-20260904"
+    task_id = "phase35-repair-depth_balanced_masked_aux_frozen-20260904"
     contract_path = tmp_path / "contract.json"
     contract = {"task_id": task_id, "contract_sha256": "a" * 64}
     record = (
@@ -519,6 +619,11 @@ def test_phase35_wrapper_renderer_and_receipt_are_fail_closed() -> None:
         "maximum_restarts": 0,
         "global_concurrency": 3,
     }
+    assert verify.load_repair_preregistration()["execution_policy"] == {
+        **prereg["execution_policy"],
+        "task_count": 2,
+        "global_concurrency": 2,
+    }
     wrapper = (ROOT / verify.WRAPPER).read_text()
     assert "#SBATCH --no-requeue" in wrapper
     assert '[[ "${SLURM_RESTART_COUNT:-0}" == "0" ]]' in wrapper
@@ -535,7 +640,7 @@ def test_phase35_wrapper_renderer_and_receipt_are_fail_closed() -> None:
     assert '"promotion_authorized": False' in renderer
     synthetic_contract = {
         "resources": prereg["execution_policy"],
-        "task_id": "phase35-synthetic",
+        "task_id": "phase35-repair-synthetic",
         "contract_sha256": "a" * 64,
     }
     command = submit.submission_command(
@@ -569,6 +674,11 @@ def test_phase35_wrapper_renderer_and_receipt_are_fail_closed() -> None:
         ROOT / "scripts/slurm/finalize_reconstruction_fullscale_receipt.py"
     ).read_text()
     assert '"best_rollout_edge_f1"' in finalizer
+    assert "PHASE35_CONTRACT_VERSION" in finalizer
+    assert (
+        "hypertagging-reconstruction-phase35-improvement-contract-v1"
+        in finalizer
+    )
     assert "return 0 if terminal_success or not phase35 else 1" in finalizer
     assert "terminal evidence finalization failed" in wrapper
     assert '[[ -s "${receipt_file}" ]]' in wrapper
@@ -590,7 +700,7 @@ def _campaign_receipt_fixture(
         contract = {
             "contract_version": verify.CONTRACT_VERSION,
             "study_id": verify.STUDY_ID,
-            "task_id": f"phase35-{arm_role}-20260904",
+            "task_id": verify.phase35_task_id(arm_role),
             "arm_role": arm_role,
             "expected_git_sha": git_sha,
             "expected_git_tag": verify.IMPLEMENTATION_TAG,
@@ -662,7 +772,7 @@ def _campaign_receipt_fixture(
     receipt = submit._with_receipt_hash(
         {
             "receipt_version": (
-                "hypertagging-reconstruction-phase35-submission-v1"
+                verify.CAMPAIGN_SUBMISSION_RECEIPT_VERSION
             ),
             "created_at": "2026-09-04T00:00:00+00:00",
             "updated_at": "2026-09-04T00:00:01+00:00",
@@ -697,7 +807,7 @@ def _campaign_receipt_fixture(
 
 
 @pytest.mark.parametrize("status", ["release_in_progress", "submitted"])
-def test_phase35_campaign_receipt_exactly_binds_atomic_three_arm_release(
+def test_phase35_campaign_receipt_exactly_binds_atomic_two_arm_repair_release(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, status: str
 ) -> None:
     contract, job_id, receipt_path = _campaign_receipt_fixture(
@@ -733,6 +843,27 @@ def test_phase35_campaign_receipt_rejects_pre_release_state(
         json.dumps(submit._with_receipt_hash(receipt)), encoding="utf-8"
     )
     with pytest.raises(RuntimeError, match="atomic campaign"):
+        verify.verify_campaign_submission_receipt(
+            job_id=job_id,
+            contract=contract,
+        )
+
+
+def test_phase35_campaign_receipt_rejects_missing_repair_arm(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    contract, job_id, receipt_path = _campaign_receipt_fixture(
+        tmp_path, monkeypatch, status="submitted"
+    )
+    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    removed_id = receipt["jobs"].pop()["job_id"]
+    receipt["submitted_job_ids"].remove(removed_id)
+    receipt["scheduler_records_after_release"].pop(removed_id)
+    receipt["release_argv"][-1] = ",".join(receipt["submitted_job_ids"])
+    receipt_path.write_text(
+        json.dumps(submit._with_receipt_hash(receipt)), encoding="utf-8"
+    )
+    with pytest.raises(RuntimeError, match="exactly two jobs"):
         verify.verify_campaign_submission_receipt(
             job_id=job_id,
             contract=contract,

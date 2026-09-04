@@ -773,6 +773,36 @@ def test_rollout_gates_reject_ineligible_primary_metrics():
     assert not rollout_checkpoint_eligibility(zero_denominator, gates)["eligible"]
 
 
+def test_unevaluated_rollout_gates_are_explicit_and_json_finite():
+    gates = {
+        "minimum_tree_validity": 0.999,
+        "minimum_p4_closure": 1.0,
+        "maximum_recursive_source_conflicts": 0,
+        "required_denominators": [
+            "rollout_validation_events",
+            "predicted_edge_denominator",
+            "predicted_p4_closure_denominator",
+        ],
+    }
+    result = rollout_checkpoint_eligibility(
+        {"rollout_validation_events": 0.0}, gates
+    )
+
+    assert not result["eligible"]
+    assert result["evaluated_metrics"] == {
+        "predicted_tree_validity_rate": None,
+        "predicted_p4_closure_rate": None,
+        "predicted_recursive_source_conflicts": None,
+    }
+    assert {
+        "finite:predicted_tree_validity_rate",
+        "finite:predicted_p4_closure_rate",
+        "finite:predicted_recursive_source_conflicts",
+    }.issubset(result["failures"])
+    # Strict JSON rejects NaN and Inf, matching receipt/checkpoint metadata QA.
+    json.dumps(result, allow_nan=False)
+
+
 @dataclass(frozen=True)
 class _Event:
     event_uid: str

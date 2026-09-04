@@ -24,6 +24,7 @@ if str(ROOT) not in sys.path:
 
 from scripts.slurm.verify_reconstruction_phase35_contract import (  # noqa: E402
     CAMPAIGN_SUBMISSION_RECEIPT,
+    CAMPAIGN_SUBMISSION_RECEIPT_VERSION,
     PHASE35_ARM_ROLES,
     PHASE35_CAMPAIGN_PERMISSIONS,
     canonical_contract_hash,
@@ -275,8 +276,8 @@ def main() -> int:
     )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    if len(args.contract) != 3:
-        raise RuntimeError("phase35 campaign requires exactly three contracts")
+    if len(args.contract) != len(PHASE35_ARM_ROLES):
+        raise RuntimeError("phase35 repair campaign requires exactly two contracts")
     output = safe_repo_output_path(
         args.output,
         expected_relative=SUBMISSION_RECEIPT,
@@ -350,7 +351,7 @@ def main() -> int:
     def receipt(status: str) -> dict[str, Any]:
         return {
             "receipt_version": (
-                "hypertagging-reconstruction-phase35-submission-v1"
+                CAMPAIGN_SUBMISSION_RECEIPT_VERSION
             ),
             "created_at": created_at,
             "updated_at": datetime.now(timezone.utc).isoformat(),

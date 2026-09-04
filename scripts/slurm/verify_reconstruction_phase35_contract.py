@@ -17,21 +17,32 @@ ROOT = Path(__file__).resolve().parents[2]
 PREREGISTRATION = (
     "configs/reconstruction/ht_reconstruction_phase35_improvement_20260904.json"
 )
-CONTRACT_VERSION = "hypertagging-reconstruction-phase35-improvement-contract-v1"
-STUDY_ID = "phase35-full-decay-reconstruction-improvement-20260904"
-IMPLEMENTATION_TAG = "ht-reconstruction-phase35-improvement-20260904-v3"
-OUTPUT_NAMESPACE = "artifacts/runs/ht-reconstruction-phase35-improvement-20260904"
+PARENT_STUDY_ID = "phase35-full-decay-reconstruction-improvement-20260904"
+REPAIR_PREREGISTRATION = (
+    "configs/reconstruction/ht_reconstruction_phase35_masked_repair_20260904.json"
+)
+REPAIR_PREREGISTRATION_VERSION = (
+    "hypertagging-reconstruction-phase35-masked-repair-v1"
+)
+CONTRACT_VERSION = "hypertagging-reconstruction-phase35-masked-repair-contract-v1"
+STUDY_ID = "phase35-masked-context-repair-20260904"
+IMPLEMENTATION_TAG = "ht-reconstruction-phase35-masked-repair-20260904-v1"
+OUTPUT_NAMESPACE = "artifacts/runs/ht-reconstruction-phase35-masked-repair-20260904"
 WRAPPER = "scripts/slurm/run_reconstruction_phase35.sbatch"
 CAMPAIGN_SUBMISSION_RECEIPT = (
     "artifacts/codex/"
-    "reconstruction_phase35_improvement_submission_20260904.json"
+    "reconstruction_phase35_masked_repair_submission_20260904.json"
+)
+CAMPAIGN_SUBMISSION_RECEIPT_VERSION = (
+    "hypertagging-reconstruction-phase35-masked-repair-submission-v1"
 )
 PHASE35_TEST_RECEIPT = (
     "artifacts/codex/"
-    "reconstruction_phase35_improvement_test_receipt_20260904.json"
+    "reconstruction_phase35_masked_repair_test_receipt_20260904.json"
 )
 PHASE35_SOURCE_FILES = (
     PREREGISTRATION,
+    REPAIR_PREREGISTRATION,
     "scripts/build_reconstruction_validation_exclusions.py",
     "scripts/build_reconstruction_phase35_evaluation_cohort.py",
     "scripts/run_reconstruction_phase35.py",
@@ -65,10 +76,43 @@ PHASE35_SOURCE_FILES = (
     "environment/gpu/requirements-cu126.lock",
 )
 PHASE35_ARM_ROLES = (
-    "depth_balanced_fallback_frozen",
     "depth_balanced_masked_aux_encoder_adapt",
     "depth_balanced_masked_aux_frozen",
 )
+PHASE35_HIERARCHY_SUPERVISION = {
+    "target_levels": [1, 2, 3, 4, 5, 6],
+    "eligible_mother_counts_by_level": {
+        "1": 75460,
+        "2": 32095,
+        "3": 20559,
+        "4": 11666,
+        "5": 6568,
+        "6": 885,
+    },
+    "eligible_event_pool_counts_by_level": {
+        "1": 27620,
+        "2": 16160,
+        "3": 12961,
+        "4": 10001,
+        "5": 6542,
+        "6": 885,
+    },
+    "upsilon4s_root_count": 10000,
+    "upsilon4s_roots_by_level": {
+        "3": 284,
+        "4": 3169,
+        "5": 5662,
+        "6": 885,
+    },
+    "continuum_forest_roots": {
+        "root_count": 37200,
+        "event_count": 17796,
+        "continuum_event_count": 25000,
+    },
+    "artificial_continuum_resonance_token": False,
+    "inference_seed": "detector_fsps_only",
+    "truth_targets": "eligible_complete_mothers_all_levels",
+}
 PHASE35_CAMPAIGN_PERMISSIONS = {
     "training_authorized": True,
     "validation_payload_access_authorized": True,
@@ -186,9 +230,15 @@ def phase35_contract_relative_path(arm_role: str) -> str:
     if arm_role not in PHASE35_ARM_ROLES:
         raise RuntimeError(f"phase35 campaign arm set changed: {arm_role}")
     return (
-        f"artifacts/codex/reconstruction_phase35_{arm_role}_"
+        f"artifacts/codex/reconstruction_phase35_repair_{arm_role}_"
         "contract_20260904.json"
     )
+
+
+def phase35_task_id(arm_role: str) -> str:
+    if arm_role not in PHASE35_ARM_ROLES:
+        raise RuntimeError(f"phase35 campaign arm set changed: {arm_role}")
+    return f"phase35-repair-{arm_role}-20260904"
 
 
 def phase35_submission_command(
@@ -254,11 +304,380 @@ def load_preregistration() -> dict[str, Any]:
     if (
         payload.get("preregistration_version")
         != "hypertagging-reconstruction-phase35-improvement-v1"
-        or payload.get("study_id") != STUDY_ID
+        or payload.get("study_id") != PARENT_STUDY_ID
         or payload.get("study_classification")
         != "exploratory_validation_performance_screen"
     ):
-        raise RuntimeError("unsupported phase35 preregistration")
+        raise RuntimeError("unsupported parent phase35 preregistration")
+    return payload
+
+
+def load_repair_preregistration() -> dict[str, Any]:
+    payload = json.loads(
+        repo_path(REPAIR_PREREGISTRATION, suffix=".json").read_text(
+            encoding="utf-8"
+        )
+    )
+    if (
+        payload.get("repair_preregistration_version")
+        != REPAIR_PREREGISTRATION_VERSION
+        or payload.get("study_id") != STUDY_ID
+        or payload.get("parent_study_id") != PARENT_STUDY_ID
+        or payload.get("parent_git_sha")
+        != "91f1a43e8827c67b4cd4e3d8d36279321f6b9dee"
+        or payload.get("parent_git_tag")
+        != "ht-reconstruction-phase35-improvement-20260904-v3"
+        or payload.get("parent_preregistration")
+        != {
+            "path": PREREGISTRATION,
+            "sha256": sha256(repo_path(PREREGISTRATION)),
+        }
+        or payload.get("eligible_arm_roles") != list(PHASE35_ARM_ROLES)
+        or payload.get("excluded_completed_arm_role")
+        != "depth_balanced_fallback_frozen"
+        or payload.get("excluded_completed_arm_rerun_authorized") is not False
+        or payload.get("clean_restart_required") is not True
+        or payload.get("resume_from_failed_attempt_authorized") is not False
+        or payload.get("reuse_failed_output_authorized") is not False
+        or payload.get("sealed_test_role_access") != "forbidden"
+        or payload.get("automatic_promotion") is not False
+        or payload.get("repair_scope")
+        != {
+            "checkpoint_metadata_nonfinite_fix_required": True,
+            "masked_context_node_padding_fix_required": True,
+            "scientific_configuration_changes_authorized": False,
+        }
+        or payload.get("hierarchy_supervision")
+        != PHASE35_HIERARCHY_SUPERVISION
+    ):
+        raise RuntimeError("unsupported phase35 repair preregistration")
+
+    expected_resources = {
+        "task_count": 2,
+        "gres": "gpu:h100nvl:1",
+        "cpus_per_task": 8,
+        "memory": "64G",
+        "time": "24:00:00",
+        "requeue": False,
+        "maximum_restarts": 0,
+        "global_concurrency": 2,
+    }
+    if payload.get("execution_policy") != expected_resources:
+        raise RuntimeError("phase35 repair execution policy changed")
+
+    source = payload.get("restart_source_checkpoint")
+    if not isinstance(source, dict):
+        raise RuntimeError("phase35 repair restart source is missing")
+    source_path = repo_path(str(source.get("path", "")), suffix=".pt")
+    if (
+        source.get("path")
+        != "runtime_inputs/reconstruction_phase34_20260904/checkpoint-step-81096.pt"
+        or source.get("step") != 81096
+        or source.get("sha256")
+        != "98e461ad5c5d0a82ce312f4e2c6e67f6f40212d9f0df038cae315296ec990869"
+        or sha256(source_path) != source.get("sha256")
+    ):
+        raise RuntimeError("phase35 repair restart source changed")
+
+    evidence = payload.get("historical_attempts")
+    if not isinstance(evidence, list) or len(evidence) != 3:
+        raise RuntimeError("phase35 repair historical attempt set changed")
+    expected_attempts = {
+        "depth_balanced_fallback_frozen": {
+            "job_id": "16282571",
+            "task_id": "phase35-depth_balanced_fallback_frozen-20260904",
+            "contract_sha256": (
+                "9de3a764468f26b3e0c847866fced743af62a72f06cf4097fb4ab6a632a0c86e"
+            ),
+            "status": "completed",
+            "terminal_stage": "full_decay_complete",
+            "batch_exit_status": 0,
+            "rerun_authorized": False,
+        },
+        "depth_balanced_masked_aux_encoder_adapt": {
+            "job_id": "16282587",
+            "task_id": (
+                "phase35-depth_balanced_masked_aux_encoder_adapt-20260904"
+            ),
+            "contract_sha256": (
+                "5cd05ca3b4953c84abef56ef0ec82e738f3c4b7ba099942ea03141d69a83618d"
+            ),
+            "status": "failed_or_nonterminal",
+            "terminal_stage": "trainer_failed",
+            "batch_exit_status": 1,
+            "rerun_authorized": True,
+        },
+        "depth_balanced_masked_aux_frozen": {
+            "job_id": "16282601",
+            "task_id": "phase35-depth_balanced_masked_aux_frozen-20260904",
+            "contract_sha256": (
+                "7e1c79aec1e405178248f79ecbfb68a38bcdfbf0bf6d8f80087993ff4dca1753"
+            ),
+            "status": "failed_or_nonterminal",
+            "terminal_stage": "trainer_failed",
+            "batch_exit_status": 1,
+            "rerun_authorized": True,
+        },
+    }
+    by_role: dict[str, dict[str, Any]] = {}
+    for item in evidence:
+        if not isinstance(item, dict):
+            raise RuntimeError("phase35 repair historical attempt is malformed")
+        role = str(item.get("arm_role", ""))
+        if role in by_role or role not in expected_attempts:
+            raise RuntimeError("phase35 repair historical attempt role changed")
+        by_role[role] = item
+        contract_binding = item.get("contract")
+        receipt_binding = item.get("attempt_receipt")
+        error_binding = item.get("stderr")
+        if not all(
+            isinstance(binding, dict)
+            for binding in (contract_binding, receipt_binding, error_binding)
+        ):
+            raise RuntimeError("phase35 repair evidence binding is malformed")
+        # Avoid relying on assertions for fail-closed validation: optimized
+        # Python removes ``assert`` statements entirely.
+        contract_binding = dict(contract_binding)
+        receipt_binding = dict(receipt_binding)
+        error_binding = dict(error_binding)
+        contract_path = repo_path(str(contract_binding.get("path", "")))
+        receipt_path = repo_path(str(receipt_binding.get("path", "")))
+        error_path = repo_path(str(error_binding.get("path", "")))
+        if (
+            sha256(contract_path) != contract_binding.get("sha256")
+            or sha256(receipt_path) != receipt_binding.get("sha256")
+            or sha256(error_path) != error_binding.get("sha256")
+        ):
+            raise RuntimeError("phase35 repair historical evidence changed")
+        historical_contract = json.loads(contract_path.read_text(encoding="utf-8"))
+        attempt_receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        expected = expected_attempts[role]
+        slurm = attempt_receipt.get("slurm")
+        source_checkpoint = attempt_receipt.get("source_checkpoint")
+        if (
+            item.get("job_id") != expected["job_id"]
+            or historical_contract.get("contract_sha256")
+            != expected["contract_sha256"]
+            or historical_contract.get("arm_role") != role
+            or historical_contract.get("task_id") != expected["task_id"]
+            or canonical_contract_hash(historical_contract)
+            != expected["contract_sha256"]
+            or attempt_receipt.get("receipt_sha256")
+            != receipt_binding.get("receipt_sha256")
+            or attempt_receipt.get("contract_sha256")
+            != expected["contract_sha256"]
+            or any(attempt_receipt.get(key) != expected[key] for key in (
+                "status",
+                "terminal_stage",
+                "batch_exit_status",
+                "task_id",
+            ))
+            or not isinstance(slurm, dict)
+            or str(slurm.get("job_id"))
+            != expected["job_id"]
+            or str(slurm.get("restart_count")) != "0"
+            or not isinstance(source_checkpoint, dict)
+            or source_checkpoint.get("live_hash_matches_contract") is not True
+            or item.get("rerun_authorized") != expected["rerun_authorized"]
+        ):
+            raise RuntimeError("phase35 repair historical attempt identity changed")
+
+    if set(by_role) != set(expected_attempts):
+        raise RuntimeError("phase35 repair historical attempt set changed")
+    parent_submission = payload.get("parent_campaign_submission_receipt")
+    if not isinstance(parent_submission, dict):
+        raise RuntimeError("phase35 repair parent campaign receipt is missing")
+    parent_receipt_path = repo_path(str(parent_submission.get("path", "")))
+    parent_receipt = json.loads(parent_receipt_path.read_text(encoding="utf-8"))
+    if (
+        sha256(parent_receipt_path) != parent_submission.get("sha256")
+        or parent_receipt.get("receipt_sha256")
+        != parent_submission.get("receipt_sha256")
+        or parent_receipt.get("status") != "submitted"
+        or parent_receipt.get("study_id") != PARENT_STUDY_ID
+        or parent_receipt.get("git_sha")
+        != "91f1a43e8827c67b4cd4e3d8d36279321f6b9dee"
+        or parent_receipt.get("git_tag")
+        != "ht-reconstruction-phase35-improvement-20260904-v3"
+        or parent_receipt.get("submitted_job_ids")
+        != ["16282571", "16282587", "16282601"]
+    ):
+        raise RuntimeError("phase35 repair parent campaign receipt changed")
+
+    expected_diagnostic_reports = [
+        {
+            "arm_role": "depth_balanced_masked_aux_frozen",
+            "checkpoint_sha256": (
+                "02db81fd0bff1a7047d263021ec02522ffc6e533ef37599bec099df08d87d622"
+            ),
+            "checkpoint_step": 500,
+            "path": (
+                "artifacts/evaluation/phase35_failed_arm_step500_clean_v3_"
+                "20260904/masked_frozen_direct.json"
+            ),
+            "truth_topology_mode": "checkpoint_direct",
+        },
+        {
+            "arm_role": "depth_balanced_masked_aux_encoder_adapt",
+            "checkpoint_sha256": (
+                "569121077774faa329dd6b620fb4d9cd6747ee3ac95ccccc7f9a408bc65b71c7"
+            ),
+            "checkpoint_step": 500,
+            "path": (
+                "artifacts/evaluation/phase35_failed_arm_step500_clean_v3_"
+                "20260904/masked_adapt_direct.json"
+            ),
+            "truth_topology_mode": "checkpoint_direct",
+        },
+        {
+            "arm_role": "depth_balanced_masked_aux_frozen",
+            "checkpoint_sha256": (
+                "02db81fd0bff1a7047d263021ec02522ffc6e533ef37599bec099df08d87d622"
+            ),
+            "checkpoint_step": 500,
+            "path": (
+                "artifacts/evaluation/phase35_failed_arm_step500_clean_v3_"
+                "20260904/masked_frozen_contracted.json"
+            ),
+            "truth_topology_mode": "contracted_diagnostic",
+        },
+        {
+            "arm_role": "depth_balanced_masked_aux_encoder_adapt",
+            "checkpoint_sha256": (
+                "569121077774faa329dd6b620fb4d9cd6747ee3ac95ccccc7f9a408bc65b71c7"
+            ),
+            "checkpoint_step": 500,
+            "path": (
+                "artifacts/evaluation/phase35_failed_arm_step500_clean_v3_"
+                "20260904/masked_adapt_contracted.json"
+            ),
+            "truth_topology_mode": "contracted_diagnostic",
+        },
+    ]
+    diagnostics = payload.get("step500_diagnostics")
+    reports = diagnostics.get("reports") if isinstance(diagnostics, dict) else None
+    if (
+        not isinstance(reports, list)
+        or diagnostics.get("decision") != "clean_restart_both_failed_arms"
+        or len(reports) != len(expected_diagnostic_reports)
+        or any(
+            not isinstance(binding, dict)
+            or set(binding) != {*expected, "sha256"}
+            or {key: binding.get(key) for key in expected} != expected
+            or not HEX64.fullmatch(str(binding.get("sha256", "")))
+            for binding, expected in zip(reports, expected_diagnostic_reports)
+        )
+    ):
+        raise RuntimeError("phase35 repair diagnostic decision changed")
+
+    def metric_counts(
+        report: dict[str, Any], scope: str, section: str, name: str
+    ) -> tuple[float, float]:
+        metric = report.get("summaries", {}).get(scope, {}).get(section, {}).get(name)
+        if not isinstance(metric, dict):
+            raise RuntimeError("phase35 repair diagnostic metric is missing")
+        return float(metric.get("numerator", -1)), float(
+            metric.get("denominator", -1)
+        )
+
+    parent = load_preregistration()
+    exclusions = load_validation_exclusions(parent)
+    cohort = load_evaluation_cohort(parent, exclusions=exclusions)
+    expected_cohort = parent["evaluation_cohort"]
+    for binding in reports:
+        report_path = repo_path(binding["path"], suffix=".json")
+        if sha256(report_path) != binding["sha256"]:
+            raise RuntimeError("phase35 repair diagnostic report changed")
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        checkpoint_pair = report.get("checkpoint_pair")
+        configuration = report.get("configuration")
+        context = report.get("context")
+        events = report.get("events")
+        provenance = report.get("evaluator_code_provenance")
+        if (
+            report.get("report_version")
+            != "hypertagging-offline-full-decay-evaluation-v3"
+            or report.get("evaluation_role") != "offline_model_evaluation"
+            or report.get("not_basf2_reconstruction") is not True
+            or report.get("input_contract")
+            != "direct-mdst-tree-v4-preprocessed-training-input"
+            or not isinstance(checkpoint_pair, dict)
+            or checkpoint_pair.get("compatible") is not True
+            or checkpoint_pair.get("pretraining_step") != source["step"]
+            or checkpoint_pair.get("pretraining_sha256") != source["sha256"]
+            or checkpoint_pair.get("reconstruction_step")
+            != binding["checkpoint_step"]
+            or checkpoint_pair.get("reconstruction_sha256")
+            != binding["checkpoint_sha256"]
+            or checkpoint_pair.get("encoder_exact_fraction") != 1.0
+            or checkpoint_pair.get("encoder_common_keys") != 121
+            or checkpoint_pair.get("encoder_shape_compatible_keys") != 121
+            or checkpoint_pair.get("encoder_dtype_compatible_keys") != 121
+            or checkpoint_pair.get("encoder_exact_keys") != 121
+            or checkpoint_pair.get("encoder_pretraining_keys") != 121
+            or checkpoint_pair.get("encoder_reconstruction_keys") != 121
+            or checkpoint_pair.get("exact_frozen_encoder_required")
+            is not binding["arm_role"].endswith("_frozen")
+            or not isinstance(configuration, dict)
+            or configuration.get("truth_topology_mode")
+            != binding["truth_topology_mode"]
+            or configuration.get("max_level") != 6
+            or configuration.get("target_policy") != "complete_only"
+            or configuration.get("event_uid_manifest", {}).get("sha256")
+            != expected_cohort["manifest_sha256"]
+            or not isinstance(context, dict)
+            or context.get("evaluation_split") != "validation"
+            or context.get("evaluation_event_selection")
+            != "explicit_uid_cohort"
+            or context.get("evaluated_event_uids") != cohort["event_uids"]
+            or context.get("evaluation_uid_train_overlap") != []
+            or not isinstance(provenance, dict)
+            or provenance.get("git_head")
+            != "91f1a43e8827c67b4cd4e3d8d36279321f6b9dee"
+            or provenance.get("provenance_version")
+            != "git-index-cached-diff-v1"
+            or provenance.get("provenance_complete") is not True
+            or provenance.get("index_matches_worktree") is not True
+            or provenance.get("worktree_dirty") is not False
+            or provenance.get("dirty_path_count") != 0
+            or provenance.get("dirty_paths") != []
+            or provenance.get("untracked_path_count") != 0
+            or provenance.get("untracked_paths") != []
+            or not HEX64.fullmatch(
+                str(provenance.get("worktree_patch_sha256", ""))
+            )
+            or not isinstance(events, list)
+            or len(events) != 100
+        ):
+            raise RuntimeError("phase35 repair diagnostic identity changed")
+        expected_common_counts = {
+            ("full", "inference", "configured_root_completion"): (0.0, 100.0),
+            ("full", "decay_metrics", "source_recall"): (32.0, 389.0),
+            ("full", "decay_metrics", "source_precision"): (32.0, 42.0),
+            ("full", "decay_metrics", "lcag_pair_accuracy"): (0.0, 3672.0),
+            ("full", "decay_metrics", "mother_pid_coverage"): (0.0, 203.0),
+            ("half", "decay_metrics", "source_recall"): (61.0, 657.0),
+            ("half", "decay_metrics", "perfect_lcag"): (2.0, 148.0),
+        }
+        if any(
+            metric_counts(report, scope, section, name) != counts
+            for (scope, section, name), counts in expected_common_counts.items()
+        ):
+            raise RuntimeError("phase35 repair diagnostic endpoint changed")
+        expected_representability = (
+            ((21.0, 21.0), (148.0, 148.0))
+            if binding["truth_topology_mode"] == "contracted_diagnostic"
+            else ((1.0, 21.0), (97.0, 148.0))
+        )
+        if (
+            metric_counts(report, "full", "decay_metrics", "target_representable")
+            != expected_representability[0]
+            or metric_counts(
+                report, "half", "decay_metrics", "target_representable"
+            )
+            != expected_representability[1]
+        ):
+            raise RuntimeError("phase35 repair representability evidence changed")
     return payload
 
 
@@ -367,7 +786,7 @@ def load_evaluation_cohort(
     if (
         manifest.get("manifest_version")
         != "hypertagging-reconstruction-evaluation-cohort-v1"
-        or manifest.get("study_id") != STUDY_ID
+        or manifest.get("study_id") != PARENT_STUDY_ID
         or manifest.get("role") != "validation"
         or manifest.get("sealed_test_role_access") != "forbidden"
         or len(event_uids) != 100
@@ -472,7 +891,7 @@ def verify_test_receipt(
     if (
         not isinstance(focused, dict)
         or set(focused.get("files", ())) != required_test_files
-        or int(focused.get("passed_count", 0)) < 112
+        or int(focused.get("passed_count", 0)) < 119
         or "uv run --no-project" not in str(focused.get("command", ""))
         or "hypertagging-gpu-cu126-v1/bin/python" not in str(
             focused.get("command", "")
@@ -538,7 +957,7 @@ def verify_campaign_submission_receipt(
     contract: dict[str, Any],
     allowed_statuses: tuple[str, ...] = ("release_in_progress", "submitted"),
 ) -> dict[str, Any]:
-    """Verify the complete, held-first three-arm campaign authorization.
+    """Verify the complete, held-first two-arm repair authorization.
 
     ``release_in_progress`` is written and fsynced before the single multi-job
     release command.  It is therefore an authorization to start the exact
@@ -596,7 +1015,7 @@ def verify_campaign_submission_receipt(
     }
     if (
         receipt.get("receipt_version")
-        != "hypertagging-reconstruction-phase35-submission-v1"
+        != CAMPAIGN_SUBMISSION_RECEIPT_VERSION
         or receipt.get("status") not in set(allowed_statuses)
         or set(receipt) != expected_top_level_keys
         or not HEX64.fullmatch(stored_hash)
@@ -637,7 +1056,7 @@ def verify_campaign_submission_receipt(
             or peer.get("contract_version") != CONTRACT_VERSION
             or peer.get("study_id") != STUDY_ID
             or peer.get("arm_role") != arm_role
-            or peer.get("task_id") != f"phase35-{arm_role}-20260904"
+            or peer.get("task_id") != phase35_task_id(arm_role)
             or peer.get("expected_git_sha") != contract.get("expected_git_sha")
             or peer.get("expected_git_tag") != contract.get("expected_git_tag")
             or peer.get("test_receipt") != contract.get("test_receipt")
@@ -679,7 +1098,7 @@ def verify_campaign_submission_receipt(
         or not isinstance(submitted_ids, list)
         or len(submitted_ids) != len(PHASE35_ARM_ROLES)
     ):
-        raise RuntimeError("phase35 campaign does not contain exactly three jobs")
+        raise RuntimeError("phase35 repair campaign does not contain exactly two jobs")
     job_ids = [str(item.get("job_id", "")) for item in jobs]
     if (
         any(not value.isdigit() for value in job_ids)
@@ -1003,14 +1422,22 @@ def verify_contract(
         raise RuntimeError("phase35 tested implementation identity mismatch")
     verify_clean_worktree()
     preregistration = load_preregistration()
+    repair_preregistration = load_repair_preregistration()
     prereg_binding = contract.get("preregistration", {})
     if (
         prereg_binding.get("path") != PREREGISTRATION
         or prereg_binding.get("sha256") != sha256(repo_path(PREREGISTRATION))
     ):
         raise RuntimeError("phase35 preregistration binding changed")
+    repair_prereg_binding = contract.get("repair_preregistration", {})
+    if (
+        repair_prereg_binding.get("path") != REPAIR_PREREGISTRATION
+        or repair_prereg_binding.get("sha256")
+        != sha256(repo_path(REPAIR_PREREGISTRATION))
+    ):
+        raise RuntimeError("phase35 repair preregistration binding changed")
     arm_role = str(contract.get("arm_role", ""))
-    expected_task_id = f"phase35-{arm_role}-20260904"
+    expected_task_id = phase35_task_id(arm_role)
     if (
         arm_role not in PHASE35_ARM_ROLES
         or contract.get("mode") != "production"
@@ -1153,6 +1580,12 @@ def verify_contract(
         contract.get("checkpoint") != source["path"]
         or contract.get("checkpoint_step") != source["step"]
         or contract.get("checkpoint_sha256") != source["sha256"]
+        or repair_preregistration.get("restart_source_checkpoint")
+        != {
+            "path": source["path"],
+            "step": source["step"],
+            "sha256": source["sha256"],
+        }
     ):
         raise RuntimeError("phase35 source checkpoint binding changed")
     checkpoint = repo_path(str(source["path"]), suffix=".pt")
@@ -1198,8 +1631,10 @@ def verify_contract(
     )
     if contract.get("evaluation_cohort") != preregistration["evaluation_cohort"]:
         raise RuntimeError("phase35 evaluation cohort contract changed")
+    if contract.get("hierarchy_supervision") != PHASE35_HIERARCHY_SUPERVISION:
+        raise RuntimeError("phase35 all-level truth supervision contract changed")
 
-    if contract.get("resources") != preregistration["execution_policy"]:
+    if contract.get("resources") != repair_preregistration["execution_policy"]:
         raise RuntimeError("phase35 resource policy changed")
     resources = contract["resources"]
     if (
@@ -1209,8 +1644,8 @@ def verify_contract(
         or resources.get("time") != "24:00:00"
         or resources.get("requeue") is not False
         or resources.get("maximum_restarts") != 0
-        or resources.get("task_count") != 3
-        or resources.get("global_concurrency") != 3
+        or resources.get("task_count") != 2
+        or resources.get("global_concurrency") != 2
     ):
         raise RuntimeError("phase35 resource policy is unsafe")
     if contract.get("device") != "cuda":
@@ -1233,6 +1668,25 @@ def verify_contract(
         raise RuntimeError("phase35 submission is not authorized")
     if contract.get("campaign_submission_receipt") != CAMPAIGN_SUBMISSION_RECEIPT:
         raise RuntimeError("phase35 atomic campaign receipt path changed")
+    expected_repair_lineage = {
+        "repair_preregistration": {
+            "path": REPAIR_PREREGISTRATION,
+            "sha256": sha256(repo_path(REPAIR_PREREGISTRATION)),
+        },
+        "parent_study_id": PARENT_STUDY_ID,
+        "parent_git_sha": repair_preregistration["parent_git_sha"],
+        "parent_git_tag": repair_preregistration["parent_git_tag"],
+        "clean_restart_required": True,
+        "restart_source_checkpoint": repair_preregistration[
+            "restart_source_checkpoint"
+        ],
+        "resume_from_failed_attempt_authorized": False,
+        "reuse_failed_output_authorized": False,
+        "excluded_completed_arm_role": "depth_balanced_fallback_frozen",
+        "excluded_completed_arm_rerun_authorized": False,
+    }
+    if contract.get("repair_lineage") != expected_repair_lineage:
+        raise RuntimeError("phase35 repair lineage changed")
 
     receipt_binding = contract.get("test_receipt", {})
     if receipt_binding.get("path") != PHASE35_TEST_RECEIPT:
@@ -1281,6 +1735,18 @@ def verify_contract(
         str(preregistration["diagnostic_basis"]["full_decay_report"]["path"]),
         str(preregistration["diagnostic_basis"]["lineage_receipt"]["path"]),
         PHASE35_TEST_RECEIPT,
+        str(repair_preregistration["parent_campaign_submission_receipt"]["path"]),
+        *(
+            str(binding["path"])
+            for binding in repair_preregistration["step500_diagnostics"][
+                "reports"
+            ]
+        ),
+        *(
+            str(binding[key]["path"])
+            for binding in repair_preregistration["historical_attempts"]
+            for key in ("contract", "attempt_receipt", "stderr")
+        ),
         *(str(item["path"]) for item in exclusion_manifest["sources"]),
     }
     verify_hashed_inputs(

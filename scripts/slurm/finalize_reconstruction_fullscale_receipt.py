@@ -18,6 +18,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scripts.slurm.verify_reconstruction_phase35_contract import (  # noqa: E402
+    CONTRACT_VERSION as PHASE35_CONTRACT_VERSION,
     load_preregistration,
     verify_campaign_submission_receipt,
 )
@@ -86,10 +87,13 @@ def main() -> int:
         else {}
     )
     config = contract.get("config", {})
-    phase35 = (
-        contract.get("contract_version")
-        == "hypertagging-reconstruction-phase35-improvement-contract-v1"
-    )
+    # Keep terminal-evidence enforcement for both versions. A legacy contract
+    # processed from this repair checkout intentionally fails closed at the
+    # repair-only campaign verifier; re-finalization must use its pinned tag.
+    phase35 = contract.get("contract_version") in {
+        "hypertagging-reconstruction-phase35-improvement-contract-v1",
+        PHASE35_CONTRACT_VERSION,
+    }
     checkpoint_audits = (
         result.get("checkpoints", {}) if isinstance(result, dict) else {}
     )

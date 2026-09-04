@@ -20,15 +20,20 @@ if str(REPO_ROOT) not in sys.path:
 from scripts.slurm.verify_reconstruction_phase35_contract import (  # noqa: E402
     CONTRACT_VERSION,
     CAMPAIGN_SUBMISSION_RECEIPT,
+    IMPLEMENTATION_TAG,
     OUTPUT_NAMESPACE,
     PHASE35_SOURCE_FILES,
     PHASE35_TEST_RECEIPT,
     PREREGISTRATION,
+    REPAIR_PREREGISTRATION,
     ROOT,
     STUDY_ID,
     load_evaluation_cohort,
     load_preregistration,
+    load_repair_preregistration,
     load_validation_exclusions,
+    phase35_contract_relative_path,
+    phase35_task_id,
     repo_path,
     resolved_arm_config,
     safe_repo_output_path,
@@ -101,10 +106,7 @@ def main() -> int:
         ),
     )
     args = parser.parse_args()
-    expected_output_relative = (
-        f"artifacts/codex/reconstruction_phase35_{args.arm}_"
-        "contract_20260904.json"
-    )
+    expected_output_relative = phase35_contract_relative_path(args.arm)
     output = safe_repo_output_path(
         args.output,
         expected_relative=expected_output_relative,
@@ -115,11 +117,14 @@ def main() -> int:
     head = command_output(("git", "rev-parse", "HEAD"))
     if head != args.expected_git_sha:
         raise RuntimeError("expected phase35 Git SHA is not checked out")
+    if args.expected_git_tag != IMPLEMENTATION_TAG:
+        raise RuntimeError("unexpected phase35 repair implementation tag")
     if command_output(("git", "rev-list", "-n", "1", args.expected_git_tag)) != head:
         raise RuntimeError("expected phase35 tag does not resolve to HEAD")
     verify_clean_worktree()
 
     preregistration = load_preregistration()
+    repair_preregistration = load_repair_preregistration()
     runtime_binding = preregistration["runtime_binding"]
     if (
         str(args.gpu_env) != runtime_binding["gpu_environment"]
@@ -160,7 +165,7 @@ def main() -> int:
         expected_git_sha=head,
         expected_git_tag=args.expected_git_tag,
     )
-    task_id = f"phase35-{args.arm}-20260904"
+    task_id = phase35_task_id(args.arm)
     contract: dict[str, Any] = {
         "contract_version": CONTRACT_VERSION,
         "study_id": STUDY_ID,
@@ -174,14 +179,18 @@ def main() -> int:
         "gpu_environment": str(args.gpu_env),
         "device": "cuda",
         "preregistration": hashed(PREREGISTRATION),
+        "repair_preregistration": hashed(REPAIR_PREREGISTRATION),
         "checkpoint": source["path"],
         "checkpoint_sha256": source["sha256"],
         "checkpoint_step": source["step"],
         "data": data,
         "config": config,
-        "resources": preregistration["execution_policy"],
+        "resources": repair_preregistration["execution_policy"],
         "validation_exclusion": preregistration["validation_exclusion"],
         "evaluation_cohort": preregistration["evaluation_cohort"],
+        "hierarchy_supervision": repair_preregistration[
+            "hierarchy_supervision"
+        ],
         "sealed_test_role_access": "forbidden",
         "source_checkpoint_mutation": "forbidden",
         "automatic_promotion": False,
@@ -205,6 +214,22 @@ def main() -> int:
         "submission_authorized": True,
         "submission_performed": False,
         "campaign_submission_receipt": CAMPAIGN_SUBMISSION_RECEIPT,
+        "repair_lineage": {
+            "repair_preregistration": hashed(REPAIR_PREREGISTRATION),
+            "parent_study_id": repair_preregistration["parent_study_id"],
+            "parent_git_sha": repair_preregistration["parent_git_sha"],
+            "parent_git_tag": repair_preregistration["parent_git_tag"],
+            "clean_restart_required": True,
+            "restart_source_checkpoint": repair_preregistration[
+                "restart_source_checkpoint"
+            ],
+            "resume_from_failed_attempt_authorized": False,
+            "reuse_failed_output_authorized": False,
+            "excluded_completed_arm_role": (
+                repair_preregistration["excluded_completed_arm_role"]
+            ),
+            "excluded_completed_arm_rerun_authorized": False,
+        },
         "live_slurm": live_slurm(),
     }
     paths = [
@@ -218,7 +243,17 @@ def main() -> int:
         preregistration["diagnostic_basis"]["full_decay_report"]["path"],
         preregistration["diagnostic_basis"]["lineage_receipt"]["path"],
         str(receipt.relative_to(ROOT)),
+        repair_preregistration["parent_campaign_submission_receipt"]["path"],
     ]
+    for historical_attempt in repair_preregistration["historical_attempts"]:
+        paths.extend(
+            historical_attempt[key]["path"]
+            for key in ("contract", "attempt_receipt", "stderr")
+        )
+    paths.extend(
+        report["path"]
+        for report in repair_preregistration["step500_diagnostics"]["reports"]
+    )
     exclusion_manifest = json.loads(
         repo_path(preregistration["validation_exclusion"]["manifest"]).read_text()
     )

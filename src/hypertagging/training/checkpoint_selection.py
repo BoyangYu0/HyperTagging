@@ -299,13 +299,19 @@ def rollout_checkpoint_eligibility(
             failures.append(f"minimum:{metric}")
         elif direction == "maximum" and value > threshold:
             failures.append(f"maximum:{metric}")
+    evaluated_metrics: dict[str, float | None] = {}
+    for name, _, _ in checks:
+        value = float(metrics.get(name, float("nan")))
+        # ``None`` records that a rollout gate was not evaluated (or returned
+        # an invalid value) without serializing NaN/Inf into an otherwise
+        # resumable checkpoint. The failures above retain the exact reason the
+        # checkpoint is ineligible, so this is not converted into evidence for
+        # a zero-valued measurement.
+        evaluated_metrics[name] = value if math.isfinite(value) else None
     return {
         "eligible": not failures,
         "failures": failures,
-        "evaluated_metrics": {
-            name: float(metrics.get(name, float("nan")))
-            for name, _, _ in checks
-        },
+        "evaluated_metrics": evaluated_metrics,
     }
 
 
