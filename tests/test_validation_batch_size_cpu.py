@@ -1,10 +1,12 @@
 import pytest
 import torch
 
+import hypertagging.training.reconstruction_trainer as reconstruction_trainer
 from hypertagging.data.heterogeneous import heterogeneous_from_level_event
 from hypertagging.data.tiny_level_fixtures import tiny_level_events
 from hypertagging.models.level_autoregressive import LevelAutoregressiveReconstructor
 from hypertagging.preprocessing.pid_filter import PDG_TOKENS
+from hypertagging.reconstruction.level_rollout import rollout_policy_identity
 from hypertagging.training.reconstruction_trainer import validate_reconstruction
 
 
@@ -30,9 +32,9 @@ class _RecordingModel(torch.nn.Module):
         )
         self.batch_sizes = []
 
-    def forward(self, batch, *, target_level):
+    def forward(self, batch, *, target_level, **kwargs):
         self.batch_sizes.append(batch["node_mask"].shape[0])
-        return self.base(batch, target_level=target_level)
+        return self.base(batch, target_level=target_level, **kwargs)
 
 
 def test_validation_batch_size_controls_next_level_forward_batching():
@@ -64,3 +66,38 @@ def test_lightweight_data_module_still_fails_closed_in_scientific_mode():
             validation_batch_size=2,
             scientific_mode=True,
         )
+
+
+def test_validation_threads_continue_through_empty_levels_to_every_rollout(
+    monkeypatch,
+):
+    observed = []
+    real_level_rollout = reconstruction_trainer.level_rollout
+
+    def recording_level_rollout(*args, **kwargs):
+        observed.append((kwargs["mode"], kwargs["config"]))
+        return real_level_rollout(*args, **kwargs)
+
+    monkeypatch.setattr(
+        reconstruction_trainer, "level_rollout", recording_level_rollout
+    )
+    result = validate_reconstruction(
+        _RecordingModel(),
+        _DataModule(),
+        device=torch.device("cpu"),
+        max_validation_events=1,
+        rollout_validation_events=1,
+        validation_batch_size=1,
+        rollout_continue_through_empty_levels=True,
+    )
+
+    assert [mode for mode, _config in observed] == [
+        "teacher_forced",
+        "predicted",
+        "predicted",
+        "scheduled",
+    ]
+    assert all(config.continue_through_empty_levels for _mode, config in observed)
+    policy = rollout_policy_identity(continue_through_empty_levels=True)
+    assert result["rollout_empty_level_policy"] == "continue_to_max_level"
+    assert result["rollout_policy_sha256"] == policy["sha256"]

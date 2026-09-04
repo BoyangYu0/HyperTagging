@@ -27,6 +27,7 @@ from hypertagging.training.checkpoint_selection import (
     reconstruction_selection_contract,
 )
 from hypertagging.training.data_module import _track_fit_policies_from_publications
+from hypertagging.training.fixed_validation import excluded_event_uids_contract
 from hypertagging.training.pretrain_trainer import objective_preflight_report
 from scripts.train_level_reconstruction import parse_args as parse_reconstruction_args
 
@@ -73,9 +74,52 @@ def test_track_a_checkpoint_contract_binds_stop_on_empty_rollout_policy():
     track_b = rollout_policy_identity(continue_through_empty_levels=True)
     assert contract["version"] == "reconstruction-checkpoint-selection-v5"
     assert contract["rollout_configuration"]["policy_identity"] == track_a
+    assert "excluded_event_uid_count" not in contract["validation_selection"]
     assert track_a["empty_level_policy"] == "stop_on_first_empty"
     assert track_a["sha256"] != track_b["sha256"]
     assert len(str(track_a["sha256"])) == 64
+
+
+def test_extended_checkpoint_contract_binds_continuation_and_exclusions():
+    arguments = {
+        "best_metric": "predicted_edge_f1",
+        "best_mode": "max",
+        "max_validation_events": 32,
+        "rollout_validation_events": 8,
+        "rollout_validate_every": 100,
+        "rollout_pid_kinematics_mode": "soft_decision_hard_construction",
+        "rollout_pid_temperature": 0.5,
+        "target_policy": "complete_only",
+        "constraint_policy": {},
+    }
+    continuation = reconstruction_selection_contract(
+        **arguments,
+        rollout_continue_through_empty_levels=True,
+    )
+    assert continuation["version"] == "reconstruction-checkpoint-selection-v6"
+    assert continuation["rollout_configuration"]["policy_identity"] == (
+        rollout_policy_identity(continue_through_empty_levels=True)
+    )
+    assert continuation["validation_selection"] == {
+        "version": "ci-source-prefix-v1",
+        "scientific_mode": False,
+        "selection_manifest_hash": "",
+        **excluded_event_uids_contract(()),
+    }
+
+    excluded_uids = ("validation:b", "validation:a", "validation:a")
+    excluded = reconstruction_selection_contract(
+        **arguments,
+        validation_excluded_event_uids=excluded_uids,
+    )
+    assert excluded["version"] == "reconstruction-checkpoint-selection-v6"
+    assert excluded["rollout_configuration"]["policy_identity"] == (
+        rollout_policy_identity(continue_through_empty_levels=False)
+    )
+    assert all(
+        excluded["validation_selection"][key] == value
+        for key, value in excluded_event_uids_contract(excluded_uids).items()
+    )
 
 
 def test_query_repulsion_masks_no_object_overlap_and_is_permutation_invariant():

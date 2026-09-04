@@ -1,0 +1,395 @@
+{
+  "preregistration_version": "hypertagging-reconstruction-phase35-improvement-v1",
+  "study_date": "2026-09-04",
+  "study_id": "phase35-full-decay-reconstruction-improvement-20260904",
+  "study_classification": "exploratory_validation_performance_screen",
+  "scientific_question": "Can globally depth-balanced replay, rollout-conditioned training with protected teacher supervision, and conservative late encoder adaptation improve the observed one-level reconstruction collapse while preserving structural validity?",
+  "diagnostic_basis": {
+    "full_decay_report": {
+      "path": "artifacts/evaluation/full_decay_phase34_81096_best_validation_100_both_20260904.json",
+      "sha256": "1bc5ac0e4a51d24d3320437e1504f7cdc1e4c7a1977417496880acd22dd003e9",
+      "event_count": 100,
+      "full_decay_available_events": 21,
+      "full_decay_perfect_lcag": 0.0,
+      "full_decay_lcag_pair_accuracy": 0.0,
+      "full_decay_source_precision": 0.7368421052631579,
+      "full_decay_source_recall": 0.06746987951807229,
+      "full_decay_root_pid_accuracy": 0.0,
+      "full_decay_mother_pid_coverage": 0.0,
+      "configured_root_completion": 0.0,
+      "empty_level_count": 705,
+      "accepted_composites": 98,
+      "accepted_composite_levels": {
+        "1": 98
+      },
+      "accepted_composite_cardinalities": {
+        "2": 98
+      },
+      "accepted_composite_types": {
+        "pi0": 95,
+        "Lambda0": 3
+      },
+      "diagnosis": "one_level_two_daughter_mode_collapse"
+    },
+    "lineage_receipt": {
+      "path": "artifacts/evaluation/full_decay_phase34_81096_best_lineage_20260904.json",
+      "sha256": "07be295d3071077c6b62912bf3a6bc51ed5bdc171f2cb4d9757fea927123e136"
+    },
+    "threshold_finding": "confidence_threshold_is_zero_and_type_probability_threshold_is_null_so_lowering_those_thresholds_cannot_explain_or_fix_the_collapse",
+    "target_policy_finding": {
+      "complete_only_eligible_targets": 331960,
+      "reconstructable_partial_eligible_targets": 331960,
+      "decision": "retain_complete_only_for_this_campaign"
+    },
+    "target_distribution": {
+      "eligible_target_count": 331960,
+      "by_level": {
+        "1": 174876,
+        "2": 72993,
+        "3": 45184,
+        "4": 23849,
+        "5": 13278,
+        "6": 1780
+      },
+      "level_1_fraction": 0.5267984094469214,
+      "level_6_fraction": 0.00536209181829136,
+      "level_1_two_daughter_fraction": 0.9117145863354605
+    },
+    "unary_policy_mismatch": {
+      "suppressed_truth_mothers": 174,
+      "suppressed_truth_mothers_with_one_retained_daughter": 174,
+      "affected_full_decay_events": 16,
+      "interpretation": "minimum_daughters_2_cannot_represent_direct_unary_intermediates",
+      "decision": "keep_checkpoint_direct_as_primary_and_defer_a_versioned_unary_contraction_target_contract_to_a_separate_campaign"
+    }
+  },
+  "source_checkpoint": {
+    "role": "eligible_parent_81096",
+    "path": "runtime_inputs/reconstruction_phase34_20260904/checkpoint-step-81096.pt",
+    "step": 81096,
+    "sha256": "98e461ad5c5d0a82ce312f4e2c6e67f6f40212d9f0df038cae315296ec990869",
+    "pretraining_success_gate_passed": true,
+    "transfer_mode": "fresh_encoder_and_leaf_pid_transfer_without_optimizer_resume"
+  },
+  "baseline_reconstruction_checkpoint": {
+    "path": "artifacts/runs/ht-reconstruction-phase34-checkpoint-comparison-20260904/parent_ranking_winner/16251363/training/best.pt",
+    "step": 500,
+    "sha256": "578e1a9508bdd3c423363d66c7b5e30aa48c680a03a9d1fc1c0b4175b24ec191",
+    "role": "phase34_reconstruction_baseline_for_new_same_cohort_comparison"
+  },
+  "runtime_binding": {
+    "gpu_environment": "/project/agkuhr/users/boyang/envs/hypertagging-gpu-cu126-v1",
+    "python_sha256": "4f88a74c1b135771da9e4d6bce3d47713025c96944b24646d4dd5379152b246c",
+    "pyvenv_cfg_sha256": "b7cc2295b5c9317360674366918bc857dadd2d10a2afe4cbdbb84c4cf16d58a9",
+    "runtime_contract": "environment/gpu/runtime-contract.json",
+    "runtime_contract_sha256": "ed1a1d76ca6da74df9ccaa8f669b6a51a4e1b6f14f71aaaa0258dd7e57959fd9",
+    "requirements_lock": "environment/gpu/requirements-cu126.lock",
+    "requirements_lock_sha256": "2d34539c79f144f133c39f9ae86c0a34dafaab554c8fe263c28e01fe766576fc"
+  },
+  "data_binding": {
+    "training_role": "train",
+    "evaluation_role": "validation",
+    "selection_manifest": "runtime_inputs/reconstruction_phase34_20260904/train_035k.repromoted.json",
+    "selection_manifest_sha256": "d0516ee4db09d7610a614475057af40282594882e03df1e9106e371a6710a660",
+    "dataset_index": "runtime_inputs/reconstruction_phase34_20260904/train_035k.complete_only.repromoted.index.json",
+    "dataset_index_sha256": "8d486304ba8018e03d4126271be24b5b43b15dd2c71f0e5dc8c847071b728097",
+    "target_policy": "complete_only",
+    "split_counts": {
+      "train": 35000,
+      "validation": 50000,
+      "test": 0
+    },
+    "opened_index_roles": [
+      "train",
+      "validation"
+    ],
+    "raw_manifest_contains_unopened_test_entries": true,
+    "event_identity_validation_status": "passed",
+    "dataset_index_sealed_test_opened": false,
+    "train_validation_fallback": false,
+    "sealed_test_role_access": "forbidden"
+  },
+  "validation_exclusion": {
+    "reason": "new_checkpoint_selection_cohort_must_be_disjoint_from_all_prior_rollout_and_confirmation_cohorts",
+    "manifest": "configs/reconstruction/ht_reconstruction_phase35_validation_exclusions_20260904.json",
+    "manifest_sha256": "e7bf2cdc05f915f5cff55f2bff50bbcfb1d91657f037e5cc2faab32a6095f75b",
+    "event_uid_count": 3956,
+    "event_uids_sha256": "09f664c6af67f129fdefe03fb505b1a44274f07f1b6a1afce19a4947637d3bf8",
+    "event_uids_hash_scheme": "sha256-u64be-length-prefixed-utf8-v1"
+  },
+  "evaluation_cohort": {
+    "manifest": "configs/reconstruction/ht_reconstruction_phase35_evaluation_cohort_20260904.json",
+    "manifest_sha256": "5fc8e9f6a2cb92ce1483e85163138ade36cfcf7081cf3db427ebfd716afbef36",
+    "role": "validation",
+    "event_uid_count": 100,
+    "event_uids_sha256": "19e244342b9e2d1028c8637f18ea7ccb15cd020f0181e3eb5b82dbb7a8646af5",
+    "checkpoint_selection_event_uid_count": 2000,
+    "checkpoint_selection_event_uids_sha256": "b4952f76e7c7ac40f5c367359cb1e1dee4e33f1e707e2d03237a4f9a95607bfa",
+    "source_category_counts": {
+      "ccbar": 16,
+      "charged": 9,
+      "ddbar": 14,
+      "mixed": 12,
+      "ssbar": 14,
+      "taupair": 14,
+      "uubar": 21
+    },
+    "historical_exclusion_overlap": 0,
+    "checkpoint_selection_overlap": 0,
+    "sealed_test_role_access": "forbidden"
+  },
+  "common_training_contract": {
+    "max_steps": 2188,
+    "lr_schedule_total_steps": 2188,
+    "training_budget_semantics": "four_train_size_equivalent_level_conditioned_replay_slots_not_four_literal_dataset_epochs",
+    "train_split_event_count": 35000,
+    "four_train_size_equivalent_slot_target": 140000,
+    "optimizer_steps_per_train_size_equivalent": 547,
+    "replay_slot_budget": 140032,
+    "replay_slot_counts_by_level": {
+      "1": 23339,
+      "2": 23339,
+      "3": 23339,
+      "4": 23339,
+      "5": 23338,
+      "6": 23338
+    },
+    "learning_rate": 0.0003,
+    "warmup_fraction": 0.05,
+    "warmup_steps": 110,
+    "max_warmup_steps": 10000,
+    "min_lr_ratio": 0.05,
+    "batch_size": 64,
+    "seed": 20260904,
+    "checkpoint_every": 500,
+    "validate_every": 100,
+    "rollout_validate_every": 500,
+    "max_validation_events": 2000,
+    "rollout_validation_events": 1000,
+    "validation_batch_size": 4,
+    "validation_enabled": true,
+    "target_policy": "complete_only",
+    "scheduled_sampling_probability": 0.5,
+    "scheduled_sampling_schedule": "linear",
+    "scheduled_sampling_duration_steps": 1094,
+    "scheduled_sampling_zero_based_step_range": [
+      0,
+      2187
+    ],
+    "nominal_expected_predicted_context_slots_before_fallback": 52496,
+    "nominal_expected_predicted_context_fraction_before_fallback": 0.3748857404021938,
+    "nominal_expected_teacher_context_slots_before_fallback": 87536,
+    "nominal_expected_teacher_context_fraction_before_fallback": 0.6251142595978062,
+    "transfer_leaf_pid_head": true,
+    "freeze_leaf_pid_head_steps": 2188,
+    "leaf_pid_lr_multiplier": 1.0,
+    "encoder_lr_multiplier": 0.05,
+    "minimum_encoder_transfer_coverage": 1.0,
+    "allow_low_encoder_transfer_coverage": false,
+    "require_exact_leaf_pid_transfer": true,
+    "level_sampling_mode": "balanced_level_replay",
+    "balanced_level_replay_contract": {
+      "version": "balanced-level-replay-v1",
+      "levels": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "seed": 20260904,
+      "target_policy": "complete_only",
+      "min_daughters": 2,
+      "materialized_train_event_count": 35000,
+      "materialized_train_uid_sha256": "7a03a2287285a4a5d0563b0af8720545bd8affd2bfce3dff376c9dc6b482a3bd",
+      "eligible_pool_counts_by_level": {
+        "1": 27620,
+        "2": 16160,
+        "3": 12961,
+        "4": 10001,
+        "5": 6542,
+        "6": 885
+      },
+      "eligible_pool_uid_sha256_by_level": {
+        "1": "a53fcbf903832df9f6ae237c62ea657ff0fb29fa9006a0454ca330b1a8a87f0c",
+        "2": "7ae6d806bb24c7091130e697fad3ea750e21c4033f992730302a3bb2888c65b6",
+        "3": "40f533ff8370ebe6766c414e6f8106f142ab28064582d576977bbf836659ea6f",
+        "4": "fb22f7818ce94c9a7a4b2625229787b3389c5e9c55e1dfc1e2c337ecaa721ec0",
+        "5": "1d173261cc50965a53a81551f35b59124eaff1d55a508cc641fdd89ceb9b089d",
+        "6": "928e7db20578d2d85eebaed80d23a47855ebc2737ccb93a56ba7d0ce419968a6"
+      },
+      "uid_hash_scheme": "sha256-u64be-length-prefixed-utf8-v1",
+      "level_schedule": "global_slot_round_robin",
+      "pool_order": "uid_lexicographic_before_permutation",
+      "pool_permutation": "sha256_ranked_by_seed_level_cycle_uid",
+      "replacement_policy": "new_seeded_permutation_on_pool_exhaustion",
+      "planned_schedule": {
+        "start_slot": 0,
+        "slot_count": 140032,
+        "end_slot_exclusive": 140032,
+        "level_counts": {
+          "1": 23339,
+          "2": 23339,
+          "3": 23339,
+          "4": 23339,
+          "5": 23338,
+          "6": 23338
+        },
+        "max_minus_min_level_count": 1
+      }
+    },
+    "type_conditioned_daughter_relation_bias": true,
+    "query_repulsion_weight": 0.01,
+    "empirical_type_prior_mode": "soft",
+    "n_queries_by_level": [
+      [1, 16],
+      [2, 8],
+      [3, 6],
+      [4, 4],
+      [5, 3],
+      [6, 2]
+    ],
+    "max_cardinality": 16,
+    "max_cardinality_by_level": [
+      [1, 9],
+      [2, 16],
+      [3, 15],
+      [4, 14],
+      [5, 13],
+      [6, 2]
+    ],
+    "model_preset": "small_candidate",
+    "object_positive_weight": 12.0,
+    "pointer_positive_weight": 16.0,
+    "best_metric": "predicted_edge_f1",
+    "best_mode": "max",
+    "early_stopping_patience": null,
+    "initial_state_policy": "upsilon4s",
+    "rollout_pid_kinematics_mode": "soft_decision_hard_construction",
+    "rollout_pid_temperature": 0.5,
+    "rollout_continue_through_empty_levels": true,
+    "rollout_max_level": 6,
+    "rollout_root_types": [
+      1
+    ],
+    "rollout_exclusive_final": true,
+    "rollout_use_learned_confidence": true,
+    "mixed_precision": true,
+    "amp_dtype": "bfloat16",
+    "grad_scaler_enabled": false,
+    "scientific_mode": true,
+    "num_workers": 0,
+    "log_every": 10
+  },
+  "arms": [
+    {
+      "role": "depth_balanced_fallback_frozen",
+      "hypothesis": "A globally depth-balanced, four-train-size-equivalent replay budget improves depth even when unrepresentable predicted contexts retain historical teacher fallback.",
+      "overrides": {
+        "freeze_pretrained_encoder_steps": 2188,
+        "unrepresentable_target_policy": "fallback_teacher",
+        "auxiliary_teacher_weight": 0.0
+      }
+    },
+    {
+      "role": "depth_balanced_masked_aux_frozen",
+      "hypothesis": "Masking targets that cannot be represented in predicted context while retaining a 0.25 auxiliary teacher loss avoids false no-object supervision and protects link learning without arbitrary recovery logits.",
+      "overrides": {
+        "freeze_pretrained_encoder_steps": 2188,
+        "unrepresentable_target_policy": "masked_representable_only",
+        "auxiliary_teacher_weight": 0.25
+      }
+    },
+    {
+      "role": "depth_balanced_masked_aux_encoder_adapt",
+      "hypothesis": "Unfreezing the exactly transferred encoder halfway through training at 0.05 times decoder LR improves rollout-conditioned representations beyond the frozen masked-context arm.",
+      "overrides": {
+        "freeze_pretrained_encoder_steps": 1094,
+        "unrepresentable_target_policy": "masked_representable_only",
+        "auxiliary_teacher_weight": 0.25
+      }
+    }
+  ],
+  "selection_and_evaluation": {
+    "checkpoint_selection": {
+      "checkpoint": "best.pt",
+      "primary_metric": "predicted_edge_f1",
+      "mode": "max",
+      "eligible_rollout_steps": [
+        500,
+        1000,
+        1500,
+        2000,
+        2188
+      ],
+      "tie_break": "retain_earliest_step",
+      "teacher_forced_event_uid_count": 2000,
+      "rollout_event_uid_count": 1000,
+      "rollout_event_selection": "ordered_prefix_of_checkpoint_selection_cohort",
+      "evaluation_cohort_used_for_checkpoint_selection": false
+    },
+    "required_additional_checkpoint_audits": [
+      "best.pt",
+      "best_rollout_edge_f1.pt",
+      "checkpoint.pt"
+    ],
+    "secondary_metrics": [
+      "complete_target_efficiency",
+      "predicted_edge_recall",
+      "predicted_predicted_max_level",
+      "predicted_mother_type_accuracy",
+      "validation_loss_total"
+    ],
+    "post_training_full_decay_scope": "both",
+    "post_training_truth_topology_primary": "checkpoint_direct",
+    "post_training_truth_topology_diagnostic": "contracted_diagnostic",
+    "post_training_full_decay_protocol": {
+      "candidate_checkpoint": "best.pt_selected_only_on_checkpoint_selection_cohort",
+      "baseline_checkpoint": "baseline_reconstruction_checkpoint",
+      "comparison_cohort": "evaluation_cohort_exact_ordered_100_validation_events",
+      "max_level": 6,
+      "max_level_justification": "training_targets_and_dedicated_level_decoders_exist_only_for_levels_1_through_6",
+      "full_scope_root_types": [
+        1
+      ],
+      "half_scope_root_types": [],
+      "continue_through_empty_levels": true,
+      "exclusive_final": true,
+      "use_learned_confidence": true,
+      "object_probability_threshold": 0.5,
+      "daughter_pointer_probability_threshold": 0.5,
+      "confidence_threshold": 0.0,
+      "type_probability_threshold": null,
+      "p4_closure_tolerance": 1e-06,
+      "threads": 4,
+      "trees_included": false
+    },
+    "directional_endpoints": [
+      "configured_root_completion",
+      "full_decay_source_recall",
+      "full_decay_lcag_pair_accuracy",
+      "full_decay_mother_pid_coverage"
+    ],
+    "historical_endpoint_values_role": "diagnostic_context_only_not_new_cohort_pass_fail_thresholds",
+    "reporting_policy": "report_each_arm_independently_against_the_phase34_baseline_on_identical_events_with_raw_numerators_denominators_and_absolute_deltas;do_not_rank_select_or_promote_arms;follow_up_selection_requires_a_separately_preregistered_untouched_cohort_or_sealed_test_authorization",
+    "structural_guardrails": {
+      "minimum_tree_validity": 0.999,
+      "minimum_p4_closure": 1.0,
+      "maximum_recursive_source_conflicts": 0
+    },
+    "sealed_test_evaluation_before_selection": false,
+    "automatic_promotion": false,
+    "evaluation_cohort_arm_selection_authorized": false
+  },
+  "execution_policy": {
+    "task_count": 3,
+    "gres": "gpu:h100nvl:1",
+    "cpus_per_task": 8,
+    "memory": "64G",
+    "time": "24:00:00",
+    "requeue": false,
+    "maximum_restarts": 0,
+    "global_concurrency": 3
+  }
+}

@@ -67,6 +67,32 @@ def test_full_decay_cli_allows_explicit_confidence_diagnostic_override():
     assert args.use_learned_confidence is False
 
 
+def test_full_decay_explicit_uid_manifest_is_hashed_and_validation_only(
+    tmp_path,
+):
+    module = _script_module()
+    uids = ["validation:a", "validation:b"]
+    manifest = tmp_path / "cohort.json"
+    payload = {
+        "manifest_version": "hypertagging-reconstruction-evaluation-cohort-v1",
+        "role": "validation",
+        "sealed_test_role_access": "forbidden",
+        "event_uid_count": len(uids),
+        "event_uids_sha256": module._uid_sequence_sha256(uids),
+        "event_uids": uids,
+    }
+    manifest.write_text(json.dumps(payload), encoding="utf-8")
+
+    loaded = module._load_event_uid_manifest(manifest, len(uids))
+
+    assert loaded["event_uids"] == uids
+    assert len(loaded["sha256"]) == 64
+    payload["role"] = "test"
+    manifest.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="manifest is invalid"):
+        module._load_event_uid_manifest(manifest, len(uids))
+
+
 def test_output_path_cannot_alias_direct_or_manifest_referenced_input(tmp_path):
     module = _script_module()
     checkpoint = tmp_path / "checkpoint.pt"

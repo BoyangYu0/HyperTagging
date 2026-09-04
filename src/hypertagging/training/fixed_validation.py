@@ -4,11 +4,31 @@ from __future__ import annotations
 
 import hashlib
 import heapq
-from typing import Iterable, TypeVar
+from collections.abc import Iterable
+from typing import TypeVar
 
 
 T = TypeVar("T")
 FIXED_VALIDATION_VERSION = "manifest-role-uid-hash-v1"
+EXCLUDED_EVENT_UID_HASH_SCHEME = "sha256-u64be-length-prefixed-utf8-v1"
+
+
+def excluded_event_uids_contract(
+    event_uids: Iterable[str],
+) -> dict[str, int | str]:
+    """Return an order-independent identity for an excluded validation set."""
+
+    normalized = tuple(sorted({str(uid) for uid in event_uids}))
+    digest = hashlib.sha256()
+    for uid in normalized:
+        encoded = uid.encode("utf-8")
+        digest.update(len(encoded).to_bytes(8, byteorder="big"))
+        digest.update(encoded)
+    return {
+        "excluded_event_uid_count": len(normalized),
+        "excluded_event_uids_sha256": digest.hexdigest(),
+        "excluded_event_uids_hash_scheme": EXCLUDED_EVENT_UID_HASH_SCHEME,
+    }
 
 
 def select_validation_events(
@@ -19,6 +39,7 @@ def select_validation_events(
     selection_manifest_hash: str | None,
     seed: int,
     restored_event_uids: tuple[str, ...] = (),
+    excluded_event_uids: tuple[str, ...] = (),
 ) -> tuple[list[T], tuple[str, ...], dict[str, object]]:
     """Select a fixed role cohort, or retain prefix behavior for explicit CI mode."""
 
@@ -28,12 +49,21 @@ def select_validation_events(
         raise ValueError(
             "scientific fixed validation requires a training-selection manifest"
         )
+    excluded = {str(uid) for uid in excluded_event_uids}
+    exclusion_contract = excluded_event_uids_contract(excluded)
     if restored_event_uids:
+        overlap = set(restored_event_uids) & excluded
+        if overlap:
+            raise ValueError(
+                "saved fixed-validation UIDs intersect the excluded validation set: "
+                f"{sorted(overlap)[:3]}"
+            )
         requested = set(restored_event_uids)
         selected = {
-            str(getattr(event, "event_uid")): event
+            str(event.event_uid): event
             for event in events
-            if str(getattr(event, "event_uid")) in requested
+            if str(event.event_uid) in requested
+            and str(event.event_uid) not in excluded
         }
         missing = requested - set(selected)
         if missing:
@@ -47,25 +77,31 @@ def select_validation_events(
             "mode": "restored_manifest_role_uids",
             "selection_manifest_hash": selection_manifest_hash or "",
             "seed": int(seed),
+            **exclusion_contract,
         }
     if not scientific_mode:
         selected = []
         for event in events:
+            if str(event.event_uid) in excluded:
+                continue
             if len(selected) >= limit:
                 break
             selected.append(event)
-        uids = tuple(str(getattr(event, "event_uid")) for event in selected)
+        uids = tuple(str(event.event_uid) for event in selected)
         return selected, uids, {
             "version": "ci-source-prefix-v1",
             "mode": "non_scientific_ci_prefix",
             "selection_manifest_hash": selection_manifest_hash or "",
             "seed": int(seed),
+            **exclusion_contract,
         }
     ranked: list[tuple[int, int, str, T]] = []
     for index, event in enumerate(events):
-        uid = str(getattr(event, "event_uid"))
+        uid = str(event.event_uid)
+        if uid in excluded:
+            continue
         rank = int.from_bytes(hashlib.sha256(
-            f"{FIXED_VALIDATION_VERSION}:{seed}:{uid}".encode("utf-8")
+            f"{FIXED_VALIDATION_VERSION}:{seed}:{uid}".encode()
         ).digest(), byteorder="big")
         entry = (-rank, index, uid, event)
         if len(ranked) < limit:
@@ -78,7 +114,13 @@ def select_validation_events(
         "mode": "manifest_validation_role_uid_hash",
         "selection_manifest_hash": selection_manifest_hash,
         "seed": int(seed),
+        **exclusion_contract,
     }
 
 
-__all__ = ["FIXED_VALIDATION_VERSION", "select_validation_events"]
+__all__ = [
+    "EXCLUDED_EVENT_UID_HASH_SCHEME",
+    "FIXED_VALIDATION_VERSION",
+    "excluded_event_uids_contract",
+    "select_validation_events",
+]

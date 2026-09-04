@@ -89,6 +89,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--event-uid-manifest",
+        help=(
+            "Exact validation-only event cohort manifest. When supplied, it "
+            "replaces checkpoint/stream selection and must contain exactly "
+            "--max-events unique event_uids."
+        ),
+    )
+    parser.add_argument(
         "--source-category",
         action="append",
         default=None,
@@ -169,6 +177,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
+    event_uid_manifest = (
+        _load_event_uid_manifest(Path(args.event_uid_manifest), args.max_events)
+        if args.event_uid_manifest is not None
+        else None
+    )
+    if event_uid_manifest is not None and args.event_selection != "auto":
+        raise ValueError(
+            "--event-uid-manifest cannot be combined with --event-selection"
+        )
     output = _validated_output_path(
         args.output,
         direct_inputs=(
@@ -176,6 +193,7 @@ def main(argv: list[str] | None = None) -> int:
             args.reconstruction_checkpoint,
             args.dataset_index,
             *args.data,
+            *((args.event_uid_manifest,) if args.event_uid_manifest else ()),
         ),
         data_arguments=args.data,
     )
@@ -214,7 +232,14 @@ def main(argv: list[str] | None = None) -> int:
             args.diagnostic_external_independent_sample
         ),
         source_categories=args.source_category,
-        event_selection=args.event_selection,
+        event_selection=(
+            "explicit_uids" if event_uid_manifest is not None else args.event_selection
+        ),
+        explicit_event_uids=(
+            event_uid_manifest["event_uids"]
+            if event_uid_manifest is not None
+            else None
+        ),
     )
     phase_seconds["model_and_data_context_loading"] = (
         time.perf_counter() - phase_started
@@ -424,6 +449,20 @@ def main(argv: list[str] | None = None) -> int:
             "max_events": args.max_events,
             "source_categories": args.source_category or [],
             "requested_event_selection": args.event_selection,
+            "event_uid_manifest": (
+                {
+                    key: event_uid_manifest[key]
+                    for key in (
+                        "path",
+                        "sha256",
+                        "manifest_version",
+                        "event_uid_count",
+                        "event_uids_sha256",
+                    )
+                }
+                if event_uid_manifest is not None
+                else None
+            ),
             "max_level": args.max_level,
             "object_threshold": args.object_threshold,
             "pointer_threshold": pointer_threshold,
@@ -515,6 +554,44 @@ def _validated_output_path(
                 f"{destination} == {resolved}"
             )
     return destination
+
+
+def _load_event_uid_manifest(path: Path, max_events: int) -> dict[str, Any]:
+    manifest_path = path.expanduser().resolve(strict=True)
+    raw = manifest_path.read_bytes()
+    payload = json.loads(raw)
+    event_uids = payload.get("event_uids")
+    if (
+        payload.get("manifest_version")
+        != "hypertagging-reconstruction-evaluation-cohort-v1"
+        or payload.get("role") != "validation"
+        or payload.get("sealed_test_role_access") != "forbidden"
+        or not isinstance(event_uids, list)
+        or len(event_uids) != max_events
+        or len(event_uids) != len(set(str(uid) for uid in event_uids))
+    ):
+        raise ValueError("evaluation event UID manifest is invalid")
+    normalized = [str(uid) for uid in event_uids]
+    if payload.get("event_uid_count") != len(normalized):
+        raise ValueError("evaluation event UID manifest count is invalid")
+    if payload.get("event_uids_sha256") != _uid_sequence_sha256(normalized):
+        raise ValueError("evaluation event UID manifest hash is invalid")
+    return {
+        **payload,
+        "path": str(manifest_path),
+        "sha256": sha256(raw).hexdigest(),
+        "event_uids": normalized,
+    }
+
+
+def _uid_sequence_sha256(event_uids: list[str]) -> str:
+    digest = sha256()
+    digest.update(b"hypertagging-evaluation-event-uids-v1\0")
+    for uid in event_uids:
+        encoded = uid.encode("utf-8")
+        digest.update(len(encoded).to_bytes(8, byteorder="big"))
+        digest.update(encoded)
+    return digest.hexdigest()
 
 
 def _manifest_referenced_paths(path: Path) -> list[Path]:

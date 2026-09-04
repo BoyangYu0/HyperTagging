@@ -7,6 +7,7 @@ import math
 from typing import Mapping
 
 from hypertagging.reconstruction.level_rollout import rollout_policy_identity
+from hypertagging.training.fixed_validation import excluded_event_uids_contract
 
 
 @dataclass(frozen=True)
@@ -128,11 +129,103 @@ def reconstruction_selection_contract(
     eligibility_gates: Mapping[str, object] | None = None,
     scientific_mode: bool = False,
     validation_selection_manifest_hash: str = "",
+    rollout_continue_through_empty_levels: bool = False,
+    validation_excluded_event_uids: tuple[str, ...] = (),
+    rollout_max_level: int | None = None,
+    rollout_root_types: tuple[int, ...] | None = None,
+    rollout_exclusive_final: bool | None = None,
+    rollout_use_learned_confidence: bool | None = None,
 ) -> dict[str, object]:
     """Fields whose change makes checkpoint ranking incomparable on resume."""
 
-    return {
-        "version": "reconstruction-checkpoint-selection-v5",
+    rollout_policy_values = (
+        rollout_max_level,
+        rollout_root_types,
+        rollout_exclusive_final,
+        rollout_use_learned_confidence,
+    )
+    explicit_rollout_policy = any(value is not None for value in rollout_policy_values)
+    if explicit_rollout_policy and any(
+        value is None for value in rollout_policy_values
+    ):
+        raise ValueError(
+            "explicit rollout policy requires max_level, root_types, "
+            "exclusive_final, and use_learned_confidence"
+        )
+    if explicit_rollout_policy:
+        assert rollout_max_level is not None
+        assert rollout_root_types is not None
+        assert rollout_exclusive_final is not None
+        assert rollout_use_learned_confidence is not None
+        if rollout_max_level <= 0:
+            raise ValueError("rollout_max_level must be positive")
+        if (
+            len(set(rollout_root_types)) != len(rollout_root_types)
+            or any(
+                isinstance(token, bool)
+                or not isinstance(token, int)
+                or token <= 0
+                for token in rollout_root_types
+            )
+        ):
+            raise ValueError("rollout_root_types must contain unique positive integers")
+        if not isinstance(rollout_exclusive_final, bool):
+            raise ValueError("rollout_exclusive_final must be boolean")
+        if not isinstance(rollout_use_learned_confidence, bool):
+            raise ValueError("rollout_use_learned_confidence must be boolean")
+
+    exclusion_contract = excluded_event_uids_contract(
+        validation_excluded_event_uids
+    )
+    extended_identity = bool(
+        rollout_continue_through_empty_levels
+        or exclusion_contract["excluded_event_uid_count"]
+    )
+    validation_selection: dict[str, object] = {
+        "version": (
+            "manifest-role-uid-hash-v1"
+            if scientific_mode else "ci-source-prefix-v1"
+        ),
+        "scientific_mode": bool(scientific_mode),
+        "selection_manifest_hash": validation_selection_manifest_hash,
+    }
+    if extended_identity:
+        validation_selection.update(exclusion_contract)
+    rollout_configuration: dict[str, object] = {
+        "max_level": (
+            int(rollout_max_level) if explicit_rollout_policy else 8
+        ),
+        "exclusive_resolution": "greedy",
+        "bounded_weighted_set_packing": "diagnostic_only",
+        "learned_confidence": (
+            bool(rollout_use_learned_confidence)
+            if explicit_rollout_policy
+            else True
+        ),
+        "policy_identity": rollout_policy_identity(
+            continue_through_empty_levels=(
+                rollout_continue_through_empty_levels
+            )
+        ),
+    }
+    if explicit_rollout_policy:
+        rollout_configuration.update(
+            {
+                "root_types": [int(token) for token in rollout_root_types],
+                "exclusive_final": bool(rollout_exclusive_final),
+            }
+        )
+
+    contract = {
+        "version": (
+            "reconstruction-checkpoint-selection-v7"
+            if explicit_rollout_policy
+            else (
+                "reconstruction-checkpoint-selection-v6"
+                if extended_identity
+                else "reconstruction-checkpoint-selection-v5"
+            )
+        ),
         "primary_metric": best_metric,
         "primary_mode": best_mode,
         "tracks": [
@@ -148,15 +241,7 @@ def reconstruction_selection_contract(
         "validation_event_limit": int(max_validation_events),
         "rollout_event_limit": int(rollout_validation_events),
         "rollout_validate_every": int(rollout_validate_every),
-        "rollout_configuration": {
-            "max_level": 8,
-            "exclusive_resolution": "greedy",
-            "bounded_weighted_set_packing": "diagnostic_only",
-            "learned_confidence": True,
-            "policy_identity": rollout_policy_identity(
-                continue_through_empty_levels=False
-            ),
-        },
+        "rollout_configuration": rollout_configuration,
         "constraint_policy": dict(constraint_policy),
         "pid_mode": rollout_pid_kinematics_mode,
         "pid_temperature": float(rollout_pid_temperature),
@@ -168,15 +253,11 @@ def reconstruction_selection_contract(
         },
         "target_policy": target_policy,
         "primary_eligibility_gates": dict(eligibility_gates or {}),
-        "validation_selection": {
-            "version": (
-                "manifest-role-uid-hash-v1"
-                if scientific_mode else "ci-source-prefix-v1"
-            ),
-            "scientific_mode": bool(scientific_mode),
-            "selection_manifest_hash": validation_selection_manifest_hash,
-        },
+        "validation_selection": validation_selection,
     }
+    if explicit_rollout_policy:
+        contract["rollout_validate_at_final_step"] = True
+    return contract
 
 
 def rollout_checkpoint_eligibility(

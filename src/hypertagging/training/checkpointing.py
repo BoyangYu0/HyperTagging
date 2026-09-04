@@ -190,11 +190,7 @@ def restore_training_checkpoint(
             model.state_dict(),
             checkpoint_step=int(payload.get("step", 0)),
         )
-        training_state = dict(payload.get("training_state", {}))
-        migrations = list(training_state.get("checkpoint_load_migrations", []))
         migrations.append(migration)
-        training_state["checkpoint_load_migrations"] = migrations
-        payload["training_state"] = training_state
     if migrations:
         training_state = dict(payload.get("training_state", {}))
         existing = list(training_state.get("checkpoint_load_migrations", []))

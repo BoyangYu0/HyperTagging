@@ -21,7 +21,11 @@ from hypertagging.models.hyperbolic import (
 )
 from hypertagging.models.relations import HyperbolicRelationBias
 from hypertagging.training.checkpoint_selection import rollout_checkpoint_eligibility
-from hypertagging.training.fixed_validation import select_validation_events
+from hypertagging.training.fixed_validation import (
+    EXCLUDED_EVENT_UID_HASH_SCHEME,
+    excluded_event_uids_contract,
+    select_validation_events,
+)
 from hypertagging.training.learning_rate import (
     build_warmup_cosine_scheduler,
     learning_rate_schedule_contract,
@@ -46,6 +50,8 @@ from hypertagging.training.pretrain_trainer import (
     objective_preflight_report,
 )
 from hypertagging.training.reconstruction_trainer import (
+    ReconstructionConfig,
+    _data_order_contract,
     _require_scientific_capacity_report,
 )
 
@@ -802,3 +808,80 @@ def test_scientific_fixed_validation_is_order_independent_and_restorable():
     )
     assert [event.event_uid for event in restored] == list(uids)
     assert restored_uids == uids
+
+
+def test_fixed_validation_exclusions_are_set_bound_and_applied_before_ranking():
+    events = [_Event(f"validation:{index}") for index in range(20)]
+    excluded = ("validation:2", "validation:7", "validation:2")
+    selected, uids, contract = select_validation_events(
+        events,
+        limit=7,
+        scientific_mode=True,
+        selection_manifest_hash="manifest-hash",
+        seed=17,
+        excluded_event_uids=excluded,
+    )
+    manually_filtered = [
+        event for event in events if event.event_uid not in set(excluded)
+    ]
+    _, expected_uids, _ = select_validation_events(
+        reversed(manually_filtered),
+        limit=7,
+        scientific_mode=True,
+        selection_manifest_hash="manifest-hash",
+        seed=17,
+    )
+    assert [event.event_uid for event in selected] == list(uids)
+    assert uids == expected_uids
+    assert not set(uids) & set(excluded)
+    assert contract == {
+        "version": "manifest-role-uid-hash-v1",
+        "mode": "manifest_validation_role_uid_hash",
+        "selection_manifest_hash": "manifest-hash",
+        "seed": 17,
+        **excluded_event_uids_contract(excluded),
+    }
+    assert contract["excluded_event_uid_count"] == 2
+    assert (
+        contract["excluded_event_uids_hash_scheme"]
+        == EXCLUDED_EVENT_UID_HASH_SCHEME
+    )
+
+
+def test_fixed_validation_rejects_restored_excluded_uid_intersection():
+    events = [_Event(f"validation:{index}") for index in range(5)]
+    with pytest.raises(ValueError, match="intersect the excluded validation set"):
+        select_validation_events(
+            events,
+            limit=2,
+            scientific_mode=True,
+            selection_manifest_hash="manifest-hash",
+            seed=17,
+            restored_event_uids=("validation:1", "validation:2"),
+            excluded_event_uids=("validation:2",),
+        )
+
+
+def test_reconstruction_data_order_binds_validation_exclusion_identity():
+    exclusions = ("validation:b", "validation:a", "validation:b")
+    config = ReconstructionConfig(
+        data="unused",
+        output_dir="unused",
+        validation_excluded_event_uids=exclusions,
+    )
+    contract = _data_order_contract(
+        config,
+        SimpleNamespace(
+            dataset_index={"index_hash": "index-hash"},
+            split_manifest_hash="split-hash",
+        ),
+    )
+    assert config.validation_excluded_event_uids == exclusions
+    assert {
+        key: contract[key]
+        for key in (
+            "excluded_event_uid_count",
+            "excluded_event_uids_sha256",
+            "excluded_event_uids_hash_scheme",
+        )
+    } == excluded_event_uids_contract(exclusions)

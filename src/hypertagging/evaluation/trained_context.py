@@ -71,6 +71,7 @@ def load_trained_evaluation_context(
     diagnostic_allow_external_independent_sample: bool = False,
     source_categories: Sequence[str] | None = None,
     event_selection: str = "auto",
+    explicit_event_uids: Sequence[str] | None = None,
 ) -> TrainedEvaluationContext:
     """Load a trained model and a deterministic held-out event selection.
 
@@ -88,8 +89,22 @@ def load_trained_evaluation_context(
         "checkpoint_rollout",
         "checkpoint_validation",
         "stream",
+        "explicit_uids",
     }:
         raise ValueError(f"unknown evaluation event selection: {event_selection}")
+    explicit_uids = (
+        tuple(str(uid) for uid in explicit_event_uids)
+        if explicit_event_uids is not None
+        else None
+    )
+    if explicit_uids is not None and (
+        not explicit_uids or len(explicit_uids) != len(set(explicit_uids))
+    ):
+        raise ValueError("explicit evaluation event UIDs must be nonempty and unique")
+    if (event_selection == "explicit_uids") != (explicit_uids is not None):
+        raise ValueError(
+            "explicit_uids selection requires exactly one explicit UID cohort"
+        )
     requested_categories = {
         str(category).strip() for category in (source_categories or ())
     }
@@ -183,6 +198,7 @@ def load_trained_evaluation_context(
         data_module=data_module,
         split=split,
         requested=event_selection,
+        explicit_event_uids=explicit_uids,
     )
     events = _select_evaluation_events(
         data_module,
@@ -346,7 +362,14 @@ def _resolve_checkpoint_event_selection(
     data_module: RealDataModule,
     split: str,
     requested: str,
+    explicit_event_uids: tuple[str, ...] | None = None,
 ) -> tuple[tuple[str, ...] | None, str]:
+    if requested == "explicit_uids":
+        if not explicit_event_uids:
+            raise ValueError("explicit evaluation UID cohort is missing")
+        return explicit_event_uids, "explicit_uid_cohort"
+    if explicit_event_uids is not None:
+        raise ValueError("explicit evaluation UIDs require explicit_uids selection")
     selection = payload.get("validation_selection", {})
     has_checkpoint_cohort = (
         split == "validation"
