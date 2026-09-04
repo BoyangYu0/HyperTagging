@@ -122,11 +122,12 @@ def test_confirmation_workflow_is_fail_closed() -> None:
         "global_concurrency": 2,
     }
     wrapper = (ROOT / "scripts/slurm/run_reconstruction_confirmation.sbatch").read_text()
-    assert "#SBATCH --requeue" not in wrapper
+    assert "#SBATCH --no-requeue" in wrapper
     assert wrapper.index("trap finalize EXIT") < wrapper.index(
         "verify_reconstruction_confirmation_contract.py"
     )
     renderer = (ROOT / "scripts/slurm/render_reconstruction_confirmation_job.py").read_text()
+    assert '"--no-requeue"' in renderer
     for denied in (
         '"training_authorized": False',
         '"checkpoint_mutation_authorized": False',

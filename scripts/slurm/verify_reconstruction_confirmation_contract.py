@@ -45,6 +45,19 @@ def git(*args: str) -> str:
     return result.stdout.strip()
 
 
+def slurm_job(job_id: str) -> str:
+    result = subprocess.run(
+        ("/opt/slurm/bin/scontrol", "show", "job", "-o", job_id),
+        text=True,
+        capture_output=True,
+        check=False,
+        timeout=30,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr.strip())
+    return result.stdout.strip()
+
+
 def verify_contract_hash(contract: dict[str, Any]) -> str:
     expected = str(contract.get("contract_sha256", ""))
     payload = dict(contract)
@@ -174,8 +187,15 @@ def verify_contract(path: Path, *, require_slurm: bool = True) -> tuple[dict[str
     allowed = (ROOT / "artifacts/runs/ht-reconstruction-phase34-confirmation-20260904").resolve()
     if allowed not in output_root.parents:
         raise RuntimeError("confirmation output root is outside the study namespace")
-    if require_slurm and not os.environ.get("SLURM_JOB_ID"):
-        raise RuntimeError("confirmation execution requires Slurm")
+    if require_slurm:
+        job_id = os.environ.get("SLURM_JOB_ID")
+        if not job_id:
+            raise RuntimeError("confirmation execution requires Slurm")
+        scheduler_record = slurm_job(job_id)
+        if " Requeue=0 " not in f" {scheduler_record} ":
+            raise RuntimeError("confirmation task must disable Slurm requeue")
+        if " Restarts=0 " not in f" {scheduler_record} ":
+            raise RuntimeError("confirmation task cannot execute after a restart")
     runtime = {
         "contract_sha256": contract_hash,
         "gpu_environment": str(gpu_environment),

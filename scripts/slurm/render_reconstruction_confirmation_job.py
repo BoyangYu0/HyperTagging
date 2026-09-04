@@ -183,6 +183,7 @@ def main() -> int:
         "--cpus-per-task=8",
         "--mem=32G",
         "--time=06:00:00",
+        "--no-requeue",
         "--export=NIL",
         f"--job-name={task_id}",
         "scripts/slurm/run_reconstruction_confirmation.sbatch",
