@@ -455,6 +455,17 @@ def test_phase35_live_slurm_contract_is_exact_and_no_requeue(tmp_path: Path) -> 
     verify.verify_live_slurm_record(
         record, contract=contract, contract_path=contract_path
     )
+    verify.verify_live_slurm_record(
+        record.replace("NumNodes=1", "NumNodes=1-1"),
+        contract=contract,
+        contract_path=contract_path,
+    )
+    with pytest.raises(RuntimeError, match="NumNodes"):
+        verify.verify_live_slurm_record(
+            record.replace("NumNodes=1", "NumNodes=1-2"),
+            contract=contract,
+            contract_path=contract_path,
+        )
     with pytest.raises(RuntimeError, match="live Slurm allocation"):
         verify.verify_live_slurm_record(
             record.replace("Requeue=0", "Requeue=1"),

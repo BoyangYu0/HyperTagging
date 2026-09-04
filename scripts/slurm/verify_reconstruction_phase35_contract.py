@@ -19,7 +19,7 @@ PREREGISTRATION = (
 )
 CONTRACT_VERSION = "hypertagging-reconstruction-phase35-improvement-contract-v1"
 STUDY_ID = "phase35-full-decay-reconstruction-improvement-20260904"
-IMPLEMENTATION_TAG = "ht-reconstruction-phase35-improvement-20260904-v1"
+IMPLEMENTATION_TAG = "ht-reconstruction-phase35-improvement-20260904-v2"
 OUTPUT_NAMESPACE = "artifacts/runs/ht-reconstruction-phase35-improvement-20260904"
 WRAPPER = "scripts/slurm/run_reconstruction_phase35.sbatch"
 CAMPAIGN_SUBMISSION_RECEIPT = (
@@ -910,7 +910,6 @@ def verify_live_slurm_record(
         "Partition": "inter",
         "Account": "others",
         "NumCPUs": "8",
-        "NumNodes": "1",
         "NumTasks": "1",
         "CPUs/Task": "8",
         "TimeLimit": "1-00:00:00",
@@ -922,6 +921,13 @@ def verify_live_slurm_record(
         for key, value in expected.items()
         if _slurm_field(record, key) != value
     }
+    # A pending one-node job is rendered as the exact range ``1-1`` by this
+    # cluster's Slurm controller; running and terminal records use ``1``.
+    # ReqTRES:node is independently required below, so accept only these two
+    # equivalent single-node encodings.
+    num_nodes = _slurm_field(record, "NumNodes")
+    if num_nodes not in {"1", "1-1"}:
+        mismatches["NumNodes"] = (num_nodes, "1 or 1-1")
     req_tres = _slurm_field(record, "ReqTRES")
     req_tres_values = {
         key: value
