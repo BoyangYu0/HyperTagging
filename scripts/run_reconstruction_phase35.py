@@ -376,6 +376,10 @@ def _pairs(values: list[list[int]]) -> tuple[tuple[int, int], ...]:
     return tuple((int(level), int(value)) for level, value in values)
 
 
+def _float_pairs(values: list[list[float]]) -> tuple[tuple[int, float], ...]:
+    return tuple((int(level), float(value)) for level, value in values)
+
+
 def _training_config(
     *,
     config: dict[str, Any],
@@ -451,6 +455,10 @@ def _training_config(
         query_repulsion_weight=float(config["query_repulsion_weight"]),
         object_positive_weight=float(config["object_positive_weight"]),
         pointer_positive_weight=float(config["pointer_positive_weight"]),
+        level_loss_weights=_float_pairs(config.get("level_loss_weights", [])),
+        recovery_objective_weight=float(
+            config.get("recovery_objective_weight", 1.0)
+        ),
         best_metric=str(config["best_metric"]),
         best_mode=str(config["best_mode"]),
         early_stopping_patience=config["early_stopping_patience"],
@@ -459,6 +467,12 @@ def _training_config(
             config["rollout_pid_kinematics_mode"]
         ),
         rollout_pid_temperature=float(config["rollout_pid_temperature"]),
+        rollout_object_threshold=float(
+            config.get("rollout_object_threshold", 0.5)
+        ),
+        rollout_pointer_threshold=float(
+            config.get("rollout_pointer_threshold", 0.5)
+        ),
         rollout_continue_through_empty_levels=bool(
             config["rollout_continue_through_empty_levels"]
         ),
@@ -469,6 +483,18 @@ def _training_config(
         rollout_exclusive_final=bool(config["rollout_exclusive_final"]),
         rollout_use_learned_confidence=bool(
             config["rollout_use_learned_confidence"]
+        ),
+        rollout_min_tree_validity=float(
+            config.get("rollout_min_tree_validity", 0.999)
+        ),
+        rollout_min_p4_closure=float(
+            config.get("rollout_min_p4_closure", 1.0)
+        ),
+        rollout_min_depth_fraction=float(
+            config.get("rollout_min_depth_fraction", 0.0)
+        ),
+        rollout_min_complete_target_efficiency=float(
+            config.get("rollout_min_complete_target_efficiency", 0.0)
         ),
         type_conditioned_daughter_relation_bias=bool(
             config["type_conditioned_daughter_relation_bias"]
