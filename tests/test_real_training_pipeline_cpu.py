@@ -63,7 +63,7 @@ def test_reconstruction_threads_extended_rollout_and_final_validation_contracts(
 
     payload = load_training_checkpoint(result.checkpoint)
     selection = payload["training_state"]["checkpoint_selection_contract"]
-    assert selection["version"] == "reconstruction-checkpoint-selection-v6"
+    assert selection["version"] == "reconstruction-checkpoint-selection-v8"
     assert selection["rollout_configuration"]["policy_identity"][
         "empty_level_policy"
     ] == "continue_to_max_level"

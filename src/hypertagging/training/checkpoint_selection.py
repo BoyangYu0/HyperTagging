@@ -34,6 +34,20 @@ RECONSTRUCTION_CHECKPOINT_TRACKS: tuple[CheckpointTrack, ...] = (
         requires_rollout=True,
     ),
     CheckpointTrack(
+        "best_rollout_complete_target_efficiency.pt",
+        "micro_complete_target_efficiency",
+        "max",
+        "complete_target_efficiency_denominator",
+        requires_rollout=True,
+    ),
+    CheckpointTrack(
+        "best_rollout_depth_fraction.pt",
+        "predicted_depth_fraction",
+        "max",
+        "rollout_validation_events",
+        requires_rollout=True,
+    ),
+    CheckpointTrack(
         "best_rollout_tree_validity.pt",
         "predicted_tree_validity_rate",
         "max",
@@ -135,6 +149,8 @@ def reconstruction_selection_contract(
     rollout_root_types: tuple[int, ...] | None = None,
     rollout_exclusive_final: bool | None = None,
     rollout_use_learned_confidence: bool | None = None,
+    rollout_object_threshold: float = 0.5,
+    rollout_pointer_threshold: float = 0.5,
 ) -> dict[str, object]:
     """Fields whose change makes checkpoint ranking incomparable on resume."""
 
@@ -217,15 +233,7 @@ def reconstruction_selection_contract(
         )
 
     contract = {
-        "version": (
-            "reconstruction-checkpoint-selection-v7"
-            if explicit_rollout_policy
-            else (
-                "reconstruction-checkpoint-selection-v6"
-                if extended_identity
-                else "reconstruction-checkpoint-selection-v5"
-            )
-        ),
+        "version": "reconstruction-checkpoint-selection-v8",
         "primary_metric": best_metric,
         "primary_mode": best_mode,
         "tracks": [
@@ -246,8 +254,8 @@ def reconstruction_selection_contract(
         "pid_mode": rollout_pid_kinematics_mode,
         "pid_temperature": float(rollout_pid_temperature),
         "thresholds": {
-            "object_probability": 0.5,
-            "daughter_pointer_probability": 0.5,
+            "object_probability": float(rollout_object_threshold),
+            "daughter_pointer_probability": float(rollout_pointer_threshold),
             "confidence": 0.0,
             "type_probability": None,
         },
@@ -274,7 +282,7 @@ def rollout_checkpoint_eligibility(
         value = float(metrics.get(name, 0.0))
         if not math.isfinite(value) or value <= 0:
             failures.append(f"nonzero_denominator:{name}")
-    checks = (
+    checks: list[tuple[str, float, str]] = [
         (
             "predicted_tree_validity_rate",
             float(gates.get("minimum_tree_validity", 0.999)),
@@ -290,7 +298,23 @@ def rollout_checkpoint_eligibility(
             float(gates.get("maximum_recursive_source_conflicts", 0.0)),
             "maximum",
         ),
-    )
+    ]
+    if "minimum_depth_fraction" in gates:
+        checks.append(
+            (
+                "predicted_depth_fraction",
+                float(gates["minimum_depth_fraction"]),
+                "minimum",
+            )
+        )
+    if "minimum_complete_target_efficiency" in gates:
+        checks.append(
+            (
+                "micro_complete_target_efficiency",
+                float(gates["minimum_complete_target_efficiency"]),
+                "minimum",
+            )
+        )
     for metric, threshold, direction in checks:
         value = float(metrics.get(metric, float("nan")))
         if not math.isfinite(value):

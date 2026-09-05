@@ -25,10 +25,17 @@ from hypertagging.training.pretrained_transfer import load_pretrained_encoder
 from hypertagging.training.reconstruction_trainer import (
     ReconstructionConfig,
     _collate_context_batches,
+    _normalized_weighted_mean,
     _predicted_context_rollout_max_level,
     train_level_reconstruction,
     validate_reconstruction,
 )
+
+
+def test_level_weighted_mean_changes_emphasis_without_changing_scale() -> None:
+    losses = [torch.tensor(1.0), torch.tensor(3.0)]
+    assert _normalized_weighted_mean(losses, [1.0, 1.0]) == pytest.approx(2.0)
+    assert _normalized_weighted_mean(losses, [1.0, 3.0]) == pytest.approx(2.5)
 
 
 class _ValidationDataModule:
@@ -72,9 +79,11 @@ def test_explicit_rollout_policy_is_checkpoint_selection_identity() -> None:
         rollout_root_types=(1,),
         rollout_exclusive_final=True,
         rollout_use_learned_confidence=True,
+        rollout_object_threshold=0.35,
+        rollout_pointer_threshold=0.4,
     )
 
-    assert contract["version"] == "reconstruction-checkpoint-selection-v7"
+    assert contract["version"] == "reconstruction-checkpoint-selection-v8"
     assert contract["rollout_validate_at_final_step"] is True
     assert contract["rollout_configuration"] == {
         "max_level": 6,
@@ -85,6 +94,10 @@ def test_explicit_rollout_policy_is_checkpoint_selection_identity() -> None:
         "learned_confidence": True,
         "policy_identity": contract["rollout_configuration"]["policy_identity"],
     }
+    assert contract["thresholds"]["object_probability"] == pytest.approx(0.35)
+    assert contract["thresholds"]["daughter_pointer_probability"] == pytest.approx(
+        0.4
+    )
 
 
 def test_validation_threads_one_explicit_policy_to_every_rollout(
@@ -112,6 +125,8 @@ def test_validation_threads_one_explicit_policy_to_every_rollout(
         rollout_root_types=(1,),
         rollout_exclusive_final=True,
         rollout_use_learned_confidence=True,
+        rollout_object_threshold=0.35,
+        rollout_pointer_threshold=0.4,
     )
 
     assert result["rollout_validation_events"] == 1
@@ -126,6 +141,8 @@ def test_validation_threads_one_explicit_policy_to_every_rollout(
     assert all(config.exclusive_final for _mode, config in observed)
     assert all(config.use_learned_confidence for _mode, config in observed)
     assert all(config.confidence_trained for _mode, config in observed)
+    assert all(config.object_threshold == 0.35 for _mode, config in observed)
+    assert all(config.pointer_threshold == 0.4 for _mode, config in observed)
 
 
 def test_balanced_micro_rollout_stops_before_selected_level_and_obeys_cap() -> None:
@@ -216,7 +233,7 @@ def test_explicit_policy_forces_rollout_validation_at_final_step(
     assert result.metrics["rollout_validation_events"] == 1
     checkpoint = load_training_checkpoint(result.checkpoint)
     selection = checkpoint["training_state"]["checkpoint_selection_contract"]
-    assert selection["version"] == "reconstruction-checkpoint-selection-v7"
+    assert selection["version"] == "reconstruction-checkpoint-selection-v8"
     assert selection["rollout_validate_at_final_step"] is True
     assert checkpoint["validation_selection"]["rollout_was_run"] is True
 

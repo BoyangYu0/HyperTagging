@@ -726,7 +726,7 @@ def test_corrected_scientific_configs_and_small_candidate_contract():
         assert getattr(parsed_rerun, name) == h100_rerun[name]
     assert reconstruction["max_validation_events"] == 2000
     assert reconstruction["rollout_validation_events"] == 1000
-    assert reconstruction["best_metric"] == "predicted_edge_f1"
+    assert reconstruction["best_metric"] == "micro_complete_target_efficiency"
     assert reconstruction["best_mode"] == "max"
 
     candidate = MODEL_PRESETS["small_candidate"]
@@ -771,6 +771,34 @@ def test_rollout_gates_reject_ineligible_primary_metrics():
     assert "minimum:predicted_tree_validity_rate" in result["failures"]
     zero_denominator = dict(eligible, predicted_edge_denominator=0)
     assert not rollout_checkpoint_eligibility(zero_denominator, gates)["eligible"]
+
+
+def test_hierarchy_rollout_gates_require_depth_and_complete_targets():
+    gates = {
+        "minimum_tree_validity": 0.999,
+        "minimum_p4_closure": 1.0,
+        "maximum_recursive_source_conflicts": 0,
+        "minimum_depth_fraction": 0.5,
+        "minimum_complete_target_efficiency": 0.02,
+        "required_denominators": ["rollout_validation_events"],
+    }
+    metrics = {
+        "rollout_validation_events": 100,
+        "predicted_tree_validity_rate": 1.0,
+        "predicted_p4_closure_rate": 1.0,
+        "predicted_recursive_source_conflicts": 0.0,
+        "predicted_depth_fraction": 0.6,
+        "micro_complete_target_efficiency": 0.03,
+    }
+    assert rollout_checkpoint_eligibility(metrics, gates)["eligible"]
+    too_shallow = dict(metrics, predicted_depth_fraction=0.49)
+    result = rollout_checkpoint_eligibility(too_shallow, gates)
+    assert not result["eligible"]
+    assert "minimum:predicted_depth_fraction" in result["failures"]
+    no_complete_targets = dict(metrics, micro_complete_target_efficiency=0.0)
+    result = rollout_checkpoint_eligibility(no_complete_targets, gates)
+    assert not result["eligible"]
+    assert "minimum:micro_complete_target_efficiency" in result["failures"]
 
 
 def test_unevaluated_rollout_gates_are_explicit_and_json_finite():

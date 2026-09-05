@@ -32,6 +32,15 @@ def _level_int_pairs(value: str):
     )
 
 
+def _level_float_pairs(value: str):
+    if not value:
+        return ()
+    return tuple(
+        (int(level), float(weight))
+        for level, weight in (item.split(":", 1) for item in value.split(","))
+    )
+
+
 def _string_tuple(value: str):
     return tuple(item for item in value.split(",") if item)
 
@@ -106,6 +115,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--scheduled-sampling-duration-steps", type=int, default=1000)
     parser.add_argument("--auxiliary-teacher-weight", type=float, default=0.0)
+    parser.add_argument("--level-loss-weights", type=_level_float_pairs, default=())
+    parser.add_argument("--recovery-objective-weight", type=float, default=1.0)
     parser.add_argument(
         "--unrepresentable-target-policy",
         choices=("fallback_teacher", "skip_event_level", "masked_representable_only", "recovery_objective"),
@@ -132,6 +143,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         choices=(
             "validation_loss_total",
             "predicted_edge_f1",
+            "micro_complete_target_efficiency",
             "predicted_tree_validity_rate",
         ),
         default="validation_loss_total",
@@ -142,6 +154,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--scientific-mode", action="store_true")
     parser.add_argument("--rollout-min-tree-validity", type=float, default=0.999)
     parser.add_argument("--rollout-min-p4-closure", type=float, default=1.0)
+    parser.add_argument("--rollout-min-depth-fraction", type=float, default=0.0)
+    parser.add_argument(
+        "--rollout-min-complete-target-efficiency", type=float, default=0.0
+    )
     parser.add_argument("--rollout-p4-tolerance", type=float, default=1e-6)
     parser.add_argument(
         "--rollout-max-recursive-source-conflicts", type=int, default=0
@@ -178,6 +194,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--pid-temperature", type=float, default=1.0)
     parser.add_argument("--rollout-pid-kinematics-mode", choices=("soft_decision_hard_construction", "hard", "temperature_softmax", "straight_through_hard"), default="soft_decision_hard_construction")
     parser.add_argument("--rollout-pid-temperature", type=float, default=0.5)
+    parser.add_argument("--rollout-object-threshold", type=float, default=0.5)
+    parser.add_argument("--rollout-pointer-threshold", type=float, default=0.5)
     parser.add_argument("--query-repulsion-weight", type=float, default=0.0)
     parser.add_argument("--allow-local-tiny-gpu-test", action="store_true")
     return resolve_argparse_namespace(parser, argv)
@@ -257,6 +275,8 @@ def main(argv: list[str] | None = None) -> int:
                 scheduled_sampling_schedule=args.scheduled_sampling_schedule,
                 scheduled_sampling_duration_steps=args.scheduled_sampling_duration_steps,
                 auxiliary_teacher_weight=args.auxiliary_teacher_weight,
+                level_loss_weights=tuple(args.level_loss_weights),
+                recovery_objective_weight=args.recovery_objective_weight,
                 unrepresentable_target_policy=args.unrepresentable_target_policy,
                 level_sampling_mode=args.level_sampling_mode,
                 empirical_type_prior_mode=args.empirical_type_prior_mode,
@@ -275,6 +295,10 @@ def main(argv: list[str] | None = None) -> int:
                 scientific_mode=args.scientific_mode,
                 rollout_min_tree_validity=args.rollout_min_tree_validity,
                 rollout_min_p4_closure=args.rollout_min_p4_closure,
+                rollout_min_depth_fraction=args.rollout_min_depth_fraction,
+                rollout_min_complete_target_efficiency=(
+                    args.rollout_min_complete_target_efficiency
+                ),
                 rollout_p4_tolerance=args.rollout_p4_tolerance,
                 rollout_max_recursive_source_conflicts=(
                     args.rollout_max_recursive_source_conflicts
@@ -294,6 +318,8 @@ def main(argv: list[str] | None = None) -> int:
                 pid_temperature=args.pid_temperature,
                 rollout_pid_kinematics_mode=args.rollout_pid_kinematics_mode,
                 rollout_pid_temperature=args.rollout_pid_temperature,
+                rollout_object_threshold=args.rollout_object_threshold,
+                rollout_pointer_threshold=args.rollout_pointer_threshold,
                 query_repulsion_weight=args.query_repulsion_weight,
                 log_every=args.log_every,
             )

@@ -174,8 +174,12 @@ class ReconstructionConfig:
     query_repulsion_weight: float = 0.0
     object_positive_weight: float = 2.0
     pointer_positive_weight: float = 4.0
+    level_loss_weights: tuple[tuple[int, float], ...] = ()
+    recovery_objective_weight: float = 1.0
     rollout_pid_kinematics_mode: str = "soft_decision_hard_construction"
     rollout_pid_temperature: float = 0.5
+    rollout_object_threshold: float = 0.5
+    rollout_pointer_threshold: float = 0.5
     rollout_continue_through_empty_levels: bool = False
     # When all four fields are supplied, one explicit predicted-rollout policy
     # is shared by scheduled-sampling micro-rollouts and rollout validation.
@@ -191,6 +195,8 @@ class ReconstructionConfig:
     scientific_mode: bool = False
     rollout_min_tree_validity: float = 0.999
     rollout_min_p4_closure: float = 1.0
+    rollout_min_depth_fraction: float = 0.0
+    rollout_min_complete_target_efficiency: float = 0.0
     rollout_p4_tolerance: float = 1e-6
     rollout_max_recursive_source_conflicts: int = 0
     rollout_required_denominators: tuple[str, ...] = (
@@ -291,18 +297,30 @@ def train_level_reconstruction(
         raise ValueError("best_mode must be 'min' or 'max'")
     if config.best_metric not in RECONSTRUCTION_TRACK_BY_METRIC:
         raise ValueError(
-            "best_metric must be validation_loss_total, predicted_edge_f1, or "
-            "predicted_tree_validity_rate"
+            "best_metric must be validation_loss_total, predicted_edge_f1, "
+            "micro_complete_target_efficiency, or predicted_tree_validity_rate"
         )
     if config.scientific_mode and (
-        config.best_metric != "predicted_edge_f1" or config.best_mode != "max"
+        config.best_metric
+        not in {"predicted_edge_f1", "micro_complete_target_efficiency"}
+        or config.best_mode != "max"
     ):
         raise ValueError(
-            "scientific reconstruction requires rollout predicted_edge_f1 as "
-            "the maximizing primary metric"
+            "scientific reconstruction requires a maximizing rollout metric: "
+            "predicted_edge_f1 or micro_complete_target_efficiency"
         )
     if config.early_stopping_patience is not None and config.early_stopping_patience < 1:
         raise ValueError("early_stopping_patience must be positive when supplied")
+    if not 0.0 <= config.rollout_object_threshold <= 1.0:
+        raise ValueError("rollout_object_threshold must lie in [0, 1]")
+    if not 0.0 <= config.rollout_pointer_threshold <= 1.0:
+        raise ValueError("rollout_pointer_threshold must lie in [0, 1]")
+    if not 0.0 <= config.rollout_min_depth_fraction <= 1.0:
+        raise ValueError("rollout_min_depth_fraction must lie in [0, 1]")
+    if not 0.0 <= config.rollout_min_complete_target_efficiency <= 1.0:
+        raise ValueError(
+            "rollout_min_complete_target_efficiency must lie in [0, 1]"
+        )
     if not 0.0 <= config.scheduled_sampling_probability <= 1.0:
         raise ValueError("scheduled_sampling_probability must lie in [0, 1]")
     if config.unrepresentable_target_policy not in {
@@ -343,6 +361,24 @@ def train_level_reconstruction(
         config.pointer_positive_weight
     ):
         raise ValueError("decoder positive weights must be finite and positive")
+    level_weight_levels = [level for level, _weight in config.level_loss_weights]
+    if (
+        len(set(level_weight_levels)) != len(level_weight_levels)
+        or any(level <= 0 for level in level_weight_levels)
+        or any(
+            not math.isfinite(weight) or weight <= 0
+            for _level, weight in config.level_loss_weights
+        )
+    ):
+        raise ValueError(
+            "level_loss_weights must contain unique positive levels with "
+            "finite positive weights"
+        )
+    if (
+        not math.isfinite(config.recovery_objective_weight)
+        or config.recovery_objective_weight <= 0
+    ):
+        raise ValueError("recovery_objective_weight must be finite and positive")
     seed_everything(config.seed)
     if config.resume and config.num_workers > 0:
         raise ValueError(
@@ -604,6 +640,8 @@ def train_level_reconstruction(
         rollout_validate_every=config.rollout_validate_every,
         rollout_pid_kinematics_mode=config.rollout_pid_kinematics_mode,
         rollout_pid_temperature=config.rollout_pid_temperature,
+        rollout_object_threshold=config.rollout_object_threshold,
+        rollout_pointer_threshold=config.rollout_pointer_threshold,
         target_policy=config.target_policy,
         constraint_policy=constraint_policy.to_dict(),
         eligibility_gates=_rollout_eligibility_contract(config),
@@ -698,6 +736,8 @@ def train_level_reconstruction(
             constraint_policy=constraint_policy,
             rollout_pid_kinematics_mode=config.rollout_pid_kinematics_mode,
             rollout_pid_temperature=config.rollout_pid_temperature,
+            rollout_object_threshold=config.rollout_object_threshold,
+            rollout_pointer_threshold=config.rollout_pointer_threshold,
             pilot_allow_train_validation_fallback=(
                 config.pilot_allow_train_validation_fallback
                 or config.allow_legacy_conflated
@@ -1106,6 +1146,8 @@ def train_level_reconstruction(
             constraint_policy=constraint_policy,
             rollout_pid_kinematics_mode=config.rollout_pid_kinematics_mode,
             rollout_pid_temperature=config.rollout_pid_temperature,
+            rollout_object_threshold=config.rollout_object_threshold,
+            rollout_pointer_threshold=config.rollout_pointer_threshold,
             pilot_allow_train_validation_fallback=(
                 config.pilot_allow_train_validation_fallback
                 or config.allow_legacy_conflated
@@ -1256,9 +1298,11 @@ def _optimization_loss(
     component_accumulator: dict[str, torch.Tensor] = {}
     leaf_pid_losses = []
     primary_losses = []
+    primary_loss_weights: list[float] = []
     teacher_primary = []
     predicted_primary = []
     auxiliary_losses = []
+    auxiliary_loss_weights: list[float] = []
     truth_contexts = 0
     predicted_contexts = 0
     sampled_teacher_contexts = 0
@@ -1344,6 +1388,8 @@ def _optimization_loss(
                         constraint_policy=constraint_policy,
                         rollout_pid_kinematics_mode=config.rollout_pid_kinematics_mode,
                         rollout_pid_temperature=config.rollout_pid_temperature,
+                        object_threshold=config.rollout_object_threshold,
+                        pointer_threshold=config.rollout_pointer_threshold,
                         continue_through_empty_levels=(
                             config.rollout_continue_through_empty_levels
                         ),
@@ -1460,9 +1506,15 @@ def _optimization_loss(
                 count = min(recovery_missing, pointer_output.object_logits.shape[1])
                 top_object_logits = pointer_output.object_logits.topk(count, dim=-1).values
                 recovery_loss = F.softplus(-top_object_logits).mean()
+            recovery_loss = recovery_loss * config.recovery_objective_weight
+            if recovery_missing:
                 per_level_components.setdefault("recovery", []).append(recovery_loss)
             primary_event_loss = loss_output.total + recovery_loss
+            level_loss_weight = dict(config.level_loss_weights).get(
+                target_level, 1.0
+            )
             primary_losses.append(primary_event_loss)
+            primary_loss_weights.append(level_loss_weight)
             optimized_counts_by_level[target_level] += 1
             (teacher_primary if choose_teacher else predicted_primary).append(primary_event_loss)
             for name, value in loss_output.components.items():
@@ -1503,6 +1555,7 @@ def _optimization_loss(
                         pointer_positive_weight=config.pointer_positive_weight,
                     ).total
                 )
+                auxiliary_loss_weights.append(level_loss_weight)
         for name, values in per_level_components.items():
             component_accumulator[name] = component_accumulator.get(name, 0) + torch.stack(values).mean()
         # Detached batched teacher view is retained only for metric reporting.
@@ -1527,12 +1580,12 @@ def _optimization_loss(
             )
           level_outputs.append((target_level, diagnostic_output, diagnostic_loss))
     primary_loss = (
-        torch.stack(primary_losses).mean()
+        _normalized_weighted_mean(primary_losses, primary_loss_weights)
         if primary_losses
         else next(model.parameters()).sum() * 0.0
     )
     auxiliary_teacher_loss = (
-        torch.stack(auxiliary_losses).mean()
+        _normalized_weighted_mean(auxiliary_losses, auxiliary_loss_weights)
         if auxiliary_losses
         else primary_loss * 0.0
     )
@@ -1556,6 +1609,7 @@ def _optimization_loss(
         "fallback_teacher_count": float(fallback_teacher_count),
         "skipped_event_level_count": float(skipped_event_level_count),
         "recovery_loss_count": float(recovery_loss_count),
+        "recovery_objective_weight": float(config.recovery_objective_weight),
         "configured_teacher_probability": schedule.probability(step),
         "sampled_teacher_fraction": sampled_teacher_contexts / max(sampled_contexts, 1),
         "sampled_predicted_fraction": sampled_predicted_contexts / max(sampled_contexts, 1),
@@ -1590,6 +1644,9 @@ def _optimization_loss(
             metrics[f"optimized_event_level_{level}_count"] = float(
                 optimized_counts_by_level.get(level, 0)
             )
+            metrics[f"level_{level}_loss_weight"] = float(
+                dict(config.level_loss_weights).get(level, 1.0)
+            )
     return (
         reconstruction_loss,
         leaf_pid_loss,
@@ -1597,6 +1654,20 @@ def _optimization_loss(
         level_outputs,
         metrics,
     )
+
+
+def _normalized_weighted_mean(
+    losses: list[torch.Tensor], weights: list[float]
+) -> torch.Tensor:
+    """Change relative level emphasis without changing the mean loss scale."""
+
+    if not losses or len(losses) != len(weights):
+        raise ValueError("weighted loss requires one positive weight per loss")
+    denominator = sum(weights)
+    if denominator <= 0 or not math.isfinite(denominator):
+        raise ValueError("weighted loss denominator must be finite and positive")
+    scaled = [loss * weight for loss, weight in zip(losses, weights, strict=True)]
+    return torch.stack(scaled).sum() / denominator
 
 
 def _selected_event_levels(
@@ -1858,6 +1929,8 @@ def validate_reconstruction(
     constraint_policy: ReconstructionConstraintPolicy | None = None,
     rollout_pid_kinematics_mode: str = "soft_decision_hard_construction",
     rollout_pid_temperature: float = 0.5,
+    rollout_object_threshold: float = 0.5,
+    rollout_pointer_threshold: float = 0.5,
     pilot_allow_train_validation_fallback: bool = False,
     selected_event_uids: list[str] | None = None,
     excluded_event_uids: tuple[str, ...] = (),
@@ -2038,6 +2111,8 @@ def validate_reconstruction(
                 constraint_policy=constraint_policy,
                 rollout_pid_kinematics_mode=rollout_pid_kinematics_mode,
                 rollout_pid_temperature=rollout_pid_temperature,
+                object_threshold=rollout_object_threshold,
+                pointer_threshold=rollout_pointer_threshold,
                 continue_through_empty_levels=(
                     rollout_continue_through_empty_levels
                 ),
@@ -2068,6 +2143,8 @@ def validate_reconstruction(
                 constraint_policy=constraint_policy,
                 rollout_pid_kinematics_mode=rollout_pid_kinematics_mode,
                 rollout_pid_temperature=rollout_pid_temperature,
+                object_threshold=rollout_object_threshold,
+                pointer_threshold=rollout_pointer_threshold,
                 continue_through_empty_levels=(
                     rollout_continue_through_empty_levels
                 ),
@@ -2102,6 +2179,8 @@ def validate_reconstruction(
                     max_resolution_proposals=12,
                     rollout_pid_kinematics_mode=rollout_pid_kinematics_mode,
                     rollout_pid_temperature=rollout_pid_temperature,
+                    object_threshold=rollout_object_threshold,
+                    pointer_threshold=rollout_pointer_threshold,
                     continue_through_empty_levels=(
                         rollout_continue_through_empty_levels
                     ),
@@ -2137,6 +2216,8 @@ def validate_reconstruction(
                 constraint_policy=constraint_policy,
                 rollout_pid_kinematics_mode=rollout_pid_kinematics_mode,
                 rollout_pid_temperature=rollout_pid_temperature,
+                object_threshold=rollout_object_threshold,
+                pointer_threshold=rollout_pointer_threshold,
                 continue_through_empty_levels=(
                     rollout_continue_through_empty_levels
                 ),
@@ -2186,6 +2267,10 @@ def validate_reconstruction(
             ),
             "predicted_recursive_source_conflicts": float(
                 _recursive_source_conflicts(predicted.batch)
+            ),
+            "predicted_depth_fraction": float(
+                predicted_metrics["predicted_max_level"]
+                / max(predicted_metrics["truth_max_level"], 1)
             ),
             "scheduled_rollout_valid": float(scheduled.valid),
             "representable_target_rate": represented / max(total_targets, 1),
@@ -2328,9 +2413,13 @@ def _rollout_eligibility_contract(
     config: ReconstructionConfig,
 ) -> dict[str, object]:
     return {
-        "version": "rollout-checkpoint-eligibility-v1",
+        "version": "rollout-checkpoint-eligibility-v2",
         "minimum_tree_validity": float(config.rollout_min_tree_validity),
         "minimum_p4_closure": float(config.rollout_min_p4_closure),
+        "minimum_depth_fraction": float(config.rollout_min_depth_fraction),
+        "minimum_complete_target_efficiency": float(
+            config.rollout_min_complete_target_efficiency
+        ),
         "p4_closure_tolerance": float(config.rollout_p4_tolerance),
         "maximum_recursive_source_conflicts": int(
             config.rollout_max_recursive_source_conflicts
@@ -2580,6 +2669,11 @@ def _data_order_contract(
         "grad_scaler_enabled": config.grad_scaler_enabled,
         "object_positive_weight": config.object_positive_weight,
         "pointer_positive_weight": config.pointer_positive_weight,
+        "level_loss_weights": [
+            [int(level), float(weight)]
+            for level, weight in config.level_loss_weights
+        ],
+        "recovery_objective_weight": config.recovery_objective_weight,
     }
     if config.level_sampling_mode == "balanced_level_replay":
         if data_module.balanced_level_replay_contract is None:
@@ -2603,6 +2697,8 @@ def _data_order_contract(
             "use_learned_confidence": bool(
                 config.rollout_use_learned_confidence
             ),
+            "object_threshold": float(config.rollout_object_threshold),
+            "pointer_threshold": float(config.rollout_pointer_threshold),
             "continue_through_empty_levels": bool(
                 config.rollout_continue_through_empty_levels
             ),
