@@ -44,7 +44,7 @@ ARM_ROLES = (
 )
 ALLOWED_SELECTION_STEPS = {500, 1000, 1500, 2000, 2188}
 CHECKPOINT_TRACKS = {
-    "final": "checkpoint-step-2188.pt",
+    "final": "checkpoint.pt",
     "best": "best.pt",
     "best_complete_target": "best_rollout_complete_target_efficiency.pt",
     "best_depth": "best_rollout_depth_fraction.pt",
@@ -257,7 +257,7 @@ def main() -> int:
         raise RuntimeError("phase36 track selected an unregistered step")
 
     selection_audit = _validation_selection_audit(
-        training_output / "checkpoint-step-2188.pt",
+        training_output / CHECKPOINT_TRACKS["final"],
         exclusions=exclusions,
         expected_event_uids=tuple(cohort["checkpoint_selection_event_uids"]),
         expected_rollout_event_uids=tuple(

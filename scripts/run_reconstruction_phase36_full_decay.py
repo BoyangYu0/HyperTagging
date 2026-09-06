@@ -85,6 +85,7 @@ def main() -> int:
     atomic_json(
         evaluation_manifest,
         {
+            "manifest_version": "hypertagging-reconstruction-evaluation-cohort-v1",
             "role": "validation",
             "sealed_test_role_access": "forbidden",
             "event_uid_count": cohort["evaluation_event_uid_count"],
@@ -118,6 +119,8 @@ def main() -> int:
             allow_finetuned_encoder=(
                 step > int(contract["config"]["freeze_pretrained_encoder_steps"])
             ),
+            object_threshold=float(contract["config"]["rollout_object_threshold"]),
+            pointer_threshold=float(contract["config"]["rollout_pointer_threshold"]),
         )
         artifacts[label] = {
             "checkpoint": _artifact(checkpoint),

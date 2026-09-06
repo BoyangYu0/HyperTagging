@@ -95,9 +95,18 @@ def test_phase36_training_config_preserves_fractional_level_weights(
 
 def test_phase36_runner_requires_all_independent_tracks() -> None:
     assert CHECKPOINT_TRACKS == {
-        "final": "checkpoint-step-2188.pt",
+        "final": "checkpoint.pt",
         "best": "best.pt",
         "best_complete_target": "best_rollout_complete_target_efficiency.pt",
         "best_depth": "best_rollout_depth_fraction.pt",
         "best_tree_validity": "best_rollout_tree_validity.pt",
     }
+
+
+def test_phase36_full_decay_binds_manifest_and_preregistered_thresholds() -> None:
+    source = (ROOT / "scripts/run_reconstruction_phase36_full_decay.py").read_text(
+        encoding="utf-8"
+    )
+    assert '"manifest_version": "hypertagging-reconstruction-evaluation-cohort-v1"' in source
+    assert 'contract["config"]["rollout_object_threshold"]' in source
+    assert 'contract["config"]["rollout_pointer_threshold"]' in source

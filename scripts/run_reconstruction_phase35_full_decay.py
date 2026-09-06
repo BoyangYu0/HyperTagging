@@ -167,6 +167,8 @@ def _run_evaluator(
     output: Path,
     log: Path,
     allow_finetuned_encoder: bool,
+    object_threshold: float = 0.5,
+    pointer_threshold: float | None = None,
 ) -> dict[str, Any]:
     command = [
         str(python),
@@ -191,6 +193,8 @@ def _run_evaluator(
         "100",
         "--max-level",
         "6",
+        "--object-threshold",
+        str(object_threshold),
         "--threads",
         "4",
         "--omit-trees",
@@ -199,6 +203,8 @@ def _run_evaluator(
     ]
     if allow_finetuned_encoder:
         command.append("--allow-finetuned-encoder")
+    if pointer_threshold is not None:
+        command.extend(("--pointer-threshold", str(pointer_threshold)))
     environment = {
         **os.environ,
         "CUDA_VISIBLE_DEVICES": "",
