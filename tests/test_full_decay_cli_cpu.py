@@ -37,6 +37,8 @@ def test_full_decay_cli_defaults_to_cpu_both_scopes(monkeypatch):
     assert args.source_category is None
     assert args.event_selection == "auto"
     assert args.use_learned_confidence is None
+    assert args.threads == 1
+    assert args.deterministic_algorithms is False
     assert module.os.environ["CUDA_VISIBLE_DEVICES"] == ""
     policy = module.rollout_policy_identity(continue_through_empty_levels=True)
     assert module.REPORT_VERSION == "hypertagging-offline-full-decay-evaluation-v3"
@@ -65,6 +67,15 @@ def test_full_decay_cli_allows_explicit_confidence_diagnostic_override():
         _required_args() + ["--disable-learned-confidence"]
     )
     assert args.use_learned_confidence is False
+
+
+def test_full_decay_cli_accepts_deterministic_algorithm_requirement():
+    module = _script_module()
+    args = module.parse_args(
+        _required_args() + ["--threads", "1", "--deterministic-algorithms"]
+    )
+    assert args.threads == 1
+    assert args.deterministic_algorithms is True
 
 
 def test_full_decay_explicit_uid_manifest_is_hashed_and_validation_only(

@@ -169,7 +169,11 @@ def _run_evaluator(
     allow_finetuned_encoder: bool,
     object_threshold: float = 0.5,
     pointer_threshold: float | None = None,
+    threads: int = 4,
+    deterministic_algorithms: bool = False,
 ) -> dict[str, Any]:
+    if threads <= 0:
+        raise ValueError("full-decay evaluator threads must be positive")
     command = [
         str(python),
         "scripts/evaluate_full_decay.py",
@@ -196,21 +200,23 @@ def _run_evaluator(
         "--object-threshold",
         str(object_threshold),
         "--threads",
-        "4",
+        str(threads),
         "--omit-trees",
         "--output",
         str(output),
     ]
     if allow_finetuned_encoder:
         command.append("--allow-finetuned-encoder")
+    if deterministic_algorithms:
+        command.append("--deterministic-algorithms")
     if pointer_threshold is not None:
         command.extend(("--pointer-threshold", str(pointer_threshold)))
     environment = {
         **os.environ,
         "CUDA_VISIBLE_DEVICES": "",
-        "OMP_NUM_THREADS": "4",
-        "MKL_NUM_THREADS": "4",
-        "OPENBLAS_NUM_THREADS": "4",
+        "OMP_NUM_THREADS": str(threads),
+        "MKL_NUM_THREADS": str(threads),
+        "OPENBLAS_NUM_THREADS": str(threads),
     }
     completed = subprocess.run(
         command,
@@ -246,6 +252,9 @@ def _run_evaluator(
         report.get("report_version")
         != "hypertagging-offline-full-decay-evaluation-v3"
         or report.get("device") != "cpu"
+        or report.get("torch_num_threads") != threads
+        or report.get("torch_deterministic_algorithms_enabled")
+        is not deterministic_algorithms
         or report.get("configuration", {}).get("max_level") != 6
         or report.get("configuration", {}).get("truth_topology_mode")
         != topology_mode

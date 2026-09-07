@@ -141,6 +141,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--p4-closure-tolerance", type=float, default=1.0e-6)
     parser.add_argument("--threads", type=int, default=1)
+    parser.add_argument(
+        "--deterministic-algorithms",
+        action="store_true",
+        help=(
+            "Require PyTorch deterministic algorithms for reproducibility-gated "
+            "offline inference."
+        ),
+    )
     parser.add_argument("--omit-trees", action="store_true")
     parser.add_argument("--profile-phases", action="store_true")
     parser.add_argument(
@@ -200,6 +208,7 @@ def main(argv: list[str] | None = None) -> int:
     run_started = time.perf_counter()
     phase_seconds: dict[str, float] = {}
     torch.set_num_threads(args.threads)
+    torch.use_deterministic_algorithms(bool(args.deterministic_algorithms))
     try:
         torch.set_num_interop_threads(max(1, min(args.threads, 4)))
     except RuntimeError:
@@ -431,6 +440,9 @@ def main(argv: list[str] | None = None) -> int:
         "device": "cpu",
         "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES", ""),
         "torch_num_threads": torch.get_num_threads(),
+        "torch_deterministic_algorithms_enabled": (
+            torch.are_deterministic_algorithms_enabled()
+        ),
         "timing": {
             "phase_seconds": phase_seconds,
             "event_count": len(event_records),
