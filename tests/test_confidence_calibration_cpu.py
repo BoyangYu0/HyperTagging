@@ -37,6 +37,25 @@ def test_recursive_exclusivity_ranking_is_deterministic():
     assert RolloutConfig().use_learned_confidence is False
 
 
+def test_beam_hypothesis_tracks_original_and_joint_model_scores():
+    from hypertagging.reconstruction.level_rollout import BeamRolloutHypothesis
+
+    hypothesis = BeamRolloutHypothesis(
+        batch={},
+        score=1.6,
+        accepted_by_level=(),
+        proposal_count=2,
+        average_link_probability_sum=1.4,
+        normalized_joint_log_probability_sum=-0.8,
+    )
+    assert hypothesis.ranking_scores() == {
+        "learned_confidence_sum": 1.6,
+        "learned_confidence_mean": 0.8,
+        "average_link_probability": 0.7,
+        "normalized_joint_log_probability": -0.4,
+    }
+
+
 def test_confidence_target_is_independent_of_type_probability_magnitude():
     batch = collate_heterogeneous_events(
         [heterogeneous_from_level_event(tiny_level_events()[0])]

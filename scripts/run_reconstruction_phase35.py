@@ -198,12 +198,16 @@ def replay_slot_audit(
     if (
         config.get("level_sampling_mode") != "balanced_level_replay"
         or batch_size != 64
-        or max_steps != 2188
-        or slot_budget != PHASE35_REPLAY_SLOT_BUDGET
+        or max_steps <= 0
         or slot_budget != batch_size * max_steps
-        or configured_counts != PHASE35_REPLAY_SLOT_COUNTS
+        or configured_counts
+        != {
+            level: slot_budget // len(levels)
+            + int(index < slot_budget % len(levels))
+            for index, level in enumerate(levels)
+        }
     ):
-        raise RuntimeError("phase35 replay slot preregistration changed")
+        raise RuntimeError("balanced replay slot preregistration changed")
     if not isinstance(trainer_contract, dict):
         raise RuntimeError("trainer did not expose a balanced replay contract")
     preregistered_contract = config.get("balanced_level_replay_contract")

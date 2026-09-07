@@ -1,0 +1,384 @@
+{
+  "arms": [
+    {
+      "hypothesis": "The phase39 pointer-32 architecture receives exactly twice the training data and twice its four-size-equivalent step budget.",
+      "overrides": {
+        "freeze_pretrained_encoder_steps": 2188,
+        "pointer_positive_weight": 32.0
+      },
+      "role": "doubled_data_control"
+    },
+    {
+      "hypothesis": "More decoder query slots reduce competition among simultaneous mothers while leaving encoder size, data, optimizer, and losses fixed.",
+      "overrides": {
+        "freeze_pretrained_encoder_steps": 2188,
+        "n_queries_by_level": [
+          [
+            1,
+            24
+          ],
+          [
+            2,
+            12
+          ],
+          [
+            3,
+            8
+          ],
+          [
+            4,
+            6
+          ],
+          [
+            5,
+            4
+          ],
+          [
+            6,
+            2
+          ]
+        ],
+        "pointer_positive_weight": 32.0
+      },
+      "role": "doubled_data_query_scale"
+    }
+  ],
+  "authority": {
+    "automatic_promotion": false,
+    "longer_run_authorized": false,
+    "promotion_authorized": false,
+    "scheduler_authorized": true,
+    "scientific_validation_authorized": true,
+    "sealed_test_access_authorized": false,
+    "sealed_test_request_authorized": false,
+    "source_checkpoint_mutation_authorized": false,
+    "submission_authorized": true,
+    "training_authorized": true,
+    "validation_payload_access_authorized": true
+  },
+  "checkpoint_selection_contract": {
+    "allowed_selection_steps": [
+      1000,
+      2000,
+      3000,
+      4000,
+      4376
+    ],
+    "independent_tracks": [
+      {
+        "filename": "best_rollout_complete_target_efficiency.pt",
+        "metric": "micro_complete_target_efficiency",
+        "mode": "max"
+      },
+      {
+        "filename": "best_rollout_depth_fraction.pt",
+        "metric": "predicted_depth_fraction",
+        "mode": "max"
+      },
+      {
+        "filename": "best_rollout_tree_validity.pt",
+        "metric": "predicted_tree_validity_rate",
+        "mode": "max"
+      }
+    ],
+    "primary": {
+      "filename": "best.pt",
+      "metric": "micro_complete_target_efficiency",
+      "mode": "max"
+    }
+  },
+  "common_training_contract": {
+    "allow_low_encoder_transfer_coverage": false,
+    "amp_dtype": "bfloat16",
+    "auxiliary_teacher_weight": 0.5,
+    "balanced_level_replay_contract": {
+      "eligible_pool_counts_by_level": {
+        "1": 55323,
+        "2": 32352,
+        "3": 25942,
+        "4": 20061,
+        "5": 13220,
+        "6": 1744
+      },
+      "eligible_pool_uid_sha256_by_level": {
+        "1": "a4bd6b19439cfe4146713fb8c91e4a6bb9d10eb3adb07c2512f873a0c754c836",
+        "2": "1c292746fad717298e0a796d603b1109aa8b9262ab487add44d0ea1fa5bd0443",
+        "3": "29925713b07f5c99c6cff3355530db9de2b8fffefc0f231245f30da512849441",
+        "4": "f39a49fe0b9b397717fa24afb7939af6a0fc05fff08026e633e48b4b4f5f5194",
+        "5": "d09cce173d1b5f4aa6695c5c89c1bbb4ec001198d4b4ac53a7e5cc7e5e083a4e",
+        "6": "97887987a77dad4c13fea2682a0de7888d212c0059adb25eaea5a189d6986011"
+      },
+      "level_schedule": "global_slot_round_robin",
+      "levels": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "materialized_train_event_count": 70000,
+      "materialized_train_uid_sha256": "f57ef10b1f2249f1abf9e38c641730ccf71dc919273021dbc315a86167102bf0",
+      "min_daughters": 2,
+      "planned_schedule": {
+        "end_slot_exclusive": 280064,
+        "level_counts": {
+          "1": 46678,
+          "2": 46678,
+          "3": 46677,
+          "4": 46677,
+          "5": 46677,
+          "6": 46677
+        },
+        "max_minus_min_level_count": 1,
+        "slot_count": 280064,
+        "start_slot": 0
+      },
+      "pool_order": "uid_lexicographic_before_permutation",
+      "pool_permutation": "sha256_ranked_by_seed_level_cycle_uid",
+      "replacement_policy": "new_seeded_permutation_on_pool_exhaustion",
+      "seed": 20260909,
+      "target_policy": "complete_only",
+      "uid_hash_scheme": "sha256-u64be-length-prefixed-utf8-v1",
+      "version": "balanced-level-replay-v1"
+    },
+    "batch_size": 64,
+    "best_metric": "micro_complete_target_efficiency",
+    "best_mode": "max",
+    "checkpoint_every": 1000,
+    "early_stopping_patience": null,
+    "empirical_type_prior_mode": "soft",
+    "encoder_lr_multiplier": 0.05,
+    "four_train_size_equivalent_slot_target": 280000,
+    "freeze_leaf_pid_head_steps": 4376,
+    "grad_scaler_enabled": false,
+    "initial_state_policy": "upsilon4s",
+    "leaf_pid_lr_multiplier": 1.0,
+    "learning_rate": 0.0003,
+    "level_loss_weights": [
+      [
+        1,
+        1.0
+      ],
+      [
+        2,
+        1.0
+      ],
+      [
+        3,
+        1.25
+      ],
+      [
+        4,
+        1.5
+      ],
+      [
+        5,
+        2.0
+      ],
+      [
+        6,
+        3.0
+      ]
+    ],
+    "level_sampling_mode": "balanced_level_replay",
+    "log_every": 10,
+    "lr_schedule_total_steps": 4376,
+    "max_cardinality": 16,
+    "max_cardinality_by_level": [
+      [
+        1,
+        9
+      ],
+      [
+        2,
+        16
+      ],
+      [
+        3,
+        15
+      ],
+      [
+        4,
+        14
+      ],
+      [
+        5,
+        13
+      ],
+      [
+        6,
+        2
+      ]
+    ],
+    "max_steps": 4376,
+    "max_validation_events": 2000,
+    "max_warmup_steps": 10000,
+    "min_lr_ratio": 0.05,
+    "minimum_encoder_transfer_coverage": 1.0,
+    "mixed_precision": true,
+    "model_preset": "small_candidate",
+    "n_queries_by_level": [
+      [
+        1,
+        16
+      ],
+      [
+        2,
+        8
+      ],
+      [
+        3,
+        6
+      ],
+      [
+        4,
+        4
+      ],
+      [
+        5,
+        3
+      ],
+      [
+        6,
+        2
+      ]
+    ],
+    "nominal_expected_predicted_context_fraction_before_fallback": 0.3748857404021938,
+    "nominal_expected_predicted_context_slots_before_fallback": 52496,
+    "nominal_expected_teacher_context_fraction_before_fallback": 0.6251142595978062,
+    "nominal_expected_teacher_context_slots_before_fallback": 87536,
+    "num_workers": 0,
+    "object_positive_weight": 12.0,
+    "optimizer_steps_per_train_size_equivalent": 1094,
+    "pointer_positive_weight": 16.0,
+    "query_repulsion_weight": 0.01,
+    "recovery_objective_weight": 2.0,
+    "replay_slot_budget": 280064,
+    "replay_slot_counts_by_level": {
+      "1": 46678,
+      "2": 46678,
+      "3": 46677,
+      "4": 46677,
+      "5": 46677,
+      "6": 46677
+    },
+    "require_exact_leaf_pid_transfer": true,
+    "rollout_continue_through_empty_levels": true,
+    "rollout_exclusive_final": true,
+    "rollout_max_level": 6,
+    "rollout_min_complete_target_efficiency": 0.0,
+    "rollout_min_depth_fraction": 0.0,
+    "rollout_min_p4_closure": 1.0,
+    "rollout_min_tree_validity": 0.999,
+    "rollout_object_threshold": 0.5,
+    "rollout_pid_kinematics_mode": "soft_decision_hard_construction",
+    "rollout_pid_temperature": 0.5,
+    "rollout_pointer_threshold": 0.35,
+    "rollout_root_types": [
+      1
+    ],
+    "rollout_use_learned_confidence": true,
+    "rollout_validate_every": 1000,
+    "rollout_validation_events": 1000,
+    "scheduled_sampling_duration_steps": 2188,
+    "scheduled_sampling_probability": 0.5,
+    "scheduled_sampling_schedule": "linear",
+    "scheduled_sampling_zero_based_step_range": [
+      0,
+      4375
+    ],
+    "scientific_mode": true,
+    "seed": 20260909,
+    "target_policy": "complete_only",
+    "train_split_event_count": 70000,
+    "training_budget_semantics": "four_train_size_equivalent_level_conditioned_replay_slots_on_exact_doubled_training_data",
+    "transfer_leaf_pid_head": true,
+    "type_conditioned_daughter_relation_bias": true,
+    "unrepresentable_target_policy": "recovery_objective",
+    "validate_every": 100,
+    "validation_batch_size": 4,
+    "validation_enabled": true,
+    "warmup_fraction": 0.05,
+    "warmup_steps": 110
+  },
+  "created_at": "2026-09-07T17:45:29.359161+00:00",
+  "data_binding": {
+    "dataset_index": "artifacts/experiment_readiness/reconstruction_phase40_20260907/train_070k.complete_only.index.json",
+    "dataset_index_sha256": "d3e61ed35443bdd15176c444cb04ed5ef3e02cc60519e4a1cb1c908f73a9e1ae",
+    "included_splits": [
+      "train",
+      "validation"
+    ],
+    "sealed_test_opened": false,
+    "selection_manifest": "configs/training_selection/production_1m_20260812/train_070k_phase40.json",
+    "selection_manifest_sha256": "83e6f627a779b365465934cebb78450e9fccbb72efc309510f6df3cfb5c676f9",
+    "train_events": 70000,
+    "validation_events": 50000
+  },
+  "evaluation_contract": {
+    "beam_search": {
+      "beam_width": 4,
+      "enabled": true,
+      "max_events": 20,
+      "max_level": 6,
+      "model_only_rankings": [
+        "learned_confidence_sum",
+        "learned_confidence_mean",
+        "average_link_probability",
+        "normalized_joint_log_probability"
+      ],
+      "oracle_at_k_diagnostic_only": true,
+      "scope": "full"
+    },
+    "cpu_threads": 1,
+    "deterministic_algorithms": true,
+    "primary_evaluation_repeats": 2,
+    "require_exact_primary_repeat_equality": true,
+    "root_completion_stability_policy": "require_at_least_two_completed_roots_in_each_identical_primary_repeat"
+  },
+  "execution_policy": {
+    "cpus_per_task": 8,
+    "global_concurrency": 2,
+    "gres": "gpu:h100nvl:1",
+    "maximum_restarts": 0,
+    "memory": "64G",
+    "requeue": false,
+    "task_count": 2,
+    "time": "36:00:00"
+  },
+  "parent_phase39": {
+    "path": "configs/reconstruction/ht_reconstruction_phase39_20260907.json",
+    "sha256": "ea49e265f6bb65e2821deac1a956707840ecc58398866b57249a04faaba1354e"
+  },
+  "post_training_gates": {
+    "all_gates_required": true,
+    "minimum_complete_target_efficiency": 0.03,
+    "minimum_exact_mother_coverage_numerator": 2,
+    "minimum_full_lcag_numerator": 2,
+    "minimum_full_root_completion_numerator": 2,
+    "minimum_full_source_precision": 0.75,
+    "minimum_full_source_recall": 0.17,
+    "minimum_half_lcag_numerator": 10,
+    "minimum_half_perfect_lcag_numerator": 3,
+    "minimum_half_root_pid_accuracy": 0.02,
+    "minimum_half_source_precision": 0.45,
+    "minimum_half_source_recall": 0.19,
+    "minimum_p4_closure": 1.0,
+    "minimum_predicted_depth_fraction": 1.2,
+    "minimum_tree_validity": 0.999
+  },
+  "preregistration_version": "hypertagging-reconstruction-phase40-preregistration-v1",
+  "scientific_question": "Does doubling reconstruction data and training exposure improve hierarchy recovery, and does added per-level query capacity provide a further controlled gain without exhausting precision?",
+  "study_id": "phase40-hierarchy-aware-reconstruction-20260907",
+  "untouched_validation_cohort": {
+    "all_required_overlaps_zero": true,
+    "checkpoint_selection_event_uid_count": 2000,
+    "checkpoint_selection_event_uids_sha256": "e414cd36d6e285b3dc76f2c9da586ddb4c94b36454860c1c513947a5b596d311",
+    "evaluation_event_uid_count": 100,
+    "evaluation_event_uids_sha256": "79ca48fbc5775d53c77f5cf9768d9534ce196672b409cbc00a1bc1fedc136a1e",
+    "path": "configs/reconstruction/ht_reconstruction_phase40_validation_cohort_20260907.json",
+    "sealed_test_role_access": "forbidden",
+    "sha256": "7a0258ffb12cbce68f75023a76ce18af9e99a01eb56fd9a0e71d3f1f3247b981"
+  }
+}

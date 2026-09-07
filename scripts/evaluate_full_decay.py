@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 from collections import defaultdict
+from dataclasses import replace
 from datetime import datetime, timezone
 from hashlib import sha256
 import json
@@ -46,12 +47,15 @@ from hypertagging.evaluation.trained_context import (  # noqa: E402
     load_trained_evaluation_context,
 )
 from hypertagging.reconstruction.hierarchical_inference import (  # noqa: E402
+    FULL_ROOT_TOKEN,
     HierarchicalInferenceConfig,
     OFFLINE_INFERENCE_POLICY_VERSION,
+    project_schema_v4_fsps,
     reconstruct_full_tree_from_fsps,
 )
 from hypertagging.reconstruction.level_rollout import (  # noqa: E402
     RolloutConfig,
+    bounded_beam_rollout,
     rollout_policy_identity,
 )
 
@@ -152,6 +156,24 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--omit-trees", action="store_true")
     parser.add_argument("--profile-phases", action="store_true")
     parser.add_argument(
+        "--beam-width",
+        type=int,
+        default=1,
+        help="Evaluation-only full-tree beam width; one disables beam evaluation.",
+    )
+    parser.add_argument(
+        "--beam-max-events",
+        type=int,
+        default=20,
+        help="Bounded validation events used by the full-tree beam diagnostic.",
+    )
+    parser.add_argument(
+        "--beam-max-proposals",
+        type=int,
+        default=12,
+        help="Maximum exact proposal-set enumeration size per beam level.",
+    )
+    parser.add_argument(
         "--allow-finetuned-encoder",
         action="store_true",
         help="Allow a future intentionally fine-tuned reconstruction encoder.",
@@ -169,6 +191,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         parser.error("--max-level must be positive")
     if args.threads <= 0:
         parser.error("--threads must be positive")
+    if args.beam_width <= 0 or args.beam_max_events <= 0:
+        parser.error("beam width and beam max events must be positive")
+    if args.beam_max_proposals <= 0 or args.beam_max_proposals > 16:
+        parser.error("--beam-max-proposals must lie in [1, 16]")
     for name in (
         "object_threshold",
         "pointer_threshold",
@@ -322,6 +348,15 @@ def main(argv: list[str] | None = None) -> int:
     metric_wall_seconds = 0.0
     serialization_wall_seconds = 0.0
     event_processing_started = time.perf_counter()
+    beam_rankings = (
+        "learned_confidence_sum",
+        "learned_confidence_mean",
+        "average_link_probability",
+        "normalized_joint_log_probability",
+    )
+    beam_metric_rows: dict[str, list[Any]] = defaultdict(list)
+    beam_oracle_rows: list[Any] = []
+    beam_event_records: list[dict[str, Any]] = []
 
     for event_index, event in enumerate(context.events):
         print(
@@ -413,6 +448,76 @@ def main(argv: list[str] | None = None) -> int:
                     f"retained_depth={unit.truth_retained_depth}"
                 )
                 metric_rows_by_target_shape[scope][shape].append(unit)
+        if args.beam_width > 1 and event_index < args.beam_max_events:
+            phase_started = time.perf_counter()
+            projection = project_schema_v4_fsps(truth_batch)
+            beam_config = replace(
+                rollout_config,
+                max_level=args.max_level,
+                root_types=(FULL_ROOT_TOKEN,),
+                continue_through_empty_levels=True,
+                max_resolution_proposals=args.beam_max_proposals,
+            )
+            hypotheses = bounded_beam_rollout(
+                context.model,
+                projection.batch,
+                config=beam_config,
+                beam_width=args.beam_width,
+                lookahead_levels=args.max_level,
+            )
+            candidates: list[tuple[Any, Any]] = []
+            for hypothesis in hypotheses:
+                hypothesis.batch["evaluation_leaf_source_keys"] = (
+                    projection.evaluation_leaf_source_keys.clone()
+                )
+                evaluation = evaluate_full_decay(
+                    hypothesis.batch,
+                    truth_batch,
+                    target_policy=target_policy,
+                    minimum_daughters=int(policy.minimum_daughters),
+                    truth_topology_mode=args.truth_topology_mode,
+                )
+                candidates.append((hypothesis, evaluation))
+            if candidates:
+                ranking_selections: dict[str, int] = {}
+                for ranking in beam_rankings:
+                    selected_index = max(
+                        range(len(candidates)),
+                        key=lambda index: (
+                            candidates[index][0].ranking_scores()[ranking],
+                            -index,
+                        ),
+                    )
+                    ranking_selections[ranking] = selected_index
+                    beam_metric_rows[ranking].append(candidates[selected_index][1])
+                oracle_index = max(
+                    range(len(candidates)),
+                    key=lambda index: _beam_oracle_key(candidates[index][1]),
+                )
+                beam_oracle_rows.append(candidates[oracle_index][1])
+                beam_event_records.append(
+                    {
+                        "event_uid": event.event_uid,
+                        "candidate_count": len(candidates),
+                        "ranking_selections": ranking_selections,
+                        "oracle_candidate_index": oracle_index,
+                        "candidates": [
+                            {
+                                "candidate_index": index,
+                                "model_only_ranking_scores": hypothesis.ranking_scores(),
+                                "proposal_count": hypothesis.proposal_count,
+                                "stop_reason": hypothesis.stop_reason,
+                                "accepted_proposal_counts_by_level": [
+                                    len(items)
+                                    for items in hypothesis.accepted_by_level
+                                ],
+                                "truth_diagnostic_metrics": evaluation.as_dict(),
+                            }
+                            for index, (hypothesis, evaluation) in enumerate(candidates)
+                        ],
+                    }
+                )
+            inference_wall_seconds += time.perf_counter() - phase_started
         event_records.append(record)
 
     phase_seconds["event_processing"] = time.perf_counter() - event_processing_started
@@ -498,6 +603,16 @@ def main(argv: list[str] | None = None) -> int:
             "target_policy": target_policy,
             "truth_topology_mode": args.truth_topology_mode,
             "trees_included": not args.omit_trees,
+            "beam_search": {
+                "enabled": args.beam_width > 1,
+                "beam_width": args.beam_width,
+                "max_events": min(args.beam_max_events, len(context.events)),
+                "max_proposals": args.beam_max_proposals,
+                "max_level": args.max_level,
+                "model_only_rankings": list(beam_rankings),
+                "truth_used_for_ranking": False,
+                "oracle_at_k_is_diagnostic_only": True,
+            },
         },
         "summaries": {
             scope: {
@@ -532,10 +647,38 @@ def main(argv: list[str] | None = None) -> int:
             for scope in scopes
         },
         "events": event_records,
+        "beam_search": {
+            "event_count": len(beam_event_records),
+            "top1_summaries_by_model_only_ranking": {
+                ranking: summarize_decay_evaluations(rows)
+                for ranking, rows in beam_metric_rows.items()
+            },
+            "oracle_at_k_summary": (
+                summarize_decay_evaluations(beam_oracle_rows)
+                if beam_oracle_rows
+                else {}
+            ),
+            "events": beam_event_records,
+        },
     }
     _atomic_write_json(output, report)
     print(f"Wrote {output}", file=sys.stderr, flush=True)
     return 0
+
+
+def _beam_oracle_key(evaluation: Any) -> tuple[float, ...]:
+    """Truth-only diagnostic ordering; never used to choose deployed output."""
+
+    def value(metric: Any) -> float:
+        return float(metric.value) if metric.value is not None else -1.0
+
+    return (
+        value(evaluation.perfect_lcag),
+        value(evaluation.lcag_pair_accuracy),
+        value(evaluation.mother_pid_coverage),
+        value(evaluation.source_recall),
+        value(evaluation.source_precision),
+    )
 
 
 def _validated_output_path(

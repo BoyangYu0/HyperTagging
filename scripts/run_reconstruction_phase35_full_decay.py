@@ -171,6 +171,11 @@ def _run_evaluator(
     pointer_threshold: float | None = None,
     threads: int = 4,
     deterministic_algorithms: bool = False,
+    beam_width: int = 1,
+    beam_max_events: int = 20,
+    beam_max_proposals: int = 12,
+    max_events: int = 100,
+    scope: str = "both",
 ) -> dict[str, Any]:
     if threads <= 0:
         raise ValueError("full-decay evaluator threads must be positive")
@@ -190,11 +195,11 @@ def _run_evaluator(
         "--event-uid-manifest",
         str(cohort_manifest),
         "--scope",
-        "both",
+        scope,
         "--truth-topology-mode",
         topology_mode,
         "--max-events",
-        "100",
+        str(max_events),
         "--max-level",
         "6",
         "--object-threshold",
@@ -211,6 +216,17 @@ def _run_evaluator(
         command.append("--deterministic-algorithms")
     if pointer_threshold is not None:
         command.extend(("--pointer-threshold", str(pointer_threshold)))
+    if beam_width > 1:
+        command.extend(
+            (
+                "--beam-width",
+                str(beam_width),
+                "--beam-max-events",
+                str(beam_max_events),
+                "--beam-max-proposals",
+                str(beam_max_proposals),
+            )
+        )
     environment = {
         **os.environ,
         "CUDA_VISIBLE_DEVICES": "",
