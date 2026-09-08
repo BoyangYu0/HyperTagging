@@ -58,8 +58,8 @@ Greedy is the default. At each level it selects valid mother proposals under
 the common policy, persists them and continues with the resulting forest.
 Object, type, cardinality and pointer outputs determine proposals; confidence
 is used only if the checkpoint records that it was trained. Search stops under
-the configured root/level/empty-state conditions. Truth cannot rescue a rejected
-proposal or supply a missing parent.
+the configured root, level, or empty-state conditions. Truth cannot rescue a
+rejected proposal or supply a missing parent.
 
 The output records the final forest, construction steps and diagnostics. A
 structurally valid forest can still have the wrong daughters, PID or root and
