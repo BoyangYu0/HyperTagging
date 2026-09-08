@@ -33,7 +33,9 @@ from hypertagging.utils.tensor_contractions import boolean_matmul
 LEVEL_ROLLOUT_POLICY_VERSION = "level-rollout-source-isolation-v2"
 
 
-def rollout_policy_identity(*, continue_through_empty_levels: bool) -> dict[str, object]:
+def rollout_policy_identity(
+    *, continue_through_empty_levels: bool
+) -> dict[str, object]:
     """Return the comparable decoder-policy identity for persisted metrics."""
 
     contract: dict[str, object] = {
@@ -47,9 +49,9 @@ def rollout_policy_identity(*, continue_through_empty_levels: bool) -> dict[str,
         "recursive_source_conflict_policy": "reject",
         "evaluation_leaf_source_keys_axis": "source",
     }
-    encoded = json.dumps(
-        contract, sort_keys=True, separators=(",", ":")
-    ).encode("utf-8")
+    encoded = json.dumps(contract, sort_keys=True, separators=(",", ":")).encode(
+        "utf-8"
+    )
     return {**contract, "sha256": hashlib.sha256(encoded).hexdigest()}
 
 
@@ -153,11 +155,15 @@ class BatchedRolloutResult:
 
 @dataclass(frozen=True)
 class BeamRolloutHypothesis:
-    """One evaluation-only partial-tree hypothesis retained by bounded beam."""
+    """One coherent tree state, with its cumulative search score and rollout."""
 
     batch: dict[str, torch.Tensor]
     score: float
     accepted_by_level: tuple[tuple[CompositeProposal, ...], ...]
+    result: LevelRolloutResult | None = None
+    log_score_sum: float = 0.0
+    scored_candidates: int = 0
+    scored_decisions: int = 0
 
 
 def _resolved_rollout_constraint_policy(
@@ -168,7 +174,8 @@ def _resolved_rollout_constraint_policy(
         minimum_daughters=config.min_daughters,
         cardinality_insufficient_policy=config.cardinality_insufficient_policy,
         valid_leaf_node_kinds=tuple(
-            kind for kind in config.allowed_daughter_node_kinds
+            kind
+            for kind in config.allowed_daughter_node_kinds
             if kind != NODE_KIND_TO_ID["composite"]
         ),
         valid_composite_node_kinds=(NODE_KIND_TO_ID["composite"],),
@@ -214,9 +221,7 @@ def hard_decode_proposals(
         parentless = batch["parent_ids"][0] < 0
     elif "daughter_adjacency" in batch:
         parentless = ~batch["daughter_adjacency"][0].bool().any(dim=0)
-    elif bool(
-        (batch["level_ids"][0][output.context_mask[0]] == 0).all()
-    ):
+    elif bool((batch["level_ids"][0][output.context_mask[0]] == 0).all()):
         # Backward-compatible tiny reference fixtures may omit all topology
         # fields for an initial FSP-only level, where every node is a root.
         parentless = torch.ones_like(output.context_mask[0])
@@ -229,7 +234,9 @@ def hard_decode_proposals(
     context_positions = context.nonzero(as_tuple=False).flatten()
     proposals: list[CompositeProposal] = []
     for query_id in range(output.pointer.object_logits.shape[1]):
-        object_score = float(torch.sigmoid(output.pointer.object_logits[0, query_id]).detach())
+        object_score = float(
+            torch.sigmoid(output.pointer.object_logits[0, query_id]).detach()
+        )
         if config.use_learned_confidence and not config.confidence_trained:
             raise RuntimeError(
                 "learned confidence was requested for decoding but the checkpoint "
@@ -288,9 +295,11 @@ def hard_decode_proposals(
             )
             selected_local = selected_bool.nonzero(as_tuple=False).flatten()
         else:
-            selected_local = (probabilities >= config.pointer_threshold).nonzero(
-                as_tuple=False
-            ).flatten()
+            selected_local = (
+                (probabilities >= config.pointer_threshold)
+                .nonzero(as_tuple=False)
+                .flatten()
+            )
         daughter_positions = tuple(
             sorted(int(context_positions[index]) for index in selected_local.tolist())
         )
@@ -306,11 +315,11 @@ def hard_decode_proposals(
         if not bool(allowed_types[mother_type]):
             continue
         charge_contract = dict(config.mother_charge_by_token)
-        expected_charge = charge_contract.get(mother_type, policy.expected_charge(mother_type))
+        expected_charge = charge_contract.get(
+            mother_type, policy.expected_charge(mother_type)
+        )
         if policy.mother_charge_compatibility in {"hard", "soft_train_hard_rollout"}:
-            daughter_charge = float(
-                batch["charge"][0, list(daughter_positions)].sum()
-            )
+            daughter_charge = float(batch["charge"][0, list(daughter_positions)].sum())
             if abs(daughter_charge - expected_charge) > policy.mother_charge_tolerance:
                 continue
         if policy.loose_physical_constraints and not policy.rollout_physical_valid(
@@ -323,7 +332,9 @@ def hard_decode_proposals(
             else 0.0
         )
         type_probability = float(
-            torch.softmax(output.pointer.type_logits[0, query_id], dim=-1).max().detach()
+            torch.softmax(output.pointer.type_logits[0, query_id], dim=-1)
+            .max()
+            .detach()
         )
         if (
             config.type_probability_threshold is not None
@@ -384,7 +395,9 @@ def resolve_exclusive_proposals(
                 for position in proposal.daughter_positions
             }
         else:
-            raise ValueError("recursive leaf sources or legacy source_node_ids are required")
+            raise ValueError(
+                "recursive leaf sources or legacy source_node_ids are required"
+            )
         if sources & used_sources:
             continue
         accepted.append(proposal)
@@ -417,7 +430,9 @@ def resolve_weighted_set_packing(
     best_indices: tuple[int, ...] = ()
     best_score = float("-inf")
     for subset_bits in range(1 << len(proposals)):
-        chosen = tuple(index for index in range(len(proposals)) if subset_bits & (1 << index))
+        chosen = tuple(
+            index for index in range(len(proposals)) if subset_bits & (1 << index)
+        )
         used: set[int] = set()
         valid = True
         for index in chosen:
@@ -433,7 +448,9 @@ def resolve_weighted_set_packing(
         if score > best_score or (score == best_score and tie_key < best_tie):
             best_score = score
             best_indices = chosen
-    return sorted((proposals[index] for index in best_indices), key=lambda item: item.query_id)
+    return sorted(
+        (proposals[index] for index in best_indices), key=lambda item: item.query_id
+    )
 
 
 def bounded_beam_proposal_sets(
@@ -497,93 +514,43 @@ def bounded_beam_rollout(
     *,
     config: RolloutConfig | None = None,
     beam_width: int = 4,
-    lookahead_levels: int = 2,
+    lookahead_levels: int | None = None,
 ) -> tuple[BeamRolloutHypothesis, ...]:
-    """Preserve competing partial trees for one or two evaluation levels.
+    """Compatibility entry point for full-depth beam on native schema-v4 data.
 
-    This intentionally remains a batch-size-one, bounded evaluation tool.  It
-    is not a production decoder and is never selected by the training CLI.
+    The optional historical lookahead argument now limits any positive number
+    of levels. Without it the complete configured depth is searched. Stored
+    inputs pass through the same truth-scrubbing FSP projection as offline
+    evaluation; use full_depth_beam_rollout only for already projected inputs.
     """
+    from dataclasses import replace
+    from hypertagging.reconstruction.beam_search import (
+        BeamSearchConfig,
+        full_depth_beam_rollout,
+    )
+    from hypertagging.reconstruction.hierarchical_inference import (
+        project_schema_v4_fsps,
+    )
 
-    if lookahead_levels not in {1, 2}:
-        raise ValueError("bounded beam lookahead_levels must be one or two")
     config = config or RolloutConfig()
-    if full_batch["node_mask"].shape[0] != 1:
-        raise ValueError("bounded beam rollout is evaluation-only and batch size one")
-    policy = _resolved_rollout_constraint_policy(config)
-    upgraded = _upgrade_flat_batch(full_batch)
-    initial = _select_nodes(
-        upgraded,
-        upgraded["node_mask"][0] & (upgraded["level_ids"][0] == 0),
-    )
-    hypotheses = [BeamRolloutHypothesis(initial, 0.0, ())]
-    forward_mode = (
-        "soft_expectation"
-        if config.rollout_pid_kinematics_mode == "soft_decision_hard_construction"
-        else config.rollout_pid_kinematics_mode
-    )
-    construction_mode = (
-        "hard"
-        if config.rollout_pid_kinematics_mode == "soft_decision_hard_construction"
-        else forward_mode
-    )
-    for target_level in range(1, lookahead_levels + 1):
-        expanded: list[BeamRolloutHypothesis] = []
-        for hypothesis in hypotheses:
-            model_batch = _constrained_rollout_model_batch(
-                hypothesis.batch,
-                target_level=target_level,
-                policy=policy,
-            )
-            output = model(
-                model_batch,
-                target_level=target_level,
-                pid_kinematics_mode_override=forward_mode,
-                pid_temperature_override=config.rollout_pid_temperature,
-            )
-            state = hypothesis.batch
-            if output.leaf_pid_logits is not None:
-                state = _with_predicted_leaf_p4(
-                    state,
-                    output.leaf_pid_logits,
-                    mode=construction_mode,
-                    temperature=config.rollout_pid_temperature,
-                )
-            proposals = hard_decode_proposals(output, state, config)
-            recursive = state.get("recursive_leaf_source_mask")
-            if recursive is None:
-                raise ValueError("bounded beam requires recursive leaf-source masks")
-            proposal_sets = bounded_beam_proposal_sets(
-                proposals,
-                recursive_leaf_source_mask=recursive[0],
-                beam_width=beam_width,
-                max_proposals=config.max_resolution_proposals,
-            )
-            for accepted in proposal_sets:
-                if not accepted:
-                    continue
-                next_state, _ = append_composite_proposals(
-                    state, list(accepted), target_level=target_level
-                )
-                expanded.append(
-                    BeamRolloutHypothesis(
-                        next_state,
-                        hypothesis.score + sum(item.confidence for item in accepted),
-                        hypothesis.accepted_by_level + (accepted,),
-                    )
-                )
-        if not expanded:
-            break
-        deduplicated: dict[str, BeamRolloutHypothesis] = {}
-        for item in expanded:
-            key = _state_fingerprint(item.batch)
-            if key not in deduplicated or item.score > deduplicated[key].score:
-                deduplicated[key] = item
-        hypotheses = sorted(
-            deduplicated.values(),
-            key=lambda item: (-item.score, _state_fingerprint(item.batch)),
-        )[:beam_width]
-    return tuple(hypotheses)
+    if lookahead_levels is not None:
+        if (
+            isinstance(lookahead_levels, bool)
+            or not isinstance(lookahead_levels, int)
+            or lookahead_levels < 1
+        ):
+            raise ValueError("lookahead_levels must be a positive integer")
+        config = replace(config, max_level=min(config.max_level, lookahead_levels))
+    projection = project_schema_v4_fsps(full_batch)
+    return full_depth_beam_rollout(
+        model,
+        projection.batch,
+        config=config,
+        beam_config=BeamSearchConfig(
+            beam_width=beam_width,
+            max_proposals_per_level=config.max_resolution_proposals,
+        ),
+    ).candidates
 
 
 def proposal_ambiguity_metrics(
@@ -617,12 +584,15 @@ def proposal_ambiguity_metrics(
         return overlaps / max(pairs, 1)
 
     daughter_keys = [tuple(item.daughter_positions) for item in proposals]
-    typed_keys = [(item.mother_type, tuple(item.daughter_positions)) for item in proposals]
+    typed_keys = [
+        (item.mother_type, tuple(item.daughter_positions)) for item in proposals
+    ]
     return {
         "duplicate_daughter_set_rate": duplicate_rate(daughter_keys),
         "duplicate_typed_set_rate": duplicate_rate(typed_keys),
         "duplicate_mother_type_daughter_set_rate": duplicate_rate(typed_keys),
-        "unused_query_fraction": max(total_queries - len(proposals), 0) / max(total_queries, 1),
+        "unused_query_fraction": max(total_queries - len(proposals), 0)
+        / max(total_queries, 1),
         "query_utilization": min(len(proposals), total_queries) / max(total_queries, 1),
         "recursive_source_overlap": overlap_rate(proposals),
         "overlap_rate_before_exclusive_resolution": overlap_rate(proposals),
@@ -639,7 +609,9 @@ def rollout_search_metrics(
     survival: dict[str, float] = {}
     oracle_rates: dict[str, float] = {}
     for step in result.steps:
-        survival[str(step.target_level)] = len(step.accepted) / max(len(step.proposals), 1)
+        survival[str(step.target_level)] = len(step.accepted) / max(
+            len(step.proposals), 1
+        )
         state = cached_context_for_level(result, step.target_level)
         oracle = _truth_proposals(truth_batch, state, step.target_level)
         predicted_keys = {
@@ -707,7 +679,10 @@ def validate_proposals(
     return all(
         proposal.daughter_positions
         and len(set(proposal.daughter_positions)) == len(proposal.daughter_positions)
-        and all(0 <= daughter < existing_node_count for daughter in proposal.daughter_positions)
+        and all(
+            0 <= daughter < existing_node_count
+            for daughter in proposal.daughter_positions
+        )
         for proposal in proposals
     )
 
@@ -718,10 +693,15 @@ def evaluation_reference_rollout(
     *,
     mode: Literal["predicted", "teacher_forced", "scheduled"] = "predicted",
     config: RolloutConfig | None = None,
+    max_nodes: int | None = None,
 ) -> LevelRolloutResult:
     """Bounded batch-size-one correctness reference for complete free rollout."""
 
     config = config or RolloutConfig()
+    if max_nodes is not None and (
+        isinstance(max_nodes, bool) or not isinstance(max_nodes, int) or max_nodes < 1
+    ):
+        raise ValueError("max_nodes must be a positive integer when supplied")
     supported_pid_modes = {
         "soft_decision_hard_construction",
         "hard",
@@ -730,15 +710,16 @@ def evaluation_reference_rollout(
     }
     if config.rollout_pid_kinematics_mode not in supported_pid_modes:
         raise ValueError(
-            "unknown rollout_pid_kinematics_mode: "
-            f"{config.rollout_pid_kinematics_mode}"
+            f"unknown rollout_pid_kinematics_mode: {config.rollout_pid_kinematics_mode}"
         )
     if full_batch["node_mask"].shape[0] != 1:
         raise ValueError("Tiny rollout currently requires batch size 1")
     full_batch = _upgrade_flat_batch(full_batch)
     policy = _resolved_rollout_constraint_policy(config)
     truth_batch = {key: value for key, value in full_batch.items()}
-    state = _select_nodes(full_batch, full_batch["node_mask"][0] & (full_batch["level_ids"][0] == 0))
+    state = _select_nodes(
+        full_batch, full_batch["node_mask"][0] & (full_batch["level_ids"][0] == 0)
+    )
     generator = torch.Generator(device=state["p4"].device).manual_seed(config.seed)
     seen_states = {_state_fingerprint(state)}
     cached_states: list[tuple[int, dict[str, torch.Tensor]]] = [(0, state)]
@@ -751,10 +732,12 @@ def evaluation_reference_rollout(
         if not state["node_mask"].any():
             stop_reason = "no_context"
             break
+        if max_nodes is not None and int(state["node_mask"].sum()) >= max_nodes:
+            stop_reason = "node_limit_reached"
+            break
         forward_pid_mode = (
             "soft_expectation"
-            if config.rollout_pid_kinematics_mode
-            == "soft_decision_hard_construction"
+            if config.rollout_pid_kinematics_mode == "soft_decision_hard_construction"
             else config.rollout_pid_kinematics_mode
         )
         model_batch = _constrained_rollout_model_batch(
@@ -770,8 +753,7 @@ def evaluation_reference_rollout(
         )
         construction_pid_mode = (
             "hard"
-            if config.rollout_pid_kinematics_mode
-            == "soft_decision_hard_construction"
+            if config.rollout_pid_kinematics_mode == "soft_decision_hard_construction"
             else forward_pid_mode
         )
         if output.leaf_pid_logits is not None:
@@ -791,7 +773,11 @@ def evaluation_reference_rollout(
                 torch.rand((), generator=generator, device=state["p4"].device)
                 >= config.scheduled_sampling_probability
             )
-        proposals = _truth_proposals(truth_batch, state, target_level) if use_truth else predicted
+        proposals = (
+            _truth_proposals(truth_batch, state, target_level)
+            if use_truth
+            else predicted
+        )
         if not proposals:
             steps.append(
                 RolloutStep(
@@ -833,6 +819,24 @@ def evaluation_reference_rollout(
                 continue
             stop_reason = "no_valid_new_mother"
             break
+        reached_node_limit = False
+        if max_nodes is not None:
+            remaining_nodes = max_nodes - int(state["node_mask"].sum())
+            if len(accepted) > remaining_nodes:
+                # Preserve the greedy resolver's priority under the independent
+                # dense-state bound, then restore query order for construction.
+                accepted = sorted(
+                    accepted,
+                    key=lambda proposal: (
+                        -proposal.confidence,
+                        -proposal.object_score,
+                        proposal.mother_type,
+                        proposal.daughter_positions,
+                        proposal.query_id,
+                    ),
+                )[:remaining_nodes]
+                accepted = sorted(accepted, key=lambda proposal: proposal.query_id)
+            reached_node_limit = len(accepted) == remaining_nodes
         if not validate_proposals(
             accepted,
             existing_node_count=state["p4"].shape[1],
@@ -868,6 +872,9 @@ def evaluation_reference_rollout(
         ):
             stop_reason = "configured_root_reconstructed"
             break
+        if reached_node_limit:
+            stop_reason = "node_limit_reached"
+            break
     return LevelRolloutResult(
         batch=state,
         steps=tuple(steps),
@@ -888,9 +895,7 @@ def level_rollout(
 ) -> LevelRolloutResult:
     """Compatibility alias for :func:`evaluation_reference_rollout`."""
 
-    return evaluation_reference_rollout(
-        model, full_batch, mode=mode, config=config
-    )
+    return evaluation_reference_rollout(model, full_batch, mode=mode, config=config)
 
 
 def cached_context_for_level(
@@ -1030,7 +1035,9 @@ def append_composite_proposals(
         (1, proposal_count, batch["common_features"].shape[-1])
     )
     common[0, :, :4] = construction["p4"]
-    mass2 = construction["p4"][:, 3].square() - construction["p4"][:, :3].square().sum(dim=-1)
+    mass2 = construction["p4"][:, 3].square() - construction["p4"][:, :3].square().sum(
+        dim=-1
+    )
     common[0, :, 4] = mass2.clamp_min(0).sqrt()
     common[0, :, 5] = construction["charge"]
     common[0, :, 6] = torch.tensor(
@@ -1092,7 +1099,9 @@ def append_composite_proposals(
         construction["features"].shape[-1],
         additions["composite_features"].shape[-1],
     )
-    additions["composite_features"][0, :, :copied_width] = construction["features"][:, :copied_width]
+    additions["composite_features"][0, :, :copied_width] = construction["features"][
+        :, :copied_width
+    ]
     additions["composite_availability"][0, :, :copied_width] = construction[
         "availability"
     ][:, :copied_width]
@@ -1161,10 +1170,7 @@ def append_composite_proposals(
             device=device,
         ),
         "b_side": torch.stack(
-            [
-                _proposal_b_side(batch["b_side"][0], proposal)
-                for proposal in proposals
-            ]
+            [_proposal_b_side(batch["b_side"][0], proposal) for proposal in proposals]
         ).unsqueeze(0),
         "full_truth_daughter_count": torch.where(
             truth_guided, daughter_masks.sum(dim=-1).unsqueeze(0), -1
@@ -1194,7 +1200,9 @@ def append_composite_proposals(
         ),
         "full_event_max_level": torch.where(
             truth_guided,
-            torch.full((1, proposal_count), target_level, dtype=torch.long, device=device),
+            torch.full(
+                (1, proposal_count), target_level, dtype=torch.long, device=device
+            ),
             torch.full((1, proposal_count), -1, dtype=torch.long, device=device),
         ),
     }
@@ -1323,8 +1331,12 @@ def append_composite_proposals(
     result["lca_node_id"] = geometry.lca_node_id.to(device).unsqueeze(0)
     result["edges_to_lca_from_i"] = geometry.edges_to_lca_from_i.to(device).unsqueeze(0)
     result["edges_to_lca_from_j"] = geometry.edges_to_lca_from_j.to(device).unsqueeze(0)
-    result["exact_tree_path_distance"] = geometry.exact_tree_path_distance.to(device).unsqueeze(0)
-    result["depth_from_retained_root"] = geometry.depth_from_retained_root.to(device).unsqueeze(0)
+    result["exact_tree_path_distance"] = geometry.exact_tree_path_distance.to(
+        device
+    ).unsqueeze(0)
+    result["depth_from_retained_root"] = geometry.depth_from_retained_root.to(
+        device
+    ).unsqueeze(0)
     result["distance_to_nearest_retained_root"] = (
         geometry.distance_to_nearest_retained_root.to(device).unsqueeze(0)
     )
@@ -1335,10 +1347,16 @@ def append_composite_proposals(
     result["lca_depth"] = lca_depth.to(device).unsqueeze(0)
     positions = torch.arange(geometry.lca_node_id.shape[0])
     result["ancestor_descendant_relation"] = (
-        ((geometry.lca_node_id == positions[:, None])
-         | (geometry.lca_node_id == positions[None, :]))
-        & ~torch.eye(positions.numel(), dtype=torch.bool)
-    ).to(device).unsqueeze(0)
+        (
+            (
+                (geometry.lca_node_id == positions[:, None])
+                | (geometry.lca_node_id == positions[None, :])
+            )
+            & ~torch.eye(positions.numel(), dtype=torch.bool)
+        )
+        .to(device)
+        .unsqueeze(0)
+    )
     return result, [int(value) for value in new_ids.tolist()]
 
 
@@ -1371,9 +1389,7 @@ def batched_level_step(
     accepted = accepted_query_mask.bool()
     selected = daughter_mask.bool() & accepted[..., None] & batch["node_mask"][:, None]
     if (selected & (batch["parent_ids"] >= 0)[:, None]).any():
-        raise ValueError(
-            "accepted batched daughters must be unparented forest roots"
-        )
+        raise ValueError("accepted batched daughters must be unparented forest roots")
     if mother_types is None:
         mother_types = model_output.pointer.type_logits.argmax(dim=-1)
     if mother_types.shape != accepted.shape:
@@ -1428,8 +1444,10 @@ def batched_level_step(
     )
     common[..., :4] = new_p4
     common[..., 4] = (
-        new_p4[..., 3].square() - new_p4[..., :3].square().sum(dim=-1)
-    ).clamp_min(0).sqrt()
+        (new_p4[..., 3].square() - new_p4[..., :3].square().sum(dim=-1))
+        .clamp_min(0)
+        .sqrt()
+    )
     common[..., 5] = new_charge
     common[..., 6] = mother_types.to(common.dtype) * accepted_float
     common[..., 7] = float(target_level) * accepted_float
@@ -1479,8 +1497,8 @@ def batched_level_step(
     for name, addition in tensor_additions.items():
         result[name] = torch.cat([batch[name], addition], dim=1)
 
-    max_existing = batch["node_ids"].masked_fill(~batch["node_mask"], -1).amax(
-        dim=1, keepdim=True
+    max_existing = (
+        batch["node_ids"].masked_fill(~batch["node_mask"], -1).amax(dim=1, keepdim=True)
     )
     new_ids = max_existing + 1 + torch.arange(query_count, device=device)[None]
     new_ids = torch.where(accepted, new_ids, torch.full_like(new_ids, -1))
@@ -1513,7 +1531,9 @@ def batched_level_step(
         ),
         "pid_labels": torch.where(accepted, mother_types, long_zeros),
         "level_ids": torch.where(
-            accepted, torch.full_like(mother_types, target_level), torch.full_like(mother_types, -1)
+            accepted,
+            torch.full_like(mother_types, target_level),
+            torch.full_like(mother_types, -1),
         ),
         "charge": new_charge,
         "parent_ids": torch.full_like(mother_types, -1),
@@ -1600,7 +1620,10 @@ def batched_level_step(
     ):
         if name in batch:
             padded = torch.full(
-                (batch_size, total_count, total_count), -1, dtype=batch[name].dtype, device=device
+                (batch_size, total_count, total_count),
+                -1,
+                dtype=batch[name].dtype,
+                device=device,
             )
             padded[:, :old_count, :old_count] = batch[name]
             result[name] = padded
@@ -1610,9 +1633,7 @@ def batched_level_step(
                 [batch[name], torch.full_like(mother_types, -1)], dim=1
             )
     if "recursive_leaf_source_mask" in batch:
-        new_sources = boolean_matmul(
-            selected, batch["recursive_leaf_source_mask"]
-        )
+        new_sources = boolean_matmul(selected, batch["recursive_leaf_source_mask"])
         result["recursive_leaf_source_mask"] = torch.cat(
             [batch["recursive_leaf_source_mask"], new_sources], dim=1
         )
@@ -1684,7 +1705,8 @@ def batched_rollout_level_transition(
         batch=batch,
         active_event_mask=next_active,
         stopped_event_mask=state.stopped_event_mask | stopped_now,
-        levels_completed=state.levels_completed + active.to(state.levels_completed.dtype),
+        levels_completed=state.levels_completed
+        + active.to(state.levels_completed.dtype),
         stop_code=stop_code,
     )
 
@@ -1720,7 +1742,9 @@ def _batched_initial_leaf_state(
     batch["node_mask"] = leaves
     batch["active"] = leaves
     batch["level_ids"] = torch.where(
-        leaves, torch.zeros_like(batch["level_ids"]), -torch.ones_like(batch["level_ids"])
+        leaves,
+        torch.zeros_like(batch["level_ids"]),
+        -torch.ones_like(batch["level_ids"]),
     )
     batch["parent_ids"] = torch.full_like(batch["parent_ids"], -1)
     batch["node_ids"] = torch.where(
@@ -1802,8 +1826,7 @@ def batched_decode_level(
     )
     cardinality = output.pointer.cardinality_logits.argmax(dim=-1)
     bounded_by_cardinality = (
-        config.use_cardinality
-        and policy.daughter_cardinality_policy == "predicted"
+        config.use_cardinality and policy.daughter_cardinality_policy == "predicted"
     )
     # Source exclusivity is a structural constraint, not a side effect of using
     # the cardinality head.  Greedily visit candidates in pointer-probability
@@ -1827,9 +1850,9 @@ def batched_decode_level(
                 device=pointer_probabilities.device,
             ),
         )
-        batch_indices = torch.arange(
-            batch_size, device=pointer_probabilities.device
-        )[:, None].expand(batch_size, query_count)
+        batch_indices = torch.arange(batch_size, device=pointer_probabilities.device)[
+            :, None
+        ].expand(batch_size, query_count)
         for rank in range(node_count):
             candidate_index = order[..., rank]
             candidate_available = candidates.gather(
@@ -1839,15 +1862,14 @@ def batched_decode_level(
             if bounded_by_cardinality:
                 can_select &= selected_count < cardinality
             if policy.reject_recursive_source_conflicts:
-                candidate_conflicts = conflicts[
-                    batch_indices, candidate_index
-                ]
+                candidate_conflicts = conflicts[batch_indices, candidate_index]
                 can_select &= ~(candidate_conflicts & selected).any(dim=-1)
-            selected.scatter_(
-                -1, candidate_index[..., None], can_select[..., None]
-            )
+            selected.scatter_(-1, candidate_index[..., None], can_select[..., None])
             selected_count = selected_count + can_select.to(selected_count.dtype)
-        if bounded_by_cardinality and policy.cardinality_insufficient_policy == "invalid":
+        if (
+            bounded_by_cardinality
+            and policy.cardinality_insufficient_policy == "invalid"
+        ):
             cardinality_valid = selected_count == cardinality
         else:
             cardinality_valid = selected_count >= int(policy.minimum_daughters)
@@ -1861,9 +1883,7 @@ def batched_decode_level(
         policy, output.target_level, device=mother_types.device
     )
     type_valid = allowed_types[mother_types]
-    type_probability = torch.softmax(
-        output.pointer.type_logits, dim=-1
-    ).amax(dim=-1)
+    type_probability = torch.softmax(output.pointer.type_logits, dim=-1).amax(dim=-1)
     if config.type_probability_threshold is not None:
         type_valid &= type_probability >= float(config.type_probability_threshold)
 
@@ -1885,9 +1905,9 @@ def batched_decode_level(
             )
     charge_valid = torch.ones_like(type_valid)
     if policy.mother_charge_compatibility in {"hard", "soft_train_hard_rollout"}:
-        charge_valid = (
-            daughter_charge - expected_charge
-        ).abs() <= float(policy.mother_charge_tolerance)
+        charge_valid = (daughter_charge - expected_charge).abs() <= float(
+            policy.mother_charge_tolerance
+        )
 
     physical_valid = torch.ones_like(type_valid)
     if policy.loose_physical_constraints:
@@ -1895,9 +1915,7 @@ def batched_decode_level(
             "bqn,bnf->bqf", selected.to(batch["p4"].dtype), batch["p4"]
         )
         momentum = mother_p4[..., :3].square().sum(dim=-1).sqrt()
-        mass = (
-            mother_p4[..., 3].square() - momentum.square()
-        ).clamp_min(0).sqrt()
+        mass = (mother_p4[..., 3].square() - momentum.square()).clamp_min(0).sqrt()
         configured = dict(policy.loose_physical_constraints)
         if "minimum_mother_energy" in configured:
             physical_valid &= mother_p4[..., 3] >= configured["minimum_mother_energy"]
@@ -1932,10 +1950,14 @@ def batched_decode_level(
     if config.exclusive_final:
         source_mask = batch.get("recursive_leaf_source_mask")
         if source_mask is None:
-            source_mask = torch.nn.functional.one_hot(
-                torch.arange(node_count, device=selected.device),
-                num_classes=node_count,
-            ).bool()[None].expand(batch_size, -1, -1)
+            source_mask = (
+                torch.nn.functional.one_hot(
+                    torch.arange(node_count, device=selected.device),
+                    num_classes=node_count,
+                )
+                .bool()[None]
+                .expand(batch_size, -1, -1)
+            )
         proposal_sources = boolean_matmul(selected, source_mask)
         order = torch.argsort(
             confidence.masked_fill(~proposal_valid, float("-inf")),
@@ -1949,20 +1971,14 @@ def batched_decode_level(
             dtype=torch.bool,
             device=selected.device,
         )
-        batch_indices = torch.arange(
-            batch_size, device=selected.device
-        )
+        batch_indices = torch.arange(batch_size, device=selected.device)
         for rank in range(query_count):
             query_index = order[:, rank]
-            candidate_valid = proposal_valid[
-                batch_indices, query_index
-            ]
-            candidate_sources = proposal_sources[
-                batch_indices, query_index
-            ]
-            can_accept = candidate_valid & ~(
-                candidate_sources & used_sources
-            ).any(dim=-1)
+            candidate_valid = proposal_valid[batch_indices, query_index]
+            candidate_sources = proposal_sources[batch_indices, query_index]
+            can_accept = candidate_valid & ~(candidate_sources & used_sources).any(
+                dim=-1
+            )
             accepted.scatter_(1, query_index[:, None], can_accept[:, None])
             used_sources |= candidate_sources & can_accept[:, None]
     else:
@@ -1981,9 +1997,7 @@ def batched_free_rollout(
 
     config = config or RolloutConfig()
     if config.use_learned_confidence and not config.confidence_trained:
-        raise RuntimeError(
-            "learned confidence was requested but is not marked trained"
-        )
+        raise RuntimeError("learned confidence was requested but is not marked trained")
     batch = _batched_initial_leaf_state(full_batch)
     policy = _resolved_rollout_constraint_policy(config)
     batch_size = batch["node_mask"].shape[0]
@@ -1993,9 +2007,7 @@ def batched_free_rollout(
     root_completed = torch.zeros(batch_size, dtype=torch.bool, device=device)
     initial_event_nonempty = active.clone()
     levels_completed = torch.zeros(batch_size, dtype=torch.long, device=device)
-    empty_level_counts = torch.zeros(
-        batch_size, dtype=torch.long, device=device
-    )
+    empty_level_counts = torch.zeros(batch_size, dtype=torch.long, device=device)
     stop_code = torch.where(
         active,
         torch.zeros(batch_size, dtype=torch.long, device=device),
@@ -2004,19 +2016,15 @@ def batched_free_rollout(
     accepted_history: list[torch.Tensor] = []
     daughter_history: list[torch.Tensor] = []
     profile_totals: dict[str, float] = {}
-    root_tokens = torch.tensor(
-        config.root_types, dtype=torch.long, device=device
-    )
+    root_tokens = torch.tensor(config.root_types, dtype=torch.long, device=device)
     forward_pid_mode = (
         "soft_expectation"
-        if config.rollout_pid_kinematics_mode
-        == "soft_decision_hard_construction"
+        if config.rollout_pid_kinematics_mode == "soft_decision_hard_construction"
         else config.rollout_pid_kinematics_mode
     )
     construction_pid_mode = (
         "hard"
-        if config.rollout_pid_kinematics_mode
-        == "soft_decision_hard_construction"
+        if config.rollout_pid_kinematics_mode == "soft_decision_hard_construction"
         else forward_pid_mode
     )
     for target_level in range(1, config.max_level + 1):
@@ -2060,9 +2068,10 @@ def batched_free_rollout(
             config=config,
         )
         if config.profile_phases:
-            profile_totals["proposal_validation_and_exclusive_resolution"] = profile_totals.get(
-                "proposal_validation_and_exclusive_resolution", 0.0
-            ) + (time.perf_counter() - phase_start)
+            profile_totals["proposal_validation_and_exclusive_resolution"] = (
+                profile_totals.get("proposal_validation_and_exclusive_resolution", 0.0)
+                + (time.perf_counter() - phase_start)
+            )
         phase_start = time.perf_counter()
         batch = batched_level_step(
             batch,
@@ -2073,9 +2082,10 @@ def batched_free_rollout(
             mother_types=mother_types,
         )
         if config.profile_phases:
-            profile_totals["composite_append_and_transitive_updates"] = profile_totals.get(
-                "composite_append_and_transitive_updates", 0.0
-            ) + (time.perf_counter() - phase_start)
+            profile_totals["composite_append_and_transitive_updates"] = (
+                profile_totals.get("composite_append_and_transitive_updates", 0.0)
+                + (time.perf_counter() - phase_start)
+            )
         accepted_history.append(accepted)
         daughter_history.append(daughters)
         appended = accepted.any(dim=-1)
@@ -2202,8 +2212,7 @@ def _select_nodes(
         else:
             selected[key] = value
     id_to_new = {
-        int(batch["node_ids"][0, old]): new
-        for new, old in enumerate(indices.tolist())
+        int(batch["node_ids"][0, old]): new for new, old in enumerate(indices.tolist())
     }
     remapped_parent = torch.full_like(selected["parent_ids"], -1)
     for new, old in enumerate(indices.tolist()):
@@ -2223,17 +2232,21 @@ def _truth_proposals(
     target_level: int,
 ) -> list[CompositeProposal]:
     truth_positions = (
-        truth["node_mask"][0] & (truth["level_ids"][0] == target_level)
-    ).nonzero(as_tuple=False).flatten()
+        (truth["node_mask"][0] & (truth["level_ids"][0] == target_level))
+        .nonzero(as_tuple=False)
+        .flatten()
+    )
     state_by_node_id = {
         int(node_id): position
         for position, node_id in enumerate(state["node_ids"][0].tolist())
     }
     proposals: list[CompositeProposal] = []
     for query_id, truth_position in enumerate(truth_positions.tolist()):
-        daughter_truth_positions = truth["daughter_adjacency"][0, truth_position].nonzero(
-            as_tuple=False
-        ).flatten()
+        daughter_truth_positions = (
+            truth["daughter_adjacency"][0, truth_position]
+            .nonzero(as_tuple=False)
+            .flatten()
+        )
         daughters = []
         for daughter_position in daughter_truth_positions.tolist():
             node_id = int(truth["node_ids"][0, daughter_position])
@@ -2245,7 +2258,9 @@ def _truth_proposals(
             CompositeProposal(
                 query_id=query_id,
                 mother_type=int(
-                    truth.get("pid_target_labels", truth["pid_labels"])[0, truth_position]
+                    truth.get("pid_target_labels", truth["pid_labels"])[
+                        0, truth_position
+                    ]
                 ),
                 daughter_positions=tuple(sorted(daughters)),
                 object_score=1.0,
@@ -2274,9 +2289,9 @@ def _state_fingerprint(batch: dict[str, torch.Tensor]) -> str:
     for position in range(batch["node_mask"].shape[1]):
         if not bool(batch["node_mask"][0, position]):
             continue
-        daughters = batch["daughter_adjacency"][0, position].nonzero(
-            as_tuple=False
-        ).flatten()
+        daughters = (
+            batch["daughter_adjacency"][0, position].nonzero(as_tuple=False).flatten()
+        )
         if "recursive_leaf_source_mask" in batch:
             sources = (
                 batch["recursive_leaf_source_mask"][0, position]

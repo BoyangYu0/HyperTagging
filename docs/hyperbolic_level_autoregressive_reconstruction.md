@@ -166,12 +166,24 @@ exclusivity. Greedy exclusivity remains the production default; an exact
 bounded weighted set-packing resolver is evaluation-only and does not turn
 greedy decoding into a claim of global ambiguity resolution.
 
-An additional top-K bounded beam preserves competing partial trees for one or
-two levels. It and set packing are evaluation-only. The complete free path is
-named `evaluation_reference_rollout`: it is deliberately bounded and batch
-size one. `batched_free_rollout` performs padded multi-event, multi-level
+The strict offline FSP API also supports full-depth bounded beam search. It
+retains alternative mother/type/daughter proposals and coherent partial event
+trees across all configured levels, with deterministic state deduplication and
+explicit proposal/state limits. Its comparable cumulative score avoids raw
+additive-confidence preference for more candidates. Greedy remains the default;
+beam width one follows its compatible behavior. Beam top-1 and truth-only
+oracle@K evaluation are separate from the existing greedy metrics. See
+[`full_decay_reconstruction_evaluation.md`](full_decay_reconstruction_evaluation.md)
+for settings, scoring, and reporting. The older `bounded_beam_rollout` remains
+a bounded compatibility helper. The complete greedy free path is named
+`evaluation_reference_rollout`: it is deliberately bounded and batch size one.
+`batched_free_rollout` performs padded multi-event, multi-level
 decoding and segmented append with exact daughter-sum p4, recursive
 source-conflict propagation, deterministic IDs, and event-specific stop masks.
+Its state records active/stopped event masks, completed levels, and tensor stop
+codes; decoded daughter masks are intersected with both active-event and padded
+node masks before accepted mothers occupy padded query slots. The decode path
+does not extract CUDA tensor scalars.
 CPU fixtures match independent batch-size-one reference rollouts. Optional
 compaction, guarded CUDA execution, and representative profiling remain
 required before a production-readiness claim.
@@ -202,7 +214,7 @@ profiling remains future evidence, not future functionality.
 
 Tiny CPU tests verify formulas, masks, matching, p4 closure, finite gradients,
 and termination. They do not establish scientific improvement. Real-size
-training and evaluation remain HTCondor-only.
+training and evaluation use the guarded Slurm or HTCondor workflows.
 
 ## Context-first geometry and curriculum
 

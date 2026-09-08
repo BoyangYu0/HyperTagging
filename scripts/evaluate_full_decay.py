@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 from collections import defaultdict
+from dataclasses import asdict
 from datetime import datetime, timezone
 from hashlib import sha256
 import json
@@ -41,6 +42,11 @@ from hypertagging.evaluation.full_decay_runner import (  # noqa: E402
     inference_diagnostics,
     serialize_reconstructed_tree,
     summarize_inference_diagnostics,
+    summarize_beam_search_diagnostics,
+)
+from hypertagging.evaluation.beam_decay_metrics import (  # noqa: E402
+    evaluate_ranked_decay_candidates,
+    summarize_beam_decay_evaluations,
 )
 from hypertagging.evaluation.trained_context import (  # noqa: E402
     load_trained_evaluation_context,
@@ -49,7 +55,9 @@ from hypertagging.reconstruction.hierarchical_inference import (  # noqa: E402
     HierarchicalInferenceConfig,
     OFFLINE_INFERENCE_POLICY_VERSION,
     reconstruct_full_tree_from_fsps,
+    reconstruct_beam_from_fsps,
 )
+from hypertagging.reconstruction.beam_search import BeamSearchConfig  # noqa: E402
 from hypertagging.reconstruction.level_rollout import (  # noqa: E402
     RolloutConfig,
     rollout_policy_identity,
@@ -57,6 +65,7 @@ from hypertagging.reconstruction.level_rollout import (  # noqa: E402
 
 
 REPORT_VERSION = "hypertagging-offline-full-decay-evaluation-v3"
+BEAM_REPORT_VERSION = "hypertagging-offline-full-decay-evaluation-v4"
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -109,6 +118,43 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--max-events", type=int, default=100)
     parser.add_argument("--max-level", type=int, default=8)
+    parser.add_argument(
+        "--beam-search",
+        action="store_true",
+        help="Compare the unchanged greedy evaluation with bounded beam top-1 and truth-only oracle@K.",
+    )
+    beam_defaults = BeamSearchConfig()
+    for field in (
+        "beam_width",
+        "max_candidates_per_query",
+        "max_proposals_per_level",
+        "max_daughter_options",
+        "max_type_options",
+        "max_cardinality_options",
+        "max_candidate_expansions_per_query",
+        "max_nodes_per_hypothesis",
+    ):
+        option = field if field == "beam_width" else f"beam_{field}"
+        parser.add_argument(
+            f"--{option.replace('_', '-')}",
+            dest=option,
+            type=int,
+            default=getattr(beam_defaults, field),
+        )
+    for field in ("score_length_normalization", "empty_level_penalty"):
+        parser.add_argument(
+            f"--beam-{field.replace('_', '-')}",
+            dest=f"beam_{field}",
+            type=float,
+            default=getattr(beam_defaults, field),
+        )
+    parser.add_argument(
+        "--beam-oracle-k",
+        type=int,
+        action="append",
+        default=None,
+        help="Oracle prefix K (repeatable, 1 <= K <= beam width); defaults to 1 and beam width.",
+    )
     parser.add_argument("--object-threshold", type=float, default=0.5)
     parser.add_argument("--pointer-threshold", type=float, default=None)
     parser.add_argument("--confidence-threshold", type=float, default=0.0)
@@ -164,7 +210,24 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             parser.error(f"--{name.replace('_', '-')} must lie in [0, 1]")
     if args.p4_closure_tolerance < 0:
         parser.error("--p4-closure-tolerance must be non-negative")
+    try:
+        _beam_config_from_args(args)
+    except (TypeError, ValueError) as exc:
+        parser.error(f"invalid beam configuration: {exc}")
+    if args.beam_oracle_k is not None and any(
+        k < 1 or k > args.beam_width for k in args.beam_oracle_k
+    ):
+        parser.error("--beam-oracle-k must lie between 1 and --beam-width")
     return args
+
+
+def _beam_config_from_args(args: argparse.Namespace) -> BeamSearchConfig:
+    return BeamSearchConfig(
+        **{
+            field: getattr(args, field if field == "beam_width" else f"beam_{field}")
+            for field in asdict(BeamSearchConfig())
+        }
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -233,9 +296,9 @@ def main(argv: list[str] | None = None) -> int:
     checkpoint_config = context.checkpoint.get("config", {})
     target_policy = str(checkpoint_config.get("target_policy", "complete_only"))
     confidence_trained = bool(context.checkpoint.get("confidence_head_trained", False))
-    checkpoint_selection_contract = context.checkpoint.get(
-        "training_state", {}
-    ).get("checkpoint_selection_contract", {})
+    checkpoint_selection_contract = context.checkpoint.get("training_state", {}).get(
+        "checkpoint_selection_contract", {}
+    )
     checkpoint_rollout_contract = checkpoint_selection_contract.get(
         "rollout_configuration", {}
     )
@@ -278,12 +341,29 @@ def main(argv: list[str] | None = None) -> int:
     metric_rows_by_category: dict[str, dict[str, list[Any]]] = defaultdict(
         lambda: defaultdict(list)
     )
-    diagnostics_by_category: dict[
-        str, dict[str, list[dict[str, Any]]]
-    ] = defaultdict(lambda: defaultdict(list))
-    metric_rows_by_target_shape: dict[
-        str, dict[str, list[Any]]
-    ] = defaultdict(lambda: defaultdict(list))
+    diagnostics_by_category: dict[str, dict[str, list[dict[str, Any]]]] = defaultdict(
+        lambda: defaultdict(list)
+    )
+    metric_rows_by_target_shape: dict[str, dict[str, list[Any]]] = defaultdict(
+        lambda: defaultdict(list)
+    )
+    beam_rows: dict[str, list[Any]] = defaultdict(list)
+    beam_search_rows: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    beam_top1_diagnostics: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    beam_rows_by_category: dict[str, dict[str, list[Any]]] = defaultdict(
+        lambda: defaultdict(list)
+    )
+    beam_search_by_category: dict[str, dict[str, list[Any]]] = defaultdict(
+        lambda: defaultdict(list)
+    )
+    beam_top1_by_category: dict[str, dict[str, list[Any]]] = defaultdict(
+        lambda: defaultdict(list)
+    )
+    beam_rows_by_target_shape: dict[str, dict[str, list[Any]]] = defaultdict(
+        lambda: defaultdict(list)
+    )
+    beam_config = _beam_config_from_args(args)
+    oracle_ks = sorted(set(args.beam_oracle_k or (1, beam_config.beam_width)))
     inference_wall_seconds = 0.0
     metric_wall_seconds = 0.0
     serialization_wall_seconds = 0.0
@@ -361,15 +441,114 @@ def main(argv: list[str] | None = None) -> int:
                 scope_record["host_phase_seconds"] = dict(
                     inference.rollout.host_phase_seconds
                 )
+            if args.beam_search:
+                phase_started = time.perf_counter()
+                beam = reconstruct_beam_from_fsps(
+                    context.model,
+                    truth_batch,
+                    config=HierarchicalInferenceConfig(
+                        scope=scope,
+                        rollout_config=rollout_config,
+                        max_level=args.max_level,
+                    ),
+                    beam_config=beam_config,
+                )
+                inference_wall_seconds += time.perf_counter() - phase_started
+                phase_started = time.perf_counter()
+                candidate_evaluations = []
+                candidate_diagnostics = []
+                for candidate in beam.candidates:
+                    evaluation_kwargs = {
+                        "target_policy": target_policy,
+                        "minimum_daughters": int(policy.minimum_daughters),
+                        "truth_topology_mode": args.truth_topology_mode,
+                    }
+                    if scope == "full":
+                        candidate_evaluations.append(
+                            evaluate_full_decay(
+                                candidate.batch,
+                                truth_batch,
+                                **evaluation_kwargs,
+                            )
+                        )
+                    else:
+                        candidate_evaluations.append(
+                            evaluate_half_decays(
+                                candidate.batch,
+                                truth_batch,
+                                source_category=event.source_category,
+                                **evaluation_kwargs,
+                            )
+                        )
+                    candidate_diagnostics.append(
+                        inference_diagnostics(
+                            candidate,
+                            p4_tolerance=float(args.p4_closure_tolerance),
+                        )
+                    )
+                beam_evaluation = evaluate_ranked_decay_candidates(
+                    candidate_evaluations,
+                    scores=beam.scores,
+                    oracle_ks=oracle_ks,
+                )
+                beam_record = beam_evaluation.as_dict()
+                beam_record["search"] = beam.diagnostics
+                beam_record["top1_inference"] = candidate_diagnostics[0]
+                for index, candidate_record in enumerate(beam_record["candidates"]):
+                    candidate_record["inference"] = candidate_diagnostics[index]
+                    candidate_record["log_score_sum"] = beam.log_score_sums[index]
+                    candidate_record["scored_candidate_count"] = (
+                        beam.scored_candidate_counts[index]
+                    )
+                    candidate_record["scored_decision_count"] = (
+                        beam.scored_decision_counts[index]
+                    )
+                metric_wall_seconds += time.perf_counter() - phase_started
+                if not args.omit_trees:
+                    phase_started = time.perf_counter()
+                    for candidate, candidate_record in zip(
+                        beam.candidates, beam_record["candidates"]
+                    ):
+                        candidate_record["reconstructed_tree"] = (
+                            serialize_reconstructed_tree(candidate)
+                        )
+                    serialization_wall_seconds += time.perf_counter() - phase_started
+                scope_record["beam"] = beam_record
+                beam_rows[scope].append(beam_evaluation)
+                beam_search_rows[scope].append(beam.diagnostics)
+                beam_top1_diagnostics[scope].append(candidate_diagnostics[0])
+                beam_rows_by_category[event.source_category][scope].append(
+                    beam_evaluation
+                )
+                beam_search_by_category[event.source_category][scope].append(
+                    beam.diagnostics
+                )
+                beam_top1_by_category[event.source_category][scope].append(
+                    candidate_diagnostics[0]
+                )
+                candidate_units = [
+                    candidate.halves if scope == "half" else (candidate,)
+                    for candidate in candidate_evaluations
+                ]
+                for unit_index, unit in enumerate(candidate_units[0]):
+                    if not unit.available or unit.truth_retained_depth is None:
+                        continue
+                    shape = (
+                        f"fsp_count={len(unit.truth_sources)};"
+                        f"retained_depth={unit.truth_retained_depth}"
+                    )
+                    beam_rows_by_target_shape[scope][shape].append(
+                        evaluate_ranked_decay_candidates(
+                            [units[unit_index] for units in candidate_units],
+                            scores=beam.scores,
+                            oracle_ks=oracle_ks,
+                        )
+                    )
             record["scopes"][scope] = scope_record
             metric_rows[scope].append(evaluation)
             diagnostic_rows[scope].append(diagnostics)
-            metric_rows_by_category[event.source_category][scope].append(
-                evaluation
-            )
-            diagnostics_by_category[event.source_category][scope].append(
-                diagnostics
-            )
+            metric_rows_by_category[event.source_category][scope].append(evaluation)
+            diagnostics_by_category[event.source_category][scope].append(diagnostics)
             units = evaluation.halves if scope == "half" else (evaluation,)
             for unit in units:
                 if not unit.available or unit.truth_retained_depth is None:
@@ -388,7 +567,7 @@ def main(argv: list[str] | None = None) -> int:
     phase_seconds["total_before_report_write"] = time.perf_counter() - run_started
 
     report = {
-        "report_version": REPORT_VERSION,
+        "report_version": (BEAM_REPORT_VERSION if args.beam_search else REPORT_VERSION),
         "created_utc": datetime.now(timezone.utc).isoformat(),
         "evaluation_role": "offline_model_evaluation",
         "offline_inference_policy_version": OFFLINE_INFERENCE_POLICY_VERSION,
@@ -447,12 +626,34 @@ def main(argv: list[str] | None = None) -> int:
             "target_policy": target_policy,
             "truth_topology_mode": args.truth_topology_mode,
             "trees_included": not args.omit_trees,
+            **(
+                {
+                    "beam_search_enabled": True,
+                    "beam_search": asdict(beam_config),
+                    "beam_oracle_ks": oracle_ks,
+                }
+                if args.beam_search
+                else {}
+            ),
         },
         "summaries": {
             scope: {
                 "decay_metrics": summarize_decay_evaluations(metric_rows[scope]),
-                "inference": summarize_inference_diagnostics(
-                    diagnostic_rows[scope]
+                "inference": summarize_inference_diagnostics(diagnostic_rows[scope]),
+                **(
+                    {
+                        "beam": {
+                            **summarize_beam_decay_evaluations(beam_rows[scope]),
+                            "search": summarize_beam_search_diagnostics(
+                                beam_search_rows[scope]
+                            ),
+                            "top1_inference": summarize_inference_diagnostics(
+                                beam_top1_diagnostics[scope]
+                            ),
+                        }
+                    }
+                    if args.beam_search
+                    else {}
                 ),
             }
             for scope in scopes
@@ -466,6 +667,23 @@ def main(argv: list[str] | None = None) -> int:
                     "inference": summarize_inference_diagnostics(
                         diagnostics_by_category[category][scope]
                     ),
+                    **(
+                        {
+                            "beam": {
+                                **summarize_beam_decay_evaluations(
+                                    beam_rows_by_category[category][scope]
+                                ),
+                                "search": summarize_beam_search_diagnostics(
+                                    beam_search_by_category[category][scope]
+                                ),
+                                "top1_inference": summarize_inference_diagnostics(
+                                    beam_top1_by_category[category][scope]
+                                ),
+                            }
+                        }
+                        if args.beam_search
+                        else {}
+                    ),
                 }
                 for scope in scopes
             }
@@ -473,10 +691,20 @@ def main(argv: list[str] | None = None) -> int:
         },
         "summaries_by_target_shape": {
             scope: {
-                shape: summarize_decay_evaluations(rows)
-                for shape, rows in sorted(
-                    metric_rows_by_target_shape[scope].items()
-                )
+                shape: {
+                    **summarize_decay_evaluations(rows),
+                    **(
+                        {
+                            "beam": summarize_beam_decay_evaluations(
+                                beam_rows_by_target_shape[scope][shape],
+                                include_event_metrics=False,
+                            )
+                        }
+                        if args.beam_search
+                        else {}
+                    ),
+                }
+                for shape, rows in sorted(metric_rows_by_target_shape[scope].items())
             }
             for scope in scopes
         },
@@ -511,8 +739,7 @@ def _validated_output_path(
                 aliases = False
         if aliases:
             raise ValueError(
-                "--output must not alias a read input: "
-                f"{destination} == {resolved}"
+                f"--output must not alias a read input: {destination} == {resolved}"
             )
     return destination
 
@@ -569,8 +796,7 @@ def _atomic_write_json(destination: Path, payload: dict[str, Any]) -> None:
         file_descriptor = -1
         with handle:
             handle.write(
-                json.dumps(payload, indent=2, sort_keys=True, allow_nan=False)
-                + "\n"
+                json.dumps(payload, indent=2, sort_keys=True, allow_nan=False) + "\n"
             )
             handle.flush()
             os.fsync(handle.fileno())
@@ -588,12 +814,16 @@ def _evaluator_code_provenance() -> dict[str, Any]:
     """Bind receipts to the Git index without reading untracked payloads."""
 
     try:
-        head = subprocess.run(
-            ("git", "rev-parse", "HEAD"),
-            cwd=REPO_ROOT,
-            check=True,
-            capture_output=True,
-        ).stdout.decode().strip()
+        head = (
+            subprocess.run(
+                ("git", "rev-parse", "HEAD"),
+                cwd=REPO_ROOT,
+                check=True,
+                capture_output=True,
+            )
+            .stdout.decode()
+            .strip()
+        )
         index_metadata = subprocess.run(
             ("git", "ls-files", "-s", "-z"),
             cwd=REPO_ROOT,

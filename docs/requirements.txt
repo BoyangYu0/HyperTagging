@@ -1,0 +1,3 @@
+# Documentation-only environment: never install the training package to build docs.
+Sphinx==7.3.7
+PyYAML==6.0.3

@@ -11,7 +11,7 @@ original batch for later evaluation.
 from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
-from typing import Literal, Mapping
+from typing import Any, Literal, Mapping
 
 import torch
 from torch import nn
@@ -39,14 +39,16 @@ from hypertagging.reconstruction.level_rollout import (
     RolloutConfig,
     batched_free_rollout,
 )
+from hypertagging.reconstruction.beam_search import (
+    BeamSearchConfig,
+    full_depth_beam_rollout,
+)
 from hypertagging.reconstruction.pid_state import COMPOSITE_TYPE_SOURCE_TO_ID
 from hypertagging.utils.tensor_contractions import boolean_matmul
 
 
 InferenceScope = Literal["full", "half"]
-OFFLINE_INFERENCE_POLICY_VERSION = (
-    "fsp-forest-root-empty-level-soft-type-pid-parity-v2"
-)
+OFFLINE_INFERENCE_POLICY_VERSION = "fsp-forest-root-empty-level-soft-type-pid-parity-v2"
 
 FULL_ROOT_TOKEN = TOKENIZE_DICT[300553]
 DEFAULT_HALF_ROOT_TOKENS: tuple[int, ...] = tuple(
@@ -123,7 +125,9 @@ class HierarchicalInferenceConfig:
             raise ValueError("inference scope must be 'full' or 'half'")
         if self.max_level is not None and self.max_level <= 0:
             raise ValueError("max_level must be positive")
-        if any(token <= 0 or token >= len(PDG_TOKENS) for token in self.half_root_tokens):
+        if any(
+            token <= 0 or token >= len(PDG_TOKENS) for token in self.half_root_tokens
+        ):
             raise ValueError("half_root_tokens contain an invalid reduced PID token")
         if not self.rollout_config.exclusive_final:
             raise ValueError(
@@ -180,9 +184,7 @@ class FSPInputAudit:
             "source_node_width": self.source_node_width,
             "projected_node_width": self.projected_node_width,
             "fsp_counts": list(self.fsp_counts),
-            "discarded_active_node_counts": list(
-                self.discarded_active_node_counts
-            ),
+            "discarded_active_node_counts": list(self.discarded_active_node_counts),
             "discarded_higher_level_node_counts": list(
                 self.discarded_higher_level_node_counts
             ),
@@ -208,9 +210,7 @@ class FSPInputAudit:
             "evaluation_fsp_source_keys": [
                 list(values) for values in self.evaluation_fsp_source_keys
             ],
-            "removed_truth_target_fields": list(
-                self.removed_truth_target_fields
-            ),
+            "removed_truth_target_fields": list(self.removed_truth_target_fields),
             "cpu_validated": self.cpu_validated,
         }
 
@@ -243,6 +243,24 @@ class HierarchicalInferenceResult:
         """Compatibility convenience for the reconstructed runtime tree."""
 
         return self.rollout.batch
+
+
+@dataclass(frozen=True)
+class HierarchicalBeamInferenceResult:
+    """Ranked coherent trees from a single event, with truth-free search scores."""
+
+    scope: InferenceScope
+    candidates: tuple[HierarchicalInferenceResult, ...]
+    scores: tuple[float, ...]
+    log_score_sums: tuple[float, ...]
+    scored_candidate_counts: tuple[int, ...]
+    scored_decision_counts: tuple[int, ...]
+    diagnostics: dict[str, Any]
+    config: BeamSearchConfig
+
+    @property
+    def top1(self) -> HierarchicalInferenceResult:
+        return self.candidates[0]
 
 
 def project_schema_v4_fsps(
@@ -292,8 +310,8 @@ def project_schema_v4_fsps(
     common = common.clone()
     common[..., :4] = p4
     common[..., 4] = (
-        p4[..., 3].square() - p4[..., :3].square().sum(dim=-1)
-    ).clamp_min(0).sqrt()
+        (p4[..., 3].square() - p4[..., :3].square().sum(dim=-1)).clamp_min(0).sqrt()
+    )
     common[..., 5] = charge
     common[..., 6] = pid_labels.to(common.dtype)
     common[..., 7] = 0
@@ -357,15 +375,11 @@ def project_schema_v4_fsps(
         (batch_size, width, provenance_width), dtype=torch.bool
     )
     for batch_index, compact in enumerate(compact_source_rows):
-        recursive_sources[
-            batch_index, : compact.shape[0], : compact.shape[1]
-        ] = compact
+        recursive_sources[batch_index, : compact.shape[0], : compact.shape[1]] = compact
     source_overlap = boolean_matmul(
         recursive_sources, recursive_sources.transpose(1, 2)
     )
-    source_conflicts = source_overlap & ~torch.eye(
-        width, dtype=torch.bool
-    ).unsqueeze(0)
+    source_conflicts = source_overlap & ~torch.eye(width, dtype=torch.bool).unsqueeze(0)
     source_conflicts &= node_mask[:, :, None] & node_mask[:, None, :]
     evaluation_source_keys = torch.full_like(dense_ids, -1)
     original_reco_ids = _gather_nodes(full_batch["reco_ids"], positions, width)
@@ -393,18 +407,14 @@ def project_schema_v4_fsps(
         torch.full_like(dense_ids, native_input_source),
         torch.zeros_like(dense_ids),
     )
-    unavailable_truth_sources = torch.full_like(
-        dense_ids, unavailable_truth_source
-    )
+    unavailable_truth_sources = torch.full_like(dense_ids, unavailable_truth_source)
     input_fixed_sources = torch.full_like(
         dense_ids, COMPOSITE_TYPE_SOURCE_TO_ID["input_fixed"]
     )
     zeros_long = torch.zeros_like(dense_ids)
     minus_one_long = torch.full_like(dense_ids, -1)
     zeros_bool = torch.zeros_like(node_mask)
-    zeros_float = torch.zeros(
-        (batch_size, width, histogram_width), dtype=p4.dtype
-    )
+    zeros_float = torch.zeros((batch_size, width, histogram_width), dtype=p4.dtype)
 
     projected: dict[str, torch.Tensor] = {
         "common_features": common,
@@ -431,9 +441,7 @@ def project_schema_v4_fsps(
         "p4": torch.where(node_mask.unsqueeze(-1), p4, torch.zeros_like(p4)),
         "charge": torch.where(node_mask, charge, torch.zeros_like(charge)),
         "parent_ids": minus_one_long.clone(),
-        "daughter_adjacency": torch.zeros(
-            (batch_size, width, width), dtype=torch.bool
-        ),
+        "daughter_adjacency": torch.zeros((batch_size, width, width), dtype=torch.bool),
         "node_mask": node_mask,
         "active": node_mask.clone(),
         "copied": zeros_bool.clone(),
@@ -465,9 +473,7 @@ def project_schema_v4_fsps(
         "ancestor_descendant_relation": torch.zeros(
             (batch_size, width, width), dtype=torch.bool
         ),
-        "lca_node_id": torch.full(
-            (batch_size, width, width), -1, dtype=torch.long
-        ),
+        "lca_node_id": torch.full((batch_size, width, width), -1, dtype=torch.long),
         "edges_to_lca_from_i": torch.full(
             (batch_size, width, width), -1, dtype=torch.long
         ),
@@ -477,16 +483,12 @@ def project_schema_v4_fsps(
         "exact_tree_path_distance": torch.full(
             (batch_size, width, width), -1, dtype=torch.long
         ),
-        "lca_depth": torch.full(
-            (batch_size, width, width), -1, dtype=torch.long
-        ),
+        "lca_depth": torch.full((batch_size, width, width), -1, dtype=torch.long),
         "depth_from_retained_root": minus_one_long.clone(),
         "distance_to_nearest_retained_root": minus_one_long.clone(),
         "runtime_features_are_raw": torch.tensor(True),
     }
-    projected["daughter_pid_histogram"] = projected[
-        "daughter_input_pid_histogram"
-    ]
+    projected["daughter_pid_histogram"] = projected["daughter_input_pid_histogram"]
     projected["daughter_pid_histogram_available"] = projected[
         "daughter_input_pid_histogram_available"
     ]
@@ -503,8 +505,7 @@ def project_schema_v4_fsps(
         projected_node_width=width,
         fsp_counts=counts,
         discarded_active_node_counts=tuple(
-            int((active[index] & ~fsp_mask[index]).sum())
-            for index in range(batch_size)
+            int((active[index] & ~fsp_mask[index]).sum()) for index in range(batch_size)
         ),
         discarded_higher_level_node_counts=tuple(
             int((active[index] & (levels[index] > 0)).sum())
@@ -526,12 +527,8 @@ def project_schema_v4_fsps(
         # Dense runtime index i maps to each tuple's i-th original key.  These
         # evaluation-only keys are carried beside ``projected`` but are never
         # read by the encoder or decoder.
-        original_fsp_node_ids=_values_at_positions(
-            full_batch["node_ids"], positions
-        ),
-        original_fsp_reco_ids=_values_at_positions(
-            full_batch["reco_ids"], positions
-        ),
+        original_fsp_node_ids=_values_at_positions(full_batch["node_ids"], positions),
+        original_fsp_reco_ids=_values_at_positions(full_batch["reco_ids"], positions),
         original_fsp_source_node_ids=_values_at_positions(
             full_batch["source_node_ids"], positions
         ),
@@ -579,6 +576,111 @@ def reconstruct_full_tree_from_fsps(
             config=rollout_config,
         )
 
+    return _hierarchical_result(rollout, projection, config)
+
+
+def reconstruct_beam_from_fsps(
+    model: LevelAutoregressiveReconstructor,
+    full_batch: Mapping[str, torch.Tensor],
+    *,
+    config: HierarchicalInferenceConfig | None = None,
+    beam_config: BeamSearchConfig | None = None,
+    scope: InferenceScope | None = None,
+) -> HierarchicalBeamInferenceResult:
+    """Run bounded full-depth CPU search after the strict FSP projection.
+
+    Search operates on one event at a time. Every candidate has its own
+    coherent forest and the same input audit. Evaluation source keys are
+    attached only after all model calls and pruning have finished.
+    """
+
+    if config is None:
+        config = HierarchicalInferenceConfig(scope=scope or "full")
+    elif scope is not None:
+        config = replace(config, scope=scope)
+    beam_config = beam_config or BeamSearchConfig()
+    _validate_cpu_evaluation_model(model)
+    projection = project_schema_v4_fsps(full_batch)
+    if projection.batch["node_mask"].shape[0] != 1:
+        raise ValueError("offline beam inference requires batch size 1; iterate events")
+    with torch.inference_mode():
+        search = full_depth_beam_rollout(
+            model,
+            projection.batch,
+            config=config.resolved_rollout_config(),
+            beam_config=beam_config,
+        )
+    candidates = []
+    for hypothesis in search.candidates:
+        result = hypothesis.result
+        if result is None:
+            raise RuntimeError(
+                "beam search returned a hypothesis without rollout history"
+            )
+        accepted_masks = []
+        daughter_masks = []
+        for step in result.steps:
+            accepted = torch.zeros_like(
+                step.model_output.pointer.object_logits, dtype=torch.bool
+            )
+            daughters = torch.zeros_like(
+                step.model_output.pointer.pointer_logits, dtype=torch.bool
+            )
+            for proposal in step.accepted:
+                accepted[0, proposal.query_id] = True
+                daughters[0, proposal.query_id, list(proposal.daughter_positions)] = (
+                    True
+                )
+            accepted_masks.append(accepted)
+            daughter_masks.append(daughters)
+        root_completed = result.stop_reason == "configured_root_reconstructed"
+        stop_code = {
+            "configured_root_reconstructed": 2,
+            "maximum_level": 3,
+            "node_limit_reached": 4,
+            "beam_selected_empty": 5,
+        }.get(result.stop_reason, 1)
+        rollout = BatchedRolloutResult(
+            batch=result.batch,
+            levels_completed=torch.tensor([len(result.steps)], dtype=torch.long),
+            stopped_event_mask=torch.tensor([True]),
+            root_completed_mask=torch.tensor([root_completed]),
+            event_valid_mask=torch.tensor([result.valid]),
+            stop_code=torch.tensor([stop_code], dtype=torch.long),
+            accepted_query_masks=tuple(accepted_masks),
+            daughter_masks=tuple(daughter_masks),
+            empty_level_counts=torch.tensor(
+                [result.empty_level_count], dtype=torch.long
+            ),
+        )
+        candidates.append(_hierarchical_result(rollout, projection, config))
+    if not candidates:
+        raise RuntimeError("beam search returned no candidate states")
+    return HierarchicalBeamInferenceResult(
+        scope=config.scope,
+        candidates=tuple(candidates),
+        scores=tuple(h.score for h in search.candidates),
+        log_score_sums=tuple(h.log_score_sum for h in search.candidates),
+        scored_candidate_counts=tuple(h.scored_candidates for h in search.candidates),
+        scored_decision_counts=tuple(h.scored_decisions for h in search.candidates),
+        diagnostics={
+            **search.diagnostics,
+            "proposal_diagnostics_available": beam_config.beam_width != 1,
+            "diagnostic_coverage": (
+                "greedy_rollout_only" if beam_config.beam_width == 1 else "full_search"
+            ),
+        },
+        config=beam_config,
+    )
+
+
+def _hierarchical_result(
+    rollout: BatchedRolloutResult,
+    projection: FSPProjection,
+    config: HierarchicalInferenceConfig,
+) -> HierarchicalInferenceResult:
+    """Attach evaluation-only identities and component masks after inference."""
+
     reconstructed = rollout.batch
     # Attach stable FSP identities only after every model call has finished.
     # They are metric metadata, never an input tensor.
@@ -587,9 +689,7 @@ def reconstruct_full_tree_from_fsps(
     )
     _require_cpu_tensors(reconstructed, owner="reconstructed rollout")
     nodes = reconstructed["node_mask"].bool()
-    composite = nodes & (
-        reconstructed["node_kind_ids"] == NODE_KIND_TO_ID["composite"]
-    )
+    composite = nodes & (reconstructed["node_kind_ids"] == NODE_KIND_TO_ID["composite"])
     forest = nodes & (reconstructed["parent_ids"] < 0)
     pid = reconstructed["pid_labels"]
     b_tokens = torch.tensor(config.half_root_tokens, dtype=torch.long)
@@ -660,8 +760,7 @@ def _validate_schema_v4_input(
         histogram_width,
     ):
         raise ValueError(
-            "daughter_input_pid_histogram must have shape "
-            f"[B,N,{histogram_width}]"
+            f"daughter_input_pid_histogram must have shape [B,N,{histogram_width}]"
         )
     scalar_fields = (
         "daughter_input_pid_histogram_available",
@@ -800,24 +899,21 @@ def _validate_projected_fsp_batch(
         raise AssertionError("projected inference input is not detector-FSP-only")
     if (batch["level_ids"][active] != 0).any():
         raise AssertionError("projected FSP levels were not reset")
-    if (batch["parent_ids"][active] != -1).any() or batch[
-        "daughter_adjacency"
-    ].any():
+    if (batch["parent_ids"][active] != -1).any() or batch["daughter_adjacency"].any():
         raise AssertionError("projected topology was not reset")
     if (batch["b_side"][active] != -1).any():
         raise AssertionError("projected B-side truth labels were not scrubbed")
     if any(name in batch for name in _REMOVED_TRUTH_TARGET_FIELDS):
         raise AssertionError("truth PID target field survived FSP projection")
     unavailable = TRUTH_SUPERVISION_SOURCE_TO_ID["unavailable"]
-    if (
-        batch["truth_supervision_source_ids"][active] != unavailable
-    ).any() or (
+    if (batch["truth_supervision_source_ids"][active] != unavailable).any() or (
         batch["daughter_truth_pid_source_ids"][active] != unavailable
     ).any():
         raise AssertionError("projected truth provenance is not unavailable")
-    if batch["daughter_truth_pid_histogram_available"].any() or batch[
-        "daughter_truth_pid_histogram"
-    ].count_nonzero():
+    if (
+        batch["daughter_truth_pid_histogram_available"].any()
+        or batch["daughter_truth_pid_histogram"].count_nonzero()
+    ):
         raise AssertionError("truth daughter-PID state survived FSP projection")
     for event_index in range(active.shape[0]):
         count = int(active[event_index].sum())
@@ -861,9 +957,7 @@ def _validate_cpu_evaluation_model(model: object) -> None:
         )
 
 
-def _require_cpu_tensors(
-    values: Mapping[str, torch.Tensor], *, owner: str
-) -> None:
+def _require_cpu_tensors(values: Mapping[str, torch.Tensor], *, owner: str) -> None:
     non_cpu = sorted(
         name
         for name, value in values.items()
@@ -880,9 +974,7 @@ def _gather_nodes(
     positions: tuple[tuple[int, ...], ...],
     width: int,
 ) -> torch.Tensor:
-    output = torch.zeros(
-        (len(positions), width, *value.shape[2:]), dtype=value.dtype
-    )
+    output = torch.zeros((len(positions), width, *value.shape[2:]), dtype=value.dtype)
     for batch_index, event_positions in enumerate(positions):
         count = len(event_positions)
         if count:
@@ -921,10 +1013,12 @@ __all__ = [
     "FSPInputAudit",
     "FSPProjection",
     "HierarchicalInferenceConfig",
+    "HierarchicalBeamInferenceResult",
     "HierarchicalInferenceResult",
     "InferenceScope",
     "OFFLINE_INFERENCE_POLICY_VERSION",
     "project_preprocessed_mdst_fsps",
     "project_schema_v4_fsps",
     "reconstruct_full_tree_from_fsps",
+    "reconstruct_beam_from_fsps",
 ]

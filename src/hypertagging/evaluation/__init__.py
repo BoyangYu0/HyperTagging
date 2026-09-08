@@ -36,6 +36,12 @@ from hypertagging.evaluation.full_decay_runner import (
     inference_diagnostics,
     serialize_reconstructed_tree,
     summarize_inference_diagnostics,
+    summarize_beam_search_diagnostics,
+)
+from hypertagging.evaluation.beam_decay_metrics import (
+    BeamDecayEvaluation,
+    evaluate_ranked_decay_candidates,
+    summarize_beam_decay_evaluations,
 )
 from hypertagging.evaluation.trained_context import (
     TrainedEvaluationContext,
@@ -70,6 +76,10 @@ __all__ = [
     "inference_diagnostics",
     "serialize_reconstructed_tree",
     "summarize_inference_diagnostics",
+    "summarize_beam_search_diagnostics",
+    "BeamDecayEvaluation",
+    "evaluate_ranked_decay_candidates",
+    "summarize_beam_decay_evaluations",
     "TrainedEvaluationContext",
     "load_trained_evaluation_context",
 ]

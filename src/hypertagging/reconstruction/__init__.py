@@ -60,13 +60,19 @@ _EXPORT_MODULE = {
             "FSPInputAudit",
             "FSPProjection",
             "HierarchicalInferenceConfig",
+            "HierarchicalBeamInferenceResult",
             "HierarchicalInferenceResult",
             "InferenceScope",
             "OFFLINE_INFERENCE_POLICY_VERSION",
             "project_preprocessed_mdst_fsps",
             "project_schema_v4_fsps",
             "reconstruct_full_tree_from_fsps",
+            "reconstruct_beam_from_fsps",
         )
+    },
+    **{
+        name: "hypertagging.reconstruction.beam_search"
+        for name in ("BeamSearchConfig", "BeamSearchResult", "full_depth_beam_rollout")
     },
 }
 

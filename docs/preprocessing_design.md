@@ -129,8 +129,11 @@ Inspect and validate:
   --all-events --check-tree --check-p4 --check-pid
 ```
 
-The documented real mDST glob is in `file_paths.md`:
+The DESY MC16ri Run 2 source used by the recorded preprocessing work is
 `/pnfs/desy.de/belle/local/belle/MC/release-08-03-00/DB00003335/MC16ri_run2/**/*.root`.
+Treat this as a site-specific historical input, not a portable default. Keep
+virtual environments and generated data on the configured data/project volume,
+never in the repository checkout, and use small CPU samples for debugging.
 
 ## Current Basf2 Adapter Notes
 

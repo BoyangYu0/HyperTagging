@@ -31,5 +31,10 @@ venv/
 *.log
 slurm_log.*
 CompLog/
+# Generated documentation and isolated local documentation environments
+docs/wiki/_generated/
+docs/_build/
+.venv-docs/
+.firecrawl/
 outputs/
 artifacts/

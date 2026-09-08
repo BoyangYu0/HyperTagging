@@ -6,6 +6,7 @@ from hypertagging.evaluation.full_decay_runner import (
     inference_diagnostics,
     serialize_reconstructed_tree,
     summarize_inference_diagnostics,
+    summarize_beam_search_diagnostics,
 )
 from hypertagging.preprocessing.schema_v2 import NODE_KIND_TO_ID
 from hypertagging.reconstruction.hierarchical_inference import (
@@ -17,8 +18,14 @@ from hypertagging.reconstruction.level_rollout import BatchedRolloutResult
 
 def _result() -> HierarchicalInferenceResult:
     p4 = torch.tensor(
-        [[[1.0, 0.0, 0.0, 1.0], [0.0, 2.0, 0.0, 2.0],
-          [0.0, 0.0, 3.0, 3.0], [1.0, 2.0, 0.0, 3.0]]]
+        [
+            [
+                [1.0, 0.0, 0.0, 1.0],
+                [0.0, 2.0, 0.0, 2.0],
+                [0.0, 0.0, 3.0, 3.0],
+                [1.0, 2.0, 0.0, 3.0],
+            ]
+        ]
     )
     adjacency = torch.zeros(1, 4, 4, dtype=torch.bool)
     adjacency[0, 3, :2] = True
@@ -157,3 +164,57 @@ def test_p4_closure_is_undefined_without_reconstructed_mothers():
     assert summary["p4_closure"]["denominator"] == 0
     assert summary["p4_closure"]["value"] is None
     assert not summary["p4_closure"]["eligible"]
+
+
+def test_beam_search_summary_sums_work_and_preserves_resource_peaks():
+    rows = [
+        {
+            "policy_version": "test",
+            "configuration": {"beam_width": 4},
+            "states_expanded": 9,
+            "states_pruned": 5,
+            "max_live_states": 4,
+            "query_expansion_limit_hits": 2,
+            "completed_candidates": 2,
+        },
+        {
+            "policy_version": "test",
+            "configuration": {"beam_width": 4},
+            "states_expanded": 3,
+            "states_pruned": 0,
+            "max_live_states": 2,
+            "query_expansion_limit_hits": 0,
+            "completed_candidates": 0,
+        },
+    ]
+    summary = summarize_beam_search_diagnostics(rows)
+    assert summary["states_expanded"] == 12
+    assert summary["states_pruned"] == 5
+    assert summary["max_live_states"] == 4
+    assert summary["events_with_pruning"] == {
+        "value": 0.5,
+        "numerator": 1,
+        "denominator": 2,
+    }
+    assert summary["events_at_query_expansion_limit"]["denominator"] == 2
+    assert summary["events_with_completed_candidate"]["numerator"] == 1
+
+
+def test_width_one_uninstrumented_pruning_has_no_eligibility_denominator():
+    summary = summarize_beam_search_diagnostics(
+        [
+            {
+                "width_one_greedy_compatibility": True,
+                "proposal_diagnostics_available": False,
+                "states_pruned": 0,
+                "completed_candidates": 1,
+            }
+        ]
+    )
+    assert summary["events_with_pruning"] == {
+        "value": None,
+        "numerator": 0,
+        "denominator": 0,
+    }
+    assert summary["events_at_query_expansion_limit"]["denominator"] == 0
+    assert summary["events_with_completed_candidate"]["denominator"] == 1

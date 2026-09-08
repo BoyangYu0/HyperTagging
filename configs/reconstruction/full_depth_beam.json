@@ -1,0 +1,12 @@
+{
+  "beam_width": 4,
+  "max_candidates_per_query": 4,
+  "max_proposals_per_level": 12,
+  "max_daughter_options": 4,
+  "max_type_options": 3,
+  "max_cardinality_options": 2,
+  "max_candidate_expansions_per_query": 128,
+  "max_nodes_per_hypothesis": 256,
+  "score_length_normalization": 1.0,
+  "empty_level_penalty": 0.0
+}

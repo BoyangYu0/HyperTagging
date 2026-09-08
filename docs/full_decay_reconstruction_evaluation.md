@@ -117,6 +117,128 @@ a daughter to come from an earlier level would allow a node already consumed
 by one mother to be consumed again at a later level, producing an inconsistent
 adjacency/parent state and double-counting its detector source.
 
+### Optional full-depth beam comparison
+
+Greedy remains the default. Add `--beam-search` to the offline evaluator to run
+the same event/scope twice: the existing greedy rollout and a bounded search
+through competing coherent forests. The trained model and checkpoint policy
+are unchanged. Every live forest is decoded again at each generation; each
+query can retain alternative mother types, daughter sets, and cardinalities.
+Compatible queries are composed into an event state before the next model
+call. Merely retaining a local top-k mother list is not the search algorithm.
+
+The search shares the existing projection, mother construction, PID update,
+decoder constraints, and recursive detector-source policy. A used detector
+source can move upward through its own composite; an associated detector alias
+cannot reuse a source already committed to another composite. Live candidate
+states are deduplicated independently of generated mother IDs and query
+assignment only when their recursive tree and future model-visible features
+(including reconstructed confidence state) agree. Terminal candidates may
+then collapse feature-only duplicates of the same physical tree. Ties are
+deterministic. No truth values, truth-based termination, or evaluation source
+keys are available to the search; the direct core API also filters model calls
+to an allowlisted reconstructed-data surface and rejects non-sentinel truth
+metadata.
+
+The core API is `full_depth_beam_rollout(..., config=RolloutConfig(...),
+beam_config=BeamSearchConfig(...))`. For native offline data use
+`reconstruct_beam_from_fsps(..., config=HierarchicalInferenceConfig(...),
+beam_config=BeamSearchConfig(...))`, which applies the strict FSP boundary and
+returns ordered `candidates`, `scores`, score sufficient statistics, and
+`diagnostics`. This API processes one event at a time on CPU. Width one uses a
+source-safe reference-greedy path. Its `width_one_greedy_compatibility` flag is
+true only when no additional detector-alias mask was required; padded node
+positions may still differ from the batched greedy path.
+
+Width-one compatibility applies to source-exclusive greedy trees: the beam
+entry point additionally masks detector aliases already committed to another
+composite, closing a legacy cross-generation reuse hole. Beam requires the
+recursive-source rejection policy. For width greater than one, a requested
+terminal root is a singleton proposal set, following the deployment candidate
+semantics; unrelated new side mothers cannot raise its score. Existing ONNX
+bundles retain their manifest-defined policy and are not claimed to have score
+parity with the new offline search. Their user-owned implementation is preserved.
+
+Search bounds are explicit and validated before loading data:
+
+| CLI option | Default | Meaning |
+| --- | ---: | --- |
+| `--beam-width` | 4 | Live event states and returned candidates; completed states have their own equally bounded pool. |
+| `--beam-max-candidates-per-query` | 4 | Retained mother/daughter candidates for each query. |
+| `--beam-max-proposals-per-level` | 12 | Retained proposals per live state and generation. |
+| `--beam-max-daughter-options` | 4 | Feasible daughter sets explored per cardinality. |
+| `--beam-max-type-options` | 3 | Valid mother-type alternatives retained per feasible daughter set; final candidates remain bounded per query. |
+| `--beam-max-cardinality-options` | 2 | Alternative predicted daughter counts per query. |
+| `--beam-max-candidate-expansions-per-query` | 128 | Bound on source-aware partial daughter-set states expanded per query. |
+| `--beam-max-nodes-per-hypothesis` | 256 | Hard node-axis limit for each coherent forest, including input FSPs. |
+| `--beam-score-length-normalization` | 1.0 | Exponent alpha, in [0,1], for normalization by cumulative query decisions. |
+| `--beam-empty-level-penalty` | 0.0 | Finite nonnegative log-score penalty per empty generation. |
+
+All count bounds must be positive integers. A selected query contributes a
+log score from object, mother-type, mean selected-pointer, and predicted
+cardinality probabilities; a trained confidence score multiplies those factors
+when enabled. An unused query contributes `log(1 - object_probability)`.
+Probabilities are numerically bounded before taking logs. The cumulative sum,
+including any empty-level penalties, is divided by
+`max(1, scored_decision_count) ** alpha`. This avoids rewarding a tree merely
+for accumulating more positive confidence values; the score is a search
+heuristic, not a calibrated event probability. Complete requested-root states
+rank before incomplete states, then by normalized score and a canonical tree
+tie key. Half scope has no requested stop root and searches through the maximum
+level. Pruning is approximate and cannot guarantee the globally optimal tree.
+Within a fixed cardinality, daughter subsets are enumerated by the same mean
+pointer-probability objective used in scoring, with source conflicts pruned on
+partial subsets. Invalid high-ranked types/cardinalities are backfilled until
+the configured number of valid alternatives or the expansion bound is reached.
+The cross-query proposal cap ranks the gain over that query's no-object score.
+Terminal root candidates are scored in a separate bounded lane so a pruned
+empty prefix cannot make a later root query unreachable.
+
+The matching API configuration is checked in at
+[`configs/reconstruction/full_depth_beam.json`](../configs/reconstruction/full_depth_beam.json).
+Load it with `BeamSearchConfig(**json.loads(Path(path).read_text()))`; unknown
+keys and invalid values fail immediately. The
+[examples README](../examples/README.md) shows its use with an existing CPU
+evaluation pipeline.
+
+For example, append these arguments to the validation command below:
+
+```bash
+--beam-search --beam-width 4 \
+--beam-max-candidates-per-query 4 --beam-max-proposals-per-level 12 \
+--beam-oracle-k 1 --beam-oracle-k 4
+```
+
+Greedy-only output remains report schema v3. Beam-enabled output is schema v4.
+Existing event `metrics`, `inference`, and summary `decay_metrics` keys retain
+their greedy meaning and names. Additional `beam` records contain the complete
+existing metrics for deployable `top1`, every candidate's rank, normalized
+score, cumulative log score, decision count, inference diagnostics, and
+optional tree. Beam top-1 inference metrics are aggregated in parallel with
+all existing structural diagnostics. Search counters include generated,
+deduplicated, rejected, and pruned candidates/states, expansion-limit hits,
+model calls, per-level state counts, and resource peaks. Aggregation sums work
+counters and retains maxima for peak bounds. Width-one delegation records
+rollout work, but does not instrument proposal enumeration; its
+`proposal_diagnostics_available=false` marks zero search-specific counters as
+unavailable. Main and source-category summaries include complete beam results.
+Target-shape summaries retain the original keys and add beam unit metrics;
+event conjunctions are omitted there because an event can span multiple shapes.
+
+`oracle_at_k` is explicitly truth-only evaluation after search. By default
+prefixes 1 and beam width are reported; repeat `--beam-oracle-k K` to choose
+prefixes (1 <= K <= beam width). A search returning fewer than K states reports
+the actual evaluated count. `perfect_lcag`, source recall, and
+`mother_pid_coverage`
+use the best recovery for each fixed truth unit among that prefix. Thus two
+different candidates may recover different B halves. The separate
+`coherent_event_perfect_lcag` and `both_halves_perfect_lcag` require one candidate
+to recover the whole event or both halves together. Exactness means the
+existing source-keyed topology definition, which excludes PID. First exact
+rank/score and reciprocal exact rank quantify where recovery occurs. All rates
+retain original eligibility and failure denominators and micro-sum sufficient
+statistics; oracle results are never labeled deployable top-1 performance.
+
 ### Full-decay scope
 
 For a B-pair event with an explicit retained `Upsilon(4S)` root, full scope has

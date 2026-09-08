@@ -12,6 +12,10 @@ from hypertagging.evaluation.full_decay_metrics import (
     source_keyed_lcag,
     summarize_decay_evaluations,
 )
+from hypertagging.evaluation.beam_decay_metrics import (
+    evaluate_ranked_decay_candidates,
+    summarize_beam_decay_evaluations,
+)
 
 
 def _full_tree() -> dict[str, torch.Tensor]:
@@ -58,15 +62,122 @@ def _full_tree() -> dict[str, torch.Tensor]:
         "level_ids": levels,
         "p4": p4,
         "node_ids": torch.arange(count).reshape(1, count),
-        "reco_ids": torch.tensor(
-            [[100, 101, 102, 103, 104, 105, -1, -1, -1, -1, -1]]
-        ),
+        "reco_ids": torch.tensor([[100, 101, 102, 103, 104, 105, -1, -1, -1, -1, -1]]),
         "source_node_ids": torch.arange(count).reshape(1, count),
     }
 
 
 def _clone(batch):
     return {key: value.clone() for key, value in batch.items()}
+
+
+def test_beam_oracle_recovers_lower_rank_without_changing_top1_metrics():
+    truth = _full_tree()
+    wrong = evaluate_full_decay(_missing(truth, {5}), truth)
+    exact = evaluate_full_decay(_clone(truth), truth)
+    beam = evaluate_ranked_decay_candidates(
+        [wrong, exact],
+        scores=[-0.1, -0.2],
+        oracle_ks=[1, 2, 4],
+    )
+    report = beam.as_dict()
+    assert report["top1"] == wrong.as_dict()
+    assert report["oracle_at_k"]["1"]["perfect_lcag"]["value"] == 0
+    oracle = report["oracle_at_k"]["2"]
+    assert oracle["perfect_lcag"] == {
+        "value": 1.0,
+        "numerator": 1.0,
+        "denominator": 1.0,
+    }
+    assert "mother_pid_coverage" in oracle
+    assert "mother_coverage" not in oracle
+    assert oracle["units"][0]["first_exact_rank"] == 2
+    assert oracle["units"][0]["first_exact_score"] == -0.2
+    assert oracle["mean_reciprocal_exact_rank"]["value"] == 0.5
+    assert report["oracle_at_k"]["4"]["evaluated_candidate_count"] == 2
+    assert (
+        report["oracle_uses_truth"] and not report["oracle_is_deployable_performance"]
+    )
+    json.dumps(report, allow_nan=False)
+
+
+def test_beam_half_unit_oracle_does_not_invent_a_coherent_event():
+    truth = _full_tree()
+    missing_left = _clone(truth)
+    missing_left["node_mask"][0, [4, 8]] = False
+    missing_left["daughter_adjacency"][0, 10].zero_()
+    missing_left["daughter_adjacency"][0, 10, [6, 9]] = True
+    left = evaluate_half_decays(_missing(truth, {5}), truth)
+    right = evaluate_half_decays(missing_left, truth)
+    assert [row.perfectLCAG for row in left.halves] == [True, False]
+    assert [row.perfectLCAG for row in right.halves] == [False, True]
+    beam = evaluate_ranked_decay_candidates([left, right], scores=[-0.1, -0.2])
+    oracle = beam.oracle_at_k[2]
+    assert oracle["perfect_lcag"]["numerator"] == 2
+    assert oracle["perfect_lcag"]["denominator"] == 2
+    assert oracle["coherent_event_perfect_lcag"]["numerator"] == 0
+    assert oracle["coherent_event_perfect_lcag"]["denominator"] == 1
+    assert oracle["both_halves_perfect_lcag"]["value"] == 0
+
+
+def test_beam_summary_micro_sums_denominators_and_preserves_legacy_names():
+    truth = _full_tree()
+    exact = evaluate_full_decay(truth, truth)
+    wrong = evaluate_full_decay(_missing(truth, {5}), truth)
+    recovered = evaluate_ranked_decay_candidates([wrong, exact], scores=[-0.1, -0.2])
+    smaller_truth = _missing(truth, {5})
+    smaller_wrong = evaluate_full_decay(_missing(truth, {4, 5}), smaller_truth)
+    failed = evaluate_ranked_decay_candidates(
+        [smaller_wrong], scores=[-0.1], oracle_ks=[1, 2]
+    )
+    summary = summarize_beam_decay_evaluations([recovered, failed])
+    assert summary["top1"] == summarize_decay_evaluations([wrong, smaller_wrong])
+    assert set(summary["top1"]) == set(summarize_decay_evaluations([exact]))
+    assert summary["oracle_at_k"]["2"]["perfect_lcag"] == {
+        "value": 0.5,
+        "numerator": 1.0,
+        "denominator": 2.0,
+    }
+    assert summary["oracle_at_k"]["2"]["source_recall"] == {
+        "value": 10 / 11,
+        "numerator": 10.0,
+        "denominator": 11.0,
+    }
+    assert "mother_pid_coverage" in summary["oracle_at_k"]["2"]
+    assert "mother_coverage" not in summary["oracle_at_k"]["2"]
+    assert summary["candidate_count"] == 3
+    json.dumps(summary, allow_nan=False)
+
+
+def test_beam_unavailable_truth_keeps_zero_denominators():
+    truth = _full_tree()
+    unavailable_truth = _clone(truth)
+    unavailable_truth["node_mask"].zero_()
+    unavailable = evaluate_full_decay(truth, unavailable_truth)
+    beam = evaluate_ranked_decay_candidates(
+        [unavailable], scores=[0.0], oracle_ks=[1, 4]
+    )
+    summary = summarize_beam_decay_evaluations([beam])
+    assert summary["top1"]["unavailable_evaluation_count"] == 1
+    for oracle in summary["oracle_at_k"].values():
+        for name in (
+            "perfect_lcag",
+            "source_recall",
+            "coherent_event_perfect_lcag",
+            "mean_reciprocal_exact_rank",
+        ):
+            assert oracle[name] == {"value": None, "numerator": 0.0, "denominator": 0.0}
+
+
+@pytest.mark.parametrize(
+    "scores,ks", [([], [1]), ([float("nan")], [1]), ([0.0], [0]), ([0.0], [1, True])]
+)
+def test_beam_metrics_reject_invalid_scores_or_oracle_prefixes(scores, ks):
+    truth = _full_tree()
+    with pytest.raises(ValueError):
+        evaluate_ranked_decay_candidates(
+            [evaluate_full_decay(truth, truth)], scores=scores, oracle_ks=ks
+        )
 
 
 def _permute(batch, permutation):
@@ -108,9 +219,9 @@ def test_lcag_is_source_keyed_order_id_and_pid_invariant():
     predicted = _permute(truth, [10, 3, 8, 0, 6, 5, 1, 9, 2, 7, 4])
     # Detector-conflict provenance may have a different raw source-column
     # order; LCAG membership is rebuilt from unique FSP keys and adjacency.
-    predicted["recursive_leaf_source_mask"] = predicted[
-        "recursive_leaf_source_mask"
-    ][:, :, [4, 1, 5, 0, 3, 2]]
+    predicted["recursive_leaf_source_mask"] = predicted["recursive_leaf_source_mask"][
+        :, :, [4, 1, 5, 0, 3, 2]
+    ]
     # The FSP projection itself uses dense runtime IDs; this evaluation-only
     # leaf-order metadata is the bridge back to stable original reco IDs.
     predicted["reco_ids"] = torch.arange(11).reshape(1, 11)
@@ -170,9 +281,7 @@ def test_continuum_top_level_components_are_multiplicity_units():
         truth[name][0, 8] = 4
         truth[name][0, 9] = 6
 
-    result = evaluate_half_decays(
-        _clone(truth), truth, source_category="ccbar"
-    )
+    result = evaluate_half_decays(_clone(truth), truth, source_category="ccbar")
 
     assert result.available
     assert result.unit_semantics == "continuum_components"
@@ -187,9 +296,7 @@ def test_continuum_without_explicit_composite_roots_is_unavailable():
     truth = _full_tree()
     truth["node_mask"][0, 6:] = False
 
-    result = evaluate_half_decays(
-        _clone(truth), truth, source_category="continuum"
-    )
+    result = evaluate_half_decays(_clone(truth), truth, source_category="continuum")
 
     assert not result.available
     assert result.rows == ()
@@ -208,9 +315,7 @@ def test_continuum_counts_nonoverlapping_hallucinated_component_root():
     predicted["recursive_leaf_source_mask"][0, 8, [4, 5]] = True
     predicted["level_ids"][0, 8] = 1
 
-    result = evaluate_half_decays(
-        predicted, truth, source_category="ccbar"
-    )
+    result = evaluate_half_decays(predicted, truth, source_category="ccbar")
 
     assert len(result.rows) == 2
     assert result.predicted_component_root_count == 3
@@ -256,9 +361,7 @@ def test_momentum_errors_use_source_alignment_and_have_denominators():
     )
     assert metrics.kinematics.relative_p3.numerator == pytest.approx(0.5)
     assert metrics.kinematics.relative_p3.denominator == 3
-    expected_mass_sum = math.sqrt(21.0**2 - 2.0**2) - math.sqrt(
-        21.0**2 - 3.0**2
-    )
+    expected_mass_sum = math.sqrt(21.0**2 - 2.0**2) - math.sqrt(21.0**2 - 3.0**2)
     assert metrics.kinematics.mass.numerator == pytest.approx(expected_mass_sum)
 
 
@@ -434,17 +537,13 @@ def test_ineligible_unary_is_unrepresentable_for_checkpoint_direct_target():
     truth["source_node_ids"] = torch.cat(
         (truth["source_node_ids"], torch.tensor([[11]], dtype=torch.long)), dim=1
     )
-    truth["valid_reconstruction_target"] = torch.ones(
-        (1, count + 1), dtype=torch.bool
-    )
+    truth["valid_reconstruction_target"] = torch.ones((1, count + 1), dtype=torch.bool)
     truth["valid_reconstruction_target"][0, 11] = False
     truth["recursive_reconstructable_complete"] = torch.ones(
         (1, count + 1), dtype=torch.bool
     )
 
-    primary = evaluate_full_decay(
-        predicted, truth, target_policy="complete_only"
-    )
+    primary = evaluate_full_decay(predicted, truth, target_policy="complete_only")
     diagnostic = evaluate_full_decay(
         predicted,
         truth,
@@ -454,9 +553,7 @@ def test_ineligible_unary_is_unrepresentable_for_checkpoint_direct_target():
 
     assert primary.available
     assert primary.target_representable.value == 0
-    assert primary.target_unrepresentable_reasons == (
-        "ineligible_direct_intermediate",
-    )
+    assert primary.target_unrepresentable_reasons == ("ineligible_direct_intermediate",)
     assert primary.perfectLCAG is False
     assert primary.truth_mother_count == 5
     assert diagnostic.available
@@ -468,17 +565,11 @@ def test_ineligible_unary_is_unrepresentable_for_checkpoint_direct_target():
 
 def test_half_units_keep_multiplicity_when_one_b_target_is_ineligible():
     truth = _full_tree()
-    truth["valid_reconstruction_target"] = torch.ones_like(
-        truth["node_mask"]
-    )
+    truth["valid_reconstruction_target"] = torch.ones_like(truth["node_mask"])
     truth["valid_reconstruction_target"][0, 8] = False
-    truth["recursive_reconstructable_complete"] = torch.ones_like(
-        truth["node_mask"]
-    )
+    truth["recursive_reconstructable_complete"] = torch.ones_like(truth["node_mask"])
 
-    result = evaluate_half_decays(
-        _clone(truth), truth, source_category="signal"
-    )
+    result = evaluate_half_decays(_clone(truth), truth, source_category="signal")
 
     assert len(result.rows) == 2
     assert not result.available
@@ -491,9 +582,7 @@ def test_recursive_detector_source_conflict_changes_eligibility_not_topology_key
     truth["recursive_leaf_source_mask"][0, 0, 1] = True
 
     full = evaluate_full_decay(_clone(truth), truth)
-    halves = evaluate_half_decays(
-        _clone(truth), truth, source_category="signal"
-    )
+    halves = evaluate_half_decays(_clone(truth), truth, source_category="signal")
 
     assert full.available
     assert full.target_representable.value == 0
@@ -503,9 +592,7 @@ def test_recursive_detector_source_conflict_changes_eligibility_not_topology_key
     assert full.perfectLCAG is False
     assert len(halves.rows) == 2
     assert all(row.available for row in halves.rows)
-    assert sum(
-        int(row.target_representable.value == 0) for row in halves.rows
-    ) == 1
+    assert sum(int(row.target_representable.value == 0) for row in halves.rows) == 1
     assert halves.both_halves_perfect_lcag.value == 0
 
 

@@ -20,6 +20,8 @@ ROLLOUT_STOP_REASONS = {
     1: "no_valid_new_mother",
     2: "configured_root_reconstructed",
     3: "maximum_level",
+    4: "node_limit_reached",
+    5: "beam_selected_empty",
 }
 
 
@@ -40,10 +42,7 @@ def inference_diagnostics(
     p4 = batch["p4"][event_index].detach().cpu()
     sources, canonical_keys = canonical_fsp_membership(batch, event_index)
     detector_sources = (
-        batch["recursive_leaf_source_mask"][event_index]
-        .bool()
-        .detach()
-        .cpu()
+        batch["recursive_leaf_source_mask"][event_index].bool().detach().cpu()
     )
 
     indegree = adjacency.sum(dim=0)
@@ -89,18 +88,12 @@ def inference_diagnostics(
         if bool(roots.any())
         else torch.zeros(detector_sources.shape[-1], dtype=torch.long)
     )
-    detector_source_width = int(
-        result.input_audit.detector_source_counts[event_index]
-    )
-    duplicate_detector_sources = int(
-        (detector_usage[:detector_source_width] > 1).sum()
-    )
+    detector_source_width = int(result.input_audit.detector_source_counts[event_index])
+    duplicate_detector_sources = int((detector_usage[:detector_source_width] > 1).sum())
     conflicting_mother_count = 0
     conflicting_detector_resource_count = 0
     for mother in active_positions.tolist():
-        daughters = (adjacency[mother] & active).nonzero(
-            as_tuple=False
-        ).flatten()
+        daughters = (adjacency[mother] & active).nonzero(as_tuple=False).flatten()
         if daughters.numel() < 2:
             continue
         daughter_usage = detector_sources[daughters].sum(dim=0)
@@ -148,8 +141,7 @@ def inference_diagnostics(
             result.evaluation_slice_multiplicity[event_index]
         ),
         "accepted_mother_count": sum(
-            int(mask[event_index].sum())
-            for mask in result.rollout.accepted_query_masks
+            int(mask[event_index].sum()) for mask in result.rollout.accepted_query_masks
         ),
         "acyclic_by_strict_level_order": bool(levels_ordered),
         "single_parent": bool((indegree <= 1).all()),
@@ -157,9 +149,7 @@ def inference_diagnostics(
         "inference_structurally_valid": structurally_valid,
         "forest_root_sources_disjoint": duplicate_sources == 0,
         "duplicate_root_source_count": duplicate_sources,
-        "forest_root_detector_resources_disjoint": (
-            duplicate_detector_sources == 0
-        ),
+        "forest_root_detector_resources_disjoint": (duplicate_detector_sources == 0),
         "duplicate_root_detector_resource_count": duplicate_detector_sources,
         "detector_resource_count": detector_source_width,
         "recursive_detector_sources_disjoint": recursive_sources_disjoint,
@@ -176,9 +166,7 @@ def inference_diagnostics(
         "p4_closure_denominator": closure_denominator,
         "p4_closure_eligible": closure_denominator > 0,
         "p4_closure_rate": (
-            closure_numerator / closure_denominator
-            if closure_denominator
-            else None
+            closure_numerator / closure_denominator if closure_denominator else None
         ),
         "maximum_p4_closure_residual": maximum_closure_residual,
         "p4_closure_tolerance": float(p4_tolerance),
@@ -197,10 +185,7 @@ def serialize_reconstructed_tree(
     adjacency = batch["daughter_adjacency"][event_index].bool().detach().cpu()
     sources, canonical_keys = canonical_fsp_membership(batch, event_index)
     detector_sources = (
-        batch["recursive_leaf_source_mask"][event_index]
-        .bool()
-        .detach()
-        .cpu()
+        batch["recursive_leaf_source_mask"][event_index].bool().detach().cpu()
     )
     forest = result.forest_root_mask[event_index].detach().cpu()
     b_roots = result.b_root_mask[event_index].detach().cpu()
@@ -255,7 +240,9 @@ def summarize_inference_diagnostics(
     closure_numerator = sum(int(row["p4_closure_numerator"]) for row in rows)
     closure_denominator = sum(int(row["p4_closure_denominator"]) for row in rows)
     source_numerator = sum(int(row["input_source_coverage_numerator"]) for row in rows)
-    source_denominator = sum(int(row["input_source_coverage_denominator"]) for row in rows)
+    source_denominator = sum(
+        int(row["input_source_coverage_denominator"]) for row in rows
+    )
 
     def rate(name: str) -> dict[str, float | int | None]:
         numerator = sum(int(bool(row[name])) for row in rows)
@@ -287,9 +274,7 @@ def summarize_inference_diagnostics(
         ),
         "p4_closure": {
             "value": (
-                closure_numerator / closure_denominator
-                if closure_denominator
-                else None
+                closure_numerator / closure_denominator if closure_denominator else None
             ),
             "numerator": closure_numerator,
             "denominator": closure_denominator,
@@ -297,9 +282,7 @@ def summarize_inference_diagnostics(
         },
         "input_source_coverage": {
             "value": (
-                source_numerator / source_denominator
-                if source_denominator
-                else None
+                source_numerator / source_denominator if source_denominator else None
             ),
             "numerator": source_numerator,
             "denominator": source_denominator,
@@ -311,9 +294,89 @@ def summarize_inference_diagnostics(
     }
 
 
+def summarize_beam_search_diagnostics(
+    diagnostics: Iterable[dict[str, Any]],
+) -> dict[str, Any]:
+    """Sum search counters, retain resource peaks, and count pruned events."""
+
+    rows = list(diagnostics)
+    if rows and any(
+        row.get("configuration") != rows[0].get("configuration")
+        or row.get("policy_version") != rows[0].get("policy_version")
+        for row in rows
+    ):
+        raise ValueError("beam diagnostic aggregation requires one search policy")
+    numeric_names = sorted(
+        {
+            name
+            for row in rows
+            for name, value in row.items()
+            if isinstance(value, (int, float)) and not isinstance(value, bool)
+        }
+    )
+    output: dict[str, Any] = {
+        "event_count": len(rows),
+        "policy_version": rows[0].get("policy_version") if rows else None,
+        "configuration": rows[0].get("configuration") if rows else None,
+        "proposal_diagnostics_available_event_count": sum(
+            int(
+                row.get(
+                    "proposal_diagnostics_available",
+                    not row.get("width_one_greedy_compatibility", False),
+                )
+            )
+            for row in rows
+        ),
+    }
+    for name in numeric_names:
+        values = [row.get(name, 0) for row in rows]
+        output[name] = (
+            max(values, default=0) if name.startswith("max_") else sum(values)
+        )
+    for name, predicate in (
+        (
+            "events_with_pruning",
+            lambda row: any(
+                value > 0
+                for key, value in row.items()
+                if "pruned" in key and isinstance(value, (int, float))
+            ),
+        ),
+        (
+            "events_at_query_expansion_limit",
+            lambda row: row.get("query_expansion_limit_hits", 0) > 0,
+        ),
+        (
+            "events_with_completed_candidate",
+            lambda row: row.get("completed_candidates", 0) > 0,
+        ),
+    ):
+        eligible_rows = (
+            rows
+            if name == "events_with_completed_candidate"
+            else [
+                row
+                for row in rows
+                if row.get(
+                    "proposal_diagnostics_available",
+                    not row.get("width_one_greedy_compatibility", False),
+                )
+            ]
+        )
+        numerator = sum(int(predicate(row)) for row in eligible_rows)
+        denominator = len(eligible_rows)
+        output[name] = {
+            "numerator": numerator,
+            "denominator": denominator,
+            "value": numerator / denominator if denominator else None,
+        }
+    return output
+
+
 __all__ = [
     "ROLLOUT_STOP_REASONS",
     "inference_diagnostics",
     "serialize_reconstructed_tree",
     "summarize_inference_diagnostics",
+    "summarize_beam_search_diagnostics",
 ]

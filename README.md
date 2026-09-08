@@ -1,347 +1,212 @@
-# hypertagging-unified
+# HyperTagging
 
-Unified migration workspace for the historical HyperTagging repositories. This
-repository now contains migrated, CPU-testable components through the current
-level-autoregressive baseline. It is still a migration artifact, not a polished
-reproduction package.
+HyperTagging is a unified, CPU-testable implementation of the historical
+HyperTagging, GraFEI, reduced-GraFEI, and GPT-like reconstruction studies. The
+current production path uses truth-separated `direct-mdst-tree-v4` events, a
+shared hyperbolic encoder, and level-autoregressive set reconstruction.
 
-The current revision adds a production-oriented, CPU-verified implementation
-of hyperbolic-pretrained level-autoregressive set reconstruction while
-preserving versioned compatibility with historical preprocessing:
+The software contracts are exercised on small CPU fixtures. A historical
+bounded real-mDST pilot verified the Belle II preprocessing API path at its
+recorded revision; no current-revision real pilot has run, and full-training
+physics performance is not established by this repository. Treat the
+[current audit](docs/audits/current_status.md) as the sole mutable readiness
+statement; historical reports and run receipts are evidence for their recorded
+revisions only.
 
-- production `direct-mdst-tree-v4` event-row data, explicit provenance, and
-  separate model-input versus truth-supervision features;
-- v1/v2/v3 compatibility without fabricated detector fields;
-- canonical structured two-B channels and unordered Upsilon pair identity;
-- track, ECL, masked KLM, and composite adapters in one shared latent/Poincare space;
-- exact retained-tree LCA/path geometry, topology-safe directed-parent,
-  radius-depth, channel, dimension-aware variance, and covariance pretraining;
-- relation bias applied to actual stair-causal attention logits;
-- overlap-aware physical pair relations that expose mass/energy only for
-  disjoint recursive sources;
-- batched teacher-forced validation, a CPU-reference-equivalent padded
-  multi-event free rollout, and a bounded batch-size-one correctness oracle,
-  all with daughter-summed p4;
-- fixture-executable dataset, geometry, rollout, and QA notebooks.
+## Documentation
 
-These additions are software-validated on tiny CPU fixtures. A bounded
-50-event charged-B mDST pilot validates the release-08-03-00 fit/PID API path,
-strict B roots, and KLM collection, while incomplete KLM-to-K_L coverage
-remains explicit. Full-training physics performance remains unverified and
-HTCondor-only.
+- [Documentation wiki (canonical Pages target; deployment pending)](https://boyangyu0.github.io/HyperTagging/wiki/)
+- [Dashboard (canonical Pages target; deployment pending)](https://boyangyu0.github.io/HyperTagging/wiki/_generated/status/)
+- [Local wiki source](docs/index.rst)
+- [Training and evaluation guide](docs/training.md)
+- [Preprocessing contract](docs/preprocessing_design.md)
+- [Full-decay evaluation contract](docs/full_decay_reconstruction_evaluation.md)
+- [basf2 and ONNX deployment](docs/basf2_onnx_full_decay.md)
 
-The current audit boundary, exact local verification counts, and remote CI
-state live only in [`docs/audits/current_status.md`](docs/audits/current_status.md);
-this overview does not duplicate mutable audit claims.
-
-Scientific behavior is preserved by keeping historical variants separate and by
-adding equivalence or smoke tests before each migrated component is treated as
-usable. Full training, full-data preprocessing, and performance reproduction
-remain GPU/HPC-only and are not verified from repository contents.
-
-## Historical Sources
-
-The unified package consolidates reusable code from:
-
-- `HyperTagging`: original Toy-MC/BASF2 HyperTagging studies.
-- `HyperTaggingColab`: cleaner collaboration package structure and embedding
-  utilities.
-- `graFEI`: early full GraFEI HyperTagging workflow.
-- `graFEI_reduced`: reduced/final GraFEI workflow source for many model and
-  reconstruction definitions.
-- `graFEI_gpt`: GPT-like/autoregressive GraFEI branch.
-
-See `REPOSITORY_MAP.md` for the current compact mapping. The current audit and
-immutable historical snapshots are indexed in
-[`docs/audits/README.md`](docs/audits/README.md).
-
-## Data Roots
-
-- Toy-MC inputs after BASF2 generation and before preprocessing:
-  `/home/boyang/data/MC`
-- Original GraFEI inputs before preprocessing:
-  `/home/boyang/data/graFEI`
-
-Derived/preprocessed folders such as `emb/`, `comb/`, `gpt/`, `ConstEmb/`, and
-`RegEmb/` are not treated as original inputs.
-
-## What Is Migrated
-
-- Utilities: padding, device, seeds, simple I/O, checkpoint loading with CPU
-  `map_location`.
-- Data: provisional batch contracts, tiny fixtures, dry-run preprocessing
-  adapters, GPT-like collate helpers.
-- Models: historical embedding, link, reconstruction, and GPT-like model
-  classes where the source class is self-contained.
-- Losses: tensor-level embedding, reconstruction, link, and GPT-like losses.
-- Training: CPU dry-run loops for embedding, link, reconstruction, and GPT-like
-  stages.
-- Reconstruction: single-level helpers, historical GraFEI compatibility
-  fixtures, and strict offline full/half-decay evaluation from physically
-  compacted schema-v4 detector FSPs.
-- Examples: minimal CPU examples for Toy-MC, GraFEI, and GPT-like workflows.
-
-## Known Limitations
-
-- Historical preprocessing scripts still contain hard-coded legacy paths. The
-  migrated adapters construct dry-run commands and document intended input
-  roots; they do not rewrite scientific preprocessing semantics.
-- Full epoch training loops and full-data loader orchestration remain
-  production integration work; revised checkpoint, split, normalization, and
-  evaluation surfaces are implemented and CPU-tested.
-- `graFEI_gpt.models.MultiGPT` was not executable as written. The migrated
-  `MultiGPT` preserves the verified autoregressive embedding reconstruction and
-  embedding-link branches; the historical PDG/feature branch remains ambiguous.
-- Full performance numbers and physics results are not verified from repository
-  contents.
-- The direct-mDST inspection and four-momentum validation notebooks are
-  executable integration artifacts. Historical exploratory notebooks remain
-  references in the source repositories.
-
-## CPU Smoke Commands
-
-Create the CPU-only project environment on the data volume (not in the AFS
-checkout):
+These URLs become public after a repository administrator enables GitHub Pages
+with **GitHub Actions** as its source and the first successful trusted `master`
+deployment completes. Until then, build the same site locally:
 
 ```bash
-UV_PROJECT_ENVIRONMENT=/data/dust/user/boyangyu/uv_env \
-UV_CACHE_DIR=/data/dust/user/boyangyu/uv_cache \
-uv sync --python 3.11 --all-extras
+python3.11 -m venv .venv-docs
+.venv-docs/bin/python -m pip install -r docs/requirements.txt
+docs_out="$(mktemp -d)"
+.venv-docs/bin/python scripts/build_docs.py --output "$docs_out"
+docs_html="$(find "$docs_out" -maxdepth 1 -type d -name html -print -quit)"
+.venv-docs/bin/python -m http.server 8000 --directory "$docs_html"
 ```
 
-Run the full CPU test suite:
+The build is offline after dependency installation and does not import the
+project, open training data or checkpoints, or require basf2 or CUDA. See the
+[wiki maintenance guide](docs/wiki/maintaining.rst) for its publication and
+privacy boundary.
+
+## Repository layout
+
+- `src/hypertagging/`: data contracts, preprocessing, models, losses, training,
+  reconstruction, evaluation, and deployment integration.
+- `configs/`: model presets, ablations, data selections, and guarded production
+  contracts.
+- `scripts/`: user-facing preprocessing, training, evaluation, documentation,
+  and batch-rendering commands.
+- `tests/`: CPU contract, regression, and compatibility tests.
+- `examples/`: minimal fixture-based CPU runs.
+- `notebooks/`: the registry-backed inspection and evidence suite.
+- `docs/`: current guides plus explicitly separated audit history.
+
+Compatibility adapters keep v1-v3 inputs readable without making them the
+production contract. The [schema history](docs/schema_migration_history.md)
+records those boundaries. Exact scientific and implementation invariants for
+contributors and coding agents are in [AGENTS.md](AGENTS.md).
+
+## Project environment
+
+Use the existing lock without relocking dependencies:
 
 ```bash
-/data/dust/user/boyangyu/uv_env/bin/python -m pytest
+uv sync --frozen --all-extras
+source scripts/activate_env.sh project
+python scripts/check_uv_lock_direct_dependencies.py
 ```
 
-Run dry-run CLIs:
+Keep environments, datasets, checkpoints, notebook outputs, and other large
+artifacts outside the checkout. The separately frozen CUDA environment and its
+verification procedure are documented in
+[environment/gpu/README.md](environment/gpu/README.md).
+
+Run the CPU suite with bounded threads:
 
 ```bash
-uv --cache-dir /tmp/uv-cache run python scripts/train_embedding.py --dry-run --device cpu
-uv --cache-dir /tmp/uv-cache run python scripts/train_link.py --dry-run --device cpu
-uv --cache-dir /tmp/uv-cache run python scripts/train_reconstruction.py --dry-run --device cpu
-uv --cache-dir /tmp/uv-cache run python scripts/train_gpt_like.py --dry-run --device cpu
-uv --cache-dir /tmp/uv-cache run python scripts/evaluate_reconstruction.py --dry-run --device cpu
-uv --cache-dir /tmp/uv-cache run python scripts/run_gpt_like.py --dry-run --device cpu
+CUDA_VISIBLE_DEVICES="" OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 \
+  python -m pytest -q
 ```
 
-Run the new level-autoregressive CPU dry-runs:
+Small end-to-end training checks are available without data or a GPU:
 
 ```bash
-uv --cache-dir /tmp/uv-cache run python scripts/train_hyperbolic_pretrain.py --dry-run --tiny --device cpu --max-steps 2 --batch-size 2
-uv --cache-dir /tmp/uv-cache run python scripts/train_level_reconstruction.py --dry-run --tiny --device cpu --max-steps 2 --batch-size 2
+python scripts/train_hyperbolic_pretrain.py \
+  --dry-run --tiny --device cpu --max-steps 2 --batch-size 2
+python scripts/train_level_reconstruction.py \
+  --dry-run --tiny --device cpu --max-steps 2 --batch-size 2
+python scripts/execute_notebook_smoke_tests.py --list
 ```
 
-Full CUDA training and full-data preprocessing are HTCondor-only. Local CUDA is
-refused unless it is an explicit tiny smoke test guarded by `condor_q` and
-`nvidia-smi` checks.  See `docs/hyperbolic_level_autoregressive_reconstruction.md`,
-`docs/training.md`, and `docs/condor.md`.
+Fixture results validate software behavior, not physics performance.
 
-## Direct mDST Preprocessing
+## Core workflows
 
-The unified repo now includes a direct-mDST preprocessing path under
-`src/hypertagging/preprocessing`. Run the producer inside a basf2 environment:
+### Preprocess mDST data
+
+Run the producer inside the documented Belle II release, writing output to a
+data volume:
 
 ```bash
 source /cvmfs/belle.cern.ch/tools/b2setup release-08-03-00
 python3 scripts/preprocess_mdst.py \
   --input /path/to/generic_mdst.root \
-  --output /data/dust/user/boyangyu/hypertagging/processed.parquet \
+  --output /data/volume/hypertagging/processed.parquet \
   --schema-version direct-mdst-tree-v4 \
   --max-events 50
 ```
 
-Validate or inspect output with normal Python:
+Then verify the event rows with ordinary Python:
 
 ```bash
-/data/dust/user/boyangyu/uv_env/bin/python scripts/verify_preprocessing.py \
-  --input /data/dust/user/boyangyu/hypertagging/processed.parquet \
+python scripts/verify_preprocessing.py \
+  --input /data/volume/hypertagging/processed.parquet \
   --all-events --check-tree --check-p4 --check-pid
 ```
 
-See `docs/preprocessing_design.md` for the schema, legacy compatibility notes,
-and the reco-kinematics/truth-topology separation.
+The producer never migrates existing Parquet files in place. Raw-track PID,
+detector availability, model-input summaries, truth-only targets, event
+identity, and recursive source provenance remain separate contracts.
 
-New files default to the truth-clean, streamable v4 schema. V1/v2/v3 remain
-loadable through the versioned compatibility adapters; trainers require
-explicit diagnostic opt-in for their legacy-conflated PID summaries.
+### Train and evaluate
 
-Inspect the real parquet schema, variable event/tree structure, GPT attention
-contract, and a complete CPU forward/loss/backward/optimizer step in:
-
-```text
-notebooks/inspect_preprocessed_parquet_and_gpt_like.ipynb
-```
-
-The corresponding direct-tree adapter is
-`hypertagging.data.direct_gpt`. It handles variable node counts and tree depths;
-the historical fixed-width level collator must not be applied directly to this
-schema.
-
-Run all current deterministic CPU fixture notebooks (the runner reports the
-authoritative group count with `--list`):
+Real runs consume an immutable source-role selection and authenticated dataset
+index. Fit normalization on training rows only, preserve the validation UID
+cohort, and never use the sealed test role for tuning. A typical reconstruction
+invocation is:
 
 ```bash
-/data/dust/user/boyangyu/uv_env/bin/python \
-  scripts/execute_notebook_smoke_tests.py \
-  --keep-output /tmp/hypertagging-notebook-smoke
-```
-
-For real data, set `HYPERTAGGING_PARQUET` and a data-volume
-`HYPERTAGGING_FIGURE_DIR`; see `docs/dataset_visualization.md`.
-
-Render the prerequisite 5k pilot and 100k canary manifests without submitting:
-
-```bash
-python scripts/mdst_batch_production.py plan --campaign-profile pilot \
-  --input-root /path/to/MC --output-root /data/volume/hypertagging \
-  --manifest /data/volume/pilot.jsonl
-python scripts/mdst_batch_production.py plan --campaign-profile canary \
-  --input-root /path/to/MC --output-root /data/volume/hypertagging \
-  --manifest /data/volume/canary.jsonl
-```
-
-The campaign/task hashes, exact clean source commit/tree, input identities,
-source ranges, and marker payload/sidecar digests are enforced by every worker.
-Interrupted shards are quarantined and retried. Plan a 10-million-input-event
-production and print the HTCondor description without submitting only after a
-representative canary report exists:
-
-```bash
-scripts/condor/submit_mdst_production_10m.sh --dry-run
-```
-
-Submission is deliberately separate and is not authorized by fixture tests or
-a tiny pilot. The current recommendation and external evidence gate live only
-in `docs/audits/current_status.md`.
-
-Run minimal examples:
-
-```bash
-uv --cache-dir /tmp/uv-cache run python examples/toy_mc_minimal/run_example.py
-uv --cache-dir /tmp/uv-cache run python examples/grafei_minimal/run_example.py
-uv --cache-dir /tmp/uv-cache run python examples/gpt_like_minimal/run_example.py
-```
-
-## Equivalence Status
-
-- Exact parity tests exist for selected utilities, losses, model state/forward
-  behavior, one-step reconstruction formulas, full-reconstruction evaluation
-  formulas, GPT masks/collate behavior, and dry-run CLI surfaces.
-- Tiny synthetic fixtures are used for CPU tests. They validate shape,
-  conventions, and formula preservation, not final scientific results.
-- Components listed in `MIGRATION_PLAN.md` under "must not be refactored" should
-  remain unchanged until broader equivalence tests exist.
-
-## Historical schema compatibility
-
-V1/v2/v3 remain readable through conservative adapters, but they do not define
-the production architecture. Detailed evolution is preserved in
-[`docs/schema_migration_history.md`](docs/schema_migration_history.md); current
-documentation describes schema-v4 first.
-
-Real (non-dry-run) CPU pilots now accept parquet data:
-
-```bash
-python scripts/train_hyperbolic_pretrain.py \
-  --data /path/to/tiny.parquet --device cpu --max-steps 2 --batch-size 2 \
-  --output-dir /tmp/hypertagging-pretrain
 python scripts/train_level_reconstruction.py \
-  --data /path/to/tiny.parquet \
-  --pretrained-encoder /tmp/hypertagging-pretrain/checkpoint.pt \
-  --device cpu --max-steps 2 --batch-size 2 \
-  --output-dir /tmp/hypertagging-reconstruction
-```
-
-The same CLIs run full CUDA jobs inside HTCondor. Outside Condor, full CUDA is
-refused. No job is submitted by either trainer.
-
-## Truth-clean schema-v4 and streaming training
-
-New preprocessing defaults to `direct-mdst-tree-v4`. V4 writes one event per
-Parquet row with bounded row-group buffering and a metadata sidecar. It keeps
-`daughter_input_pid_histogram` separate from the diagnostic
-`daughter_truth_pid_histogram`; only the former is a model input. V1/v2/v3
-remain readable, but real trainers reject their legacy-conflated PID contract
-unless `--allow-legacy-conflated` is supplied. Such runs are recorded as
-diagnostic and are not data-compatible performance measurements.
-
-Raw tracks enter with unknown input PID. A detector-context pass predicts a
-charge-compatible leaf PID distribution, rebuilds the differentiable track
-energy and physical relations, and a second reconstruction-context pass
-predicts Level-1 mothers and pointers. Composite p4 remains an exact recursive
-daughter sum. Production JSONL manifests may use `output_file`; the trainers
-iterate event rows lazily, fit masked Welford normalization on training only,
-and never materialize every batch.
-
-For a schema-v4 pilot:
-
-```bash
-source /cvmfs/belle.cern.ch/tools/b2setup release-08-03-00
-python3 scripts/preprocess_mdst.py \
-  --input /path/to/input.root --output /data/path/pilot-v4.parquet \
-  --schema-version direct-mdst-tree-v4 --max-events 50 \
-  --event-buffer-size 32 --row-group-size 16
-```
-
-## Runtime normalization and scale index
-
-Common/composite tensors remain raw at the streaming boundary. The model owns a
-train-fitted `RuntimeFeatureNormalizer`, applies it before contextual encoding,
-rebuilds PID-conditioned p4/composite quantities in raw physical units, and
-applies the same transform before pass B. PID token, level, node kind, active,
-and copied are categorical/binary embeddings rather than z-scored numbers.
-
-Build the reusable startup index once:
-
-```bash
-python scripts/build_dataset_index.py \
+  --config configs/model_presets/production_baseline.yaml \
   --data /data/volume/manifest.jsonl \
-  --output /data/volume/dataset_index.json
+  --dataset-index /data/volume/dataset_index.json \
+  --pretrained-encoder /data/volume/pretrain/checkpoint.pt \
+  --device cuda \
+  --output-dir /data/volume/reconstruction
 ```
 
-Pass `--dataset-index /data/volume/dataset_index.json` to either trainer. The
-index supplies Welford and capacity/split summaries without repeated event
-payload scans. `--rescan-dataset` is the diagnostic fallback.
+Production jobs use the guarded Slurm or HTCondor workflows documented in
+[docs/condor.md](docs/condor.md); rendering a job never submits it. Validate a
+trusted pretraining/reconstruction checkpoint pair before running the strict
+CPU full-decay evaluator. Greedy inference remains the default. Opt-in bounded
+full-depth beam search reports deployable top-1 separately from truth-only
+oracle@K metrics.
 
-Exact interrupted/resumed event order is supported for `--num-workers 0`.
-Multiworker training uses disjoint file/row-group work units, but exact
-mid-epoch multiworker resume is deliberately rejected pending a coordinated
-worker-cursor protocol.
+## Updating the dashboard after training
 
-Before any 10M storage migration, benchmark event-JSON v4 against experimental
-native nested Arrow v5:
+The dashboard is generated from a small allowlist of tracked evidence declared
+in `docs/_ext/wiki_status.py`; it does not poll jobs, inspect arbitrary run
+directories, or execute training. Never edit or commit `docs/wiki/_generated/`
+or `docs/_build/`.
 
-```bash
-python scripts/benchmark_parquet_storage.py \
-  --data /data/volume/pilot-v4.parquet \
-  --output-dir /data/volume/storage-benchmark --max-events 10000
-```
+After a training or evaluation run:
 
-The benchmark is a decision artifact, not evidence that native storage is
-faster for every shard size.
+1. Validate the run receipt, then add only the reduced, reviewable metadata
+   needed for the dashboard. Keep checkpoints, raw logs, host/user paths,
+   scheduler identifiers, and data outside the publication boundary.
+2. Append the relevant verification record and update the reviewed current
+   status or issue ledger only when their claims actually change. Do not
+   overwrite dated receipts; add a new immutable record and update the
+   `SOURCE_PATHS` allowlist and its tests in the same branch when a campaign is
+   superseded.
+3. Regenerate nothing in place. Verify the derived dashboard with:
 
-## Offline full-decay model evaluation
+   ```bash
+   python -m pytest -q tests/test_docs_*_cpu.py
+   docs_check="$(mktemp -d)"
+   python scripts/build_docs.py --output "$docs_check"
+   docs_html="$(find "$docs_check" -maxdepth 1 -type d -name html -print -quit)"
+   docs_generated="$(find "$docs_check" -type d -name _generated -print -quit)"
+   python scripts/validate_docs.py \
+     --html "$docs_html" \
+     --generated "$docs_generated" \
+     --check-generation --workflow
+   ```
 
-The current evaluator consumes the same `direct-mdst-tree-v4` preprocessed
-Parquet selection/index used for training. It is not a basf2 candidate builder
-and does not accept GraFEI `pairs`. Before each CPU rollout it physically
-removes all stored higher-level particles, retaining only track, ECL-cluster,
-and KLM-cluster FSP records; the untouched truth tree is held separately for
-metrics.
+4. Open a pull request or merge request (PR/MR) containing the evidence and any
+   required allowlist/test update. Review the generated status values, source
+   hashes, freshness warnings, and scientific-claim boundary before merging.
 
-Validate the pretraining/reconstruction checkpoint lineage with
-`scripts/validate_reconstruction_checkpoint_pair.py`, then run
-`scripts/evaluate_full_decay.py`. Full scope contributes one root unit per
-eligible event; B-half scope contributes exactly two units per eligible event
-plus an event-level both-halves result. Native schema-v4 has no truth-defined
-continuum sides, so each explicit top-level continuum truth particle is
-evaluated as a multiplicity-one component and no two-side conjunction is
-invented. Primary topology scoring keeps direct-target incompatibilities as
-failed trials; contracted topology is diagnostic only. See
-[`docs/full_decay_reconstruction_evaluation.md`](docs/full_decay_reconstruction_evaluation.md)
-for the algorithm, metric definitions, current checkpoint command, and output
-contract. The training/HPO compatibility audit is tracked in
-[`docs/full_decay_training_hpo_compatibility_handoff.md`](docs/full_decay_training_hpo_compatibility_handoff.md)
-with a machine-readable JSON companion.
+On GitHub, [.github/workflows/docs.yml](.github/workflows/docs.yml) performs the
+PR checks automatically; a successful trusted merge to `master` rebuilds and
+deploys Pages. A GitLab mirror may use an MR for the same review flow, but this
+repository does not ship a GitLab runner or Pages configuration: its MR
+pipeline must run the commands above and the merged revision must reach the
+canonical GitHub `master` branch for this Pages deployment to update.
+
+Training itself deliberately never pushes, opens a PR/MR, or publishes the
+site. The automatic portion begins when reviewed evidence is committed to the
+branch. More detail is in the [maintenance guide](docs/wiki/maintaining.rst).
+
+## Historical scope and limitations
+
+The unified package preserves selected behavior from the original Toy-MC
+HyperTagging repository, HyperTaggingColab, GraFEI, `graFEI_reduced`, and
+`graFEI_gpt`. Historical paths and variants remain compatibility references,
+not current production defaults. The detailed Phase 1-13 decisions and
+historical source mapping are preserved in the
+[migration provenance](docs/historical_migration_provenance.md). In particular:
+
+- full-data reproduction still depends on external data and checkpoint
+  provenance;
+- legacy scripts may contain historical site-specific paths;
+- synthetic CPU fixtures do not establish convergence, throughput, basf2
+  interoperability, or physics quality;
+- archived audits, reports, receipts, snapshots, and production data cards are
+  retained intentionally and must not be treated as duplicate active guides.
+
+Use the [examples guide](examples/README.md) for minimal runnable paths and the
+[notebook guide](notebooks/README.md) for the evidence registry.

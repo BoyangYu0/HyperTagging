@@ -15,6 +15,14 @@ python scripts/execute_notebook_smoke_tests.py \
 These commands use synthetic fixtures. They validate software behavior and do
 not measure physics performance.
 
+## Publishing post-training status
+
+Training outputs do not update the public dashboard directly. After validating
+a terminal receipt, publish only reduced metadata through a reviewed PR/MR; the
+documentation build then regenerates the dashboard. The canonical evidence,
+privacy, validation, GitHub deployment, and GitLab-mirror procedure is in
+[`docs/wiki/maintaining.rst`](wiki/maintaining.rst).
+
 The real-parquet CPU pilot path is separate from the fixture-only dry run:
 
 Model architecture is resolved from one of `tiny_cpu`, `gpu_debug`, or
@@ -54,6 +62,12 @@ file and/or physics category. Duplicate event IDs are rejected before
 splitting. `MaskedFeatureNormalizer` fits each feature only from available
 training-split values, stores its state with the checkpoint, and leaves missing
 positions at masked zero after transformation.
+
+The historical metadata-only bridge from the 15-key `train_035k` selection to
+the 16-key loader contract is recorded in the dated
+[repromotion package](training_selection_repromotion_20260831.md) and its
+[one-use publication boundary](training_selection_repromotion_publication_20260831.md).
+Neither record is selection activation or training authorization.
 
 Production loaders should stratify diagnostics by exact channel ID,
 multiplicity, depth, source category, and rare/unseen channels. Exact channel

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
+from dataclasses import replace
 
 import pytest
 import torch
@@ -21,7 +22,16 @@ from hypertagging.reconstruction.hierarchical_inference import (
     HierarchicalInferenceConfig,
     project_schema_v4_fsps,
     reconstruct_full_tree_from_fsps,
+    reconstruct_beam_from_fsps,
 )
+from hypertagging.reconstruction.beam_search import BeamSearchConfig
+from hypertagging.evaluation.full_decay_metrics import (
+    evaluate_full_decay,
+    evaluate_half_decays,
+    source_keyed_lcag,
+)
+from hypertagging.evaluation.full_decay_runner import inference_diagnostics
+from hypertagging.evaluation.beam_decay_metrics import evaluate_ranked_decay_candidates
 from hypertagging.reconstruction.level_rollout import (
     RolloutConfig,
     batched_free_rollout,
@@ -42,7 +52,9 @@ def _normalized_native_v4_batch() -> dict[str, torch.Tensor]:
     return batch
 
 
-def _interleave_truth_mothers(batch: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
+def _interleave_truth_mothers(
+    batch: dict[str, torch.Tensor],
+) -> dict[str, torch.Tensor]:
     """Place truth mothers between FSPs instead of relying on an FSP prefix."""
 
     permutation = torch.tensor([0, 4, 1, 5, 2, 6, 3])
@@ -78,22 +90,14 @@ class _TwoBThenUpsilonModel:
     ):
         del pid_kinematics_mode_override, pid_temperature_override, return_attention
         self.inference_mode_flags.append(torch.is_inference_mode_enabled())
-        self.evaluation_metadata_flags.append(
-            "evaluation_leaf_source_keys" in batch
-        )
+        self.evaluation_metadata_flags.append("evaluation_leaf_source_keys" in batch)
         batch_size, node_count = batch["node_mask"].shape
         query_count = 2
         context = batch["node_mask"] & (batch["level_ids"] < target_level)
-        pointer_logits = torch.full(
-            (batch_size, query_count, node_count), -20.0
-        )
+        pointer_logits = torch.full((batch_size, query_count, node_count), -20.0)
         object_logits = torch.full((batch_size, query_count), -20.0)
-        type_logits = torch.full(
-            (batch_size, query_count, len(PDG_TOKENS)), -20.0
-        )
-        cardinality_logits = torch.full(
-            (batch_size, query_count, 7), -20.0
-        )
+        type_logits = torch.full((batch_size, query_count, len(PDG_TOKENS)), -20.0)
+        cardinality_logits = torch.full((batch_size, query_count, 7), -20.0)
         cardinality_logits[..., 2] = 20.0
         if target_level == 1:
             leaves = batch["node_mask"] & (batch["level_ids"] == 0)
@@ -101,10 +105,14 @@ class _TwoBThenUpsilonModel:
             first = leaves & (rank < 2)
             second = leaves & (rank >= 2) & (rank < 4)
             pointer_logits[:, 0] = torch.where(
-                first, torch.full_like(rank, 20.0, dtype=torch.float32), pointer_logits[:, 0]
+                first,
+                torch.full_like(rank, 20.0, dtype=torch.float32),
+                pointer_logits[:, 0],
             )
             pointer_logits[:, 1] = torch.where(
-                second, torch.full_like(rank, 20.0, dtype=torch.float32), pointer_logits[:, 1]
+                second,
+                torch.full_like(rank, 20.0, dtype=torch.float32),
+                pointer_logits[:, 1],
             )
             object_logits[:, 0] = torch.where(
                 leaves.sum(dim=-1) >= 2,
@@ -205,9 +213,7 @@ class _EmptyLevelThenUpsilonModel:
                 torch.full_like(pointer_logits[:, 0], 20.0),
                 pointer_logits[:, 0],
             )
-        type_logits = torch.full(
-            (batch_size, 1, len(PDG_TOKENS)), -20.0
-        )
+        type_logits = torch.full((batch_size, 1, len(PDG_TOKENS)), -20.0)
         type_logits[..., FULL_ROOT_TOKEN] = 20.0
         cardinality_logits = torch.full((batch_size, 1, 7), -20.0)
         cardinality_logits[..., 2] = 20.0
@@ -325,13 +331,13 @@ def test_truth_and_higher_node_perturbations_cannot_change_projection_or_rollout
     )
     assert first_projection.batch.keys() == second_projection.batch.keys()
     for name in first_projection.batch:
-        assert torch.equal(first_projection.batch[name], second_projection.batch[name]), name
+        assert torch.equal(
+            first_projection.batch[name], second_projection.batch[name]
+        ), name
 
     first_model = _TwoBThenUpsilonModel()
     second_model = _TwoBThenUpsilonModel()
-    config = HierarchicalInferenceConfig(
-        scope="full", rollout_config=_rollout_config()
-    )
+    config = HierarchicalInferenceConfig(scope="full", rollout_config=_rollout_config())
     first = reconstruct_full_tree_from_fsps(first_model, source, config=config)
     second = reconstruct_full_tree_from_fsps(second_model, changed, config=config)
     for name in ("p4", "pid_labels", "parent_ids", "daughter_adjacency"):
@@ -372,11 +378,127 @@ def test_full_scope_stops_at_upsilon_while_half_scope_evaluates_b_multiplicity()
     assert (half.batch["parent_ids"][0, b_positions] >= 0).all()
 
 
+@pytest.mark.parametrize("scope", ["full", "half"])
+def test_width_one_beam_wrapper_preserves_greedy_topology_metrics_and_boundaries(scope):
+    source = _normalized_native_v4_batch()
+    original = {name: value.clone() for name, value in source.items()}
+    config = HierarchicalInferenceConfig(scope=scope, rollout_config=_rollout_config())
+    greedy = reconstruct_full_tree_from_fsps(
+        _TwoBThenUpsilonModel(), source, config=config
+    )
+    model = _TwoBThenUpsilonModel()
+    beam = reconstruct_beam_from_fsps(
+        model, source, config=config, beam_config=BeamSearchConfig(beam_width=1)
+    )
+    assert len(beam.candidates) == 1
+    assert source_keyed_lcag(beam.top1.batch) == source_keyed_lcag(greedy.batch)
+    evaluate = evaluate_full_decay if scope == "full" else evaluate_half_decays
+    evaluation_kwargs = (
+        {"truth_root_position": 6} if scope == "full" else {"source_category": "ccbar"}
+    )
+    # Generated positions are representation details, while all scientific
+    # counters and failure denominators must remain exactly compatible.
+    from hypertagging.evaluation.full_decay_metrics import summarize_decay_evaluations
+
+    beam_metrics = summarize_decay_evaluations(
+        [evaluate(beam.top1.batch, source, **evaluation_kwargs)]
+    )
+    greedy_metrics = summarize_decay_evaluations(
+        [evaluate(greedy.batch, source, **evaluation_kwargs)]
+    )
+    assert beam_metrics == greedy_metrics
+    assert beam_metrics["perfect_lcag"]["denominator"] > 0
+    assert inference_diagnostics(beam.top1) == inference_diagnostics(greedy)
+    assert all(model.inference_mode_flags)
+    assert not any(model.evaluation_metadata_flags)
+    assert "evaluation_leaf_source_keys" in beam.top1.batch
+    for name, value in original.items():
+        torch.testing.assert_close(source[name], value)
+
+
+def test_beam_wrapper_applies_projection_before_all_model_calls():
+    source = _normalized_native_v4_batch()
+    model = _TwoBThenUpsilonModel()
+    beam = reconstruct_beam_from_fsps(
+        model,
+        source,
+        beam_config=BeamSearchConfig(beam_width=3),
+        config=HierarchicalInferenceConfig(
+            scope="full", rollout_config=_rollout_config()
+        ),
+    )
+    assert 1 <= len(beam.candidates) <= 3
+    assert model.inference_mode_flags and all(model.inference_mode_flags)
+    assert not any(model.evaluation_metadata_flags)
+    assert all(
+        "evaluation_leaf_source_keys" in candidate.batch
+        for candidate in beam.candidates
+    )
+
+
+def test_end_to_end_beam_oracle_recovers_a_tree_below_greedy_and_beam_top1():
+    class AmbiguousChain(_TwoBThenUpsilonModel):
+        def __call__(self, batch, *, target_level, **kwargs):
+            output = super().__call__(batch, target_level=target_level, **kwargs)
+            pointer = output.pointer
+            pointer.object_logits.fill_(-20.0)
+            pointer.pointer_logits.fill_(-20.0)
+            pointer.type_logits.fill_(-20.0)
+            pointer.object_logits[:, 0] = 12.0
+            pointer.type_logits[
+                :, 0, (4 if target_level == 1 else 5 if target_level == 2 else 1)
+            ] = 12.0
+            if target_level == 1:
+                # Greedy prefers (0,2), whereas the retained truth clade is (0,1).
+                pointer.pointer_logits[0, 0, [0, 2, 1]] = torch.tensor([4.0, 3.0, 2.5])
+            else:
+                roots = (
+                    (batch["node_mask"][0] & (batch["parent_ids"][0] < 0))
+                    .nonzero()
+                    .flatten()
+                    .tolist()
+                )
+                composites = [p for p in roots if int(batch["level_ids"][0, p]) > 0]
+                if not composites:
+                    pointer.object_logits[:, 0] = -20.0
+                else:
+                    leaf = next(p for p in roots if int(batch["level_ids"][0, p]) == 0)
+                    pointer.pointer_logits[0, 0, [composites[0], leaf]] = 12.0
+            return replace(output, pointer=pointer)
+
+    source = _normalized_native_v4_batch()
+    config = HierarchicalInferenceConfig(scope="full", rollout_config=_rollout_config())
+    greedy = reconstruct_full_tree_from_fsps(AmbiguousChain(), source, config=config)
+    beam = reconstruct_beam_from_fsps(
+        AmbiguousChain(),
+        source,
+        config=config,
+        beam_config=BeamSearchConfig(
+            beam_width=2,
+            max_candidates_per_query=2,
+            max_daughter_options=2,
+            max_type_options=1,
+            max_cardinality_options=1,
+        ),
+    )
+    greedy_metrics = evaluate_full_decay(greedy.batch, source, truth_root_position=6)
+    metrics = evaluate_ranked_decay_candidates(
+        [
+            evaluate_full_decay(candidate.batch, source, truth_root_position=6)
+            for candidate in beam.candidates
+        ],
+        scores=beam.scores,
+        oracle_ks=[1, 2],
+    )
+    assert greedy_metrics.perfectLCAG is False
+    assert metrics.top1.perfectLCAG is False
+    assert metrics.oracle_at_k[2]["perfect_lcag"]["value"] == 1
+    assert metrics.oracle_at_k[2]["first_coherent_event_exact_rank"] == 2
+
+
 def test_strict_inference_rejects_nonexclusive_rollout():
     with pytest.raises(ValueError, match="exclusive_final=True"):
-        HierarchicalInferenceConfig(
-            rollout_config=RolloutConfig(exclusive_final=False)
-        )
+        HierarchicalInferenceConfig(rollout_config=RolloutConfig(exclusive_final=False))
 
 
 def test_batched_decode_never_reuses_an_already_parented_node():
@@ -572,8 +694,7 @@ def test_batched_rollout_injects_soft_type_and_pointer_constraints_before_model(
     assert bool((snapshot["type_logit_bias"] < 0).any())
     assert torch.equal(
         snapshot["pointer_validity_mask"],
-        policy.pointer_validity_mask(projected, 1)
-        & (projected["parent_ids"] < 0),
+        policy.pointer_validity_mask(projected, 1) & (projected["parent_ids"] < 0),
     )
 
 
@@ -601,9 +722,17 @@ def test_projection_rejects_compatibility_adapter_and_non_normalized_batches():
     (
         ("common_features", "append", r"common_features must have shape \[B,N,12\]"),
         ("track_features", "truncate", r"track_features must have shape \[B,N,16\]"),
-        ("cluster_availability", "append", r"cluster_availability must have shape \[B,N,9\]"),
+        (
+            "cluster_availability",
+            "append",
+            r"cluster_availability must have shape \[B,N,9\]",
+        ),
         ("klm_features", "truncate", r"klm_features must have shape \[B,N,9\]"),
-        ("composite_features", "append", r"composite_features must have shape \[B,N,13\]"),
+        (
+            "composite_features",
+            "append",
+            r"composite_features must have shape \[B,N,13\]",
+        ),
         (
             "daughter_input_pid_histogram",
             "truncate",
