@@ -41,8 +41,8 @@ the enclosing site's local static asset configuration for ``wiki.css``.
 The compatibility fixture validates this discovery/toctree structure; it does
 not claim a build inside an installed basf2 release.
 
-Compatible settings and the publication boundary
-------------------------------------------------
+Compatible Sphinx settings
+--------------------------
 
 The shared configuration enables ``autodoc``, ``napoleon``, ``viewcode``,
 ``mathjax``, ``autosectionlabel`` and ``intersphinx``. Section labels are prefixed
@@ -50,11 +50,8 @@ with their document names; ``default_role = "any"`` supports single-backtick
 references and ``numfig = True`` enables numbered figures. Napoleon supports
 Google and NumPy docstrings for future authored autodoc pages.
 
-For public builds, ``html_copy_source`` and ``html_show_sourcelink`` are false.
-The ``wiki`` extension blocks viewcode source discovery: enabling viewcode does
-not authorize publishing package bodies or importing modules. Source references
-are relative filenames, definition lines and SHA-256 values. No raw repository,
-script, configuration, audit, report or package source is distributed.
+Static API generation supplies Python-domain references without importing the
+scientific runtime. Source copying is disabled.
 
 MathJax syntax remains accepted, while ``html_math_renderer = "offline-text"``
 uses escaped formula text and equation numbering without loading any browser
@@ -127,6 +124,4 @@ side effects. The generated reference exposes every lexical function and class
 occurrence, including undocumented internals, nested functions and repeated
 definitions at distinct source lines. Function-local entries retain unique
 anchors but do not claim importable Python targets. Public and internal surfaces
-are separated. Redacted docstrings are displayed as literal text so mixed
-Markdown/reStructuredText and embedded directives cannot execute or read
-external files during the build.
+are separated. Docstrings are displayed as literal text to preserve mixed documentation syntax.

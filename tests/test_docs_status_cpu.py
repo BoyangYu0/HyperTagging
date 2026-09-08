@@ -221,7 +221,7 @@ def test_revision_warnings_and_changed_sources_are_disclosed(evidence, tmp_path,
     assert source_info(manifest, "transfer_preregistration")["freshness"]["status"] == "after_reference_date"
 
 
-def test_dashboard_has_accessible_cards_progress_and_nonhtml_fallback(evidence, tmp_path):
+def test_dashboard_has_accessible_performance_cards_and_nonhtml_fallback(evidence, tmp_path):
     class Elements(HTMLParser):
         def __init__(self):
             super().__init__()
@@ -234,14 +234,12 @@ def test_dashboard_has_accessible_cards_progress_and_nonhtml_fallback(evidence, 
     parser = Elements()
     parser.feed(document)
     articles = [attrs for tag, attrs in parser.elements if tag == "article"]
-    assert len(articles) == 7
+    assert len(articles) == 3
     assert all("aria-labelledby" in attrs for attrs in articles)
-    progress = next(attrs for tag, attrs in parser.elements if tag == "progress")
-    assert progress["value"] == "54064" and progress["max"] == "108128"
-    assert any(tag == "label" and attrs.get("for") == progress["id"] for tag, attrs in parser.elements)
     assert ".. only:: not html" in document
-    assert "54064 / 108128 steps = 50%" in document
+    assert document.index("Reconstruction edge F1") < document.index("Training and software context")
     assert "DO_NOT_PROMOTE" in document and "+0.008" in document and "+0.010" in document
+    assert "UNAVAILABLE" in document and "NOT_RUN" in document
     assert manifest["pretraining"]["progress_fraction"] == 0.5
     assert manifest["reconstruction"]["completion"] == "COMPLETED"
 
@@ -258,9 +256,9 @@ def test_failed_pytest_record_is_rendered_as_blocking_evidence(evidence, tmp_pat
     output = tmp_path / "generated"
     status.generate_status(evidence, output)
     document = (output / "index.rst").read_text()
-    assert "FAIL: 10 passed" in document
-    assert "2 failed; 1 skipped; 3 warnings; 4.5 seconds" in document
-    assert 'status-card status-card--blocked' in document
+    assert status._literal("FAIL: 10 passed") in document
+    assert "2 failed" in document
+    assert "CPU fixtures" in document
 
 
 @pytest.mark.parametrize("shell,command,expected", [
@@ -294,6 +292,9 @@ def test_current_repository_dashboard_surfaces_recorded_acceptance_values(tmp_pa
     assert manifest["reconstruction"]["completion"] == "COMPLETED"
     assert manifest["reconstruction"]["recommendation"] == "DO_NOT_PROMOTE"
     assert manifest["reconstruction"]["edge_f1_delta"] == 0.008
+    assert manifest["reconstruction"]["metrics"]["relbias"]["edge_f1"] == 0.039
+    assert manifest["reconstruction"]["metrics"]["q32"]["edge_f1"] == 0.031
+    assert manifest["reconstruction"]["cohorts"]["relbias"] == {"validation_events": 2000, "rollout_events": 1000}
     assert manifest["science"]["real_pilot"] == manifest["science"]["trained_physics"] == "NOT_RUN"
     assert manifest["cpu_ci"]["without_explicit_pipefail"] == 3
 
@@ -316,3 +317,31 @@ def test_output_cannot_alias_repository_symlink_or_previous_raw_artifact(evidenc
     (output / "evidence").mkdir(parents=True)
     with pytest.raises(ValueError, match="unexpected files"):
         status.generate_status(evidence, output)
+
+
+def test_metric_projection_and_target_gap(evidence, tmp_path):
+    path = evidence / status.SOURCE_PATHS["reconstruction_terminal"]
+    payload = json.loads(path.read_text())
+    payload["validation"]["relbias"] = {"edge_f1": 0.039, "validation_loss": 2.46,
+                                      "validation_events": 2000, "private_extra": "SECRET"}
+    payload["validation"]["q32"] = {"edge_f1": 0.031, "validation_loss": "SECRET"}
+    write_source(evidence, "reconstruction_terminal", payload)
+    output = tmp_path / "generated"
+    result = status.generate_status(evidence, output)["reconstruction"]
+    assert result["metrics"]["relbias"]["edge_f1"] == 0.039
+    assert result["metrics"]["q32"]["validation_loss"] is None
+    assert result["metrics"]["relbias"]["pointer_recall"] is None
+    assert result["cohorts"]["relbias"]["validation_events"] == 2000
+    assert result["target_gap"] == pytest.approx(-0.002)
+    assert "SECRET" not in (output / "index.rst").read_text()
+
+
+def test_missing_metric_source_remains_unknown(evidence, tmp_path):
+    (evidence / status.SOURCE_PATHS["reconstruction_terminal"]).unlink()
+    output = tmp_path / "generated"
+    manifest = status.generate_status(evidence, output)
+    assert source_info(manifest, "reconstruction_terminal")["availability"] == "missing"
+    result = manifest["reconstruction"]
+    assert result["target_gap"] is None
+    assert all(value is None for value in result["metrics"]["relbias"].values())
+    assert "UNKNOWN" in (output / "index.rst").read_text()

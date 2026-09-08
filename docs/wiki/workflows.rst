@@ -35,11 +35,8 @@ sampling and rollout PID mode are persisted. Checkpoints also carry optimizer,
 scheduler, scaler, RNG and curriculum state. Exact mid-epoch replay is supported
 with zero loader workers; prefetched multiworker replay is not claimed.
 
-Use the tracked guarded Slurm or HTCondor renderers for production. Rendering
-does not submit a job. Inspect :doc:`_generated/status/index` and the original
-readiness/provenance documents before interpreting an old contract as launch
-authorization. Local CUDA diagnostics require the explicit admission/watchdog
-or tiny-test guards; a docs build never launches them.
+Production workflows use the tracked Slurm or HTCondor renderers; see the
+:doc:`script catalogue <_generated/catalog/index>` for entry points.
 
 Strict offline evaluation
 -------------------------
@@ -63,16 +60,8 @@ trials; contraction is diagnostic. Match by reconstructed source/topology before
 PID or p4 scoring, aggregate counts before division, and preserve unavailable
 versus failed results. Keep greedy, beam top-1 and oracle@K namespaces separate.
 
-Development evidence
---------------------
+Further reading
+---------------
 
-The existing CPU and notebook workflows remain independent of the new Pages
-workflow. Docs checks validate coverage, reproducibility, source provenance,
-local links/assets, and workflow permissions. They do not update scientific
-readiness or promote historical test counts to the current checkout.
-
-For exact options and operator commands, use :doc:`_generated/catalog/index`.
-Consult the checkout's ``docs/training.md``, ``docs/condor.md``,
-``docs/full_decay_reconstruction_evaluation.md``, ``notebooks/README.md`` and
-``environment/gpu/README.md``. These source documents are not included in the
-public artifact.
+See :doc:`dataset`, :doc:`training`, :doc:`reconstruction` and :doc:`evaluation`
+for the scientific definitions, and :doc:`maintaining` for documentation builds.

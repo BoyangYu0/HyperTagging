@@ -6,15 +6,20 @@ particles using a shared hyperbolic encoder and a level-autoregressive decoder.
 This wiki documents the current implementation, its historical compatibility
 paths, and the evidence available in this checkout.
 
-Start with :doc:`setup` for an isolated documentation build or CPU examples,
-then :doc:`architecture` for the data and reconstruction contracts.
-:doc:`_generated/status/index` distinguishes implementation checks, recorded
-training observations, and scientific results that remain unverified.
+Start with :doc:`dataset`, follow :doc:`training` and :doc:`reconstruction`,
+then use :doc:`evaluation` to interpret results. The
+:doc:`_generated/status/index` leads with recorded model performance and
+identifies measurements that remain unavailable.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Learn and operate
+   :caption: Physics and implementation
 
+   dataset
+   training
+   reconstruction
+   evaluation
+   _generated/status/index
    setup
    architecture
    workflows
@@ -26,7 +31,6 @@ training observations, and scientific results that remain unverified.
    :caption: Reference and evidence
 
    _generated/api/index
-   _generated/status/index
    _generated/repository/index
    maintaining
 

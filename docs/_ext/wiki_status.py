@@ -299,6 +299,24 @@ def _collect(payloads: dict[str, Any], revision: str | None) -> dict[str, Any]:
                       "required_edge_f1_delta": _number(validation.get("required_edge_f1_delta")),
                       "paired_event_evidence": _boolean(validation.get("paired_event_evidence")),
                       "guards": _enum(validation.get("guards"), {"not_established", "established"})}
+    # Fixed metric names and scalar validation keep operational receipt fields private.
+    metric_names = ("edge_f1", "full_tree_exact_match", "tree_validity", "canonical_subtree",
+                    "pointer_precision", "pointer_recall", "validation_loss", "query_utilization")
+    reconstruction["metrics"] = {
+        variant: {name: _number(_mapping(validation.get(variant)).get(name))
+                  for name in metric_names}
+        for variant in ("relbias", "q32")
+    }
+    reconstruction["cohorts"] = {
+        variant: {name: _integer(_mapping(validation.get(variant)).get(name))
+                  for name in ("validation_events", "rollout_events")}
+        for variant in ("relbias", "q32")
+    }
+    reconstruction["target_gap"] = (
+        reconstruction["edge_f1_delta"] - reconstruction["required_edge_f1_delta"]
+        if reconstruction["edge_f1_delta"] is not None and reconstruction["required_edge_f1_delta"] is not None
+        else None
+    )
     science = {"source_ids": _refs("verification_runs", "notebook_registry"),
                "real_pilot": _notebook_record(notebook_runs.get("real_mdst_pilot"))["result"],
                "trained_physics": _notebook_record(notebook_runs.get("trained_physics_validation"))["result"],
@@ -345,90 +363,76 @@ def _card(title: str, value: str, paragraphs: list[str], sources: list[str], kin
 
 
 def _render(manifest: dict[str, Any]) -> str:
-    provenance, audit = manifest["provenance"], manifest["audit"]
-    verification, notebooks = manifest["verification"], manifest["notebooks"]
-    latest, pretraining, reconstruction = verification["latest_record"], manifest["pretraining"], manifest["reconstruction"]
-    science, ci, pytest = manifest["science"], manifest["cpu_ci"], latest["pytest"]
-    pytest_result = pytest["result"]
-    pytest_kind = "blocked" if pytest_result == "FAIL" else "info" if pytest_result == "PASS" else "warning"
-    pytest_failed = (
-        "failed count UNKNOWN"
-        if pytest["failed"] is None
-        else f"{pytest['failed']} failed"
-    )
-    fraction = pretraining["progress_fraction"]
-    progress_text = "UNKNOWN" if fraction is None else f"{fraction:.0%}"
-    progress = (pretraining["recorded_step"], pretraining["planned_steps"]) if fraction is not None else None
+    reconstruction = manifest["reconstruction"]
+    science = manifest["science"]
+    source = manifest["sources"][SOURCE_IDS["reconstruction_terminal"]]
     delta, required = reconstruction["edge_f1_delta"], reconstruction["required_edge_f1_delta"]
-    comparison = "below" if delta is not None and required is not None and delta < required else "compared with"
     cards = [
-        ("Production recommendation", audit["recommendation"], ["Recorded audit recommendation; this build grants no production authorization.",
-            f"Audit revision: {audit['revision_match']}. Verification revision: {latest['revision_match']}."], audit["source_ids"], "blocked", None),
-        ("Latest recorded CPU pytest", f"{pytest_result}: {_display(pytest['passed'])} passed", [
-            f"{pytest_failed}; {_display(pytest['skipped'])} skipped; {_display(pytest['warnings'])} warnings; {_display(pytest['duration_seconds'])} seconds.",
-            f"Recorded {latest['date'] or 'UNKNOWN'}. CPU software/fixture evidence; no inference of trained physics quality."], verification["source_ids"], pytest_kind, None),
-        ("Notebook registry", f"{_display(notebooks['total'])} registered", [
-            f"{_display(notebooks['default_smoke'])} default smoke; {notebooks['input_modes'].get('fixture', 0)} fixture; {notebooks['input_modes'].get('real_only', 0)} real only.",
-            f"Registry NOT_RUN: {_display(notebooks['not_run'])}. Human visual review: {notebooks['visual_review_status']}."], notebooks["source_ids"], "warning", None),
-        ("Pretraining", progress_text, [
-            f"{_display(pretraining['recorded_step'])} / {_display(pretraining['planned_steps'])} steps = {progress_text}; scientific-contract resume step against its final validation milestone.",
-            f"Calibration {pretraining['calibration_status']}: {_display(pretraining['calibration_pending'])} candidates pending.",
-            f"Selected profile: {pretraining['selected_profile_state']}; production authorization: {_display(pretraining['production_submission_authorized'])}; submission performed: {_display(pretraining['submission_performed'])}.",
-            "This is a metadata snapshot, not live training progress or evidence of convergence."], pretraining["source_ids"], "warning", progress),
-        ("Reconstruction Stage A", reconstruction["completion"], [f"Recommendation: {reconstruction['recommendation']}.",
-            f"Edge F1 delta {_signed(delta)} {comparison} required {_signed(required)}.",
-            "Recorded aggregate exploratory evidence; paired event evidence and complete promotion guards are not established." if reconstruction["paired_event_evidence"] is False else "Projected evidence fields do not establish scientific validity."], reconstruction["source_ids"], "blocked", None),
-        ("Real data and trained physics", f"Pilot {science['real_pilot']}", [f"Trained physics validation {science['trained_physics']}.",
-            "Latest recorded validation statuses; bounded training receipts do not replace these scientific evaluations.",
-            "Schedulers and live training are not queried."], science["source_ids"], "warning", None),
-        ("Existing CPU CI evidence", ci["evidence_limitation"], [f"{_display(ci['without_explicit_pipefail'])} of {_display(ci['tee_pipeline_steps'])} tee pipeline steps lack explicit pipefail protection.",
-            "An upstream test failure can be masked by a successful tee exit; an apparent green job alone is insufficient evidence." if ci['evidence_limitation'] == 'TEE_WITHOUT_PIPEFAIL' else "Static workflow inspection only; no CI run was queried."], ci["source_ids"], "warning", None),
+        ("Reconstruction edge F1", _display(reconstruction["metrics"]["relbias"]["edge_f1"]),
+         [f"q32 comparison: {_display(reconstruction['metrics']['q32']['edge_f1'])}.",
+          "Historical Stage A aggregate rollout; exploratory, not a current physics benchmark."], "info"),
+        ("Edge F1 improvement", _signed(delta),
+         [f"Required improvement {_signed(required)}; gap to target {_signed(reconstruction['target_gap'])}.",
+          f"Recommendation: {reconstruction['recommendation']}. Paired event evidence: {_display(reconstruction['paired_event_evidence'])}."], "warning"),
+        ("Trained physics evaluation", science["trained_physics"],
+         [f"Current recorded real pilot: {science['real_pilot']}.",
+          "Strict full-decay and beam top-1/oracle metrics: UNAVAILABLE in dashboard sources.",
+          "Pretraining validation objectives and PID accuracies: UNAVAILABLE in dashboard sources."], "warning"),
     ]
-    lines = ["Development and training status", "===============================", "",
-             "This static dashboard projects selected recorded metadata. It does not run tests,",
-             "train a model, query a scheduler, or inspect data or saved model state.",
-             "CPU fixture evidence and unverified claims about real data and trained physics",
-             "remain separate. Recorded permissions are not live authorization.", "",
-             ":download:`Redacted status projection and hashes <status.json>`.", ""]
-    if audit["revision_match"] == "different_revision" or latest["revision_match"] == "different_revision":
-        lines += [".. warning::", "", "   STALE REVISION EVIDENCE: the audit and/or latest verification record describes",
-                  "   another source revision. Recorded passes do not verify this checkout.",
-                  f"   Audit: {audit['revision_match']}. Verification: {latest['revision_match']}.", ""]
-    lines += [".. raw:: html", "", '   <section class="status-dashboard" aria-label="Recorded development and training dashboard">']
-    for index, (title, value, paragraphs, refs, kind, card_progress) in enumerate(cards):
-        lines.extend("   " + line for line in _card(title, value, paragraphs, refs, kind, index, card_progress).splitlines())
+    lines = ["Model performance and scientific status", "=======================================", "",
+             "Recorded measurements from tracked evidence. Missing measurements are UNAVAILABLE;",
+             "NOT_RUN describes a recorded evaluation status. Historical results do not verify",
+             "the current model. See :doc:`../../evaluation` for metric definitions and populations.", "",
+             ":download:`Metric values and source hashes <status.json>`.", "",
+             f"Stage A observation: {_literal(source['recorded_date'])}; freshness: {_literal(source['freshness']['status'])}.",
+             "Aggregate-only exploratory comparison; no paired confidence interval is available.", "",
+             ".. raw:: html", "",
+             '   <section class="status-dashboard" aria-label="Recorded model performance">']
+    for index, (title, value, paragraphs, kind) in enumerate(cards):
+        refs = science["source_ids"] if index == 2 else reconstruction["source_ids"]
+        lines.extend("   " + line for line in _card(title, value, paragraphs, refs, kind, index).splitlines())
     lines += ["   </section>", "", ".. only:: not html", ""]
-    for title, value, paragraphs, refs, kind, card_progress in cards:
+    for title, value, paragraphs, kind in cards:
         lines += [f"   **{_literal(title)}: {_literal(value)}**", ""]
         lines.extend(f"   {_literal(paragraph)}" for paragraph in paragraphs)
-        lines += [f"   Provenance: {_literal(', '.join(refs))}.", ""]
-    lines += ["Issue distribution", "------------------", "", f"{_literal(audit['ledger_item_count'])} recorded issues. Counts describe the audit scope,",
-              "not the current checkout's test results or scientific readiness.", ""]
-    lines += _table(["Recorded status", "Count"], [[key, value] for key, value in audit["ledger_status_counts"].items()])
-    lines += ["Notebook evidence", "-----------------", "", "Registry counts describe available notebooks. Execution records describe runs;",
-              "NOT_RUN and NOT_REVIEWED remain distinct from failure and pass.", ""]
-    lines += _table(["Registry group", "Count"], [[key, value] for key, value in notebooks["groups"].items()])
-    lines += _table(["Latest recorded notebook check", "Result", "Count"], [[key, value["result"], value["count"]] for key, value in latest["notebooks"].items()])
-    lines += ["Freshness and provenance", "------------------------", "",
-              f"* Checkout revision: {_literal(provenance['git_revision'])}.",
-              f"* Reproducible reference time: {_literal(provenance['as_of'])}; basis: {_literal(provenance['as_of_basis'])}.",
-              f"* Evidence-set SHA-256: {_literal(provenance['source_set_sha256'])}.", "",
-              f"Age freshness uses a {FRESHNESS_DAYS}-day editorial threshold against the reference time.",
-              "The default reference is checkout commit time; SOURCE_DATE_EPOCH can provide an",
-              "explicit reproducible reference. Wall-clock and file modification times are not",
-              "used. Age freshness never overrides revision mismatch warnings. Missing dates",
-              "or history produce unknown freshness. after_reference_date means recorded evidence",
-              "postdates the reference. File commit dates describe metadata history, not an",
-              "experiment date. A heading date does not establish whole-document verification.", "",
-              "Opaque source IDs map the cards to SHA-256 hashes of exact local metadata inputs.",
-              "These field-level projections omit source bodies, operational identifiers, and",
-              "source locations. A hash binds input bytes; it does not validate their claims.", ""]
-    for source in manifest["sources"].values():
-        label = source["source_id"]
-        lines += [label, "~" * len(label), ""]
-        lines += _table(["Property", "Value"], [[key, source.get(key)] for key in (
-            "availability", "sha256", "recorded_date", "recorded_date_basis", "last_commit", "last_commit_date", "worktree_state"
-        )] + [["age_freshness", source["freshness"]["status"]], ["age_days", source["freshness"]["age_days"]]])
+        lines += [""]
+    lines += ["Stage A validation comparison", "-----------------------------", "",
+              "Values are copied from the terminal receipt. Validation loss and pointer metrics",
+              "describe the validation view; edge/tree results describe rollout. The receipt",
+              "does not retain per-metric sufficient statistics or paired event uncertainties.",
+              "The canonical subtree field is retained under its receipt name.", ""]
+    lines += _table(["Metric", "Relation bias", "q32"], [
+        [name, reconstruction["metrics"]["relbias"][name], reconstruction["metrics"]["q32"][name]]
+        for name in reconstruction["metrics"]["relbias"]])
+    lines += _table(["Cohort", "Relation bias", "q32"], [
+        [name, reconstruction["cohorts"]["relbias"][name], reconstruction["cohorts"]["q32"][name]]
+        for name in ("validation_events", "rollout_events")])
+    lines += ["Unavailable values in this table appear as UNKNOWN. Smaller validation loss is",
+              "better only under comparable objective weights and target populations; it is not",
+              "a full-tree reconstruction efficiency. Tree validity does not imply correct topology.", "",
+              "Training and software context", "-----------------------------", ""]
+    pretraining, audit = manifest["pretraining"], manifest["audit"]
+    latest = manifest["verification"]["latest_record"]
+    pytest = latest["pytest"]
+    lines += _table(["Recorded context", "Value"], [
+        ["Pretraining resume / planned steps", f"{_display(pretraining['recorded_step'])} / {_display(pretraining['planned_steps'])}"],
+        ["Stage A completion", reconstruction["completion"]],
+        ["Current status recommendation", audit["recommendation"]],
+        ["CPU fixtures", f"{pytest['result']}: {_display(pytest['passed'])} passed; {_display(pytest['failed'])} failed"],
+        ["Notebook registry", manifest["notebooks"]["total"]],
+        ["Live deployment / CI", "NOT_QUERIED"],
+    ])
+    if audit["revision_match"] == "different_revision" or latest["revision_match"] == "different_revision":
+        lines += ["STALE REVISION EVIDENCE: audit or software verification describes another revision.", ""]
+    lines += ["The current-status record owns the recommendation. Recorded metadata is not live authorization.",
+              "CPU fixtures measure software behavior. Step counts do not measure convergence.", "",
+              "Evidence provenance", "-------------------", "",
+              f"Reference time: {_literal(manifest['provenance']['as_of'])}; basis: {_literal(manifest['provenance']['as_of_basis'])}.",
+              f"Freshness threshold: {FRESHNESS_DAYS} days. Unknown dates remain unknown; commit time is not experiment time.",
+              "Full hashes and revision details are available in the metric download.", ""]
+    lines += _table(["Source", "Observation date", "Availability", "Freshness"], [
+        [item["source_id"], item["recorded_date"], item["availability"], item["freshness"]["status"]]
+        for item in manifest["sources"].values()])
     return "\n".join(lines)
 
 
