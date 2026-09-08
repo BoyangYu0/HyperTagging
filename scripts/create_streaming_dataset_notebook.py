@@ -52,7 +52,7 @@ def build_notebook():
             from hypertagging.preprocessing.schema_v5 import benchmark_storage_formats, native_nested_schema_v5
             from hypertagging.training.data_module import resolve_data_paths, build_real_data_module
             requested=os.environ.get("HYPERTAGGING_PARQUET","").strip(); FIXTURE_MODE=not bool(requested)
-            path=Path(requested) if requested else Path("/tmp/hypertagging_streaming_v4.parquet")
+            path=(Path(requested) if requested else Path("/tmp/hypertagging_streaming_v4.parquet")).expanduser().resolve()
             if FIXTURE_MODE: write_notebook_fixture_v4(path,row_group_size=1)
             OUT=Path(os.environ.get("HYPERTAGGING_FIGURE_DIR","/tmp/hypertagging_figures/streaming")); OUT.mkdir(parents=True,exist_ok=True)
             parquet=pq.ParquetFile(path)
@@ -112,7 +112,7 @@ def build_notebook():
             )
             index=load_dataset_index(index_path)
             indexed=build_real_data_module(
-                manifest,seed=7,dataset_index=index_path,
+                [path],seed=7,dataset_index=index_path,
                 split_config=SourceAwareSplitConfig(train_fraction=1.0,validation_fraction=0.0,test_fraction=0.0,seed=7),
             )
             index_pass=indexed.dataset_index is not None and index["event_count"]==len(records)
