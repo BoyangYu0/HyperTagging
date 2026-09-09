@@ -40,6 +40,25 @@ validation host. Existing production ownership checks retain their fixed UIDs,
 while synthetic ownership fixtures use the test runner's UID. Scientific
 promotion, sealed-test access, and the NO-GO recommendation are unchanged.
 
+## Reconstruction phase41 closeout — 2026-09-09
+
+Both 70,000-event, 4,376-step arms completed, with verified receipt/artifact
+hashes and identical repeated strict metrics. The pointer32 control reached
+143/3,620 micro complete targets (3.9503%); level-1 pointer24 reached
+134/3,620 (3.7017%). On the separate 100-event strict cohort both built zero
+full roots and recovered 1/2,769 full LCAG pairs and 1/153 matched mothers.
+Neither passed every hierarchy gate. Lowering the level-1 weight improved
+pointer precision slightly but lost recall and half-tree LCAG coverage.
+
+Hold dataset size at 70,000. Prior data doubling also doubled steps and changed
+validation cohort, so it does not identify a dataset-size effect. Additional
+pretraining is a hypothesis, not an established improvement: Phase42 compares
+existing pretrained steps 81,096 and 108,128 through the current fixed decoder
+and an untouched validation cohort. The user's 2026-09-09 request authorizes
+these two bounded 4,376-step trainings. No automatic promotion or sealed-test
+access is authorized. See the Phase41 wiki closeout for the study synthesis,
+metric populations, limitations, and the next-study contract.
+
 ## Reconstruction phase40r1 closeout — 2026-09-09
 
 Both preregistered 4,376-step reconstruction arms completed on the doubled
@@ -64,7 +83,7 @@ confidence mean/sum, normalized joint log probability, and diagnostic oracle).
 Beam recall, precision, LCAG pair accuracy, mother coverage, and perfect LCAG
 are reported separately for full- and half-tree scopes on the same 20-event
 cohort. Dashboard generation fails closed when either scope is incomplete.
-Two phase41 tasks are submitted: the phase40r1 control and a single-factor arm
+At that closeout, two phase41 tasks were submitted: the phase40r1 control and a single-factor arm
 that reduces only the level-1 pointer-positive weight from 32 to 24. Both use
 the fresh phase41 selection/evaluation cohort, pointer threshold 0.35, object
 threshold 0.60, the same 4,376-step budget, strict repeatability and beam

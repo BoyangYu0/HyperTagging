@@ -9,6 +9,7 @@ import sys
 import pytest
 
 
+ROOT = Path(__file__).resolve().parents[1]
 _MODULE = Path(__file__).resolve().parents[1] / "docs" / "_ext" / "wiki_status.py"
 _SPEC = importlib.util.spec_from_file_location("wiki_status", _MODULE)
 assert _SPEC and _SPEC.loader
@@ -33,6 +34,8 @@ def evidence(tmp_path, monkeypatch):
     monkeypatch.delenv("SOURCE_DATE_EPOCH", raising=False)
     monkeypatch.setattr(status, "_git", lambda *_args: None)
     documents = {
+        "reconstruction_phase41": {"reserved_for_phase41": True},
+        "reconstruction_phase42_submission": {"reserved_for_phase42": True},
         "current_status": "# Current status\n\n## Recommendation: NO-GO\n\nNo current real pilot.\n\n## Older result\n\n999 passed.\n",
         "issue_ledger": {"audit_generated_at": "2026-08-01T12:00:00+00:00", "audited_code_sha": "a" * 40,
                          "items": [{"id": "A", "current_status": "FIXED_AND_TESTED"}, {"id": "B", "current_status": "PARTIAL"}]},
@@ -138,7 +141,7 @@ def test_status_is_deterministic_and_preserves_record_scope(evidence, tmp_path, 
     assert manifest["pretraining"]["selected_profile_state"] == "NONE_SELECTED"
     assert manifest["pretraining"]["submission_performed"] is False
     assert manifest["pretraining"]["pretraining_success_gate_passed"] is False
-    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 3
+    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 5
     assert manifest["provenance"]["external_filesystem_or_network_artifacts_opened"] is False
     assert source_info(manifest, "issue_ledger")["freshness"]["status"] == "stale"
     assert source_info(manifest, "current_status")["freshness"]["status"] == "unknown"
@@ -453,3 +456,36 @@ def test_missing_metric_source_remains_unknown(evidence, tmp_path):
     assert result["target_gap"] is None
     assert all(value is None for value in result["metrics"]["relbias"].values())
     assert "UNKNOWN" in (output / "index.rst").read_text()
+
+
+def test_phase41_current_evidence_has_every_registered_metric_and_both_beam_scopes():
+    source = ROOT / status.SOURCE_PATHS['reconstruction_phase41']
+    assert source.stat().st_size <= status._MAX_SOURCE_BYTES
+    payload = json.loads(source.read_text())
+    projected = status._phase41_projection(payload)
+    assert len(projected['metric_rows']) == len(payload['metric_rows'])
+    for arm in ('pointer32_control', 'level1_pointer24'):
+        record = projected['arms'][arm]
+        assert record['endpoints']['full_root_completion']['numerator'] == 0
+        assert record['endpoints']['full_root_completion']['denominator'] == 100
+        assert set(record['beam']) == {'full', 'half'}
+        assert len(record['beam']['half']) == 6
+        assert record['all_gates_passed'] is False
+
+
+def test_phase41_rejects_missing_metric_or_beam_statistic():
+    payload = json.loads((ROOT / status.SOURCE_PATHS['reconstruction_phase41']).read_text())
+    removed = payload['metric_rows'].pop()
+    with pytest.raises(ValueError, match='registry is incomplete'):
+        status._phase41_projection(payload)
+    payload['metric_rows'].append(removed)
+    del payload['arms']['level1_pointer24']['beam']['half']['oracle_at_k']['source_recall']['denominator']
+    with pytest.raises(ValueError, match='count is missing'):
+        status._phase41_projection(payload)
+
+
+def test_phase41_arbitrary_labels_and_nested_strings_do_not_publish():
+    payload = json.loads((ROOT / status.SOURCE_PATHS['reconstruction_phase41']).read_text())
+    payload['metric_rows'].append({'arm': 'pointer32_control', 'view': 'private-host', 'metric': '/private/checkpoint.pt', 'value': 1})
+    payload['arms']['pointer32_control']['private'] = '/private/checkpoint.pt'
+    assert 'private' not in json.dumps(status._phase41_projection(payload))

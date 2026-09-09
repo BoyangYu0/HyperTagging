@@ -255,6 +255,19 @@ def _run_component(
             f"full evaluation component {name} failed: {completed.stderr[-1000:]}"
         )
     report = json.loads(output.resolve(strict=True).read_text(encoding="utf-8"))
+    return _validate_component_report(
+        report, name=name, threads=threads, expected_uids=expected_uids,
+        expected_scope=expected_scope, expected_topology=expected_topology,
+        expected_checkpoint_sha256=expected_checkpoint_sha256, expect_beam=expect_beam,
+    )
+
+
+def _validate_component_report(
+    report: dict[str, Any], *, name: str, threads: int,
+    expected_uids: Sequence[str], expected_scope: str, expected_topology: str,
+    expected_checkpoint_sha256: str, expect_beam: bool,
+) -> dict[str, Any]:
+    """Validate a completed report independently of JSON object-key ordering."""
     configuration = report.get("configuration", {})
     context = report.get("context", {})
     beam = configuration.get("beam_search", {})
@@ -292,8 +305,8 @@ def _run_component(
             or beam.get("truth_used_for_ranking") is not False
             or beam.get("oracle_at_k_is_diagnostic_only") is not True
             or any(
-                list(top1_by_scope.get(scope, {}))
-                != list(MODEL_ONLY_BEAM_RANKINGS)
+                set(top1_by_scope.get(scope, {}))
+                != set(MODEL_ONLY_BEAM_RANKINGS)
                 for scope in expected_scopes
             )
             or any(not oracle_by_scope.get(scope) for scope in expected_scopes)
@@ -327,8 +340,9 @@ def _metric_catalog() -> dict[str, Any]:
         ),
         "perfect_lcag": "Fraction of targets with every comparable LCAG relation exact.",
         "mother_pid_coverage": (
-            "Fraction of truth mothers represented by a matched predicted mother with "
-            "the exact particle type."
+            "Fraction of PID-eligible truth mothers aligned to a predicted mother by "
+            "source/topology, regardless of predicted PID. mother_pid_accuracy "
+            "separately measures correct PID over those aligned mothers."
         ),
         "root_pid_accuracy": "Fraction of available targets with the exact root type.",
         "inference_structurally_valid": "Fraction of reconstructed forests passing tree checks.",

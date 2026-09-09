@@ -32,6 +32,8 @@ SOURCE_PATHS = {
     "reconstruction_terminal": "artifacts/codex/joint_optimization_20260824/reconstruction_stage_a_paired_relbias_16036157_terminal_audit_20260827.json",
     "reconstruction_phase40r1": "artifacts/codex/reconstruction_phase40r1_closeout_20260909.json",
     "cpu_workflow": ".github/workflows/cpu-tests.yml",
+    "reconstruction_phase41": "artifacts/codex/reconstruction_phase41_closeout_20260909.json",
+    "reconstruction_phase42_submission": "artifacts/codex/reconstruction_phase42_submission_20260909.json",
 }
 SOURCE_IDS = {key: f"source-{index:02d}" for index, key in enumerate(SOURCE_PATHS, 1)}
 FRESHNESS_DAYS = 30
@@ -410,6 +412,12 @@ def _collect(payloads: dict[str, Any], revision: str | None) -> dict[str, Any]:
             "phase41_threshold_role": _enum(_mapping(recent.get("decision")).get("phase41_threshold_role"), {"PREREGISTERED_FRESH_COHORT_CANDIDATE_ONLY"}),
         },
     }
+    reconstruction["phase41"] = _phase41_projection(payloads.get("reconstruction_phase41"))
+    submission = _mapping(payloads.get("reconstruction_phase42_submission"))
+    if reconstruction["phase41"] and submission.get("status") in {"PREPARED", "SUBMITTED", "RUNNING"}:
+        reconstruction["phase41"]["next_study_status"] = submission["status"]
+        reconstruction["phase41"]["submission_task_count"] = _integer(submission.get("task_count"))
+        reconstruction["phase41"]["submission_source_revision"] = _sha(submission.get("source_revision"))
     science = {"source_ids": _refs("verification_runs", "notebook_registry"),
                "real_pilot": _notebook_record(notebook_runs.get("real_mdst_pilot"))["result"],
                "trained_physics": _notebook_record(notebook_runs.get("trained_physics_validation"))["result"],
@@ -417,6 +425,116 @@ def _collect(payloads: dict[str, Any], revision: str | None) -> dict[str, Any]:
     return {"audit": audit, "verification": verification, "notebooks": notebooks, "pretraining": pretraining,
             "reconstruction": reconstruction, "science": science, "cpu_ci": _ci_projection(payloads.get("cpu_workflow"))}
 
+
+
+def _phase41_projection(raw: Any) -> dict[str, Any]:
+    raw = _mapping(raw)
+    if raw.get("audit_version") != "phase41-closeout-v1":
+        return {}
+    if raw.get("metric_completeness") != "COMPLETE":
+        raise ValueError("Phase41 full/half metric set is incomplete")
+    endpoints = ("exact_mother_coverage", "full_lcag", "full_root_completion",
+                 "full_source_precision", "full_source_recall", "half_lcag",
+                 "half_perfect_lcag", "half_root_pid_accuracy", "half_source_precision", "half_source_recall")
+    rankings = ("greedy", "average_link_probability", "learned_confidence_mean",
+                "learned_confidence_sum", "normalized_joint_log_probability", "oracle_at_k")
+    metrics = ("source_recall", "source_precision", "lcag_pair_accuracy", "mother_pid_coverage", "perfect_lcag")
+    def point(raw_point):
+        point = _mapping(raw_point)
+        num, den = _number(point.get("numerator")), _number(point.get("denominator"))
+        if num is None or den is None or num < 0 or den < 0 or num > den:
+            raise ValueError("Phase41 count is missing or invalid")
+        return {"numerator": int(num) if num.is_integer() else num, "denominator": int(den) if den.is_integer() else den, "value": num / den if den else None}
+    result = {"source_ids": _refs("reconstruction_phase41"), "status": "COMPLETED",
+              "next_study_status": _enum(raw.get("next_study_status"), {"PREPARED", "SUBMITTED", "RUNNING"}),
+              "train_events": _integer(raw.get("train_events")),
+              "strict_event_count": _integer(raw.get("strict_event_count")),
+              "beam_event_count": _integer(raw.get("beam_event_count")),
+              "sealed_test_accessed": _boolean(raw.get("sealed_test_accessed")),
+              "source_hashes": [_sha(value) for value in _list(raw.get("source_hashes"))], "arms": {}}
+    for arm in ("pointer32_control", "level1_pointer24"):
+        record = _mapping(_mapping(raw.get("arms")).get(arm))
+        selected = _mapping(record.get("selected"))
+        result["arms"][arm] = {
+            "optimizer_steps": _integer(record.get("optimizer_steps")),
+            "training_elapsed_seconds": _number(record.get("training_elapsed_seconds")),
+            "gates": {key: _boolean(_mapping(record.get("gates")).get(key)) for key in (
+                "minimum_complete_target_efficiency", "minimum_depth_fraction", "minimum_full_source_precision",
+                "minimum_full_source_recall", "minimum_half_lcag", "minimum_half_perfect_lcag",
+                "minimum_half_root_pid_accuracy", "minimum_half_source_precision", "minimum_half_source_recall",
+                "nonzero_exact_mother_coverage", "nonzero_full_lcag", "nonzero_full_root_completion",
+                "primary_repeat_identical", "structural_guardrails")},
+            "selected": {key: _number(selected.get(key)) for key in ("step", "micro_complete_target_efficiency", "predicted_depth_fraction", "predicted_tree_validity_rate")},
+            "all_gates_passed": _boolean(record.get("all_gates_passed")),
+            "primary_repeat_identical": _boolean(record.get("primary_repeat_identical")),
+            "endpoints": {key: point(_mapping(record.get("endpoints")).get(key)) for key in endpoints},
+            "beam": {scope: {rank: {metric: point(_mapping(_mapping(_mapping(_mapping(record.get("beam")).get(scope)).get(rank)).get(metric)))
+                                      for metric in metrics} for rank in rankings} for scope in ("full", "half")}}
+    # Exact authored vocabulary; arbitrary source strings and injected fields cannot publish.
+    registry = json.loads(Path(__file__).with_name("phase41_metric_registry.json").read_text())
+    allowed = {tuple(row) for row in registry}
+    rows = []
+    seen = set()
+    for row in _list(raw.get("metric_rows")):
+        identity = (row.get("arm"), row.get("view"), row.get("metric"))
+        if identity not in allowed:
+            continue
+        if identity in seen:
+            raise ValueError("Duplicate Phase41 metric")
+        seen.add(identity)
+        value = row.get("value")
+        if value is not None and _number(value) is None and type(value) is not bool:
+            raise ValueError("Invalid Phase41 metric value")
+        rows.append({"arm": identity[0], "view": identity[1], "metric": identity[2], "value": value})
+    if seen != allowed:
+        raise ValueError("Phase41 metric registry is incomplete")
+    result["metric_rows"] = rows
+    return result
+
+
+def _render_phase41(record: dict[str, Any]) -> list[str]:
+    if not record:
+        return []
+    arms = record["arms"]
+    labels = ("pointer32_control", "level1_pointer24")
+    lines = ["Phase41: completed, no promotion", "--------------------------------", "",
+             "The control remains the reference. Lowering the level-1 pointer-positive weight",
+             "trades recall for precision without improving exact hierarchy reconstruction.",
+             "The single full-tree topology-matched mother has incorrect PID in both arms (0/1 PID accuracy).", "",
+             "Both arms used 70,000 training events and 4,376 optimization steps. Checkpoint",
+             "selection used a fresh 2,000-event cohort (1,000 rollout events); strict evaluation",
+             "used a separate 100-event cohort, and beam search its fixed 20-event subset.", "",
+             "All registered aggregate metrics, checkpoint tracks, calibration, PID confusion,",
+             "and full/half beam rankers are included in the metric download above.", ""]
+    rows = [[key, *[arms[arm]["selected"][key] for arm in labels]] for key in arms[labels[0]]["selected"]]
+    rows += [[key, *[_metric_point(arms[arm]["endpoints"][key]) for arm in labels]] for key in arms[labels[0]]["endpoints"]]
+    rows += [["all hierarchy gates passed", *[arms[arm]["all_gates_passed"] for arm in labels]]]
+    lines += _table(["Metric", "Pointer32 control", "Level1 pointer24"], rows)
+    selected_metrics = {(row["arm"], row["metric"]): row["value"] for row in record["metric_rows"] if row["view"] == "training_best"}
+    lines += ["Checkpoint-selection diagnostics", "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", "",
+              "These micro teacher-forced pointer metrics use aggregated numerator/denominator",
+              "counts and diagnose daughter association separately from strict rollout topology.", ""]
+    lines += _table(["Level", "Control precision", "Control recall", "Pointer24 precision", "Pointer24 recall"], [
+        [level, *[selected_metrics.get((arm, f"micro_level_{level}_pointer_{metric}")) for arm in labels for metric in ("precision", "recall")]]
+        for level in range(1, 7)])
+    lines += ["Phase41 beam comparison", "~~~~~~~~~~~~~~~~~~~~~~~", "",
+              "Model-only top-1 rankers and diagnostic oracle share the same cohort. Available-target",
+              "denominators differ from event counts; unavailable targets are retained separately in the download.", ""]
+    lines += _table(["Arm", "Scope", "Ranking", "Recall", "Precision", "LCAG", "Mother coverage", "Perfect LCAG"], [
+        [arm, scope, rank, *[_metric_point(point) for point in points.values()]]
+        for arm in labels for scope, rankings in arms[arm]["beam"].items() for rank, points in rankings.items()])
+    lines += ["Decision for the next training", "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", "",
+              "Hold the dataset at 70,000 events. The earlier 35,000-to-70,000 comparison also",
+              "changed optimization budget and validation cohort, so it does not isolate data scaling.",
+              "Test pretraining transfer before a larger data campaign: compare pretrained steps",
+              "81,096 and 108,128 with the current decoder, fixed data/budget, and a fresh cohort.",
+              "Earlier studies did not establish a reliable downstream benefit from later pretraining.",
+              "This study tests that hypothesis; lower pretraining loss alone is insufficient.", "",
+              f"Phase42 submission snapshot: {_literal(record['next_study_status'])}. Two bounded training arms; no automatic promotion.", "",
+              "Physical mother momentum resolution remains unavailable: retained truth mother",
+              "four-vectors are absent. Daughter-sum closure measures an implementation invariant.",
+              "Small validation cohorts and a single training seed limit conclusions.", ""]
+    return lines
 
 def _literal(value: Any) -> str:
     text = "UNKNOWN" if value is None else str(value)
@@ -441,7 +559,8 @@ def _display(value: Any) -> str:
 def _metric_point(value: dict[str, Any]) -> str:
     numerator, denominator = value.get("numerator"), value.get("denominator")
     ratio = numerator / denominator if numerator is not None and denominator else None
-    return f"{_display(ratio)} ({_display(numerator)}/{_display(denominator)})"
+    shown = "UNKNOWN" if ratio is None else f"{ratio:.6g}"
+    return f"{shown} ({_display(numerator)}/{_display(denominator)})"
 
 
 def _signed(value: Any) -> str:
@@ -482,9 +601,16 @@ def _render(manifest: dict[str, Any]) -> str:
          [f"Control complete-target efficiency: {_display(control['micro_complete_target_efficiency'])}; strict full roots: {_display(control['full_root_completion_numerator'])}/{_display(control['full_root_completion_denominator'])}.",
           f"Control half-tree recall / precision: {_display(control['half_source_recall'])} / {_display(control['half_source_precision'])}; perfect half LCAG: {_display(control['half_perfect_lcag_numerator'])}/{_display(control['half_perfect_lcag_denominator'])}.",
           f"Query-scale complete-target efficiency: {_display(query_scale['micro_complete_target_efficiency'])}; all gates passed: {_display(query_scale['all_gates_passed'])}.",
-          f"Next study: {recent['decision']['next_study']} ({recent['decision']['next_study_status']}, {_display(recent['decision']['phase41_task_count'])} tasks); sealed test accessed: {_display(recent['sealed_test_accessed'])}.",
+          "Historical Phase40r1 snapshot; see the Phase41 closeout below for the subsequent decision.",
           f"Recorded real pilot: {science['real_pilot']}; pretraining validation objectives remain UNAVAILABLE."], "warning"),
     ]
+    if reconstruction.get("phase41"):
+        phase41 = reconstruction["phase41"]
+        best = phase41["arms"]["pointer32_control"]
+        cards.insert(0, ("Phase41 reconstruction", "NO PROMOTION",
+            [f"Control complete-target efficiency: {best['selected']['micro_complete_target_efficiency']:.2%}; full roots: 0/100.",
+             "Neither arm passes all hierarchy gates. Hold data at 70,000; test pretraining transfer next.",
+             f"Phase42: {phase41['next_study_status']}."], "warning"))
     lines = ["Model performance and scientific status", "=======================================", "",
              "Recorded measurements from tracked evidence. Missing measurements are UNAVAILABLE;",
              "NOT_RUN describes a recorded evaluation status. Historical results do not verify",
@@ -496,13 +622,14 @@ def _render(manifest: dict[str, Any]) -> str:
              ".. raw:: html", "",
              '   <section class="status-dashboard" aria-label="Recorded model performance">']
     for index, (title, value, paragraphs, kind) in enumerate(cards):
-        refs = recent["source_ids"] if index == 2 else reconstruction["source_ids"]
+        refs = reconstruction["phase41"]["source_ids"] if title.startswith("Phase41") else recent["source_ids"] if title.startswith("Phase40") else reconstruction["source_ids"]
         lines.extend("   " + line for line in _card(title, value, paragraphs, refs, kind, index).splitlines())
     lines += ["   </section>", "", ".. only:: not html", ""]
     for title, value, paragraphs, kind in cards:
         lines += [f"   **{_literal(title)}: {_literal(value)}**", ""]
         lines.extend(f"   {_literal(paragraph)}" for paragraph in paragraphs)
         lines += [""]
+    lines += _render_phase41(reconstruction["phase41"])
     lines += ["Phase40r1 strict full-decay comparison", "----------------------------------------", "",
               "Both arms used the same untouched 100-event validation cohort. Values are",
               "strict checkpoint-direct reconstruction metrics; neither arm passed every",

@@ -198,3 +198,39 @@ def test_environment_python_symlink_is_not_resolved(
     entrypoint.symlink_to(base)
     assert entrypoint.absolute() == entrypoint
     assert entrypoint.resolve() == base
+
+
+def _serialized_beam_report():
+    report = _report(uids=['one'], scope='both', topology='checkpoint_direct', beam=True)
+    report.update(report_version=suite.EVALUATOR_REPORT_VERSION, device='cpu', torch_num_threads=1,
+                  torch_deterministic_algorithms_enabled=True)
+    report['checkpoint_pair']['reconstruction_sha256'] = 'a' * 64
+    report['context'].update(evaluation_split='validation', evaluation_event_selection='explicit_uid_cohort',
+                             evaluation_uid_train_overlap=[])
+    report['configuration']['beam_search'] = {
+        'enabled': True, 'model_only_rankings': list(suite.MODEL_ONLY_BEAM_RANKINGS),
+        'truth_used_for_ranking': False, 'oracle_at_k_is_diagnostic_only': True}
+    # The real evaluator sorts mapping keys when serializing JSON.
+    return json.loads(json.dumps(report, sort_keys=True))
+
+
+def _validate_serialized(report):
+    return suite._validate_component_report(report, name='beam', threads=1,
+        expected_uids=['one'], expected_scope='both', expected_topology='checkpoint_direct',
+        expected_checkpoint_sha256='a' * 64, expect_beam=True)
+
+
+def test_sorted_json_ranking_maps_are_valid():
+    report = _serialized_beam_report()
+    assert _validate_serialized(report) == report
+
+
+@pytest.mark.parametrize('mutation', ['missing_ranker', 'wrong_cohort'])
+def test_sorted_json_validation_still_rejects_contract_changes(mutation):
+    report = _serialized_beam_report()
+    if mutation == 'missing_ranker':
+        del report['beam_search']['top1_summaries_by_scope_and_model_only_ranking']['half']['average_link_probability']
+    else:
+        report['context']['evaluated_event_uids'] = ['different']
+    with pytest.raises(RuntimeError, match='contract'):
+        _validate_serialized(report)

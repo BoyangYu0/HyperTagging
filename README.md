@@ -15,17 +15,16 @@ revisions only.
 
 ## Documentation
 
-- [Documentation wiki (canonical Pages target; deployment pending)](https://boyangyu0.github.io/HyperTagging/wiki/)
-- [Dashboard (canonical Pages target; deployment pending)](https://boyangyu0.github.io/HyperTagging/wiki/_generated/status/)
+- [Documentation wiki](https://boyangyu0.github.io/HyperTagging/wiki/)
+- [Dashboard](https://boyangyu0.github.io/HyperTagging/wiki/_generated/status/)
 - [Local wiki source](docs/index.rst)
 - [Training and evaluation guide](docs/training.md)
 - [Preprocessing contract](docs/preprocessing_design.md)
 - [Full-decay evaluation contract](docs/full_decay_reconstruction_evaluation.md)
 - [basf2 and ONNX deployment](docs/basf2_onnx_full_decay.md)
 
-These URLs become public after a repository administrator enables GitHub Pages
-with **GitHub Actions** as its source and the first successful trusted `master`
-deployment completes. Until then, build the same site locally:
+GitHub Pages publishes the validated site from trusted `master` deployments.
+Build the same site locally:
 
 ```bash
 python3.11 -m venv .venv-docs
