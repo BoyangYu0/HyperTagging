@@ -19,6 +19,9 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase41 closeout and bounded Phase42 submission; historical physics audit unchanged.
+  - 6f3f378bb0357697b470d6c1503809a194cfc34f
+  - 64257f9bf18debb57d529bda4aafe56098cb44e7
   - 0e030d578f6e21fa993523be809b5fbecc8b1467
   - d02e823e0cbcc81c96c442994057155c7d8b7862
   - 537d7cc0e5d03c24b90d6b4d04f828df39f02c18

@@ -61,6 +61,13 @@ the two jobs to immutable contracts. No automatic promotion or sealed-test
 access is authorized. See the Phase41 wiki closeout for the study synthesis,
 metric populations, limitations, and the next-study contract.
 
+Validation: 141 focused tests passed on the exact frozen training source;
+149 documentation tests passed. The broad CPU review had 1,444 passes and
+34 skips; all 12 legacy CLI import failures passed after setting the new
+checkout on `PYTHONPATH`. Both two-step CPU training dry runs passed.
+These supplemental checks do not replace the historical audit scope or its
+canonical suite record.
+
 ## Reconstruction phase40r1 closeout — 2026-09-09
 
 Both preregistered 4,376-step reconstruction arms completed on the doubled

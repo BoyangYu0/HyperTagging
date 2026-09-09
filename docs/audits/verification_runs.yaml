@@ -227,3 +227,64 @@ runs:
     ci_run: NOT_RUN_LOCAL_ONLY
     human_visual_review_status: NOT_REVIEWED
     evidence_limitations: Dependency reproducibility and the complete CPU suite are verified only; the production source object/tree, fresh scientific-allocation preflight, final review/tag, convergence, scientific performance, sealed test, remote CI, and full training remain absent or deliberately blocked.
+# Focused checks do not replace the historical canonical complete-suite record.
+supplemental_runs:
+  - source_sha: 6f3f378bb0357697b470d6c1503809a194cfc34f
+    metadata_head: resolved_by_git_rev_parse_HEAD
+    worktree_state: clean_detached_training_source_with_separate_publication_metadata
+    date: '2026-09-09T15:40:30.879010+00:00'
+    commands:
+    - CUDA_VISIBLE_DEVICES="" OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=$PWD/src
+      python -m pytest -q tests/test_reconstruction_phase41_campaign_cpu.py tests/test_reconstruction_phase42_campaign_cpu.py
+      tests/test_full_reconstruction_evaluation_suite_cpu.py tests/test_full_decay_runner_cpu.py
+      tests/test_full_decay_metrics_cpu.py tests/test_full_depth_beam_cpu.py tests/test_confidence_calibration_cpu.py
+    - python -m pytest -q tests/test_docs_*_cpu.py
+    - python scripts/train_hyperbolic_pretrain.py --dry-run --tiny --device cpu --max-steps
+      2 --batch-size 2
+    - python scripts/train_level_reconstruction.py --dry-run --tiny --device cpu --max-steps
+      2 --batch-size 2
+    - ruff check --select F (changed Python files); bash -n (Phase42 wrapper); Python
+      compilation; JSON syntax; git diff --check
+    pytest:
+      result: PASS
+      passed: 141
+      skipped: 0
+      warnings: 0
+      duration_seconds: 7.81
+    documentation_tests:
+      passed: 149
+      skipped: 0
+      duration_seconds: 29.79
+    broad_cpu_review:
+      initial_passed: 1444
+      initial_failed: 12
+      skipped: 34
+      initial_seconds: 261.14
+      failed_recheck_passed: 12
+      failed_recheck_seconds: 203.25
+      environment_correction: Legacy CLI subprocess imports required PYTHONPATH pointing
+        to this new checkout src; all twelve passed on recheck.
+    notebooks:
+      generated_consistency:
+        result: NOT_RUN
+        count: 0
+      default_fixture:
+        result: NOT_RUN
+        count: 0
+      real_mdst_pilot:
+        result: NOT_RUN
+        count: 0
+      trained_physics_validation:
+        result: NOT_RUN
+        count: 0
+    real_data_inputs: phase41_fixed_validation_100_primary_and_repeat_20_beam_both_scopes;
+      phase42_train_70000_validation_UID_cohort_audit; sealed_test_closed
+    checkpoint: phase41_immutable_selected_primary_checkpoints_and_phase42_pretrained_steps_81096_108128_hash_verified
+    ci_run: PENDING_PUBLICATION_WORKFLOW
+    human_visual_review_status: NOT_REVIEWED
+    evidence_limitations: Phase41 strict repetitions agree exactly within the current
+      runtime; current versus original numerical summary residuals differ by less than
+      1e-6 with topology counts unchanged. Both arms fail hierarchy gates. Full mother
+      PID accuracy is 0/1 despite topology coverage 1/153. No physics promotion. Phase42
+      two training jobs submitted, outcomes pending. Pretraining advantage and data
+      limitation are unproven. The historical audit scope is unchanged.
