@@ -459,6 +459,9 @@ def _training_config(
         query_repulsion_weight=float(config["query_repulsion_weight"]),
         object_positive_weight=float(config["object_positive_weight"]),
         pointer_positive_weight=float(config["pointer_positive_weight"]),
+        pointer_positive_weights_by_level=_float_pairs(
+            config.get("pointer_positive_weights_by_level", [])
+        ),
         level_loss_weights=_float_pairs(config.get("level_loss_weights", [])),
         recovery_objective_weight=float(
             config.get("recovery_objective_weight", 1.0)

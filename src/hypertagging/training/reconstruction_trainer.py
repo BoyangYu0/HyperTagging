@@ -174,6 +174,7 @@ class ReconstructionConfig:
     query_repulsion_weight: float = 0.0
     object_positive_weight: float = 2.0
     pointer_positive_weight: float = 4.0
+    pointer_positive_weights_by_level: tuple[tuple[int, float], ...] = ()
     level_loss_weights: tuple[tuple[int, float], ...] = ()
     recovery_objective_weight: float = 1.0
     rollout_pid_kinematics_mode: str = "soft_decision_hard_construction"
@@ -361,6 +362,21 @@ def train_level_reconstruction(
         config.pointer_positive_weight
     ):
         raise ValueError("decoder positive weights must be finite and positive")
+    pointer_weight_levels = [
+        level for level, _weight in config.pointer_positive_weights_by_level
+    ]
+    if (
+        len(set(pointer_weight_levels)) != len(pointer_weight_levels)
+        or any(level <= 0 for level in pointer_weight_levels)
+        or any(
+            not math.isfinite(weight) or weight <= 0
+            for _level, weight in config.pointer_positive_weights_by_level
+        )
+    ):
+        raise ValueError(
+            "pointer_positive_weights_by_level must contain unique positive "
+            "levels with finite positive weights"
+        )
     level_weight_levels = [level for level, _weight in config.level_loss_weights]
     if (
         len(set(level_weight_levels)) != len(level_weight_levels)
@@ -758,6 +774,9 @@ def train_level_reconstruction(
             p4_closure_tolerance=config.rollout_p4_tolerance,
             object_positive_weight=config.object_positive_weight,
             pointer_positive_weight=config.pointer_positive_weight,
+            pointer_positive_weights_by_level=(
+                config.pointer_positive_weights_by_level
+            ),
         )
         final_metrics.update(validation_metrics)
         logger.log(step=validation_step, split="validation", **validation_metrics)
@@ -1168,6 +1187,9 @@ def train_level_reconstruction(
             p4_closure_tolerance=config.rollout_p4_tolerance,
             object_positive_weight=config.object_positive_weight,
             pointer_positive_weight=config.pointer_positive_weight,
+            pointer_positive_weights_by_level=(
+                config.pointer_positive_weights_by_level
+            ),
         )
         final_metrics.update(validation_metrics)
         logger.log(step=completed_steps, split="validation", **validation_metrics)
@@ -1499,7 +1521,9 @@ def _optimization_loss(
                 unrepresentable_target_counts=[masked_missing],
                 weights={"query_repulsion": config.query_repulsion_weight},
                 object_positive_weight=config.object_positive_weight,
-                pointer_positive_weight=config.pointer_positive_weight,
+                pointer_positive_weight=dict(
+                    config.pointer_positive_weights_by_level
+                ).get(target_level, config.pointer_positive_weight),
             )
             recovery_loss = loss_output.total * 0.0
             if recovery_missing:
@@ -1552,7 +1576,9 @@ def _optimization_loss(
                         constraint_policy=constraint_policy,
                         weights={"query_repulsion": config.query_repulsion_weight},
                         object_positive_weight=config.object_positive_weight,
-                        pointer_positive_weight=config.pointer_positive_weight,
+                        pointer_positive_weight=dict(
+                            config.pointer_positive_weights_by_level
+                        ).get(target_level, config.pointer_positive_weight),
                     ).total
                 )
                 auxiliary_loss_weights.append(level_loss_weight)
@@ -1576,7 +1602,9 @@ def _optimization_loss(
                 constraint_policy=constraint_policy,
                 weights={"query_repulsion": config.query_repulsion_weight},
                 object_positive_weight=config.object_positive_weight,
-                pointer_positive_weight=config.pointer_positive_weight,
+                pointer_positive_weight=dict(
+                    config.pointer_positive_weights_by_level
+                ).get(target_level, config.pointer_positive_weight),
             )
           level_outputs.append((target_level, diagnostic_output, diagnostic_loss))
     primary_loss = (
@@ -1943,6 +1971,7 @@ def validate_reconstruction(
     p4_closure_tolerance: float = 1e-6,
     object_positive_weight: float = 2.0,
     pointer_positive_weight: float = 4.0,
+    pointer_positive_weights_by_level: tuple[tuple[int, float], ...] = (),
 ) -> dict[str, float | str]:
     model.eval()
     rollout_policy_values = (
@@ -2050,7 +2079,9 @@ def validate_reconstruction(
                 target_policy=target_policy,
                 constraint_policy=constraint_policy,
                 object_positive_weight=object_positive_weight,
-                pointer_positive_weight=pointer_positive_weight,
+                pointer_positive_weight=dict(pointer_positive_weights_by_level).get(
+                    target_level, pointer_positive_weight
+                ),
             )
             accumulated.setdefault("validation_loss_total", []).append(
                 float(loss_output.total.detach().cpu())
@@ -2669,6 +2700,10 @@ def _data_order_contract(
         "grad_scaler_enabled": config.grad_scaler_enabled,
         "object_positive_weight": config.object_positive_weight,
         "pointer_positive_weight": config.pointer_positive_weight,
+        "pointer_positive_weights_by_level": [
+            [int(level), float(weight)]
+            for level, weight in config.pointer_positive_weights_by_level
+        ],
         "level_loss_weights": [
             [int(level), float(weight)]
             for level, weight in config.level_loss_weights

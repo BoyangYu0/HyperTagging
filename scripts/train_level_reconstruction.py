@@ -116,6 +116,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--scheduled-sampling-duration-steps", type=int, default=1000)
     parser.add_argument("--auxiliary-teacher-weight", type=float, default=0.0)
     parser.add_argument("--level-loss-weights", type=_level_float_pairs, default=())
+    parser.add_argument(
+        "--pointer-positive-weights-by-level",
+        type=_level_float_pairs,
+        default=(),
+    )
     parser.add_argument("--recovery-objective-weight", type=float, default=1.0)
     parser.add_argument(
         "--unrepresentable-target-policy",
@@ -276,6 +281,9 @@ def main(argv: list[str] | None = None) -> int:
                 scheduled_sampling_duration_steps=args.scheduled_sampling_duration_steps,
                 auxiliary_teacher_weight=args.auxiliary_teacher_weight,
                 level_loss_weights=tuple(args.level_loss_weights),
+                pointer_positive_weights_by_level=tuple(
+                    args.pointer_positive_weights_by_level
+                ),
                 recovery_objective_weight=args.recovery_objective_weight,
                 unrepresentable_target_policy=args.unrepresentable_target_policy,
                 level_sampling_mode=args.level_sampling_mode,
