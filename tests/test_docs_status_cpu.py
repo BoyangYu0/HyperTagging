@@ -58,6 +58,35 @@ def evidence(tmp_path, monkeypatch):
                                     "jobs": {"12345678": {"state": "COMPLETED"}, "87654321": {"state": "COMPLETED"}},
                                     "validation": {"delta_relbias_minus_q32": {"edge_f1": 0.008}, "required_edge_f1_delta": 0.010,
                                                    "paired_event_evidence": False, "guards": "not_established", "evidence_class": "aggregate_only_nonpromotable"}},
+        "reconstruction_phase40r1": {
+            "audit_version": "2026-09-09.phase40r1-closeout.v1",
+            "status": "COMPLETED", "strict_event_count": 100,
+            "beam_event_count": 20, "primary_repeat_identical": True,
+            "sealed_test_accessed": False, "promotion_authorized": False,
+            "longer_run_authorized": False,
+            "control": {"selected_step": 4000,
+                        "micro_complete_target_efficiency": 0.045,
+                        "full_root_completion_numerator": 1,
+                        "full_root_completion_denominator": 100,
+                        "all_gates_passed": False},
+            "query_scale": {"selected_step": 2000,
+                            "micro_complete_target_efficiency": 0.035,
+                            "full_root_completion_numerator": 2,
+                            "full_root_completion_denominator": 100,
+                            "all_gates_passed": False},
+            "control_beam": {"average_link_source_recall": 0.25,
+                             "average_link_source_precision": 0.68,
+                             "average_link_lcag_numerator": 1,
+                             "average_link_lcag_denominator": 329,
+                             "oracle_source_recall": 0.29,
+                             "oracle_lcag_numerator": 1,
+                             "oracle_lcag_denominator": 329,
+                             "oracle_is_diagnostic_only": True},
+            "decision": {"winning_arm": "CONTROL",
+                         "query_scale_continuation": "STOP",
+                         "longer_budget": "NOT_AUTHORIZED",
+                         "next_study": "LEVEL1_POINTER_BALANCE",
+                         "next_study_status": "PREREGISTRATION_IN_PROGRESS"}},
         "cpu_workflow": {"jobs": {"unit": {"steps": [{"run": "python -m pytest -q | tee private-log.txt"}]}}},
     }
     for key, document in documents.items():
@@ -84,7 +113,7 @@ def test_status_is_deterministic_and_preserves_record_scope(evidence, tmp_path, 
     assert manifest["pretraining"]["selected_profile_state"] == "NONE_SELECTED"
     assert manifest["pretraining"]["submission_performed"] is False
     assert manifest["pretraining"]["pretraining_success_gate_passed"] is False
-    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 2
+    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 3
     assert manifest["provenance"]["external_filesystem_or_network_artifacts_opened"] is False
     assert source_info(manifest, "issue_ledger")["freshness"]["status"] == "stale"
     assert source_info(manifest, "current_status")["freshness"]["status"] == "unknown"
@@ -295,6 +324,15 @@ def test_current_repository_dashboard_surfaces_recorded_acceptance_values(tmp_pa
     assert manifest["reconstruction"]["metrics"]["relbias"]["edge_f1"] == 0.039
     assert manifest["reconstruction"]["metrics"]["q32"]["edge_f1"] == 0.031
     assert manifest["reconstruction"]["cohorts"]["relbias"] == {"validation_events": 2000, "rollout_events": 1000}
+    phase40r1 = manifest["reconstruction"]["phase40r1"]
+    assert phase40r1["status"] == "COMPLETED"
+    assert phase40r1["arms"]["control"]["micro_complete_target_efficiency"] == pytest.approx(0.045015189174261255)
+    assert phase40r1["arms"]["control"]["full_root_completion_numerator"] == 1
+    assert phase40r1["arms"]["query_scale"]["full_root_completion_numerator"] == 2
+    assert phase40r1["arms"]["control"]["all_gates_passed"] is False
+    assert phase40r1["decision"]["winning_arm"] == "CONTROL"
+    assert phase40r1["decision"]["next_study_status"] == "SUBMITTED"
+    assert phase40r1["sealed_test_accessed"] is False
     assert manifest["science"]["real_pilot"] == manifest["science"]["trained_physics"] == "NOT_RUN"
     assert manifest["cpu_ci"]["without_explicit_pipefail"] == 3
 

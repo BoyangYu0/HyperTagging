@@ -28,6 +28,28 @@ committed current-HEAD multi-category real pilot has not run. Therefore the
 1k–10k pilot campaign from that clean source, run only its bounded shards,
 validate it globally, and review the consolidated report and figures.
 
+## Reconstruction phase40r1 closeout — 2026-09-09
+
+Both preregistered 4,376-step reconstruction arms completed on the doubled
+70,000-event training selection. The original-query control was stronger than
+the enlarged-query arm on the primary checkpoint metric (4.50% versus 3.45%
+micro complete-target efficiency), but neither arm passed every strict
+full-decay hierarchy gate. On the shared 100-event validation cohort, the
+control reconstructed 1 full root, 1/2,518 LCAG pairs, and 1/149 exact mothers;
+the query-scale arm reconstructed 2 full roots but also only 1 LCAG pair and 1
+exact mother. Promotion, a longer budget, and sealed-test access remain
+unauthorized.
+
+A validation-only threshold diagnostic did not improve LCAG or exact-mother
+coverage. Object threshold 0.60 improved full-root and half-perfect-LCAG counts
+without violating the existing recall/precision floors, so it is registered
+only as a fresh-cohort phase41 candidate, not as a post-hoc phase40 promotion.
+Two phase41 tasks are submitted: the phase40r1 control and a single-factor arm
+that reduces only the level-1 pointer-positive weight from 32 to 24. Both use
+the fresh phase41 selection/evaluation cohort, pointer threshold 0.35, object
+threshold 0.60, the same 4,376-step budget, strict repeatability and beam
+evaluation, and no sealed-test authority.
+
 ## Training-integration runtime evidence — 2026-08-14
 
 Non-scientific Slurm job `15745941` completed in 2:12 on `th-cl-nv01` from
@@ -123,9 +145,9 @@ remains optional/experimental.
 
 ## Deliberately deferred scientific issues
 
-No HyperTagging model redesign was performed. Trained physics performance,
-calibration, rare-channel quality, PID/fit-policy/channel-pooling ablations,
-query collapse, GPU throughput, rollout profiling, whole-set scoring, and
-iterative pointer decoding remain separate scientific or CUDA/HTCondor work.
-No HTCondor job, 100k canary, 10M campaign, long training, or CUDA job was run
-or submitted.
+The phase40r1/phase41 reconstruction studies do not establish promotion-grade
+trained physics performance. Calibration, rare-channel quality,
+PID/fit-policy/channel-pooling ablations, GPU throughput, whole-set scoring,
+and iterative pointer decoding remain separate work. No sealed-test request,
+HTCondor 100k canary, 10M campaign, or longer reconstruction budget is
+authorized by these validation-only results.

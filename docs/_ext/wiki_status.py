@@ -30,6 +30,7 @@ SOURCE_PATHS = {
     "pretraining_selection": "artifacts/codex/ht_pretraining_1m_phase3_batch_efficiency_selection_20260823.json",
     "transfer_preregistration": "configs/reconstruction/ht_reconstruction_transfer_preregistration_20260824.json",
     "reconstruction_terminal": "artifacts/codex/joint_optimization_20260824/reconstruction_stage_a_paired_relbias_16036157_terminal_audit_20260827.json",
+    "reconstruction_phase40r1": "artifacts/codex/reconstruction_phase40r1_closeout_20260909.json",
     "cpu_workflow": ".github/workflows/cpu-tests.yml",
 }
 SOURCE_IDS = {key: f"source-{index:02d}" for index, key in enumerate(SOURCE_PATHS, 1)}
@@ -317,6 +318,63 @@ def _collect(payloads: dict[str, Any], revision: str | None) -> dict[str, Any]:
         if reconstruction["edge_f1_delta"] is not None and reconstruction["required_edge_f1_delta"] is not None
         else None
     )
+    recent = _mapping(payloads.get("reconstruction_phase40r1"))
+    recent_metric_names = (
+        "micro_complete_target_efficiency", "predicted_depth_fraction",
+        "tree_validity", "full_source_recall", "full_source_precision",
+        "half_source_recall", "half_source_precision",
+    )
+    recent_count_names = (
+        "full_root_completion_numerator", "full_root_completion_denominator",
+        "full_lcag_numerator", "full_lcag_denominator",
+        "exact_mother_coverage_numerator", "exact_mother_coverage_denominator",
+        "half_lcag_numerator", "half_lcag_denominator",
+        "half_perfect_lcag_numerator", "half_perfect_lcag_denominator",
+    )
+    reconstruction["phase40r1"] = {
+        "source_ids": _refs("reconstruction_phase40r1"),
+        "status": _enum(recent.get("status"), {"COMPLETED"}),
+        "strict_event_count": _integer(recent.get("strict_event_count")),
+        "beam_event_count": _integer(recent.get("beam_event_count")),
+        "primary_repeat_identical": _boolean(recent.get("primary_repeat_identical")),
+        "sealed_test_accessed": _boolean(recent.get("sealed_test_accessed")),
+        "promotion_authorized": _boolean(recent.get("promotion_authorized")),
+        "longer_run_authorized": _boolean(recent.get("longer_run_authorized")),
+        "arms": {
+            arm: {
+                "selected_step": _integer(_mapping(recent.get(arm)).get("selected_step")),
+                "all_gates_passed": _boolean(_mapping(recent.get(arm)).get("all_gates_passed")),
+                **{name: _number(_mapping(recent.get(arm)).get(name)) for name in recent_metric_names},
+                **{name: _integer(_mapping(recent.get(arm)).get(name)) for name in recent_count_names},
+            }
+            for arm in ("control", "query_scale")
+        },
+        "beam": {
+            name: (_boolean(_mapping(recent.get("control_beam")).get(name))
+                   if name == "oracle_is_diagnostic_only"
+                   else _integer(_mapping(recent.get("control_beam")).get(name))
+                   if name.endswith(("_numerator", "_denominator"))
+                   else _number(_mapping(recent.get("control_beam")).get(name)))
+            for name in (
+                "average_link_source_recall", "average_link_source_precision",
+                "average_link_lcag_numerator", "average_link_lcag_denominator",
+                "oracle_source_recall", "oracle_source_precision",
+                "oracle_lcag_numerator", "oracle_lcag_denominator",
+                "oracle_is_diagnostic_only",
+            )
+        },
+        "decision": {
+            "winning_arm": _enum(_mapping(recent.get("decision")).get("winning_arm"), {"CONTROL", "QUERY_SCALE"}),
+            "query_scale_continuation": _enum(_mapping(recent.get("decision")).get("query_scale_continuation"), {"STOP", "CONTINUE"}),
+            "longer_budget": _enum(_mapping(recent.get("decision")).get("longer_budget"), {"NOT_AUTHORIZED", "AUTHORIZED"}),
+            "next_study": _enum(_mapping(recent.get("decision")).get("next_study"), {"LEVEL1_POINTER_BALANCE"}),
+            "next_study_status": _enum(_mapping(recent.get("decision")).get("next_study_status"), {"PREREGISTRATION_IN_PROGRESS", "SUBMITTED", "RUNNING", "COMPLETED"}),
+            "phase41_task_count": _integer(_mapping(recent.get("decision")).get("phase41_task_count")),
+            "phase41_pointer_threshold": _number(_mapping(recent.get("decision")).get("phase41_pointer_threshold")),
+            "phase41_object_threshold": _number(_mapping(recent.get("decision")).get("phase41_object_threshold")),
+            "phase41_threshold_role": _enum(_mapping(recent.get("decision")).get("phase41_threshold_role"), {"PREREGISTERED_FRESH_COHORT_CANDIDATE_ONLY"}),
+        },
+    }
     science = {"source_ids": _refs("verification_runs", "notebook_registry"),
                "real_pilot": _notebook_record(notebook_runs.get("real_mdst_pilot"))["result"],
                "trained_physics": _notebook_record(notebook_runs.get("trained_physics_validation"))["result"],
@@ -366,6 +424,11 @@ def _render(manifest: dict[str, Any]) -> str:
     reconstruction = manifest["reconstruction"]
     science = manifest["science"]
     source = manifest["sources"][SOURCE_IDS["reconstruction_terminal"]]
+    recent_source = manifest["sources"][SOURCE_IDS["reconstruction_phase40r1"]]
+    recent = reconstruction["phase40r1"]
+    control = recent["arms"]["control"]
+    query_scale = recent["arms"]["query_scale"]
+    beam = recent["beam"]
     delta, required = reconstruction["edge_f1_delta"], reconstruction["required_edge_f1_delta"]
     cards = [
         ("Reconstruction edge F1", _display(reconstruction["metrics"]["relbias"]["edge_f1"]),
@@ -374,29 +437,52 @@ def _render(manifest: dict[str, Any]) -> str:
         ("Edge F1 improvement", _signed(delta),
          [f"Required improvement {_signed(required)}; gap to target {_signed(reconstruction['target_gap'])}.",
           f"Recommendation: {reconstruction['recommendation']}. Paired event evidence: {_display(reconstruction['paired_event_evidence'])}."], "warning"),
-        ("Trained physics evaluation", science["trained_physics"],
-         [f"Current recorded real pilot: {science['real_pilot']}.",
-          "Strict full-decay and beam top-1/oracle metrics: UNAVAILABLE in dashboard sources.",
-          "Pretraining validation objectives and PID accuracies: UNAVAILABLE in dashboard sources."], "warning"),
+        ("Phase40r1 strict reconstruction", recent["status"],
+         [f"Control complete-target efficiency: {_display(control['micro_complete_target_efficiency'])}; strict full roots: {_display(control['full_root_completion_numerator'])}/{_display(control['full_root_completion_denominator'])}.",
+          f"Query-scale complete-target efficiency: {_display(query_scale['micro_complete_target_efficiency'])}; all gates passed: {_display(query_scale['all_gates_passed'])}.",
+          f"Next study: {recent['decision']['next_study']} ({recent['decision']['next_study_status']}, {_display(recent['decision']['phase41_task_count'])} tasks); sealed test accessed: {_display(recent['sealed_test_accessed'])}.",
+          f"Recorded real pilot: {science['real_pilot']}; pretraining validation objectives remain UNAVAILABLE."], "warning"),
     ]
     lines = ["Model performance and scientific status", "=======================================", "",
              "Recorded measurements from tracked evidence. Missing measurements are UNAVAILABLE;",
              "NOT_RUN describes a recorded evaluation status. Historical results do not verify",
              "the current model. See :doc:`../../evaluation` for metric definitions and populations.", "",
              ":download:`Metric values and source hashes <status.json>`.", "",
-             f"Stage A observation: {_literal(source['recorded_date'])}; freshness: {_literal(source['freshness']['status'])}.",
+             f"Phase40r1 observation: {_literal(recent_source['recorded_date'])}; freshness: {_literal(recent_source['freshness']['status'])}.",
+             f"Historical Stage A observation: {_literal(source['recorded_date'])}; freshness: {_literal(source['freshness']['status'])}.",
              "Aggregate-only exploratory comparison; no paired confidence interval is available.", "",
              ".. raw:: html", "",
              '   <section class="status-dashboard" aria-label="Recorded model performance">']
     for index, (title, value, paragraphs, kind) in enumerate(cards):
-        refs = science["source_ids"] if index == 2 else reconstruction["source_ids"]
+        refs = recent["source_ids"] if index == 2 else reconstruction["source_ids"]
         lines.extend("   " + line for line in _card(title, value, paragraphs, refs, kind, index).splitlines())
     lines += ["   </section>", "", ".. only:: not html", ""]
     for title, value, paragraphs, kind in cards:
         lines += [f"   **{_literal(title)}: {_literal(value)}**", ""]
         lines.extend(f"   {_literal(paragraph)}" for paragraph in paragraphs)
         lines += [""]
-    lines += ["Stage A validation comparison", "-----------------------------", "",
+    lines += ["Phase40r1 strict full-decay comparison", "----------------------------------------", "",
+              "Both arms used the same untouched 100-event validation cohort. Values are",
+              "strict checkpoint-direct reconstruction metrics; neither arm passed every",
+              "preregistered hierarchy gate and neither is authorized for promotion.", ""]
+    lines += _table(["Metric", "Control", "Query scale"], [
+        ["selected step", control["selected_step"], query_scale["selected_step"]],
+        ["micro complete-target efficiency", control["micro_complete_target_efficiency"], query_scale["micro_complete_target_efficiency"]],
+        ["predicted depth fraction", control["predicted_depth_fraction"], query_scale["predicted_depth_fraction"]],
+        ["tree validity", control["tree_validity"], query_scale["tree_validity"]],
+        ["full root completion", f"{_display(control['full_root_completion_numerator'])}/{_display(control['full_root_completion_denominator'])}", f"{_display(query_scale['full_root_completion_numerator'])}/{_display(query_scale['full_root_completion_denominator'])}"],
+        ["full LCAG", f"{_display(control['full_lcag_numerator'])}/{_display(control['full_lcag_denominator'])}", f"{_display(query_scale['full_lcag_numerator'])}/{_display(query_scale['full_lcag_denominator'])}"],
+        ["exact mother coverage", f"{_display(control['exact_mother_coverage_numerator'])}/{_display(control['exact_mother_coverage_denominator'])}", f"{_display(query_scale['exact_mother_coverage_numerator'])}/{_display(query_scale['exact_mother_coverage_denominator'])}"],
+        ["full source recall", control["full_source_recall"], query_scale["full_source_recall"]],
+        ["full source precision", control["full_source_precision"], query_scale["full_source_precision"]],
+        ["all gates passed", control["all_gates_passed"], query_scale["all_gates_passed"]],
+    ])
+    lines += ["Beam search used 20 validation events. Average-link top-1 source recall / precision:",
+              f"{_literal(beam['average_link_source_recall'])} / {_literal(beam['average_link_source_precision'])};",
+              f"LCAG {_literal(beam['average_link_lcag_numerator'])}/{_literal(beam['average_link_lcag_denominator'])}.",
+              f"Oracle-at-k recall was {_literal(beam['oracle_source_recall'])}, but LCAG remained {_literal(beam['oracle_lcag_numerator'])}/{_literal(beam['oracle_lcag_denominator'])}; oracle is diagnostic only.", "",
+              f"Phase41 preregisters pointer/object thresholds {_literal(recent['decision']['phase41_pointer_threshold'])}/{_literal(recent['decision']['phase41_object_threshold'])} on a fresh cohort; this is not a post-hoc phase40 promotion setting.", "",
+              "Stage A validation comparison", "-----------------------------", "",
               "Values are copied from the terminal receipt. Validation loss and pointer metrics",
               "describe the validation view; edge/tree results describe rollout. The receipt",
               "does not retain per-metric sufficient statistics or paired event uncertainties.",
