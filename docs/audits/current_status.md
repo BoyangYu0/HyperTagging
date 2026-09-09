@@ -55,7 +55,9 @@ validation cohort, so it does not identify a dataset-size effect. Additional
 pretraining is a hypothesis, not an established improvement: Phase42 compares
 existing pretrained steps 81,096 and 108,128 through the current fixed decoder
 and an untouched validation cohort. The user's 2026-09-09 request authorizes
-these two bounded 4,376-step trainings. No automatic promotion or sealed-test
+these two bounded 4,376-step trainings. Both were submitted and released from
+source `6f3f378bb0357697b470d6c1503809a194cfc34f`; the submission receipt binds
+the two jobs to immutable contracts. No automatic promotion or sealed-test
 access is authorized. See the Phase41 wiki closeout for the study synthesis,
 metric populations, limitations, and the next-study contract.
 
