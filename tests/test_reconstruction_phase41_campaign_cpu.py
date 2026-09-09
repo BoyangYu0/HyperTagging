@@ -228,7 +228,9 @@ def test_phase41_full_decay_binds_manifest_and_preregistered_thresholds() -> Non
     assert '"primary_complete_target_beam_direct.json"' in source
     assert '"primary_complete_target_contracted_diagnostic.json"' in source
     assert '"full_evaluation_bundle"' in source
-    assert '"oracle_at_k_summary_diagnostic_only"' in source
+    assert 'scope="both"' in source
+    assert '"top1_summaries_by_scope_and_model_only_ranking"' in source
+    assert '"oracle_at_k_summary_by_scope_diagnostic_only"' in source
     for metric in (
         "full_source_recall",
         "full_source_precision",

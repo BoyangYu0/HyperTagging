@@ -78,6 +78,26 @@ def test_full_decay_cli_accepts_deterministic_algorithm_requirement():
     assert args.deterministic_algorithms is True
 
 
+def test_half_tree_beam_oracle_uses_aggregate_lcag_metrics(monkeypatch):
+    module = _script_module()
+
+    class HalfEvaluation:
+        halves = ()
+
+    monkeypatch.setattr(
+        module,
+        "summarize_decay_evaluations",
+        lambda _rows: {
+            "perfect_lcag": {"value": 0.2},
+            "lcag_pair_accuracy": {"value": 0.3},
+            "mother_pid_coverage": {"value": 0.4},
+            "source_recall": {"value": 0.5},
+            "source_precision": {"value": 0.6},
+        },
+    )
+    assert module._beam_oracle_key(HalfEvaluation()) == (0.2, 0.3, 0.4, 0.5, 0.6)
+
+
 def test_full_decay_explicit_uid_manifest_is_hashed_and_validation_only(
     tmp_path,
 ):

@@ -354,8 +354,10 @@ def main(argv: list[str] | None = None) -> int:
         "average_link_probability",
         "normalized_joint_log_probability",
     )
-    beam_metric_rows: dict[str, list[Any]] = defaultdict(list)
-    beam_oracle_rows: list[Any] = []
+    beam_metric_rows: dict[str, dict[str, list[Any]]] = {
+        scope: defaultdict(list) for scope in scopes
+    }
+    beam_oracle_rows: dict[str, list[Any]] = {scope: [] for scope in scopes}
     beam_event_records: list[dict[str, Any]] = []
 
     for event_index, event in enumerate(context.events):
@@ -465,19 +467,30 @@ def main(argv: list[str] | None = None) -> int:
                 beam_width=args.beam_width,
                 lookahead_levels=args.max_level,
             )
-            candidates: list[tuple[Any, Any]] = []
+            candidates: list[tuple[Any, dict[str, Any]]] = []
             for hypothesis in hypotheses:
                 hypothesis.batch["evaluation_leaf_source_keys"] = (
                     projection.evaluation_leaf_source_keys.clone()
                 )
-                evaluation = evaluate_full_decay(
-                    hypothesis.batch,
-                    truth_batch,
-                    target_policy=target_policy,
-                    minimum_daughters=int(policy.minimum_daughters),
-                    truth_topology_mode=args.truth_topology_mode,
-                )
-                candidates.append((hypothesis, evaluation))
+                evaluations: dict[str, Any] = {}
+                if "full" in scopes:
+                    evaluations["full"] = evaluate_full_decay(
+                        hypothesis.batch,
+                        truth_batch,
+                        target_policy=target_policy,
+                        minimum_daughters=int(policy.minimum_daughters),
+                        truth_topology_mode=args.truth_topology_mode,
+                    )
+                if "half" in scopes:
+                    evaluations["half"] = evaluate_half_decays(
+                        hypothesis.batch,
+                        truth_batch,
+                        source_category=event.source_category,
+                        target_policy=target_policy,
+                        minimum_daughters=int(policy.minimum_daughters),
+                        truth_topology_mode=args.truth_topology_mode,
+                    )
+                candidates.append((hypothesis, evaluations))
             if candidates:
                 ranking_selections: dict[str, int] = {}
                 for ranking in beam_rankings:
@@ -489,18 +502,30 @@ def main(argv: list[str] | None = None) -> int:
                         ),
                     )
                     ranking_selections[ranking] = selected_index
-                    beam_metric_rows[ranking].append(candidates[selected_index][1])
-                oracle_index = max(
-                    range(len(candidates)),
-                    key=lambda index: _beam_oracle_key(candidates[index][1]),
-                )
-                beam_oracle_rows.append(candidates[oracle_index][1])
+                    for scope in scopes:
+                        beam_metric_rows[scope][ranking].append(
+                            candidates[selected_index][1][scope]
+                        )
+                oracle_candidate_indices = {
+                    scope: max(
+                        range(len(candidates)),
+                        key=lambda index: _beam_oracle_key(
+                            candidates[index][1][scope]
+                        ),
+                    )
+                    for scope in scopes
+                }
+                for scope, oracle_index in oracle_candidate_indices.items():
+                    beam_oracle_rows[scope].append(
+                        candidates[oracle_index][1][scope]
+                    )
                 beam_event_records.append(
                     {
                         "event_uid": event.event_uid,
                         "candidate_count": len(candidates),
                         "ranking_selections": ranking_selections,
-                        "oracle_candidate_index": oracle_index,
+                        "oracle_candidate_indices_by_scope": oracle_candidate_indices,
+                        "oracle_candidate_index": oracle_candidate_indices.get("full"),
                         "candidates": [
                             {
                                 "candidate_index": index,
@@ -511,9 +536,17 @@ def main(argv: list[str] | None = None) -> int:
                                     len(items)
                                     for items in hypothesis.accepted_by_level
                                 ],
-                                "truth_diagnostic_metrics": evaluation.as_dict(),
+                                "truth_diagnostic_metrics_by_scope": {
+                                    scope: evaluation.as_dict()
+                                    for scope, evaluation in evaluations.items()
+                                },
+                                "truth_diagnostic_metrics": (
+                                    evaluations["full"].as_dict()
+                                    if "full" in evaluations
+                                    else None
+                                ),
                             }
-                            for index, (hypothesis, evaluation) in enumerate(candidates)
+                            for index, (hypothesis, evaluations) in enumerate(candidates)
                         ],
                     }
                 )
@@ -649,13 +682,29 @@ def main(argv: list[str] | None = None) -> int:
         "events": event_records,
         "beam_search": {
             "event_count": len(beam_event_records),
+            "evaluated_scopes": list(scopes),
+            "top1_summaries_by_scope_and_model_only_ranking": {
+                scope: {
+                    ranking: summarize_decay_evaluations(rows)
+                    for ranking, rows in beam_metric_rows[scope].items()
+                }
+                for scope in scopes
+            },
             "top1_summaries_by_model_only_ranking": {
                 ranking: summarize_decay_evaluations(rows)
-                for ranking, rows in beam_metric_rows.items()
+                for ranking, rows in beam_metric_rows.get("full", {}).items()
+            },
+            "oracle_at_k_summary_by_scope": {
+                scope: (
+                    summarize_decay_evaluations(beam_oracle_rows[scope])
+                    if beam_oracle_rows[scope]
+                    else {}
+                )
+                for scope in scopes
             },
             "oracle_at_k_summary": (
-                summarize_decay_evaluations(beam_oracle_rows)
-                if beam_oracle_rows
+                summarize_decay_evaluations(beam_oracle_rows.get("full", []))
+                if beam_oracle_rows.get("full")
                 else {}
             ),
             "events": beam_event_records,
@@ -668,6 +717,21 @@ def main(argv: list[str] | None = None) -> int:
 
 def _beam_oracle_key(evaluation: Any) -> tuple[float, ...]:
     """Truth-only diagnostic ordering; never used to choose deployed output."""
+
+    if hasattr(evaluation, "halves"):
+        summary = summarize_decay_evaluations([evaluation])
+
+        def summary_value(name: str) -> float:
+            value = summary.get(name, {}).get("value")
+            return float(value) if value is not None else -1.0
+
+        return (
+            summary_value("perfect_lcag"),
+            summary_value("lcag_pair_accuracy"),
+            summary_value("mother_pid_coverage"),
+            summary_value("source_recall"),
+            summary_value("source_precision"),
+        )
 
     def value(metric: Any) -> float:
         return float(metric.value) if metric.value is not None else -1.0

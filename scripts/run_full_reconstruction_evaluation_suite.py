@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-REPORT_VERSION = "hypertagging-full-reconstruction-evaluation-suite-v1"
+REPORT_VERSION = "hypertagging-full-reconstruction-evaluation-suite-v2"
 EVALUATOR_REPORT_VERSION = "hypertagging-offline-full-decay-evaluation-v3"
 MANIFEST_VERSION = "hypertagging-reconstruction-evaluation-cohort-v1"
 MODEL_ONLY_BEAM_RANKINGS = (
@@ -280,11 +280,23 @@ def _run_component(
     if expect_beam:
         observed = report.get("beam_search", {})
         rankings = beam.get("model_only_rankings")
+        observed_scopes = observed.get("evaluated_scopes")
+        top1_by_scope = observed.get(
+            "top1_summaries_by_scope_and_model_only_ranking", {}
+        )
+        oracle_by_scope = observed.get("oracle_at_k_summary_by_scope", {})
         if (
             observed.get("event_count") != len(expected_uids)
+            or observed_scopes != expected_scopes
             or rankings != list(MODEL_ONLY_BEAM_RANKINGS)
             or beam.get("truth_used_for_ranking") is not False
             or beam.get("oracle_at_k_is_diagnostic_only") is not True
+            or any(
+                list(top1_by_scope.get(scope, {}))
+                != list(MODEL_ONLY_BEAM_RANKINGS)
+                for scope in expected_scopes
+            )
+            or any(not oracle_by_scope.get(scope) for scope in expected_scopes)
         ):
             raise RuntimeError("beam-search evaluation violated its ranking contract")
     return report
@@ -322,8 +334,9 @@ def _metric_catalog() -> dict[str, Any]:
         "inference_structurally_valid": "Fraction of reconstructed forests passing tree checks.",
         "p4_closure": "Fraction whose composite four-vectors equal daughter sums.",
         "beam_search": (
-            "Bounded, full-depth reconstruction on a fixed validation subset. Greedy "
-            "and every top-1 model-only ranking use exactly the same events."
+            "Bounded, full-depth reconstruction on a fixed validation subset. Full- "
+            "and half-tree metrics, including LCAG, are computed from the same beam "
+            "hypotheses; greedy and every top-1 model-only ranking use the same events."
         ),
         "learned_confidence_sum": "Sum of learned proposal confidence log-probabilities.",
         "learned_confidence_mean": "Mean learned proposal confidence over accepted links.",
@@ -522,7 +535,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "full-depth-beam-search",
         cohort=beam_manifest,
         uids=beam_uids,
-        scope="full",
+        scope="both",
         topology="checkpoint_direct",
         beam_width=args.beam_width,
     )
@@ -635,12 +648,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             ),
             "beam_search": {
                 "event_count": beam["beam_search"]["event_count"],
-                "greedy_same_cohort_summary": beam["summaries"]["full"],
-                "top1_summaries_by_model_only_ranking": beam["beam_search"][
-                    "top1_summaries_by_model_only_ranking"
+                "evaluated_scopes": beam["beam_search"]["evaluated_scopes"],
+                "greedy_same_cohort_summary_by_scope": beam["summaries"],
+                "top1_summaries_by_scope_and_model_only_ranking": beam["beam_search"][
+                    "top1_summaries_by_scope_and_model_only_ranking"
                 ],
-                "oracle_at_k_summary_diagnostic_only": beam["beam_search"][
-                    "oracle_at_k_summary"
+                "oracle_at_k_summary_by_scope_diagnostic_only": beam["beam_search"][
+                    "oracle_at_k_summary_by_scope"
                 ],
             },
         },

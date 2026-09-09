@@ -264,7 +264,7 @@ def main() -> int:
         beam_max_events=beam_count,
         beam_max_proposals=12,
         max_events=beam_count,
-        scope="full",
+        scope="both",
     )
     if (
         beam_report.get("beam_search", {}).get("event_count") != beam_count
@@ -272,6 +272,8 @@ def main() -> int:
             "truth_used_for_ranking"
         )
         is not False
+        or beam_report.get("beam_search", {}).get("evaluated_scopes")
+        != ["full", "half"]
     ):
         raise RuntimeError("phase41 beam-search validation contract failed")
     artifacts["primary_complete_target"].update(
@@ -419,12 +421,14 @@ def main() -> int:
             "beam_search": {
                 "contract": beam_contract,
                 "observed_event_count": beam_report["beam_search"]["event_count"],
-                "top1_summaries_by_model_only_ranking": beam_report[
+                "evaluated_scopes": beam_report["beam_search"]["evaluated_scopes"],
+                "greedy_same_cohort_summary_by_scope": beam_report["summaries"],
+                "top1_summaries_by_scope_and_model_only_ranking": beam_report[
                     "beam_search"
-                ]["top1_summaries_by_model_only_ranking"],
-                "oracle_at_k_summary_diagnostic_only": beam_report[
+                ]["top1_summaries_by_scope_and_model_only_ranking"],
+                "oracle_at_k_summary_by_scope_diagnostic_only": beam_report[
                     "beam_search"
-                ]["oracle_at_k_summary"],
+                ]["oracle_at_k_summary_by_scope"],
             },
         },
         "full_evaluation_bundle": {

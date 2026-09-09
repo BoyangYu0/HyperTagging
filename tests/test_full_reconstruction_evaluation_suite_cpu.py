@@ -64,8 +64,14 @@ def _report(*, uids: list[str], scope: str, topology: str, beam: bool) -> dict:
         "events": [{"event_uid": uid} for uid in uids],
         "beam_search": {
             "event_count": len(uids) if beam else 0,
-            "top1_summaries_by_model_only_ranking": beam_summary if beam else {},
-            "oracle_at_k_summary": _summary()["decay_metrics"] if beam else {},
+            "evaluated_scopes": scopes if beam else [],
+            "top1_summaries_by_scope_and_model_only_ranking": (
+                {name: beam_summary for name in scopes} if beam else {}
+            ),
+            "oracle_at_k_summary_by_scope": (
+                {name: _summary()["decay_metrics"] for name in scopes}
+                if beam else {}
+            ),
             "events": [],
         },
     }
@@ -141,6 +147,7 @@ def test_full_suite_runs_every_component_and_writes_one_index(
         "full-depth-beam-search",
     ]
     assert calls[-1]["expected_uids"] == ["one"]
+    assert calls[-1]["expected_scope"] == "both"
     assert "--beam-width" in calls[-1]["command"]
     assert "--deterministic-algorithms" in calls[0]["command"]
 
@@ -157,6 +164,12 @@ def test_full_suite_runs_every_component_and_writes_one_index(
         "half"
     ]
     assert receipt["results"]["beam_search"]["event_count"] == 1
+    assert receipt["results"]["beam_search"]["evaluated_scopes"] == [
+        "full", "half"
+    ]
+    assert receipt["results"]["beam_search"][
+        "top1_summaries_by_scope_and_model_only_ranking"
+    ]["half"]["average_link_probability"]["lcag_pair_accuracy"]
     assert "average_link_probability" in receipt["metric_catalog"]
     assert receipt["metric_catalog"]["oracle_at_k"].startswith("Truth-ranked")
     assert receipt["checkpoint_pair"]["compatible"] is True
