@@ -17,6 +17,7 @@ class EncoderTransferReport:
     frozen: bool
     leaf_pid_loaded_keys: tuple[str, ...] = ()
     leaf_pid_missing_keys: tuple[str, ...] = ()
+    leaf_pid_unexpected_keys: tuple[str, ...] = ()
     leaf_pid_shape_mismatches: tuple[str, ...] = ()
     leaf_pid_frozen: bool = False
 
@@ -35,6 +36,7 @@ def load_pretrained_encoder(
     leaf_pid_head: torch.nn.Module | None = None,
     transfer_leaf_pid_head: bool = False,
     freeze_leaf_pid_head: bool = False,
+    require_exact_leaf_pid_transfer: bool = False,
     minimum_coverage: float = 0.0,
     allow_low_coverage: bool = False,
 ) -> EncoderTransferReport:
@@ -67,7 +69,12 @@ def load_pretrained_encoder(
         parameter.requires_grad_(not freeze)
     leaf_loaded: list[str] = []
     leaf_missing: list[str] = []
+    leaf_unexpected: list[str] = []
     leaf_mismatch: list[str] = []
+    if require_exact_leaf_pid_transfer and not transfer_leaf_pid_head:
+        raise ValueError(
+            "require_exact_leaf_pid_transfer requires transfer_leaf_pid_head"
+        )
     if transfer_leaf_pid_head:
         if leaf_pid_head is None:
             raise ValueError("transfer_leaf_pid_head requires a destination leaf PID head")
@@ -85,6 +92,8 @@ def load_pretrained_encoder(
                 leaf_loaded.append(key)
             elif key in target_leaf:
                 leaf_mismatch.append(key)
+            else:
+                leaf_unexpected.append(key)
         leaf_result = leaf_pid_head.load_state_dict(compatible_leaf, strict=False)
         leaf_missing.extend(leaf_result.missing_keys)
         for parameter in leaf_pid_head.parameters():
@@ -97,9 +106,27 @@ def load_pretrained_encoder(
         frozen=freeze,
         leaf_pid_loaded_keys=tuple(sorted(leaf_loaded)),
         leaf_pid_missing_keys=tuple(sorted(leaf_missing)),
+        leaf_pid_unexpected_keys=tuple(sorted(leaf_unexpected)),
         leaf_pid_shape_mismatches=tuple(sorted(leaf_mismatch)),
         leaf_pid_frozen=bool(transfer_leaf_pid_head and freeze_leaf_pid_head),
     )
+    if require_exact_leaf_pid_transfer:
+        assert leaf_pid_head is not None
+        expected_leaf_keys = tuple(sorted(leaf_pid_head.state_dict()))
+        if (
+            report.leaf_pid_loaded_keys != expected_leaf_keys
+            or report.leaf_pid_missing_keys
+            or report.leaf_pid_unexpected_keys
+            or report.leaf_pid_shape_mismatches
+        ):
+            raise ValueError(
+                "exact leaf PID transfer contract failed: "
+                f"loaded={report.leaf_pid_loaded_keys}, "
+                f"expected={expected_leaf_keys}, "
+                f"missing={report.leaf_pid_missing_keys}, "
+                f"unexpected={report.leaf_pid_unexpected_keys}, "
+                f"shape_mismatches={report.leaf_pid_shape_mismatches}"
+            )
     if (
         (
             report.coverage < float(minimum_coverage)

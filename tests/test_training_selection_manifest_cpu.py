@@ -379,6 +379,7 @@ def test_tracked_authoritative_inventory_projects_exact_entry_schema_and_order(
     validate_training_selection_metadata(payload)
 
 
+@pytest.mark.campaign_artifacts('artifacts/experiment_readiness/production_1m_20260812/train_035k/train_035k.complete_only.index.json')
 def test_promoted_manifest_index_preflight_resolves_only_index_paths(
     tmp_path, monkeypatch
 ):

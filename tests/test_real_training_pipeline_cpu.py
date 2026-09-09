@@ -1,12 +1,84 @@
 import pytest
 
+import hypertagging.training.reconstruction_trainer as reconstruction_trainer
 from hypertagging.data.notebook_fixtures import write_notebook_fixture_v3
 from hypertagging.training.checkpointing import load_training_checkpoint
+from hypertagging.training.fixed_validation import excluded_event_uids_contract
 from hypertagging.training.pretrain_trainer import PretrainConfig, train_hyperbolic_pretraining
 from hypertagging.training.reconstruction_trainer import (
     ReconstructionConfig,
     train_level_reconstruction,
 )
+
+
+def test_reconstruction_threads_extended_rollout_and_final_validation_contracts(
+    tmp_path, monkeypatch
+):
+    data = write_notebook_fixture_v3(tmp_path / "extended-tiny.parquet")
+    rollout_configs = []
+    validation_kwargs = []
+    real_level_rollout = reconstruction_trainer.level_rollout
+    real_validate = reconstruction_trainer.validate_reconstruction
+
+    def recording_level_rollout(*args, **kwargs):
+        rollout_configs.append(kwargs["config"])
+        return real_level_rollout(*args, **kwargs)
+
+    def recording_validate(*args, **kwargs):
+        validation_kwargs.append(dict(kwargs))
+        return real_validate(*args, **kwargs)
+
+    monkeypatch.setattr(
+        reconstruction_trainer, "level_rollout", recording_level_rollout
+    )
+    monkeypatch.setattr(
+        reconstruction_trainer, "validate_reconstruction", recording_validate
+    )
+    excluded_uids = ("fixture:validation:never-selected",)
+    result = train_level_reconstruction(
+        ReconstructionConfig(
+            data=str(data),
+            output_dir=str(tmp_path / "extended-reconstruction"),
+            max_steps=1,
+            batch_size=2,
+            allow_legacy_conflated=True,
+            validate_every=2,
+            rollout_validate_every=2,
+            checkpoint_every=2,
+            max_validation_events=2,
+            rollout_validation_events=0,
+            scheduled_sampling_probability=1.0,
+            scheduled_sampling_duration_steps=0,
+            validation_excluded_event_uids=excluded_uids,
+            rollout_continue_through_empty_levels=True,
+        )
+    )
+
+    assert result.metrics["sampled_predicted_count"] > 0
+    assert rollout_configs
+    assert all(config.continue_through_empty_levels for config in rollout_configs)
+    assert len(validation_kwargs) == 1
+    assert validation_kwargs[0]["excluded_event_uids"] == excluded_uids
+    assert validation_kwargs[0]["rollout_continue_through_empty_levels"] is True
+
+    payload = load_training_checkpoint(result.checkpoint)
+    selection = payload["training_state"]["checkpoint_selection_contract"]
+    assert selection["version"] == "reconstruction-checkpoint-selection-v8"
+    assert selection["rollout_configuration"]["policy_identity"][
+        "empty_level_policy"
+    ] == "continue_to_max_level"
+    assert payload["data_order_contract"][
+        "rollout_continue_through_empty_levels"
+    ] is True
+    exclusion_contract = excluded_event_uids_contract(excluded_uids)
+    assert all(
+        selection["validation_selection"][key] == value
+        for key, value in exclusion_contract.items()
+    )
+    assert all(
+        payload["validation_selection"][key] == value
+        for key, value in exclusion_contract.items()
+    )
 
 
 def test_real_parquet_train_transfer_validate_and_resume(tmp_path):
@@ -125,6 +197,16 @@ def test_real_parquet_train_transfer_validate_and_resume(tmp_path):
             : int(reconstruction.metrics["rollout_validation_events"])
         ]
     )
+    exclusion_contract = excluded_event_uids_contract(())
+    assert all(
+        reconstruction_payload["validation_selection"][key] == value
+        for key, value in exclusion_contract.items()
+    )
+    assert all(
+        reconstruction_payload["data_order_contract"][key] == value
+        for key, value in exclusion_contract.items()
+    )
+    assert reconstruction_payload["config"]["validation_excluded_event_uids"] == ()
     resumed_without_new_steps = train_level_reconstruction(
         ReconstructionConfig(
             data=str(data),

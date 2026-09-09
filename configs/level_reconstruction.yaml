@@ -13,10 +13,14 @@ max_validation_events: 2000
 rollout_validation_events: 1000
 validate_every: 100
 rollout_validate_every: 500
-best_metric: predicted_edge_f1
+best_metric: micro_complete_target_efficiency
 best_mode: max
 rollout_min_tree_validity: 0.999
 rollout_min_p4_closure: 1.0
+rollout_min_depth_fraction: 0.0
+rollout_min_complete_target_efficiency: 0.0
+rollout_object_threshold: 0.5
+rollout_pointer_threshold: 0.5
 rollout_p4_tolerance: 1.0e-6
 rollout_max_recursive_source_conflicts: 0
 rollout_required_denominators:
@@ -24,8 +28,10 @@ rollout_required_denominators:
   - predicted_edge_denominator
   - predicted_p4_closure_denominator
 # Independent diagnostic tracks are always retained as
-# best_teacher_forced.pt, best_rollout_edge_f1.pt, and
-# best_rollout_tree_validity.pt when their denominators are nonzero.
+# best_teacher_forced.pt, best_rollout_edge_f1.pt,
+# best_rollout_complete_target_efficiency.pt,
+# best_rollout_depth_fraction.pt, and best_rollout_tree_validity.pt when their
+# denominators are nonzero.
 pilot_allow_train_validation_fallback: false
 initial_state_policy: upsilon4s
 query_repulsion_weight: 0.0

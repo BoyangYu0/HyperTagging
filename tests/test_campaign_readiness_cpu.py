@@ -27,6 +27,7 @@ from hypertagging.training.checkpoint_selection import (
     reconstruction_selection_contract,
 )
 from hypertagging.training.data_module import _track_fit_policies_from_publications
+from hypertagging.training.fixed_validation import excluded_event_uids_contract
 from hypertagging.training.pretrain_trainer import objective_preflight_report
 from scripts.train_level_reconstruction import parse_args as parse_reconstruction_args
 
@@ -45,16 +46,70 @@ def test_teacher_loss_and_rollout_f1_select_independent_checkpoint_tracks():
         "validation_loss_total": 0.6,
         "validation_teacher_forced_terms": 8.0,
         "predicted_edge_f1": 0.75,
+        "micro_complete_target_efficiency": 0.25,
+        "complete_target_efficiency_denominator": 12.0,
+        "predicted_depth_fraction": 0.5,
         "predicted_tree_validity_rate": 1.0,
         "rollout_validation_events": 4.0,
     }
     state, selected = checkpoint_track_decisions(rollout_metrics, state)
     assert {track.filename for track in selected} == {
         "best_rollout_edge_f1.pt",
+        "best_rollout_complete_target_efficiency.pt",
+        "best_rollout_depth_fraction.pt",
         "best_rollout_tree_validity.pt",
     }
     assert state["validation_loss_total"] == pytest.approx(0.4)
     assert state["predicted_edge_f1"] == pytest.approx(0.75)
+    assert state["micro_complete_target_efficiency"] == pytest.approx(0.25)
+
+
+def test_complete_target_track_requires_a_real_complete_target_denominator():
+    state = initial_track_values()
+    metrics = {
+        "rollout_validation_events": 4.0,
+        "micro_complete_target_efficiency": 1.0,
+        "complete_target_efficiency_denominator": 0.0,
+    }
+    state, selected = checkpoint_track_decisions(metrics, state)
+    assert "best_rollout_complete_target_efficiency.pt" not in {
+        track.filename for track in selected
+    }
+    assert state["micro_complete_target_efficiency"] == -float("inf")
+
+
+def test_hierarchy_recovery_cli_configuration_is_explicit() -> None:
+    args = parse_reconstruction_args(
+        [
+            "--best-metric",
+            "micro_complete_target_efficiency",
+            "--best-mode",
+            "max",
+            "--unrepresentable-target-policy",
+            "recovery_objective",
+            "--level-loss-weights",
+            "1:1,2:1,3:1.25,4:1.5,5:2,6:3",
+            "--recovery-objective-weight",
+            "2",
+            "--rollout-object-threshold",
+            "0.35",
+            "--rollout-pointer-threshold",
+            "0.4",
+        ]
+    )
+    assert args.best_metric == "micro_complete_target_efficiency"
+    assert args.unrepresentable_target_policy == "recovery_objective"
+    assert args.level_loss_weights == (
+        (1, 1.0),
+        (2, 1.0),
+        (3, 1.25),
+        (4, 1.5),
+        (5, 2.0),
+        (6, 3.0),
+    )
+    assert args.recovery_objective_weight == 2.0
+    assert args.rollout_object_threshold == pytest.approx(0.35)
+    assert args.rollout_pointer_threshold == pytest.approx(0.4)
 
 
 def test_track_a_checkpoint_contract_binds_stop_on_empty_rollout_policy():
@@ -71,11 +126,54 @@ def test_track_a_checkpoint_contract_binds_stop_on_empty_rollout_policy():
     )
     track_a = rollout_policy_identity(continue_through_empty_levels=False)
     track_b = rollout_policy_identity(continue_through_empty_levels=True)
-    assert contract["version"] == "reconstruction-checkpoint-selection-v5"
+    assert contract["version"] == "reconstruction-checkpoint-selection-v8"
     assert contract["rollout_configuration"]["policy_identity"] == track_a
+    assert "excluded_event_uid_count" not in contract["validation_selection"]
     assert track_a["empty_level_policy"] == "stop_on_first_empty"
     assert track_a["sha256"] != track_b["sha256"]
     assert len(str(track_a["sha256"])) == 64
+
+
+def test_extended_checkpoint_contract_binds_continuation_and_exclusions():
+    arguments = {
+        "best_metric": "predicted_edge_f1",
+        "best_mode": "max",
+        "max_validation_events": 32,
+        "rollout_validation_events": 8,
+        "rollout_validate_every": 100,
+        "rollout_pid_kinematics_mode": "soft_decision_hard_construction",
+        "rollout_pid_temperature": 0.5,
+        "target_policy": "complete_only",
+        "constraint_policy": {},
+    }
+    continuation = reconstruction_selection_contract(
+        **arguments,
+        rollout_continue_through_empty_levels=True,
+    )
+    assert continuation["version"] == "reconstruction-checkpoint-selection-v8"
+    assert continuation["rollout_configuration"]["policy_identity"] == (
+        rollout_policy_identity(continue_through_empty_levels=True)
+    )
+    assert continuation["validation_selection"] == {
+        "version": "ci-source-prefix-v1",
+        "scientific_mode": False,
+        "selection_manifest_hash": "",
+        **excluded_event_uids_contract(()),
+    }
+
+    excluded_uids = ("validation:b", "validation:a", "validation:a")
+    excluded = reconstruction_selection_contract(
+        **arguments,
+        validation_excluded_event_uids=excluded_uids,
+    )
+    assert excluded["version"] == "reconstruction-checkpoint-selection-v8"
+    assert excluded["rollout_configuration"]["policy_identity"] == (
+        rollout_policy_identity(continue_through_empty_levels=False)
+    )
+    assert all(
+        excluded["validation_selection"][key] == value
+        for key, value in excluded_event_uids_contract(excluded_uids).items()
+    )
 
 
 def test_query_repulsion_masks_no_object_overlap_and_is_permutation_invariant():

@@ -378,7 +378,7 @@ def test_current_repository_dashboard_surfaces_recorded_acceptance_values(tmp_pa
     assert phase40r1["decision"]["next_study_status"] == "SUBMITTED"
     assert phase40r1["sealed_test_accessed"] is False
     assert manifest["science"]["real_pilot"] == manifest["science"]["trained_physics"] == "NOT_RUN"
-    assert manifest["cpu_ci"]["without_explicit_pipefail"] == 3
+    assert manifest["cpu_ci"]["without_explicit_pipefail"] == 0
 
 
 def test_current_best_metric_contract_rejects_missing_half_or_beam_metrics(evidence, tmp_path):

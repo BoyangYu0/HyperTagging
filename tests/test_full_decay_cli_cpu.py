@@ -45,6 +45,8 @@ def test_full_decay_cli_defaults_to_cpu_both_scopes(monkeypatch):
     assert args.use_learned_confidence is None
     assert not args.beam_search
     assert args.beam_width == 4
+    assert args.threads == 1
+    assert args.deterministic_algorithms is False
     assert module.os.environ["CUDA_VISIBLE_DEVICES"] == ""
     policy = module.rollout_policy_identity(continue_through_empty_levels=True)
     assert module.REPORT_VERSION == "hypertagging-offline-full-decay-evaluation-v3"
@@ -174,8 +176,10 @@ def test_cli_report_keeps_greedy_results_and_adds_parallel_beam_metrics(
     )
     monkeypatch.setattr(module, "load_trained_evaluation_context", lambda **kw: context)
     monkeypatch.setattr(module, "_evaluator_code_provenance", lambda: {})
-    paths = [tmp_path / "greedy.json", tmp_path / "beam.json"]
-    for path, extra in zip(paths, ([], ["--beam-search", "--beam-width", "2"])):
+    paths = [tmp_path / "greedy.json", tmp_path / "beam.json", tmp_path / "ranking.json"]
+    for path, extra in zip(
+        paths, ([], ["--beam-search", "--beam-width", "2"], ["--beam-width", "2"])
+    ):
         assert (
             module.main(
                 _required_args()
@@ -192,7 +196,11 @@ def test_cli_report_keeps_greedy_results_and_adds_parallel_beam_metrics(
             )
             == 0
         )
-    greedy, beam = [json.loads(path.read_text()) for path in paths]
+    greedy, beam, ranking = [json.loads(path.read_text()) for path in paths]
+    assert ranking["configuration"]["beam_search"]["algorithm"] == "diagnostic_proposal_set_beam"
+    assert ranking["beam_search"]["event_count"] == 1
+    assert ranking["beam_search"]["events"][0]["candidate_count"] > 0
+    assert ranking["summaries"]["full"]["decay_metrics"] == greedy["summaries"]["full"]["decay_metrics"]
     assert greedy["report_version"] == module.REPORT_VERSION
     assert (
         not {
@@ -241,6 +249,61 @@ def test_full_decay_cli_allows_explicit_confidence_diagnostic_override():
     module = _script_module()
     args = module.parse_args(_required_args() + ["--disable-learned-confidence"])
     assert args.use_learned_confidence is False
+
+
+def test_full_decay_cli_accepts_deterministic_algorithm_requirement():
+    module = _script_module()
+    args = module.parse_args(
+        _required_args() + ["--threads", "1", "--deterministic-algorithms"]
+    )
+    assert args.threads == 1
+    assert args.deterministic_algorithms is True
+
+
+def test_half_tree_beam_oracle_uses_aggregate_lcag_metrics(monkeypatch):
+    module = _script_module()
+
+    class HalfEvaluation:
+        halves = ()
+
+    monkeypatch.setattr(
+        module,
+        "summarize_decay_evaluations",
+        lambda _rows: {
+            "perfect_lcag": {"value": 0.2},
+            "lcag_pair_accuracy": {"value": 0.3},
+            "mother_pid_coverage": {"value": 0.4},
+            "source_recall": {"value": 0.5},
+            "source_precision": {"value": 0.6},
+        },
+    )
+    assert module._beam_oracle_key(HalfEvaluation()) == (0.2, 0.3, 0.4, 0.5, 0.6)
+
+
+def test_full_decay_explicit_uid_manifest_is_hashed_and_validation_only(
+    tmp_path,
+):
+    module = _script_module()
+    uids = ["validation:a", "validation:b"]
+    manifest = tmp_path / "cohort.json"
+    payload = {
+        "manifest_version": "hypertagging-reconstruction-evaluation-cohort-v1",
+        "role": "validation",
+        "sealed_test_role_access": "forbidden",
+        "event_uid_count": len(uids),
+        "event_uids_sha256": module._uid_sequence_sha256(uids),
+        "event_uids": uids,
+    }
+    manifest.write_text(json.dumps(payload), encoding="utf-8")
+
+    loaded = module._load_event_uid_manifest(manifest, len(uids))
+
+    assert loaded["event_uids"] == uids
+    assert len(loaded["sha256"]) == 64
+    payload["role"] = "test"
+    manifest.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="manifest is invalid"):
+        module._load_event_uid_manifest(manifest, len(uids))
 
 
 def test_output_path_cannot_alias_direct_or_manifest_referenced_input(tmp_path):

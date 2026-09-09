@@ -373,6 +373,9 @@ RUNTIME_STATE_FIELDS = {
 }
 
 
+TRUSTED_STATE_OWNER_UID = 12184
+
+
 def validate_state_integrity(spec: Mapping[str, Any], receipt: Mapping[str, Any]) -> None:
     schema = spec["schemas"]["StateIntegrityReceipt.v12"]
     exact_keys(receipt, schema["exact_keys"], "state integrity receipt")
@@ -397,7 +400,7 @@ def validate_state_integrity(spec: Mapping[str, Any], receipt: Mapping[str, Any]
             raise VerificationError("state target type/mode mismatch")
         expected_identity = (entry["st_dev"], entry["st_ino"], entry["owner_uid"], entry["mode"], entry["byte_length"])
         actual_identity = (before.st_dev, before.st_ino, before.st_uid, stat.S_IMODE(before.st_mode), before.st_size)
-        if expected_identity != actual_identity or entry["owner_uid"] != 12184:
+        if expected_identity != actual_identity or entry["owner_uid"] != TRUSTED_STATE_OWNER_UID:
             raise VerificationError("state target identity/owner mismatch")
         fd = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
         try:

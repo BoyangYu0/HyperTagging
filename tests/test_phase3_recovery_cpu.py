@@ -41,6 +41,7 @@ def _finite_tensors(value: object, path: str = "") -> list[str]:
     return bad
 
 
+@pytest.mark.campaign_artifacts('artifacts/runs/ht-pretrain-production-1m-h100-20260821/20260812/15933802/checkpoint-step-54064.pt')
 def test_immutable_failed_lineage_and_checkpoint_are_readable_and_finite():
     assert hashlib.sha256(CHECKPOINT.read_bytes()).hexdigest() == CHECKPOINT_SHA256
     assert CHECKPOINT.stat().st_size == 19_371_763
@@ -69,6 +70,7 @@ def test_immutable_failed_lineage_and_checkpoint_are_readable_and_finite():
         assert _finite_tensors(payload[section], section) == []
 
 
+@pytest.mark.campaign_artifacts('artifacts/runs/ht-pretrain-production-1m-h100-20260821/20260812/15933802/metrics.jsonl')
 def test_failed_metrics_prove_validation_boundary_and_no_restart():
     metrics_path = ROOT / (
         "artifacts/runs/ht-pretrain-production-1m-h100-20260821/20260812/"
@@ -137,6 +139,7 @@ def test_recovery_binds_all_eight_validation_checkpoint_step_boundaries():
     assert "108128" in renderer
 
 
+@pytest.mark.campaign_artifacts('artifacts/runs/ht-pretrain-production-1m-h100-20260821/20260812/15933802/checkpoint-step-54064.pt')
 def test_exact_resume_enters_phase3_at_next_optimizer_step():
     schedule = ProgressivePhaseSchedule(
         unit="optimizer_step", durations=(27032, 27032, 27032, 27032)

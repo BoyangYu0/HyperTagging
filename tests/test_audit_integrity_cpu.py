@@ -274,3 +274,21 @@ def test_missing_or_nonancestor_audited_code_sha_fails(tmp_path):
     assert "not an ancestor" in _load_validator().validate_audited_code_ancestry(
         nonancestor, repo
     )[0]
+
+
+def test_merge_of_reviewed_tree_passes_but_merge_source_edits_fail(tmp_path):
+    repo, _, ledger = _audit_history_fixture(tmp_path)
+    _git(repo, "checkout", "-b", "reviewed")
+    (repo / "src/model.py").write_text("VALUE = 2\n")
+    reviewed = _commit(repo, "reviewed source")
+    ledger["allowed_post_audit_commits"] = [reviewed]
+    _git(repo, "checkout", "master")
+    _git(repo, "merge", "--no-ff", "reviewed", "-m", "merge reviewed tree")
+    validator = _load_validator()
+    assert validator.validate_audited_code_ancestry(ledger, repo) == []
+    (repo / "src/model.py").write_text("VALUE = 3\n")
+    _git(repo, "add", "src/model.py")
+    _git(repo, "commit", "--amend", "--no-edit")
+    assert validator.validate_audited_code_ancestry(ledger, repo) == [
+        "post-audit path is outside the allowlist: src/model.py"
+    ]

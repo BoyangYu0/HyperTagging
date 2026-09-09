@@ -21,7 +21,11 @@ from hypertagging.models.hyperbolic import (
 )
 from hypertagging.models.relations import HyperbolicRelationBias
 from hypertagging.training.checkpoint_selection import rollout_checkpoint_eligibility
-from hypertagging.training.fixed_validation import select_validation_events
+from hypertagging.training.fixed_validation import (
+    EXCLUDED_EVENT_UID_HASH_SCHEME,
+    excluded_event_uids_contract,
+    select_validation_events,
+)
 from hypertagging.training.learning_rate import (
     build_warmup_cosine_scheduler,
     learning_rate_schedule_contract,
@@ -46,6 +50,8 @@ from hypertagging.training.pretrain_trainer import (
     objective_preflight_report,
 )
 from hypertagging.training.reconstruction_trainer import (
+    ReconstructionConfig,
+    _data_order_contract,
     _require_scientific_capacity_report,
 )
 
@@ -720,7 +726,7 @@ def test_corrected_scientific_configs_and_small_candidate_contract():
         assert getattr(parsed_rerun, name) == h100_rerun[name]
     assert reconstruction["max_validation_events"] == 2000
     assert reconstruction["rollout_validation_events"] == 1000
-    assert reconstruction["best_metric"] == "predicted_edge_f1"
+    assert reconstruction["best_metric"] == "micro_complete_target_efficiency"
     assert reconstruction["best_mode"] == "max"
 
     candidate = MODEL_PRESETS["small_candidate"]
@@ -767,6 +773,64 @@ def test_rollout_gates_reject_ineligible_primary_metrics():
     assert not rollout_checkpoint_eligibility(zero_denominator, gates)["eligible"]
 
 
+def test_hierarchy_rollout_gates_require_depth_and_complete_targets():
+    gates = {
+        "minimum_tree_validity": 0.999,
+        "minimum_p4_closure": 1.0,
+        "maximum_recursive_source_conflicts": 0,
+        "minimum_depth_fraction": 0.5,
+        "minimum_complete_target_efficiency": 0.02,
+        "required_denominators": ["rollout_validation_events"],
+    }
+    metrics = {
+        "rollout_validation_events": 100,
+        "predicted_tree_validity_rate": 1.0,
+        "predicted_p4_closure_rate": 1.0,
+        "predicted_recursive_source_conflicts": 0.0,
+        "predicted_depth_fraction": 0.6,
+        "micro_complete_target_efficiency": 0.03,
+    }
+    assert rollout_checkpoint_eligibility(metrics, gates)["eligible"]
+    too_shallow = dict(metrics, predicted_depth_fraction=0.49)
+    result = rollout_checkpoint_eligibility(too_shallow, gates)
+    assert not result["eligible"]
+    assert "minimum:predicted_depth_fraction" in result["failures"]
+    no_complete_targets = dict(metrics, micro_complete_target_efficiency=0.0)
+    result = rollout_checkpoint_eligibility(no_complete_targets, gates)
+    assert not result["eligible"]
+    assert "minimum:micro_complete_target_efficiency" in result["failures"]
+
+
+def test_unevaluated_rollout_gates_are_explicit_and_json_finite():
+    gates = {
+        "minimum_tree_validity": 0.999,
+        "minimum_p4_closure": 1.0,
+        "maximum_recursive_source_conflicts": 0,
+        "required_denominators": [
+            "rollout_validation_events",
+            "predicted_edge_denominator",
+            "predicted_p4_closure_denominator",
+        ],
+    }
+    result = rollout_checkpoint_eligibility(
+        {"rollout_validation_events": 0.0}, gates
+    )
+
+    assert not result["eligible"]
+    assert result["evaluated_metrics"] == {
+        "predicted_tree_validity_rate": None,
+        "predicted_p4_closure_rate": None,
+        "predicted_recursive_source_conflicts": None,
+    }
+    assert {
+        "finite:predicted_tree_validity_rate",
+        "finite:predicted_p4_closure_rate",
+        "finite:predicted_recursive_source_conflicts",
+    }.issubset(result["failures"])
+    # Strict JSON rejects NaN and Inf, matching receipt/checkpoint metadata QA.
+    json.dumps(result, allow_nan=False)
+
+
 @dataclass(frozen=True)
 class _Event:
     event_uid: str
@@ -802,3 +866,80 @@ def test_scientific_fixed_validation_is_order_independent_and_restorable():
     )
     assert [event.event_uid for event in restored] == list(uids)
     assert restored_uids == uids
+
+
+def test_fixed_validation_exclusions_are_set_bound_and_applied_before_ranking():
+    events = [_Event(f"validation:{index}") for index in range(20)]
+    excluded = ("validation:2", "validation:7", "validation:2")
+    selected, uids, contract = select_validation_events(
+        events,
+        limit=7,
+        scientific_mode=True,
+        selection_manifest_hash="manifest-hash",
+        seed=17,
+        excluded_event_uids=excluded,
+    )
+    manually_filtered = [
+        event for event in events if event.event_uid not in set(excluded)
+    ]
+    _, expected_uids, _ = select_validation_events(
+        reversed(manually_filtered),
+        limit=7,
+        scientific_mode=True,
+        selection_manifest_hash="manifest-hash",
+        seed=17,
+    )
+    assert [event.event_uid for event in selected] == list(uids)
+    assert uids == expected_uids
+    assert not set(uids) & set(excluded)
+    assert contract == {
+        "version": "manifest-role-uid-hash-v1",
+        "mode": "manifest_validation_role_uid_hash",
+        "selection_manifest_hash": "manifest-hash",
+        "seed": 17,
+        **excluded_event_uids_contract(excluded),
+    }
+    assert contract["excluded_event_uid_count"] == 2
+    assert (
+        contract["excluded_event_uids_hash_scheme"]
+        == EXCLUDED_EVENT_UID_HASH_SCHEME
+    )
+
+
+def test_fixed_validation_rejects_restored_excluded_uid_intersection():
+    events = [_Event(f"validation:{index}") for index in range(5)]
+    with pytest.raises(ValueError, match="intersect the excluded validation set"):
+        select_validation_events(
+            events,
+            limit=2,
+            scientific_mode=True,
+            selection_manifest_hash="manifest-hash",
+            seed=17,
+            restored_event_uids=("validation:1", "validation:2"),
+            excluded_event_uids=("validation:2",),
+        )
+
+
+def test_reconstruction_data_order_binds_validation_exclusion_identity():
+    exclusions = ("validation:b", "validation:a", "validation:b")
+    config = ReconstructionConfig(
+        data="unused",
+        output_dir="unused",
+        validation_excluded_event_uids=exclusions,
+    )
+    contract = _data_order_contract(
+        config,
+        SimpleNamespace(
+            dataset_index={"index_hash": "index-hash"},
+            split_manifest_hash="split-hash",
+        ),
+    )
+    assert config.validation_excluded_event_uids == exclusions
+    assert {
+        key: contract[key]
+        for key in (
+            "excluded_event_uid_count",
+            "excluded_event_uids_sha256",
+            "excluded_event_uids_hash_scheme",
+        )
+    } == excluded_event_uids_contract(exclusions)

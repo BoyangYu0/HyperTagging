@@ -9,6 +9,12 @@ AUTH={k:False for k in ('submission_authorized','execution_authorized','schedule
 DENIAL={k:False for k in ('sealed_test_used','stress_used','restricted_raw_used','restricted_source_used','train_loss_used')}
 TARGETS=('checkpoint','model_state','event_manifest','normalized_tensor_manifest','batch_plan','runtime_manifest')
 
+@pytest.fixture(autouse=True)
+def trusted_fixture_owner(monkeypatch):
+    from scripts.reconstruction_hpo import _v13_core
+    monkeypatch.setattr(_v13_core, "TRUSTED_STATE_OWNER_UID", os.geteuid())
+
+
 def receipt(tmp_path,phase='before'):
     tmp_path.mkdir(parents=True,exist_ok=True)
     targets={}

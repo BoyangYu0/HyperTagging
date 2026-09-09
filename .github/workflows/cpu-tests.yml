@@ -10,6 +10,15 @@ on:
         required: false
         type: string
 
+defaults:
+  run:
+    shell: bash
+
+env:
+  CUDA_VISIBLE_DEVICES: ""
+  OMP_NUM_THREADS: "2"
+  MKL_NUM_THREADS: "2"
+
 jobs:
   unit:
     runs-on: ubuntu-latest

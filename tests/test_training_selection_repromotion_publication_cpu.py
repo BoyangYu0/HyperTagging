@@ -24,6 +24,12 @@ CONTRACT_PATH = ROOT / (
 NOW = datetime(2026, 8, 31, 10, 30, tzinfo=timezone.utc)
 
 
+@pytest.fixture(autouse=True)
+def trusted_fixture_owner(monkeypatch):
+    # Exercise the ownership checks using files owned by this test runner.
+    monkeypatch.setattr(publication, "TRUSTED_EXECUTION_UID", os.geteuid())
+
+
 def _sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 

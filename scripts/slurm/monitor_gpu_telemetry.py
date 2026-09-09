@@ -10,7 +10,6 @@ from pathlib import Path
 import signal
 import subprocess
 import threading
-import time
 
 
 QUERY_FIELDS = (
@@ -74,10 +73,26 @@ def monitor(
     interval_seconds: float,
     nvidia_smi: str,
     max_samples: int | None = None,
+    authorized_stop_file: Path | None = None,
 ) -> int:
     stop = threading.Event()
+    stop_reason = "natural_completion"
+    error: str | None = None
 
-    def request_stop(_signum: int, _frame: object) -> None:
+    def request_stop(signum: int, _frame: object) -> None:
+        nonlocal error, stop_reason
+        if authorized_stop_file is None:
+            stop_reason = "legacy_signal"
+        elif (
+            signum == signal.SIGTERM
+            and authorized_stop_file.is_file()
+            and authorized_stop_file.read_text(encoding="utf-8").strip()
+            == "wrapper_authorized_stop_v1"
+        ):
+            stop_reason = "wrapper_authorized_signal"
+        else:
+            stop_reason = "unauthorized_signal"
+            error = "telemetry received a signal without the wrapper stop token"
         stop.set()
 
     signal.signal(signal.SIGTERM, request_stop)
@@ -86,7 +101,6 @@ def monitor(
     summary.parent.mkdir(parents=True, exist_ok=True)
     started_at = _timestamp()
     samples: list[dict[str, object]] = []
-    error: str | None = None
     with output.open("a", encoding="utf-8", buffering=1) as stream:
         while not stop.is_set():
             try:
@@ -98,6 +112,7 @@ def monitor(
             samples.append(sample)
             stream.write(json.dumps(sample, sort_keys=True) + "\n")
             if max_samples is not None and len(samples) >= max_samples:
+                stop_reason = "maximum_samples"
                 break
             stop.wait(interval_seconds)
     payload: dict[str, object] = {
@@ -108,6 +123,7 @@ def monitor(
         "interval_seconds": interval_seconds,
         "sample_count": len(samples),
         "error": error,
+        "stop_reason": stop_reason,
         "peak_memory_used_mib": max(
             (int(sample["memory_used_mib"]) for sample in samples), default=None
         ),
@@ -130,6 +146,7 @@ def main() -> int:
     parser.add_argument("--interval-seconds", type=float, default=15.0)
     parser.add_argument("--nvidia-smi", default="nvidia-smi")
     parser.add_argument("--max-samples", type=int)
+    parser.add_argument("--authorized-stop-file", type=Path)
     args = parser.parse_args()
     if args.interval_seconds <= 0:
         parser.error("--interval-seconds must be positive")
@@ -141,6 +158,7 @@ def main() -> int:
         interval_seconds=args.interval_seconds,
         nvidia_smi=args.nvidia_smi,
         max_samples=args.max_samples,
+        authorized_stop_file=args.authorized_stop_file,
     )
 
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import argparse
 from collections import defaultdict
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from datetime import datetime, timezone
 from hashlib import sha256
 import json
@@ -52,14 +52,17 @@ from hypertagging.evaluation.trained_context import (  # noqa: E402
     load_trained_evaluation_context,
 )
 from hypertagging.reconstruction.hierarchical_inference import (  # noqa: E402
+    FULL_ROOT_TOKEN,
     HierarchicalInferenceConfig,
     OFFLINE_INFERENCE_POLICY_VERSION,
+    project_schema_v4_fsps,
     reconstruct_full_tree_from_fsps,
     reconstruct_beam_from_fsps,
 )
 from hypertagging.reconstruction.beam_search import BeamSearchConfig  # noqa: E402
 from hypertagging.reconstruction.level_rollout import (  # noqa: E402
     RolloutConfig,
+    diagnostic_proposal_beam_rollout,
     rollout_policy_identity,
 )
 
@@ -95,6 +98,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help=(
             "Event cohort policy. Auto restores checkpoint rollout UIDs for "
             "validation and uses stream order only where no checkpoint cohort exists."
+        ),
+    )
+    parser.add_argument(
+        "--event-uid-manifest",
+        help=(
+            "Exact validation-only event cohort manifest. When supplied, it "
+            "replaces checkpoint/stream selection and must contain exactly "
+            "--max-events unique event_uids."
         ),
     )
     parser.add_argument(
@@ -179,8 +190,28 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--p4-closure-tolerance", type=float, default=1.0e-6)
     parser.add_argument("--threads", type=int, default=1)
+    parser.add_argument(
+        "--deterministic-algorithms",
+        action="store_true",
+        help=(
+            "Require PyTorch deterministic algorithms for reproducibility-gated "
+            "offline inference."
+        ),
+    )
     parser.add_argument("--omit-trees", action="store_true")
     parser.add_argument("--profile-phases", action="store_true")
+    parser.add_argument(
+        "--beam-max-events",
+        type=int,
+        default=20,
+        help="Bounded validation events used by the full-tree beam diagnostic.",
+    )
+    parser.add_argument(
+        "--beam-max-proposals",
+        type=int,
+        default=12,
+        help="Maximum exact proposal-set enumeration size per beam level.",
+    )
     parser.add_argument(
         "--allow-finetuned-encoder",
         action="store_true",
@@ -192,13 +223,23 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Relax only checkpoint split/hash identity for a verified external sample.",
     )
     parser.add_argument("--output", required=True, help="Destination JSON report.")
-    args = parser.parse_args(argv)
+    raw_args = list(sys.argv[1:] if argv is None else argv)
+    args = parser.parse_args(raw_args)
+    args.beam_ranking_diagnostics = (
+        not args.beam_search
+        and args.beam_width > 1
+        and any(arg == "--beam-width" or arg.startswith("--beam-width=") for arg in raw_args)
+    )
     if args.max_events <= 0:
         parser.error("--max-events must be positive")
     if args.max_level <= 0:
         parser.error("--max-level must be positive")
     if args.threads <= 0:
         parser.error("--threads must be positive")
+    if args.beam_width <= 0 or args.beam_max_events <= 0:
+        parser.error("beam width and beam max events must be positive")
+    if args.beam_max_proposals <= 0 or args.beam_max_proposals > 16:
+        parser.error("--beam-max-proposals must lie in [1, 16]")
     for name in (
         "object_threshold",
         "pointer_threshold",
@@ -232,6 +273,15 @@ def _beam_config_from_args(args: argparse.Namespace) -> BeamSearchConfig:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
+    event_uid_manifest = (
+        _load_event_uid_manifest(Path(args.event_uid_manifest), args.max_events)
+        if args.event_uid_manifest is not None
+        else None
+    )
+    if event_uid_manifest is not None and args.event_selection != "auto":
+        raise ValueError(
+            "--event-uid-manifest cannot be combined with --event-selection"
+        )
     output = _validated_output_path(
         args.output,
         direct_inputs=(
@@ -239,12 +289,14 @@ def main(argv: list[str] | None = None) -> int:
             args.reconstruction_checkpoint,
             args.dataset_index,
             *args.data,
+            *((args.event_uid_manifest,) if args.event_uid_manifest else ()),
         ),
         data_arguments=args.data,
     )
     run_started = time.perf_counter()
     phase_seconds: dict[str, float] = {}
     torch.set_num_threads(args.threads)
+    torch.use_deterministic_algorithms(bool(args.deterministic_algorithms))
     try:
         torch.set_num_interop_threads(max(1, min(args.threads, 4)))
     except RuntimeError:
@@ -277,7 +329,14 @@ def main(argv: list[str] | None = None) -> int:
             args.diagnostic_external_independent_sample
         ),
         source_categories=args.source_category,
-        event_selection=args.event_selection,
+        event_selection=(
+            "explicit_uids" if event_uid_manifest is not None else args.event_selection
+        ),
+        explicit_event_uids=(
+            event_uid_manifest["event_uids"]
+            if event_uid_manifest is not None
+            else None
+        ),
     )
     phase_seconds["model_and_data_context_loading"] = (
         time.perf_counter() - phase_started
@@ -368,6 +427,17 @@ def main(argv: list[str] | None = None) -> int:
     metric_wall_seconds = 0.0
     serialization_wall_seconds = 0.0
     event_processing_started = time.perf_counter()
+    beam_rankings = (
+        "learned_confidence_sum",
+        "learned_confidence_mean",
+        "average_link_probability",
+        "normalized_joint_log_probability",
+    )
+    beam_metric_rows: dict[str, dict[str, list[Any]]] = {
+        scope: defaultdict(list) for scope in scopes
+    }
+    beam_oracle_rows: dict[str, list[Any]] = {scope: [] for scope in scopes}
+    beam_event_records: list[dict[str, Any]] = []
 
     for event_index, event in enumerate(context.events):
         print(
@@ -558,6 +628,107 @@ def main(argv: list[str] | None = None) -> int:
                     f"retained_depth={unit.truth_retained_depth}"
                 )
                 metric_rows_by_target_shape[scope][shape].append(unit)
+        if args.beam_ranking_diagnostics and event_index < args.beam_max_events:
+            phase_started = time.perf_counter()
+            projection = project_schema_v4_fsps(truth_batch)
+            diagnostic_config = replace(
+                rollout_config,
+                max_level=args.max_level,
+                root_types=(FULL_ROOT_TOKEN,),
+                continue_through_empty_levels=True,
+                max_resolution_proposals=args.beam_max_proposals,
+            )
+            hypotheses = diagnostic_proposal_beam_rollout(
+                context.model,
+                projection.batch,
+                config=diagnostic_config,
+                beam_width=args.beam_width,
+                lookahead_levels=args.max_level,
+            )
+            candidates: list[tuple[Any, dict[str, Any]]] = []
+            for hypothesis in hypotheses:
+                hypothesis.batch["evaluation_leaf_source_keys"] = (
+                    projection.evaluation_leaf_source_keys.clone()
+                )
+                evaluations: dict[str, Any] = {}
+                if "full" in scopes:
+                    evaluations["full"] = evaluate_full_decay(
+                        hypothesis.batch,
+                        truth_batch,
+                        target_policy=target_policy,
+                        minimum_daughters=int(policy.minimum_daughters),
+                        truth_topology_mode=args.truth_topology_mode,
+                    )
+                if "half" in scopes:
+                    evaluations["half"] = evaluate_half_decays(
+                        hypothesis.batch,
+                        truth_batch,
+                        source_category=event.source_category,
+                        target_policy=target_policy,
+                        minimum_daughters=int(policy.minimum_daughters),
+                        truth_topology_mode=args.truth_topology_mode,
+                    )
+                candidates.append((hypothesis, evaluations))
+            if candidates:
+                ranking_selections: dict[str, int] = {}
+                for ranking in beam_rankings:
+                    selected_index = max(
+                        range(len(candidates)),
+                        key=lambda index: (
+                            candidates[index][0].ranking_scores()[ranking],
+                            -index,
+                        ),
+                    )
+                    ranking_selections[ranking] = selected_index
+                    for scope in scopes:
+                        beam_metric_rows[scope][ranking].append(
+                            candidates[selected_index][1][scope]
+                        )
+                oracle_candidate_indices = {
+                    scope: max(
+                        range(len(candidates)),
+                        key=lambda index: _beam_oracle_key(
+                            candidates[index][1][scope]
+                        ),
+                    )
+                    for scope in scopes
+                }
+                for scope, oracle_index in oracle_candidate_indices.items():
+                    beam_oracle_rows[scope].append(
+                        candidates[oracle_index][1][scope]
+                    )
+                beam_event_records.append(
+                    {
+                        "event_uid": event.event_uid,
+                        "candidate_count": len(candidates),
+                        "ranking_selections": ranking_selections,
+                        "oracle_candidate_indices_by_scope": oracle_candidate_indices,
+                        "oracle_candidate_index": oracle_candidate_indices.get("full"),
+                        "candidates": [
+                            {
+                                "candidate_index": index,
+                                "model_only_ranking_scores": hypothesis.ranking_scores(),
+                                "proposal_count": hypothesis.proposal_count,
+                                "stop_reason": hypothesis.stop_reason,
+                                "accepted_proposal_counts_by_level": [
+                                    len(items)
+                                    for items in hypothesis.accepted_by_level
+                                ],
+                                "truth_diagnostic_metrics_by_scope": {
+                                    scope: evaluation.as_dict()
+                                    for scope, evaluation in evaluations.items()
+                                },
+                                "truth_diagnostic_metrics": (
+                                    evaluations["full"].as_dict()
+                                    if "full" in evaluations
+                                    else None
+                                ),
+                            }
+                            for index, (hypothesis, evaluations) in enumerate(candidates)
+                        ],
+                    }
+                )
+            inference_wall_seconds += time.perf_counter() - phase_started
         event_records.append(record)
 
     phase_seconds["event_processing"] = time.perf_counter() - event_processing_started
@@ -585,6 +756,9 @@ def main(argv: list[str] | None = None) -> int:
         "device": "cpu",
         "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES", ""),
         "torch_num_threads": torch.get_num_threads(),
+        "torch_deterministic_algorithms_enabled": (
+            torch.are_deterministic_algorithms_enabled()
+        ),
         "timing": {
             "phase_seconds": phase_seconds,
             "event_count": len(event_records),
@@ -603,6 +777,20 @@ def main(argv: list[str] | None = None) -> int:
             "max_events": args.max_events,
             "source_categories": args.source_category or [],
             "requested_event_selection": args.event_selection,
+            "event_uid_manifest": (
+                {
+                    key: event_uid_manifest[key]
+                    for key in (
+                        "path",
+                        "sha256",
+                        "manifest_version",
+                        "event_uid_count",
+                        "event_uids_sha256",
+                    )
+                }
+                if event_uid_manifest is not None
+                else None
+            ),
             "max_level": args.max_level,
             "object_threshold": args.object_threshold,
             "pointer_threshold": pointer_threshold,
@@ -634,6 +822,19 @@ def main(argv: list[str] | None = None) -> int:
                 }
                 if args.beam_search
                 else {}
+            ),
+            **(
+                {"beam_search": {
+                    "enabled": True,
+                    "algorithm": "diagnostic_proposal_set_beam",
+                    "beam_width": args.beam_width,
+                    "max_events": min(args.beam_max_events, len(context.events)),
+                    "max_proposals": args.beam_max_proposals,
+                    "max_level": args.max_level,
+                    "model_only_rankings": list(beam_rankings),
+                    "truth_used_for_ranking": False,
+                    "oracle_at_k_is_diagnostic_only": True,
+                }} if args.beam_ranking_diagnostics else {}
             ),
         },
         "summaries": {
@@ -709,10 +910,69 @@ def main(argv: list[str] | None = None) -> int:
             for scope in scopes
         },
         "events": event_records,
+        "beam_search": {
+            "event_count": len(beam_event_records),
+            "evaluated_scopes": list(scopes),
+            "top1_summaries_by_scope_and_model_only_ranking": {
+                scope: {
+                    ranking: summarize_decay_evaluations(rows)
+                    for ranking, rows in beam_metric_rows[scope].items()
+                }
+                for scope in scopes
+            },
+            "top1_summaries_by_model_only_ranking": {
+                ranking: summarize_decay_evaluations(rows)
+                for ranking, rows in beam_metric_rows.get("full", {}).items()
+            },
+            "oracle_at_k_summary_by_scope": {
+                scope: (
+                    summarize_decay_evaluations(beam_oracle_rows[scope])
+                    if beam_oracle_rows[scope]
+                    else {}
+                )
+                for scope in scopes
+            },
+            "oracle_at_k_summary": (
+                summarize_decay_evaluations(beam_oracle_rows.get("full", []))
+                if beam_oracle_rows.get("full")
+                else {}
+            ),
+            "events": beam_event_records,
+        },
     }
     _atomic_write_json(output, report)
     print(f"Wrote {output}", file=sys.stderr, flush=True)
     return 0
+
+
+def _beam_oracle_key(evaluation: Any) -> tuple[float, ...]:
+    """Truth-only diagnostic ordering; never used to choose deployed output."""
+
+    if hasattr(evaluation, "halves"):
+        summary = summarize_decay_evaluations([evaluation])
+
+        def summary_value(name: str) -> float:
+            value = summary.get(name, {}).get("value")
+            return float(value) if value is not None else -1.0
+
+        return (
+            summary_value("perfect_lcag"),
+            summary_value("lcag_pair_accuracy"),
+            summary_value("mother_pid_coverage"),
+            summary_value("source_recall"),
+            summary_value("source_precision"),
+        )
+
+    def value(metric: Any) -> float:
+        return float(metric.value) if metric.value is not None else -1.0
+
+    return (
+        value(evaluation.perfect_lcag),
+        value(evaluation.lcag_pair_accuracy),
+        value(evaluation.mother_pid_coverage),
+        value(evaluation.source_recall),
+        value(evaluation.source_precision),
+    )
 
 
 def _validated_output_path(
@@ -742,6 +1002,44 @@ def _validated_output_path(
                 f"--output must not alias a read input: {destination} == {resolved}"
             )
     return destination
+
+
+def _load_event_uid_manifest(path: Path, max_events: int) -> dict[str, Any]:
+    manifest_path = path.expanduser().resolve(strict=True)
+    raw = manifest_path.read_bytes()
+    payload = json.loads(raw)
+    event_uids = payload.get("event_uids")
+    if (
+        payload.get("manifest_version")
+        != "hypertagging-reconstruction-evaluation-cohort-v1"
+        or payload.get("role") != "validation"
+        or payload.get("sealed_test_role_access") != "forbidden"
+        or not isinstance(event_uids, list)
+        or len(event_uids) != max_events
+        or len(event_uids) != len(set(str(uid) for uid in event_uids))
+    ):
+        raise ValueError("evaluation event UID manifest is invalid")
+    normalized = [str(uid) for uid in event_uids]
+    if payload.get("event_uid_count") != len(normalized):
+        raise ValueError("evaluation event UID manifest count is invalid")
+    if payload.get("event_uids_sha256") != _uid_sequence_sha256(normalized):
+        raise ValueError("evaluation event UID manifest hash is invalid")
+    return {
+        **payload,
+        "path": str(manifest_path),
+        "sha256": sha256(raw).hexdigest(),
+        "event_uids": normalized,
+    }
+
+
+def _uid_sequence_sha256(event_uids: list[str]) -> str:
+    digest = sha256()
+    digest.update(b"hypertagging-evaluation-event-uids-v1\0")
+    for uid in event_uids:
+        encoded = uid.encode("utf-8")
+        digest.update(len(encoded).to_bytes(8, byteorder="big"))
+        digest.update(encoded)
+    return digest.hexdigest()
 
 
 def _manifest_referenced_paths(path: Path) -> list[Path]:

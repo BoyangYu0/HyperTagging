@@ -1,0 +1,181 @@
+{
+  "automatic_promotion": false,
+  "clean_restart_required": true,
+  "eligible_arm_roles": [
+    "depth_balanced_masked_aux_encoder_adapt",
+    "depth_balanced_masked_aux_frozen"
+  ],
+  "excluded_completed_arm_rerun_authorized": false,
+  "excluded_completed_arm_role": "depth_balanced_fallback_frozen",
+  "execution_policy": {
+    "cpus_per_task": 8,
+    "global_concurrency": 2,
+    "gres": "gpu:h100nvl:1",
+    "maximum_restarts": 0,
+    "memory": "64G",
+    "requeue": false,
+    "task_count": 2,
+    "time": "24:00:00"
+  },
+  "historical_attempts": [
+    {
+      "arm_role": "depth_balanced_fallback_frozen",
+      "attempt_receipt": {
+        "path": "artifacts/slurm/reconstruction-phase35/jobs/16282571/attempt-00/receipt.json",
+        "receipt_sha256": "6b38483471d86142196f08e6729d8fea7909f2f920b1be4f28a828b5237bba7e",
+        "sha256": "f3c9541fd32500027fa3089e39d3ad8600db43cf5f17ab922d174a2f5c619eee"
+      },
+      "contract": {
+        "path": "artifacts/codex/reconstruction_phase35_depth_balanced_fallback_frozen_contract_20260904.json",
+        "sha256": "af6d0a563d73d3adada2da5579f482f3320a6577fb17418ac0eade906a19b7f9"
+      },
+      "job_id": "16282571",
+      "rerun_authorized": false,
+      "stderr": {
+        "path": "artifacts/slurm/phase35-depth_balanced_fallback_frozen-20260904-16282571.err",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "arm_role": "depth_balanced_masked_aux_encoder_adapt",
+      "attempt_receipt": {
+        "path": "artifacts/slurm/reconstruction-phase35/jobs/16282587/attempt-00/receipt.json",
+        "receipt_sha256": "2a42298f4729f796c056e131564aab5ce851471164d962cfb9b57363d14fe5f6",
+        "sha256": "c67a4fe410152f13c6203bb5cea4f3f63b29183661a001f3530c570232ae0028"
+      },
+      "contract": {
+        "path": "artifacts/codex/reconstruction_phase35_depth_balanced_masked_aux_encoder_adapt_contract_20260904.json",
+        "sha256": "429b6adb809e56efe9a9bf2802615567536189292b2796afcef07cb621df3ccb"
+      },
+      "job_id": "16282587",
+      "rerun_authorized": true,
+      "stderr": {
+        "path": "artifacts/slurm/phase35-depth_balanced_masked_aux_encoder_adapt-20260904-16282587.err",
+        "sha256": "1a7ed8fce14823be31cb5d93494c6079f8db21e9d4b9e38cafde7613df516056"
+      }
+    },
+    {
+      "arm_role": "depth_balanced_masked_aux_frozen",
+      "attempt_receipt": {
+        "path": "artifacts/slurm/reconstruction-phase35/jobs/16282601/attempt-00/receipt.json",
+        "receipt_sha256": "eac127787e88d2337bf5b96f687b5a6e78f7e458e86ccfe2aa5193f1eb15cef0",
+        "sha256": "0d5e6196499a725bf31ead0efddbd8db90b23725d44a8c9974974009d7966ce9"
+      },
+      "contract": {
+        "path": "artifacts/codex/reconstruction_phase35_depth_balanced_masked_aux_frozen_contract_20260904.json",
+        "sha256": "c2c56427631bd6958ecae5abe402242f238ea105ce30a5027c1deaf82c5f014f"
+      },
+      "job_id": "16282601",
+      "rerun_authorized": true,
+      "stderr": {
+        "path": "artifacts/slurm/phase35-depth_balanced_masked_aux_frozen-20260904-16282601.err",
+        "sha256": "e7e5b2a118b094e3cdbcd5a33048c97edda4e266d3781cde77b417701491e277"
+      }
+    }
+  ],
+  "hierarchy_supervision": {
+    "artificial_continuum_resonance_token": false,
+    "continuum_forest_roots": {
+      "continuum_event_count": 25000,
+      "event_count": 17796,
+      "root_count": 37200
+    },
+    "eligible_event_pool_counts_by_level": {
+      "1": 27620,
+      "2": 16160,
+      "3": 12961,
+      "4": 10001,
+      "5": 6542,
+      "6": 885
+    },
+    "eligible_mother_counts_by_level": {
+      "1": 75460,
+      "2": 32095,
+      "3": 20559,
+      "4": 11666,
+      "5": 6568,
+      "6": 885
+    },
+    "inference_seed": "detector_fsps_only",
+    "target_levels": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "truth_targets": "eligible_complete_mothers_all_levels",
+    "upsilon4s_roots_by_level": {
+      "3": 284,
+      "4": 3169,
+      "5": 5662,
+      "6": 885
+    },
+    "upsilon4s_root_count": 10000
+  },
+  "parent_campaign_submission_receipt": {
+    "path": "artifacts/codex/reconstruction_phase35_improvement_submission_20260904.json",
+    "receipt_sha256": "9f7095580f8b36f1cec78fb63acb73ce7cc0f062cad9ed82b10948c17fe4fc56",
+    "sha256": "917bcd5b6f2376a1dcb314041ebec16457a02e0754171d0a10dd1b0c839f5c7a"
+  },
+  "parent_git_sha": "91f1a43e8827c67b4cd4e3d8d36279321f6b9dee",
+  "parent_git_tag": "ht-reconstruction-phase35-improvement-20260904-v3",
+  "parent_preregistration": {
+    "path": "configs/reconstruction/ht_reconstruction_phase35_improvement_20260904.json",
+    "sha256": "145658df6cfc41dab872ff57eb011d09cc411188f8bf342c7f7d5ca626b11ef2"
+  },
+  "parent_study_id": "phase35-full-decay-reconstruction-improvement-20260904",
+  "repair_preregistration_version": "hypertagging-reconstruction-phase35-masked-repair-v1",
+  "repair_scope": {
+    "checkpoint_metadata_nonfinite_fix_required": true,
+    "masked_context_node_padding_fix_required": true,
+    "scientific_configuration_changes_authorized": false
+  },
+  "restart_source_checkpoint": {
+    "path": "runtime_inputs/reconstruction_phase34_20260904/checkpoint-step-81096.pt",
+    "sha256": "98e461ad5c5d0a82ce312f4e2c6e67f6f40212d9f0df038cae315296ec990869",
+    "step": 81096
+  },
+  "resume_from_failed_attempt_authorized": false,
+  "reuse_failed_output_authorized": false,
+  "sealed_test_role_access": "forbidden",
+  "step500_diagnostics": {
+    "decision": "clean_restart_both_failed_arms",
+    "reports": [
+      {
+        "arm_role": "depth_balanced_masked_aux_frozen",
+        "checkpoint_sha256": "02db81fd0bff1a7047d263021ec02522ffc6e533ef37599bec099df08d87d622",
+        "checkpoint_step": 500,
+        "path": "artifacts/evaluation/phase35_failed_arm_step500_clean_v3_20260904/masked_frozen_direct.json",
+        "sha256": "d7ce898490a1bc3c535ab1bdaec93819e36c7af51541b2cd78e5db21d3d09d53",
+        "truth_topology_mode": "checkpoint_direct"
+      },
+      {
+        "arm_role": "depth_balanced_masked_aux_encoder_adapt",
+        "checkpoint_sha256": "569121077774faa329dd6b620fb4d9cd6747ee3ac95ccccc7f9a408bc65b71c7",
+        "checkpoint_step": 500,
+        "path": "artifacts/evaluation/phase35_failed_arm_step500_clean_v3_20260904/masked_adapt_direct.json",
+        "sha256": "d3d3ea65dbf7641e84685e20aaf0267aea99569db4f1027b379b0d5257523c3d",
+        "truth_topology_mode": "checkpoint_direct"
+      },
+      {
+        "arm_role": "depth_balanced_masked_aux_frozen",
+        "checkpoint_sha256": "02db81fd0bff1a7047d263021ec02522ffc6e533ef37599bec099df08d87d622",
+        "checkpoint_step": 500,
+        "path": "artifacts/evaluation/phase35_failed_arm_step500_clean_v3_20260904/masked_frozen_contracted.json",
+        "sha256": "dd2f0237f86abe4f233710ee8b5efe14a4ab7fd522ca0751f2e19f82a771cdbf",
+        "truth_topology_mode": "contracted_diagnostic"
+      },
+      {
+        "arm_role": "depth_balanced_masked_aux_encoder_adapt",
+        "checkpoint_sha256": "569121077774faa329dd6b620fb4d9cd6747ee3ac95ccccc7f9a408bc65b71c7",
+        "checkpoint_step": 500,
+        "path": "artifacts/evaluation/phase35_failed_arm_step500_clean_v3_20260904/masked_adapt_contracted.json",
+        "sha256": "5fdb97e1def638e62e274d4d072e8e5d2a58347c818581b09cc1e5c68ed8b921",
+        "truth_topology_mode": "contracted_diagnostic"
+      }
+    ]
+  },
+  "study_id": "phase35-masked-context-repair-20260904"
+}

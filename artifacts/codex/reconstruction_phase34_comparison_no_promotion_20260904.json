@@ -1,0 +1,98 @@
+{
+  "schema_version": "hypertagging-reconstruction-phase34-terminal-decision-v1",
+  "study_id": "phase34-orderfix-downstream-reconstruction-20260904",
+  "decision_date": "2026-09-04",
+  "status": "terminal_comparison_complete",
+  "selection_rule": {
+    "primary": "predicted_edge_f1",
+    "mode": "max",
+    "all_three_arms_required": true,
+    "sealed_test_used": false
+  },
+  "arms": [
+    {
+      "role": "resume_source_baseline",
+      "pretraining_step": 54064,
+      "job_id": "16251359",
+      "result": {
+        "path": "artifacts/runs/ht-reconstruction-phase34-checkpoint-comparison-20260904/resume_source_baseline/16251359/result.json",
+        "sha256": "89bf14734ad85b62093b4ed8cb0087b667b24f5114d4527391e569f127fe8129"
+      },
+      "receipt": {
+        "path": "artifacts/slurm/reconstruction-fullscale/jobs/16251359/attempt-00/receipt.json",
+        "sha256": "98cc14f8513f370fa47fd89acfd04b58e25b1302b5f6520bbd18e6e49b306f62"
+      },
+      "best_checkpoint": {
+        "path": "artifacts/runs/ht-reconstruction-phase34-checkpoint-comparison-20260904/resume_source_baseline/16251359/training/best.pt",
+        "sha256": "064265344cf6c2bd69fa57618a7ef11281edbc0775c99db5333beda1f9b3f24b",
+        "reconstruction_step": 500,
+        "predicted_edge_f1": 0.046
+      },
+      "terminal_predicted_edge_f1": 0.034,
+      "terminal_validation_loss_total": 2.0230168204994774,
+      "pretraining_success_gate_passed": false
+    },
+    {
+      "role": "parent_ranking_winner",
+      "pretraining_step": 81096,
+      "job_id": "16251363",
+      "result": {
+        "path": "artifacts/runs/ht-reconstruction-phase34-checkpoint-comparison-20260904/parent_ranking_winner/16251363/result.json",
+        "sha256": "389a04b0c1ec16543eda451e30b45d1ac8b244e354c2a4b486f3a77007c13ec9"
+      },
+      "receipt": {
+        "path": "artifacts/slurm/reconstruction-fullscale/jobs/16251363/attempt-00/receipt.json",
+        "sha256": "275256e8f7e8653ed25dbf65cdfe0eac9080f66607b8ecf23702cb24b999507c"
+      },
+      "best_checkpoint": {
+        "path": "artifacts/runs/ht-reconstruction-phase34-checkpoint-comparison-20260904/parent_ranking_winner/16251363/training/best.pt",
+        "sha256": "578e1a9508bdd3c423363d66c7b5e30aa48c680a03a9d1fc1c0b4175b24ec191",
+        "reconstruction_step": 500,
+        "predicted_edge_f1": 0.042
+      },
+      "terminal_predicted_edge_f1": 0.028,
+      "terminal_validation_loss_total": 1.6470683860656266,
+      "pretraining_success_gate_passed": true
+    },
+    {
+      "role": "configured_objective_winner",
+      "pretraining_step": 108128,
+      "job_id": "16251364",
+      "result": {
+        "path": "artifacts/runs/ht-reconstruction-phase34-checkpoint-comparison-20260904/configured_objective_winner/16251364/result.json",
+        "sha256": "810b4d9f5dc922f320d233cd397f2af7565a3d754fe99d91b8b12382b2d4d234"
+      },
+      "receipt": {
+        "path": "artifacts/slurm/reconstruction-fullscale/jobs/16251364/attempt-00/receipt.json",
+        "sha256": "76a923326c315eafaebae38325dc59b54645cf2fa6a1ebcec9010ba9a6328971"
+      },
+      "best_checkpoint": {
+        "path": "artifacts/runs/ht-reconstruction-phase34-checkpoint-comparison-20260904/configured_objective_winner/16251364/training/best.pt",
+        "sha256": "d602ca4715e816a150c3d2bc42d0b74dd0289863cdff40c97ca8d13ddcdf497c",
+        "reconstruction_step": 1000,
+        "predicted_edge_f1": 0.03
+      },
+      "terminal_predicted_edge_f1": 0.026,
+      "terminal_validation_loss_total": 1.6428789807123279,
+      "pretraining_success_gate_passed": true
+    }
+  ],
+  "decision": {
+    "validation_primary_winner": "resume_source_baseline",
+    "validation_primary_winner_pretraining_step": 54064,
+    "best_pretraining_complete_arm": "parent_ranking_winner",
+    "production_eligible_winner": null,
+    "verdict": "NO_PROMOTION",
+    "reason": "The validation-primary winner did not pass the pretraining success gate; post-hoc substitution of step 81096 is forbidden.",
+    "promotion_authorized": false,
+    "sealed_test_authorized": false,
+    "additional_same_contract_training_authorized": false,
+    "confirmatory_validation_only_tasks_recommended": true
+  },
+  "superseded_attempt": {
+    "job_id": "16251299",
+    "status": "failed_before_training",
+    "reason": "legacy selection entry lacked builder metadata",
+    "superseded_by_job_id": "16251359"
+  }
+}

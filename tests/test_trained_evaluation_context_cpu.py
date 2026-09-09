@@ -133,6 +133,28 @@ def test_checkpoint_rollout_cohort_restores_uid_order_before_category_limit():
     assert [event.event_uid for event in selected] == ["uid-a", "uid-c"]
 
 
+def test_explicit_uid_cohort_is_independent_of_checkpoint_selection():
+    explicit = ("uid-z", "uid-y")
+    selected, mode = _resolve_checkpoint_event_selection(
+        {"validation_selection": {}},
+        data_module=SimpleNamespace(),
+        split="validation",
+        requested="explicit_uids",
+        explicit_event_uids=explicit,
+    )
+    assert selected == explicit
+    assert mode == "explicit_uid_cohort"
+
+    with pytest.raises(ValueError, match="require explicit_uids"):
+        _resolve_checkpoint_event_selection(
+            {},
+            data_module=SimpleNamespace(),
+            split="validation",
+            requested="stream",
+            explicit_event_uids=explicit,
+        )
+
+
 def test_checkpoint_rollout_cohort_rejects_missing_uid_when_stream_exhausts():
     events = [SimpleNamespace(event_uid="uid-a", source_category="mixed")]
 

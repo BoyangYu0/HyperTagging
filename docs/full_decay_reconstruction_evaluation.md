@@ -518,3 +518,14 @@ files may still be replaced atomically.
   checkpoint receipts, and reported statistical uncertainty.
 - The output is an evaluation artifact. It does not create basf2 Particles,
   write an mDST, or replace experiment reconstruction software.
+
+### Study ranking diagnostic compatibility
+
+`--beam-search` retains the full-depth state search and its versioned top-1 and
+oracle report. The campaign interface `--beam-width N` (N > 1, without
+`--beam-search`) runs the separate proposal-set ranking diagnostic, limited by
+`--beam-max-events` and `--beam-max-proposals`. Its configuration identifies
+`diagnostic_proposal_set_beam`, and its full/half ranking summaries remain under
+`beam_search`. Omitting both options runs greedy evaluation. These search
+algorithms have distinct candidate populations; compare their metrics only with
+matching recorded search configuration and cohort.

@@ -136,6 +136,7 @@ def test_contract_requires_exact_closed_false_authorization_set(mutation):
         repromotion._validate_contract(contract)
 
 
+@pytest.mark.campaign_artifacts('artifacts/experiment_readiness/production_1m_20260812/train_035k/train_035k.complete_only.index.json')
 def test_repromotion_semantic_diff_is_exactly_whitelisted(tmp_path):
     _contract, package = _package(tmp_path / "inert")
     legacy_selection = json.loads(
@@ -194,6 +195,7 @@ def test_inventory_and_role_cross_bindings_fail_closed(mutation):
         repromotion._promote_selection(inventory, roles, selection, contract["target"])
 
 
+@pytest.mark.campaign_artifacts('artifacts/experiment_readiness/production_1m_20260812/train_035k/train_035k.complete_only.index.json')
 def test_o_excl_namespace_is_read_only_one_shot_and_does_not_move_inputs(
     tmp_path, monkeypatch
 ):

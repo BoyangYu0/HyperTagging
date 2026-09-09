@@ -205,6 +205,7 @@ def _write_healthy_receipts(plan: dict, tmp_path: Path) -> None:
         Path(entry["receipt_path"]).write_text(json.dumps(receipt, sort_keys=True) + "\n")
 
 
+@pytest.mark.campaign_artifacts('artifacts/experiment_readiness/production_1m_20260812/train_865k/train_865k.complete_only.index.json')
 def test_selection_uses_all_receipts_and_defaults_to_one_production_resume(tmp_path):
     plan, plan_path = _temporary_plan(tmp_path)
     _write_healthy_receipts(plan, tmp_path)

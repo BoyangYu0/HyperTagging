@@ -54,6 +54,7 @@ def _write_preflight(path: Path, **overrides: object) -> dict[str, object]:
     return payload
 
 
+@pytest.mark.campaign_artifacts('artifacts/runs/ht-pretrain-production-1m-h100-20260821/20260812/15933802/checkpoint-step-54064.pt', 'git:ht-pretraining-production-1m-h100-operator-authorized-20260821', 'git:ht-pretraining-1m-phase3-recovery-implementation-v2-20260823', 'git:ht-pretraining-1m-phase3-recovery-20260823-final-v2')
 def test_new_authorization_is_distinct_from_old_false_report_and_self_hashed():
     payload = verify_authorization_artifact(AUTHORIZATION, contract_path=CONTRACT)
     assert payload["authorization_basis"] == "explicit_user_operator_instruction"
@@ -81,6 +82,7 @@ def test_new_authorization_is_distinct_from_old_false_report_and_self_hashed():
     assert file_sha256(CONTRACT) == EXPECTED_CONTRACT_FILE_SHA256
 
 
+@pytest.mark.campaign_artifacts('artifacts/runs/ht-pretrain-production-1m-h100-20260821/20260812/15933802/checkpoint-step-54064.pt', 'git:ht-pretraining-production-1m-h100-operator-authorized-20260821', 'git:ht-pretraining-1m-phase3-recovery-implementation-v2-20260823', 'git:ht-pretraining-1m-phase3-recovery-20260823-final-v2')
 def test_fresh_in_allocation_preflight_is_required_and_bound(tmp_path):
     preflight = tmp_path / "gpu-preflight.json"
     _write_preflight(preflight)
@@ -92,6 +94,7 @@ def test_fresh_in_allocation_preflight_is_required_and_bound(tmp_path):
     )
 
 
+@pytest.mark.campaign_artifacts('artifacts/runs/ht-pretrain-production-1m-h100-20260821/20260812/15933802/checkpoint-step-54064.pt', 'git:ht-pretraining-production-1m-h100-operator-authorized-20260821', 'git:ht-pretraining-1m-phase3-recovery-implementation-v2-20260823', 'git:ht-pretraining-1m-phase3-recovery-20260823-final-v2')
 def test_missing_or_mismatched_preflight_fails_closed(tmp_path):
     with pytest.raises(RuntimeError, match="preflight is required"):
         verify_authorization_artifact(
@@ -111,6 +114,7 @@ def test_missing_or_mismatched_preflight_fails_closed(tmp_path):
         )
 
 
+@pytest.mark.campaign_artifacts('artifacts/runs/ht-pretrain-production-1m-h100-20260821/20260812/15933802/checkpoint-step-54064.pt', 'git:ht-pretraining-production-1m-h100-operator-authorized-20260821', 'git:ht-pretraining-1m-phase3-recovery-implementation-v2-20260823', 'git:ht-pretraining-1m-phase3-recovery-20260823-final-v2')
 def test_preflight_tampering_fails_even_when_the_contract_is_unchanged(tmp_path):
     preflight = tmp_path / "gpu-preflight.json"
     _write_preflight(preflight)

@@ -192,6 +192,7 @@ def test_runtime_values_are_contract_bound_and_shell_constrained(
         )
 
 
+@pytest.mark.campaign_artifacts('artifacts/experiment_readiness/production_1m_20260812/train_035k/train_035k.complete_only.index.json')
 def test_renderer_only_writes_contract_and_prints_exact_sanitized_command(
     monkeypatch, tmp_path, capsys
 ):
@@ -293,6 +294,7 @@ def test_scientific_renderer_requires_both_bound_receipts(
         render_one_gpu_job.main()
 
 
+@pytest.mark.campaign_artifacts('artifacts/experiment_readiness/production_1m_20260812/train_035k/train_035k.complete_only.index.json')
 def test_scientific_renderer_validates_binds_and_hashes_both_receipts(
     monkeypatch, tmp_path, capsys
 ):
@@ -384,6 +386,7 @@ def test_scientific_renderer_validates_binds_and_hashes_both_receipts(
     assert contract["export_policy"] == "NIL"
 
 
+@pytest.mark.campaign_artifacts('artifacts/experiment_readiness/production_1m_20260812/train_035k/train_035k.complete_only.index.json')
 def test_explicit_user_authorization_retains_provenance_blocker_and_h100_label(
     monkeypatch, tmp_path, capsys
 ):
@@ -505,6 +508,7 @@ def test_scientific_contract_verifier_revalidates_completion_binding(
         verify_contract(path)
 
 
+@pytest.mark.campaign_artifacts('artifacts/experiment_readiness/production_1m_20260812/train_035k/train_035k.complete_only.index.json')
 def test_blocked_scientific_contract_verifies_but_refuses_shell_runtime(
     monkeypatch, tmp_path, capsys
 ):

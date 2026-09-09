@@ -116,6 +116,13 @@ def validate_audited_code_ancestry(
             repo_root, "rev-list", "--parents", "-n", "1", commit
         ).stdout.split()
         parent = commit_and_parents[1]
+        # A merge with an identical parent tree introduces no additional code.
+        # Every parent's own history is still validated by the loop above.
+        if len(commit_and_parents) > 2 and any(
+            not _git(repo_root, "diff", "--name-only", candidate, commit).stdout.strip()
+            for candidate in commit_and_parents[1:]
+        ):
+            continue
         changed = _git(
             repo_root, "diff", "--name-only", parent, commit
         ).stdout.splitlines()

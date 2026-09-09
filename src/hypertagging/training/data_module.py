@@ -6,7 +6,8 @@ from dataclasses import dataclass, field
 import hashlib
 import json
 from pathlib import Path
-from typing import cast, Iterator, Mapping, Sequence
+from types import MappingProxyType
+from typing import cast, Iterable, Iterator, Mapping, Sequence
 import warnings
 
 import torch
@@ -27,6 +28,9 @@ from hypertagging.preprocessing.schema_v4 import (
 
 
 FEATURE_BLOCKS = ("common", "track", "cluster", "composite")
+BALANCED_LEVEL_REPLAY_LEVELS = (1, 2, 3, 4, 5, 6)
+BALANCED_LEVEL_REPLAY_VERSION = "balanced-level-replay-v1"
+BALANCED_LEVEL_REPLAY_UID_HASH_SCHEME = "sha256-u64be-length-prefixed-utf8-v1"
 _DATA_BINDING_PROVENANCE = object()
 _RESOLVED_DATA_BINDING_PROVENANCE = object()
 
@@ -47,6 +51,289 @@ class _ResolvedDatasetDataBinding:
     authenticated: _AuthenticatedDatasetDataBinding
     resolved_index: object
     _provenance: object
+
+
+def _uid_sequence_sha256(uids: Sequence[str]) -> str:
+    """Hash an ordered UID sequence without delimiter ambiguity."""
+
+    digest = hashlib.sha256()
+    for uid in uids:
+        encoded = str(uid).encode("utf-8")
+        digest.update(len(encoded).to_bytes(8, byteorder="big", signed=False))
+        digest.update(encoded)
+    return digest.hexdigest()
+
+
+def _eligible_reconstruction_target_mask(
+    event: HeterogeneousEvent,
+    *,
+    target_level: int,
+    target_policy: str,
+    min_daughters: int = 2,
+) -> torch.Tensor:
+    """Mirror the loss target policy for one unbatched event and level."""
+
+    if target_policy not in {
+        "complete_only",
+        "reconstructable_partial",
+        "diagnostic_all",
+    }:
+        raise ValueError(f"unknown reconstruction target policy: {target_policy}")
+    if target_level <= 0:
+        raise ValueError("balanced replay target levels must be positive")
+    if min_daughters < 0:
+        raise ValueError("min_daughters must be non-negative")
+    eligible = event.active.bool() & event.level_ids.eq(target_level)
+    if target_policy != "diagnostic_all":
+        eligible &= event.valid_reconstruction_target.bool()
+    if target_policy == "complete_only":
+        eligible &= event.recursive_reconstructable_complete.bool()
+    if min_daughters == 0 or not bool(eligible.any()):
+        return eligible
+    context = event.active.bool() & event.level_ids.lt(target_level)
+    context_ids = context.nonzero(as_tuple=False).flatten()
+    mothers = eligible.nonzero(as_tuple=False).flatten()
+    daughter_counts = event.daughter_adjacency[mothers][:, context_ids].sum(dim=-1)
+    eligible[mothers[daughter_counts < min_daughters]] = False
+    return eligible
+
+
+@dataclass(frozen=True)
+class BalancedLevelReplay:
+    """Deterministic random-access replay over target-policy-eligible UID pools."""
+
+    events_by_uid: Mapping[str, HeterogeneousEvent]
+    pools_by_level: Mapping[int, tuple[str, ...]]
+    levels: tuple[int, ...]
+    seed: int
+    target_policy: str
+    min_daughters: int = 2
+    _permutation_cache: dict[int, tuple[int, tuple[str, ...]]] = field(
+        default_factory=dict, init=False, repr=False, compare=False
+    )
+
+    def __post_init__(self) -> None:
+        if (
+            not self.levels
+            or self.levels != tuple(sorted(self.levels))
+            or len(set(self.levels)) != len(self.levels)
+            or any(level <= 0 for level in self.levels)
+        ):
+            raise ValueError(
+                "balanced replay levels must be unique, positive, and increasing"
+            )
+        if self.target_policy not in {
+            "complete_only",
+            "reconstructable_partial",
+            "diagnostic_all",
+        }:
+            raise ValueError(
+                f"unknown reconstruction target policy: {self.target_policy}"
+            )
+        if self.min_daughters < 0:
+            raise ValueError("min_daughters must be non-negative")
+        if set(self.pools_by_level) != set(self.levels):
+            raise ValueError("balanced replay pools do not exactly match its levels")
+        for level in self.levels:
+            pool = self.pools_by_level[level]
+            if not pool:
+                raise ValueError(f"balanced replay pool for level {level} is empty")
+            if pool != tuple(sorted(pool)):
+                raise ValueError(
+                    f"balanced replay pool for level {level} is not UID-sorted"
+                )
+            missing = [uid for uid in pool if uid not in self.events_by_uid]
+            if missing:
+                raise ValueError(
+                    f"balanced replay pool for level {level} has unknown UIDs: "
+                    f"{missing[:3]}"
+                )
+
+    @property
+    def materialized_event_count(self) -> int:
+        return len(self.events_by_uid)
+
+    @property
+    def pool_counts(self) -> dict[int, int]:
+        return {level: len(self.pools_by_level[level]) for level in self.levels}
+
+    @property
+    def pool_hashes(self) -> dict[int, str]:
+        return {
+            level: _uid_sequence_sha256(self.pools_by_level[level])
+            for level in self.levels
+        }
+
+    def level_counts(self, *, start_slot: int, slot_count: int) -> dict[int, int]:
+        """Return exact round-robin counts without materializing selections."""
+
+        if start_slot < 0 or slot_count < 0:
+            raise ValueError("balanced replay slots must be non-negative")
+        quotient, remainder = divmod(slot_count, len(self.levels))
+        counts = {level: quotient for level in self.levels}
+        for offset in range(remainder):
+            level = self.levels[(start_slot + offset) % len(self.levels)]
+            counts[level] += 1
+        return counts
+
+    def contract(
+        self,
+        *,
+        planned_slot_count: int | None = None,
+        planned_start_slot: int = 0,
+    ) -> dict[str, object]:
+        """Return the JSON-safe sampler identity and optional finite schedule."""
+
+        contract: dict[str, object] = {
+            "version": BALANCED_LEVEL_REPLAY_VERSION,
+            "levels": list(self.levels),
+            "seed": int(self.seed),
+            "target_policy": self.target_policy,
+            "min_daughters": int(self.min_daughters),
+            "materialized_train_event_count": self.materialized_event_count,
+            "materialized_train_uid_sha256": _uid_sequence_sha256(
+                tuple(sorted(self.events_by_uid))
+            ),
+            "eligible_pool_counts_by_level": {
+                str(level): count for level, count in self.pool_counts.items()
+            },
+            "eligible_pool_uid_sha256_by_level": {
+                str(level): value for level, value in self.pool_hashes.items()
+            },
+            "uid_hash_scheme": BALANCED_LEVEL_REPLAY_UID_HASH_SCHEME,
+            "level_schedule": "global_slot_round_robin",
+            "pool_order": "uid_lexicographic_before_permutation",
+            "pool_permutation": "sha256_ranked_by_seed_level_cycle_uid",
+            "replacement_policy": "new_seeded_permutation_on_pool_exhaustion",
+        }
+        if planned_slot_count is not None:
+            counts = self.level_counts(
+                start_slot=planned_start_slot,
+                slot_count=planned_slot_count,
+            )
+            contract["planned_schedule"] = {
+                "start_slot": int(planned_start_slot),
+                "slot_count": int(planned_slot_count),
+                "end_slot_exclusive": int(planned_start_slot + planned_slot_count),
+                "level_counts": {str(level): count for level, count in counts.items()},
+                "max_minus_min_level_count": max(counts.values())
+                - min(counts.values()),
+            }
+        return contract
+
+    def _permutation(self, level: int, cycle: int) -> tuple[str, ...]:
+        cached = self._permutation_cache.get(level)
+        if cached is not None and cached[0] == cycle:
+            return cached[1]
+        pool = self.pools_by_level[level]
+
+        def rank(uid: str) -> tuple[bytes, str]:
+            payload = (
+                f"{BALANCED_LEVEL_REPLAY_VERSION}\0{self.seed}\0{level}\0{cycle}\0{uid}"
+            ).encode("utf-8")
+            return hashlib.sha256(payload).digest(), uid
+
+        permutation = tuple(sorted(pool, key=rank))
+        self._permutation_cache[level] = (cycle, permutation)
+        return permutation
+
+    def selection_at(self, global_slot: int) -> tuple[int, str]:
+        """Map one absolute optimizer presentation slot to (level, event UID)."""
+
+        if global_slot < 0:
+            raise ValueError("balanced replay global_slot must be non-negative")
+        level_count = len(self.levels)
+        level = self.levels[global_slot % level_count]
+        occurrence = global_slot // level_count
+        pool_size = len(self.pools_by_level[level])
+        cycle, position = divmod(occurrence, pool_size)
+        return level, self._permutation(level, cycle)[position]
+
+    def selections(
+        self, *, start_slot: int, slot_count: int
+    ) -> tuple[tuple[int, str], ...]:
+        if start_slot < 0 or slot_count < 0:
+            raise ValueError("balanced replay slots must be non-negative")
+        return tuple(
+            self.selection_at(slot)
+            for slot in range(start_slot, start_slot + slot_count)
+        )
+
+    def collated_batch(
+        self, *, start_slot: int, batch_size: int
+    ) -> dict[str, torch.Tensor]:
+        if batch_size <= 0:
+            raise ValueError("batch_size must be positive")
+        choices = self.selections(start_slot=start_slot, slot_count=batch_size)
+        batch = collate_heterogeneous_events(
+            [self.events_by_uid[uid] for _level, uid in choices]
+        )
+        batch["selected_target_levels"] = torch.tensor(
+            [level for level, _uid in choices], dtype=torch.long
+        )
+        batch["balanced_replay_global_slots"] = torch.arange(
+            start_slot, start_slot + batch_size, dtype=torch.long
+        )
+        return batch
+
+
+def build_balanced_level_replay(
+    events: Iterable[HeterogeneousEvent],
+    *,
+    target_policy: str,
+    seed: int,
+    levels: Sequence[int] = BALANCED_LEVEL_REPLAY_LEVELS,
+    min_daughters: int = 2,
+) -> BalancedLevelReplay:
+    """Consume train events once and build sorted eligible UID pools."""
+
+    ordered_levels = tuple(int(level) for level in levels)
+    if not ordered_levels or len(set(ordered_levels)) != len(ordered_levels):
+        raise ValueError("balanced replay levels must be non-empty and unique")
+    if ordered_levels != tuple(sorted(ordered_levels)):
+        raise ValueError("balanced replay levels must be strictly increasing")
+    # Validate the policy even for an empty iterator.
+    if target_policy not in {
+        "complete_only",
+        "reconstructable_partial",
+        "diagnostic_all",
+    }:
+        raise ValueError(f"unknown reconstruction target policy: {target_policy}")
+    materialized: dict[str, HeterogeneousEvent] = {}
+    pools: dict[int, list[str]] = {level: [] for level in ordered_levels}
+    for event in events:
+        uid = str(event.event_uid)
+        if uid in materialized:
+            raise ValueError(
+                f"balanced replay requires unique event UIDs; duplicate={uid!r}"
+            )
+        materialized[uid] = event
+        for level in ordered_levels:
+            eligible = _eligible_reconstruction_target_mask(
+                event,
+                target_level=level,
+                target_policy=target_policy,
+                min_daughters=min_daughters,
+            )
+            if bool(eligible.any()):
+                pools[level].append(uid)
+    if not materialized:
+        raise ValueError("balanced replay training split is empty")
+    empty_levels = [level for level, uids in pools.items() if not uids]
+    if empty_levels:
+        raise ValueError(
+            "balanced replay has no target-policy-eligible train events for levels "
+            f"{empty_levels}"
+        )
+    sorted_pools = {level: tuple(sorted(uids)) for level, uids in pools.items()}
+    return BalancedLevelReplay(
+        events_by_uid=MappingProxyType(materialized),
+        pools_by_level=MappingProxyType(sorted_pools),
+        levels=ordered_levels,
+        seed=int(seed),
+        target_policy=target_policy,
+        min_daughters=int(min_daughters),
+    )
 
 
 @dataclass
@@ -77,6 +364,12 @@ class RealDataModule:
     dataset_index: dict[str, object] | None = None
     _materialized_splits: dict[str, list[HeterogeneousEvent]] | None = field(
         default=None, init=False, repr=False
+    )
+    _balanced_level_replay_cache: dict[
+        tuple[str, tuple[int, ...], int, int], BalancedLevelReplay
+    ] = field(default_factory=dict, init=False, repr=False)
+    balanced_level_replay_contract: dict[str, object] | None = field(
+        default=None, init=False
     )
 
     def iter_events(
@@ -185,6 +478,55 @@ class RealDataModule:
             # optimizer update while preserving every presentation.
             current_epoch += 1
             skip = 0
+
+    def balanced_level_replay(
+        self,
+        *,
+        target_policy: str,
+        seed: int,
+        levels: Sequence[int] = BALANCED_LEVEL_REPLAY_LEVELS,
+        min_daughters: int = 2,
+        planned_slot_count: int | None = None,
+    ) -> BalancedLevelReplay:
+        """Materialize and cache one immutable global level-balanced replay."""
+
+        ordered_levels = tuple(int(level) for level in levels)
+        key = (target_policy, ordered_levels, int(seed), int(min_daughters))
+        replay = self._balanced_level_replay_cache.get(key)
+        if replay is None:
+            replay = build_balanced_level_replay(
+                self.iter_events("train", shuffle=False),
+                target_policy=target_policy,
+                seed=seed,
+                levels=ordered_levels,
+                min_daughters=min_daughters,
+            )
+            self._balanced_level_replay_cache[key] = replay
+        self.balanced_level_replay_contract = replay.contract(
+            planned_slot_count=planned_slot_count
+        )
+        return replay
+
+    def balanced_level_replay_batches(
+        self,
+        replay: BalancedLevelReplay,
+        *,
+        batch_size: int,
+        start_slot: int,
+        stop_slot: int,
+    ) -> Iterator[dict[str, torch.Tensor]]:
+        """Yield finite full replay batches over an absolute slot interval."""
+
+        if batch_size <= 0:
+            raise ValueError("batch_size must be positive")
+        if start_slot < 0 or stop_slot < start_slot:
+            raise ValueError("invalid balanced replay slot interval")
+        if (stop_slot - start_slot) % batch_size:
+            raise ValueError("balanced replay interval must contain full batches")
+        for slot in range(start_slot, stop_slot, batch_size):
+            yield self.normalize_batch(
+                replay.collated_batch(start_slot=slot, batch_size=batch_size)
+            )
 
     def normalize_batch(
         self, batch: dict[str, torch.Tensor]
@@ -1207,8 +1549,13 @@ def _assigned_split(
 
 
 __all__ = [
+    "BALANCED_LEVEL_REPLAY_LEVELS",
+    "BALANCED_LEVEL_REPLAY_UID_HASH_SCHEME",
+    "BALANCED_LEVEL_REPLAY_VERSION",
+    "BalancedLevelReplay",
     "FEATURE_BLOCKS",
     "RealDataModule",
+    "build_balanced_level_replay",
     "build_real_data_module",
     "fit_training_normalizers",
     "preflight_dataset_index_data_binding",

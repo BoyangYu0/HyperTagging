@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 import json
+import math
 import time
 from typing import Literal
 
@@ -102,6 +103,10 @@ class CompositeProposal:
     object_score: float
     confidence: float
     truth_node_id: int | None = None
+    average_link_probability: float = 1.0
+    type_probability: float = 1.0
+    cardinality_probability: float = 1.0
+    normalized_joint_log_probability: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -336,6 +341,11 @@ def hard_decode_proposals(
             .max()
             .detach()
         )
+        cardinality_probability = float(
+            torch.softmax(
+                output.pointer.cardinality_logits[0, query_id], dim=-1
+            ).max().detach()
+        )
         if (
             config.type_probability_threshold is not None
             and type_probability < config.type_probability_threshold
@@ -348,6 +358,20 @@ def hard_decode_proposals(
         )
         if confidence < config.confidence_threshold:
             continue
+        eps = torch.finfo(probabilities.dtype).eps
+        selected_mask = torch.zeros_like(probabilities, dtype=torch.bool)
+        selected_mask[selected_local] = True
+        link_log_probability = torch.where(
+            selected_mask,
+            probabilities.clamp(min=eps, max=1.0 - eps).log(),
+            (1.0 - probabilities).clamp(min=eps, max=1.0 - eps).log(),
+        ).mean()
+        joint_terms = (
+            math.log(max(object_score, 1.0e-12)),
+            math.log(max(type_probability, 1.0e-12)),
+            math.log(max(cardinality_probability, 1.0e-12)),
+            float(link_log_probability.detach()),
+        )
         proposals.append(
             CompositeProposal(
                 query_id=query_id,
@@ -355,6 +379,10 @@ def hard_decode_proposals(
                 daughter_positions=daughter_positions,
                 object_score=object_score,
                 confidence=confidence,
+                average_link_probability=pointer_quality,
+                type_probability=type_probability,
+                cardinality_probability=cardinality_probability,
+                normalized_joint_log_probability=sum(joint_terms) / len(joint_terms),
             )
         )
     return proposals
@@ -465,9 +493,13 @@ def bounded_beam_proposal_sets(
     if beam_width <= 0:
         raise ValueError("beam_width must be positive")
     if len(proposals) > max_proposals:
-        raise ValueError(
-            f"bounded beam is limited to {max_proposals} proposals, got {len(proposals)}"
-        )
+        # Exact subset enumeration is exponential.  Keep the deterministic
+        # model-only top proposals before enumeration; truth never enters this
+        # evaluation-only computational cap.
+        proposals = sorted(
+            proposals,
+            key=lambda item: (-item.confidence, item.query_id),
+        )[:max_proposals]
     source_sets = [
         set(
             recursive_leaf_source_mask[list(proposal.daughter_positions)]
@@ -551,6 +583,164 @@ def bounded_beam_rollout(
             max_proposals_per_level=config.max_resolution_proposals,
         ),
     ).candidates
+
+
+@dataclass(frozen=True)
+class DiagnosticBeamRolloutHypothesis:
+    """One evaluation-only partial-tree hypothesis retained by bounded beam."""
+
+    batch: dict[str, torch.Tensor]
+    score: float
+    accepted_by_level: tuple[tuple[CompositeProposal, ...], ...]
+    proposal_count: int = 0
+    average_link_probability_sum: float = 0.0
+    normalized_joint_log_probability_sum: float = 0.0
+    stop_reason: str = "maximum_level"
+
+    def ranking_scores(self) -> dict[str, float]:
+        """Return comparable model-only scores without consulting truth."""
+
+        denominator = max(self.proposal_count, 1)
+        return {
+            "learned_confidence_sum": self.score,
+            "learned_confidence_mean": self.score / denominator,
+            "average_link_probability": (
+                self.average_link_probability_sum / denominator
+            ),
+            "normalized_joint_log_probability": (
+                self.normalized_joint_log_probability_sum / denominator
+            ),
+        }
+
+
+@torch.no_grad()
+def diagnostic_proposal_beam_rollout(
+    model: LevelAutoregressiveReconstructor,
+    full_batch: dict[str, torch.Tensor],
+    *,
+    config: RolloutConfig | None = None,
+    beam_width: int = 4,
+    lookahead_levels: int = 2,
+) -> tuple[DiagnosticBeamRolloutHypothesis, ...]:
+    """Preserve competing partial trees through a bounded number of levels.
+
+    This intentionally remains a batch-size-one, bounded evaluation tool.  It
+    is not a production decoder and is never selected by the training CLI.
+    """
+
+    from hypertagging.reconstruction.hierarchical_inference import project_schema_v4_fsps
+
+    config = config or RolloutConfig()
+    if lookahead_levels <= 0 or lookahead_levels > config.max_level:
+        raise ValueError("bounded beam lookahead_levels must lie in [1, max_level]")
+    if full_batch["node_mask"].shape[0] != 1:
+        raise ValueError("bounded beam rollout is evaluation-only and batch size one")
+    policy = _resolved_rollout_constraint_policy(config)
+    upgraded = project_schema_v4_fsps(full_batch).batch
+    initial = _select_nodes(
+        upgraded,
+        upgraded["node_mask"][0] & (upgraded["level_ids"][0] == 0),
+    )
+    hypotheses = [DiagnosticBeamRolloutHypothesis(initial, 0.0, ())]
+    forward_mode = (
+        "soft_expectation"
+        if config.rollout_pid_kinematics_mode == "soft_decision_hard_construction"
+        else config.rollout_pid_kinematics_mode
+    )
+    construction_mode = (
+        "hard"
+        if config.rollout_pid_kinematics_mode == "soft_decision_hard_construction"
+        else forward_mode
+    )
+    for target_level in range(1, lookahead_levels + 1):
+        expanded: list[DiagnosticBeamRolloutHypothesis] = []
+        for hypothesis in hypotheses:
+            if hypothesis.stop_reason == "configured_root":
+                expanded.append(hypothesis)
+                continue
+            model_batch = _constrained_rollout_model_batch(
+                hypothesis.batch,
+                target_level=target_level,
+                policy=policy,
+            )
+            output = model(
+                model_batch,
+                target_level=target_level,
+                pid_kinematics_mode_override=forward_mode,
+                pid_temperature_override=config.rollout_pid_temperature,
+            )
+            state = hypothesis.batch
+            if output.leaf_pid_logits is not None:
+                state = _with_predicted_leaf_p4(
+                    state,
+                    output.leaf_pid_logits,
+                    mode=construction_mode,
+                    temperature=config.rollout_pid_temperature,
+                )
+            proposals = hard_decode_proposals(output, state, config)
+            recursive = state.get("recursive_leaf_source_mask")
+            if recursive is None:
+                raise ValueError("bounded beam requires recursive leaf-source masks")
+            proposal_sets = bounded_beam_proposal_sets(
+                proposals,
+                recursive_leaf_source_mask=recursive[0],
+                beam_width=beam_width,
+                max_proposals=config.max_resolution_proposals,
+            )
+            nonempty_sets = tuple(items for items in proposal_sets if items)
+            if not nonempty_sets:
+                if config.continue_through_empty_levels:
+                    expanded.append(
+                        DiagnosticBeamRolloutHypothesis(
+                            state,
+                            hypothesis.score,
+                            hypothesis.accepted_by_level + ((),),
+                            hypothesis.proposal_count,
+                            hypothesis.average_link_probability_sum,
+                            hypothesis.normalized_joint_log_probability_sum,
+                            "maximum_level",
+                        )
+                    )
+                continue
+            for accepted in nonempty_sets:
+                next_state, _ = append_composite_proposals(
+                    state, list(accepted), target_level=target_level
+                )
+                expanded.append(
+                    DiagnosticBeamRolloutHypothesis(
+                        next_state,
+                        hypothesis.score + sum(item.confidence for item in accepted),
+                        hypothesis.accepted_by_level + (accepted,),
+                        hypothesis.proposal_count + len(accepted),
+                        hypothesis.average_link_probability_sum
+                        + sum(item.average_link_probability for item in accepted),
+                        hypothesis.normalized_joint_log_probability_sum
+                        + sum(
+                            item.normalized_joint_log_probability for item in accepted
+                        ),
+                        (
+                            "configured_root"
+                            if config.root_types
+                            and any(
+                                item.mother_type in config.root_types
+                                for item in accepted
+                            )
+                            else "maximum_level"
+                        ),
+                    )
+                )
+        if not expanded:
+            break
+        deduplicated: dict[str, DiagnosticBeamRolloutHypothesis] = {}
+        for item in expanded:
+            key = _state_fingerprint(item.batch)
+            if key not in deduplicated or item.score > deduplicated[key].score:
+                deduplicated[key] = item
+        hypotheses = sorted(
+            deduplicated.values(),
+            key=lambda item: (-item.score, _state_fingerprint(item.batch)),
+        )[:beam_width]
+    return tuple(hypotheses)
 
 
 def proposal_ambiguity_metrics(

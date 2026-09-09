@@ -127,6 +127,7 @@ def _rehash(contract):
     return contract
 
 
+@pytest.mark.campaign_artifacts('artifacts/experiment_readiness/production_1m_20260812/train_865k/train_865k.complete_only.index.json')
 def test_authorized_fullscale_contract_records_exact_exception_and_one_job(
     monkeypatch, tmp_path, capsys
 ):
@@ -198,6 +199,7 @@ def test_authorized_fullscale_contract_records_exact_exception_and_one_job(
         ),
     ],
 )
+@pytest.mark.campaign_artifacts('artifacts/experiment_readiness/production_1m_20260812/train_865k/train_865k.complete_only.index.json')
 def test_authorized_contract_rejects_bound_hash_resource_or_scope_mutation(
     monkeypatch, tmp_path, capsys, mutation, message
 ):
