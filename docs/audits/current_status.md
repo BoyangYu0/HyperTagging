@@ -28,6 +28,18 @@ committed current-HEAD multi-category real pilot has not run. Therefore the
 1k–10k pilot campaign from that clean source, run only its bounded shards,
 validate it globally, and review the consolidated report and figures.
 
+## CI integration boundary — 2026-09-09
+
+The beam-study and dashboard histories are integrated at source commit
+`24aa70a`. The ledger's exact post-audit commit list records this development
+boundary; it does not extend the historical audit's scientific scope. CPU CI
+now propagates failures through `tee`. Tests requiring private campaign files
+or historical tags declare those prerequisites and report unavailable evidence
+as skipped; `--require-campaign-artifacts` makes missing evidence fatal on a
+validation host. Existing production ownership checks retain their fixed UIDs,
+while synthetic ownership fixtures use the test runner's UID. Scientific
+promotion, sealed-test access, and the NO-GO recommendation are unchanged.
+
 ## Reconstruction phase40r1 closeout — 2026-09-09
 
 Both preregistered 4,376-step reconstruction arms completed on the doubled
