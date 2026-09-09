@@ -1,0 +1,19 @@
+{
+  "audit_version": "2026-09-09.phase40r1-beam-both.v1",
+  "evaluation_role": "validation",
+  "sealed_test_accessed": false,
+  "model_role": "current_best_control",
+  "event_count": 20,
+  "evaluated_scopes": ["full", "half"],
+  "evaluator_commit": "f68c11e9101639f20b93dbd06f6ffd37fc871b73",
+  "full_scope_compatibility_with_prior_report": "PASS",
+  "full_report_sha256": "c59130fa3747ff8bfd08d631fb6db10fb31592cbea52ee1454eda1c7939525f1",
+  "half_tree": {
+    "greedy": {"source_recall": [23, 115], "source_precision": [23, 50], "lcag_pair_accuracy": [3, 213], "mother_pid_coverage": [3, 55], "perfect_lcag": [0, 33]},
+    "average_link_probability": {"source_recall": [22, 115], "source_precision": [22, 59], "lcag_pair_accuracy": [2, 213], "mother_pid_coverage": [2, 55], "perfect_lcag": [0, 33]},
+    "learned_confidence_mean": {"source_recall": [22, 115], "source_precision": [22, 52], "lcag_pair_accuracy": [2, 213], "mother_pid_coverage": [2, 55], "perfect_lcag": [0, 33]},
+    "learned_confidence_sum": {"source_recall": [27, 115], "source_precision": [27, 61], "lcag_pair_accuracy": [2, 213], "mother_pid_coverage": [2, 55], "perfect_lcag": [0, 33]},
+    "normalized_joint_log_probability": {"source_recall": [26, 115], "source_precision": [26, 55], "lcag_pair_accuracy": [2, 213], "mother_pid_coverage": [2, 55], "perfect_lcag": [0, 33]},
+    "oracle_at_k_diagnostic_only": {"source_recall": [31, 115], "source_precision": [31, 66], "lcag_pair_accuracy": [3, 213], "mother_pid_coverage": [3, 55], "perfect_lcag": [1, 33]}
+  }
+}
