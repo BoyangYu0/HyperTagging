@@ -49,7 +49,9 @@ set rather than a hand-selected summary. This includes strict full-tree metrics,
 half-tree source recall and precision, half-tree LCAG and perfect-LCAG counts,
 and every registered beam ranking (greedy, average-link probability, learned
 confidence mean/sum, normalized joint log probability, and diagnostic oracle).
-Dashboard generation fails closed when any required current-best metric is absent.
+Beam recall, precision, LCAG pair accuracy, mother coverage, and perfect LCAG
+are reported separately for full- and half-tree scopes on the same 20-event
+cohort. Dashboard generation fails closed when either scope is incomplete.
 Two phase41 tasks are submitted: the phase40r1 control and a single-factor arm
 that reduces only the level-1 pointer-positive weight from 32 to 24. Both use
 the fresh phase41 selection/evaluation cohort, pointer threshold 0.35, object

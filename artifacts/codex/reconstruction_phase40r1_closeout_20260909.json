@@ -1,5 +1,5 @@
 {
-  "audit_version": "2026-09-09.phase40r1-closeout.v2",
+  "audit_version": "2026-09-09.phase40r1-closeout.v3",
   "status_date": "2026-09-09",
   "study": "phase40r1-capacity-repair",
   "status": "COMPLETED",
@@ -11,7 +11,7 @@
   "promotion_authorized": false,
   "longer_run_authorized": false,
   "current_best_arm": "CONTROL",
-  "metric_contract_version": "reconstruction-current-best-complete-v1",
+  "metric_contract_version": "reconstruction-current-best-complete-v2",
   "metric_completeness": "COMPLETE",
   "control": {
     "selected_step": 4000,
@@ -108,6 +108,50 @@
       "lcag_pair_accuracy": {"numerator": 1, "denominator": 329, "value": 0.00303951367781155},
       "mother_pid_coverage": {"numerator": 1, "denominator": 27, "value": 0.037037037037037035},
       "perfect_lcag": {"numerator": 0, "denominator": 4, "value": 0.0}
+    }
+  },
+  "beam_half_rankings": {
+    "greedy": {
+      "source_recall": {"numerator": 23, "denominator": 115, "value": 0.2},
+      "source_precision": {"numerator": 23, "denominator": 50, "value": 0.46},
+      "lcag_pair_accuracy": {"numerator": 3, "denominator": 213, "value": 0.014084507042253521},
+      "mother_pid_coverage": {"numerator": 3, "denominator": 55, "value": 0.05454545454545454},
+      "perfect_lcag": {"numerator": 0, "denominator": 33, "value": 0.0}
+    },
+    "average_link_probability": {
+      "source_recall": {"numerator": 22, "denominator": 115, "value": 0.19130434782608696},
+      "source_precision": {"numerator": 22, "denominator": 59, "value": 0.3728813559322034},
+      "lcag_pair_accuracy": {"numerator": 2, "denominator": 213, "value": 0.009389671361502348},
+      "mother_pid_coverage": {"numerator": 2, "denominator": 55, "value": 0.03636363636363636},
+      "perfect_lcag": {"numerator": 0, "denominator": 33, "value": 0.0}
+    },
+    "learned_confidence_mean": {
+      "source_recall": {"numerator": 22, "denominator": 115, "value": 0.19130434782608696},
+      "source_precision": {"numerator": 22, "denominator": 52, "value": 0.4230769230769231},
+      "lcag_pair_accuracy": {"numerator": 2, "denominator": 213, "value": 0.009389671361502348},
+      "mother_pid_coverage": {"numerator": 2, "denominator": 55, "value": 0.03636363636363636},
+      "perfect_lcag": {"numerator": 0, "denominator": 33, "value": 0.0}
+    },
+    "learned_confidence_sum": {
+      "source_recall": {"numerator": 27, "denominator": 115, "value": 0.23478260869565218},
+      "source_precision": {"numerator": 27, "denominator": 61, "value": 0.4426229508196721},
+      "lcag_pair_accuracy": {"numerator": 2, "denominator": 213, "value": 0.009389671361502348},
+      "mother_pid_coverage": {"numerator": 2, "denominator": 55, "value": 0.03636363636363636},
+      "perfect_lcag": {"numerator": 0, "denominator": 33, "value": 0.0}
+    },
+    "normalized_joint_log_probability": {
+      "source_recall": {"numerator": 26, "denominator": 115, "value": 0.22608695652173913},
+      "source_precision": {"numerator": 26, "denominator": 55, "value": 0.4727272727272727},
+      "lcag_pair_accuracy": {"numerator": 2, "denominator": 213, "value": 0.009389671361502348},
+      "mother_pid_coverage": {"numerator": 2, "denominator": 55, "value": 0.03636363636363636},
+      "perfect_lcag": {"numerator": 0, "denominator": 33, "value": 0.0}
+    },
+    "oracle_at_k": {
+      "source_recall": {"numerator": 31, "denominator": 115, "value": 0.26956521739130435},
+      "source_precision": {"numerator": 31, "denominator": 66, "value": 0.4696969696969697},
+      "lcag_pair_accuracy": {"numerator": 3, "denominator": 213, "value": 0.014084507042253521},
+      "mother_pid_coverage": {"numerator": 3, "denominator": 55, "value": 0.05454545454545454},
+      "perfect_lcag": {"numerator": 1, "denominator": 33, "value": 0.030303030303030304}
     }
   },
   "decision": {

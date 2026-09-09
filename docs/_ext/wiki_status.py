@@ -348,16 +348,22 @@ def _collect(payloads: dict[str, Any], revision: str | None) -> dict[str, Any]:
         }
         for arm in ("control", "query_scale")
     }
-    raw_rankings = _mapping(recent.get("beam_rankings"))
-    beam_rankings = {
-        ranking: {
-            metric: {
-                "numerator": _integer(_mapping(_mapping(raw_rankings.get(ranking)).get(metric)).get("numerator")),
-                "denominator": _integer(_mapping(_mapping(raw_rankings.get(ranking)).get(metric)).get("denominator")),
+    raw_rankings_by_scope = {
+        "full": _mapping(recent.get("beam_rankings")),
+        "half": _mapping(recent.get("beam_half_rankings")),
+    }
+    beam_rankings_by_scope = {
+        scope: {
+            ranking: {
+                metric: {
+                    "numerator": _integer(_mapping(_mapping(raw_rankings.get(ranking)).get(metric)).get("numerator")),
+                    "denominator": _integer(_mapping(_mapping(raw_rankings.get(ranking)).get(metric)).get("denominator")),
+                }
+                for metric in beam_metric_names
             }
-            for metric in beam_metric_names
+            for ranking in beam_ranking_names
         }
-        for ranking in beam_ranking_names
+        for scope, raw_rankings in raw_rankings_by_scope.items()
     }
     complete_arm_metrics = all(
         recent_arms[arm][name] is not None
@@ -365,13 +371,14 @@ def _collect(payloads: dict[str, Any], revision: str | None) -> dict[str, Any]:
         for name in ("selected_step", "all_gates_passed", *recent_metric_names, *recent_count_names)
     )
     complete_beam_metrics = all(
-        beam_rankings[ranking][metric][field] is not None
-        for ranking in beam_rankings
-        for metric in beam_rankings[ranking]
+        beam_rankings_by_scope[scope][ranking][metric][field] is not None
+        for scope in beam_rankings_by_scope
+        for ranking in beam_rankings_by_scope[scope]
+        for metric in beam_rankings_by_scope[scope][ranking]
         for field in ("numerator", "denominator")
     )
     if recent and (
-        recent.get("metric_contract_version") != "reconstruction-current-best-complete-v1"
+        recent.get("metric_contract_version") != "reconstruction-current-best-complete-v2"
         or recent.get("metric_completeness") != "COMPLETE"
         or not complete_arm_metrics
         or not complete_beam_metrics
@@ -387,10 +394,10 @@ def _collect(payloads: dict[str, Any], revision: str | None) -> dict[str, Any]:
         "promotion_authorized": _boolean(recent.get("promotion_authorized")),
         "longer_run_authorized": _boolean(recent.get("longer_run_authorized")),
         "current_best_arm": _enum(recent.get("current_best_arm"), {"CONTROL", "QUERY_SCALE"}),
-        "metric_contract_version": _enum(recent.get("metric_contract_version"), {"reconstruction-current-best-complete-v1"}),
+        "metric_contract_version": _enum(recent.get("metric_contract_version"), {"reconstruction-current-best-complete-v2"}),
         "metric_completeness": _enum(recent.get("metric_completeness"), {"COMPLETE"}),
         "arms": recent_arms,
-        "beam_rankings": beam_rankings,
+        "beam_rankings_by_scope": beam_rankings_by_scope,
         "decision": {
             "winning_arm": _enum(_mapping(recent.get("decision")).get("winning_arm"), {"CONTROL", "QUERY_SCALE"}),
             "query_scale_continuation": _enum(_mapping(recent.get("decision")).get("query_scale_continuation"), {"STOP", "CONTINUE"}),
@@ -462,7 +469,7 @@ def _render(manifest: dict[str, Any]) -> str:
     recent = reconstruction["phase40r1"]
     control = recent["arms"]["control"]
     query_scale = recent["arms"]["query_scale"]
-    beam_rankings = recent["beam_rankings"]
+    beam_rankings_by_scope = recent["beam_rankings_by_scope"]
     delta, required = reconstruction["edge_f1_delta"], reconstruction["required_edge_f1_delta"]
     cards = [
         ("Reconstruction edge F1", _display(reconstruction["metrics"]["relbias"]["edge_f1"]),
@@ -518,7 +525,7 @@ def _render(manifest: dict[str, Any]) -> str:
     ])
     lines += [f"Current best arm: {_literal(recent['current_best_arm'])}. Metric contract:",
               f"{_literal(recent['metric_contract_version'])} ({_literal(recent['metric_completeness'])}).",
-              "The contract rejects dashboard generation if any strict, half-tree, or beam-ranking metric is absent.", "",
+              "The contract rejects dashboard generation if any strict, half-tree, full-scope beam, or half-scope beam metric is absent.", "",
               "Current-best beam-search reconstruction", "---------------------------------------", "",
               f"Beam search used {_literal(recent['beam_event_count'])} validation events. Every registered model-only ranker is shown; oracle-at-k is diagnostic only.", ""]
     beam_labels = {
@@ -529,9 +536,10 @@ def _render(manifest: dict[str, Any]) -> str:
         "normalized_joint_log_probability": "normalized joint log probability",
         "oracle_at_k": "oracle at k (diagnostic)",
     }
-    lines += _table(["Ranking", "source recall", "source precision", "LCAG pair accuracy", "mother coverage", "perfect LCAG"], [
-        [beam_labels[name], *[_metric_point(beam_rankings[name][metric]) for metric in (
+    lines += _table(["Scope", "Ranking", "source recall", "source precision", "LCAG pair accuracy", "mother coverage", "perfect LCAG"], [
+        [scope, beam_labels[name], *[_metric_point(beam_rankings_by_scope[scope][name][metric]) for metric in (
             "source_recall", "source_precision", "lcag_pair_accuracy", "mother_pid_coverage", "perfect_lcag")]]
+        for scope in ("full", "half")
         for name in beam_labels
     ])
     lines += [

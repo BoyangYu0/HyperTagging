@@ -90,9 +90,9 @@ def evidence(tmp_path, monkeypatch):
         "cpu_workflow": {"jobs": {"unit": {"steps": [{"run": "python -m pytest -q | tee private-log.txt"}]}}},
     }
     recent = documents["reconstruction_phase40r1"]
-    recent.update({"audit_version": "2026-09-09.phase40r1-closeout.v2",
+    recent.update({"audit_version": "2026-09-09.phase40r1-closeout.v3",
                    "current_best_arm": "CONTROL",
-                   "metric_contract_version": "reconstruction-current-best-complete-v1",
+                   "metric_contract_version": "reconstruction-current-best-complete-v2",
                    "metric_completeness": "COMPLETE"})
     complete_arm_defaults = {
         "predicted_depth_fraction": 2.0, "tree_validity": 1.0,
@@ -113,6 +113,7 @@ def evidence(tmp_path, monkeypatch):
         for ranking in ("greedy", "average_link_probability", "learned_confidence_mean",
                         "learned_confidence_sum", "normalized_joint_log_probability", "oracle_at_k")
     }
+    recent["beam_half_rankings"] = json.loads(json.dumps(recent["beam_rankings"]))
     for key, document in documents.items():
         write_source(root, key, document)
     return root
@@ -364,10 +365,15 @@ def test_current_repository_dashboard_surfaces_recorded_acceptance_values(tmp_pa
     assert phase40r1["arms"]["control"]["half_source_recall"] == pytest.approx(0.2123076923076923)
     assert phase40r1["arms"]["control"]["half_perfect_lcag_numerator"] == 1
     assert phase40r1["metric_completeness"] == "COMPLETE"
-    assert set(phase40r1["beam_rankings"]) == {
-        "greedy", "average_link_probability", "learned_confidence_mean",
-        "learned_confidence_sum", "normalized_joint_log_probability", "oracle_at_k",
-    }
+    assert set(phase40r1["beam_rankings_by_scope"]) == {"full", "half"}
+    for scope in ("full", "half"):
+        assert set(phase40r1["beam_rankings_by_scope"][scope]) == {
+            "greedy", "average_link_probability", "learned_confidence_mean",
+            "learned_confidence_sum", "normalized_joint_log_probability", "oracle_at_k",
+        }
+    assert phase40r1["beam_rankings_by_scope"]["half"]["greedy"][
+        "lcag_pair_accuracy"
+    ] == {"numerator": 3, "denominator": 213}
     assert phase40r1["decision"]["winning_arm"] == "CONTROL"
     assert phase40r1["decision"]["next_study_status"] == "SUBMITTED"
     assert phase40r1["sealed_test_accessed"] is False
@@ -388,6 +394,17 @@ def test_current_best_metric_contract_rejects_missing_half_or_beam_metrics(evide
     write_source(evidence, "reconstruction_phase40r1", payload)
     with pytest.raises(ValueError, match="metric contract is incomplete"):
         status.generate_status(evidence, tmp_path / "missing-beam")
+
+    payload = json.loads(source.read_text())
+    payload["beam_rankings"]["learned_confidence_mean"]["perfect_lcag"] = {
+        "numerator": 1, "denominator": 10, "value": 0.1
+    }
+    del payload["beam_half_rankings"]["average_link_probability"][
+        "lcag_pair_accuracy"
+    ]
+    write_source(evidence, "reconstruction_phase40r1", payload)
+    with pytest.raises(ValueError, match="metric contract is incomplete"):
+        status.generate_status(evidence, tmp_path / "missing-half-beam")
 
 
 @pytest.mark.parametrize("value", ["yesterday", "-1", "1.5", "99999999999999999999999999999"])
