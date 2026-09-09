@@ -331,6 +331,52 @@ def _collect(payloads: dict[str, Any], revision: str | None) -> dict[str, Any]:
         "half_lcag_numerator", "half_lcag_denominator",
         "half_perfect_lcag_numerator", "half_perfect_lcag_denominator",
     )
+    beam_ranking_names = (
+        "greedy", "average_link_probability", "learned_confidence_mean",
+        "learned_confidence_sum", "normalized_joint_log_probability", "oracle_at_k",
+    )
+    beam_metric_names = (
+        "source_recall", "source_precision", "lcag_pair_accuracy",
+        "mother_pid_coverage", "perfect_lcag",
+    )
+    recent_arms = {
+        arm: {
+            "selected_step": _integer(_mapping(recent.get(arm)).get("selected_step")),
+            "all_gates_passed": _boolean(_mapping(recent.get(arm)).get("all_gates_passed")),
+            **{name: _number(_mapping(recent.get(arm)).get(name)) for name in recent_metric_names},
+            **{name: _integer(_mapping(recent.get(arm)).get(name)) for name in recent_count_names},
+        }
+        for arm in ("control", "query_scale")
+    }
+    raw_rankings = _mapping(recent.get("beam_rankings"))
+    beam_rankings = {
+        ranking: {
+            metric: {
+                "numerator": _integer(_mapping(_mapping(raw_rankings.get(ranking)).get(metric)).get("numerator")),
+                "denominator": _integer(_mapping(_mapping(raw_rankings.get(ranking)).get(metric)).get("denominator")),
+            }
+            for metric in beam_metric_names
+        }
+        for ranking in beam_ranking_names
+    }
+    complete_arm_metrics = all(
+        recent_arms[arm][name] is not None
+        for arm in recent_arms
+        for name in ("selected_step", "all_gates_passed", *recent_metric_names, *recent_count_names)
+    )
+    complete_beam_metrics = all(
+        beam_rankings[ranking][metric][field] is not None
+        for ranking in beam_rankings
+        for metric in beam_rankings[ranking]
+        for field in ("numerator", "denominator")
+    )
+    if recent and (
+        recent.get("metric_contract_version") != "reconstruction-current-best-complete-v1"
+        or recent.get("metric_completeness") != "COMPLETE"
+        or not complete_arm_metrics
+        or not complete_beam_metrics
+    ):
+        raise ValueError("current-best reconstruction metric contract is incomplete")
     reconstruction["phase40r1"] = {
         "source_ids": _refs("reconstruction_phase40r1"),
         "status": _enum(recent.get("status"), {"COMPLETED"}),
@@ -340,29 +386,11 @@ def _collect(payloads: dict[str, Any], revision: str | None) -> dict[str, Any]:
         "sealed_test_accessed": _boolean(recent.get("sealed_test_accessed")),
         "promotion_authorized": _boolean(recent.get("promotion_authorized")),
         "longer_run_authorized": _boolean(recent.get("longer_run_authorized")),
-        "arms": {
-            arm: {
-                "selected_step": _integer(_mapping(recent.get(arm)).get("selected_step")),
-                "all_gates_passed": _boolean(_mapping(recent.get(arm)).get("all_gates_passed")),
-                **{name: _number(_mapping(recent.get(arm)).get(name)) for name in recent_metric_names},
-                **{name: _integer(_mapping(recent.get(arm)).get(name)) for name in recent_count_names},
-            }
-            for arm in ("control", "query_scale")
-        },
-        "beam": {
-            name: (_boolean(_mapping(recent.get("control_beam")).get(name))
-                   if name == "oracle_is_diagnostic_only"
-                   else _integer(_mapping(recent.get("control_beam")).get(name))
-                   if name.endswith(("_numerator", "_denominator"))
-                   else _number(_mapping(recent.get("control_beam")).get(name)))
-            for name in (
-                "average_link_source_recall", "average_link_source_precision",
-                "average_link_lcag_numerator", "average_link_lcag_denominator",
-                "oracle_source_recall", "oracle_source_precision",
-                "oracle_lcag_numerator", "oracle_lcag_denominator",
-                "oracle_is_diagnostic_only",
-            )
-        },
+        "current_best_arm": _enum(recent.get("current_best_arm"), {"CONTROL", "QUERY_SCALE"}),
+        "metric_contract_version": _enum(recent.get("metric_contract_version"), {"reconstruction-current-best-complete-v1"}),
+        "metric_completeness": _enum(recent.get("metric_completeness"), {"COMPLETE"}),
+        "arms": recent_arms,
+        "beam_rankings": beam_rankings,
         "decision": {
             "winning_arm": _enum(_mapping(recent.get("decision")).get("winning_arm"), {"CONTROL", "QUERY_SCALE"}),
             "query_scale_continuation": _enum(_mapping(recent.get("decision")).get("query_scale_continuation"), {"STOP", "CONTINUE"}),
@@ -403,6 +431,12 @@ def _display(value: Any) -> str:
     return "UNKNOWN" if value is None else str(value)
 
 
+def _metric_point(value: dict[str, Any]) -> str:
+    numerator, denominator = value.get("numerator"), value.get("denominator")
+    ratio = numerator / denominator if numerator is not None and denominator else None
+    return f"{_display(ratio)} ({_display(numerator)}/{_display(denominator)})"
+
+
 def _signed(value: Any) -> str:
     return "UNKNOWN" if value is None else f"{value:+.3f}"
 
@@ -428,7 +462,7 @@ def _render(manifest: dict[str, Any]) -> str:
     recent = reconstruction["phase40r1"]
     control = recent["arms"]["control"]
     query_scale = recent["arms"]["query_scale"]
-    beam = recent["beam"]
+    beam_rankings = recent["beam_rankings"]
     delta, required = reconstruction["edge_f1_delta"], reconstruction["required_edge_f1_delta"]
     cards = [
         ("Reconstruction edge F1", _display(reconstruction["metrics"]["relbias"]["edge_f1"]),
@@ -439,6 +473,7 @@ def _render(manifest: dict[str, Any]) -> str:
           f"Recommendation: {reconstruction['recommendation']}. Paired event evidence: {_display(reconstruction['paired_event_evidence'])}."], "warning"),
         ("Phase40r1 strict reconstruction", recent["status"],
          [f"Control complete-target efficiency: {_display(control['micro_complete_target_efficiency'])}; strict full roots: {_display(control['full_root_completion_numerator'])}/{_display(control['full_root_completion_denominator'])}.",
+          f"Control half-tree recall / precision: {_display(control['half_source_recall'])} / {_display(control['half_source_precision'])}; perfect half LCAG: {_display(control['half_perfect_lcag_numerator'])}/{_display(control['half_perfect_lcag_denominator'])}.",
           f"Query-scale complete-target efficiency: {_display(query_scale['micro_complete_target_efficiency'])}; all gates passed: {_display(query_scale['all_gates_passed'])}.",
           f"Next study: {recent['decision']['next_study']} ({recent['decision']['next_study_status']}, {_display(recent['decision']['phase41_task_count'])} tasks); sealed test accessed: {_display(recent['sealed_test_accessed'])}.",
           f"Recorded real pilot: {science['real_pilot']}; pretraining validation objectives remain UNAVAILABLE."], "warning"),
@@ -475,12 +510,31 @@ def _render(manifest: dict[str, Any]) -> str:
         ["exact mother coverage", f"{_display(control['exact_mother_coverage_numerator'])}/{_display(control['exact_mother_coverage_denominator'])}", f"{_display(query_scale['exact_mother_coverage_numerator'])}/{_display(query_scale['exact_mother_coverage_denominator'])}"],
         ["full source recall", control["full_source_recall"], query_scale["full_source_recall"]],
         ["full source precision", control["full_source_precision"], query_scale["full_source_precision"]],
+        ["half-tree source recall", control["half_source_recall"], query_scale["half_source_recall"]],
+        ["half-tree source precision", control["half_source_precision"], query_scale["half_source_precision"]],
+        ["half-tree LCAG", f"{_display(control['half_lcag_numerator'])}/{_display(control['half_lcag_denominator'])}", f"{_display(query_scale['half_lcag_numerator'])}/{_display(query_scale['half_lcag_denominator'])}"],
+        ["perfect half-tree LCAG", f"{_display(control['half_perfect_lcag_numerator'])}/{_display(control['half_perfect_lcag_denominator'])}", f"{_display(query_scale['half_perfect_lcag_numerator'])}/{_display(query_scale['half_perfect_lcag_denominator'])}"],
         ["all gates passed", control["all_gates_passed"], query_scale["all_gates_passed"]],
     ])
-    lines += ["Beam search used 20 validation events. Average-link top-1 source recall / precision:",
-              f"{_literal(beam['average_link_source_recall'])} / {_literal(beam['average_link_source_precision'])};",
-              f"LCAG {_literal(beam['average_link_lcag_numerator'])}/{_literal(beam['average_link_lcag_denominator'])}.",
-              f"Oracle-at-k recall was {_literal(beam['oracle_source_recall'])}, but LCAG remained {_literal(beam['oracle_lcag_numerator'])}/{_literal(beam['oracle_lcag_denominator'])}; oracle is diagnostic only.", "",
+    lines += [f"Current best arm: {_literal(recent['current_best_arm'])}. Metric contract:",
+              f"{_literal(recent['metric_contract_version'])} ({_literal(recent['metric_completeness'])}).",
+              "The contract rejects dashboard generation if any strict, half-tree, or beam-ranking metric is absent.", "",
+              "Current-best beam-search reconstruction", "---------------------------------------", "",
+              f"Beam search used {_literal(recent['beam_event_count'])} validation events. Every registered model-only ranker is shown; oracle-at-k is diagnostic only.", ""]
+    beam_labels = {
+        "greedy": "greedy",
+        "average_link_probability": "average link probability",
+        "learned_confidence_mean": "learned confidence mean",
+        "learned_confidence_sum": "learned confidence sum",
+        "normalized_joint_log_probability": "normalized joint log probability",
+        "oracle_at_k": "oracle at k (diagnostic)",
+    }
+    lines += _table(["Ranking", "source recall", "source precision", "LCAG pair accuracy", "mother coverage", "perfect LCAG"], [
+        [beam_labels[name], *[_metric_point(beam_rankings[name][metric]) for metric in (
+            "source_recall", "source_precision", "lcag_pair_accuracy", "mother_pid_coverage", "perfect_lcag")]]
+        for name in beam_labels
+    ])
+    lines += [
               f"Phase41 preregisters pointer/object thresholds {_literal(recent['decision']['phase41_pointer_threshold'])}/{_literal(recent['decision']['phase41_object_threshold'])} on a fresh cohort; this is not a post-hoc phase40 promotion setting.", "",
               "Stage A validation comparison", "-----------------------------", "",
               "Values are copied from the terminal receipt. Validation loss and pointer metrics",

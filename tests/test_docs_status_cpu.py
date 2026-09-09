@@ -89,6 +89,30 @@ def evidence(tmp_path, monkeypatch):
                          "next_study_status": "PREREGISTRATION_IN_PROGRESS"}},
         "cpu_workflow": {"jobs": {"unit": {"steps": [{"run": "python -m pytest -q | tee private-log.txt"}]}}},
     }
+    recent = documents["reconstruction_phase40r1"]
+    recent.update({"audit_version": "2026-09-09.phase40r1-closeout.v2",
+                   "current_best_arm": "CONTROL",
+                   "metric_contract_version": "reconstruction-current-best-complete-v1",
+                   "metric_completeness": "COMPLETE"})
+    complete_arm_defaults = {
+        "predicted_depth_fraction": 2.0, "tree_validity": 1.0,
+        "full_source_recall": 0.2, "full_source_precision": 0.7,
+        "half_source_recall": 0.21, "half_source_precision": 0.45,
+        "full_lcag_numerator": 1, "full_lcag_denominator": 2518,
+        "exact_mother_coverage_numerator": 1, "exact_mother_coverage_denominator": 149,
+        "half_lcag_numerator": 15, "half_lcag_denominator": 1724,
+        "half_perfect_lcag_numerator": 1, "half_perfect_lcag_denominator": 164,
+    }
+    for arm in ("control", "query_scale"):
+        recent[arm].update(complete_arm_defaults)
+    metric_point = {"numerator": 1, "denominator": 10, "value": 0.1}
+    recent["beam_rankings"] = {
+        ranking: {metric: dict(metric_point) for metric in (
+            "source_recall", "source_precision", "lcag_pair_accuracy",
+            "mother_pid_coverage", "perfect_lcag")}
+        for ranking in ("greedy", "average_link_probability", "learned_confidence_mean",
+                        "learned_confidence_sum", "normalized_joint_log_probability", "oracle_at_k")
+    }
     for key, document in documents.items():
         write_source(root, key, document)
     return root
@@ -315,6 +339,13 @@ def test_current_repository_dashboard_surfaces_recorded_acceptance_values(tmp_pa
     assert manifest["notebooks"]["visual_review_status"] == "NOT_REVIEWED"
     assert manifest["pretraining"]["recorded_step"] == 54064 and manifest["pretraining"]["planned_steps"] == 108128
     assert manifest["pretraining"]["calibration_status"] == "PENDING"
+    rendered_status = (tmp_path / "generated" / "index.rst").read_text().replace("\\-", "-")
+    for required_label in (
+        "half-tree source recall", "half-tree source precision", "half-tree LCAG",
+        "perfect half-tree LCAG", "average link probability", "learned confidence mean",
+        "learned confidence sum", "normalized joint log probability", "oracle at k",
+    ):
+        assert required_label in rendered_status
     assert manifest["pretraining"]["production_submission_authorized"] is False
     assert manifest["pretraining"]["selected_profile_state"] == "NONE_SELECTED"
     assert manifest["pretraining"]["submission_performed"] is False
@@ -330,11 +361,33 @@ def test_current_repository_dashboard_surfaces_recorded_acceptance_values(tmp_pa
     assert phase40r1["arms"]["control"]["full_root_completion_numerator"] == 1
     assert phase40r1["arms"]["query_scale"]["full_root_completion_numerator"] == 2
     assert phase40r1["arms"]["control"]["all_gates_passed"] is False
+    assert phase40r1["arms"]["control"]["half_source_recall"] == pytest.approx(0.2123076923076923)
+    assert phase40r1["arms"]["control"]["half_perfect_lcag_numerator"] == 1
+    assert phase40r1["metric_completeness"] == "COMPLETE"
+    assert set(phase40r1["beam_rankings"]) == {
+        "greedy", "average_link_probability", "learned_confidence_mean",
+        "learned_confidence_sum", "normalized_joint_log_probability", "oracle_at_k",
+    }
     assert phase40r1["decision"]["winning_arm"] == "CONTROL"
     assert phase40r1["decision"]["next_study_status"] == "SUBMITTED"
     assert phase40r1["sealed_test_accessed"] is False
     assert manifest["science"]["real_pilot"] == manifest["science"]["trained_physics"] == "NOT_RUN"
     assert manifest["cpu_ci"]["without_explicit_pipefail"] == 3
+
+
+def test_current_best_metric_contract_rejects_missing_half_or_beam_metrics(evidence, tmp_path):
+    source = evidence / status.SOURCE_PATHS["reconstruction_phase40r1"]
+    payload = json.loads(source.read_text())
+    del payload["control"]["half_source_recall"]
+    write_source(evidence, "reconstruction_phase40r1", payload)
+    with pytest.raises(ValueError, match="metric contract is incomplete"):
+        status.generate_status(evidence, tmp_path / "missing-half")
+
+    payload["control"]["half_source_recall"] = 0.21
+    del payload["beam_rankings"]["learned_confidence_mean"]["perfect_lcag"]
+    write_source(evidence, "reconstruction_phase40r1", payload)
+    with pytest.raises(ValueError, match="metric contract is incomplete"):
+        status.generate_status(evidence, tmp_path / "missing-beam")
 
 
 @pytest.mark.parametrize("value", ["yesterday", "-1", "1.5", "99999999999999999999999999999"])
