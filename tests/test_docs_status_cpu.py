@@ -513,3 +513,14 @@ def test_phase42_incomplete_metrics_fail_closed(missing):
         del payload['arms']['pretrain108128']['beam']['half']['greedy']
     with pytest.raises(ValueError):
         status._phase41_projection(payload, phase=42, labels=('pretrain81096_control', 'pretrain108128'))
+
+
+
+def test_complete_metric_download_stays_within_publication_limit(tmp_path):
+    output = tmp_path / 'complete-status'
+    manifest = status.generate_status(ROOT, output)
+    download = output / 'status.json'
+    assert download.stat().st_size < 10 * 1024 * 1024
+    assert json.loads(download.read_text()) == manifest
+    assert len(manifest['reconstruction']['phase41']['metric_rows']) == 21467
+    assert len(manifest['reconstruction']['phase42']['metric_rows']) == 16306

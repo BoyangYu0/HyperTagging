@@ -812,6 +812,6 @@ def generate_status(repo_root: Path, output_dir: Path) -> dict[str, Any]:
         "external_filesystem_or_network_artifacts_opened": False,
         "dashboard_executes_tests_or_training": False, "publication_policy": "ALLOWLISTED_SCALARS_COUNTS_DATES_HASHES_ONLY",
     }, "sources": sources, **_collect(payloads, revision)}
-    _write(output / "status.json", (json.dumps(manifest, indent=2, sort_keys=True, allow_nan=False) + "\n").encode())
+    _write(output / "status.json", (json.dumps(manifest, separators=(",", ":"), sort_keys=True, allow_nan=False) + "\n").encode())
     _write(output / "index.rst", _render(manifest).encode())
     return manifest
