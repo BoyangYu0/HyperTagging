@@ -40,6 +40,24 @@ validation host. Existing production ownership checks retain their fixed UIDs,
 while synthetic ownership fixtures use the test runner's UID. Scientific
 promotion, sealed-test access, and the NO-GO recommendation are unchanged.
 
+## Reconstruction phase42 closeout — 2026-09-10
+
+Both bounded Phase42 runs completed 4,376 steps. The 81,096-step pretrained
+control selected 141/3,938 micro complete targets (3.5805%); the 108,128-step
+candidate selected 136/3,938 (3.4535%). Both completed zero full roots in 100
+strict validation events. Full LCAG was 2/3,384 versus 1/3,384; half LCAG was
+13/2,109 versus 9/2,109. Neither passed all unchanged hierarchy gates.
+Immutable receipt/checkpoint/report hashes and exact strict repeats were
+verified, including full/half beam rankers and contracted diagnostics.
+
+Hold the dataset at 70,000 and do not extend pretraining duration now.
+Phase43 tests encoder adaptation from step zero versus the current 2,188-step
+freeze, holding the 81,096-step pretrained checkpoint, decoder, learning rates,
+seed, and 4,376-step budget fixed. This exploratory allocation is authorized by
+the user's 2026-09-10 request to repeat the review and next-training workflow.
+No automatic promotion, sealed-test access, or larger data campaign is authorized.
+The historical audit scope and NO-GO production recommendation remain unchanged.
+
 ## Reconstruction phase41 closeout — 2026-09-09
 
 Both 70,000-event, 4,376-step arms completed, with verified receipt/artifact

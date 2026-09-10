@@ -34,6 +34,8 @@ def evidence(tmp_path, monkeypatch):
     monkeypatch.delenv("SOURCE_DATE_EPOCH", raising=False)
     monkeypatch.setattr(status, "_git", lambda *_args: None)
     documents = {
+        "reconstruction_phase42": {"reserved_for_phase42": True},
+        "reconstruction_phase43_submission": {"reserved_for_phase43": True},
         "reconstruction_phase41": {"reserved_for_phase41": True},
         "reconstruction_phase42_submission": {"reserved_for_phase42": True},
         "current_status": "# Current status\n\n## Recommendation: NO-GO\n\nNo current real pilot.\n\n## Older result\n\n999 passed.\n",
@@ -141,7 +143,7 @@ def test_status_is_deterministic_and_preserves_record_scope(evidence, tmp_path, 
     assert manifest["pretraining"]["selected_profile_state"] == "NONE_SELECTED"
     assert manifest["pretraining"]["submission_performed"] is False
     assert manifest["pretraining"]["pretraining_success_gate_passed"] is False
-    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 5
+    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 7
     assert manifest["provenance"]["external_filesystem_or_network_artifacts_opened"] is False
     assert source_info(manifest, "issue_ledger")["freshness"]["status"] == "stale"
     assert source_info(manifest, "current_status")["freshness"]["status"] == "unknown"
@@ -489,3 +491,25 @@ def test_phase41_arbitrary_labels_and_nested_strings_do_not_publish():
     payload['metric_rows'].append({'arm': 'pointer32_control', 'view': 'private-host', 'metric': '/private/checkpoint.pt', 'value': 1})
     payload['arms']['pointer32_control']['private'] = '/private/checkpoint.pt'
     assert 'private' not in json.dumps(status._phase41_projection(payload))
+
+
+
+def test_phase42_metrics_are_complete_and_keep_counts():
+    payload = json.loads((ROOT / status.SOURCE_PATHS['reconstruction_phase42']).read_text())
+    result = status._phase41_projection(payload, phase=42, labels=('pretrain81096_control', 'pretrain108128'))
+    assert len(result['metric_rows']) == len(payload['metric_rows']) == 16306
+    assert result['arms']['pretrain81096_control']['endpoints']['full_lcag']['numerator'] == 2
+    assert result['arms']['pretrain108128']['endpoints']['full_lcag']['numerator'] == 1
+    assert set(result['arms']['pretrain108128']['beam']) == {'full', 'half'}
+    assert (ROOT / status.SOURCE_PATHS['reconstruction_phase42']).stat().st_size < status._MAX_SOURCE_BYTES
+
+
+@pytest.mark.parametrize('missing', ['metric', 'ranking'])
+def test_phase42_incomplete_metrics_fail_closed(missing):
+    payload = json.loads((ROOT / status.SOURCE_PATHS['reconstruction_phase42']).read_text())
+    if missing == 'metric':
+        payload['metric_rows'].pop()
+    else:
+        del payload['arms']['pretrain108128']['beam']['half']['greedy']
+    with pytest.raises(ValueError):
+        status._phase41_projection(payload, phase=42, labels=('pretrain81096_control', 'pretrain108128'))
