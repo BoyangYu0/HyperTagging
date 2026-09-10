@@ -288,3 +288,51 @@ supplemental_runs:
       PID accuracy is 0/1 despite topology coverage 1/153. No physics promotion. Phase42
       two training jobs submitted, outcomes pending. Pretraining advantage and data
       limitation are unproven. The historical audit scope is unchanged.
+  - source_sha: b3cca5d0f04cbec68bfd71cd0a94d68ebe9b054e
+    metadata_head: resolved_by_git_rev_parse_HEAD
+    worktree_state: clean_detached_training_source_with_separate_publication_metadata
+    date: '2026-09-10T08:11:12.653743+00:00'
+    commands:
+    - CUDA_VISIBLE_DEVICES="" OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=$PWD/src
+      /project/agkuhr/users/boyang/envs/hypertagging-ci-20260909/bin/python -m pytest
+      -q tests/test_reconstruction_phase42_campaign_cpu.py tests/test_reconstruction_phase43_campaign_cpu.py
+      tests/test_full_reconstruction_evaluation_suite_cpu.py tests/test_full_decay_runner_cpu.py
+      tests/test_full_decay_metrics_cpu.py tests/test_full_depth_beam_cpu.py tests/test_confidence_calibration_cpu.py
+    - python -m pytest -q tests/test_docs_*_cpu.py
+    - python scripts/train_hyperbolic_pretrain.py --dry-run --tiny --device cpu --max-steps
+      2 --batch-size 2
+    - python scripts/train_level_reconstruction.py --dry-run --tiny --device cpu --max-steps
+      2 --batch-size 2
+    - Python compilation; ruff --select F; bash syntax; JSON syntax; git diff --check
+    pytest:
+      result: PASS
+      passed: 139
+      skipped: 0
+      duration_seconds: 6.07
+    documentation_tests:
+      passed: 152
+      skipped: 0
+      duration_seconds: 32.3
+    notebooks:
+      generated_consistency:
+        result: NOT_RUN
+        count: 0
+      default_fixture:
+        result: NOT_RUN
+        count: 0
+      real_mdst_pilot:
+        result: NOT_RUN
+        count: 0
+      trained_physics_validation:
+        result: NOT_RUN
+        count: 0
+    real_data_inputs: immutable_phase42_validation_reports_and_checkpoints; phase43_70000_train_and_50000_validation_UID_audit;
+      sealed_test_closed
+    checkpoint: pretrained_step_81096_sha256_98e461ad5c5d0a82ce312f4e2c6e67f6f40212d9f0df038cae315296ec990869
+    ci_run: PENDING_PUBLICATION_WORKFLOW
+    human_visual_review_status: NOT_REVIEWED
+    evidence_limitations: Phase42 strict repeats match exactly and all report/checkpoint/contract
+      input hashes verified. Neither arm passes all hierarchy gates. Later pretraining
+      does not improve the primary in this single-seed comparison; no statistical proof
+      of harm or data limitation. Phase43 jobs submitted, outcomes pending; encoder
+      update counts differ by design. Historical audit scope unchanged.
