@@ -56,6 +56,9 @@ freeze, holding the 81,096-step pretrained checkpoint, decoder, learning rates,
 seed, and 4,376-step budget fixed. This exploratory allocation is authorized by
 the user's 2026-09-10 request to repeat the review and next-training workflow.
 No automatic promotion, sealed-test access, or larger data campaign is authorized.
+Both Phase43 tasks were submitted and released from immutable source
+`b3cca5d0f04cbec68bfd71cd0a94d68ebe9b054e`. The source passed 139 focused CPU tests;
+152 documentation tests and both two-step CPU training smoke runs passed.
 The historical audit scope and NO-GO production recommendation remain unchanged.
 
 ## Reconstruction phase41 closeout — 2026-09-09
