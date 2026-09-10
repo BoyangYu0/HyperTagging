@@ -13,6 +13,20 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "docs" / "_ext"))
 from wiki_repository import generate_repository, repository_files
 
+
+def test_complete_documentation_manifest_fits_publication_budget(tmp_path):
+    import json
+    import wiki
+    manifests = {
+        'api': wiki.generate_api(ROOT, tmp_path / 'api'),
+        'catalog': wiki.generate_catalog(ROOT, tmp_path / 'catalog'),
+        'status': wiki.generate_status(ROOT, tmp_path / 'status'),
+        'repository': wiki.generate_repository(ROOT, tmp_path / 'repository'),
+    }
+    encoded = wiki._manifest_text(manifests)
+    assert len(encoded.encode()) < 10 * 1024 * 1024
+    assert json.loads(encoded) == manifests
+
 _spec = importlib.util.spec_from_file_location("wiki_validation", ROOT / "scripts" / "validate_docs.py")
 validation = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(validation)

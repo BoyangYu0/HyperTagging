@@ -65,6 +65,11 @@ def _check_owned_sources(output: Path, previous: dict) -> None:
             raise ValueError("Unowned source page would enter the publication; preserving it")
 
 
+def _manifest_text(manifests: dict) -> str:
+    """Keep the complete aggregate manifest within the publication byte budget."""
+    return json.dumps(manifests, separators=(",", ":"), sort_keys=True, allow_nan=False) + "\n"
+
+
 def generate(root: Path, output: Path) -> dict:
     """Generate in a temporary tree, then update only unchanged owned output files."""
     root, requested = root.resolve(), output.absolute()
@@ -91,7 +96,7 @@ def generate(root: Path, output: Path) -> dict:
             "status": generate_status(root, stage / "status"),
             "repository": generate_repository(root, stage / "repository"),
         }
-        (stage / "manifest.json").write_text(json.dumps(manifests, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        (stage / "manifest.json").write_text(_manifest_text(manifests), encoding="utf-8")
         validate_artifact(stage, root, generated_projection=True)
         payloads = {p.relative_to(stage).as_posix(): p.read_bytes() for p in stage.rglob("*") if p.is_file()}
         # Preflight the complete write/delete set, including new paths. An
