@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Complete documentation bundle uses lossless compact JSON.
+  - eeb3a351d34eba1146a11951398a3d1cd78b9705
   # Lossless dashboard serialization; publication resource limits remain unchanged.
   - 37a03a50370d1eb4af5cf897b71dc4ac53c6756c
   # Phase42 closeout and bounded Phase43 submission; historical audit scope unchanged.
