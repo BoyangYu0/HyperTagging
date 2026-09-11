@@ -55,3 +55,12 @@ Keep that permission boundary and the pre-upload validator intact.
 An administrator enables GitHub Actions as the Pages source and restricts the
 Pages environment to master. A GitLab mirror can run the same local checks,
 but this repository's deployment workflow is GitHub-specific.
+
+Metric download indexing
+------------------------
+
+The generated aggregate manifest indexes the complete dashboard JSON using its
+artifact-relative path, SHA-256, byte count, and format. It does not duplicate
+the metric rows. The dashboard's metric-download link publishes that complete
+JSON, retaining all historical and current aggregate metrics. This keeps both
+files within the existing publication size limit without removing evidence.

@@ -25,7 +25,13 @@ def test_complete_documentation_manifest_fits_publication_budget(tmp_path):
     }
     encoded = wiki._manifest_text(manifests)
     assert len(encoded.encode()) < 10 * 1024 * 1024
-    assert json.loads(encoded) == manifests
+    decoded = json.loads(encoded)
+    status_download = tmp_path / decoded['status']['download']
+    import hashlib
+    assert hashlib.sha256(status_download.read_bytes()).hexdigest() == decoded['status']['sha256']
+    assert status_download.stat().st_size == decoded['status']['bytes']
+    decoded['status'] = json.loads(status_download.read_text())
+    assert decoded == manifests
 
 _spec = importlib.util.spec_from_file_location("wiki_validation", ROOT / "scripts" / "validate_docs.py")
 validation = importlib.util.module_from_spec(_spec)

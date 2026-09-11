@@ -38,6 +38,8 @@ SOURCE_PATHS = {
 SOURCE_PATHS.update({
     "reconstruction_phase42": "artifacts/codex/reconstruction_phase42_closeout_20260910.json",
     "reconstruction_phase43_submission": "artifacts/codex/reconstruction_phase43_submission_20260910.json",
+    "reconstruction_phase43": "artifacts/codex/reconstruction_phase43_closeout_20260911.json",
+    "reconstruction_phase44_submission": "artifacts/codex/reconstruction_phase44_submission_20260911.json",
 })
 SOURCE_IDS = {key: f"source-{index:02d}" for index, key in enumerate(SOURCE_PATHS, 1)}
 FRESHNESS_DAYS = 30
@@ -418,16 +420,26 @@ def _collect(payloads: dict[str, Any], revision: str | None) -> dict[str, Any]:
     }
     reconstruction["phase41"] = _phase41_projection(payloads.get("reconstruction_phase41"))
     reconstruction["phase42"] = _phase41_projection(payloads.get("reconstruction_phase42"), phase=42, labels=("pretrain81096_control", "pretrain108128"))
+    reconstruction["phase43"] = _phase41_projection(payloads.get("reconstruction_phase43"), phase=43, labels=("late_adaptation_control", "early_adaptation"))
+    phase44 = _mapping(payloads.get("reconstruction_phase44_submission"))
+    if reconstruction["phase43"] and phase44.get("status") in {"PREPARED", "SUBMITTED", "RUNNING"}:
+        reconstruction["phase43"]["next_study_status"] = phase44["status"]
+        reconstruction["phase43"]["submission_task_count"] = _integer(phase44.get("task_count"))
+        reconstruction["phase43"]["submission_source_revision"] = _sha(phase44.get("source_revision"))
     phase43 = _mapping(payloads.get("reconstruction_phase43_submission"))
     if reconstruction["phase42"] and phase43.get("status") in {"PREPARED", "SUBMITTED", "RUNNING"}:
         reconstruction["phase42"]["next_study_status"] = phase43["status"]
         reconstruction["phase42"]["submission_task_count"] = _integer(phase43.get("task_count"))
         reconstruction["phase42"]["submission_source_revision"] = _sha(phase43.get("source_revision"))
+    if reconstruction["phase43"] and reconstruction["phase42"]:
+        reconstruction["phase42"]["next_study_status"] = "COMPLETED"
     submission = _mapping(payloads.get("reconstruction_phase42_submission"))
     if reconstruction["phase41"] and submission.get("status") in {"PREPARED", "SUBMITTED", "RUNNING"}:
         reconstruction["phase41"]["next_study_status"] = submission["status"]
         reconstruction["phase41"]["submission_task_count"] = _integer(submission.get("task_count"))
         reconstruction["phase41"]["submission_source_revision"] = _sha(submission.get("source_revision"))
+    if reconstruction["phase42"] and reconstruction["phase41"]:
+        reconstruction["phase41"]["next_study_status"] = "COMPLETED"
     science = {"source_ids": _refs("verification_runs", "notebook_registry"),
                "real_pilot": _notebook_record(notebook_runs.get("real_mdst_pilot"))["result"],
                "trained_physics": _notebook_record(notebook_runs.get("trained_physics_validation"))["result"],
@@ -593,6 +605,48 @@ def _render_phase42(record: dict[str, Any]) -> list[str]:
     return lines
 
 
+def _render_phase43(record: dict[str, Any]) -> list[str]:
+    if not record:
+        return []
+    labels = ("late_adaptation_control", "early_adaptation")
+    arms = record["arms"]
+    lines = ["Phase43: small adaptation signal, no promotion", "------------------------------------------------", "",
+             "Both arms completed 4,376 steps on 70,000 training events with the 81,096-step pretrained checkpoint.",
+             "The late-adaptation control selected 136/3,592 complete targets (3.79%); early adaptation selected",
+             "140/3,592 (3.90%). A four-target difference in one seed does not establish a reliable benefit.",
+             "Both completed zero full roots out of 100 strict events. Control failed six gates; early adaptation failed three.",
+             "Both failed full-root completion and full/half source recall. Neither is promoted.", "",
+             "Selection uses 2,000 validation events, including 1,000 rollout events; strict evaluation",
+             "uses a separate 100-event cohort, and beam evaluation its fixed 20-event subset.",
+             "Strict repeats match exactly. All seven evaluation tracks and all aggregate metrics are in the download.", ""]
+    rows = [[key, *[arms[a]["selected"][key] for a in labels]] for key in arms[labels[0]]["selected"]]
+    rows += [[key, *[_metric_point(arms[a]["endpoints"][key]) for a in labels]] for key in arms[labels[0]]["endpoints"]]
+    rows += [["all hierarchy gates passed", *[arms[a]["all_gates_passed"] for a in labels]]]
+    lines += _table(["Metric", "Late adaptation", "Early adaptation"], rows)
+    values = {(r["arm"], r["metric"]): r["value"] for r in record["metric_rows"] if r["view"] == "training_best"}
+    lines += ["Phase43 pointer diagnostics", "~~~~~~~~~~~~~~~~~~~~~~~~~~~", "",
+              "Micro teacher-forced daughter association, separate from strict rollout topology.", ""]
+    lines += _table(["Level", "Control precision", "Control recall", "Candidate precision", "Candidate recall"], [
+        [level, *[values.get((arm, f"micro_level_{level}_pointer_{metric}")) for arm in labels for metric in ("precision", "recall")]] for level in range(1, 7)])
+    lines += ["Phase43 beam comparison", "~~~~~~~~~~~~~~~~~~~~~~~", "",
+              "Oracle is a truth-assisted evaluation diagnostic, never a deployable ranking.",
+              "It uses a lexicographic topology ranking, not a separate maximum for each metric.", ""]
+    lines += _table(["Arm", "Scope", "Ranking", "Recall", "Precision", "LCAG", "Mother coverage", "Perfect LCAG"], [
+        [arm, scope, rank, *[_metric_point(p) for p in points.values()]]
+        for arm in labels for scope, rankings in arms[arm]["beam"].items() for rank, points in rankings.items()])
+    lines += ["Phase44 allocation decision", "~~~~~~~~~~~~~~~~~~~~~~~~~~~", "",
+              "Hold 70,000 events and the 81,096-step pretrained checkpoint. Replicate the same encoder",
+              "freeze comparison (2,188 versus zero steps) with seed 20260911 and an untouched cohort.",
+              "Both arms use 4,376 total steps and unchanged strict acceptance gates. More encoder updates",
+              "in the early arm are intentional; this does not guarantee equal FLOPs.",
+              f"Phase44 submission snapshot: {_literal(record['next_study_status'])}. Two bounded arms; no automatic promotion.", "",
+              "Prior dataset scaling confounded data and compute; Phase42 did not support longer pretraining.",
+              "Better representation learning remains a hypothesis. Replicate the adaptation signal before scaling.",
+              "Physical mother momentum resolution is unavailable; daughter-sum closure is an invariant.",
+              "See :doc:`../../phase43` for metric populations, study synthesis, and the next-training rationale.", ""]
+    return lines
+
+
 def _literal(value: Any) -> str:
     text = "UNKNOWN" if value is None else str(value)
     return " ".join("".join("\\" + char if char in string.punctuation else char for char in text).split())
@@ -670,10 +724,16 @@ def _render(manifest: dict[str, Any]) -> str:
              f"Phase42: {phase41['next_study_status']}."], "warning"))
     if reconstruction.get("phase42"):
         record = reconstruction["phase42"]
-        cards.insert(0, ("Phase42 pretraining transfer", "NO PROMOTION",
+        cards.insert(0, ("Phase42 pretraining transfer (historical)", "NO PROMOTION",
             ["Complete-target efficiency: 3.58% control versus 3.45% later checkpoint; both 0/100 full roots.",
              "Hold 70,000 events and the 81,096-step checkpoint. Test earlier task-specific encoder adaptation.",
              f"Phase43: {record['next_study_status']} (two bounded arms)."], "warning"))
+    if reconstruction.get("phase43"):
+        record = reconstruction["phase43"]
+        cards.insert(0, ("Phase43 encoder adaptation", "NO PROMOTION",
+            ["Complete-target efficiency: 3.79% late versus 3.90% early adaptation; both 0/100 full roots.",
+             "Hold 70,000 events and the 81,096-step checkpoint. Replicate the small adaptation signal.",
+             f"Phase44: {record['next_study_status']} (two bounded arms)."], "warning"))
     lines = ["Model performance and scientific status", "=======================================", "",
              "Recorded measurements from tracked evidence. Missing measurements are UNAVAILABLE;",
              "NOT_RUN describes a recorded evaluation status. Historical results do not verify",
@@ -685,13 +745,14 @@ def _render(manifest: dict[str, Any]) -> str:
              ".. raw:: html", "",
              '   <section class="status-dashboard" aria-label="Recorded model performance">']
     for index, (title, value, paragraphs, kind) in enumerate(cards):
-        refs = reconstruction["phase42"]["source_ids"] if title.startswith("Phase42") else reconstruction["phase41"]["source_ids"] if title.startswith("Phase41") else recent["source_ids"] if title.startswith("Phase40") else reconstruction["source_ids"]
+        refs = reconstruction["phase43"]["source_ids"] if title.startswith("Phase43") else reconstruction["phase42"]["source_ids"] if title.startswith("Phase42") else reconstruction["phase41"]["source_ids"] if title.startswith("Phase41") else recent["source_ids"] if title.startswith("Phase40") else reconstruction["source_ids"]
         lines.extend("   " + line for line in _card(title, value, paragraphs, refs, kind, index).splitlines())
     lines += ["   </section>", "", ".. only:: not html", ""]
     for title, value, paragraphs, kind in cards:
         lines += [f"   **{_literal(title)}: {_literal(value)}**", ""]
         lines.extend(f"   {_literal(paragraph)}" for paragraph in paragraphs)
         lines += [""]
+    lines += _render_phase43(reconstruction["phase43"])
     lines += _render_phase42(reconstruction["phase42"])
     lines += _render_phase41(reconstruction["phase41"])
     lines += ["Phase40r1 strict full-decay comparison", "----------------------------------------", "",

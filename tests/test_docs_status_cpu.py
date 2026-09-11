@@ -35,6 +35,8 @@ def evidence(tmp_path, monkeypatch):
     monkeypatch.setattr(status, "_git", lambda *_args: None)
     documents = {
         "reconstruction_phase42": {"reserved_for_phase42": True},
+        "reconstruction_phase43": {"reserved_for_phase43": True},
+        "reconstruction_phase44_submission": {"reserved_for_phase44": True},
         "reconstruction_phase43_submission": {"reserved_for_phase43": True},
         "reconstruction_phase41": {"reserved_for_phase41": True},
         "reconstruction_phase42_submission": {"reserved_for_phase42": True},
@@ -143,7 +145,7 @@ def test_status_is_deterministic_and_preserves_record_scope(evidence, tmp_path, 
     assert manifest["pretraining"]["selected_profile_state"] == "NONE_SELECTED"
     assert manifest["pretraining"]["submission_performed"] is False
     assert manifest["pretraining"]["pretraining_success_gate_passed"] is False
-    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 7
+    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 9
     assert manifest["provenance"]["external_filesystem_or_network_artifacts_opened"] is False
     assert source_info(manifest, "issue_ledger")["freshness"]["status"] == "stale"
     assert source_info(manifest, "current_status")["freshness"]["status"] == "unknown"
@@ -524,3 +526,27 @@ def test_complete_metric_download_stays_within_publication_limit(tmp_path):
     assert json.loads(download.read_text()) == manifest
     assert len(manifest['reconstruction']['phase41']['metric_rows']) == 21467
     assert len(manifest['reconstruction']['phase42']['metric_rows']) == 16306
+    assert len(manifest['reconstruction']['phase43']['metric_rows']) == 16405
+    assert manifest['reconstruction']['phase41']['next_study_status'] == 'COMPLETED'
+    assert manifest['reconstruction']['phase42']['next_study_status'] == 'COMPLETED'
+
+
+def test_phase43_metrics_are_complete_and_keep_counts():
+    payload = json.loads((ROOT / status.SOURCE_PATHS['reconstruction_phase43']).read_text())
+    result = status._phase41_projection(payload, phase=43, labels=('late_adaptation_control', 'early_adaptation'))
+    assert len(result['metric_rows']) == len(payload['metric_rows']) == 16405
+    assert result['arms']['late_adaptation_control']['endpoints']['full_lcag']['numerator'] == 1
+    assert result['arms']['early_adaptation']['endpoints']['full_lcag']['numerator'] == 2
+    assert set(result['arms']['early_adaptation']['beam']) == {'full', 'half'}
+    assert (ROOT / status.SOURCE_PATHS['reconstruction_phase43']).stat().st_size < status._MAX_SOURCE_BYTES
+
+
+@pytest.mark.parametrize('missing', ['metric', 'ranking'])
+def test_phase43_incomplete_metrics_fail_closed(missing):
+    payload = json.loads((ROOT / status.SOURCE_PATHS['reconstruction_phase43']).read_text())
+    if missing == 'metric':
+        payload['metric_rows'].pop()
+    else:
+        del payload['arms']['early_adaptation']['beam']['half']['greedy']
+    with pytest.raises(ValueError):
+        status._phase41_projection(payload, phase=43, labels=('late_adaptation_control', 'early_adaptation'))

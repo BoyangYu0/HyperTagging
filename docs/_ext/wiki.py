@@ -66,7 +66,12 @@ def _check_owned_sources(output: Path, previous: dict) -> None:
 
 
 def _manifest_text(manifests: dict) -> str:
-    """Keep the complete aggregate manifest within the publication byte budget."""
+    """Index the complete status download without duplicating its growing metric rows."""
+    manifests = dict(manifests)
+    if "status" in manifests:
+        payload = json.dumps(manifests["status"], separators=(",", ":"), sort_keys=True, allow_nan=False) + "\n"
+        manifests["status"] = {"download": "status/status.json", "sha256": hashlib.sha256(payload.encode()).hexdigest(),
+                               "bytes": len(payload.encode()), "format": "complete-status-json-v1"}
     return json.dumps(manifests, separators=(",", ":"), sort_keys=True, allow_nan=False) + "\n"
 
 
