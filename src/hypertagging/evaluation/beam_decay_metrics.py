@@ -144,6 +144,10 @@ def evaluate_ranked_decay_candidates(
             ),
             None,
         )
+        if isinstance(candidates[0], HalfDecayEvaluation) and candidates[0].coherent_retained_forest is not None:
+            event_eligible = candidates[0].coherent_retained_forest.denominator > 0
+            event_rank = next((rank for rank, candidate in enumerate(candidates[:k], 1)
+                               if candidate.coherent_retained_forest.value == 1), None)
         both_eligible = isinstance(candidates[0], HalfDecayEvaluation) and (
             candidates[0].both_halves_perfect_lcag.denominator > 0
         )

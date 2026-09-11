@@ -529,3 +529,34 @@ oracle report. The campaign interface `--beam-width N` (N > 1, without
 `beam_search`. Omitting both options runs greedy evaluation. These search
 algorithms have distinct candidate populations; compare their metrics only with
 matching recorded search configuration and cohort.
+
+### Complete retained-tree checks
+
+The offline CLI also emits `retained_tree_checks` version
+`retained-direct-tree-checks-v1`. This is an additional evaluation population:
+all explicit retained roots are checked, including roots outside the checkpoint's
+training target policy. The original policy-eligible full/half metrics and gates
+retain their existing definitions for historical comparisons.
+
+Full checks compare every component of the retained truth forest, including
+isolated FSPs. Half checks use two explicit B roots when available; otherwise
+`retained_explicit_components_no_b_partition` identifies the explicit-component
+fallback. These checks do not fabricate an initial-state root, a missing B side,
+or an unobserved particle. Empty truth remains unavailable.
+
+Every retained mother contributes to source-aligned mother/PID/kinematic coverage.
+Roots and intermediates incompatible with the training policy stay in the
+perfect-topology denominator as failures, with explicit representability reasons.
+Singletons contribute source/PID checks but no trivial LCAG-pair success.
+`coherent_retained_forest` requires all retained components in the same candidate;
+full-forest checks also reject extra predicted roots. This is retained-forest
+agreement, not complete physical-event reconstruction or momentum resolution.
+
+Greedy trees, every returned full-depth beam candidate, and every diagnostic
+proposal-beam candidate use the same evaluator. Reports include per-candidate
+results, source-category and target-shape summaries, deployable model-ranked
+selections, and explicitly truth-only oracle comparisons. Proposal-beam oracle
+prefixes use normalized joint probability order. The supplemental checks always
+use the direct retained topology, even in a contracted-diagnostic report.
+Truth is consulted only after candidate generation; it never changes inference,
+pruning, stopping, or model-ranked selections.

@@ -279,6 +279,7 @@ class HalfDecayEvaluation:
     unit_semantics: str = "b_halves"
     predicted_component_root_count: int = 0
     unassigned_predicted_component_root_count: int = 0
+    coherent_retained_forest: RatioMetric | None = None
 
     @property
     def rows(self) -> tuple[DecayEvaluation, ...]:
@@ -306,6 +307,8 @@ class HalfDecayEvaluation:
             ),
             "rows": self.as_rows(),
         }
+        if self.coherent_retained_forest is not None:
+            output["coherent_retained_forest"] = self.coherent_retained_forest.as_dict()
         _flatten_ratio(
             output,
             "both_halves_perfectLCAG",
@@ -955,6 +958,98 @@ def _evaluate_continuum_components(
     )
 
 
+
+def evaluate_retained_decays(
+    predicted: Mapping[str, torch.Tensor],
+    truth: Mapping[str, torch.Tensor],
+    event_index: int = 0,
+    *,
+    scope: str = "full",
+    source_category: str | None = None,
+    target_policy: TargetPolicy = "complete_only",
+    minimum_daughters: int = 2,
+) -> HalfDecayEvaluation:
+    """Check every retained direct tree independently of training eligibility.
+
+    Full scope compares the explicit retained forest, including isolated FSPs.
+    Half scope uses the two explicit B roots when present; otherwise it checks
+    the explicit forest components and labels that fallback. No initial-state
+    root or missing B hemisphere is fabricated. This supplemental population
+    must not replace the historical policy-eligible metrics or their gates.
+    """
+    if scope not in {"full", "half"}:
+        raise ValueError("retained evaluation scope must be full or half")
+    tv = _tree_view(truth, event_index, truth=True)
+    pv = _tree_view(predicted, event_index, truth=False)
+    roots = _root_positions(tv)
+    semantics = "retained_full_forest"
+    b_roots = _truth_b_roots(tv) if scope == "half" else []
+    is_b = len(b_roots) == 2 and not _is_continuum_category(source_category)
+    if is_b:
+        roots = b_roots
+        semantics = "retained_b_halves"
+    elif scope == "half":
+        semantics = "retained_explicit_components_no_b_partition"
+    roots = sorted(roots, key=lambda node: (tuple(sorted(tv.source_set(node))), node))
+    if not roots:
+        return _unavailable_halves("no_retained_truth_roots", unit_semantics=semantics)
+    policy_mask = _truth_target_mask(
+        truth, event_index, target_policy=target_policy,
+        minimum_daughters=minimum_daughters,
+    )
+    # PID/kinematic coverage includes every retained mother, not just eligible
+    # training targets. Representability still uses the checkpoint policy.
+    all_mothers = tv.active & tv.adjacency.any(dim=1)
+    predicted_roots = _root_positions(pv)
+    candidates = list(pv.positions) if is_b else predicted_roots
+    assigned = (_assign_two_by_sources if is_b else _assign_many_by_sources)(
+        pv, candidates, tv, roots,
+    )
+    rows = []
+    for index, (root, candidate) in enumerate(zip(roots, assigned, strict=True)):
+        representable, reasons = _unit_representability(
+            truth, event_index, tv, root, policy_mask,
+            truth_topology_mode="checkpoint_direct",
+        )
+        if tv.children(root) and not bool(policy_mask[root]):
+            representable = False
+            reasons = tuple(sorted(set(reasons) | {"root_outside_training_target_policy"}))
+        rows.append(_evaluate_root_pair(
+            predicted, truth, pv, tv, candidate, root,
+            event_index=event_index, scope=semantics, unit_index=index,
+            truth_topology_mode="checkpoint_direct", truth_target_mask=all_mothers,
+            target_representable=representable, target_unrepresentable_reasons=reasons,
+        ))
+    assigned_set = {node for node in assigned if node is not None}
+    # Singleton components have no LCAG pair trial, but must still match in the
+    # coherent forest check. Extra predicted roots make that check fail.
+    coherent = all(
+        row.structurally_valid.value == 1 and row.target_representable.value == 1
+        and row.truth_sources == row.predicted_sources
+        and (row.perfectLCAG is True or (
+            len(row.truth_sources) == 1 and row.truth_mother_count == 0
+            and row.predicted_mother_count == 0
+        )) for row in rows
+    ) and (is_b or assigned_set == set(predicted_roots))
+    topology_eligible = is_b and all(row.perfect_lcag.denominator > 0 for row in rows)
+    loo_eligible = is_b and all(row.leave_one_out_lcag.denominator > 0 for row in rows)
+    predicted_b = set(_truth_b_roots(pv))
+    return HalfDecayEvaluation(
+        available=True, unavailable_reason=None, halves=tuple(rows),
+        both_halves_perfect_lcag=RatioMetric(float(coherent and topology_eligible), float(topology_eligible)),
+        both_halves_leave_one_out_lcag=RatioMetric(
+            float(loo_eligible and all(row.leave_one_out_lcag.value == 1 for row in rows)),
+            float(loo_eligible),
+        ),
+        predicted_b_root_count=len(predicted_b),
+        assigned_predicted_component_count=len(assigned_set),
+        unassigned_predicted_b_root_count=len(predicted_b - assigned_set),
+        unit_semantics=semantics, predicted_component_root_count=len(predicted_roots),
+        unassigned_predicted_component_root_count=len(set(predicted_roots) - assigned_set),
+        coherent_retained_forest=RatioMetric(float(coherent), 1.0),
+    )
+
+
 def summarize_decay_evaluations(
     evaluations: Iterable[DecayEvaluation | HalfDecayEvaluation],
 ) -> dict[str, Any]:
@@ -1113,6 +1208,11 @@ def summarize_decay_evaluations(
         ).as_dict()
         output["both_halves_leave_one_out_lcag"] = _sum_ratios(
             event.both_halves_leave_one_out_lcag for event in half_events
+        ).as_dict()
+    retained_events = [event for event in half_events if event.coherent_retained_forest is not None]
+    if retained_events:
+        output["coherent_retained_forest"] = _sum_ratios(
+            event.coherent_retained_forest for event in retained_events
         ).as_dict()
     return output
 

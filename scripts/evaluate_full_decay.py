@@ -31,6 +31,7 @@ if str(SRC_ROOT) not in sys.path:
 
 import torch  # noqa: E402
 
+from hypertagging.evaluation.retained_tree_checks import RetainedTreeChecks, validate_retained_tree_report  # noqa: E402
 from hypertagging.evaluation.checkpoint_pair import validate_checkpoint_pair  # noqa: E402
 from hypertagging.evaluation.full_decay_metrics import (  # noqa: E402
     evaluate_full_decay,
@@ -439,6 +440,8 @@ def main(argv: list[str] | None = None) -> int:
     beam_oracle_rows: dict[str, list[Any]] = {scope: [] for scope in scopes}
     beam_event_records: list[dict[str, Any]] = []
 
+    retained_checks = RetainedTreeChecks(target_policy=target_policy, minimum_daughters=int(policy.minimum_daughters))
+
     for event_index, event in enumerate(context.events):
         print(
             f"[{event_index + 1}/{len(context.events)}] {event.event_uid}",
@@ -496,7 +499,10 @@ def main(argv: list[str] | None = None) -> int:
                     truth_topology_mode=args.truth_topology_mode,
                 )
             metric_wall_seconds += time.perf_counter() - phase_started
+            retained_evaluation = retained_checks.evaluate(inference.batch, truth_batch, scope=scope, source_category=event.source_category)
+            retained_checks.add(f"{scope}/greedy", retained_evaluation, event.source_category)
             scope_record: dict[str, Any] = {
+                "retained_tree_metrics": retained_evaluation.as_dict(),
                 "input_audit": inference.input_audit.as_dict(),
                 "inference": diagnostics,
                 "metrics": evaluation.as_dict(),
@@ -525,9 +531,13 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 inference_wall_seconds += time.perf_counter() - phase_started
                 phase_started = time.perf_counter()
+                retained_candidates = []
                 candidate_evaluations = []
                 candidate_diagnostics = []
                 for candidate in beam.candidates:
+                    retained_candidate = retained_checks.evaluate(candidate.batch, truth_batch, scope=scope, source_category=event.source_category)
+                    retained_candidates.append(retained_candidate)
+                    retained_checks.add(f"{scope}/beam_candidate_rank_{len(retained_candidates)}", retained_candidate, event.source_category)
                     evaluation_kwargs = {
                         "target_policy": target_policy,
                         "minimum_daughters": int(policy.minimum_daughters),
@@ -561,6 +571,9 @@ def main(argv: list[str] | None = None) -> int:
                     scores=beam.scores,
                     oracle_ks=oracle_ks,
                 )
+                retained_beam = retained_checks.add_beam(f"{scope}/full_depth_beam", retained_candidates, beam.scores, oracle_ks)
+                scope_record["retained_tree_beam"] = retained_beam.as_dict()
+                retained_checks.add(f"{scope}/beam_top1", retained_candidates[0], event.source_category)
                 beam_record = beam_evaluation.as_dict()
                 beam_record["search"] = beam.diagnostics
                 beam_record["top1_inference"] = candidate_diagnostics[0]
@@ -645,6 +658,7 @@ def main(argv: list[str] | None = None) -> int:
                 beam_width=args.beam_width,
                 lookahead_levels=args.max_level,
             )
+            retained_diagnostic_candidates = []
             candidates: list[tuple[Any, dict[str, Any]]] = []
             for hypothesis in hypotheses:
                 hypothesis.batch["evaluation_leaf_source_keys"] = (
@@ -668,6 +682,10 @@ def main(argv: list[str] | None = None) -> int:
                         minimum_daughters=int(policy.minimum_daughters),
                         truth_topology_mode=args.truth_topology_mode,
                     )
+                retained_by_scope = {scope: retained_checks.evaluate(hypothesis.batch, truth_batch, scope=scope, source_category=event.source_category) for scope in scopes}
+                retained_diagnostic_candidates.append(retained_by_scope)
+                for scope in scopes:
+                    retained_checks.add(f"{scope}/proposal_beam_candidate_rank_{len(retained_diagnostic_candidates)}", retained_by_scope[scope], event.source_category)
                 candidates.append((hypothesis, evaluations))
             if candidates:
                 ranking_selections: dict[str, int] = {}
@@ -681,9 +699,16 @@ def main(argv: list[str] | None = None) -> int:
                     )
                     ranking_selections[ranking] = selected_index
                     for scope in scopes:
+                        retained_checks.add(f"{scope}/proposal_beam/{ranking}", retained_diagnostic_candidates[selected_index][scope], event.source_category)
+                    for scope in scopes:
                         beam_metric_rows[scope][ranking].append(
                             candidates[selected_index][1][scope]
                         )
+                retained_oracle_indices = {scope: max(range(len(candidates)), key=lambda index: _beam_oracle_key(retained_diagnostic_candidates[index][scope])) for scope in scopes}
+                for scope in scopes:
+                    retained_checks.add(f"{scope}/proposal_beam/oracle_diagnostic", retained_diagnostic_candidates[retained_oracle_indices[scope]][scope], event.source_category)
+                    ranked_indices = sorted(range(len(candidates)), key=lambda index: (-candidates[index][0].ranking_scores()["normalized_joint_log_probability"], index))
+                    retained_checks.add_beam(f"{scope}/proposal_beam_normalized_joint", [retained_diagnostic_candidates[index][scope] for index in ranked_indices], [candidates[index][0].ranking_scores()["normalized_joint_log_probability"] for index in ranked_indices], [1, args.beam_width])
                 oracle_candidate_indices = {
                     scope: max(
                         range(len(candidates)),
@@ -702,6 +727,7 @@ def main(argv: list[str] | None = None) -> int:
                         "event_uid": event.event_uid,
                         "candidate_count": len(candidates),
                         "ranking_selections": ranking_selections,
+                        "retained_tree_oracle_indices_by_scope": retained_oracle_indices,
                         "oracle_candidate_indices_by_scope": oracle_candidate_indices,
                         "oracle_candidate_index": oracle_candidate_indices.get("full"),
                         "candidates": [
@@ -714,6 +740,7 @@ def main(argv: list[str] | None = None) -> int:
                                     len(items)
                                     for items in hypothesis.accepted_by_level
                                 ],
+                                "retained_tree_metrics_by_scope": {scope: evaluation.as_dict() for scope, evaluation in retained_diagnostic_candidates[index].items()},
                                 "truth_diagnostic_metrics_by_scope": {
                                     scope: evaluation.as_dict()
                                     for scope, evaluation in evaluations.items()
@@ -738,6 +765,7 @@ def main(argv: list[str] | None = None) -> int:
     phase_seconds["total_before_report_write"] = time.perf_counter() - run_started
 
     report = {
+        "retained_tree_checks": retained_checks.as_dict(),
         "report_version": (BEAM_REPORT_VERSION if args.beam_search else REPORT_VERSION),
         "created_utc": datetime.now(timezone.utc).isoformat(),
         "evaluation_role": "offline_model_evaluation",
@@ -940,6 +968,7 @@ def main(argv: list[str] | None = None) -> int:
             "events": beam_event_records,
         },
     }
+    validate_retained_tree_report(report)
     _atomic_write_json(output, report)
     print(f"Wrote {output}", file=sys.stderr, flush=True)
     return 0
@@ -955,7 +984,7 @@ def _beam_oracle_key(evaluation: Any) -> tuple[float, ...]:
             value = summary.get(name, {}).get("value")
             return float(value) if value is not None else -1.0
 
-        return (
+        return ((summary_value("coherent_retained_forest"),) if getattr(evaluation, "coherent_retained_forest", None) is not None else ()) + (
             summary_value("perfect_lcag"),
             summary_value("lcag_pair_accuracy"),
             summary_value("mother_pid_coverage"),

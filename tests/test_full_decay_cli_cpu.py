@@ -197,6 +197,19 @@ def test_cli_report_keeps_greedy_results_and_adds_parallel_beam_metrics(
             == 0
         )
     greedy, beam, ranking = [json.loads(path.read_text()) for path in paths]
+    for report in (greedy, beam, ranking):
+        retained = report["retained_tree_checks"]
+        assert retained["version"] == "retained-direct-tree-checks-v1"
+        assert retained["summaries"]["full/greedy"]["unavailable_unit_count"] == 0
+        assert not retained["replaces_preregistered_metrics"]
+        assert report["events"][0]["scopes"]["full"]["retained_tree_metrics"]["available"]
+    retained_beam = beam["events"][0]["scopes"]["full"]["retained_tree_beam"]
+    assert retained_beam["candidate_count"] == len(beam["events"][0]["scopes"]["full"]["beam"]["candidates"])
+    for candidate in retained_beam["candidates"]:
+        assert candidate["metrics"]["available"]
+    for candidate in ranking["beam_search"]["events"][0]["candidates"]:
+        assert candidate["retained_tree_metrics_by_scope"]["full"]["available"]
+    assert "full/proposal_beam/normalized_joint_log_probability" in ranking["retained_tree_checks"]["summaries"]
     assert ranking["configuration"]["beam_search"]["algorithm"] == "diagnostic_proposal_set_beam"
     assert ranking["beam_search"]["event_count"] == 1
     assert ranking["beam_search"]["events"][0]["candidate_count"] > 0
