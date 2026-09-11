@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Record Phase45 submissions and final Phase44 publication formatting; historical audit scope unchanged.
+  - 501fa59b0351023a8ca39f395042b06bf7df2a54
   # Phase44 diagnostic recovery, retained metrics, publication and bounded Phase45; no audit scope extension.
   - 6dc441bc8ceac1106614db66304b5ef85a05173a
   # Add complete retained-tree and beam scoring; historical audit scope unchanged.
