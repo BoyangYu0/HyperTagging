@@ -70,7 +70,8 @@ def validate_retained_tree_report(report):
                 raise ValueError('Retained tree units were skipped')
             if value['unit_count'] != len(value['rows']):
                 raise ValueError('Retained tree unit count mismatch')
-        elif value['unavailable_reason'] != 'no_retained_truth_roots':
+        elif (value['unavailable_reason'] != 'no_retained_truth_roots'
+              or value['rows'] or value['unit_count'] != 0):
             raise ValueError('Retained trees excluded for a training-policy reason')
 
     for event in report['events']:
@@ -81,7 +82,8 @@ def validate_retained_tree_report(report):
             counts[scope][1] += sum(row['available'] for row in result['rows'])
             if 'beam' in record:
                 retained = record['retained_tree_beam']
-                if retained['candidate_count'] != record['beam']['candidate_count']:
+                if (retained['candidate_count'] != record['beam']['candidate_count']
+                        or len(retained['candidates']) != retained['candidate_count']):
                     raise ValueError('Full-depth beam candidates were not all checked')
                 for candidate in retained['candidates']:
                     check_units(candidate['metrics'])

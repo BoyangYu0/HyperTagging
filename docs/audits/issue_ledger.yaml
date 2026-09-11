@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Add complete retained-tree and beam scoring; historical audit scope unchanged.
+  - c6e2169c61a5cea80b9351f93c8b6fa8136d9168
   # Record the submitted Phase44 contracts without changing scientific authority.
   - 028e4c4ee5d7c8a5921ef7191d7e13ac67c0f10b
   # Bind the Phase44 replication guard and its authority regression tests.

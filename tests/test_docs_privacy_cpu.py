@@ -126,3 +126,30 @@ def test_allowed_ast_projection_and_static_markup_do_not_trigger_raw_body_rule(t
     _write(output, "_static/custom.css", '/* https://developer.mozilla.org/en-US/docs/Web/API */\n')
     _write(output, "manifest.json", '{"job_id": null, "credentials": "[redacted]", "status": "NO_GO"}')
     assert privacy.validate_artifact(output, source)["privacy"] == "PASS"
+
+
+@pytest.mark.parametrize('placement', ['typed_references', 'literal_title', 'literal_numeric_version', 'split_object_strings', 'generic_json'])
+def test_private_numeric_literal_is_not_fabricated_from_search_doc_indexes(tmp_path, placement):
+    root = tmp_path / 'repository'
+    root.mkdir()
+    _write(root, 'private.json', json.dumps({'job_id': '1203'}))
+    output = tmp_path / 'site'
+    output.mkdir()
+    index = _search_index()
+    index['docnames'] = [f'page{i}' for i in range(4)]
+    index['filenames'] = [f'page{i}.rst' for i in range(4)]
+    index['titles'] = ['Public page'] * 4
+    index['terms'] = {'public': [1, 2, 0, 3]}
+    if placement == 'literal_title': index['titles'][0] = '1203'
+    if placement == 'literal_numeric_version': index['envversion'] = {'sphinx': 1203}
+    if placement == 'split_object_strings':
+        index['objnames'] = {'0': ['12', '03', 'Public']}
+    if placement == 'generic_json':
+        _write(output, 'data.json', json.dumps({'values': [1, 2, 0, 3]}))
+    else:
+        _write(output, 'searchindex.js', 'Search.setIndex(' + json.dumps(index) + ')')
+    if placement == 'typed_references':
+        assert privacy.validate_artifact(output, root)['privacy'] == 'PASS'
+    else:
+        with pytest.raises(ValueError, match='private-source-literal'):
+            privacy.validate_artifact(output, root)

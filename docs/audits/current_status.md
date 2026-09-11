@@ -40,6 +40,49 @@ validation host. Existing production ownership checks retain their fixed UIDs,
 while synthetic ownership fixtures use the test runner's UID. Scientific
 promotion, sealed-test access, and the NO-GO recommendation are unchanged.
 
+## Reconstruction phase44 recovery and retained-tree review — 2026-09-12
+
+Both original jobs failed after 4,376 steps because their nested replay seed
+was stale. Immutable failed receipts remain unchanged. Independently audited
+recovery is classified as post-hoc diagnostic evidence with a preregistration
+seed deviation. Late versus early adaptation selected 185/3,496 versus
+173/3,496 complete targets. Both fail the full-root gate; early adaptation also
+fails minimum full-source recall. No model is promoted.
+
+Expanded full/half checks score every explicit retained root, including
+training-incompatible components and isolated leaves, and every returned beam
+candidate. No missing initial root or B partition is invented. In 100 events,
+all 3,057 full units and 2,573 half/component units are checked; 18 events have
+explicit B halves and 82 use the labelled component fallback. Full LCAG is
+22/3,348 versus 21/3,348; half/component LCAG is 20/1,869 versus 22/1,869.
+Coherent retained-forest agreement is zero in both arms/scopes. All 84 beam
+candidates receive both checks. Bounded search does not improve LCAG or
+perfect-component counts over greedy on this twenty-event subset. Original
+policy metrics and gates retain their denominators; isolated-input source
+coverage is not hierarchy efficiency. Truth is used only after inference.
+
+Hold 70,000 training events and pretrained step 81,096. Earlier adaptation is
+not reliably beneficial, longer pretraining was not supported by Phase42,
+and earlier data scaling did not isolate data volume. Phase45 tests encoder
+learning-rate multipliers 0.05 versus 0.10 after the same 2,188-step freeze,
+with 4,376 total steps and a new untouched validation cohort. Matching training,
+replay, and cohort seeds are required before submission. Full/half retained
+checks, including every beam candidate, are mandatory alongside unchanged
+historical gates. This is an exploratory representation-adaptation test;
+no automatic promotion or sealed-test access is authorized. The historical
+audit scope and production NO-GO are unchanged.
+
+Metric completeness: 15,434 original aggregate entries, 139,610 original detailed
+entries, 19,604 retained aggregate entries, 283,866 retained detailed entries,
+and 9,371,165 per-tree/candidate scalars. All fourteen expanded reports
+preserve original scientific results exactly, and both primary repeats are exact.
+The separate history export contains 731,626 scalar records. Targeted recovery,
+retained-metric, dashboard, privacy, and Phase45 tests passed (116); focused
+CLI/coverage tests passed (37). Final training-source validation and submission
+are recorded below after execution.
+
+<!-- PHASE45_SUBMISSION_PENDING -->
+
 ## Reconstruction phase43 closeout — 2026-09-11
 
 Both Phase43 runs completed 4,376 steps with verified immutable receipts,

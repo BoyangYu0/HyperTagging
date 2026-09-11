@@ -498,9 +498,9 @@ def main(argv: list[str] | None = None) -> int:
                     minimum_daughters=int(policy.minimum_daughters),
                     truth_topology_mode=args.truth_topology_mode,
                 )
-            metric_wall_seconds += time.perf_counter() - phase_started
             retained_evaluation = retained_checks.evaluate(inference.batch, truth_batch, scope=scope, source_category=event.source_category)
             retained_checks.add(f"{scope}/greedy", retained_evaluation, event.source_category)
+            metric_wall_seconds += time.perf_counter() - phase_started
             scope_record: dict[str, Any] = {
                 "retained_tree_metrics": retained_evaluation.as_dict(),
                 "input_audit": inference.input_audit.as_dict(),

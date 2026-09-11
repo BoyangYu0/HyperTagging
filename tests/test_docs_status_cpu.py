@@ -34,6 +34,9 @@ def evidence(tmp_path, monkeypatch):
     monkeypatch.delenv("SOURCE_DATE_EPOCH", raising=False)
     monkeypatch.setattr(status, "_git", lambda *_args: None)
     documents = {
+        "reconstruction_phase44": {"reserved_for_phase44": True},
+        "reconstruction_phase44_retained": {"reserved_for_phase44": True},
+        "reconstruction_phase45_submission": {"reserved_for_phase45": True},
         "reconstruction_phase42": {"reserved_for_phase42": True},
         "reconstruction_phase43": {"reserved_for_phase43": True},
         "reconstruction_phase44_submission": {"reserved_for_phase44": True},
@@ -145,7 +148,7 @@ def test_status_is_deterministic_and_preserves_record_scope(evidence, tmp_path, 
     assert manifest["pretraining"]["selected_profile_state"] == "NONE_SELECTED"
     assert manifest["pretraining"]["submission_performed"] is False
     assert manifest["pretraining"]["pretraining_success_gate_passed"] is False
-    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 9
+    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 12
     assert manifest["provenance"]["external_filesystem_or_network_artifacts_opened"] is False
     assert source_info(manifest, "issue_ledger")["freshness"]["status"] == "stale"
     assert source_info(manifest, "current_status")["freshness"]["status"] == "unknown"
@@ -529,6 +532,9 @@ def test_complete_metric_download_stays_within_publication_limit(tmp_path):
     assert len(manifest['reconstruction']['phase43']['metric_rows']) == 16405
     assert manifest['reconstruction']['phase41']['next_study_status'] == 'COMPLETED'
     assert manifest['reconstruction']['phase42']['next_study_status'] == 'COMPLETED'
+    assert manifest['reconstruction']['phase43']['next_study_status'] == 'FAILED_JOBS_DIAGNOSTICALLY_RECOVERED'
+    assert manifest['reconstruction']['phase44']['status'] == 'RECOVERED_DIAGNOSTIC'
+    assert manifest['reconstruction']['phase44']['metric_rows'] == json.loads((ROOT / status.SOURCE_PATHS['reconstruction_phase44']).read_text())['metric_rows']
 
 
 def test_phase43_metrics_are_complete_and_keep_counts():
@@ -550,3 +556,58 @@ def test_phase43_incomplete_metrics_fail_closed(missing):
         del payload['arms']['early_adaptation']['beam']['half']['greedy']
     with pytest.raises(ValueError):
         status._phase41_projection(payload, phase=43, labels=('late_adaptation_control', 'early_adaptation'))
+
+
+def test_phase44_recovery_is_explicit_and_metrics_are_lossless():
+    payload = json.loads((ROOT / status.SOURCE_PATHS['reconstruction_phase44']).read_text())
+    result = status._phase41_projection(payload, phase=44, labels=('late_adaptation_control', 'early_adaptation'))
+    assert result['status'] == 'RECOVERED_DIAGNOSTIC'
+    assert result['original_job_status'] == 'FAILED'
+    assert result['recovery_classification'] == 'POST_HOC_DIAGNOSTIC_WITH_PREREGISTRATION_SEED_DEVIATION'
+    assert result['metric_rows'] == payload['metric_rows']
+    for arm in ('late_adaptation_control', 'early_adaptation'):
+        assert result['arms'][arm]['endpoints'] == payload['arms'][arm]['endpoints']
+        assert set(result['arms'][arm]['beam']) == {'full', 'half'}
+    assert (ROOT / status.SOURCE_PATHS['reconstruction_phase44']).stat().st_size < status._MAX_SOURCE_BYTES
+
+
+@pytest.mark.parametrize('change', ['status', 'original_job_status', 'recovery_classification', 'metric', 'ranking'])
+def test_phase44_incomplete_or_misclassified_recovery_cannot_publish(change):
+    payload = json.loads((ROOT / status.SOURCE_PATHS['reconstruction_phase44']).read_text())
+    if change == 'metric':
+        payload['metric_rows'].pop()
+    elif change == 'ranking':
+        del payload['arms']['early_adaptation']['beam']['half']['greedy']
+    else:
+        payload[change] = 'COMPLETED'
+    with pytest.raises(ValueError):
+        status._phase41_projection(payload, phase=44, labels=('late_adaptation_control', 'early_adaptation'))
+
+
+def test_phase44_retained_download_is_complete_and_separately_indexed(tmp_path):
+    payload = json.loads((ROOT / status.SOURCE_PATHS['reconstruction_phase44_retained']).read_text())
+    projected = status._phase44_retained_projection(payload)
+    assert projected['metric_rows'] == payload['metric_rows']
+    output = tmp_path / 'retained-status'
+    manifest = status.generate_status(ROOT, output)
+    record = manifest['reconstruction']['phase44']['retained_tree_checks']
+    binding = record['metric_download']
+    data = (output / binding['filename']).read_bytes()
+    import hashlib
+    assert hashlib.sha256(data).hexdigest() == binding['sha256']
+    assert len(data) == binding['bytes'] < 10 * 1024 * 1024
+    assert json.loads(data)['metric_rows'] == payload['metric_rows']
+    assert binding['metric_count'] == len(payload['metric_rows'])
+    assert 'metric_rows' not in record
+    assert (ROOT / status.SOURCE_PATHS['reconstruction_phase44_retained']).stat().st_size < status._MAX_SOURCE_BYTES
+
+
+@pytest.mark.parametrize('change', ['missing_row', 'duplicate_row', 'beam_unchecked', 'legacy_changed'])
+def test_phase44_retained_incomplete_metrics_cannot_publish(change):
+    payload = json.loads((ROOT / status.SOURCE_PATHS['reconstruction_phase44_retained']).read_text())
+    if change == 'missing_row': payload['metric_rows'].pop()
+    if change == 'duplicate_row': payload['metric_rows'].append(payload['metric_rows'][0])
+    if change == 'beam_unchecked': payload['all_returned_beam_candidates_checked'] = False
+    if change == 'legacy_changed': payload['legacy_metrics_unchanged'] = False
+    with pytest.raises(ValueError):
+        status._phase44_retained_projection(payload)

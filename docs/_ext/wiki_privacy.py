@@ -1688,15 +1688,15 @@ class _PublishedHTML(HTMLParser):
             self.active_content = True
 
 
-def _strings(value):
+def _strings(value, *, include_numbers=True):
     if isinstance(value, dict):
         for key, item in value.items():
             yield str(key)
-            yield from _strings(item)
+            yield from _strings(item, include_numbers=include_numbers)
     elif isinstance(value, list):
         for item in value:
-            yield from _strings(item)
-    elif isinstance(value, (str, int, float)):
+            yield from _strings(item, include_numbers=include_numbers)
+    elif isinstance(value, str) or (include_numbers and isinstance(value, (int, float))):
         yield str(value)
 
 
@@ -1710,14 +1710,14 @@ def _keys(value):
             yield from _keys(item)
 
 
-def _values(value):
+def _values(value, *, include_numbers=True):
     if isinstance(value, dict):
         for item in value.values():
-            yield from _values(item)
+            yield from _values(item, include_numbers=include_numbers)
     elif isinstance(value, list):
         for item in value:
-            yield from _values(item)
-    elif isinstance(value, (str, int, float)):
+            yield from _values(item, include_numbers=include_numbers)
+    elif isinstance(value, str) or (include_numbers and isinstance(value, (int, float))):
         yield str(value)
 
 
@@ -3485,10 +3485,15 @@ def validate_artifact(
                     inspect(
                         scalar, location=location, literal_scan=False,
                     )
-                separated_projection = "\n".join(scalar_parts)
+                # Only strings can carry content split across index fields.
+                # Joining typed document references fabricates numeric secrets
+                # (e.g. unrelated indexes 12, 0, 3 become a private ID 1203).
+                # The raw payload and every actual scalar remain inspected.
+                textual_parts = list(_strings(decoded, include_numbers=False))
+                separated_projection = "\n".join(textual_parts)
                 key_projection = "".join(_keys(decoded))
-                value_projection = "".join(_values(decoded))
-                mixed_projection = "".join(scalar_parts)
+                value_projection = "".join(_values(decoded, include_numbers=False))
+                mixed_projection = "".join(textual_parts)
                 parts = [separated_projection]
                 raw_body_projections = [
                     payload, separated_projection, mixed_projection,

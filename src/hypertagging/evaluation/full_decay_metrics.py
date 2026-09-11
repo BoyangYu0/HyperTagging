@@ -2524,6 +2524,7 @@ __all__ = [
     "truth_target_policy_diagnostics",
     "source_keyed_lcag",
     "evaluate_full_decay",
+    "evaluate_retained_decays",
     "evaluate_half_decays",
     "summarize_decay_evaluations",
 ]

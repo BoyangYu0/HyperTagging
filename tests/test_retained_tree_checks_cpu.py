@@ -97,3 +97,37 @@ def test_accumulator_preserves_counts_categories_shapes_and_beam_candidates():
     assert len(report['by_target_shape']['full/greedy']) == 1
     assert report['by_source_category']['full/greedy']['signal'] == summary
     assert all(torch.equal(truth[key], before[key]) for key in truth)
+
+
+def test_report_validation_rejects_skipped_full_depth_and_proposal_candidates():
+    import copy
+    import pytest
+    from hypertagging.evaluation.retained_tree_checks import validate_retained_tree_report
+    truth = _full_tree()
+    collector = RetainedTreeChecks(target_policy='complete_only', minimum_daughters=2)
+    metrics = {}
+    scopes = {}
+    for scope in ('full', 'half'):
+        result = collector.evaluate(truth, truth, scope=scope, source_category='signal')
+        collector.add(f'{scope}/greedy', result, 'signal')
+        metrics[scope] = result.as_dict()
+        scopes[scope] = {'retained_tree_metrics': result.as_dict(),
+            'beam': {'candidate_count': 1},
+            'retained_tree_beam': {'candidate_count': 1, 'candidates': [{'metrics': result.as_dict()}]}}
+    report = {'retained_tree_checks': collector.as_dict(), 'events': [{'scopes': scopes}],
+        'beam_search': {'events': [{'candidate_count': 1, 'candidates': [{'retained_tree_metrics_by_scope': metrics}]}]}}
+    assert validate_retained_tree_report(report)
+    skipped = copy.deepcopy(report)
+    skipped['events'][0]['scopes']['full']['retained_tree_beam']['candidates'].clear()
+    with pytest.raises(ValueError, match='not all checked'):
+        validate_retained_tree_report(skipped)
+    skipped = copy.deepcopy(report)
+    del skipped['beam_search']['events'][0]['candidates'][0]['retained_tree_metrics_by_scope']['half']
+    with pytest.raises(ValueError, match='scope was skipped'):
+        validate_retained_tree_report(skipped)
+    skipped = copy.deepcopy(report)
+    unit = skipped['events'][0]['scopes']['half']['retained_tree_metrics']
+    unit['available'] = False
+    unit['unavailable_reason'] = 'no_retained_truth_roots'
+    with pytest.raises(ValueError, match='excluded'):
+        validate_retained_tree_report(skipped)
