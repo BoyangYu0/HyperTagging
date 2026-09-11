@@ -774,7 +774,7 @@ def _render_phase44(record: dict[str, Any]) -> list[str]:
     lines += _table(["Arm", "Scope", "Checked units", "Unavailable", "LCAG pairs", "Mother coverage", "Perfect components", "Coherent forest"], [
         [arm, scope, value["available_unit_count"], value["unavailable_unit_count"], *[_metric_point(value[key]) for key in ("lcag_pair_accuracy", "mother_pid_coverage", "perfect_lcag", "coherent_retained_forest")]]
         for arm in labels for scope, value in retained["arms"][arm]["primary"].items()])
-    lines += ["Retained reference composition (same for both arms)", "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", ""]
+    lines += ["Retained reference composition (same for both arms)", "~" * 60, ""]
     lines += _table(["Scope", "Isolated leaves", "Single-source composites", "LCAG-eligible components", "Representable LCAG components"], [
         [scope, counts["isolated_leaf_units"], counts["single_source_composite_units"], counts["nontrivial_topology_units"], counts["representable_nontrivial_units"]]
         for scope, counts in retained["arms"][labels[0]]["primary_structure"].items()])

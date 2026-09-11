@@ -78,10 +78,17 @@ and 9,371,165 per-tree/candidate scalars. All fourteen expanded reports
 preserve original scientific results exactly, and both primary repeats are exact.
 The separate history export contains 731,626 scalar records. Targeted recovery,
 retained-metric, dashboard, privacy, and Phase45 tests passed (116); focused
-CLI/coverage tests passed (37). Final training-source validation and submission
-are recorded below after execution.
+CLI/coverage tests passed (37). The immutable training source passed the complete CPU suite: 1,589 passed,
+34 skipped, 35 warnings; both two-step CPU training smoke checks also passed.
 
-<!-- PHASE45_SUBMISSION_PENDING -->
+Both Phase45 jobs were submitted and released from immutable source
+`b4b78a1166a77786aaa1b62a3fb6f5fd48ef75ad` after full contract verification. The
+submission receipt binds exactly two one-GPU jobs to the 4,376-step contracts.
+Retained full/half checks and every returned beam candidate are mandatory.
+An initial render refused a documentation-only edit before creating contracts;
+the exact tested source bytes were restored and verified before successful
+rendering and submission. The publication checkout carries the separate
+formatting correction.
 
 ## Reconstruction phase43 closeout — 2026-09-11
 

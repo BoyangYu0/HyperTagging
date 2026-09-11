@@ -5,7 +5,7 @@ Hold the dataset at 70,000 events and keep the 81,096-step pretrained
 checkpoint. Phase44 does not establish a reliable benefit from earlier
 encoder adaptation. Its recovered measurements are diagnostic: both original
 jobs failed after training because a nested preregistration seed was stale.
-The proposed Phase45 comparison tests stronger late encoder adaptation at a
+The submitted Phase45 comparison tests stronger late encoder adaptation at a
 fixed update count. No model is promoted.
 
 Complete retained-tree and beam checks
@@ -37,9 +37,6 @@ Half/component scope contains 2,573 units: 2,336 isolated leaves, 77
 single-source composites, and 160 nontrivial components. Explicit B halves
 are present in 18 events; the other 82 use the labelled component fallback.
 There are no source-empty units in this cohort.
-
-.. image:: ../_static/phase44-retained-summary.png
-   :alt: Phase44 retained full and half LCAG and mother coverage, with numerator and denominator counts.
 
 .. list-table:: Expanded retained-tree metrics, late versus early adaptation
    :header-rows: 1
@@ -389,4 +386,8 @@ rendering or submitting jobs. The cohort excludes all prior tuning/evaluation
 cohorts and training events: 2,000 selection events, 100 separate strict events,
 and twenty of those for beam diagnostics. Two guarded one-GPU jobs have
 36-hour limits, no requeue, and no automatic promotion or sealed-test access.
-The dashboard records the submission snapshot.
+Both jobs were submitted and released from one immutable source after 1,589
+CPU tests passed (34 skipped) and both two-step training smoke checks passed.
+The dashboard records the submission snapshot. These software checks do not
+establish scientific benefit; the training results and unchanged gates remain
+pending.
