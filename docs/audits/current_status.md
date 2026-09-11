@@ -60,6 +60,14 @@ bounded two-arm study. Training budget and acceptance gates remain unchanged;
 no automatic promotion or sealed-test access is authorized. The historical
 audit scope and NO-GO production recommendation are unchanged.
 
+Phase44's two jobs were submitted and released from immutable source
+`c3ca522b644c981959c07f3dc481f0b04354bcac`. Its 143 targeted CPU tests passed,
+including replication-basis and authority rejection tests. The first prepared
+revision was rejected by its own contract guard before any job was created;
+the corrected revision passed full contract verification. Documentation tests
+passed (157), and both two-step CPU training smoke checks passed. These are
+supplemental software checks, not an extension of the historical physics audit.
+
 ## Reconstruction phase42 closeout — 2026-09-10
 
 Both bounded Phase42 runs completed 4,376 steps. The 81,096-step pretrained

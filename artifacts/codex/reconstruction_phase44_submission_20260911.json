@@ -1,8 +1,8 @@
 {
-  "status": "PREPARED",
   "status_date": "2026-09-11",
+  "status": "SUBMITTED",
   "task_count": 2,
-  "source_revision": null,
-  "sealed_test_accessed": false,
-  "promotion_authorized": false
+  "source_revision": "c3ca522b644c981959c07f3dc481f0b04354bcac",
+  "receipt_sha256": "cc0a251325d7a474d0c216bfdf58d352076443fb1368ee9f85351fdf901f0669",
+  "sealed_test_accessed": false
 }
