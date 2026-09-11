@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Bind the Phase44 replication guard and its authority regression tests.
+  - 6a31d2bfdac8014452be21a5d97a18bf076a2f3c
   # Phase43 review and bounded Phase44 replication; historical audit scope unchanged.
   - f978bcf5e799f48397cc2a724c59b2d9b7092d21
   # Complete documentation bundle uses lossless compact JSON.
