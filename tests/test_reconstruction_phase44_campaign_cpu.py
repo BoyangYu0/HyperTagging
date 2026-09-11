@@ -63,3 +63,22 @@ def test_phase44_preregistration_binds_review_and_cohort():
         assert hashlib.sha256((ROOT / record['path']).read_bytes()).hexdigest() == record['sha256']
     assert all(report['production_training_allowed'] for report in p['capacity_admission']['reports_by_arm'].values())
     assert all(report['query_overflow_count'] == report['cardinality_overflow_count'] == 0 for report in p['capacity_admission']['reports_by_arm'].values())
+
+
+def test_phase44_replication_basis_passes_the_submission_guard():
+    from scripts.run_reconstruction_phase44 import validate_closeout_basis
+    prereg = load('ht_reconstruction_phase44_20260911.json')
+    assert validate_closeout_basis(prereg) == prereg['phase43_closeout_basis']
+
+
+@pytest.mark.parametrize('field,value', [
+    ('selected_next_factor', 'encoder_freeze_steps_2188_vs_0'),
+    ('classification', 'promoted'),
+    ('sealed_test_accessed', True),
+])
+def test_phase44_rejects_changed_replication_authority(field, value):
+    from scripts.run_reconstruction_phase44 import validate_closeout_basis
+    prereg = load('ht_reconstruction_phase44_20260911.json')
+    prereg['phase43_closeout_basis'][field] = value
+    with pytest.raises(RuntimeError, match='closeout basis'):
+        validate_closeout_basis(prereg)

@@ -134,6 +134,16 @@ def validation_exclusions(cohort: dict[str, Any]) -> tuple[str, ...]:
     return tuple(sorted(values))
 
 
+def validate_closeout_basis(prereg: dict[str, Any]) -> dict[str, Any]:
+    closeout = prereg["phase43_closeout_basis"]
+    if (prereg.get("study_id") != STUDY_ID
+        or closeout.get("classification") != "completed_controlled_study_no_promotion"
+        or closeout.get("selected_next_factor") != "replicate_encoder_freeze_steps_2188_vs_0"
+        or closeout.get("sealed_test_accessed") is not False):
+        raise RuntimeError("phase44 closeout basis is invalid")
+    return closeout
+
+
 def verify_contract(path: Path) -> tuple[dict[str, Any], dict[str, str]]:
     contract = json.loads(path.read_text(encoding="utf-8"))
     if (
@@ -165,12 +175,7 @@ def verify_contract(path: Path) -> tuple[dict[str, Any], dict[str, str]]:
 
     prereg_path = _repo_file(contract["preregistration"]["path"])
     prereg = json.loads(prereg_path.read_text(encoding="utf-8"))
-    closeout = prereg["phase43_closeout_basis"]
-    if (prereg.get("study_id") != STUDY_ID
-        or closeout.get("classification") != "completed_controlled_study_no_promotion"
-        or closeout.get("selected_next_factor") != "encoder_freeze_steps_2188_vs_0"
-        or closeout.get("sealed_test_accessed") is not False):
-        raise RuntimeError("phase44 closeout basis is invalid")
+    closeout = validate_closeout_basis(prereg)
     evidence = _repo_file(closeout["path"])
     if (sha256(evidence) != closeout["sha256"]
         or json.loads(evidence.read_text()).get("metric_completeness") != "COMPLETE"):
