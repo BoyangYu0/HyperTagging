@@ -167,6 +167,7 @@ class CurriculumBatch:
     structural_positive_mask: torch.Tensor
     corruption_objective: str
     relation_input_policy: str
+    invalid_candidate_mask: torch.Tensor
 
 
 def build_curriculum_batch(
@@ -234,7 +235,32 @@ def build_curriculum_batch(
             dtype=torch.bool,
             device=output["node_mask"].device,
         )
-    hard_negatives, hard_negative_classes = hard_negative_pairs_with_classes(output)
+    # A locally unchanged mother is still an incorrect candidate when one of
+    # its daughters now represents a corrupted subtree. Keep the local edit
+    # mask/codes for the corruption classifier, and propagate candidate
+    # invalidity upward for correctness and clean-topology supervision.
+    invalid_candidate = corrupted.clone()
+    for level in sorted(
+        {
+            int(value)
+            for value in output["level_ids"][output["node_mask"]].detach().cpu().tolist()
+            if int(value) > 0
+        }
+    ):
+        affected = boolean_matmul(
+            output["daughter_adjacency"], invalid_candidate.unsqueeze(-1)
+        ).squeeze(-1)
+        invalid_candidate |= (
+            output["node_mask"] & output["level_ids"].eq(level) & affected
+        )
+    structural_positive_mask = (
+        output["node_mask"]
+        if corruption_objective == "denoising"
+        else output["node_mask"] & ~invalid_candidate
+    )
+    hard_negatives, hard_negative_classes = hard_negative_pairs_with_classes(
+        {**output, "node_mask": structural_positive_mask}
+    )
     return CurriculumBatch(
         batch=output,
         stage=stage,
@@ -242,13 +268,10 @@ def build_curriculum_batch(
         corruption_code=corruption_code,
         hard_negative_pairs=hard_negatives,
         hard_negative_relation_classes=hard_negative_classes,
-        structural_positive_mask=(
-            output["node_mask"]
-            if corruption_objective == "denoising"
-            else output["node_mask"] & ~corrupted
-        ),
+        structural_positive_mask=structural_positive_mask,
         corruption_objective=corruption_objective,
         relation_input_policy=relation_input_policy,
+        invalid_candidate_mask=invalid_candidate,
     )
 
 

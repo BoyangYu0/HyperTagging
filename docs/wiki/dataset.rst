@@ -95,7 +95,8 @@ source grouping; validation cohorts remain fixed. Train, validation and sealed
 test roles have distinct purposes. Query count, node count and daughter
 cardinality must accommodate the chosen target policy before training.
 
-Static detector normalization uses only available training observations.
+Static track/ECL normalization uses only available training observations;
+the KLM encoder uses its fixed physical scales and availability masks.
 Common/composite quantities remain in physical units until the model-owned
 runtime transform, which is reapplied after PID and mother construction.
 Unobserved runtime slots use identity scaling. Missing values stay masked
@@ -105,10 +106,13 @@ checkpoint, so evaluation applies the same mapping.
 Target populations and quality checks
 ---------------------------------------------
 
-``complete_only`` selects complete retained mother targets;
-``reconstructable_partial`` admits the supported partial population. Diagnostic
-targets have separate denominators. None of these names implies that every
-physical event is fully reconstructed.
+``complete_only`` selects valid mothers with recursive support in the retained
+forest; ``reconstructable_partial`` admits valid retained partial targets.
+The producer removes absent truth leaves before computing recursive completeness,
+so a mother can be recursively complete and still carry
+``partial_missing_daughters=True``. Both policies can select the same native
+targets. Full physical-decay completeness, strict-root representability and
+diagnostic target populations have separate meanings and denominators.
 
 Use ``scripts/verify_preprocessing.py`` to check tree structure, PID and p4
 closure. ``scripts/build_dataset_index.py`` and

@@ -551,6 +551,10 @@ def _restore_deployment_model(
             "the v1 basf2 exporter requires soft decisions with hard rollout "
             f"construction, found {rollout_pid_mode!r}"
         )
+    # Restore the checkpoint's training mode below, but export the decision
+    # mode used by its admitted rollout policy.  Hard or temperature-trained
+    # models still use soft expectations when making rollout decisions.
+    decision_pid_mode = "soft_expectation"
     pid_temperature = float(
         training_config.get(
             "rollout_pid_temperature",
@@ -596,7 +600,7 @@ def _restore_deployment_model(
             "checkpoint feature contract lacks reconstruction_constraint_policy"
         )
     policy = ReconstructionConstraintPolicy.from_dict(raw_policy)
-    return model.cpu().eval(), architecture, policy, pid_mode, pid_temperature
+    return model.cpu().eval(), architecture, policy, decision_pid_mode, pid_temperature
 
 
 def _validate_checkpoint_contract(payload: Mapping[str, Any]) -> None:

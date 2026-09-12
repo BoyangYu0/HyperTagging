@@ -68,7 +68,8 @@ to the repository root.
 - Raw-track PID choices must respect charge. Preserve the checkpoint's separate
   decision and construction modes: `soft_decision_hard_construction` uses soft
   kinematics for neural decisions and hard PID when persisting daughters.
-- Detector-specific static blocks use train-fitted normalization. Common and
+- Track and ECL static blocks use train-fitted normalization; KLM uses the
+  fixed physical scales in its encoder. Common and
   composite blocks remain in physical units until the model-owned runtime
   normalizer; apply the same transform after PID/composite rebuilding. Runtime
   slots without training observations use identity scaling. Categorical slots

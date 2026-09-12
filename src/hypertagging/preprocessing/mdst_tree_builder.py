@@ -571,7 +571,12 @@ def _drop_empty_truth_leaves(tree: EventTree) -> None:
 
 
 def recompute_mother_p4_from_daughters(tree: EventTree) -> None:
-    """Recursively set every mother p4 to the sum of retained daughter p4."""
+    """Rebuild mother p4 and charge from retained reconstructed daughters.
+
+    A retained partial decay need not carry the MC mother's charge.  Keep that
+    label in ``truth_charge``; the reconstructed forest uses daughter sums at
+    every height, just as it does during inference.
+    """
 
     ordered = _topological_children_first(tree)
     for node_id in ordered:
@@ -579,6 +584,11 @@ def recompute_mother_p4_from_daughters(tree: EventTree) -> None:
         node.n_daughters = len(node.daughter_ids)
         if node.daughter_ids:
             node.p4 = FourVector.sum(tree.nodes[child_id].p4 for child_id in node.daughter_ids)
+            node.charge = sum(
+                float(tree.nodes[child_id].reco_charge)
+                for child_id in node.daughter_ids
+            )
+            node.reco_charge = node.charge
 
 
 def _topological_children_first(tree: EventTree) -> list[int]:

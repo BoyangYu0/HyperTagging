@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import math
 from pathlib import Path
 import sys
@@ -14,6 +15,9 @@ if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
 import awkward as ak
+import pyarrow.parquet as pq
+
+from hypertagging.preprocessing.schema_v4 import iter_event_records_v4
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -27,6 +31,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--dump-tree", action="store_true", help="Print nodes grouped by level.")
     parser.add_argument("--check-p4", action="store_true", help="Check mother p4 equals daughter p4 sum.")
+    parser.add_argument("--check-charge", action="store_true", help="Check reconstructed mother charge equals daughter charge sum.")
     parser.add_argument("--check-tree", action="store_true", help="Check links, DAG, levels, and copy references.")
     parser.add_argument("--check-pid", action="store_true", help="Print PID distributions before/after if present.")
     parser.add_argument("--all", action="store_true", help="Run all checks.")
@@ -36,26 +41,46 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
-    payload = ak.to_list(ak.from_parquet(args.input))[0]
-    events = payload["events"]
-    if args.event < 0 or args.event >= len(events):
-        raise IndexError(f"event index {args.event} out of range for {len(events)} events")
-    event = events[args.event]
+    parquet = pq.ParquetFile(args.input)
+    if "event_json" in parquet.schema_arrow.names:
+        # Native v4 stores one event per row.  Keep the CLI bounded by the
+        # producer row group instead of materializing an entire shard.
+        events = iter_event_records_v4(args.input)
+        event_count = parquet.metadata.num_rows
+        sidecar = Path(args.input).with_suffix(Path(args.input).suffix + ".metadata.json")
+        metadata = json.loads(sidecar.read_text()) if sidecar.exists() else {}
+        payload = {"summary_json": json.dumps({"pid_summary": metadata.get(
+            "preprocessing_configuration", {}
+        ).get("pid_filter", metadata.get("aggregate_pid_statistics", {}))})}
+    else:
+        payload = ak.to_list(ak.from_parquet(args.input))[0]
+        events = iter(payload["events"])
+        event_count = len(payload["events"])
+    if args.event < 0 or args.event >= event_count:
+        raise IndexError(f"event index {args.event} out of range for {event_count} events")
 
-    run_all = args.all or not any([args.dump_tree, args.check_p4, args.check_tree, args.check_pid])
-    if args.dump_tree or run_all:
-        dump_tree(event)
-    checked_events = events if args.all_events else [event]
-    if args.check_tree or run_all:
-        for checked_event in checked_events:
-            check_tree(checked_event, verbose=not args.all_events)
-    if args.check_p4 or run_all:
-        for checked_event in checked_events:
-            check_p4(checked_event, tolerance=args.tolerance, verbose=not args.all_events)
+    run_all = args.all or not any([
+        args.dump_tree, args.check_p4, args.check_charge, args.check_tree, args.check_pid
+    ])
+    checked_count = 0
+    for index, event in enumerate(events):
+        if index == args.event and (args.dump_tree or run_all):
+            dump_tree(event)
+        if not args.all_events and index != args.event:
+            continue
+        if args.check_tree or run_all:
+            check_tree(event, verbose=not args.all_events)
+        if args.check_p4 or run_all:
+            check_p4(event, tolerance=args.tolerance, verbose=not args.all_events)
+        if args.check_charge or run_all:
+            check_charge(event, tolerance=args.tolerance, verbose=not args.all_events)
+        checked_count += 1
+        if not args.all_events:
+            break
     if args.check_pid or run_all:
         print_pid_summary(payload)
-    if args.all_events and (args.check_tree or args.check_p4 or run_all):
-        print(f"validated events={len(checked_events)}")
+    if args.all_events and (args.check_tree or args.check_p4 or args.check_charge or run_all):
+        print(f"validated events={checked_count}")
     return 0
 
 
@@ -141,12 +166,23 @@ def check_p4(event: dict[str, object], *, tolerance: float, verbose: bool = True
 
 def print_pid_summary(payload: dict[str, object]) -> None:
     summary_json = payload.get("summary_json") or "{}"
-    import json
-
     summary = json.loads(summary_json)
     pid_summary = summary.get("pid_summary", {})
     print("pid summary:")
     print(json.dumps(pid_summary, indent=2, sort_keys=True))
+
+
+def check_charge(event: dict[str, object], *, tolerance: float, verbose: bool = True) -> None:
+    nodes = _nodes_by_id(event)
+    for node_id, node in nodes.items():
+        if not node["daughter_ids"]:
+            continue
+        summed = sum(float(nodes[child_id]["charge"]) for child_id in node["daughter_ids"])
+        stored = float(node["charge"])
+        if not math.isclose(stored, summed, rel_tol=tolerance, abs_tol=tolerance):
+            raise ValueError(f"charge mismatch at node {node_id}: stored={stored} summed={summed}")
+    if verbose:
+        print("charge ok: recursive daughter sums")
 
 
 def _nodes_by_id(event: dict[str, object]) -> dict[int, dict[str, object]]:

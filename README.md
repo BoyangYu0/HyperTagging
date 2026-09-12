@@ -113,7 +113,7 @@ Then verify the event rows with ordinary Python:
 ```bash
 python scripts/verify_preprocessing.py \
   --input /data/volume/hypertagging/processed.parquet \
-  --all-events --check-tree --check-p4 --check-pid
+  --all-events --check-tree --check-p4 --check-charge --check-pid
 ```
 
 The producer never migrates existing Parquet files in place. Raw-track PID,
@@ -130,8 +130,9 @@ invocation is:
 ```bash
 python scripts/train_level_reconstruction.py \
   --config configs/model_presets/production_baseline.yaml \
-  --data /data/volume/manifest.jsonl \
+  --data /data/volume/train-selection.json \
   --dataset-index /data/volume/dataset_index.json \
+  --scientific-mode \
   --pretrained-encoder /data/volume/pretrain/checkpoint.pt \
   --device cuda \
   --output-dir /data/volume/reconstruction

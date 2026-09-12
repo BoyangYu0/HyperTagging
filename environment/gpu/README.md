@@ -2,11 +2,13 @@
 
 This environment is separate from the repository's CPU-only `uv.lock`. The
 resolved lock pins the CUDA 12.6 PyTorch build and every transitive Python
-dependency with package hashes for Python 3.11 on Linux x86-64. This readiness
-tranche generated and verified the lock but did not create an environment.
+dependency with package hashes for Python 3.11 on Linux x86-64. The initial
+readiness tranche generated the lock; later runtime receipts record an installed
+environment at the path below. Reuse and verify it when present.
 
-After review, create the immutable environment at the path used by the Slurm
-renderer:
+For a new installation only, create the environment at the path used by the
+Slurm renderer. Do not recreate or resynchronize an active frozen environment
+as part of an unrelated task:
 
 ```bash
 /home/b/Boyang.Yu/.local/bin/uv venv --python 3.11 /project/agkuhr/users/boyang/envs/hypertagging-gpu-cu126-v1

@@ -10,14 +10,18 @@ How to create, review, test, and submit HTCondor jobs for this repository.
 - Preserve cluster-specific conventions.
 - Never run real training locally on GPU.
 - Local GPU is only for tiny smoke tests after `condor_q` and `nvidia-smi` checks.
-- Real training and real datasets only via HTCondor.
+- Real production/GPU training uses the site's guarded HTCondor or Slurm
+  workflow. This skill covers HTCondor; bounded CPU diagnostics remain local.
 - Do not call `condor_submit` automatically unless explicitly instructed.
 - Always provide dry-run render commands first.
 - Always log git commit, config, environment, and GPU state.
 - Prefer short runtimes for debug jobs.
 - Make CPU, memory, GPU, and runtime requests configurable.
 - Write logs to `logs/condor`.
-- Checkpoint to `outputs/checkpoints` or a configured path.
+- Keep checkpoints and large generated artifacts on the configured data volume.
+- Scientific training consumes an immutable source-role selection and its
+  authenticated dataset index, with `--scientific-mode`; raw Parquet/JSONL
+  prefixes are diagnostic inputs only.
 
 ## Workflow
 

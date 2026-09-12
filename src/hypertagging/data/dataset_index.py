@@ -1338,6 +1338,7 @@ def build_dataset_index_from_sidecars(
         name: StreamingMaskedFeatureNormalizer() for name in FEATURE_BLOCKS
     }
     capacity = Counter()
+    train_capacity = Counter()
     completeness = Counter()
     total_nodes = legacy_nodes = 0
     shards: list[dict[str, Any]] = []
@@ -1397,6 +1398,8 @@ def build_dataset_index_from_sidecars(
             }
         )
         capacity.update(shard_capacity)
+        if split == "train":
+            train_capacity.update(shard_capacity)
         completeness.update(
             {
                 str(key): int(value)
@@ -1470,7 +1473,8 @@ def build_dataset_index_from_sidecars(
             mother_hist.setdefault(level, {})[count] = int(value)
         elif key.startswith("target_type_level_"):
             level, token = key.removeprefix("target_type_level_").split("_token_")
-            allowed.setdefault(level, set()).add(int(token))
+            if train_capacity[key] > 0:
+                allowed.setdefault(level, set()).add(int(token))
         elif key.startswith("daughter_cardinality_level_"):
             level, count = key.removeprefix("daughter_cardinality_level_").split(
                 "_value_"

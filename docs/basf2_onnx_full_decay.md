@@ -13,7 +13,7 @@ reconstructed FSP ParticleLists
   -> truth-free schema-v4 feature blocks
   -> one hash-checked ONNX graph per hierarchy level
   -> constrained mother/daughter proposals
-  -> full-depth beam search across levels
+  -> proposal-set beam search across levels
   -> best completed Upsilon(4S) tree in a fresh ParticleList
 ```
 
@@ -24,8 +24,16 @@ mother-type, pointer, object, leaf-PID, and confidence predictions direct the
 tree construction, while the host enforces charge, provenance, and loose
 physics constraints. Competing partial trees survive according to a bounded
 beam score, so the locally best first composite need not determine the final
-tree. Exact within-level proposal-set search is capped at 12 proposals,
-matching the offline bounded-search contract.
+tree. Exact within-level proposal-set search is capped at 12 proposals.
+
+The v1 deployment beam differs from the strict offline full-depth beam. It
+decodes one mother type, cardinality and daughter set per query, then retains
+coherent subsets across levels using the manifest's `sum_confidence` score.
+It does not enumerate the offline beam's alternative type/daughter decisions
+or its explicit no-object alternative when proposals exist. Its ranking is
+therefore a separate search policy, and offline beam gains do not establish
+deployment gains. Compare both paths on the same validation events and
+checkpoint before making a parity or physics-performance claim.
 
 ## Runtime boundary
 
@@ -34,6 +42,13 @@ manifest fixes tensor names and shapes, feature ordering, PID vocabulary,
 normalizers, reconstruction policy, graph SHA-256 hashes, and compatible
 basf2 releases. Model and manifest hashes are checked before the first event.
 The v1 graphs use fixed `max_nodes` and `max_sources` capacities.
+
+The v1 runtime also requires identical query and daughter-cardinality counts
+across all exported levels. Current scientific checkpoints with different
+per-level capacities cannot export a full bundle under this contract; they
+need a runtime/manifest extension that preserves the trained model's shapes.
+Changing or reshaping the checkpoint to fit a uniform graph would change the
+model being evaluated.
 
 The tested CVMFS environment is `light-2607-kasei`:
 

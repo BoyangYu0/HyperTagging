@@ -3,6 +3,50 @@
 This is the sole authoritative current audit report. Historical reports under
 `archive/` are immutable evidence snapshots and are not current truth.
 
+## Independent scientific audit — 2026-09-12 working-tree boundary
+
+The isolated scientific audit starts at `c6e2169` plus the recorded Phase44/45
+overlay. Its source fixes and evidence do not alter the other task's campaigns
+or retrospectively change earlier results. The generated summary below records
+the older `6e46423` audit boundary; its 463-test count is not the current suite
+size, and its historical operator steps are not fresh execution instructions.
+
+The audit demonstrated and repaired reconstructed composite charge copied from
+truth, stale pre-PID daughter-sum physics targets, corruption ancestors retaining
+clean structural labels, and detector-source reuse across greedy generations.
+It also repaired optional flat-context/PID-ablation behavior, sidecar empirical
+type-prior split leakage, native-v4 verification, and deployment state
+deduplication/source reservations, PID-decision export, and feature parity.
+An actual ONNX graph test exposed track-count-dependent tracing; dense soft-PID
+construction now supports zero, one, and multiple tracks of either sign.
+Existing checkpoints and datasets were not
+rewritten. Corrected future training needs freshly fitted train-only statistics
+through the corrected record adapter.
+
+Two current-source local MC15 mDST pilots (10 events each) passed stored tree,
+p4, and reconstructed charge checks. These are bounded producer/API evidence,
+not an immutable multi-category MC16ri campaign or a physics-performance claim.
+The initial integrated CPU run had 1,565 passes, 34 skips and 21 failures:
+17 missing inherited Phase44/45 evidence dependencies and four unsupported
+atomic-rename operations on the test filesystem. Final checks and exact source
+hashes are recorded in the audit's external control directory, alongside
+`FINAL_REPORT.md`, `RECONNECT_SUMMARY.md`, and per-domain coverage inventories.
+
+The principal unresolved scientific problem is the target/inference mismatch.
+On a diagnostic 1,000-event validation prefix, 16/200 retained Upsilon trees
+and 101/400 B roots passed necessary direct-topology/source checks. Allowing any
+charge-compatible ontology PID reduced these counts to 14/200 and 89/400;
+requiring the correct truth mother PID reduced them to 7/200 and 63/400.
+The last counts do not bound topology-only perfect LCAG. Unary required
+intermediates and charge-incompatible partial trees were common. These are
+sample-specific necessary bounds, not achievable efficiency estimates.
+Primary failed-trial denominators remain unchanged.
+The historical 3–4% micro complete-target metric measures recovered detector
+source sets plus mother PID, not exact recursive topology. Source-set recovery,
+teacher-context daughter grouping, strict trees, and post-inference oracle@K
+must therefore remain separate measurements. No model promotion or additional
+GPU campaign follows from this audit.
+
 <!-- GENERATED_STATUS_SUMMARY_START -->
 ## Generated authoritative summary
 
@@ -19,12 +63,12 @@ This is the sole authoritative current audit report. Historical reports under
 | `OBSOLETE_OR_DUPLICATE` | 1 |
 | `PARTIAL` | 9 |
 <!-- GENERATED_STATUS_SUMMARY_END -->
-## Recommendation: NO-GO
+## Historical production recommendation at the generated audit boundary: NO-GO
 
-The production-integrity software is fixed and CPU/fixture tested, but a clean
-committed current-HEAD multi-category real pilot has not run. Therefore the
-100k HTCondor canary is not yet authorized, and there is explicitly no GO for
-10M. The next operator action is to commit the focused worktree, render a new
+At that recorded boundary, the production-integrity software was CPU/fixture tested, but a clean
+committed current-HEAD multi-category real pilot had not run. Therefore the
+100k HTCondor canary was not yet authorized, and there was explicitly no GO for
+10M. The recorded next operator action was to commit the focused worktree, render a new
 1k–10k pilot campaign from that clean source, run only its bounded shards,
 validate it globally, and review the consolidated report and figures.
 

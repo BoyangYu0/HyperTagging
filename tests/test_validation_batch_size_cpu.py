@@ -48,7 +48,7 @@ def test_validation_batch_size_controls_next_level_forward_batching():
     assert result["validation_batch_size"] == 2
     assert result["validation_events"] == 3
     assert result["rollout_empty_level_policy"] == "stop_on_first_empty"
-    assert result["rollout_policy_version"] == "level-rollout-source-isolation-v2"
+    assert result["rollout_policy_version"] == "level-rollout-source-isolation-v3"
     assert len(result["rollout_policy_sha256"]) == 64
 
 

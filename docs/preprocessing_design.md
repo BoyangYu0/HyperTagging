@@ -124,9 +124,9 @@ checked for duplicates and split by source without event leakage.
 Inspect and validate:
 
 ```bash
-/data/dust/user/boyangyu/uv_env/bin/python scripts/verify_preprocessing.py \
+python scripts/verify_preprocessing.py \
   --input /data/dust/user/boyangyu/hypertagging/processed.parquet \
-  --all-events --check-tree --check-p4 --check-pid
+  --all-events --check-tree --check-p4 --check-charge --check-pid
 ```
 
 The DESY MC16ri Run 2 source used by the recorded preprocessing work is
@@ -153,38 +153,47 @@ from MC leaves for software tests only; it must not be used for training.
 Generate and execute the real-data four-momentum comparison notebook:
 
 ```bash
-/data/dust/user/boyangyu/uv_env/bin/python \
-  scripts/create_preprocessing_visualization_notebook.py
-JUPYTER_CONFIG_DIR=/tmp/hypertagging-jupyter-config \
-  /data/dust/user/boyangyu/uv_env/bin/python -m jupyter nbconvert \
-  --execute --to notebook --inplace \
-  notebooks/preprocessing_four_momentum_validation.ipynb
+notebook_dir=/data/volume/hypertagging/notebook-runs
+export PYTHONPATH="$(pwd)/src${PYTHONPATH:+:$PYTHONPATH}"
+export HYPERTAGGING_PARQUET=/data/volume/hypertagging/processed.parquet
+python scripts/create_preprocessing_visualization_notebook.py \
+  --input "$HYPERTAGGING_PARQUET" \
+  --output "$notebook_dir/preprocessing_four_momentum_validation.ipynb"
+python -c 'from nbclient.cli import main; main()' \
+  "$notebook_dir/preprocessing_four_momentum_validation.ipynb" \
+  --inplace --timeout=600
 ```
 
 The notebook compares computed/reconstructed and MC `E`, `px`, `py`, `pz`, and
 invariant mass distributions, plus event-by-event and particle-by-particle
 differences. Unmatched reconstructed objects remain in production output but
 are excluded from truth residuals.
+The execution-time `HYPERTAGGING_PARQUET` setting is required for real data;
+the generator's `--input` alone does not disable fixture fallback.
 
-The executed
-`notebooks/inspect_preprocessed_parquet_and_gpt_like.ipynb` complements this
-with the parquet schema, representative event/node tables, multiplicity and
-depth distributions, tree checks, the direct-tree GPT batch, its attention
-mask, and a real-data CPU forward/loss/backward/optimizer smoke test. Regenerate
-it with:
+The historical compatibility notebook
+`notebooks/inspect_preprocessed_parquet_and_gpt_like.ipynb` requires the nested
+schema-v1 export with `events` and `legacy_levels`; it cannot read native v4
+event rows. It inspects that legacy schema, event/node tables, multiplicities,
+tree checks and the direct-tree GPT batch, then runs a small CPU optimizer
+step. For current v4 data use `inspect_preprocessed_dataset.ipynb` and the
+level-autoregressive inspection notebook. Regenerate the v1 notebook with:
 
 ```bash
-/data/dust/user/boyangyu/uv_env/bin/python \
-  scripts/create_parquet_gpt_inspection_notebook.py
-JUPYTER_CONFIG_DIR=/tmp/hypertagging-jupyter-config \
-  /data/dust/user/boyangyu/uv_env/bin/python -m jupyter nbconvert \
-  --execute --to notebook --inplace \
-  notebooks/inspect_preprocessed_parquet_and_gpt_like.ipynb
+notebook_dir=/data/volume/hypertagging/notebook-runs
+export PYTHONPATH="$(pwd)/src${PYTHONPATH:+:$PYTHONPATH}"
+export HYPERTAGGING_PARQUET=/data/volume/hypertagging/legacy_v1.parquet
+python scripts/create_parquet_gpt_inspection_notebook.py \
+  --input "$HYPERTAGGING_PARQUET" \
+  --output "$notebook_dir/inspect_preprocessed_parquet_and_gpt_like.ipynb"
+python -c 'from nbclient.cli import main; main()' \
+  "$notebook_dir/inspect_preprocessed_parquet_and_gpt_like.ipynb" \
+  --inplace --timeout=600
 ```
 
-## GPT-Like Direct-Tree Contract
+## Historical v1 GPT-Like Direct-Tree Contract
 
-Real direct-mDST events have variable numbers of nodes and variable tree
+Legacy direct-mDST-v1 events have variable numbers of nodes and variable tree
 depths, so the old fixed-particles-per-level collator is not valid for this
 parquet. `hypertagging.data.direct_gpt` instead orders visible leaves first,
 then truth-guided higher-level query slots. Leaf queries may attend leaves;
@@ -193,9 +202,10 @@ node embeddings and link labels map each child position to its parent position.
 
 This adapter makes the current `MultiGPT` implementation executable and
 testable on real parquet, but it is teacher-forced integration scaffolding, not
-a claim of final training quality. Production training should add feature
-normalization, source-aware train/validation/test splits, checkpointing, and
-physics performance metrics.
+a claim of final training quality. The active level-autoregressive trainers
+already implement normalization, immutable source-role splits, checkpointing,
+and reconstruction metrics; see [training.md](training.md). Those contracts do
+not turn the historical `MultiGPT` adapter into the production trainer.
 
 ## Campaign-gated production
 
@@ -356,8 +366,13 @@ inferred from PID zero. Legacy v1-v3 records are adapted as
 
 Recursive completeness is stored independently from local daughter counts.
 The default `complete_only` target policy admits only valid, recursively
-reconstructable-complete mothers. Capacity scans and training use the same
-policy.
+reconstructable-complete mothers in the retained forest. Missing truth leaves
+are dropped before that completeness is computed; a mother may therefore be
+recursively complete while `partial_missing_daughters` is true. This is not
+full physical-decay completeness, and native `complete_only` and
+`reconstructable_partial` target sets can coincide. Capacity scans and training
+use the same policy; physical missing-daughter and strict-root denominators
+must be inspected separately.
 
 ## Runtime-scale publication contract
 

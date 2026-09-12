@@ -414,14 +414,6 @@ class HeterogeneousNodeEncoder(nn.Module):
             composite=composite,
             other=other,
         )
-        specific = dispatch_node_kind_adapters(
-            kinds,
-            track=track,
-            ecl_cluster=cluster,
-            klm_cluster=klm,
-            composite=composite,
-            other=other,
-        )
         h0 = self.shared_norm(
             common
             + specific

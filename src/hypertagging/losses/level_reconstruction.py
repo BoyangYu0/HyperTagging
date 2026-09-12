@@ -224,11 +224,18 @@ def level_reconstruction_loss(
                     target_masks[batch_index][target_id].sum().long()[None],
                 )
             )
+            # Physics supervision belongs to the current reconstruction state.
+            # Stored future-mother p4 and aligned overrides can predate the
+            # model's PID refinement, so even exact pointers would otherwise
+            # be penalized for a change of daughter mass hypothesis. Truth
+            # supplies the daughter mask; current daughters supply p4/charge.
+            current_target_p4 = context_p4[truth_bool].sum(dim=0)
+            current_target_charge = context_charge[truth_bool].sum()
             p4_losses.append(
                 p4_sum_consistency_loss(
                     output.pointer_logits[batch_index, query_id, context][None, None],
                     context_p4[None],
-                    target_p4[batch_index][target_id][None, None],
+                    current_target_p4[None, None],
                     component_scales=physics_component_scales,
                 )
             )
@@ -236,7 +243,7 @@ def level_reconstruction_loss(
                 charge_consistency_loss(
                     output.pointer_logits[batch_index, query_id, context][None, None],
                     context_charge[None],
-                    target_charge[batch_index][target_id][None, None],
+                    current_target_charge[None, None],
                 )
             )
             if constraint_policy is not None and constraint_policy.mother_charge_compatibility in {

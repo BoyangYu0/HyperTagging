@@ -37,7 +37,7 @@ dependency. Event context enters only after that composite input exists.
 
 ## Shared encoder and task projections
 
-Type-specific track, ECL, and composite adapters feed one `d_model` space and
+Type-specific track, ECL, KLM, and composite adapters feed one `d_model` space and
 one shared contextual set transformer. Small tree, reconstruction, and channel
 projections specialize the shared representation. One shared tree projection
 maps to the Poincare ball.
@@ -60,8 +60,8 @@ The exact LCA relation classes are:
 
 1. same node;
 2. same immediate retained mother;
-3. same local branch (a retained common ancestor no more than two levels above
-   the deeper node);
+3. same local branch (a retained common ancestor at most two parent edges from
+   each node, using exact edge-to-LCA distances rather than generation heights);
 4. same explicit B branch;
 5. different B branches in the same event;
 6. unrelated or unavailable truth relation.
@@ -207,7 +207,7 @@ nodes.
 Teacher forcing uses truth links but the same reco-derived construction.
 Scheduled sampling is seeded and reproducible. Production documentation
 distinguishes batched teacher-forced validation, the implemented CPU-tested
-multi-level padded rollout, and the bounded reference oracle. Guarded CUDA
+multi-level padded rollout, and the bounded reference rollout. Guarded CUDA
 profiling remains future evidence, not future functionality.
 
 ## Verification boundary
@@ -278,6 +278,9 @@ Corruption training rebuilds all derived p4, charge, source, histogram, level,
 and conflict features. Candidate-correctness, corruption-class, and explicit
 hard-negative losses consume these outputs; corrupted branches are never
 queued as positive channel examples.
+In `invalid_candidate` mode, invalidity also reaches ancestors containing a
+corrupted daughter subtree, including their geometry, correctness and
+hard-negative supervision. Denoising mode deliberately retains truth topology.
 
 ## Explicit scientific ablations
 
@@ -288,7 +291,10 @@ learned attention, level weighted), or PID construction (soft expectation,
 temperature softmax, straight-through hard, hard, and rollout-only soft
 decision/hard construction). Daughter compatibility is generic or
 type-conditioned relation-aware. Greedy is the production exclusive resolver;
-bounded weighted set packing and beam remain evaluation-only diagnostics.
+bounded weighted set packing remains an evaluation comparator. Strict offline
+inference provides full-depth beam search; the manifest-bound ONNX runtime
+provides a proposal-set beam across levels. Their proposal and scoring
+contracts differ, and fixture results do not select a scientific default.
 
 Query repulsion stays disabled in the production baseline. The explicit off,
 weak, and stronger configs ignore no-object slots, exclude overlapping matched

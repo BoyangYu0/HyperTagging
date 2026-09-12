@@ -1,8 +1,8 @@
 # Dataset and model visualization
 
-All revised notebooks are generated deterministically and run on CPU without
-basf2. If `HYPERTAGGING_PARQUET` is unset they create a tiny schema-v4 fixture
-under `/tmp` and label every result as a software fixture. Set the variable to
+The fixture-capable inspection notebooks below are generated deterministically
+and run on CPU without basf2. If `HYPERTAGGING_PARQUET` is unset they create a
+tiny schema-v4 fixture under `/tmp` and label every result as a software fixture. Set the variable to
 inspect a real schema-v4 shard; legacy v1-v3 inputs are adapted explicitly and
 the source parquet is never modified.
 
@@ -14,12 +14,15 @@ export HYPERTAGGING_FIGURE_DIR=/data/dust/user/boyangyu/hypertagging/figures
 export HYPERTAGGING_NOTEBOOK_SEED=20260730
 ```
 
-An optional checkpoint is selected with `HYPERTAGGING_CHECKPOINT`.
+An optional checkpoint is selected with `HYPERTAGGING_CHECKPOINT`. The separate
+real-only pilot and trained-physics notebooks listed in `notebooks/index.yaml`
+require their real inputs and never substitute fixtures.
 
 Execute a real-data copy without adding outputs to the repository:
 
 ```bash
 export HYPERTAGGING_NOTEBOOK_RUN_DIR=/data/dust/user/boyangyu/hypertagging/notebook-runs
+export PYTHONPATH="$(pwd)/src${PYTHONPATH:+:$PYTHONPATH}"
 mkdir -p "$HYPERTAGGING_NOTEBOOK_RUN_DIR"
 cp notebooks/inspect_preprocessed_dataset.ipynb \
    notebooks/inspect_hyperbolic_pretraining.ipynb \
@@ -29,7 +32,7 @@ cp notebooks/inspect_preprocessed_dataset.ipynb \
    "$HYPERTAGGING_NOTEBOOK_RUN_DIR/"
 for notebook in "$HYPERTAGGING_NOTEBOOK_RUN_DIR"/*.ipynb
 do
-  /data/dust/user/boyangyu/uv_env/bin/jupyter execute \
+  python -c 'from nbclient.cli import main; main()' \
     "$notebook" --inplace --timeout=600
 done
 ```

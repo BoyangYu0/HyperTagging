@@ -1093,7 +1093,7 @@ def train_hyperbolic_pretraining(
                 if corruption_nodes.any()
                 else encoded.node_embeddings.sum() * 0.0
             )
-            correctness_target = (~curriculum.corrupted_node_mask).float()
+            correctness_target = (~curriculum.invalid_candidate_mask).float()
             correctness_loss = (
                 F.binary_cross_entropy_with_logits(
                     correctness_logits[corruption_nodes],
@@ -1932,7 +1932,7 @@ def _validate_pretraining(
         correctness_loss = (
             F.binary_cross_entropy_with_logits(
                 correctness_logits[corruption_nodes],
-                (~curriculum.corrupted_node_mask)[corruption_nodes].float(),
+                (~curriculum.invalid_candidate_mask)[corruption_nodes].float(),
             )
             if corruption_nodes.any()
             else encoded.node_embeddings.sum() * 0.0

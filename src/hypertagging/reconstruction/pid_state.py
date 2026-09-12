@@ -182,32 +182,35 @@ def rebuild_runtime_pid_state(
     p4 = batch["p4"].clone()
     # Slice the feature axis before applying a two-dimensional boolean mask.
     input_p3 = batch["p4"][..., :3]
-    if raw.any():
-        if mode == "hard":
+    if mode == "hard":
+        if raw.any():
             p4[raw] = hard_track_p4_from_pid_token(
                 input_p3[raw], current_tokens[raw]
             )
-        elif mode == "straight_through_hard":
+    elif mode == "straight_through_hard":
+        if raw.any():
             p4[raw] = track_p4_from_pid_probabilities(
                 input_p3[raw], raw_probabilities[raw]
             )
-        else:
-            for sign in (-1, 1):
-                selected = raw & (
-                    (batch["charge"] < 0) if sign < 0 else (batch["charge"] > 0)
-                )
-                if not selected.any():
-                    continue
-                allowed = tuple(
-                    TOKENIZE_DICT[pdg]
-                    for pdg, particle_charge in PARTICLE_CHARGES.items()
-                    if particle_charge == sign
-                )
-                p4[selected] = soft_track_p4_from_pid_logits(
-                    input_p3[selected],
-                    raw_logits[selected] / effective_temperature,
-                    allowed_tokens=allowed,
-                )
+    else:
+        for sign in (-1, 1):
+            selected = raw & (
+                (batch["charge"] < 0) if sign < 0 else (batch["charge"] > 0)
+            )
+            allowed = tuple(
+                TOKENIZE_DICT[pdg]
+                for pdg, particle_charge in PARTICLE_CHARGES.items()
+                if particle_charge == sign
+            )
+            # Keep the node axis fixed through the energy mixture. Legacy
+            # ONNX tracing of boolean-indexed track subsets can bake in the
+            # example's track count and fail on zero or more tracks at runtime.
+            candidate_p4 = soft_track_p4_from_pid_logits(
+                input_p3,
+                raw_logits / effective_temperature,
+                allowed_tokens=allowed,
+            )
+            p4 = torch.where(selected.unsqueeze(-1), candidate_p4, p4)
     levels = sorted(
         {
             int(value)

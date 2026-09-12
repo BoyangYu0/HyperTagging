@@ -318,7 +318,7 @@ def test_direct_api_rejects_known_truth_and_hides_unknown_payloads():
     assert all("unlisted_truth_payload" not in keys for keys in observing_model.inputs)
 
 
-def test_width_one_alias_mask_marks_greedy_compatibility_false():
+def test_width_one_alias_policy_matches_source_safe_greedy():
     batch = _fsp_batch()
     batch["recursive_leaf_source_mask"][0, 1] = batch["recursive_leaf_source_mask"][
         0, 0
@@ -343,9 +343,9 @@ def test_width_one_alias_mask_marks_greedy_compatibility_false():
         ),
     )
 
-    assert result.diagnostics["source_alias_masks_applied"] > 0
+    assert result.diagnostics["source_alias_masks_applied"] == 0
     assert result.diagnostics["width_one_source_safe_greedy"] is True
-    assert result.diagnostics["width_one_greedy_compatibility"] is False
+    assert result.diagnostics["width_one_greedy_compatibility"] is True
 
 
 def test_selected_empty_and_no_candidate_have_distinct_stop_reasons():

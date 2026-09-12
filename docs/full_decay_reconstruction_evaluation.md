@@ -146,13 +146,15 @@ beam_config=BeamSearchConfig(...))`. For native offline data use
 beam_config=BeamSearchConfig(...))`, which applies the strict FSP boundary and
 returns ordered `candidates`, `scores`, score sufficient statistics, and
 `diagnostics`. This API processes one event at a time on CPU. Width one uses a
-source-safe reference-greedy path. Its `width_one_greedy_compatibility` flag is
-true only when no additional detector-alias mask was required; padded node
+source-safe reference-greedy path. Greedy and beam both mask detector aliases
+whose sources are already committed to a different composite; padded node
 positions may still differ from the batched greedy path.
 
-Width-one compatibility applies to source-exclusive greedy trees: the beam
-entry point additionally masks detector aliases already committed to another
-composite, closing a legacy cross-generation reuse hole. Beam requires the
+The current offline policy is
+`fsp-forest-root-empty-level-soft-type-pid-parity-source-exclusive-v3`.
+It closes a greedy/reference/batched cross-generation source-alias reuse hole;
+historical v2 greedy results require reevaluation before comparison with this
+policy. The beam entry point already enforced this restriction. Beam requires the
 recursive-source rejection policy. For width greater than one, a requested
 terminal root is a singleton proposal set, following the deployment candidate
 semantics; unrelated new side mothers cannot raise its score. Existing ONNX
@@ -432,11 +434,12 @@ current node is busy, run the same read-only command on an available CPU node
 with access to the shared filesystem; do not attach to or reuse a training
 GPU.
 
-From the repository root, validate the currently selected frozen-transfer pair
-first:
+From the repository root, validate the checkpoint pair selected by the study's
+immutable receipt. The following is the historical 2026-08-24 frozen-transfer
+example; it is not the current Phase43/44 selection:
 
 ```bash
-CUDA_VISIBLE_DEVICES="" OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 \
+CUDA_VISIBLE_DEVICES="" OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 \
   ./.venv/bin/python scripts/validate_reconstruction_checkpoint_pair.py \
   --pretraining-checkpoint \
   artifacts/runs/ht-pretrain-production-1m-h100-20260821/20260812/15933802/checkpoint-step-54064.pt \
@@ -447,14 +450,16 @@ CUDA_VISIBLE_DEVICES="" OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 \
 The receipt contains checkpoint paths, SHA-256 digests, steps, feature/PID
 contract agreement, encoder key coverage, and exact tensor equality. Content
 equality is the lineage evidence even if a serialized historical path no
-longer resolves. `--allow-finetuned-encoder` is for a future intentionally
-fine-tuned run and must be disclosed; it is not appropriate for this frozen
-pair.
+longer resolves. Later encoder-adaptation studies require the explicit
+`--allow-finetuned-encoder` flag and their recorded transfer lineage: changed
+encoder tensors cannot pass a frozen bit-equality test. The flag permits
+compatible changed tensors; it does not establish bit-exact frozen transfer
+and is not appropriate for the historical frozen pair above.
 
-An offline validation invocation is:
+The corresponding historical offline validation invocation is:
 
 ```bash
-CUDA_VISIBLE_DEVICES="" OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 \
+CUDA_VISIBLE_DEVICES="" OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 \
   ./.venv/bin/python scripts/evaluate_full_decay.py \
   --pretraining-checkpoint \
   artifacts/runs/ht-pretrain-production-1m-h100-20260821/20260812/15933802/checkpoint-step-54064.pt \
@@ -466,10 +471,13 @@ CUDA_VISIBLE_DEVICES="" OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 \
   --split validation \
   --scope both \
   --max-events 100 \
-  --threads 4 \
+  --threads 2 \
   --output artifacts/evaluation/full_decay_validation.json
 ```
 
+For new studies, substitute the receipt-bound checkpoint, selection and index
+paths together; the dated selection/index example above predates the documented
+[16-key repromotion](training_selection_repromotion_20260831.md).
 `--data` is the schema-v4 training-selection manifest bound to the promoted
 dataset index, not a raw Parquet list, a basf2 mDST file, or a GraFEI `.npy`
 file. A source-role index cannot safely be replayed by rehashing raw paths; the
@@ -477,7 +485,7 @@ loader rejects that combination. The manifest and index together fix source
 roles and deterministic splits. For validation, the default
 `--event-selection auto` restores the ordered checkpoint rollout UID cohort
 and the checkpoint's learned-confidence policy; `stream` is explicitly
-diagnostic. The currently promoted index contains no `test` role, so test
+diagnostic. The historical index above contains no `test` role, so test
 evaluation requires a separately materialized, immutable test-bound index
 rather than relabeling validation. Use `test` only after the policy and
 thresholds have been fixed on validation. Small smoke

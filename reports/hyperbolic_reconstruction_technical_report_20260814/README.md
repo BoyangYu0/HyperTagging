@@ -2,6 +2,8 @@
 
 This directory contains the delivered portable HTML report, deterministic evidence snapshot, canonical report artifact, and builder audit receipt for the technical report dated 2026-08-14. `report.html` is the primary reader-facing surface.
 
+All readiness statements and commands below refer to that dated source and evidence snapshot. Regeneration against a later checkout may fail its source checks; preserve the delivered evidence and use the original revision when reproducing it.
+
 The artifact status is `partial`. Repository data/publication evidence, CPU-tested model construction, capacity metadata, and bounded diagnostic execution are available. Long GPU convergence, free-rollout scientific quality, category/channel robustness, calibration, and sealed-test results are absent. Three serialized scientific-submission blockers remain active, and the physical-relation-only named ablation arm is not yet present.
 
 ## Package contents

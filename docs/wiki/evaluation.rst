@@ -68,6 +68,13 @@ optimization diagnostics rather than reconstruction efficiencies.
 Canonical rollout metrics
 ---------------------------------
 
+The rollout ``micro_complete_target_efficiency`` matches eligible mothers by
+recursive detector-source set and mother PID. It does not require matching
+internal daughter topology, so its target-level percentage is distinct from
+strict LCAG or full-event reconstruction. It is a rollout metric, not
+teacher-forced query accuracy. Preserve these historical definitions when
+comparing existing checkpoint tracks.
+
 :py:mod:`hypertagging.evaluation.hierarchical_metrics` represents leaves by
 source identity and mothers by PID plus recursively sorted daughter signatures.
 Generated composite node numbers therefore do not affect canonical matching.
@@ -83,7 +90,8 @@ Generated composite node numbers therefore do not affect canonical matching.
        conventions belong to this helper and differ from unavailable ratios.
    * - Full-tree / canonical-subtree exact match
      - Equality of canonical trees / overlap of canonical subtree signatures.
-       A valid tree can still be entirely wrong under these criteria.
+       Subtree overlap includes unchanged input leaves and can be high with
+       no reconstructed edges. A valid tree can still have incorrect topology.
    * - Mother-type / leaf-assignment accuracy
      - Agreement of matched mother types / assigned leaf sources under the
        canonical comparison. Source-aligned diagnostics additionally use
@@ -95,7 +103,9 @@ Generated composite node numbers therefore do not affect canonical matching.
      - Canonical signature mismatch diagnostic; not a general optimal graph
        edit distance.
    * - First divergence / root success
-     - First differing generation level and agreement of reconstructed roots.
+     - First differing generation level; legacy root success means any shared
+       root signature, including an isolated input leaf. It is not configured
+       Upsilon construction or strict full-root recovery.
    * - Tree validity / p4 closure
      - Structural acyclicity, parent and level checks / mother p4 agreement with
        daughter sums at tolerance. These test construction consistency.

@@ -127,6 +127,13 @@ def canonical_tree_metrics(
     predicted: dict[str, torch.Tensor],
     truth: dict[str, torch.Tensor],
 ) -> CanonicalTreeMetrics:
+    """Legacy all-node/forest diagnostics, including persistent input leaves.
+
+    ``root_reconstruction_success`` means any matching forest root, including
+    an isolated detector leaf. ``subtree_exact_match`` also counts leaves;
+    neither is a full-decay or mother-only reconstruction efficiency.
+    """
+
     predicted_signatures = canonical_tree_signatures(predicted)
     truth_signatures = canonical_tree_signatures(truth)
     predicted_counter = Counter(predicted_signatures.values())
@@ -545,7 +552,12 @@ def complete_target_efficiency_counts(
     *,
     target_policy: str = "complete_only",
 ) -> tuple[int, int]:
-    """Count exactly reconstructed eligible mothers using recursive sources."""
+    """Count eligible mother recovery by exact source set and mother PID.
+
+    This historical checkpoint-selection metric does not compare internal
+    daughter grouping or recursive topology. Full-decay exact-tree and LCAG
+    metrics measure those additional requirements on their own populations.
+    """
 
     eligible_total = correct = 0
     for event_index in range(truth["node_mask"].shape[0]):

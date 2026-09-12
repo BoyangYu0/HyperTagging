@@ -32,6 +32,8 @@ def dataset_capacity_statistics(
     global_max_cardinality: int | None = None,
     target_policy: str = "complete_only",
 ) -> CapacityStatistics:
+    if target_policy not in {"complete_only", "reconstructable_partial", "diagnostic_all"}:
+        raise ValueError(f"unknown reconstruction target policy: {target_policy}")
     per_level: dict[int, list[int]] = {}
     cardinality_counts: Counter[int] = Counter()
     query_overflow = 0
@@ -52,8 +54,6 @@ def dataset_capacity_statistics(
                 eligible &= event.valid_reconstruction_target
             if target_policy == "complete_only":
                 eligible &= event.recursive_reconstructable_complete
-            elif target_policy != "reconstructable_partial":
-                raise ValueError(f"unknown reconstruction target policy: {target_policy}")
             mothers = eligible.nonzero(as_tuple=False).flatten()
             count = int(mothers.numel())
             per_level.setdefault(level, []).append(count)

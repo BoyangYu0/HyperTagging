@@ -107,12 +107,16 @@ Capacity overflow is explicit rather than silently dropping excess targets.
    * - ``cardinality``
      - Cross-entropy for the number of daughters of each matched mother.
    * - ``confidence``
-     - BCE to a detached target: thresholded daughter-set Jaccard multiplied by
-       correct mother type and recursive-source validity; unmatched targets
-       are zero. Rollout uses learned confidence only when marked trained.
+     - BCE to a detached target: daughter-set Jaccard at pointer threshold 0.5,
+       multiplied by correct mother type and within-candidate source-conflict
+       validity; unmatched targets are zero. This target precedes inference
+       cardinality/top-k, configured pointer threshold, charge and cross-query
+       selection. Its calibration is not calibration of completed beam trees.
+       Rollout uses learned confidence only when marked trained.
    * - ``physics``
      - Scaled mean squared p4 residual plus charge MSE between soft pointer sums
-       and the target's reconstructed daughter sum. There is no free mother p4
+       and the truth-selected sum of current PID-refined daughters. Stored
+       future-mother p4 does not supply this target. There is no free mother p4
        regression head or MC mother momentum target.
    * - ``source_conflict``
      - Differentiable penalty for selecting recursively overlapping sources,

@@ -1,8 +1,10 @@
 # Historical migration provenance
 
 This consolidated record preserves the migration decisions and historical
-source mapping that previously lived in two root-level notes. It describes
-the repository through Phase 13 and is not a current readiness statement.
+source mapping that previously lived in two root-level notes. It preserves
+the Phase 1–13 migration history and the later schema-v4/runtime addenda below;
+those addenda do not describe the Phase-13 implementation. This is not a
+current readiness statement.
 Use the [current audit](audits/current_status.md) for mutable status and the
 [README](../README.md) for the active repository guide.
 
@@ -194,8 +196,8 @@ For every migrated component, record:
 
 ## Repository Map
 
-This snapshot records how the historical repositories mapped onto the unified
-package surface through Phase 13.
+This section records the historical repository mapping. The unified-package
+surface and revised-inspection subsections include later v4/runtime annotations.
 
 ### Historical Repository Roles
 

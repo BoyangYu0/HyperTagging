@@ -105,6 +105,7 @@ class LevelAutoregressiveReconstructor(nn.Module):
                 n_pid=len(PDG_TOKENS),
                 hidden_dim=hidden_dim,
                 hyper_dim=hyper_dim,
+                curvature=curvature,
                 hyper_projection_init_scale=hyper_projection_init_scale,
                 tangent_scale_mode=tangent_scale_mode,
             )
@@ -127,11 +128,17 @@ class LevelAutoregressiveReconstructor(nn.Module):
             )
         else:
             raise ValueError(f"Unknown encoder_mode: {encoder_mode}")
-        self.flat_relation_bias = RelationBias(hidden_dim=hidden_dim, enabled=use_relation_bias)
+        self.flat_relation_bias = RelationBias(
+            hidden_dim=hidden_dim, enabled=use_relation_bias, curvature=curvature
+        )
         self.flat_contextualizer = RelationAwareSetTransformer(
             hidden_dim,
             n_heads=n_heads,
             n_layers=n_context_layers,
+            # Preserve the registered unused flat-module tensor shapes in
+            # heterogeneous checkpoints while honoring the active flat path.
+            feedforward_dim=ffn_dim if encoder_mode == "flat" else None,
+            dropout=dropout if encoder_mode == "flat" else 0.0,
         )
         self.decoder = MotherPointerDecoder(
             hidden_dim=hidden_dim, n_types=n_types, n_queries=n_queries,
@@ -319,6 +326,7 @@ class LevelAutoregressiveReconstructor(nn.Module):
             )
             hyperbolic_relation_bias = None
             hyperbolic_attention_weights = None
+            reconstruction_projection = h
             reconstruction_h = reconstruction_projection
             leaf_pid_logits = self.leaf_pid_head(reconstruction_h)
             current_probabilities = None

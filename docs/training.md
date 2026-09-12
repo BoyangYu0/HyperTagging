@@ -3,7 +3,7 @@
 ## Local CPU verification
 
 ```bash
-python -m pytest -q
+CUDA_VISIBLE_DEVICES="" OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 python -m pytest -q
 python scripts/train_hyperbolic_pretrain.py \
   --dry-run --tiny --device cpu --max-steps 2 --batch-size 2
 python scripts/train_level_reconstruction.py \
@@ -23,17 +23,17 @@ documentation build then regenerates the dashboard. The canonical evidence,
 privacy, validation, GitHub deployment, and GitLab-mirror procedure is in
 [`docs/wiki/maintaining.rst`](wiki/maintaining.rst).
 
-The real-parquet CPU pilot path is separate from the fixture-only dry run:
-
-Model architecture is resolved from one of `tiny_cpu`, `gpu_debug`, or
-`production_baseline`; every dimension and level-specific query/cardinality
-override is serialized into the checkpoint. For example:
+Model architecture is resolved from `tiny_cpu`, `gpu_debug`, `small_candidate`,
+or `production_baseline`; every dimension and level-specific query/cardinality
+override is serialized into the checkpoint. Within an allocated production
+job, use an immutable source-role selection and its authenticated index:
 
 ```bash
 python scripts/train_level_reconstruction.py \
   --config configs/model_presets/production_baseline.yaml \
-  --data /data/volume/manifest.jsonl \
+  --data /data/volume/train-selection.json \
   --dataset-index /data/volume/dataset_index.json \
+  --scientific-mode \
   --pretrained-encoder /data/volume/pretrain/checkpoint.pt \
   --device cuda --output-dir /data/volume/reconstruction
 ```
@@ -43,6 +43,9 @@ coverage below the configured minimum unless the explicit low-coverage
 override is supplied. Exact single-worker resume replays the deterministic
 epoch iterator through the stored batch index; no unused parquet row-group
 cursor is claimed.
+
+The real-parquet CPU pilot below is diagnostic and separate from scientific
+selection and from the fixture-only dry run:
 
 ```bash
 python scripts/train_hyperbolic_pretrain.py \
@@ -106,6 +109,15 @@ teacher-forced/free-rollout results. Full evaluation helpers report exact tree
 match, edge precision/recall/F1, validity, p4 closure, node count, and maximum
 depth. Production reporting should additionally group reconstruction
 efficiency by channel, multiplicity, and depth.
+
+The rollout `micro_complete_target_efficiency` counts eligible mothers whose
+recursive detector-source set and mother PID are recovered. It does not compare
+their internal daughter topology and is not a teacher-forced accuracy or a
+full-tree success rate. A mother with the correct leaf set and type can pass
+this metric while its intermediate hierarchy fails strict LCAG. The legacy
+`root_reconstruction_success` accepts any matching root signature, including
+an isolated input leaf; `canonical_subtree_exact_match` also includes leaves.
+Use the strict full-decay metrics for hierarchical reconstruction claims.
 
 Reconstruction writes independent `best_teacher_forced.pt`,
 `best_rollout_edge_f1.pt`, and `best_rollout_tree_validity.pt` tracks, plus
@@ -330,9 +342,13 @@ Pointer decoding applies target-level
 and node masks, recursive-source conflicts, charge/type compatibility where
 configured, and a minimum pointer probability in addition to cardinality.
 
-`complete_only` is not complete full-event reconstruction: it excludes targets
-made incomplete by neutrinos, K_L treatment, acceptance/reconstruction loss,
-or other missing daughters. Explicit policy configs live under
+`complete_only` requires valid retained mothers and recursive reconstructed
+support within the retained forest. It does not require full-truth completeness:
+the native producer drops absent truth leaves before computing this retained
+completeness, so `partial_missing_daughters=True` can coexist with recursive
+completeness. The two policies can therefore select the same native targets
+even when physical daughters are missing. Full physical completeness and strict
+root representability need separate denominators. Explicit policy configs live under
 `configs/target_policies/`; their metric namespaces and denominators must never
 be merged. Run `scripts/report_reconstruction_capacity.py` against the exact
 policy-specific dataset index before production training. It reports every

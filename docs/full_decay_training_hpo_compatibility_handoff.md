@@ -1,5 +1,11 @@
 # Full-decay evaluator compatibility handoff
 
+This is a historical, source-bound handoff for the revisions named below.
+Its pending-review and next-action instructions describe that candidate at
+the time; current behavior is documented in
+[full_decay_reconstruction_evaluation.md](full_decay_reconstruction_evaluation.md)
+and current status in [audits/current_status.md](audits/current_status.md).
+
 This handoff is the training/HPO integration record for the CPU-only offline
 full-decay evaluator. It covers schema-v4 preprocessed-mDST input only; it is
 not a basf2 or GraFEI reconstruction path. The machine-readable mirror is

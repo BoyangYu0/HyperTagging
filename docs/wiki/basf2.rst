@@ -91,6 +91,17 @@ environment. Event processing consumes a hash-checked ONNX bundle whose
 manifest fixes tensor shapes, feature/PID contracts, normalizers, policy and
 compatible releases. It does not load training checkpoints during events.
 
+The v1 runtime retains coherent proposal subsets across levels and ranks by
+the manifest's ``sum_confidence`` policy. It decodes one type/daughter choice
+per query. This differs from the strict offline full-depth beam's alternative
+enumeration and scoring; their search performance requires a paired validation
+comparison.
+
+The v1 export contract requires identical query and daughter-cardinality
+counts across exported levels. Scientific checkpoints with different
+per-level capacities need a runtime/manifest extension before full-bundle
+export; reshaping their trained heads would change the model.
+
 .. code-block:: python
 
    from hypertagging.basf2_integration import add_hypertagging_full_decay

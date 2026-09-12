@@ -107,6 +107,8 @@ def inference_diagnostics(
     recursive_sources_disjoint = conflicting_mother_count == 0
     node_kinds = batch["node_kind_ids"][event_index].detach().cpu()
     composite = active & (node_kinds == NODE_KIND_TO_ID["composite"])
+    committed_usage = detector_sources[roots & composite].sum(dim=0)
+    committed_source_conflicts = int((committed_usage > 1).sum())
     input_fsp_roots = roots & ~composite
     stop_code = int(result.rollout.stop_code[event_index])
     empty_level_count = (
@@ -120,6 +122,7 @@ def inference_diagnostics(
         and parent_consistent
         and duplicate_sources == 0
         and recursive_sources_disjoint
+        and committed_source_conflicts == 0
     )
 
     return {
@@ -153,6 +156,8 @@ def inference_diagnostics(
         "duplicate_root_detector_resource_count": duplicate_detector_sources,
         "detector_resource_count": detector_source_width,
         "recursive_detector_sources_disjoint": recursive_sources_disjoint,
+        "committed_forest_detector_sources_disjoint": committed_source_conflicts == 0,
+        "committed_forest_source_conflict_count": committed_source_conflicts,
         "source_conflicting_mother_count": conflicting_mother_count,
         "source_conflicting_detector_resource_count": (
             conflicting_detector_resource_count

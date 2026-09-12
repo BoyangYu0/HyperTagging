@@ -167,8 +167,42 @@ def load_heterogeneous_events(
     return output
 
 
+def _with_reconstructed_composite_charges(
+    nodes: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Adapt stored mothers to recursive reco charge without mutating records.
+
+    Older v4 shards can store MC mother charge in their common block.  Rebuild
+    only model charge fields from detector leaves; truth labels and immutable
+    shard bytes remain unchanged.  Nodes are already ordered children first by
+    reconstruction height.
+    """
+
+    charges: dict[int, float] = {}
+    output: list[dict[str, Any]] = []
+    for node in nodes:
+        daughters = node.get("daughter_ids", [])
+        if daughters:
+            charge = sum(charges[int(child_id)] for child_id in daughters)
+            node = {
+                **node,
+                "charge": charge,
+                "reco_charge": charge,
+                "common_features": {**node["common_features"], "charge": charge},
+                "composite_features": {
+                    **node["composite_features"], "summed_charge": charge
+                },
+            }
+        else:
+            charge = float(node.get("reco_charge", node.get("charge", 0.0)) or 0.0)
+        charges[int(node["node_id"])] = charge
+        output.append(node)
+    return output
+
+
 def _event_from_record(event: dict[str, Any]) -> HeterogeneousEvent:
     nodes = sorted(event["nodes"], key=lambda node: (int(node["level"]), int(node["node_id"])))
+    nodes = _with_reconstructed_composite_charges(nodes)
     id_to_position = {int(node["node_id"]): index for index, node in enumerate(nodes)}
     count = len(nodes)
     adjacency = torch.zeros((count, count), dtype=torch.bool)

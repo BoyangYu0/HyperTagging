@@ -235,7 +235,10 @@ def _ci_projection(payload: Any) -> dict[str, Any]:
 
 def _collect(payloads: dict[str, Any], revision: str | None) -> dict[str, Any]:
     current = payloads.get("current_status")
-    recommendation = re.search(r"(?m)^## Recommendation:\s*(NO[-_]GO|GO)\s*$", current) if isinstance(current, str) else None
+    recommendation = re.search(
+        r"(?m)^## (?:Recommendation|Historical production recommendation at the generated audit boundary):\s*(NO[-_]GO|GO)\s*$",
+        current,
+    ) if isinstance(current, str) else None
     ledger = _mapping(payloads.get("issue_ledger"))
     items = [item for item in _list(ledger.get("items")) if isinstance(item, dict)]
     counts = Counter(_enum(item.get("current_status"), _ISSUE_STATUSES) for item in items)

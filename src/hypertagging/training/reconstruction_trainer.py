@@ -1549,7 +1549,8 @@ def _optimization_loss(
                 & context["truth_pid_available"]
             )
             if (
-                target_level == first_selected_level.get(batch_index)
+                ALL_ABLATIONS[config.ablation].leaf_pid
+                and target_level == first_selected_level.get(batch_index)
                 and output.leaf_pid_logits is not None
                 and raw_tracks.any()
             ):

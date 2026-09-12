@@ -16,7 +16,7 @@ data name/path, checkpoint, seed, and pass/NOT RUN status.
 Run the default deterministic CPU set with:
 
 ```bash
-/data/dust/user/boyangyu/uv_env/bin/python \
+python \
   scripts/execute_notebook_smoke_tests.py \
   --keep-output /tmp/hypertagging-current-head-notebooks
 ```

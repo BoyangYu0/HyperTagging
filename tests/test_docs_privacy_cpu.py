@@ -79,6 +79,21 @@ def test_search_index_words_are_typed_document_references_not_private_fields(tmp
     _write(tmp_path, "searchindex.js", "Search.setIndex(" + json.dumps(_search_index()) + ")")
     assert privacy.validate_artifact(tmp_path)["privacy"] == "PASS"
 
+def test_search_index_numeric_references_do_not_invent_private_identifiers(tmp_path, monkeypatch):
+    index = _search_index()
+    index["docnames"] = [f"api/module_{i}" for i in range(8)]
+    index["filenames"] = [f"api/module_{i}.rst" for i in range(8)]
+    index["titles"] = [f"Public module {i}" for i in range(8)]
+    index["terms"] = {"module": list(range(8))}
+    monkeypatch.setattr(privacy, "sensitive_literals", lambda root: {"01234567"})
+    site = tmp_path / "site"
+    _write(site, "searchindex.js", "Search.setIndex(" + json.dumps(index) + ")")
+    assert privacy.validate_artifact(site, root=tmp_path)["privacy"] == "PASS"
+    index["titles"][0] = "Recorded identifier 01234567"
+    _write(site, "searchindex.js", "Search.setIndex(" + json.dumps(index) + ")")
+    with pytest.raises(ValueError, match="private-source-literal"):
+        privacy.validate_artifact(site, root=tmp_path)
+
 def test_signature_defaults_are_elided_recursively_without_losing_dotted_names():
     value = "Example._run(self, value=Path('OPAQUE_PRIVATE_TOKEN'), *, config={'api_key': 'OPAQUE_NESTED_TOKEN'}) -> str"
     result = privacy.safe_signature(value)

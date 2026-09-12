@@ -31,7 +31,7 @@ from hypertagging.reconstruction.constraints import REDUCED_TOKEN_CHARGE
 from hypertagging.utils.tensor_contractions import boolean_matmul
 
 
-LEVEL_ROLLOUT_POLICY_VERSION = "level-rollout-source-isolation-v2"
+LEVEL_ROLLOUT_POLICY_VERSION = "level-rollout-source-isolation-v3"
 
 
 def rollout_policy_identity(
@@ -48,6 +48,7 @@ def rollout_policy_identity(
         ),
         "root_candidate_policy": "unparented_nodes_only",
         "recursive_source_conflict_policy": "reject",
+        "committed_forest_source_policy": "reserve_across_generations",
         "evaluation_leaf_source_keys_axis": "source",
     }
     encoded = json.dumps(contract, sort_keys=True, separators=(",", ":")).encode(
@@ -187,6 +188,33 @@ def _resolved_rollout_constraint_policy(
     )
 
 
+def _exclude_committed_source_aliases(
+    batch: dict[str, torch.Tensor], valid: torch.Tensor
+) -> torch.Tensor:
+    """Reserve sources already consumed by a surviving composite root.
+
+    Unused detector aliases may remain as isolated inputs. They cannot form a
+    second branch after another alias was committed in an earlier generation;
+    the composite itself remains eligible to become a daughter.
+    """
+    sources = batch.get("recursive_leaf_source_mask")
+    adjacency = batch.get("daughter_adjacency")
+    if sources is None or adjacency is None:
+        return valid
+    parentless = (
+        batch["parent_ids"] < 0
+        if "parent_ids" in batch
+        else ~adjacency.bool().any(dim=1)
+    )
+    committed = batch["node_mask"].bool() & parentless & adjacency.bool().any(dim=-1)
+    overlaps = boolean_matmul(sources, sources.transpose(1, 2))
+    identity = torch.eye(
+        valid.shape[-1], dtype=torch.bool, device=valid.device
+    ).unsqueeze(0)
+    aliases = (overlaps & ~identity & committed[:, None, :]).any(dim=-1)
+    return valid & ~aliases
+
+
 def _constrained_rollout_model_batch(
     batch: dict[str, torch.Tensor],
     *,
@@ -203,6 +231,8 @@ def _constrained_rollout_model_batch(
     pointer_validity = policy.pointer_validity_mask(batch, target_level)
     if "parent_ids" in batch:
         pointer_validity &= batch["parent_ids"] < 0
+    if policy.reject_recursive_source_conflicts:
+        pointer_validity = _exclude_committed_source_aliases(batch, pointer_validity)
     result["allowed_type_mask"] = allowed
     result["type_logit_bias"] = type_bias
     result["pointer_validity_mask"] = pointer_validity
@@ -236,6 +266,8 @@ def hard_decode_proposals(
             "after the initial FSP-only level"
         )
     context = output.context_mask[0] & parentless
+    if policy.reject_recursive_source_conflicts:
+        context = _exclude_committed_source_aliases(batch, context[None])[0]
     context_positions = context.nonzero(as_tuple=False).flatten()
     proposals: list[CompositeProposal] = []
     for query_id in range(output.pointer.object_logits.shape[1]):
@@ -2009,6 +2041,8 @@ def batched_decode_level(
         & policy.pointer_validity_mask(batch, output.target_level)
         & (batch["parent_ids"] < 0)
     )
+    if policy.reject_recursive_source_conflicts:
+        valid_nodes = _exclude_committed_source_aliases(batch, valid_nodes)
     candidates = (
         valid_nodes[:, None]
         & torch.isfinite(pointer_probabilities)
@@ -2362,6 +2396,10 @@ def _batched_event_structural_validity(
         if provenance is None:
             continue
         event_sources = provenance[batch_index].bool()
+        committed_roots = nodes & (indegree == 0) & adjacency.any(dim=-1)
+        if bool((event_sources[committed_roots].sum(dim=0) > 1).any()):
+            output[batch_index] = False
+            continue
         for mother in nodes.nonzero(as_tuple=False).flatten().tolist():
             daughters = adjacency[mother].nonzero(as_tuple=False).flatten()
             if daughters.numel() < 2:

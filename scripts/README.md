@@ -4,8 +4,9 @@ Command-line entry points added during migration phases support CPU dry-runs
 before full GPU/HPC execution paths.
 
 The `create_*_inspection_notebook.py` generators and
-`execute_notebook_smoke_tests.py` provide deterministic v1/v2 fixture
-inspection. They are CPU-only and never submit Condor jobs.
+`execute_notebook_smoke_tests.py` provide deterministic schema-v4 fixture
+inspection, with v1-v3 and direct-GPT compatibility groups identified in
+`notebooks/index.yaml`. They are CPU-only and never submit batch jobs.
 
 Examples:
 
@@ -46,5 +47,7 @@ and not GraFEI `pairs`. It hides CUDA, restores the serialized model/data
 contracts on CPU, projects to detector FSPs only, and keeps higher-level
 particles exclusively in the metric view. The full scientific contract is in
 `docs/full_decay_reconstruction_evaluation.md`; training/HPO integration
-invariants and open throughput work are tracked in
-`docs/full_decay_training_hpo_compatibility_handoff.md` and its JSON companion.
+invariants are described in the current evaluation guide. The source-bound
+historical integration review is retained in
+`docs/full_decay_training_hpo_compatibility_handoff.md` and its JSON companion;
+its blocked-action instructions apply only to the recorded candidate revision.

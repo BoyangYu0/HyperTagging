@@ -48,7 +48,7 @@ from hypertagging.utils.tensor_contractions import boolean_matmul
 
 
 InferenceScope = Literal["full", "half"]
-OFFLINE_INFERENCE_POLICY_VERSION = "fsp-forest-root-empty-level-soft-type-pid-parity-v2"
+OFFLINE_INFERENCE_POLICY_VERSION = "fsp-forest-root-empty-level-soft-type-pid-parity-source-exclusive-v3"
 
 FULL_ROOT_TOKEN = TOKENIZE_DICT[300553]
 DEFAULT_HALF_ROOT_TOKENS: tuple[int, ...] = tuple(

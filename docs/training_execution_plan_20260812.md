@@ -1,5 +1,11 @@
 # HyperTagging training execution plan — 2026-08-12
 
+Historical plan, including its dated updates through 2026-08-21. Findings,
+host availability, submission restrictions and proposed next tranches below
+describe those revisions; they are not the current experiment state. Use
+[current training guidance](training.md), the dated campaign receipts and
+[current audit status](audits/current_status.md) for later work.
+
 ## Decision and evidence boundary
 
 The first production path remains single-GPU, level-autoregressive set

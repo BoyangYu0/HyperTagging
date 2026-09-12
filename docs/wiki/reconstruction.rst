@@ -122,5 +122,7 @@ reconstruction lineage before evaluation of immutable validation/test
 selections. :py:mod:`hypertagging.deployment` exports manifest-bound ONNX level
 graphs, and :py:mod:`hypertagging.basf2_integration` constructs fresh candidates
 inside basf2. See :doc:`basf2` for integration. CPU beam fixtures establish
-search behavior; current trained beam physics performance is unavailable in
-the dashboard evidence.
+search behavior. The dated campaign pages report the separate proposal-set
+ranking diagnostic (``--beam-width N`` without ``--beam-search``); those results
+do not establish trained full-depth beam performance. Candidate populations
+and scoring must match before comparing either search with greedy.

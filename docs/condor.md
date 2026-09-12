@@ -1,6 +1,8 @@
 # HTCondor Workflow
 
-Full HyperTagging preprocessing and training should run through HTCondor.
+This page describes the HTCondor workflow. Real production and training use
+the site's existing guarded Slurm or HTCondor workflow; the current one-GPU
+Slurm environment is documented in [environment/gpu/README.md](../environment/gpu/README.md).
 
 1. Edit `configs/condor/default.yaml` to set the requested CPUs, memory, GPUs,
    and runtime.
@@ -8,7 +10,7 @@ Full HyperTagging preprocessing and training should run through HTCondor.
 
 ```bash
 python scripts/condor/render_condor_job.py --config configs/condor/default.yaml \
-  --command 'uv --cache-dir /tmp/uv-cache run python scripts/train_level_reconstruction.py --data /data/volume/manifest.jsonl --pretrained-encoder /data/volume/pretrain/checkpoint.pt --device cuda --max-steps 1000 --output-dir /data/volume/reconstruction' \
+  --command 'python scripts/train_level_reconstruction.py --data /data/volume/train-selection.json --dataset-index /data/volume/dataset_index.json --scientific-mode --pretrained-encoder /data/volume/pretrain/checkpoint.pt --device cuda --max-steps 1000 --output-dir /data/volume/reconstruction' \
   --output outputs/condor/level_reconstruction.sub
 ```
 
@@ -33,7 +35,7 @@ for ablation in flat_baseline heterogeneous_only contextual_euclidean \
 do
   python scripts/condor/render_condor_job.py \
     --config configs/condor/default.yaml \
-    --command "python scripts/train_level_reconstruction.py --data /data/volume/manifest.jsonl --pretrained-encoder /data/volume/pretrain/${ablation}/checkpoint.pt --device cuda --ablation ${ablation} --max-steps 100000 --output-dir /data/volume/reconstruction/${ablation}" \
+    --command "python scripts/train_level_reconstruction.py --data /data/volume/train-selection.json --dataset-index /data/volume/dataset_index.json --scientific-mode --pretrained-encoder /data/volume/pretrain/${ablation}/checkpoint.pt --device cuda --ablation ${ablation} --max-steps 100000 --output-dir /data/volume/reconstruction/${ablation}" \
     --output "outputs/condor/${ablation}.sub"
 done
 ```
@@ -64,8 +66,10 @@ worker verifies a clean exact-commit/tree checkout and task hash before basf2,
 then passes the full campaign provenance plus schema, leaf mode,
 charge-conjugation, track-fit, buffer, row-group, and KLM-scope settings. It
 parses the completion marker and compares hashes, sidecar, Parquet metadata,
-source identity, and exact source range with the manifest. Training consumes the exact
-`output_file` JSONL format emitted by `mdst_batch_production.py`.
+source identity, and exact source range with the manifest. Diagnostic loading
+accepts the `output_file` JSONL format emitted by `mdst_batch_production.py`.
+Scientific training instead consumes an immutable source-role selection plus
+its authenticated dataset index, as in the rendering examples above.
 
 Render the prerequisite gates without submission:
 

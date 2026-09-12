@@ -129,8 +129,24 @@ class Hypothesis:
         return tuple(
             sorted(
                 (
+                    node.node_id,
                     node.level,
+                    node.input_token,
                     node.current_token,
+                    node.pdg,
+                    node.kind_id,
+                    node.leaf_mode_id,
+                    node.p4,
+                    node.charge,
+                    node.candidate_confidence,
+                    node.common_features,
+                    node.common_availability,
+                    node.track_features,
+                    node.track_availability,
+                    node.cluster_features,
+                    node.cluster_availability,
+                    node.klm_features,
+                    node.klm_availability,
                     tuple(sorted(node.source_keys)),
                     tuple(sorted(node.daughter_ids)),
                     node.parent_id,
@@ -482,6 +498,7 @@ class BeamSearchReconstructor:
                 kind_valid = True
             pointer_valid[0, position] = (
                 kind_valid and node.parent_id < 0 and node.level < int(level)
+                and not _aliases_committed_composite(node, nodes)
             )
         result["pointer_validity_mask"] = pointer_valid
         return result
@@ -581,6 +598,7 @@ class BeamSearchReconstructor:
             if (
                 node.parent_id < 0
                 and node.level < level
+                and not _aliases_committed_composite(node, nodes)
                 and (
                     node.kind_id in valid_leaf_kinds | valid_composite_kinds
                     or (
@@ -837,6 +855,17 @@ class BeamSearchReconstructor:
         )
 
 
+def _aliases_committed_composite(node: Node, nodes: Sequence[Node]) -> bool:
+    """Exclude unused aliases of detector resources consumed in prior levels."""
+    return any(
+        other.node_id != node.node_id
+        and other.parent_id < 0
+        and other.daughter_ids
+        and node.source_keys & other.source_keys
+        for other in nodes
+    )
+
+
 def _common_block(node: Node) -> tuple[np.ndarray, np.ndarray]:
     if node.common_features:
         values = np.asarray(node.common_features, dtype=np.float32)
@@ -867,7 +896,17 @@ def _common_block(node: Node) -> tuple[np.ndarray, np.ndarray]:
     values[11] = node.candidate_confidence
     available[[0, 1, 2, 3, 4, 5, 10]] = True
     available[[6, 7, 8, 9]] = False
-    available[11] = node.candidate_confidence > 0.0
+    if node.level > 0:
+        # A decoded score of zero is still an observed reconstruction score.
+        available[11] = True
+    elif not node.common_features:
+        # Track candidate confidence is the selected fit's p-value.  Its
+        # measurement mask distinguishes an observed zero from missing data.
+        available[11] = (
+            node.track_availability[0]
+            if node.kind_id == NODE_KIND_TRACK and node.track_availability
+            else node.candidate_confidence > 0.0
+        )
     return values, available
 
 
@@ -877,9 +916,10 @@ def _composite_block(
     values = np.zeros((len(FEATURE_NAMES["composite"]),), dtype=np.float32)
     available = np.zeros_like(values, dtype=np.bool_)
     values[:6] = (*node.p4, node.charge, len(daughters))
-    daughter_confidences = [item.candidate_confidence for item in daughters]
-    values[6] = float(np.mean(daughter_confidences)) if daughter_confidences else 0.0
-    values[7] = min(daughter_confidences) if daughter_confidences else 0.0
+    # Offline persistent construction assigns this proposal's confidence to
+    # every selected daughter pointer. Prior daughter candidate scores are a
+    # different feature and must not replace the trained slot semantics.
+    values[6:8] = node.candidate_confidence
     values[8] = 0.0
     available[:9] = True
     return values, available
