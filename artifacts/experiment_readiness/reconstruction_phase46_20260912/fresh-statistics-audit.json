@@ -1,0 +1,20 @@
+{
+  "changed_normalizer_blocks": [
+    "common",
+    "composite"
+  ],
+  "construction": "full_record_scan_not_sidecars",
+  "historical_index_sha256": "d3e61ed35443bdd15176c444cb04ed5ef3e02cc60519e4a1cb1c908f73a9e1ae",
+  "index_path": "artifacts/experiment_readiness/reconstruction_phase46_20260912/train_070k.complete_only.index.json",
+  "index_sha256": "922dc6d8cf76d323fcec57a1dec1d702e0789263c4c6fcefa5cd589924935fcb",
+  "normalizer_scope": "train",
+  "same_training_selection_as_phase45": true,
+  "sealed_test_accessed": false,
+  "source_files": {
+    "scripts/build_dataset_index.py": "6e7028f9283607aedf674c92b6c4df3f9a8dabeb64143d890d8965dc719f935c",
+    "src/hypertagging/data/dataset_index.py": "3e9e26b9cc88d9373c5997f06069f1a783980bbad6a2e6b4f01c920b9baf8c00",
+    "src/hypertagging/data/heterogeneous.py": "a40d1788dd0b708998c331b46c2c539898d34a4d92395d0311df4be9eba3940f"
+  },
+  "status": "PASS",
+  "version": "phase46-fresh-statistics-audit-v1"
+}

@@ -3,6 +3,30 @@
 This is the sole authoritative current audit report. Historical reports under
 `archive/` are immutable evidence snapshots and are not current truth.
 
+## Reconstruction Phase45 review and Phase46 preparation — 2026-09-12
+
+Both Phase45 jobs completed 4,376 steps with consistent training/replay/cohort
+seeds. Both selected 148/3,805 complete target source sets plus mother PID; neither
+passes all strict hierarchy gates. This primary does not require exact recursive
+topology. Native results precede the independent scientific audit fixes and are
+preserved at their immutable source boundary, not relabelled as corrected results.
+
+Every retained full/half root and all 72 returned beam candidates were checked.
+Both arms have full LCAG 12/4,405 and half/component LCAG 11/2,448; coherent forest
+agreement is 0/100. All 3,084 full and 2,439 half/component units are included.
+Average-link beam ranking adds one exact component on its twenty-event subset,
+without improving LCAG counts or coherent forest agreement. All fourteen native
+reports and repeats are verified. Complete exports contain 16,031 original and
+19,036 retained aggregate metrics, 154,860 and 297,566 detailed metrics, 9,179,553
+per-tree/candidate scalars, and 731,754 training-history/checkpoint scalar records.
+
+Hold dataset size at 70,000. Prior scaling did not isolate data volume; Phase42
+did not support longer pretraining. Corrected supervision and train-only statistics
+are the immediate priority. Phase46 is a bounded corrected-source comparison of
+late adaptation versus a fully frozen historical encoder, with a fresh cohort and
+unchanged gates. No automatic promotion or sealed-test access is authorized.
+Publication and training submission validation are recorded below when complete.
+
 ## Independent scientific audit — 2026-09-12 working-tree boundary
 
 The isolated scientific audit starts at `c6e2169` plus the recorded Phase44/45
