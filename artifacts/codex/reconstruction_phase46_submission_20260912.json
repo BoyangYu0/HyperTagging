@@ -1,0 +1,13 @@
+{
+  "automatic_promotion": false,
+  "passed_cpu_tests": 1628,
+  "promotion_authorized": false,
+  "sealed_test_accessed": false,
+  "skipped_cpu_tests": 34,
+  "source_revision": "776a48a74e674d31fc3ddadf705e0167b418a699",
+  "status": "SUBMITTED",
+  "status_date": "2026-09-12",
+  "submission_receipt_sha256": "8fb49f383a713806e47d0fb3290424cbad2c4ec594ac60adf503746edcb35eb6",
+  "task_count": 2,
+  "version": "phase46-submission-snapshot-v1"
+}

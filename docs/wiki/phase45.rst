@@ -116,3 +116,17 @@ validation sample, with matched training/replay
 seeds. All retained-tree and beam checks are mandatory alongside unchanged gates.
 The dashboard records the submission snapshot. No automatic promotion or
 sealed-test access is authorized; historical production NO-GO remains unchanged.
+
+Submission and validation
+-------------------------
+
+Both Phase46 jobs were submitted and released from immutable source
+``776a48a74e674d31fc3ddadf705e0167b418a699`` after the full CPU suite passed
+(1,628 passed, 34 skipped, 117 warnings). Both two-step CPU training smoke checks
+also passed from that frozen checkout. Each job requests one H100 NVL, eight CPUs,
+64 GiB memory and a 36-hour limit, with no requeue or automatic promotion.
+The new cohort excludes 27,509 previously inspected validation events, including
+the independent audit sample; all required overlaps are zero. Fresh train-only
+statistics correct the common and composite blocks. Query and cardinality
+admission report zero overflows. These checks establish software and campaign
+contracts, not trained physics performance.

@@ -3,7 +3,7 @@
 This is the sole authoritative current audit report. Historical reports under
 `archive/` are immutable evidence snapshots and are not current truth.
 
-## Reconstruction Phase45 review and Phase46 preparation — 2026-09-12
+## Reconstruction Phase45 review and Phase46 submission — 2026-09-12
 
 Both Phase45 jobs completed 4,376 steps with consistent training/replay/cohort
 seeds. Both selected 148/3,805 complete target source sets plus mother PID; neither
@@ -25,7 +25,14 @@ did not support longer pretraining. Corrected supervision and train-only statist
 are the immediate priority. Phase46 is a bounded corrected-source comparison of
 late adaptation versus a fully frozen historical encoder, with a fresh cohort and
 unchanged gates. No automatic promotion or sealed-test access is authorized.
-Publication and training submission validation are recorded below when complete.
+Both Phase46 jobs were submitted and released from immutable source
+`776a48a74e674d31fc3ddadf705e0167b418a699`. The full frozen-source CPU suite passed:
+1,628 passed, 34 skipped, 117 warnings; both two-step CPU training smoke checks
+passed. The new validation cohort excludes all 27,509 previously inspected UIDs,
+including the independent audit sample. The fresh train-only index changes common
+and composite normalization statistics and has zero query/cardinality overflows.
+The native Pages publication carries the completed metric downloads and submission
+snapshot; live publication verification is retained with the external review evidence.
 
 ## Independent scientific audit — 2026-09-12 working-tree boundary
 
