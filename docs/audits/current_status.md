@@ -3,6 +3,32 @@
 This is the sole authoritative current audit report. Historical reports under
 `archive/` are immutable evidence snapshots and are not current truth.
 
+## Reconstruction Phase46 review and Phase47 replication — 2026-09-13
+
+Both corrected-source Phase46 jobs completed 4,376 steps with verified contracts,
+receipts, finite checkpoints, balanced replay and exact strict repeats. Late
+adaptation selected 120/3,854 primary source sets plus mother PID; frozen selected
+110/3,854. Frozen instead recovers 9 exact nontrivial components versus 6 control
+in both retained scopes. Every perfect component is two leaves and one mother;
+coherent retained-forest agreement remains 0/100. Neither passes all strict gates.
+
+All 3,106 full and 2,667 half/component units per arm and every one of the 79
+returned beam candidates are checked, including incompatible targets as failed
+trials. All fourteen reports are preserved. Exports contain 16,035 original and
+19,484 retained aggregate metrics, 142,876 and 324,769 detailed metrics,
+9,444,998 per-tree/candidate scalars and 731,740 training-history/checkpoint scalars.
+
+Hold dataset size at 70,000. There is no controlled evidence of data limitation
+or benefit from more pretraining epochs. Corrected pretraining quality remains
+unmeasured. Phase47 is a second-seed replication of late versus frozen adaptation,
+with unchanged scientific code, authenticated Phase46 train-only statistics and
+a fresh cohort excluding prior study and audit UIDs. The primary/topology tradeoff
+requires replication before preferring either approach. No automatic promotion
+or sealed-test access is authorized. See the Phase46 wiki review for complete
+counts, uncertainty, historical synthesis and the dashboard submission snapshot.
+The complete CPU suite passed (1,640 passed, 34 skipped, 117 warnings), and both
+two-step CPU training smoke checks passed.
+
 ## Reconstruction Phase45 review and Phase46 submission — 2026-09-12
 
 Both Phase45 jobs completed 4,376 steps with consistent training/replay/cohort

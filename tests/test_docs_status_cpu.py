@@ -34,6 +34,9 @@ def evidence(tmp_path, monkeypatch):
     monkeypatch.delenv("SOURCE_DATE_EPOCH", raising=False)
     monkeypatch.setattr(status, "_git", lambda *_args: None)
     documents = {
+        "reconstruction_phase46": {"reserved_for_phase46_closeout": True},
+        "reconstruction_phase46_retained": {"reserved_for_phase46_retained": True},
+        "reconstruction_phase47_submission": {"reserved_for_phase47": True},
         "reconstruction_phase44": {"reserved_for_phase44": True},
         "reconstruction_phase44_retained": {"reserved_for_phase44": True},
         "reconstruction_phase45_submission": {"reserved_for_phase45": True},
@@ -151,7 +154,7 @@ def test_status_is_deterministic_and_preserves_record_scope(evidence, tmp_path, 
     assert manifest["pretraining"]["selected_profile_state"] == "NONE_SELECTED"
     assert manifest["pretraining"]["submission_performed"] is False
     assert manifest["pretraining"]["pretraining_success_gate_passed"] is False
-    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 15
+    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 18
     assert manifest["provenance"]["external_filesystem_or_network_artifacts_opened"] is False
     assert source_info(manifest, "issue_ledger")["freshness"]["status"] == "stale"
     assert source_info(manifest, "current_status")["freshness"]["status"] == "unknown"
@@ -648,3 +651,37 @@ def test_phase45_source_boundary_cannot_be_silently_relabelled():
     raw['source_boundary'] = 'corrected_scientific_audit_source'
     with pytest.raises(ValueError, match='source boundary'):
         status._phase41_projection(raw,phase=45,labels=('encoder_lr005_control','encoder_lr010'))
+
+
+def test_phase46_full_metric_downloads_are_lossless(tmp_path):
+    manifest = status.generate_status(ROOT, tmp_path / 'status')
+    record = manifest['reconstruction']['phase46']
+    assert record['source_boundary'] == 'CORRECTED_SCIENTIFIC_AUDIT_SOURCE'
+    for source_key, projected in [('reconstruction_phase46',record),('reconstruction_phase46_retained',record['retained_tree_checks'])]:
+        raw = json.loads((ROOT/status.SOURCE_PATHS[source_key]).read_text())
+        binding = projected['metric_download']
+        content = (tmp_path/'status'/binding['filename']).read_bytes()
+        assert hashlib.sha256(content).hexdigest() == binding['sha256']
+        assert len(content) == binding['bytes']
+        assert json.loads(content)['metric_rows'] == raw['metric_rows']
+        assert binding['metric_count'] == len(raw['metric_rows'])
+    assert record['retained_tree_checks']['arms']['late_adaptation_control']['beam_candidate_count'] == 40
+    assert record['retained_tree_checks']['arms']['frozen_encoder']['beam_candidate_count'] == 39
+    assert (tmp_path/'status/status.json').stat().st_size < 10 * 1024 * 1024
+
+
+@pytest.mark.parametrize('change',['missing','duplicate','beam'])
+def test_phase46_incomplete_retained_metrics_cannot_publish(change):
+    raw = json.loads((ROOT/status.SOURCE_PATHS['reconstruction_phase46_retained']).read_text())
+    if change == 'missing': raw['metric_rows'].pop()
+    if change == 'duplicate': raw['metric_rows'].append(raw['metric_rows'][0])
+    if change == 'beam': raw['all_returned_beam_candidates_checked'] = False
+    with pytest.raises(ValueError):
+        status._phase46_retained_projection(raw)
+
+
+def test_phase46_source_boundary_cannot_be_silently_relabelled():
+    raw = json.loads((ROOT/status.SOURCE_PATHS['reconstruction_phase46']).read_text())
+    raw['source_boundary'] = 'pre_scientific_audit_fixes'
+    with pytest.raises(ValueError, match='source boundary'):
+        status._phase41_projection(raw,phase=46,labels=('late_adaptation_control','frozen_encoder'))
