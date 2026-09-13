@@ -336,3 +336,29 @@ supplemental_runs:
       does not improve the primary in this single-seed comparison; no statistical proof
       of harm or data limitation. Phase43 jobs submitted, outcomes pending; encoder
       update counts differ by design. Historical audit scope unchanged.
+
+  - source_sha: 0894e07024934445a245d0d927f85248cde7c82f
+    metadata_head: resolved_by_git_rev_parse_HEAD
+    worktree_state: phase47_review_committed_after_cpu_validation
+    date: '2026-09-14T00:30:00+02:00'
+    commands:
+      - CUDA_VISIBLE_DEVICES= OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 PYTHONPATH=src python -m pytest -q
+      - Both two-step CPU training dry runs
+      - Phase47 native receipt, input, report, checkpoint and repeat verification
+      - Phase48 cohort isolation and campaign/PID tests
+    pytest:
+      result: PASS
+      passed: 1652
+      skipped: 34
+      warnings: 117
+      duration_seconds: 377.55
+    notebooks:
+      generated_consistency: {result: NOT_RUN, count: 0}
+      default_fixture: {result: NOT_RUN, count: 0}
+      real_mdst_pilot: {result: NOT_RUN, count: 0}
+      trained_physics_validation: {result: NOT_RUN, count: 0}
+    real_data_inputs: immutable_phase47_validation_reports_and_checkpoints; phase48_train_validation_UID_isolation; sealed_test_closed
+    checkpoint: historical_encoder81096_and_phase47_selected_checkpoints
+    ci_run: PENDING_PUBLICATION_WORKFLOW
+    human_visual_review_status: PASS
+    evidence_limitations: CPU fixtures establish software contracts only. Both Phase47 arms fail strict gates, coherent forest agreement is zero, and no exact component above depth one was found. Cross-phase seed and cohort differ. Corrected pretraining quality remains unmeasured. Phase48 is one bounded downstream PID-head adaptation experiment; no promotion or sealed-test access. Final live publication and running-job evidence remain external pending checks.

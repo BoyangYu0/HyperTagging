@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase47 complete review and bounded Phase48 PID adaptation; historical audit scope unchanged.
+  - 0894e07024934445a245d0d927f85248cde7c82f
   # Publish Phase47 submission snapshot; historical audit scope unchanged.
   - 7099e95a2b36064957c0072ff655228c1bc8b263
   # Phase46 complete review and Phase47 replication; historical audit scope unchanged.
