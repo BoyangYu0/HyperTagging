@@ -168,3 +168,8 @@ passed, including fresh cohort isolation and the single-factor freeze schedule.
 Publication requires a warning-free docs build, privacy and local-link checks,
 correct-revision GitHub checks and live HTTP download verification. These are
 recorded separately from scientific measurements.
+
+Both Phase48 jobs were submitted and released from immutable source
+``1d3424ed5a0dc12e8ec10039a951919710131a90`` after 136 frozen-source preflight tests passed.
+The submission snapshot is not a live scheduler claim. The external review
+manifest records actual running-state and live-publication verification.

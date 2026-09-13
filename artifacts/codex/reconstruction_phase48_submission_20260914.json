@@ -1,7 +1,14 @@
 {
-  "version": "phase48-submission-snapshot-v1",
-  "status": "PREPARED",
-  "task_count": 2,
+  "automatic_promotion": false,
+  "frozen_preflight_tests": 136,
+  "passed_cpu_tests": 1652,
+  "promotion_authorized": false,
   "sealed_test_accessed": false,
-  "automatic_promotion": false
+  "skipped_cpu_tests": 34,
+  "source_revision": "1d3424ed5a0dc12e8ec10039a951919710131a90",
+  "status": "SUBMITTED",
+  "status_date": "2026-09-14",
+  "submission_receipt_sha256": "982426081e3009346e8fe7941dd60690e94af172329848210a849ec8482d4097",
+  "task_count": 2,
+  "version": "phase48-submission-snapshot-v1"
 }

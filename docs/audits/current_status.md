@@ -30,6 +30,8 @@ study and audit UIDs. See the Phase47 wiki review and dashboard for current
 submission metadata, complete metrics and scientific limitations.
 The full CPU suite passed (1,652 passed, 34 skipped, 117 warnings); both
 two-step CPU training smoke checks passed. These are software-contract checks.
+Both Phase48 jobs were submitted and released from immutable source
+`1d3424ed5a0dc12e8ec10039a951919710131a90` after 136 frozen-source preflight tests.
 
 ## Reconstruction Phase46 review and Phase47 replication — 2026-09-13
 
