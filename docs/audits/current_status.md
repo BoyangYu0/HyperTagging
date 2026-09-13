@@ -3,6 +3,34 @@
 This is the sole authoritative current audit report. Historical reports under
 `archive/` are immutable evidence snapshots and are not current truth.
 
+## Reconstruction Phase47 review and bounded PID adaptation — 2026-09-14
+
+Both corrected-source Phase47 arms completed 4,376 steps with verified immutable
+contracts, receipts, finite checkpoints, balanced replay and seven native views
+per arm. Late adaptation selected 139/3,738 primary source sets plus mother PID;
+frozen selected 133/3,738. This primary does not require recursive topology.
+Both recover three exact nontrivial components per retained scope, full LCAG
+9/4,144 and half LCAG 9/2,288. Coherent forest agreement is 0/100. No exact
+component above depth one was found across all views and all 84 beam candidates.
+Neither arm passes all strict gates; no promotion or sealed-test access.
+
+All 2,818 full and 2,264 half/component units per arm are scored, including
+incompatible targets as failed trials. Complete exports contain 16,172 original
+and 19,937 retained aggregate metrics, 148,974 and 317,272 detailed metrics,
+8,383,056 tree/candidate scalars and 731,566 training-history/checkpoint scalars.
+Retained LCAG and mother-coverage counts match event by event. Source-metric
+paired bootstrap intervals include zero. Cross-phase seed and cohort differ.
+
+Hold 70,000 events; scaling evidence remains confounded and longer pretraining
+has no established benefit. Corrected pretraining quality remains unmeasured.
+The one next bounded campaign compares late PID-head adaptation against the
+unchanged late-adaptation control, with identical encoder schedule, budget,
+statistics and gates. Its new validation cohort excludes all earlier inspected
+study and audit UIDs. See the Phase47 wiki review and dashboard for current
+submission metadata, complete metrics and scientific limitations.
+The full CPU suite passed (1,652 passed, 34 skipped, 117 warnings); both
+two-step CPU training smoke checks passed. These are software-contract checks.
+
 ## Reconstruction Phase46 review and Phase47 replication — 2026-09-13
 
 Both corrected-source Phase46 jobs completed 4,376 steps with verified contracts,
