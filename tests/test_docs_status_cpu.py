@@ -40,6 +40,7 @@ def evidence(tmp_path, monkeypatch):
         "reconstruction_phase47": {"reserved_for_phase47_closeout": True},
         "reconstruction_phase47_retained": {"reserved_for_phase47_retained": True},
         "reconstruction_phase48_submission": {"reserved_for_phase48": True},
+        "reconstruction_phase47_aggregation": {"reserved_for_phase47_aggregation": True},
         "reconstruction_phase44": {"reserved_for_phase44": True},
         "reconstruction_phase44_retained": {"reserved_for_phase44": True},
         "reconstruction_phase45_submission": {"reserved_for_phase45": True},
@@ -157,7 +158,7 @@ def test_status_is_deterministic_and_preserves_record_scope(evidence, tmp_path, 
     assert manifest["pretraining"]["selected_profile_state"] == "NONE_SELECTED"
     assert manifest["pretraining"]["submission_performed"] is False
     assert manifest["pretraining"]["pretraining_success_gate_passed"] is False
-    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 21
+    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 22
     assert manifest["provenance"]["external_filesystem_or_network_artifacts_opened"] is False
     assert source_info(manifest, "issue_ledger")["freshness"]["status"] == "stale"
     assert source_info(manifest, "current_status")["freshness"]["status"] == "unknown"
@@ -694,7 +695,7 @@ def test_phase47_full_metric_downloads_are_lossless(tmp_path):
     manifest = status.generate_status(ROOT, tmp_path / 'status')
     record = manifest['reconstruction']['phase47']
     assert record['source_boundary'] == 'CORRECTED_SCIENTIFIC_AUDIT_SOURCE'
-    for source_key, projected in [('reconstruction_phase47',record),('reconstruction_phase47_retained',record['retained_tree_checks'])]:
+    for source_key, projected in [('reconstruction_phase47',record),('reconstruction_phase47_retained',record['retained_tree_checks']),('reconstruction_phase47_aggregation',record['aggregation_supplement'])]:
         raw = json.loads((ROOT/status.SOURCE_PATHS[source_key]).read_text())
         binding = projected['metric_download']
         content = (tmp_path/'status'/binding['filename']).read_bytes()

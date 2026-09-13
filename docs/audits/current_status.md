@@ -18,6 +18,9 @@ All 2,818 full and 2,264 half/component units per arm are scored, including
 incompatible targets as failed trials. Complete exports contain 16,172 original
 and 19,937 retained aggregate metrics, 148,974 and 317,272 detailed metrics,
 8,383,056 tree/candidate scalars and 731,566 training-history/checkpoint scalars.
+An additive 5,040-scalar supplement distinguishes micro and macro populations
+and exact source, leaf-PID, topology and all-PID conjunctions without changing
+the immutable Phase48 training source or its evidence bindings.
 Retained LCAG and mother-coverage counts match event by event. Source-metric
 paired bootstrap intervals include zero. Cross-phase seed and cohort differ.
 

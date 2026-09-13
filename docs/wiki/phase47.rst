@@ -41,7 +41,8 @@ Every retained tree and candidate
 Each arm scores all 2,818 full units and 2,264 half/component units. Full units
 contain 2,611 isolated leaves, 82 single-source composites and 125 nontrivial
 components. Half units contain 2,035 isolated leaves, 82 single-source composites
-and 147 nontrivial components. All are available; unavailable counts are zero.
+and 147 nontrivial components. All unit records are available; unavailable unit counts are zero.
+Some individual ratios, such as LCAG for isolated leaves, are undefined.
 Incompatible targets remain failed trials. No missing roots or B hemispheres are
 invented; continuum uses explicitly retained components.
 
@@ -60,7 +61,7 @@ one; no exact deeper component was found.
 Full source recall is 2,718/3,374 control versus 2,715/3,374 frozen; precision is
 2,718/2,942 versus 2,715/2,937. Half recall is 2,164/2,798 versus 2,162/2,798;
 precision is 2,164/2,372 versus 2,162/2,369. These are ratios of summed counts
-(micro). Separate macro event/unit summaries remain in the complete exports;
+(micro). The separate aggregation supplement reports macro event/unit means;
 they are not substituted for micro results. Full/half perfect source, PID and
 topology, depth and representability breakdowns, calibration and PID confusion
 are preserved in the native reports and detailed scalar exports.
@@ -73,6 +74,26 @@ do not describe one coherent reconstructed event. No ranking or coherent oracle
 recovers a coherent forest (0/20). Search generation, pruning and ranking remain
 truth-free; oracle scoring occurs only afterwards. All proposal bounds, candidate
 indices, scores, pruning and diagnostic views remain in the native artifacts.
+
+Explicit macro and exact-PID populations
+---------------------------------------
+
+Full LCAG is 0.2172% micro (9/4,144), 5.8713% unit-macro over 125 defined
+nontrivial units, and 6.9831% event-macro over 69 events with defined LCAG.
+Half LCAG is 0.3934% micro (9/2,288), 5.0076% unit-macro over 147 defined units,
+and 6.9925% event-macro over 69 events. Both arms have these same values.
+The other 31 events have no defined LCAG denominator; they are reported as
+unavailable for this ratio, not successful trees. Defined failures remain zeros.
+These means weight units/events equally and must not replace pooled pair counts.
+
+The supplement separately counts exact source sets, exact source sets with every
+leaf PID, exact source/topology, and exact source/topology with every leaf and
+mother PID. On the primary nontrivial population all four criteria yield 3/125
+full and 3/147 half in each arm. This agreement is measured, not assumed from
+LCAG alone. Source-only successes also require structural validity and target
+representability; incompatible units remain failed trials. Isolated leaves can
+pass source checks but never receive trivial topology credit. Every conjunction
+and denominator, including separate all-retained counts, remains downloadable.
 
 Paired uncertainty and interpretation
 -------------------------------------
@@ -96,7 +117,9 @@ Complete evidence
 
 The dashboard provides lossless downloads of 16,172 original and 19,937 retained
 aggregate scalar metrics, exact registries and source hashes, preserving earlier
-phase downloads. The reproducible review bundle contains all fourteen native
+phase downloads. An additional 5,040 registered aggregation scalars report
+micro, unit-macro and event-macro populations and exact source/PID/topology
+conjunctions across every view and beam ranking. The reproducible review bundle contains all fourteen native
 reports and logs, original gates, receipts/contracts, 148,974 original detailed
 metrics, 317,272 retained detailed metrics, 8,383,056 per-tree/candidate scalars,
 and 731,566 training-history/checkpoint scalars. CSV/JSON equivalence and archive
@@ -173,3 +196,8 @@ Both Phase48 jobs were submitted and released from immutable source
 ``1d3424ed5a0dc12e8ec10039a951919710131a90`` after 136 frozen-source preflight tests passed.
 The submission snapshot is not a live scheduler claim. The external review
 manifest records actual running-state and live-publication verification.
+
+The later aggregation supplement passed 64 focused tests, including explicit
+checks that undefined ratios are not successes and exact topology does not
+automatically imply correct leaf PID. It adds reporting only; the immutable
+submitted training source and its bound evidence remain unchanged.

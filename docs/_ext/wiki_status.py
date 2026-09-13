@@ -56,6 +56,7 @@ SOURCE_PATHS.update({
     "reconstruction_phase47": "artifacts/codex/reconstruction_phase47_closeout_20260914.json",
     "reconstruction_phase47_retained": "artifacts/codex/reconstruction_phase47_retained_metrics_20260914.json",
     "reconstruction_phase48_submission": "artifacts/codex/reconstruction_phase48_submission_20260914.json",
+    "reconstruction_phase47_aggregation": "artifacts/codex/reconstruction_phase47_aggregation_20260914.json",
 })
 SOURCE_IDS = {key: f"source-{index:02d}" for index, key in enumerate(SOURCE_PATHS, 1)}
 FRESHNESS_DAYS = 30
@@ -498,6 +499,7 @@ def _collect(payloads: dict[str, Any], revision: str | None) -> dict[str, Any]:
         record = reconstruction["phase47"]
         record["source_boundary"] = "CORRECTED_SCIENTIFIC_AUDIT_SOURCE"
         record["retained_tree_checks"] = _phase47_retained_projection(payloads.get("reconstruction_phase47_retained"))
+        record["aggregation_supplement"] = _phase47_aggregation_projection(payloads.get("reconstruction_phase47_aggregation"))
         if reconstruction["phase46"]:
             reconstruction["phase46"]["next_study_status"] = "COMPLETED"
         submission = _mapping(payloads.get("reconstruction_phase48_submission"))
@@ -1009,6 +1011,27 @@ def _phase47_retained_projection(value):
     return result
 
 
+def _phase47_aggregation_projection(value):
+    raw = _mapping(value)
+    if raw.get('version') != 'phase47-aggregation-supplement-v1' or raw.get('status') != 'COMPLETE':
+        raise ValueError('Missing Phase47 aggregation supplement')
+    registry = json.loads(Path(__file__).with_name('phase47_aggregation_metric_registry.json').read_text())
+    allowed, seen, rows = set(map(tuple, registry)), set(), []
+    for row in _list(raw.get('metric_rows')):
+        identity = (row.get('arm'), row.get('view'), row.get('metric'))
+        if identity not in allowed:
+            continue
+        if identity in seen or (row.get('value') is not None and _number(row.get('value')) is None):
+            raise ValueError('Invalid Phase47 aggregation scalar')
+        seen.add(identity)
+        rows.append(dict(arm=identity[0], view=identity[1], metric=identity[2], value=row.get('value')))
+    if seen != allowed:
+        raise ValueError('Incomplete Phase47 aggregation registry')
+    primary = {arm: {r['metric']: r['value'] for r in rows if r['arm'] == arm and r['view'] == 'primary_complete_target_direct'} for arm in ('late_adaptation_control', 'frozen_encoder')}
+    return {'metric_rows': rows, 'primary': primary, 'source_hashes': [_sha(x) for x in _list(raw.get('source_hashes'))],
+            'source_ids': _refs('reconstruction_phase47_aggregation')}
+
+
 def _render_phase47(record):
     if not record:
         return []
@@ -1019,7 +1042,10 @@ def _render_phase47(record):
         'This primary does not require recursive topology. Both recover three exact nontrivial components per retained scope.',
         'Neither arm passes all strict gates; coherent forest agreement is zero. No promotion.', '',
         ':download:`Complete Phase47 original metric values <phase47-metrics.json>`;',
-        ':download:`Complete Phase47 retained-tree metric values <phase47-retained-metrics.json>`.', '',
+        ':download:`Complete Phase47 retained-tree metric values <phase47-retained-metrics.json>`;',
+        ':download:`Phase47 micro, macro and exact source/PID/topology counts <phase47-aggregation-metrics.json>`.', '',
+        'Micro pools counts; unit and event macros average defined ratios equally and report their available denominators.',
+        'Exact topology alone does not imply every leaf PID is correct; the supplement reports that stricter conjunction separately.', '',
         'Both arms completed 4,376 steps on 70,000 events. All seven views, exact repeats and checkpoint finiteness are verified.',
         'Selection uses 2,000 validation events (1,000 rollout); strict scoring uses 100 disjoint events and beam its 20-event subset.', '']
     lines += _table(['Original policy metric', 'Late adaptation', 'Frozen encoder'],
@@ -1036,6 +1062,16 @@ def _render_phase47(record):
     lines += _table(['Reference population', 'Full', 'Half/component'],
         [[key, *[retained['arms'][labels[0]]['primary_structure'][scope][key] for scope in ('full','half')]]
          for key in retained['arms'][labels[0]]['primary_structure']['full']])
+    aggregation = record['aggregation_supplement']['primary']
+    lines += ['Phase47 micro and macro populations', '~' * 40, '',
+        'Macro means exclude undefined zero-denominator ratios, count that unavailability, and retain defined failures as zeros.',
+        'Exact source and PID columns require representability and structural validity. Nontrivial units have at least two sources.', '']
+    lines += _table(['Arm', 'Scope', 'Metric', 'Micro', 'Unit macro', 'Event macro'],
+        [[arm, scope, key, *[f"{aggregation[arm][f'{scope}.greedy.{key}.{kind}']:.6g}" if aggregation[arm][f'{scope}.greedy.{key}.{kind}'] is not None else 'UNAVAILABLE' for kind in ('micro','unit_macro','event_macro')]]
+         for arm in labels for scope in ('full','half') for key in ('source_recall','source_precision','lcag_pair_accuracy','perfectLCAG')])
+    lines += _table(['Arm', 'Scope', 'Nontrivial exact criterion', 'Numerator', 'Denominator'],
+        [[arm, scope, key, *[aggregation[arm][f'{scope}.greedy.exact.nontrivial.{key}.{part}'] for part in ('numerator','denominator')]]
+         for arm in labels for scope in ('full','half') for key in ('source','source_leaf_pid','source_topology','source_topology_all_pid')])
     lines += ['Phase47 returned beam candidates', '~' * 40, '',
         'All returned width-four candidates receive full and half checks. Model-only rankings remain distinct from the coherent',
         'post-inference oracle. Per-unit Oracle@K maxima are bounds and do not describe one coherent event.', '']
@@ -1445,7 +1481,7 @@ def generate_status(repo_root: Path, output_dir: Path) -> dict[str, Any]:
     output = requested.resolve()
     if output == root or output in root.parents or any(part.is_symlink() for part in (requested, *requested.parents)):
         raise ValueError("Status output must be a dedicated non-symlink directory")
-    if output.exists() and any(path.name not in {"index.rst", "status.json", "phase44-retained-metrics.json", "phase45-metrics.json", "phase45-retained-metrics.json", "phase46-metrics.json", "phase46-retained-metrics.json", "phase47-metrics.json", "phase47-retained-metrics.json"} for path in output.iterdir()):
+    if output.exists() and any(path.name not in {"index.rst", "status.json", "phase44-retained-metrics.json", "phase45-metrics.json", "phase45-retained-metrics.json", "phase46-metrics.json", "phase46-retained-metrics.json", "phase47-metrics.json", "phase47-retained-metrics.json", "phase47-aggregation-metrics.json"} for path in output.iterdir()):
         raise ValueError("Status output contains unexpected files; use a fresh dedicated directory")
     history = _git(root, "log", "-1", "--format=%H%n%cI")
     lines = history.decode("utf-8", errors="replace").splitlines() if history else []
@@ -1498,7 +1534,7 @@ def generate_status(repo_root: Path, output_dir: Path) -> dict[str, Any]:
             _write(output / filename, encoded)
             record["metric_download"] = {"filename": filename, "sha256": hashlib.sha256(encoded).hexdigest(), "bytes": len(encoded), "metric_count": len(metric_rows)}
     phase47 = manifest.get("reconstruction", {}).get("phase47", {})
-    for record, filename in ((phase47, "phase47-metrics.json"), (phase47.get("retained_tree_checks", {}), "phase47-retained-metrics.json")):
+    for record, filename in ((phase47, "phase47-metrics.json"), (phase47.get("retained_tree_checks", {}), "phase47-retained-metrics.json"), (phase47.get("aggregation_supplement", {}), "phase47-aggregation-metrics.json")):
         if record:
             metric_rows = record.pop("metric_rows")
             download = {"source_hashes": record["source_hashes"], "metric_rows": metric_rows}
