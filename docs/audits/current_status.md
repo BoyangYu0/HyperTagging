@@ -27,7 +27,9 @@ requires replication before preferring either approach. No automatic promotion
 or sealed-test access is authorized. See the Phase46 wiki review for complete
 counts, uncertainty, historical synthesis and the dashboard submission snapshot.
 The complete CPU suite passed (1,640 passed, 34 skipped, 117 warnings), and both
-two-step CPU training smoke checks passed.
+two-step CPU training smoke checks passed. Phase47 was submitted and released
+from immutable source `595a150d7d1f2318e9c550ea1a5935e47c75407d` after 128 frozen-source
+preflight tests passed. Its new cohort excludes 29,609 previously inspected UIDs.
 
 ## Reconstruction Phase45 review and Phase46 submission — 2026-09-12
 

@@ -140,3 +140,9 @@ two-step CPU training smoke checks passed. Campaign isolation, untouched cohorts
 complete metric downloads and retained-tree publication checks are covered by
 focused regressions. Final site and submission checks are recorded after freezing
 the training source. These results validate software contracts, not physics quality.
+
+Both Phase47 jobs were submitted and released from immutable source
+``595a150d7d1f2318e9c550ea1a5935e47c75407d``. The frozen checkout passed 128 additional
+preflight tests. The new cohort excludes 29,609 previously inspected validation
+UIDs; all required overlaps are zero. The dashboard submission snapshot binds
+the receipt and source revision without publishing operational records.
