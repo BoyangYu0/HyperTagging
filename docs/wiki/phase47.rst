@@ -76,7 +76,7 @@ truth-free; oracle scoring occurs only afterwards. All proposal bounds, candidat
 indices, scores, pruning and diagnostic views remain in the native artifacts.
 
 Explicit macro and exact-PID populations
----------------------------------------
+----------------------------------------
 
 Full LCAG is 0.2172% micro (9/4,144), 5.8713% unit-macro over 125 defined
 nontrivial units, and 6.9831% event-macro over 69 events with defined LCAG.
