@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase47 authored heading markup only; no scientific or training changes.
+  - 627d38a8f14398f24f50cc25e74c25406dcd6372
   # Add Phase47 aggregation reporting; immutable Phase48 source and historical audit scope unchanged.
   - 0fd6f4319f67b53c75c4b9549705371449fb7916
   # Phase48 submission snapshot and Phase47 publication metadata; historical audit scope unchanged.
