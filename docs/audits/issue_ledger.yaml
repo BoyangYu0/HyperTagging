@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Update the expected audit count for the newly recorded gradient issue.
+  - b8fb5ed2a02f635ca333ae323b76d1764eb8d2f1
   # Phase48 review and gradient execution repair, with a bounded Phase49 repeat; historical audit scope unchanged.
   - 85e889f6ba3c3db341c114a9eaa709bf5ad75b16
   # Phase47 authored heading markup only; no scientific or training changes.
