@@ -3,6 +3,31 @@
 This is the sole authoritative current audit report. Historical reports under
 `archive/` are immutable evidence snapshots and are not current truth.
 
+## Reconstruction Phase48 review and gradient execution repair — 2026-09-14
+
+Both Phase48 jobs completed with verified receipts and all fourteen native views.
+Their final model tensors are identical; neither PID head has optimizer state,
+despite the different recorded freeze schedules. Both selected 115/3670 primary
+source sets plus mother PID, which does not require exact recursive topology.
+Retained full LCAG is 17/5289 and half LCAG 19/2881; perfect components are 3/132
+and 3/159, coherent forests 0/100. All 92 returned beam candidates are checked in
+both scopes; no exact component deeper than one is observed. Full-root gates fail.
+
+A CPU mixed-precision model reproduction shows no-gradient rollout autocast cache
+reuse suppressing PID gradients. Reconstruction training now disables that cache
+and fails on absent gradients for trainable PID supervision; gradient availability
+is logged. This changes the training execution boundary, not preserved Phase48
+metrics. Earlier scheduled-sampling adaptation interpretations need reevaluation;
+no pretraining-loop failure is established by this finding. Phase48 is not a valid
+negative result for effective PID adaptation. Full/half exports retain all failed
+incompatible roots, beam rankers, micro/macro populations and unavailable metrics.
+
+Hold 70000 events and prioritize this execution repair before data scaling or
+longer pretraining. Phase49 repeats the PID comparison with the repair in both
+arms, identical bounded budgets, train-only statistics and a fresh isolated cohort.
+No promotion or sealed-test access. See the Phase48 wiki review and dashboard for
+current submission and verification evidence.
+
 ## Reconstruction Phase47 review and bounded PID adaptation — 2026-09-14
 
 Both corrected-source Phase47 arms completed 4,376 steps with verified immutable

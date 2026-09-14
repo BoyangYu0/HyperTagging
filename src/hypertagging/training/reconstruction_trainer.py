@@ -92,6 +92,11 @@ from hypertagging.training.slurm_signal import (
 )
 
 
+def _gradient_safe_autocast(*, device_type, dtype, enabled=True):
+    """Keep no-grad rollout casts out of subsequent differentiable forwards."""
+    return torch.autocast(device_type=device_type, dtype=dtype, enabled=enabled, cache_enabled=False)
+
+
 @dataclass(frozen=True)
 class ReconstructionConfig:
     data: str
@@ -973,7 +978,9 @@ def train_level_reconstruction(
         # transfer so the normal CUDA path does not synchronize via tolist().
         batch = {name: value.to(device) for name, value in next_batch.items()}
         optimizer.zero_grad(set_to_none=True)
-        with torch.autocast(
+        # Scheduled-sampling rollouts run without gradients before the training
+        # forward. Reusing their autocast weights would detach trainable heads.
+        with _gradient_safe_autocast(
             device_type=device.type,
             dtype={
                 "float16": torch.float16,
@@ -1012,6 +1019,11 @@ def train_level_reconstruction(
         )
         scaler.scale(loss).backward()
         _require_finite_gradients(model, stage="raw_gradient")
+        pid_parameters = list(model.leaf_pid_head.parameters())
+        pid_trainable = any(parameter.requires_grad for parameter in pid_parameters)
+        pid_gradient_count = sum(parameter.grad is not None for parameter in pid_parameters)
+        if pid_trainable and float(leaf_pid_loss.detach()) > 0 and not pid_gradient_count:
+            raise RuntimeError("Trainable leaf PID head received no gradient from its supervised loss")
         scaler.unscale_(optimizer)
         raw_gradient_norm = torch.nn.utils.clip_grad_norm_(
             model.parameters(), config.gradient_clip, error_if_nonfinite=True
@@ -1028,6 +1040,8 @@ def train_level_reconstruction(
             "loss": final_loss,
             "learning_rate": float(optimizer.param_groups[0]["lr"]),
             "leaf_pid_loss": float(leaf_pid_loss.detach().cpu()),
+            "leaf_pid_head_trainable": float(pid_trainable),
+            "leaf_pid_gradient_tensor_count": float(pid_gradient_count),
             "levels_trained": float(len(valid_levels)),
             **context_metrics,
             **replay_step_metrics,

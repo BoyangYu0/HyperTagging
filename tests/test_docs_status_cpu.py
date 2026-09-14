@@ -34,6 +34,10 @@ def evidence(tmp_path, monkeypatch):
     monkeypatch.delenv("SOURCE_DATE_EPOCH", raising=False)
     monkeypatch.setattr(status, "_git", lambda *_args: None)
     documents = {
+        "reconstruction_phase48": {"reserved_for_phase48_closeout": True},
+        "reconstruction_phase48_retained": {"reserved_for_phase48_retained": True},
+        "reconstruction_phase48_aggregation": {"reserved_for_phase48_aggregation": True},
+        "reconstruction_phase49_submission": {"reserved_for_phase49": True},
         "reconstruction_phase46": {"reserved_for_phase46_closeout": True},
         "reconstruction_phase46_retained": {"reserved_for_phase46_retained": True},
         "reconstruction_phase47_submission": {"reserved_for_phase47": True},
@@ -158,7 +162,7 @@ def test_status_is_deterministic_and_preserves_record_scope(evidence, tmp_path, 
     assert manifest["pretraining"]["selected_profile_state"] == "NONE_SELECTED"
     assert manifest["pretraining"]["submission_performed"] is False
     assert manifest["pretraining"]["pretraining_success_gate_passed"] is False
-    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 22
+    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 26
     assert manifest["provenance"]["external_filesystem_or_network_artifacts_opened"] is False
     assert source_info(manifest, "issue_ledger")["freshness"]["status"] == "stale"
     assert source_info(manifest, "current_status")["freshness"]["status"] == "unknown"
@@ -723,3 +727,18 @@ def test_phase47_source_boundary_cannot_be_silently_relabelled():
     raw['source_boundary'] = 'pre_scientific_audit_fixes'
     with pytest.raises(ValueError, match='source boundary'):
         status._phase41_projection(raw,phase=47,labels=('late_adaptation_control','frozen_encoder'))
+
+
+def test_phase48_all_tree_and_beam_publication(tmp_path):
+    manifest = status.generate_status(ROOT, tmp_path/'phase48-status')
+    phase = manifest['reconstruction']['phase48']
+    assert phase['status'] == 'COMPLETED'
+    assert phase['metric_download']['metric_count'] == 15936
+    retained = phase['retained_tree_checks']
+    assert retained['metric_download']['metric_count'] == 19316
+    assert retained['tree_metric_scalar_rows'] == 8953020
+    assert sum(a['beam_candidate_count'] for a in retained['arms'].values()) == 92
+    assert manifest['reconstruction']['phase47']['next_study_status'] == 'COMPLETED'
+    page = (tmp_path/'phase48-status/index.rst').read_text()
+    assert 'PID adaptation did not execute' in page
+    assert 'not evidence that effective PID adaptation has no benefit' in page
