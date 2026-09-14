@@ -175,7 +175,7 @@ GPU campaign follows from this audit.
 | Ledger status | Count |
 |---|---:|
 | `FIXED_AND_TESTED` | 84 |
-| `IMPLEMENTED_NOT_REAL_VERIFIED` | 6 |
+| `IMPLEMENTED_NOT_REAL_VERIFIED` | 7 |
 | `INTENTIONALLY_DEFERRED_SCIENCE` | 4 |
 | `OBSOLETE_OR_DUPLICATE` | 1 |
 | `PARTIAL` | 9 |

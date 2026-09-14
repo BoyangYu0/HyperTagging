@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase48 review and gradient execution repair, with a bounded Phase49 repeat; historical audit scope unchanged.
+  - 85e889f6ba3c3db341c114a9eaa709bf5ad75b16
   # Phase47 authored heading markup only; no scientific or training changes.
   - 627d38a8f14398f24f50cc25e74c25406dcd6372
   # Add Phase47 aggregation reporting; immutable Phase48 source and historical audit scope unchanged.
@@ -1388,3 +1390,14 @@ items:
     external_evidence_required: []
     last_verified_sha: 7acddc096d7cb6e4e03005f24739a98e5cff185b
     notes: uv lock --check now accepts a minimal additive lock update; editable-root dependencies and requires-dist contain all 10 direct runtime requirements, frozen all-extras sync is idempotent, uv pip check passes, and SciPy/PyYAML import from the frozen environment without manual restoration.
+  - id: TRAIN-024
+    title: No-gradient rollout autocast cache suppresses subsequent training gradients
+    originating_audit: docs/wiki/phase48.rst
+    first_reported_sha: 85e889f6ba3c3db341c114a9eaa709bf5ad75b16
+    current_status: IMPLEMENTED_NOT_REAL_VERIFIED
+    current_evidence_files: [src/hypertagging/training/reconstruction_trainer.py, docs/wiki/phase48.rst, configs/reconstruction/ht_reconstruction_phase49_20260914.json]
+    current_tests: [tests/test_reconstruction_autocast_gradient_cpu.py, tests/test_reconstruction_phase49_campaign_cpu.py]
+    notebook_evidence: []
+    external_evidence_required: [Phase49 post-unfreeze GPU PID optimizer updates and complete scientific evaluation]
+    last_verified_sha: 85e889f6ba3c3db341c114a9eaa709bf5ad75b16
+    notes: Phase48 final models are identical across all 464 tensors and PID heads have no optimizer state; both heads match pretraining. CPU model reproduction restores gradients and parameter updates when autocast cache is disabled. Reconstruction now uses that context, logs PID gradient availability and fails on missing trainable supervised PID gradients. The CPU repair is verified; its scientific benefit and post-unfreeze real-training recovery remain unmeasured.
