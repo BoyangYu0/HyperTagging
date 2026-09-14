@@ -27,6 +27,11 @@ longer pretraining. Phase49 repeats the PID comparison with the repair in both
 arms, identical bounded budgets, train-only statistics and a fresh isolated cohort.
 No promotion or sealed-test access. See the Phase48 wiki review and dashboard for
 current submission and verification evidence.
+Both Phase49 jobs were submitted and atomically released from immutable source
+`ed3b942b4b7dc747c8bf47c0fbf628a224386a11` after 139 frozen-source preflight tests.
+The broad CPU suite passed 1657 tests with 34 skips; eight new campaign tests
+passed separately and both CPU training smokes passed. These are software checks;
+post-unfreeze PID updates and the scientific effect remain to be measured.
 
 ## Reconstruction Phase47 review and bounded PID adaptation — 2026-09-14
 

@@ -117,3 +117,10 @@ the independent audit sample, and all required overlaps are zero.
 A trainable PID head with nonzero supervised loss and absent gradients now fails
 explicitly; gradient availability is logged. This is one bounded two-arm study,
 not an automatic campaign chain. Current submission status is on the dashboard.
+
+Both Phase49 jobs were submitted and atomically released from the immutable
+gradient-safe source after 139 frozen-source preflight tests passed. The broad CPU
+suite passed 1,657 tests with 34 skips; all eight new campaign tests passed
+separately, and both CPU training smoke checks passed. These establish software
+checks, not improved scientific performance. The dashboard carries the submitted
+source revision; runtime verification is retained with the external review evidence.
