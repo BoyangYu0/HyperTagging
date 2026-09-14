@@ -356,7 +356,7 @@ def test_current_repository_dashboard_surfaces_recorded_acceptance_values(tmp_pa
     root = _MODULE.parents[2]
     manifest = status.generate_status(root, tmp_path / "generated")
     assert manifest["audit"]["recommendation"] == "NO_GO"
-    assert manifest["audit"]["ledger_status_counts"] == {"FIXED_AND_TESTED": 84, "IMPLEMENTED_NOT_REAL_VERIFIED": 6,
+    assert manifest["audit"]["ledger_status_counts"] == {"FIXED_AND_TESTED": 84, "IMPLEMENTED_NOT_REAL_VERIFIED": 7,
         "INTENTIONALLY_DEFERRED_SCIENCE": 4, "OBSOLETE_OR_DUPLICATE": 1, "PARTIAL": 9}
     assert manifest["verification"]["latest_record"]["pytest"]["passed"] == 463
     assert manifest["notebooks"]["total"] == 18 and manifest["notebooks"]["default_smoke"] == 15
