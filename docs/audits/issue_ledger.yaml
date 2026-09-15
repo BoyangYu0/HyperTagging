@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Extend dashboard test fixtures for the four new review sources.
+  - e42e355e2e46777f20e74e4f891dd29bdd39d96b
   # Phase49 complete review and bounded Phase50 replication; historical audit scope unchanged.
   - 678092741e4adcb7001d119287431c64586eb8fc
   # Phase49 submission snapshot and Phase48 publication metadata only.
