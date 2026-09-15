@@ -1398,10 +1398,10 @@ items:
     title: No-gradient rollout autocast cache suppresses subsequent training gradients
     originating_audit: docs/wiki/phase48.rst
     first_reported_sha: 85e889f6ba3c3db341c114a9eaa709bf5ad75b16
-    current_status: IMPLEMENTED_NOT_REAL_VERIFIED
-    current_evidence_files: [src/hypertagging/training/reconstruction_trainer.py, docs/wiki/phase48.rst, configs/reconstruction/ht_reconstruction_phase49_20260914.json]
+    current_status: FIXED_AND_TESTED
+    current_evidence_files: [src/hypertagging/training/reconstruction_trainer.py, docs/wiki/phase48.rst, docs/wiki/phase49.rst, configs/reconstruction/ht_reconstruction_phase49_20260914.json]
     current_tests: [tests/test_reconstruction_autocast_gradient_cpu.py, tests/test_reconstruction_phase49_campaign_cpu.py]
     notebook_evidence: []
-    external_evidence_required: [Phase49 post-unfreeze GPU PID optimizer updates and complete scientific evaluation]
-    last_verified_sha: 85e889f6ba3c3db341c114a9eaa709bf5ad75b16
-    notes: Phase48 final models are identical across all 464 tensors and PID heads have no optimizer state; both heads match pretraining. CPU model reproduction restores gradients and parameter updates when autocast cache is disabled. Reconstruction now uses that context, logs PID gradient availability and fails on missing trainable supervised PID gradients. The CPU repair is verified; its scientific benefit and post-unfreeze real-training recovery remain unmeasured.
+    external_evidence_required: []
+    last_verified_sha: ed3b942b4b7dc747c8bf47c0fbf628a224386a11
+    notes: Phase48 final models are identical across all 464 tensors and PID heads have no optimizer state; both heads match pretraining. CPU model reproduction restores gradients and parameter updates when autocast cache is disabled. Reconstruction now uses that context, logs PID gradient availability and fails on missing trainable supervised PID gradients. Phase49 real GPU candidate records two gradient tensors on all 2188 post-unfreeze steps, 2188 optimizer updates per PID tensor and changed PID weights. Control remains frozen. All fourteen views and 121 beam candidates were reviewed; modest mixed topology gains require replication and do not establish promotion-grade physics.

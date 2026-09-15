@@ -356,7 +356,7 @@ def test_current_repository_dashboard_surfaces_recorded_acceptance_values(tmp_pa
     root = _MODULE.parents[2]
     manifest = status.generate_status(root, tmp_path / "generated")
     assert manifest["audit"]["recommendation"] == "NO_GO"
-    assert manifest["audit"]["ledger_status_counts"] == {"FIXED_AND_TESTED": 84, "IMPLEMENTED_NOT_REAL_VERIFIED": 7,
+    assert manifest["audit"]["ledger_status_counts"] == {"FIXED_AND_TESTED": 85, "IMPLEMENTED_NOT_REAL_VERIFIED": 6,
         "INTENTIONALLY_DEFERRED_SCIENCE": 4, "OBSOLETE_OR_DUPLICATE": 1, "PARTIAL": 9}
     assert manifest["verification"]["latest_record"]["pytest"]["passed"] == 463
     assert manifest["notebooks"]["total"] == 18 and manifest["notebooks"]["default_smoke"] == 15
@@ -742,3 +742,37 @@ def test_phase48_all_tree_and_beam_publication(tmp_path):
     page = (tmp_path/'phase48-status/index.rst').read_text()
     assert 'PID adaptation did not execute' in page
     assert 'not evidence that effective PID adaptation has no benefit' in page
+
+
+def test_phase49_full_metric_downloads_are_lossless(tmp_path):
+    manifest = status.generate_status(ROOT, tmp_path / 'status')
+    record = manifest['reconstruction']['phase49']
+    assert record['source_boundary'] == 'CORRECTED_SCIENTIFIC_AUDIT_SOURCE'
+    for source_key, projected in [('reconstruction_phase49',record),('reconstruction_phase49_retained',record['retained_tree_checks']),('reconstruction_phase49_aggregation',record['aggregation_supplement'])]:
+        raw = json.loads((ROOT/status.SOURCE_PATHS[source_key]).read_text())
+        binding = projected['metric_download']
+        content = (tmp_path/'status'/binding['filename']).read_bytes()
+        assert hashlib.sha256(content).hexdigest() == binding['sha256']
+        assert len(content) == binding['bytes']
+        assert json.loads(content)['metric_rows'] == raw['metric_rows']
+        assert binding['metric_count'] == len(raw['metric_rows'])
+    assert record['retained_tree_checks']['arms']['late_adaptation_control']['beam_candidate_count'] == 61
+    assert record['retained_tree_checks']['arms']['late_pid_adaptation']['beam_candidate_count'] == 60
+    assert (tmp_path/'status/status.json').stat().st_size < 10 * 1024 * 1024
+
+
+@pytest.mark.parametrize('change',['missing','duplicate','beam'])
+def test_phase49_incomplete_retained_metrics_cannot_publish(change):
+    raw = json.loads((ROOT/status.SOURCE_PATHS['reconstruction_phase49_retained']).read_text())
+    if change == 'missing': raw['metric_rows'].pop()
+    if change == 'duplicate': raw['metric_rows'].append(raw['metric_rows'][0])
+    if change == 'beam': raw['all_returned_beam_candidates_checked'] = False
+    with pytest.raises(ValueError):
+        status._phase49_retained_projection(raw)
+
+
+def test_phase49_source_boundary_cannot_be_silently_relabelled():
+    raw = json.loads((ROOT/status.SOURCE_PATHS['reconstruction_phase49']).read_text())
+    raw['source_boundary'] = 'pre_scientific_audit_fixes'
+    with pytest.raises(ValueError, match='source boundary'):
+        status._phase41_projection(raw,phase=49,labels=('late_adaptation_control','late_pid_adaptation'))

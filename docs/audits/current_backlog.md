@@ -8,7 +8,7 @@ by hand. The complete source/test/notebook mapping is in
 
 | Status | Count |
 |---|---:|
-| `IMPLEMENTED_NOT_REAL_VERIFIED` | 7 |
+| `IMPLEMENTED_NOT_REAL_VERIFIED` | 6 |
 | `INTENTIONALLY_DEFERRED_SCIENCE` | 4 |
 | `PARTIAL` | 9 |
 
@@ -127,9 +127,3 @@ by hand. The complete source/test/notebook mapping is in
 - Status: `PARTIAL`
 - Next external evidence: representative multi-category KLM/K_L pilot denominators, 100k canary if KLM is included, and real worker/storage/index timings
 - Current boundary: The required fields and explicit included/excluded_by_policy/unresolved decision are implemented; current scope is unresolved, resource results are fixture-only, and schema-v4 remains selected.
-
-### TRAIN-024: No-gradient rollout autocast cache suppresses subsequent training gradients
-
-- Status: `IMPLEMENTED_NOT_REAL_VERIFIED`
-- Next external evidence: Phase49 post-unfreeze GPU PID optimizer updates and complete scientific evaluation
-- Current boundary: Phase48 final models are identical across all 464 tensors and PID heads have no optimizer state; both heads match pretraining. CPU model reproduction restores gradients and parameter updates when autocast cache is disabled. Reconstruction now uses that context, logs PID gradient availability and fails on missing trainable supervised PID gradients. The CPU repair is verified; its scientific benefit and post-unfreeze real-training recovery remain unmeasured.

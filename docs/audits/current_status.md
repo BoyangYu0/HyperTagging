@@ -3,6 +3,23 @@
 This is the sole authoritative current audit report. Historical reports under
 `archive/` are immutable evidence snapshots and are not current truth.
 
+## Reconstruction Phase49 review — 2026-09-15
+
+Both jobs completed with verified immutable receipts and all fourteen native views.
+The repaired candidate PID head received 2188 optimizer updates and changed from
+pretraining; control PID remained frozen. The real GPU gradient-execution defect
+is resolved. Both primary scores are 270/3670. Candidate passes all original gates;
+control misses full-source recall. Retained LCAG improves 24 to 28/2529 full and
+25 to 29/1548 half, while exact nontrivial counts tie at 11, coherent forests are
+0/100 and every exact component is depth one. Original full LCAG and half-root
+PID outcomes decline. All 121 beam candidates receive both full/half checks.
+
+Hold 70000 events and replicate this modest mixed signal before dataset scaling
+or longer pretraining. Corrected pretraining benefits remain unmeasured. Phase50
+preserves both arm contracts and budgets with a new seed and untouched cohort.
+No promotion or sealed-test access. The Phase49 wiki and dashboard own this review;
+older sections below retain their historical observations and limitations.
+
 ## Reconstruction Phase48 review and gradient execution repair — 2026-09-14
 
 Both Phase48 jobs completed with verified receipts and all fourteen native views.
@@ -179,8 +196,8 @@ GPU campaign follows from this audit.
 
 | Ledger status | Count |
 |---|---:|
-| `FIXED_AND_TESTED` | 84 |
-| `IMPLEMENTED_NOT_REAL_VERIFIED` | 7 |
+| `FIXED_AND_TESTED` | 85 |
+| `IMPLEMENTED_NOT_REAL_VERIFIED` | 6 |
 | `INTENTIONALLY_DEFERRED_SCIENCE` | 4 |
 | `OBSOLETE_OR_DUPLICATE` | 1 |
 | `PARTIAL` | 9 |
