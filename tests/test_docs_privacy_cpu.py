@@ -168,3 +168,11 @@ def test_private_numeric_literal_is_not_fabricated_from_search_doc_indexes(tmp_p
     else:
         with pytest.raises(ValueError, match='private-source-literal'):
             privacy.validate_artifact(output, root)
+
+
+@pytest.mark.parametrize("limit", ["_MAX_PUBLICATION_BYTES", "_MAX_PUBLICATION_FILE_BYTES"])
+def test_publication_size_limits_still_fail_closed(tmp_path, monkeypatch, limit):
+    site = _validation_site(tmp_path, "<html><body>Reviewed measurement</body></html>")
+    monkeypatch.setattr(privacy, limit, 16)
+    with pytest.raises(ValueError, match="publication-resource-limit"):
+        privacy.validate_artifact(site)
