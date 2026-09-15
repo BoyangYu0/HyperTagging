@@ -113,6 +113,8 @@ def evidence(tmp_path, monkeypatch):
                          "next_study_status": "PREREGISTRATION_IN_PROGRESS"}},
         "cpu_workflow": {"jobs": {"unit": {"steps": [{"run": "python -m pytest -q | tee private-log.txt"}]}}},
     }
+    for key in ("reconstruction_phase49", "reconstruction_phase49_retained", "reconstruction_phase49_aggregation", "reconstruction_phase50_submission"):
+        documents[key] = {"reserved_for_phase49_review": True}
     recent = documents["reconstruction_phase40r1"]
     recent.update({"audit_version": "2026-09-09.phase40r1-closeout.v3",
                    "current_best_arm": "CONTROL",
@@ -162,7 +164,7 @@ def test_status_is_deterministic_and_preserves_record_scope(evidence, tmp_path, 
     assert manifest["pretraining"]["selected_profile_state"] == "NONE_SELECTED"
     assert manifest["pretraining"]["submission_performed"] is False
     assert manifest["pretraining"]["pretraining_success_gate_passed"] is False
-    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 26
+    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 30
     assert manifest["provenance"]["external_filesystem_or_network_artifacts_opened"] is False
     assert source_info(manifest, "issue_ledger")["freshness"]["status"] == "stale"
     assert source_info(manifest, "current_status")["freshness"]["status"] == "unknown"
