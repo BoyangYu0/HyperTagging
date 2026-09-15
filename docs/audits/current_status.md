@@ -17,6 +17,7 @@ PID outcomes decline. All 121 beam candidates receive both full/half checks.
 Hold 70000 events and replicate this modest mixed signal before dataset scaling
 or longer pretraining. Corrected pretraining benefits remain unmeasured. Phase50
 preserves both arm contracts and budgets with a new seed and untouched cohort.
+Both Phase50 jobs were submitted after 144 frozen-source preflight tests passed.
 No promotion or sealed-test access. The Phase49 wiki and dashboard own this review;
 older sections below retain their historical observations and limitations.
 

@@ -209,3 +209,9 @@ checkpoint, train-only statistics, gates and 4,376-step budgets. This checks
 repeatability before changing another scientific factor. Two seeds still provide
 limited evidence about training variability. No sealed-test access or promotion
 is authorized. Current submission status appears on the dashboard.
+
+Both Phase50 jobs were submitted and atomically released from an immutable source
+after 144 frozen-source preflight tests passed. The new cohort excludes all
+35,909 previously inspected validation events and has zero required overlaps.
+The dashboard records the submitted source revision; runtime state is verified
+separately and submission alone does not establish training progress.
