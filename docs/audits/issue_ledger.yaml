@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase52 capacity arm identity preflight correction; no jobs submitted from prior revision.
+  - f6beb54fd335f6899f3b3c357b61909891232ecc
   # Phase51 complete metrics and bounded Phase52 recovery-objective comparison; historical audit unchanged.
   - 6c87c9c9d3aac3ac49699aa6520f639b951f164f
   # Concurrent documentation layouts with explicit failure propagation; all publication checks retained.
