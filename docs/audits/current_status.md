@@ -1,5 +1,21 @@
 # Current repository audit status
 
+## Phase51 review — 2026-09-17
+
+Both lower-rate PID comparison runs completed. All 14 views and all 124 beam
+candidates are checked in full/half scope. Primary source-set plus mother-PID
+recovery is 275/3597 control versus 280/3597 candidate; retained exact nontrivial
+components decline 11 to 10, all depth one, with zero coherent forests. Both
+miss full-root construction. PID gradients and changed candidate weights are
+verified. No promotion or sealed-test access.
+
+Hold 70k events. Neither dataset growth nor longer pretraining has a controlled
+benefit in the accumulated studies. Corrected pretraining quality remains an
+unmeasured hypothesis. Prepare one Phase52 pair testing existing recovery-loss
+weight 2 versus 4 with PID frozen, identical budget and fresh disjoint cohort.
+See `docs/wiki/phase51.rst` and the complete dashboard metrics.
+
+
 This is the sole authoritative current audit report. Historical reports under
 `archive/` are immutable evidence snapshots and are not current truth.
 
