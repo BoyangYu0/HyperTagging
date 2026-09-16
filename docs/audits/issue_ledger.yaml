@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase51 submission snapshot and Phase50 publication metadata only.
+  - a679047c579106338e2979489eeca0ce25aa1fbc
   # Phase50 complete review and bounded Phase51 low-rate PID study; historical audit scope unchanged.
   - b42f037f2d19c61930100009a46f8f5b42001106
   # Bounded documentation total-size allowance; content privacy rules unchanged.
