@@ -3,6 +3,22 @@
 This is the sole authoritative current audit report. Historical reports under
 `archive/` are immutable evidence snapshots and are not current truth.
 
+## Reconstruction Phase50 review — 2026-09-16
+
+Both runs completed with verified immutable evidence and all fourteen views.
+PID adaptation executed, but primary recovery falls from 285/3588 to 280/3588.
+Control passes all original gates; candidate misses full-root construction.
+Retained LCAG rises 17 to 20/4366 full and 20 to 22/2477 half, while exact
+nontrivial counts tie at six and coherent forests remain zero. All 129 beam
+candidates have full/half checks; no exact component deeper than one occurs.
+Paired LCAG bootstrap intervals include zero. No promotion or sealed-test access.
+
+Hold 70000 events. Existing studies do not establish a controlled dataset-size
+or longer-pretraining benefit. Corrected pretraining quality is an unmeasured
+hypothesis. Phase51 tests lower-rate late PID adaptation (multiplier 0.1) against
+frozen PID with unchanged encoder schedule and budget, fresh seed and cohort.
+See the Phase50 wiki and dashboard for complete metrics and submission state.
+
 ## Reconstruction Phase49 review — 2026-09-15
 
 Both jobs completed with verified immutable receipts and all fourteen native views.
