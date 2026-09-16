@@ -11,7 +11,7 @@ verified. No promotion or sealed-test access.
 
 Hold 70k events. Neither dataset growth nor longer pretraining has a controlled
 benefit in the accumulated studies. Corrected pretraining quality remains an
-unmeasured hypothesis. Prepare one Phase52 pair testing existing recovery-loss
+unmeasured hypothesis. Submitted one Phase52 pair testing existing recovery-loss
 weight 2 versus 4 with PID frozen, identical budget and fresh disjoint cohort.
 See `docs/wiki/phase51.rst` and the complete dashboard metrics.
 

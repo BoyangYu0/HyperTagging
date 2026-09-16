@@ -204,3 +204,10 @@ This is an exploratory downstream objective test, not an established remedy.
 A fresh validation cohort excludes every previous selection and evaluation UID.
 One bounded pair is authorized; there is no automatic promotion, campaign chain
 or sealed-test access. The dashboard records the submission snapshot.
+
+Both Phase52 jobs were submitted from the validated immutable revision. The
+submission snapshot is queued; scheduler state is not a training-completion
+claim. The frozen source passed 156 CPU preflight tests, and the broader suite
+passed after correcting the subprocess import path (1,690 initial passes plus
+12 successful rechecks; 34 environment-dependent skips). Focused reconstruction
+tests, two tiny CPU training checks, audit integrity and metric exports passed.
