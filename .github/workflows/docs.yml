@@ -20,7 +20,7 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     # Privacy validation deliberately scans every generated token and artifact.
-    # Keep a bounded but realistic allowance for all three Sphinx layouts.
+    # The two independent compatibility layouts run concurrently within this bound.
     timeout-minutes: 30
     permissions:
       contents: read
@@ -49,8 +49,16 @@ jobs:
         run: python scripts/validate_docs.py --html "$RUNNER_TEMP/hypertagging-docs/html" --generated "$RUNNER_TEMP/hypertagging-docs/source/wiki/_generated" --check-generation --workflow
       - name: Validate text and basf2 discovery layouts
         run: |
-          python scripts/build_docs.py --builder text --output "$RUNNER_TEMP/hypertagging-docs-text"
-          python scripts/build_docs.py --layout basf2 --output "$RUNNER_TEMP/hypertagging-docs-basf2"
+          python scripts/build_docs.py --builder text --output "$RUNNER_TEMP/hypertagging-docs-text" &
+          text_layout_pid=$!
+          python scripts/build_docs.py --layout basf2 --output "$RUNNER_TEMP/hypertagging-docs-basf2" &
+          basf2_layout_pid=$!
+          text_layout_status=0
+          basf2_layout_status=0
+          wait "$text_layout_pid" || text_layout_status=$?
+          wait "$basf2_layout_pid" || basf2_layout_status=$?
+          test "$text_layout_status" -eq 0
+          test "$basf2_layout_status" -eq 0
       - name: Upload validated Pages artifact from master only
         if: >-
           (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
