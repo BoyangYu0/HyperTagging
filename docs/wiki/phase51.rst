@@ -170,7 +170,7 @@ tables. The complete local archive additionally retains native event reports,
 all candidate scalars, training history, uncertainty and verification records.
 
 Study history and next training
-------------------------------
+-------------------------------
 
 Hold the dataset at 70,000 events. Phase40 changed data, steps and cohort
 together, so it does not supply a controlled learning curve. The current
