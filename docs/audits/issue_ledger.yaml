@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase51 RST heading formatting correction.
+  - ae2d1dd32a7d0b9515af81d5d3ebdddb77d10d14
   # Phase52 submission snapshot and Phase51 publication metadata.
   - 83ebef35641ff01fdc8f28a789d86f6b451311b5
   # Phase52 capacity arm identity preflight correction; no jobs submitted from prior revision.
