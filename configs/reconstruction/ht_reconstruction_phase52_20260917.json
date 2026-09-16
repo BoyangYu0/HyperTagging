@@ -4740,7 +4740,7 @@
         "report_version": "hypertagging-capacity-report-v2",
         "target_policy": "complete_only"
       },
-      "late_pid_adaptation": {
+      "stronger_recovery": {
         "cardinality_overflow_count": 0,
         "channel_frequency_histogram": {
           "1": 4094,
@@ -9684,7 +9684,7 @@
     "warmup_fraction": 0.05,
     "warmup_steps": 110
   },
-  "created_at": "2026-09-16T23:14:19.651870+00:00",
+  "created_at": "2026-09-16T23:17:56.227995+00:00",
   "data_binding": {
     "dataset_index": "artifacts/experiment_readiness/reconstruction_phase46_20260912/train_070k.complete_only.index.json",
     "dataset_index_sha256": "922dc6d8cf76d323fcec57a1dec1d702e0789263c4c6fcefa5cd589924935fcb",

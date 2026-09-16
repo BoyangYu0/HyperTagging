@@ -15,6 +15,8 @@ def load(name):
 def test_phase52_changes_only_recovery_objective_weight():
     p = load('ht_reconstruction_phase52_20260917.json')
     assert tuple(a['role'] for a in p['arms']) == ARM_ROLES
+    assert set(p['capacity_admission']['reports_by_arm']) == set(ARM_ROLES)
+    assert all(report['production_training_allowed'] and report['query_overflow_count'] == report['cardinality_overflow_count'] == 0 for report in p['capacity_admission']['reports_by_arm'].values())
     a,b = [{**copy.deepcopy(p['common_training_contract']), **copy.deepcopy(a['overrides'])} for a in p['arms']]
     assert a.pop('recovery_objective_weight') == 2.0
     assert b.pop('recovery_objective_weight') == 4.0

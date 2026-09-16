@@ -36,6 +36,8 @@ def main():
     candidate['overrides']['recovery_objective_weight']=4.0
     candidate['hypothesis']='Double the existing object-presence recovery term for targets missing from predicted context. This tests a downstream objective bottleneck; it cannot repair structurally incompatible targets.'
     p['arms']=[control,candidate]
+    capacity = p['capacity_admission']['reports_by_arm']
+    capacity['stronger_recovery'] = capacity.pop('late_pid_adaptation')
     p['parent_phase51']=binding(previous)
     p['phase51_closeout_basis']={**binding(evidence_path),'classification':'completed_corrected_source_no_promotion','selected_next_factor':'recovery_objective_weight','sealed_test_accessed':False}
     p['phase51_retained_metric_basis']={**binding(retained_path),'version':retained['version'],'evaluator_revision':retained['evaluator_revision']}
