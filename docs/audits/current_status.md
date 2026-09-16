@@ -17,6 +17,7 @@ Hold 70000 events. Existing studies do not establish a controlled dataset-size
 or longer-pretraining benefit. Corrected pretraining quality is an unmeasured
 hypothesis. Phase51 tests lower-rate late PID adaptation (multiplier 0.1) against
 frozen PID with unchanged encoder schedule and budget, fresh seed and cohort.
+Both Phase51 jobs were submitted after 151 frozen-source preflight tests passed.
 See the Phase50 wiki and dashboard for complete metrics and submission state.
 
 ## Reconstruction Phase49 review — 2026-09-15

@@ -153,6 +153,9 @@ trivial LCAG successes. No missing roots or hemispheres are invented.
      - 0
      - 0
 
+Exact component counts here require perfect nontrivial LCAG, not necessarily
+all-PID equality; the conjunction metrics are reported separately.
+
 Both models recover six exact nontrivial components per scope and zero coherent
 forests. Every exact component across all views and candidates remains depth one.
 Retained source coverage includes preserved detector inputs; it is not hierarchy
@@ -191,7 +194,7 @@ models, do not estimate training-seed uncertainty and have no multiple-compariso
 correction. Repeated views and checkpoint aliases are not independent trials.
 
 Decision across the studies
---------------------------
+---------------------------
 
 Keep 70,000 training events for now. Phase40 changed dataset size, compute and
 cohort together; it does not establish a controlled data scaling benefit.
@@ -229,3 +232,7 @@ A fresh seed and untouched validation cohort exclude all earlier inspected
 cohorts and the independent audit. Gates, search budgets and selection procedure
 remain fixed. Exactly two bounded jobs are authorized, with no automatic campaign
 chain, promotion or sealed-test access. The dashboard records submission state.
+
+Both Phase51 jobs were submitted and atomically released after 151 frozen-source
+preflight tests passed. Scheduler state remains a snapshot; submission does not
+establish successful training.
