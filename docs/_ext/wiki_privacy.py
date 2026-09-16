@@ -161,9 +161,9 @@ _PATH_FRAGMENT_ORDERED_PATTERNS = tuple(
 )
 _MAX_PUBLICATION_ENTRIES = 5_000
 _MAX_PUBLICATION_FILE_BYTES = 10 * 1024 * 1024
-# The complete historical metric downloads plus the nested basf2 layout exceed
-# 64 MiB after Phase49. Keep a bounded total without relaxing per-file/content checks.
-_MAX_PUBLICATION_BYTES = 80 * 1024 * 1024
+# Phase51 historical metric downloads exceed 80 MiB in the nested basf2 layout.
+# Keep a bounded total; the 10 MiB per-file limit and content checks are unchanged.
+_MAX_PUBLICATION_BYTES = 96 * 1024 * 1024
 _MAX_SOURCE_TEXT_BYTES = 5_000_000
 _MAX_TYPE_ANNOTATION_BYTES = 8_192
 _MAX_MATCH_STATES = 100_000
