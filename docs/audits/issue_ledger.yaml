@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase52 complete metrics and bounded Phase53 lower-recovery study; historical audit unchanged.
+  - 27219d614daa5dedc9ccfb384dd3c8a79456b325
   # Phase51 bounded total publication size and independent validation scheduling; content checks retained.
   - dc6b438552ee03df3c970b12da9333337ff5aae7
   # Phase51 RST heading formatting correction.
