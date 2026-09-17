@@ -1,1 +1,8 @@
-{"status":"PREPARED","task_count":2,"source_revision":null,"sealed_test_accessed":false,"promotion_authorized":false}
+{
+  "status": "SUBMITTED",
+  "status_date": "2026-09-17",
+  "task_count": 2,
+  "sealed_test_accessed": false,
+  "promotion_authorized": false,
+  "source_revision": "c794bc9ae3dcd41679e25fa037e6f326e5087393"
+}

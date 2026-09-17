@@ -223,3 +223,10 @@ remain necessary. This is one bounded exploratory pair, not a promotion.
 The new validation cohort excludes every previous selection and evaluation UID,
 including Phase52 and the independent audit. There is no automatic campaign
 chain or sealed-test access. The dashboard records the submission snapshot.
+
+Both Phase53 jobs were submitted from the validated immutable revision after
+161 frozen-source CPU preflight tests passed. The submission snapshot is not a
+training-completion claim. Focused reconstruction tests passed (193), dashboard
+and retained-tree checks passed (89), campaign/gradient checks passed (9), and
+both two-step CPU training smokes passed. These verify software contracts, not
+physics performance.

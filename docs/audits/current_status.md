@@ -12,7 +12,7 @@ sealed-test access.
 
 Hold 70k events. Dataset scaling and longer pretraining have no controlled
 established benefit; improved pretraining quality remains unmeasured. Phase53
-prepares one lower recovery-dose pair (2 versus 1) with unchanged budget,
+submitted one lower recovery-dose pair (2 versus 1) with unchanged budget,
 initialization, gates and a fresh disjoint validation cohort. See the Phase52
 wiki review and complete dashboard metrics for evidence and submission status.
 
