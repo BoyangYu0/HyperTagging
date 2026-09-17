@@ -1,5 +1,21 @@
 # Current repository audit status
 
+## Phase52 review — 2026-09-17
+
+Both recovery-weight runs completed; all fourteen views and 118 beam candidates
+are checked in full/half scope. Primary source-set plus mother-PID recovery is
+279/3619 versus 282/3619. Both pass original gates, but retained exact components
+decline 10 to 9, all depth one, and coherent forests remain zero. Original half
+exactness separately falls 10/152 to 8/152. Paired LCAG intervals include zero.
+Recovery weights 2/4 executed with PID frozen in both arms. No promotion or
+sealed-test access.
+
+Hold 70k events. Dataset scaling and longer pretraining have no controlled
+established benefit; improved pretraining quality remains unmeasured. Phase53
+prepares one lower recovery-dose pair (2 versus 1) with unchanged budget,
+initialization, gates and a fresh disjoint validation cohort. See the Phase52
+wiki review and complete dashboard metrics for evidence and submission status.
+
 ## Phase51 review — 2026-09-17
 
 Both lower-rate PID comparison runs completed. All 14 views and all 124 beam
