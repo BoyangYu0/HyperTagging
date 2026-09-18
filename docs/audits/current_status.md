@@ -1,5 +1,23 @@
 # Current repository audit status
 
+## Phase53 review — 2026-09-18
+
+Both recovery-weight runs completed. All fourteen views and all 141 beam
+candidates are checked in full/half scope. Primary recovery is 278/3807 versus
+279/3807. Retained exact components rise 7 to 9, but coherent forests decline
+1 to 0; candidate misses full-root construction. Both recover the same depth-two
+component in one continuum event. The control forest success is a separate
+continuum event, not a B-pair reconstruction. LCAG intervals include zero;
+half-source precision has an exploratory positive interval. Recovery weights
+2/1 executed, with PID frozen in both arms. No promotion or sealed-test access.
+
+Hold 70k events. More data and longer pretraining have no established controlled
+benefit; improved pretraining quality is unmeasured. Phase54 prepares one
+replication of weights 2 versus 1 with a fresh seed/cohort and unchanged budget
+and gates. If the joint benefit does not reproduce, prioritize a controlled
+representation-quality experiment rather than further dose tuning. See the
+Phase53 wiki and dashboard for complete metrics and submission evidence.
+
 ## Phase52 review — 2026-09-17
 
 Both recovery-weight runs completed; all fourteen views and 118 beam candidates
