@@ -2628,6 +2628,7 @@ def generate_status(repo_root: Path, output_dir: Path) -> dict[str, Any]:
             encoded = (json.dumps(download, separators=(",", ":"), sort_keys=True, allow_nan=False) + "\n").encode()
             _write(output / filename, encoded)
             record["metric_download"] = {"filename": filename, "sha256": hashlib.sha256(encoded).hexdigest(), "bytes": len(encoded), "metric_count": len(metric_rows)}
-    _write(output / "status.json", (json.dumps(_compact_exact_numbers(manifest), separators=(",", ":"), sort_keys=True, allow_nan=False) + "\n").encode())
+    manifest = _compact_exact_numbers(manifest)
+    _write(output / "status.json", (json.dumps(manifest, separators=(",", ":"), sort_keys=True, allow_nan=False) + "\n").encode())
     _write(output / "index.rst", _render(manifest).encode())
     return manifest
