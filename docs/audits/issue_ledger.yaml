@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Measured Phase53 publication total allowance; per-file and content checks unchanged.
+  - 7d454f4dc28100cdc9d9629e45419d8fa2d036e7
   # Phase54 submission snapshot and Phase53 publication metadata.
   - 32139e83d8e7a665b33056385fa8c23a31ff195d
   # Lossless status serialization and manifest binding correction before Phase54 submission.
