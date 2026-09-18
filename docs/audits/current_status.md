@@ -12,7 +12,7 @@ half-source precision has an exploratory positive interval. Recovery weights
 2/1 executed, with PID frozen in both arms. No promotion or sealed-test access.
 
 Hold 70k events. More data and longer pretraining have no established controlled
-benefit; improved pretraining quality is unmeasured. Phase54 prepares one
+benefit; improved pretraining quality is unmeasured. Phase54 submitted one
 replication of weights 2 versus 1 with a fresh seed/cohort and unchanged budget
 and gates. If the joint benefit does not reproduce, prioritize a controlled
 representation-quality experiment rather than further dose tuning. See the

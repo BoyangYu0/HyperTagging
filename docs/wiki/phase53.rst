@@ -370,3 +370,7 @@ The recovery loss is an object-presence surrogate, not supervision of correct
 daughters or recursive topology; its weight cannot repair incompatible targets.
 The new cohort excludes all earlier selection and scoring events, including
 Phase53 and the independent audit. The dashboard records the submission snapshot.
+
+Both Phase54 jobs were submitted and atomically released from immutable source
+``67e1019414ebbf92d1d32be575aed93bce005a01`` after 168 frozen-source preflight
+tests passed. Scheduler state is a submission snapshot, not a completed result.
