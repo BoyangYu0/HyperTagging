@@ -425,3 +425,10 @@ preflight tests. Both were queued at the submission snapshot. Each allocation
 has one H100 NVL, eight CPUs, 64 GiB and a 36-hour limit, with no requeue.
 Submission does not establish successful training; the next review must inspect
 refinement execution, transfer lineage and all reconstruction gates.
+
+Presentation accounting clarification: the preregistration's 70,016 field is
+the nominal product of 2,188 steps and batch capacity 32. The non-cycling
+iterator retains a final 16-event batch, so the expected actual refinement
+count is 70,000 presentations in each arm. Sum logged batch sizes to verify
+actual exposure; do not report the nominal capacity as processed data. This
+clarification changes neither training steps nor either submitted contract.
