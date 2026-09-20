@@ -1,5 +1,23 @@
 # Current repository audit status
 
+## Phase54 review — 2026-09-20
+
+Both runs completed with all fourteen views and all 124 full/half beam candidates
+checked. Primary recovery rises 243/3783 to 261/3783, but retained exact components
+fall 12 to 11; both fail full-source-recall and full-root-construction gates.
+All exact components have depth one. Each arm has one continuum coherent forest;
+control has no mothers, candidate one shallow mother. No B-pair or deep-tree
+success is established. Paired intervals include zero. Recovery weights 2/1
+executed and PID stayed frozen. No promotion or sealed-test access.
+
+Hold 70k events and stop recovery-dose tuning. Phase55 prepares one matched
+pretraining-quality pair: parent-ranking weights 1 versus 2 during 2188-step
+refinement, then identical 4376-step reconstruction. Both start from the same
+parameters with fresh corrected train-only normalization and fresh training
+state. Pretraining quality is an unproven hypothesis; longer pretraining and
+data growth have no established controlled benefit. See the Phase54 review and
+dashboard for complete metrics, cohort boundaries and submission evidence.
+
 ## Phase53 review — 2026-09-18
 
 Both recovery-weight runs completed. All fourteen views and all 141 beam

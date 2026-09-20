@@ -81,6 +81,10 @@ SOURCE_PATHS.update({
     "reconstruction_phase53_retained": "artifacts/codex/reconstruction_phase53_retained_metrics_20260918.json",
     "reconstruction_phase53_aggregation": "artifacts/codex/reconstruction_phase53_aggregation_20260918.json",
     "reconstruction_phase54_submission": "artifacts/codex/reconstruction_phase54_submission_20260918.json",
+    "reconstruction_phase54": "artifacts/codex/reconstruction_phase54_closeout_20260920.json",
+    "reconstruction_phase54_retained": "artifacts/codex/reconstruction_phase54_retained_metrics_20260920.json",
+    "reconstruction_phase54_aggregation": "artifacts/codex/reconstruction_phase54_aggregation_20260920.json",
+    "reconstruction_phase55_submission": "artifacts/codex/reconstruction_phase55_submission_20260920.json",
 })
 SOURCE_IDS = {key: f"source-{index:02d}" for index, key in enumerate(SOURCE_PATHS, 1)}
 FRESHNESS_DAYS = 30
@@ -609,6 +613,19 @@ def _collect(payloads: dict[str, Any], revision: str | None) -> dict[str, Any]:
             record["next_study_status"] = submission["status"]
             record["submission_task_count"] = _integer(submission.get("task_count"))
             record["submission_source_revision"] = _sha(submission.get("source_revision"))
+    reconstruction["phase54"] = _phase41_projection(payloads.get("reconstruction_phase54"), phase=54, labels=("late_adaptation_control", "weaker_recovery"))
+    if reconstruction["phase54"]:
+        record = reconstruction["phase54"]
+        record["source_boundary"] = "CORRECTED_SCIENTIFIC_AUDIT_SOURCE"
+        record["retained_tree_checks"] = _phase54_retained_projection(payloads.get("reconstruction_phase54_retained"))
+        record["aggregation_supplement"] = _phase54_aggregation_projection(payloads.get("reconstruction_phase54_aggregation"))
+        if reconstruction["phase53"]:
+            reconstruction["phase53"]["next_study_status"] = "COMPLETED"
+        submission = _mapping(payloads.get("reconstruction_phase55_submission"))
+        if submission.get("status") in {"PREPARED", "SUBMITTED", "RUNNING"}:
+            record["next_study_status"] = submission["status"]
+            record["submission_task_count"] = _integer(submission.get("task_count"))
+            record["submission_source_revision"] = _sha(submission.get("source_revision"))
     science = {"source_ids": _refs("verification_runs", "notebook_registry"),
                "real_pilot": _notebook_record(notebook_runs.get("real_mdst_pilot"))["result"],
                "trained_physics": _notebook_record(notebook_runs.get("trained_physics_validation"))["result"],
@@ -643,7 +660,7 @@ def _phase41_projection(raw: Any, *, phase=41, labels=("pointer32_control", "lev
               "beam_event_count": _integer(raw.get("beam_event_count")),
               "sealed_test_accessed": _boolean(raw.get("sealed_test_accessed")),
               "source_hashes": [_sha(value) for value in _list(raw.get("source_hashes"))], "arms": {}}
-    if phase in (46, 47, 48, 49, 50, 51, 52, 53):
+    if phase in (46, 47, 48, 49, 50, 51, 52, 53, 54):
         if (raw.get("status") != "COMPLETED" or raw.get("source_boundary") != "corrected_scientific_audit_source"
             or raw.get("sealed_test_accessed") is not False):
             raise ValueError("Phase46 corrected source boundary is missing")
@@ -720,6 +737,8 @@ def _render_phase41(record: dict[str, Any]) -> list[str]:
     rows += [[key, *[_metric_point(arms[arm]["endpoints"][key]) for arm in labels]] for key in arms[labels[0]]["endpoints"]]
     rows += [["all hierarchy gates passed", *[arms[arm]["all_gates_passed"] for arm in labels]]]
     lines += _table(["Metric", "Pointer32 control", "Level1 pointer24"], rows)
+    if record.get("metric_download"):
+        lines += [":download:`Complete Phase41 metric values <phase41-metrics.json>`.", ""]
     selected_metrics = {(row["arm"], row["metric"]): row["value"] for row in record["metric_rows"] if row["view"] == "training_best"}
     lines += ["Checkpoint-selection diagnostics", "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", "",
               "These micro teacher-forced pointer metrics use aggregated numerator/denominator",
@@ -1223,6 +1242,153 @@ def _phase48_aggregation_projection(value):
     return {'metric_rows': rows, 'primary': primary, 'source_hashes': [_sha(x) for x in _list(raw.get('source_hashes'))],
             'source_ids': _refs('reconstruction_phase48_aggregation')}
 
+
+def _phase54_retained_projection(value):
+    raw = _mapping(value)
+    if (raw.get("status") != "COMPLETE" or raw.get("version") != "phase54-retained-tree-export-v1"
+        or raw.get("all_returned_beam_candidates_checked") is not True
+        or raw.get("original_job_status") != "COMPLETED" or raw.get("sealed_test_accessed") is not False):
+        raise ValueError("Phase54 retained-tree coverage is incomplete")
+    result = {"version": "phase54-retained-tree-export-v1", "status": "COMPLETE",
+              "source_ids": _refs("reconstruction_phase54_retained"),
+              "evaluator_revision": _sha(raw.get("evaluator_revision")),
+              "source_hashes": [_sha(item) for item in _list(raw.get("source_hashes"))],
+              "all_returned_beam_candidates_checked": True,
+              "aggregate_metric_count": _integer(raw.get("aggregate_metric_count")),
+              "detailed_metric_count": _integer(raw.get("detailed_metric_count")),
+              "tree_metric_scalar_rows": _integer(raw.get("tree_metric_scalar_rows")),
+              "tree_metric_export_sha256": _sha(raw.get("tree_metric_export_sha256")), "arms": {}}
+    metrics = ("source_recall", "source_precision", "lcag_pair_accuracy", "mother_pid_coverage",
+               "mother_pid_accuracy", "perfect_lcag", "coherent_retained_forest", "target_representable", "root_pid_accuracy")
+    def points(value):
+        output = {}
+        value = _mapping(value)
+        for key in metrics:
+            point = _mapping(value.get(key))
+            num, den = _number(point.get("numerator")), _number(point.get("denominator"))
+            if num is None or den is None or num < 0 or den < num:
+                raise ValueError("Invalid retained-tree metric counts")
+            output[key] = {"numerator": num, "denominator": den, "value": num / den if den else None}
+        for key in ("unit_count", "available_unit_count", "unavailable_unit_count", "truth_mother_count", "matched_mother_count"):
+            output[key] = _integer(value.get(key))
+            if output[key] is None or output[key] < 0:
+                raise ValueError("Missing retained-tree coverage count")
+        if output['unit_count'] != output['available_unit_count'] + output['unavailable_unit_count']:
+            raise ValueError("Inconsistent retained-tree coverage count")
+        output['unit_semantics_counts'] = {key: _integer(_mapping(value.get('unit_semantics_counts')).get(key, 0)) for key in ('retained_full_forest', 'retained_b_halves', 'retained_explicit_components_no_b_partition')}
+        return output
+    for arm in ("late_adaptation_control", "weaker_recovery"):
+        record = _mapping(_mapping(raw.get('arms')).get(arm))
+        if record.get('primary_repeat_identical') is not True:
+            raise ValueError('Retained-tree repeat was not verified')
+        result['arms'][arm] = {'primary_repeat_identical': True, 'beam_candidate_count': _integer(record.get('beam_candidate_count')),
+            'primary_structure': {scope: {key: _integer(_mapping(_mapping(record.get('primary_structure')).get(scope)).get(key)) for key in ('isolated_leaf_units', 'single_source_composite_units', 'nontrivial_topology_units', 'source_empty_units', 'representable_nontrivial_units', 'events_without_flagged_target_incompatibility')} for scope in ('full', 'half')},
+            'primary': {scope: points(_mapping(record.get('primary')).get(scope)) for scope in ('full', 'half')},
+            'beam': {scope: {ranking: points(_mapping(_mapping(record.get('beam')).get(scope)).get(ranking)) for ranking in ('average_link_probability', 'learned_confidence_mean', 'learned_confidence_sum', 'normalized_joint_log_probability', 'oracle_diagnostic')} for scope in ('full', 'half')}}
+    for arm in result['arms'].values():
+        for scope, counts in arm['primary_structure'].items():
+            if any(value is None for value in counts.values()):
+                raise ValueError('Missing retained-reference composition count')
+            if sum(counts[key] for key in ('isolated_leaf_units', 'single_source_composite_units', 'nontrivial_topology_units', 'source_empty_units')) != arm['primary'][scope]['unit_count']:
+                raise ValueError('Retained-reference composition does not cover all units')
+            if counts['representable_nontrivial_units'] > counts['nontrivial_topology_units']:
+                raise ValueError('Invalid retained-reference representability count')
+    registry = json.loads(Path(__file__).with_name('phase54_retained_metric_registry.json').read_text())
+    allowed, seen, rows = set(map(tuple, registry)), set(), []
+    for row in _list(raw.get('metric_rows')):
+        identity = (row.get('arm'), row.get('view'), row.get('metric'))
+        if identity not in allowed:
+            continue
+        if identity in seen:
+            raise ValueError('Duplicate retained-tree metric')
+        number = row.get('value')
+        if number is not None and _number(number) is None and type(number) is not bool:
+            raise ValueError('Invalid retained-tree scalar')
+        seen.add(identity)
+        rows.append(dict(arm=identity[0], view=identity[1], metric=identity[2], value=number))
+    if seen != allowed or len(rows) != result['aggregate_metric_count']:
+        raise ValueError('Incomplete retained-tree metric registry')
+    result['metric_rows'] = rows
+    return result
+
+
+def _phase54_aggregation_projection(value):
+    raw = _mapping(value)
+    if raw.get('version') != 'phase54-aggregation-supplement-v1' or raw.get('status') != 'COMPLETE':
+        raise ValueError('Missing Phase54 aggregation supplement')
+    registry = json.loads(Path(__file__).with_name('phase54_aggregation_metric_registry.json').read_text())
+    allowed, seen, rows = set(map(tuple, registry)), set(), []
+    for row in _list(raw.get('metric_rows')):
+        identity = (row.get('arm'), row.get('view'), row.get('metric'))
+        if identity not in allowed:
+            continue
+        if identity in seen or (row.get('value') is not None and _number(row.get('value')) is None):
+            raise ValueError('Invalid Phase54 aggregation scalar')
+        seen.add(identity)
+        rows.append(dict(arm=identity[0], view=identity[1], metric=identity[2], value=row.get('value')))
+    if seen != allowed:
+        raise ValueError('Incomplete Phase54 aggregation registry')
+    primary = {arm: {r['metric']: r['value'] for r in rows if r['arm'] == arm and r['view'] == 'primary_complete_target_direct'} for arm in ('late_adaptation_control', 'weaker_recovery')}
+    return {'metric_rows': rows, 'primary': primary, 'source_hashes': [_sha(x) for x in _list(raw.get('source_hashes'))],
+            'source_ids': _refs('reconstruction_phase54_aggregation')}
+
+
+def _render_phase54(record):
+    if not record:
+        return []
+    labels = ('late_adaptation_control', 'weaker_recovery')
+    arms, retained = record['arms'], record['retained_tree_checks']
+    lines = ['Phase54: Recovery-dose replication does not establish a joint benefit', '-' * 80, '',
+        'Primary source-set plus mother-PID recovery is 243/3783 control versus 261/3783 weaker recovery; this is not recursive topology efficiency.',
+        'Recovery weights 2 and 1 are verified; both PID heads stayed frozen with unchanged weights.',
+        'Both arms fail full-source-recall and full-root-construction gates. Gate passage does not establish promotion-grade physics.', '',
+        ':download:`Complete Phase54 original metric values <phase54-metrics.json>`;',
+        ':download:`Complete Phase54 retained-tree metric values <phase54-retained-metrics.json>`;',
+        ':download:`Phase54 micro, macro and exact source/PID/topology counts <phase54-aggregation-metrics.json>`.', '',
+        'Both arms completed 4,376 steps on 70,000 events. All seven views and strict repeats are checked.',
+        'Selection uses 2,000 validation events (1,000 rollout); strict scoring uses 100 disjoint events and beam its 20-event subset.', '']
+    lines += _table(['Original policy metric', 'Recovery weight 2', 'Recovery weight 1'],
+        [[key, *[_metric_point(arms[a]['endpoints'][key]) for a in labels]] for key in arms[labels[0]]['endpoints']])
+    lines += _table(['Strict gate', 'Recovery weight 2', 'Recovery weight 1'],
+        [[key, *[arms[a]['gates'][key] for a in labels]] for key in arms[labels[0]]['gates']])
+    lines += ['Phase54 all retained full and half trees', '~' * 48, '',
+        'Every retained root is checked, including incompatible targets as failed trials. Isolated leaves do not earn trivial LCAG successes.',
+        'Half scope uses explicit B partitions or labelled component fallbacks; missing roots or hemispheres are never invented.',
+        'Source coverage is dominated by preserved inputs and is not hierarchy efficiency.', '']
+    lines += _table(['Scope', 'Metric', 'Recovery weight 2', 'Recovery weight 1'],
+        [[scope, key, *[_metric_point(retained['arms'][a]['primary'][scope][key]) for a in labels]]
+         for scope in ('full', 'half') for key in ('source_recall','source_precision','lcag_pair_accuracy','mother_pid_coverage','mother_pid_accuracy','perfect_lcag','coherent_retained_forest','target_representable','root_pid_accuracy')])
+    lines += _table(['Reference population', 'Full', 'Half/component'],
+        [[key, *[retained['arms'][labels[0]]['primary_structure'][scope][key] for scope in ('full','half')]]
+         for key in retained['arms'][labels[0]]['primary_structure']['full']])
+    aggregation = record['aggregation_supplement']['primary']
+    lines += ['Phase54 micro and macro populations', '~' * 40, '',
+        'Macro means exclude undefined zero-denominator ratios, count that unavailability, and retain defined failures as zeros.',
+        'Exact source and PID columns require representability and structural validity. Nontrivial units have at least two sources.', '']
+    lines += _table(['Arm', 'Scope', 'Metric', 'Micro', 'Unit macro', 'Event macro'],
+        [[arm, scope, key, *[f"{aggregation[arm][f'{scope}.greedy.{key}.{kind}']:.6g}" if aggregation[arm][f'{scope}.greedy.{key}.{kind}'] is not None else 'UNAVAILABLE' for kind in ('micro','unit_macro','event_macro')]]
+         for arm in labels for scope in ('full','half') for key in ('source_recall','source_precision','lcag_pair_accuracy','perfectLCAG')])
+    lines += _table(['Arm', 'Scope', 'Nontrivial exact criterion', 'Numerator', 'Denominator'],
+        [[arm, scope, key, *[aggregation[arm][f'{scope}.greedy.exact.nontrivial.{key}.{part}'] for part in ('numerator','denominator')]]
+         for arm in labels for scope in ('full','half') for key in ('source','source_leaf_pid','source_topology','source_topology_all_pid')])
+    lines += ['Phase54 returned beam candidates', '~' * 40, '',
+        'All returned width-four candidates receive full and half checks. Model-only rankings remain distinct from the coherent',
+        'post-inference oracle. Per-unit Oracle@K maxima are bounds and do not describe one coherent event.', '']
+    lines += _table(['Arm', 'Returned candidates'], [[a, retained['arms'][a]['beam_candidate_count']] for a in labels])
+    lines += _table(['Arm', 'Scope', 'Ranking', 'LCAG', 'Mother coverage', 'Perfect component', 'Coherent forest'],
+        [[a, scope, rank, *[_metric_point(points[k]) for k in ('lcag_pair_accuracy','mother_pid_coverage','perfect_lcag','coherent_retained_forest')]]
+         for a in labels for scope, rankings in retained['arms'][a]['beam'].items() for rank, points in rankings.items()])
+    lines += ['Phase54 decision and uncertainty', '~' * 40, '',
+        'Primary recovery rises by 18 source sets, but retained exact components fall from 12 to 11. Each arm has one coherent forest on a different continuum event; the control event has no mothers and the candidate has one shallow mother. No exact component has depth greater than one.',
+        'Paired event-bootstrap intervals for retained LCAG gains include zero; they are conditional on the selected models, not training-seed uncertainty.',
+        'Keep 70,000 events. Stop recovery-dose tuning and test pretraining quality with matched compute.',
+        'Corrected pretraining quality remains unmeasured; prior data and compute scaling were confounded.',
+        'Phase55 compares parent-ranking weights 1 and 2 during 2,188-step pretraining refinement, followed by identical 4,376-step reconstruction. Both arms use 70,000 events and the same initial parameters. Pretraining quality is a hypothesis, not an established benefit.',
+        f"Phase55 submission snapshot: {_literal(record['next_study_status'])}. No automatic promotion or sealed-test access.",
+        'Physical mother momentum resolution is unavailable; daughter-sum closure is an implementation invariant.',
+        'After Phase55 only 1,491 untouched validation UIDs remain; plan validation budgeting separately from training-data growth.',
+        'See :doc:`../../phase54` for full interpretation and historical synthesis.', '']
+    return lines
 
 def _phase53_retained_projection(value):
     raw = _mapping(value)
@@ -2382,6 +2548,12 @@ def _render(manifest: dict[str, Any]) -> str:
             ["Recovery weights 2 and 1 executed. Exact components rise 7 to 9; coherent forests fall 1 to 0.",
              "Weaker recovery misses full-root construction. All full/half beam candidates checked; no promotion.",
              f"Phase54: {record['next_study_status']}; replicate recovery-objective weight 2 versus 1 at fixed 70,000 events."], "warning"))
+    if reconstruction.get("phase54"):
+        record = reconstruction["phase54"]
+        cards.insert(0, ("Phase54 recovery-dose replication", "MIXED / NO PROMOTION",
+            ["Primary recovery rises 243/3783 to 261/3783; retained exact components fall 12 to 11.",
+             "Both arms fail full-recall and root-construction gates. All 124 full/half beam candidates checked.",
+             f"Phase55: {record['next_study_status']}; matched parent-ranking pretraining weights 1 versus 2, then identical reconstruction."], "warning"))
     lines = ["Model performance and scientific status", "=======================================", "",
              "Recorded measurements from tracked evidence. Missing measurements are UNAVAILABLE;",
              "NOT_RUN describes a recorded evaluation status. Historical results do not verify",
@@ -2393,13 +2565,14 @@ def _render(manifest: dict[str, Any]) -> str:
              ".. raw:: html", "",
              '   <section class="status-dashboard" aria-label="Recorded model performance">']
     for index, (title, value, paragraphs, kind) in enumerate(cards):
-        refs = reconstruction["phase53"]["source_ids"] if title.startswith("Phase53") else reconstruction["phase52"]["source_ids"] if title.startswith("Phase52") else reconstruction["phase51"]["source_ids"] if title.startswith("Phase51") else reconstruction["phase50"]["source_ids"] if title.startswith("Phase50") else reconstruction["phase49"]["source_ids"] if title.startswith("Phase49") else reconstruction["phase48"]["source_ids"] if title.startswith("Phase48") else reconstruction["phase47"]["source_ids"] if title.startswith("Phase47") else reconstruction["phase46"]["source_ids"] if title.startswith("Phase46") else reconstruction["phase45"]["source_ids"] if title.startswith("Phase45") else reconstruction["phase44"]["source_ids"] if title.startswith("Phase44") else reconstruction["phase43"]["source_ids"] if title.startswith("Phase43") else reconstruction["phase42"]["source_ids"] if title.startswith("Phase42") else reconstruction["phase41"]["source_ids"] if title.startswith("Phase41") else recent["source_ids"] if title.startswith("Phase40") else reconstruction["source_ids"]
+        refs = reconstruction["phase54"]["source_ids"] if title.startswith("Phase54") else reconstruction["phase53"]["source_ids"] if title.startswith("Phase53") else reconstruction["phase52"]["source_ids"] if title.startswith("Phase52") else reconstruction["phase51"]["source_ids"] if title.startswith("Phase51") else reconstruction["phase50"]["source_ids"] if title.startswith("Phase50") else reconstruction["phase49"]["source_ids"] if title.startswith("Phase49") else reconstruction["phase48"]["source_ids"] if title.startswith("Phase48") else reconstruction["phase47"]["source_ids"] if title.startswith("Phase47") else reconstruction["phase46"]["source_ids"] if title.startswith("Phase46") else reconstruction["phase45"]["source_ids"] if title.startswith("Phase45") else reconstruction["phase44"]["source_ids"] if title.startswith("Phase44") else reconstruction["phase43"]["source_ids"] if title.startswith("Phase43") else reconstruction["phase42"]["source_ids"] if title.startswith("Phase42") else reconstruction["phase41"]["source_ids"] if title.startswith("Phase41") else recent["source_ids"] if title.startswith("Phase40") else reconstruction["source_ids"]
         lines.extend("   " + line for line in _card(title, value, paragraphs, refs, kind, index).splitlines())
     lines += ["   </section>", "", ".. only:: not html", ""]
     for title, value, paragraphs, kind in cards:
         lines += [f"   **{_literal(title)}: {_literal(value)}**", ""]
         lines.extend(f"   {_literal(paragraph)}" for paragraph in paragraphs)
         lines += [""]
+    lines += _render_phase54(reconstruction.get("phase54", {}))
     lines += _render_phase53(reconstruction.get("phase53", {}))
     lines += _render_phase52(reconstruction.get("phase52", {}))
     lines += _render_phase51(reconstruction.get("phase51", {}))
@@ -2520,7 +2693,7 @@ def generate_status(repo_root: Path, output_dir: Path) -> dict[str, Any]:
     output = requested.resolve()
     if output == root or output in root.parents or any(part.is_symlink() for part in (requested, *requested.parents)):
         raise ValueError("Status output must be a dedicated non-symlink directory")
-    if output.exists() and any(path.name not in {"index.rst", "status.json", "phase44-retained-metrics.json", "phase45-metrics.json", "phase45-retained-metrics.json", "phase46-metrics.json", "phase46-retained-metrics.json", "phase47-metrics.json", "phase47-retained-metrics.json", "phase47-aggregation-metrics.json", "phase48-metrics.json", "phase48-retained-metrics.json", "phase48-aggregation-metrics.json", "phase49-metrics.json", "phase49-retained-metrics.json", "phase49-aggregation-metrics.json", "phase50-metrics.json", "phase50-retained-metrics.json", "phase50-aggregation-metrics.json", "phase51-metrics.json", "phase51-retained-metrics.json", "phase51-aggregation-metrics.json", "phase52-metrics.json", "phase52-retained-metrics.json", "phase52-aggregation-metrics.json", "phase53-metrics.json", "phase53-retained-metrics.json", "phase53-aggregation-metrics.json"} for path in output.iterdir()):
+    if output.exists() and any(path.name not in {"index.rst", "status.json", "phase44-retained-metrics.json", "phase45-metrics.json", "phase45-retained-metrics.json", "phase46-metrics.json", "phase46-retained-metrics.json", "phase47-metrics.json", "phase47-retained-metrics.json", "phase47-aggregation-metrics.json", "phase48-metrics.json", "phase48-retained-metrics.json", "phase48-aggregation-metrics.json", "phase49-metrics.json", "phase49-retained-metrics.json", "phase49-aggregation-metrics.json", "phase50-metrics.json", "phase50-retained-metrics.json", "phase50-aggregation-metrics.json", "phase51-metrics.json", "phase51-retained-metrics.json", "phase51-aggregation-metrics.json", "phase52-metrics.json", "phase52-retained-metrics.json", "phase52-aggregation-metrics.json", "phase53-metrics.json", "phase53-retained-metrics.json", "phase53-aggregation-metrics.json", "phase54-metrics.json", "phase54-retained-metrics.json", "phase54-aggregation-metrics.json", "phase41-metrics.json"} for path in output.iterdir()):
         raise ValueError("Status output contains unexpected files; use a fresh dedicated directory")
     history = _git(root, "log", "-1", "--format=%H%n%cI")
     lines = history.decode("utf-8", errors="replace").splitlines() if history else []
@@ -2628,6 +2801,24 @@ def generate_status(repo_root: Path, output_dir: Path) -> dict[str, Any]:
             encoded = (json.dumps(download, separators=(",", ":"), sort_keys=True, allow_nan=False) + "\n").encode()
             _write(output / filename, encoded)
             record["metric_download"] = {"filename": filename, "sha256": hashlib.sha256(encoded).hexdigest(), "bytes": len(encoded), "metric_count": len(metric_rows)}
+    phase54 = manifest.get("reconstruction", {}).get("phase54", {})
+    for record, filename in ((phase54, "phase54-metrics.json"), (phase54.get("retained_tree_checks", {}), "phase54-retained-metrics.json"), (phase54.get("aggregation_supplement", {}), "phase54-aggregation-metrics.json")):
+        if record:
+            metric_rows = record.pop("metric_rows")
+            download = {"source_hashes": record["source_hashes"], "metric_rows": metric_rows}
+            encoded = (json.dumps(download, separators=(",", ":"), sort_keys=True, allow_nan=False) + "\n").encode()
+            _write(output / filename, encoded)
+            record["metric_download"] = {"filename": filename, "sha256": hashlib.sha256(encoded).hexdigest(), "bytes": len(encoded), "metric_count": len(metric_rows)}
+    # Keep the historical diagnostics needed to render Phase41 inline; publish
+    # every bulk row in a hash-bound download to keep status.json below 10 MiB.
+    phase41 = manifest.get("reconstruction", {}).get("phase41", {})
+    if phase41:
+        rows = phase41["metric_rows"]
+        download = _compact_exact_numbers({"source_hashes": phase41["source_hashes"], "metric_rows": rows})
+        encoded = (json.dumps(download, sort_keys=True, separators=(",", ":"), allow_nan=False) + "\n").encode()
+        _write(output / "phase41-metrics.json", encoded)
+        phase41["metric_download"] = {"filename": "phase41-metrics.json", "sha256": hashlib.sha256(encoded).hexdigest(), "bytes": len(encoded), "metric_count": len(rows)}
+        phase41["metric_rows"] = [row for row in rows if row["view"] == "training_best"]
     manifest = _compact_exact_numbers(manifest)
     _write(output / "status.json", (json.dumps(manifest, separators=(",", ":"), sort_keys=True, allow_nan=False) + "\n").encode())
     _write(output / "index.rst", _render(manifest).encode())

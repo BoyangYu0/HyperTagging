@@ -86,6 +86,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--output-dir", default="outputs/hyperbolic_pretrain")
     parser.add_argument("--resume", default=None)
+    parser.add_argument("--weights-initialization-checkpoint", default=None)
+    parser.add_argument("--validation-event-uids", nargs="*", default=[])
     parser.add_argument("--checkpoint-every", type=int, default=100)
     parser.add_argument("--log-every", type=int, default=10)
     parser.add_argument("--validate-every", type=int, default=100)
@@ -232,6 +234,8 @@ def main(argv: list[str] | None = None) -> int:
                 scientific_mode=args.scientific_mode,
                 channel_pooling=args.channel_pooling,
                 resume=args.resume,
+                weights_initialization_checkpoint=args.weights_initialization_checkpoint,
+                validation_event_uids=tuple(args.validation_event_uids),
                 ablation=args.ablation,
                 channel_memory_size=args.channel_memory_size,
                 radius_target_mode=args.radius_target_mode,

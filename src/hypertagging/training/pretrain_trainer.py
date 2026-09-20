@@ -56,7 +56,6 @@ from hypertagging.training.learning_rate import (
 )
 from hypertagging.training.presentation_progress import (
     PHASE3_PHASE_PRESENTATION_DURATIONS,
-    PHASE3_TOTAL_PRESENTATIONS,
     PHASE3_VALIDATION_PRESENTATIONS,
     PRESENTATION_PROGRESS_VERSION,
     VIRTUAL_STEP_PRESENTATIONS,
@@ -106,6 +105,8 @@ class PretrainConfig:
     checkpoint_every: int = 100
     validate_every: int = 100
     resume: str | None = None
+    weights_initialization_checkpoint: str | None = None
+    validation_event_uids: tuple[str, ...] = ()
     curriculum: tuple[str, ...] = (
         PretrainingStage.FSP_ONLY.value,
         PretrainingStage.TRUTH_GUIDED_MULTILEVEL.value,
@@ -376,6 +377,33 @@ class ChannelMemoryBank(torch.nn.Module):
         )
 
 
+def initialize_pretraining_parameters(model, checkpoint: Path, *, architecture: dict[str, Any]) -> dict[str, Any]:
+    """Warm-start parameters only; retain fresh train-fitted buffers and optimizer state."""
+    from hypertagging.preprocessing.pid_filter import PID_VOCABULARY_VERSION
+    payload = load_training_checkpoint(checkpoint, map_location="cpu")
+    if (payload.get("architecture") != architecture
+        or payload.get("pid_vocabulary_version") != PID_VOCABULARY_VERSION
+        or payload.get("feature_specification", {}).get("feature_spec_hash") != feature_spec_v4()["feature_spec_hash"]
+        or payload.get("preprocessing_schema_version") != "direct-mdst-tree-v4"):
+        raise ValueError("pretraining parameter initialization contract mismatch")
+    if type(payload.get("step")) is not int or payload["step"] < 0:
+        raise ValueError("invalid pretraining initialization step")
+    state = payload["model_state_dict"]
+    parameters = dict(model.named_parameters())
+    for name, parameter in parameters.items():
+        value = state.get(name)
+        if (not isinstance(value, torch.Tensor) or value.shape != parameter.shape
+            or value.dtype != parameter.dtype or not torch.isfinite(value).all()):
+            raise ValueError(f"invalid pretraining initialization parameter: {name}")
+    # Validate the complete set before mutating any parameter. Runtime normalizers,
+    # channel-memory buffers, optimizer, schedule, RNG and cursors are not restored.
+    with torch.no_grad():
+        for name, parameter in parameters.items():
+            parameter.copy_(state[name])
+    return {"source_step": int(payload["step"]), "parameter_count": len(parameters),
+            "buffers_restored": False, "optimizer_restored": False}
+
+
 def train_hyperbolic_pretraining(
     config: PretrainConfig,
     *,
@@ -506,6 +534,10 @@ def train_hyperbolic_pretraining(
             raise ValueError(
                 "phase-3 presentation phase budgets are immutable in this profile"
             )
+    if config.resume and config.weights_initialization_checkpoint:
+        raise ValueError("resume and parameter initialization are mutually exclusive")
+    if config.validation_event_uids and (len(set(config.validation_event_uids)) != len(config.validation_event_uids) or len(config.validation_event_uids) != config.validation_events):
+        raise ValueError("explicit pretraining validation UIDs must be unique and match validation_events")
     seed_everything(config.seed)
     if config.resume and config.num_workers > 0:
         raise ValueError("exact streaming resume currently requires num_workers=0")
@@ -613,6 +645,12 @@ def train_hyperbolic_pretraining(
             composite_count=data_module.normalizers["composite"].count,
         ).to(device)
     )
+    if config.weights_initialization_checkpoint:
+        initial_path = Path(config.weights_initialization_checkpoint).resolve(strict=True)
+        if initial_path.parent == output_dir.resolve():
+            raise ValueError("parameter initialization output must be a fresh directory")
+        initialization = initialize_pretraining_parameters(model, initial_path, architecture=architecture.to_dict())
+        (output_dir / "parameter-initialization.json").write_text(json.dumps(initialization, sort_keys=True) + "\n")
     optimizer = torch.optim.AdamW(
         model.parameters(),
         lr=config.learning_rate,
@@ -759,6 +797,10 @@ def train_hyperbolic_pretraining(
         "validation_selection", {}
     )
     validation_uids = list(restored_validation_selection.get("event_uids", []))
+    if config.validation_event_uids:
+        if validation_uids and validation_uids != list(config.validation_event_uids):
+            raise ValueError("resume pretraining validation UIDs differ from explicit cohort")
+        validation_uids = list(config.validation_event_uids)
     model.fixed_validation_uids = validation_uids
     if restored_training_state and (
         restored_training_state.get("best_metric") != config.best_metric
@@ -1421,6 +1463,7 @@ def train_hyperbolic_pretraining(
             "hard_negative_count": float(curriculum.hard_negative_pairs.shape[0]),
             "learning_rate": float(optimizer.param_groups[0]["lr"]),
             "leaf_pid_training_weight": float(leaf_pid_training_weight),
+            "pretraining_parent_ranking_weight": float(config.parent_ranking_weight),
             "amp_dtype": config.amp_dtype if amp_dtype is not None else "float32",
             "grad_scaler_enabled": float(scaler.is_enabled()),
             "grad_scaler_scale": float(scaler.get_scale()),
