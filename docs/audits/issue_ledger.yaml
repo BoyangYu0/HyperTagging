@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Clarify nominal versus actual Phase55 presentations without changing submitted contracts.
+  - 6b56d3ce1ea0849fe2a324a12b84019c1d618979
   # Phase55 submission snapshot and Phase54 publication metadata.
   - 9cc0364faf8e7c17b3a3a865d5edf0046d66799f
   # Phase54 complete review and matched Phase55 pretraining-quality experiment; historical audit unchanged.
