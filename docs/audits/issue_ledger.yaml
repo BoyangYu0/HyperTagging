@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase54 complete review and matched Phase55 pretraining-quality experiment; historical audit unchanged.
+  - deeb02811950ae5585a4d49ea0cd46a8c4e3210c
   # Measured Phase53 publication total allowance; per-file and content checks unchanged.
   - 7d454f4dc28100cdc9d9629e45419d8fa2d036e7
   # Phase54 submission snapshot and Phase53 publication metadata.
