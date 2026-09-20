@@ -419,3 +419,9 @@ After reserving Phase55, only 1,491 untouched validation UIDs remain in the
 will not fit. Plan a validation refresh or a preregistered reuse design before
 a later campaign; this is distinct from increasing training data and does not
 authorize opening the sealed test.
+
+Both Phase55 jobs were submitted from a clean, immutable source after 185 CPU
+preflight tests. Both were queued at the submission snapshot. Each allocation
+has one H100 NVL, eight CPUs, 64 GiB and a 36-hour limit, with no requeue.
+Submission does not establish successful training; the next review must inspect
+refinement execution, transfer lineage and all reconstruction gates.

@@ -10,7 +10,7 @@ control has no mothers, candidate one shallow mother. No B-pair or deep-tree
 success is established. Paired intervals include zero. Recovery weights 2/1
 executed and PID stayed frozen. No promotion or sealed-test access.
 
-Hold 70k events and stop recovery-dose tuning. Phase55 prepares one matched
+Hold 70k events and stop recovery-dose tuning. Phase55 submitted one matched
 pretraining-quality pair: parent-ranking weights 1 versus 2 during 2188-step
 refinement, then identical 4376-step reconstruction. Both start from the same
 parameters with fresh corrected train-only normalization and fresh training
