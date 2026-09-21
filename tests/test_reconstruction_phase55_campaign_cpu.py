@@ -104,3 +104,22 @@ def test_phase55_pretraining_validation_never_uses_strict_cohort(tmp_path):
     assert config.validation_event_uids == tuple(cohort['checkpoint_selection_event_uids'][:1000])
     assert not set(config.validation_event_uids) & set(cohort['event_uids'])
     assert config.weights_initialization_checkpoint == 'checkpoint' and config.resume is None
+
+
+def test_phase55_evaluation_uses_authenticated_refinement(tmp_path):
+    from scripts.run_reconstruction_phase55_full_decay import refined_evaluation_runtime
+    checkpoint = tmp_path / 'refined.pt'
+    checkpoint.write_bytes(b'refined-checkpoint')
+    checksum = hashlib.sha256(checkpoint.read_bytes()).hexdigest()
+    runtime = {'checkpoint': '/original.pt', 'checkpoint_sha256': 'original', 'checkpoint_step': '81096'}
+    result = {'pretraining_refinement': {'status': 'COMPLETED', 'step': 2188,
+        'checkpoint_selection': 'fixed_final_step_2188', 'checkpoint': str(checkpoint),
+        'checkpoint_sha256': checksum, 'source_checkpoint_sha256': 'original', 'source_unchanged': True}}
+    actual = refined_evaluation_runtime(result, runtime)
+    assert actual['checkpoint'] == str(checkpoint) and actual['checkpoint_step'] == '2188'
+    assert runtime['checkpoint'] == '/original.pt'
+    for field,value in [('checkpoint_sha256','wrong'),('source_checkpoint_sha256','other'),('step',81096),('source_unchanged',False)]:
+        bad = copy.deepcopy(result)
+        bad['pretraining_refinement'][field] = value
+        with pytest.raises(RuntimeError, match='lineage'):
+            refined_evaluation_runtime(bad,runtime)

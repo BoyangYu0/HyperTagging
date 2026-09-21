@@ -7,6 +7,7 @@ import argparse
 import json
 from pathlib import Path
 import sys
+import subprocess
 from typing import Any
 
 import torch
@@ -79,15 +80,43 @@ def _decision_payload(report: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def refined_evaluation_runtime(training_result, runtime):
+    """Bind evaluation to the authenticated checkpoint actually transferred."""
+    from scripts.run_reconstruction_phase35 import sha256
+    refinement = training_result.get("pretraining_refinement", {})
+    checkpoint = Path(refinement.get("checkpoint", "")).resolve(strict=True)
+    if (refinement.get("status") != "COMPLETED" or refinement.get("step") != 2188
+        or refinement.get("checkpoint_selection") != "fixed_final_step_2188"
+        or refinement.get("source_checkpoint_sha256") != runtime["checkpoint_sha256"]
+        or refinement.get("source_unchanged") is not True
+        or sha256(checkpoint) != refinement.get("checkpoint_sha256")):
+        raise RuntimeError("Phase55 refined evaluation checkpoint lineage is invalid")
+    return {**runtime, "checkpoint": str(checkpoint),
+            "checkpoint_sha256": refinement["checkpoint_sha256"], "checkpoint_step": "2188"}
+
+
+def evaluation_contract(path, source_root=None):
+    """Revalidate an archived contract in its immutable training checkout."""
+    if source_root is None:
+        return verify_contract(path)
+    source_root = source_root.resolve(strict=True)
+    command = [sys.executable, "-c",
+        "import json,pathlib,sys; from scripts.run_reconstruction_phase55 import verify_contract; "
+        "print(json.dumps(verify_contract(pathlib.Path(sys.argv[1]))))", str(path)]
+    result = subprocess.run(command, cwd=source_root, check=True, text=True, capture_output=True)
+    return tuple(json.loads(result.stdout))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--contract", type=Path, required=True)
+    parser.add_argument("--contract-source-root", type=Path, help="Immutable training checkout for evaluation-only recovery")
     parser.add_argument("--training-result", type=Path, required=True)
     parser.add_argument("--training-dir", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    contract, runtime = verify_contract(args.contract.resolve(strict=True))
+    contract, runtime = evaluation_contract(args.contract.resolve(strict=True), args.contract_source_root)
     evaluation_contract = dict(contract["evaluation_contract"])
     evaluation_threads = int(evaluation_contract["cpu_threads"])
     deterministic_algorithms = bool(
@@ -101,6 +130,7 @@ def main() -> int:
         or training_result.get("contract_sha256") != contract["contract_sha256"]
     ):
         raise RuntimeError("phase55 training result is not evaluation-eligible")
+    runtime = refined_evaluation_runtime(training_result, runtime)
     output_dir = args.output_dir.resolve()
     output = args.output.resolve()
     if output.exists() or output_dir.exists():
