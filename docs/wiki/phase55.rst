@@ -43,7 +43,7 @@ same-host results control the tables, and the complete variation audit is
 preserved locally. This sensitivity further limits small-count claims.
 
 Pretraining execution
---------------------
+---------------------
 
 Both arms started from the same 129 parameters of encoder81096, with fresh
 train-only normalization, optimizer, schedule, RNG and channel memory. Only
@@ -335,7 +335,7 @@ The following retained greedy metrics check every checkpoint view. Repeat and ch
      - 6/194
 
 Exactness, depth and distinct events
------------------------------------
+------------------------------------
 
 All fourteen views and every returned candidate were scanned for exact-component depth. There are 0 exact records with depth greater than one across repeated views/scopes; these records are not independent successes. In the primary reports there are 0 distinct events with a deeper exact component.
 
@@ -616,7 +616,7 @@ produce a reproducible joint topology/forest gain. Recovery-dose tuning stops.
 Different phase cohorts and seeds prohibit causal comparisons of raw rates.
 
 Phase56: one bounded replication
--------------------------------
+--------------------------------
 
 Repeat pretraining parent-ranking weights **1 versus 2**, with seed 20260923,
 matched 2,188-step refinement and identical 4,376-step reconstruction. Keep
@@ -646,3 +646,19 @@ The export contains 15,655 original aggregate scalars, 20,339 retained aggregate
 Physical mother momentum resolution remains unavailable: daughter-sum p4 closure is an implementation invariant. Private event identities and paths stay in the local complete-metrics archive; Pages publishes allowlisted aggregates and source hashes.
 
 Publication and submission verification are recorded in the dashboard and the local final manifest.
+
+Submission verification
+-----------------------
+
+Both Phase56 jobs were submitted through held, verified contracts and released
+as one bounded pair. Each requests one H100 NVL, eight CPUs, 64 GiB and a
+36-hour limit without requeue. The first verified scheduler snapshot was
+pending; submission does not establish successful training. The immutable source
+revision is ``8b2a994b0ef5a7dfa4011a1eccad5c966a4fcd93`` and the tag is
+``reconstruction-phase56-pretraining-parent-replication-20260921``.
+The complete input bindings and submission receipt are retained locally.
+
+The frozen preflight passed 192 CPU tests. The broad run passed 1,786 tests
+and skipped 34; its one stale dashboard fixture assertion was corrected and
+passed both its focused recheck and the frozen preflight. The dashboard's
+submission field is a recorded snapshot, not a live scheduler feed.

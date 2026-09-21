@@ -11,10 +11,12 @@ but coherent forests fall 1 to 0. Control fails full-source recall; candidate
 fails full-root construction. No promotion or sealed-test access.
 
 Hold 70k training events. Pretraining quality remains an unproven hypothesis;
-Phase56 prepares one matched replication of parent weights 1 versus 2, at the
+Phase56 submits one matched replication of parent weights 1 versus 2, at the
 same compute with a fresh seed and 1000 selection / 100 strict untouched events.
 The smaller selection cohort is explicit; only 391 untouched validation events
-remain afterward. See the Phase55 review for complete metrics and uncertainty.
+remain afterward. The two verified contracts were submitted from immutable source
+`8b2a994b0ef5a7dfa4011a1eccad5c966a4fcd93`; the first scheduler snapshot was pending.
+See the Phase55 review for complete metrics and uncertainty.
 
 ## Phase54 review — 2026-09-20
 
