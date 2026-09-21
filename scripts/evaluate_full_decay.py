@@ -11,6 +11,7 @@ from hashlib import sha256
 import json
 import os
 from pathlib import Path
+import platform
 import subprocess
 import sys
 import tempfile
@@ -784,6 +785,20 @@ def main(argv: list[str] | None = None) -> int:
         "device": "cpu",
         "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES", ""),
         "torch_num_threads": torch.get_num_threads(),
+        "runtime_environment": {
+            "python_version": platform.python_version(),
+            "machine": platform.machine(),
+            "torch_version": str(torch.__version__),
+            "torch_build_config_sha256": sha256(torch.__config__.show().encode()).hexdigest(),
+            "cpu_capability": torch.backends.cpu.get_cpu_capability(),
+            "mkldnn_available": torch.backends.mkldnn.is_available(),
+            "mkldnn_enabled": torch.backends.mkldnn.enabled,
+            "mkl_available": torch.backends.mkl.is_available(),
+            "float32_matmul_precision": torch.get_float32_matmul_precision(),
+            "intraop_threads": torch.get_num_threads(),
+            "interop_threads": torch.get_num_interop_threads(),
+            "reproducibility_scope": "same_runtime_only_not_bitwise_cross_cpu_guarantee",
+        },
         "torch_deterministic_algorithms_enabled": (
             torch.are_deterministic_algorithms_enabled()
         ),

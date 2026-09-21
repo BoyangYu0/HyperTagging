@@ -20,8 +20,9 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     # Privacy validation deliberately scans every generated token and artifact.
-    # The two independent compatibility layouts run concurrently within this bound.
-    timeout-minutes: 30
+    # Phase54 used almost 30 minutes; Phase55 adds complete metric history.
+    # Keep all checks and allow 45 minutes; compatibility layouts run concurrently.
+    timeout-minutes: 45
     permissions:
       contents: read
     env:

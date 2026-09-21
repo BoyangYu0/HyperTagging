@@ -144,6 +144,8 @@ def test_security_validators_have_no_assert_statements():
 
 @pytest.mark.parametrize("before,after", [
     ("contents: read", "contents: write"),
+    ("timeout-minutes: 45", "timeout-minutes: 46"),
+    ("timeout-minutes: 10", "timeout-minutes: 31"),
     ("persist-credentials: false", "persist-credentials: true"),
     ("-e -o pipefail", "-e"),
     ("github.ref == 'refs/heads/master'", "github.ref == 'refs/heads/other'"),

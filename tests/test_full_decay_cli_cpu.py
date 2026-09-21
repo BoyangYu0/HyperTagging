@@ -198,6 +198,12 @@ def test_cli_report_keeps_greedy_results_and_adds_parallel_beam_metrics(
         )
     greedy, beam, ranking = [json.loads(path.read_text()) for path in paths]
     for report in (greedy, beam, ranking):
+        runtime = report['runtime_environment']
+        assert runtime['torch_version'] == str(torch.__version__)
+        assert runtime['cpu_capability'] == torch.backends.cpu.get_cpu_capability()
+        assert len(runtime['torch_build_config_sha256']) == 64
+        assert runtime['intraop_threads'] == report['torch_num_threads']
+        assert 'hostname' not in runtime
         retained = report["retained_tree_checks"]
         assert retained["version"] == "retained-direct-tree-checks-v1"
         assert retained["summaries"]["full/greedy"]["unavailable_unit_count"] == 0

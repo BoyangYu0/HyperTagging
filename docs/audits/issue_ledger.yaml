@@ -19,6 +19,10 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase55 authenticated refined-checkpoint evaluation recovery; historical audit scope unchanged.
+  - 813204c54dba8bfd3f4e97cf697caef6799b6170
+  # Fix the recovery contract-verification function name before recovered reports were produced.
+  - e452cb05a6ec4a2bc918f2b2c50cf414e2752f13
   # Clarify nominal versus actual Phase55 presentations without changing submitted contracts.
   - 6b56d3ce1ea0849fe2a324a12b84019c1d618979
   # Phase55 submission snapshot and Phase54 publication metadata.

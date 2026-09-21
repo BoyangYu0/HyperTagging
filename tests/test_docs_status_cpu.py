@@ -113,7 +113,7 @@ def evidence(tmp_path, monkeypatch):
                          "next_study_status": "PREREGISTRATION_IN_PROGRESS"}},
         "cpu_workflow": {"jobs": {"unit": {"steps": [{"run": "python -m pytest -q | tee private-log.txt"}]}}},
     }
-    for key in ("reconstruction_phase49", "reconstruction_phase49_retained", "reconstruction_phase49_aggregation", "reconstruction_phase50_submission", "reconstruction_phase50", "reconstruction_phase50_retained", "reconstruction_phase50_aggregation", "reconstruction_phase51_submission", "reconstruction_phase51", "reconstruction_phase51_retained", "reconstruction_phase51_aggregation", "reconstruction_phase52_submission", "reconstruction_phase52", "reconstruction_phase52_retained", "reconstruction_phase52_aggregation", "reconstruction_phase53_submission", "reconstruction_phase53", "reconstruction_phase53_retained", "reconstruction_phase53_aggregation", "reconstruction_phase54_submission", "reconstruction_phase54", "reconstruction_phase54_retained", "reconstruction_phase54_aggregation", "reconstruction_phase55_submission"):
+    for key in ("reconstruction_phase49", "reconstruction_phase49_retained", "reconstruction_phase49_aggregation", "reconstruction_phase50_submission", "reconstruction_phase50", "reconstruction_phase50_retained", "reconstruction_phase50_aggregation", "reconstruction_phase51_submission", "reconstruction_phase51", "reconstruction_phase51_retained", "reconstruction_phase51_aggregation", "reconstruction_phase52_submission", "reconstruction_phase52", "reconstruction_phase52_retained", "reconstruction_phase52_aggregation", "reconstruction_phase53_submission", "reconstruction_phase53", "reconstruction_phase53_retained", "reconstruction_phase53_aggregation", "reconstruction_phase54_submission", "reconstruction_phase54", "reconstruction_phase54_retained", "reconstruction_phase54_aggregation", "reconstruction_phase55_submission", "reconstruction_phase55", "reconstruction_phase55_retained", "reconstruction_phase55_aggregation", "reconstruction_phase55_pretraining", "reconstruction_phase56_submission"):
         documents[key] = {"reserved_for_phase49_review": True}
     recent = documents["reconstruction_phase40r1"]
     recent.update({"audit_version": "2026-09-09.phase40r1-closeout.v3",
@@ -164,7 +164,7 @@ def test_status_is_deterministic_and_preserves_record_scope(evidence, tmp_path, 
     assert manifest["pretraining"]["selected_profile_state"] == "NONE_SELECTED"
     assert manifest["pretraining"]["submission_performed"] is False
     assert manifest["pretraining"]["pretraining_success_gate_passed"] is False
-    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 50
+    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 55
     assert manifest["provenance"]["external_filesystem_or_network_artifacts_opened"] is False
     assert source_info(manifest, "issue_ledger")["freshness"]["status"] == "stale"
     assert source_info(manifest, "current_status")["freshness"]["status"] == "unknown"
@@ -966,3 +966,41 @@ def test_phase54_source_boundary_cannot_be_silently_relabelled():
     with pytest.raises(ValueError, match='source boundary'):
         status._phase41_projection(raw,phase=54,labels=('late_adaptation_control','weaker_recovery'))
 
+
+
+def test_phase55_recovered_metrics_and_pretraining_downloads_are_lossless(tmp_path):
+    manifest = status.generate_status(ROOT,tmp_path/'status')
+    record = manifest['reconstruction']['phase55']
+    assert record['original_job_status'] == 'FAILED_POST_TRAINING_EVALUATION'
+    assert manifest['reconstruction']['phase54']['next_study_status'] == 'COMPLETED'
+    for source_key, projected in [('reconstruction_phase55',record),('reconstruction_phase55_retained',record['retained_tree_checks']),('reconstruction_phase55_aggregation',record['aggregation_supplement']),('reconstruction_phase55_pretraining',record['pretraining_metrics'])]:
+        raw=json.loads((ROOT/status.SOURCE_PATHS[source_key]).read_text())
+        binding=projected['metric_download'];content=(tmp_path/'status'/binding['filename']).read_bytes()
+        assert hashlib.sha256(content).hexdigest()==binding['sha256']
+        assert len(content)==binding['bytes']
+        assert json.loads(content)['metric_rows']==raw['metric_rows']
+        assert binding['metric_count']==len(raw['metric_rows'])
+    assert (tmp_path/'status/status.json').stat().st_size < 10*1024*1024
+
+
+@pytest.mark.parametrize('change',['missing','duplicate','beam','job_status'])
+def test_phase55_incomplete_or_relabelled_recovery_cannot_publish(change):
+    raw=json.loads((ROOT/status.SOURCE_PATHS['reconstruction_phase55_retained']).read_text())
+    if change=='missing':raw['metric_rows'].pop()
+    if change=='duplicate':raw['metric_rows'].append(raw['metric_rows'][0])
+    if change=='beam':raw['all_returned_beam_candidates_checked']=False
+    if change=='job_status':raw['original_job_status']='COMPLETED'
+    with pytest.raises(ValueError):status._phase55_retained_projection(raw)
+
+
+def test_phase55_original_source_boundary_cannot_be_relabelled():
+    raw=json.loads((ROOT/status.SOURCE_PATHS['reconstruction_phase55']).read_text())
+    raw['source_boundary']='corrected_scientific_audit_source'
+    with pytest.raises(ValueError,match='source boundary'):
+        status._phase41_projection(raw,phase=55,labels=('late_adaptation_control','stronger_parent_pretraining'))
+
+
+def test_phase55_missing_pretraining_metric_cannot_publish():
+    raw=json.loads((ROOT/status.SOURCE_PATHS['reconstruction_phase55_pretraining']).read_text())
+    raw['metric_rows'].pop()
+    with pytest.raises(ValueError):status._phase55_pretraining_projection(raw)

@@ -610,7 +610,7 @@ def validate_workflow() -> dict:
     expected_actions = {"actions/" + name + "@" + digest for name, digest in ACTION_PINS.items()}
     observed_actions = []
     for job in (build, deploy):
-        _require(isinstance(job.get("timeout-minutes"), int) and 0 < job["timeout-minutes"] <= 30,
+        _require(isinstance(job.get("timeout-minutes"), int) and 0 < job["timeout-minutes"] <= (45 if job is build else 30),
                  "Workflow jobs require bounded timeouts")
         _require(job.get("runs-on") == "ubuntu-24.04", "Workflow runner must be the reviewed hosted image")
         _require(not job.get("continue-on-error"), "Workflow jobs must fail closed")
