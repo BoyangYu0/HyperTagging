@@ -95,7 +95,7 @@ def refined_evaluation_runtime(training_result, runtime):
             "checkpoint_sha256": refinement["checkpoint_sha256"], "checkpoint_step": "2188"}
 
 
-def evaluation_contract(path, source_root=None):
+def verify_evaluation_contract(path, source_root=None):
     """Revalidate an archived contract in its immutable training checkout."""
     if source_root is None:
         return verify_contract(path)
@@ -116,7 +116,7 @@ def main() -> int:
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    contract, runtime = evaluation_contract(args.contract.resolve(strict=True), args.contract_source_root)
+    contract, runtime = verify_evaluation_contract(args.contract.resolve(strict=True), args.contract_source_root)
     evaluation_contract = dict(contract["evaluation_contract"])
     evaluation_threads = int(evaluation_contract["cpu_threads"])
     deterministic_algorithms = bool(
