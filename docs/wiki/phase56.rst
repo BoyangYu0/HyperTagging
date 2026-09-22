@@ -155,7 +155,7 @@ replication, and the completed arm still fails gates. **Stop parent-dose tuning.
 Cross-phase rates have different seeds/cohorts and are not causal contrasts.
 
 Phase57: one bounded objective-balance test
------------------------------------------
+-------------------------------------------
 
 Fix parent weight **2 in both arms**, as a completed reference rather than a
 proven winner. Compare leaf-PID phase weights **[1, 1, 0.4, 0.4]** versus
@@ -189,6 +189,16 @@ The available exports contain 8,416 original aggregate scalars, 10,197 retained 
 Submission and publication
 --------------------------
 
-Phase57 is prepared; submission receipts and verified source revision will be
-recorded after frozen preflight. The dashboard is a recorded snapshot, not a
-live scheduler feed.
+Both Phase57 jobs were submitted through held, verified contracts and released
+as one bounded pair. The first scheduler snapshot was pending; submission is
+not evidence of completed training. The immutable source revision is
+``55abc338060088fb9f58be15f38cace54654a652`` and its tag is
+``reconstruction-phase57-pretraining-objective-balance-20260922``.
+Input checksums, resource requests and both scheduler receipts were verified.
+The dashboard is a recorded snapshot, not a live scheduler feed.
+
+The broad CPU suite passed **1,805 tests**, with 34 skipped. The focused
+reconstruction/search suite passed 193 tests; dashboard/failure checks passed
+107, and the frozen contract/failure/provenance preflight passed 14. Both
+pretraining and reconstruction completed their two-step CPU smokes. These
+engineering checks do not establish scientific performance of the next models.
