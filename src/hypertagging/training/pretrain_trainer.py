@@ -1325,6 +1325,8 @@ def train_hyperbolic_pretraining(
                         config.objective_weighted_loss_tolerance
                     ),
                     action=config.pilot_objective_violation_action,
+                    failure_output=output_dir / f"objective-preflight-step-{step + 1}.json",
+                    completed_step=step,
                 )
                 pending_preflight_objectives = set(
                     preflight["not_evaluable_objectives"]
@@ -2458,6 +2460,8 @@ def objective_preflight_report(
     dominance_ratio: float = 100.0,
     weighted_loss_tolerance: float = 1e-7,
     action: str = "warn",
+    failure_output: Path | None = None,
+    completed_step: int | None = None,
 ) -> dict[str, Any]:
     """Validate supported pilot objectives without changing optimization.
 
@@ -2659,6 +2663,14 @@ def objective_preflight_report(
     if violations:
         message = "objective pilot preflight: " + ", ".join(report["violations"])
         if action == "fail":
+            if failure_output is not None:
+                _write_json_atomic(failure_output, {
+                    "event": "objective_preflight_failure",
+                    "completed_optimizer_steps": completed_step,
+                    "attempted_optimizer_step": None if completed_step is None else completed_step + 1,
+                    "optimizer_step_executed": False,
+                    "report": report,
+                })
             raise RuntimeError(message)
         warnings.warn(message, RuntimeWarning, stacklevel=2)
     return report

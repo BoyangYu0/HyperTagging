@@ -34,6 +34,12 @@ def evidence(tmp_path, monkeypatch):
     monkeypatch.delenv("SOURCE_DATE_EPOCH", raising=False)
     monkeypatch.setattr(status, "_git", lambda *_args: None)
     documents = {
+        "reconstruction_phase56": {"reserved": True},
+        "reconstruction_phase56_retained": {"reserved": True},
+        "reconstruction_phase56_aggregation": {"reserved": True},
+        "reconstruction_phase56_pretraining": {"reserved": True},
+        "reconstruction_phase57_submission": {"reserved": True},
+
         "reconstruction_phase48": {"reserved_for_phase48_closeout": True},
         "reconstruction_phase48_retained": {"reserved_for_phase48_retained": True},
         "reconstruction_phase48_aggregation": {"reserved_for_phase48_aggregation": True},
@@ -164,7 +170,7 @@ def test_status_is_deterministic_and_preserves_record_scope(evidence, tmp_path, 
     assert manifest["pretraining"]["selected_profile_state"] == "NONE_SELECTED"
     assert manifest["pretraining"]["submission_performed"] is False
     assert manifest["pretraining"]["pretraining_success_gate_passed"] is False
-    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 55
+    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 60
     assert manifest["provenance"]["external_filesystem_or_network_artifacts_opened"] is False
     assert source_info(manifest, "issue_ledger")["freshness"]["status"] == "stale"
     assert source_info(manifest, "current_status")["freshness"]["status"] == "unknown"
@@ -1004,3 +1010,25 @@ def test_phase55_missing_pretraining_metric_cannot_publish():
     raw=json.loads((ROOT/status.SOURCE_PATHS['reconstruction_phase55_pretraining']).read_text())
     raw['metric_rows'].pop()
     with pytest.raises(ValueError):status._phase55_pretraining_projection(raw)
+
+
+def test_phase56_available_metrics_are_lossless_and_missing_control_is_null(tmp_path):
+    manifest=status.generate_status(ROOT,tmp_path/'phase56')
+    record=manifest['reconstruction']['phase56']
+    assert record['status']=='INCOMPLETE_COMPARISON' and record['comparison_available'] is False
+    assert record['arms']['late_adaptation_control']['endpoints'] is None
+    for source_key,projected in [('reconstruction_phase56',record),('reconstruction_phase56_retained',record['retained_tree_checks']),('reconstruction_phase56_aggregation',record['aggregation_supplement']),('reconstruction_phase56_pretraining',record['pretraining_metrics'])]:
+        binding=projected['metric_download'];content=(tmp_path/'phase56'/binding['filename']).read_bytes()
+        assert hashlib.sha256(content).hexdigest()==binding['sha256']
+        raw=json.loads((ROOT/status.SOURCE_PATHS[source_key]).read_text())
+        assert json.loads(content)['metric_rows']==raw['metric_rows']
+
+
+@pytest.mark.parametrize('change',['complete','comparison','fabricated_control','missing_row'])
+def test_phase56_rejects_false_comparison_or_incomplete_export(change):
+    raw=json.loads((ROOT/status.SOURCE_PATHS['reconstruction_phase56']).read_text())
+    if change=='complete':raw['status']='COMPLETED'
+    if change=='comparison':raw['comparison_available']=True
+    if change=='fabricated_control':raw['arms']['late_adaptation_control']['endpoints']={}
+    if change=='missing_row':raw['metric_rows'].pop()
+    with pytest.raises(ValueError):status._phase56_projection(raw)

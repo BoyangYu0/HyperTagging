@@ -585,3 +585,28 @@ PID/fit-policy/channel-pooling ablations, GPU throughput, whole-set scoring,
 and iterative pointer decoding remain separate work. No sealed-test request,
 HTCondor 100k canary, 10M campaign, or longer reconstruction budget is
 authorized by these validation-only results.
+
+## Phase56 review and bounded Phase57 objective balance (2026-09-22)
+
+Phase56 is an **incomplete comparison**, not a replicated parent-weight result.
+The control completed 1,642 refinement steps before the unchanged objective
+preflight rejected attempted step 1,643 (weighted leaf-PID/LCA dominance
+20.1546 > 20). It has no reconstruction artifacts. The candidate completed
+2,188 refinement and 4,376 reconstruction steps; all seven native reports and
+all retained full/half beam candidates are exported. It fails original full-root
+and full-source-recall gates. No exact retained component deeper than one
+generation is present. One distinct primary continuum forest comprises 26
+isolated leaves and one depth-one mother. Missing control metrics and paired
+contrasts remain unavailable. No promotion or sealed-test access.
+
+Hold 70,000 training events; the prior studies do not supply a controlled
+learning curve showing that immediate growth is preferable. Stop parent-dose
+tuning and test late leaf-PID phase weights 0.4 versus 0.2 at fixed parent weight
+2, matched budgets and seed 20260924. Preserve the threshold-20 fail guard and
+save structured diagnostics before failure. Phase57 explicitly reuses the exact
+1,000 Phase56 selection UIDs and reserves 100 fresh strict UIDs; 291 validation
+UIDs remain untouched. This is not independent selection replication.
+
+The detailed review is [Phase56](../wiki/phase56.rst). New local verification,
+frozen-source and submission receipts are kept separately from historical audit
+claims. This update does not expand the historical scientific verification scope.
