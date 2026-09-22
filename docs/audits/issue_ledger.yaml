@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase56 available-artifact review and Phase57 bounded objective balance; historical audit unchanged.
+  - 4a9a661e074e29b8ef887707196e8749dfd06324
   # Phase56 verified submission snapshot and Phase55 publication formatting only.
   - 9dfb2e666e039956eed72ded904b63aa80551f9c
   # Phase55 complete recovered metrics and bounded Phase56 replication; historical audit unchanged.
