@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Measured Phase57 total publication allowance; per-file and content privacy checks unchanged.
+  - b6c368a15bbec1f822bafa17604a2b18e178250d
   # Phase58 verified submission snapshot and Phase57 publication metadata only.
   - 778e0a67d07cc7fc1efe754a79a0b97d7abfb2b9
   # Phase57 complete diagnostic review and corrected bounded Phase58 comparison; historical audit scope unchanged.
