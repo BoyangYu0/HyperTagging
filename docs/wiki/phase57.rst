@@ -702,3 +702,19 @@ The exports contain 15,522 original aggregate scalars,
 provide the public aggregates; the local complete-metrics archive retains
 native reports, failed receipts, full exports, source bindings and verification
 hashes. Physical mother momentum resolution remains unavailable.
+
+Submission and validation
+-------------------------
+
+Both Phase58 jobs were submitted from immutable source
+``64ba0674430ff20fa3d1f827e9677d1184ce6041``, tagged
+``reconstruction-phase58-corrected-pretraining-objective-balance-20260923``.
+The submission receipt and scheduler records were verified against both
+contracts. These are submitted experiments, not completed results.
+
+The source passed 1,835 CPU tests (34 environment-dependent skips),
+129 focused campaign/dashboard tests, 18 frozen-source preflight tests,
+193 focused reconstruction/search tests and both two-step CPU training smokes.
+The complete tree CSV matches all 9,554,795 regenerated source scalars. All
+38 earlier metric downloads remain byte-identical. Publication checks cover
+both documentation layouts, privacy, offline assets and current source identity.
