@@ -39,6 +39,11 @@ def evidence(tmp_path, monkeypatch):
         "reconstruction_phase56_aggregation": {"reserved": True},
         "reconstruction_phase56_pretraining": {"reserved": True},
         "reconstruction_phase57_submission": {"reserved": True},
+        "reconstruction_phase57": {"reserved": True},
+        "reconstruction_phase57_retained": {"reserved": True},
+        "reconstruction_phase57_aggregation": {"reserved": True},
+        "reconstruction_phase57_pretraining": {"reserved": True},
+        "reconstruction_phase58_submission": {"reserved": True},
 
         "reconstruction_phase48": {"reserved_for_phase48_closeout": True},
         "reconstruction_phase48_retained": {"reserved_for_phase48_retained": True},
@@ -170,7 +175,7 @@ def test_status_is_deterministic_and_preserves_record_scope(evidence, tmp_path, 
     assert manifest["pretraining"]["selected_profile_state"] == "NONE_SELECTED"
     assert manifest["pretraining"]["submission_performed"] is False
     assert manifest["pretraining"]["pretraining_success_gate_passed"] is False
-    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 60
+    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 65
     assert manifest["provenance"]["external_filesystem_or_network_artifacts_opened"] is False
     assert source_info(manifest, "issue_ledger")["freshness"]["status"] == "stale"
     assert source_info(manifest, "current_status")["freshness"]["status"] == "unknown"
@@ -1032,3 +1037,37 @@ def test_phase56_rejects_false_comparison_or_incomplete_export(change):
     if change=='fabricated_control':raw['arms']['late_adaptation_control']['endpoints']={}
     if change=='missing_row':raw['metric_rows'].pop()
     with pytest.raises(ValueError):status._phase56_projection(raw)
+
+
+def test_phase57_lossless_downloads_preserve_diagnostic_classification(tmp_path):
+    manifest=status.generate_status(ROOT,tmp_path/'phase57')
+    record=manifest['reconstruction']['phase57']
+    assert record['status']=='DIAGNOSTIC_COMPLETE' and record['independent_validation'] is False
+    assert record['strict_selection_overlap']==100
+    for suffix,projected in [('',record),('_retained',record['retained_tree_checks']),('_aggregation',record['aggregation_supplement']),('_pretraining',record['pretraining_metrics'])]:
+        binding=projected['metric_download'];content=(tmp_path/'phase57'/binding['filename']).read_bytes()
+        assert hashlib.sha256(content).hexdigest()==binding['sha256']
+        raw=json.loads((ROOT/status.SOURCE_PATHS['reconstruction_phase57'+suffix]).read_text())
+        download=json.loads(content)
+        assert download['metric_rows']==raw['metric_rows']
+        assert download['independent_validation'] is False and download['strict_selection_overlap']==100
+        assert download['scientific_classification']=='SELECTION_CONTAMINATED_DIAGNOSTICS'
+        assert download['classification_scope']=='phase57_reconstruction_evaluation'
+
+
+@pytest.mark.parametrize('change',['independent','overlap','complete','gate','missing_row'])
+def test_phase57_cannot_claim_independent_gate_success(change):
+    raw=json.loads((ROOT/status.SOURCE_PATHS['reconstruction_phase57']).read_text())
+    if change=='independent':raw['independent_validation']=True
+    if change=='overlap':raw['strict_selection_overlap']=0
+    if change=='complete':raw['status']='COMPLETED'
+    if change=='gate':raw['arms']['pretraining_balance_control']['all_gates_passed']=True
+    if change=='missing_row':raw['metric_rows'].pop()
+    with pytest.raises(ValueError):status._phase41_projection(raw,phase=57,labels=('pretraining_balance_control','lower_late_pid_pretraining'))
+
+
+@pytest.mark.parametrize('suffix,projector', [('_retained',status._phase57_retained_projection),('_aggregation',status._phase57_aggregation_projection),('_pretraining',status._phase57_pretraining_projection)])
+def test_phase57_supplements_reject_false_independence(suffix,projector):
+    raw=json.loads((ROOT/status.SOURCE_PATHS['reconstruction_phase57'+suffix]).read_text())
+    raw['independent_validation']=True
+    with pytest.raises(ValueError):projector(raw)

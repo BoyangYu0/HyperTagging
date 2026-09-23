@@ -95,6 +95,11 @@ SOURCE_PATHS.update({
     "reconstruction_phase56_aggregation": "artifacts/codex/reconstruction_phase56_aggregation_20260922.json",
     "reconstruction_phase56_pretraining": "artifacts/codex/reconstruction_phase56_pretraining_20260922.json",
     "reconstruction_phase57_submission": "artifacts/codex/reconstruction_phase57_submission_20260922.json",
+    "reconstruction_phase57": "artifacts/codex/reconstruction_phase57_closeout_20260923.json",
+    "reconstruction_phase57_retained": "artifacts/codex/reconstruction_phase57_retained_metrics_20260923.json",
+    "reconstruction_phase57_aggregation": "artifacts/codex/reconstruction_phase57_aggregation_20260923.json",
+    "reconstruction_phase57_pretraining": "artifacts/codex/reconstruction_phase57_pretraining_20260923.json",
+    "reconstruction_phase58_submission": "artifacts/codex/reconstruction_phase58_submission_20260923.json",
 })
 SOURCE_IDS = {key: f"source-{index:02d}" for index, key in enumerate(SOURCE_PATHS, 1)}
 FRESHNESS_DAYS = 30
@@ -664,6 +669,18 @@ def _collect(payloads: dict[str, Any], revision: str | None) -> dict[str, Any]:
             record['next_study_status'] = submission['status']
             record['submission_task_count'] = _integer(submission.get('task_count'))
             record['submission_source_revision'] = _sha(submission.get('source_revision'))
+    reconstruction['phase57'] = _phase41_projection(payloads.get('reconstruction_phase57'), phase=57, labels=('pretraining_balance_control','lower_late_pid_pretraining'))
+    if reconstruction['phase57']:
+        record=reconstruction['phase57']
+        record['retained_tree_checks']=_phase57_retained_projection(payloads.get('reconstruction_phase57_retained'))
+        record['aggregation_supplement']=_phase57_aggregation_projection(payloads.get('reconstruction_phase57_aggregation'))
+        record['pretraining_metrics']=_phase57_pretraining_projection(payloads.get('reconstruction_phase57_pretraining'))
+        if reconstruction['phase56']:reconstruction['phase56']['next_study_status']='DIAGNOSTIC_COMPLETE'
+        submission=_mapping(payloads.get('reconstruction_phase58_submission'))
+        if submission.get('status') in {'PREPARED','SUBMITTED','RUNNING'}:
+            record['next_study_status']=submission['status']
+            record['submission_task_count']=_integer(submission.get('task_count'))
+            record['submission_source_revision']=_sha(submission.get('source_revision'))
     science = {"source_ids": _refs("verification_runs", "notebook_registry"),
                "real_pilot": _notebook_record(notebook_runs.get("real_mdst_pilot"))["result"],
                "trained_physics": _notebook_record(notebook_runs.get("trained_physics_validation"))["result"],
@@ -698,6 +715,15 @@ def _phase41_projection(raw: Any, *, phase=41, labels=("pointer32_control", "lev
               "beam_event_count": _integer(raw.get("beam_event_count")),
               "sealed_test_accessed": _boolean(raw.get("sealed_test_accessed")),
               "source_hashes": [_sha(value) for value in _list(raw.get("source_hashes"))], "arms": {}}
+    if phase == 57:
+        if (raw.get('status')!='DIAGNOSTIC_COMPLETE' or raw.get('independent_validation') is not False
+            or raw.get('strict_selection_overlap')!=100 or raw.get('source_boundary')!='selection_contaminated_diagnostic_recovery'
+            or raw.get('original_job_status')!='FAILED_POST_TRAINING_COHORT_AUDIT' or raw.get('sealed_test_accessed') is not False):
+            raise ValueError('Phase57 selection contamination must remain explicit')
+        if any(_mapping(v).get('all_gates_passed') is not False for v in _mapping(raw.get('arms')).values()):
+            raise ValueError('Phase57 cannot certify independent gate passage')
+        result.update(status='DIAGNOSTIC_COMPLETE',metric_completeness='COMPLETE',independent_validation=False,strict_selection_overlap=100,
+            source_boundary='selection_contaminated_diagnostic_recovery',original_job_status='FAILED_POST_TRAINING_COHORT_AUDIT')
     if phase in (46, 47, 48, 49, 50, 51, 52, 53, 54):
         if (raw.get("status") != "COMPLETED" or raw.get("source_boundary") != "corrected_scientific_audit_source"
             or raw.get("sealed_test_accessed") is not False):
@@ -2698,6 +2724,12 @@ def _render(manifest: dict[str, Any]) -> str:
             ['Control failed pretraining objective preflight at attempted step 1643; reconstruction is unavailable.',
              'Completed arm fails full-root and source-recall gates. All retained full/half beam candidates checked.',
              f"Phase57: {record['next_study_status']}; late leaf-PID balance test, fixed 70,000 training events."], 'warning'))
+    if reconstruction.get('phase57'):
+        record=reconstruction['phase57']
+        cards.insert(0,('Phase57 pretraining balance','SELECTION-CONTAMINATED DIAGNOSTICS',
+            ['Both arms completed training, but all 100 reserved strict events entered checkpoint selection.',
+             'All available full/half and beam metrics are diagnostic; no independent gate passage or promotion.',
+             f"Phase58: {record['next_study_status']}; corrected cohort enforcement, fixed 70,000 training events."],'warning'))
     lines = ["Model performance and scientific status", "=======================================", "",
              "Recorded measurements from tracked evidence. Missing measurements are UNAVAILABLE;",
              "NOT_RUN describes a recorded evaluation status. Historical results do not verify",
@@ -2709,13 +2741,14 @@ def _render(manifest: dict[str, Any]) -> str:
              ".. raw:: html", "",
              '   <section class="status-dashboard" aria-label="Recorded model performance">']
     for index, (title, value, paragraphs, kind) in enumerate(cards):
-        refs = reconstruction["phase56"]["source_ids"] if title.startswith("Phase56") else reconstruction["phase55"]["source_ids"] if title.startswith("Phase55") else reconstruction["phase54"]["source_ids"] if title.startswith("Phase54") else reconstruction["phase53"]["source_ids"] if title.startswith("Phase53") else reconstruction["phase52"]["source_ids"] if title.startswith("Phase52") else reconstruction["phase51"]["source_ids"] if title.startswith("Phase51") else reconstruction["phase50"]["source_ids"] if title.startswith("Phase50") else reconstruction["phase49"]["source_ids"] if title.startswith("Phase49") else reconstruction["phase48"]["source_ids"] if title.startswith("Phase48") else reconstruction["phase47"]["source_ids"] if title.startswith("Phase47") else reconstruction["phase46"]["source_ids"] if title.startswith("Phase46") else reconstruction["phase45"]["source_ids"] if title.startswith("Phase45") else reconstruction["phase44"]["source_ids"] if title.startswith("Phase44") else reconstruction["phase43"]["source_ids"] if title.startswith("Phase43") else reconstruction["phase42"]["source_ids"] if title.startswith("Phase42") else reconstruction["phase41"]["source_ids"] if title.startswith("Phase41") else recent["source_ids"] if title.startswith("Phase40") else reconstruction["source_ids"]
+        refs = reconstruction["phase57"]["source_ids"] if title.startswith("Phase57") else reconstruction["phase56"]["source_ids"] if title.startswith("Phase56") else reconstruction["phase55"]["source_ids"] if title.startswith("Phase55") else reconstruction["phase54"]["source_ids"] if title.startswith("Phase54") else reconstruction["phase53"]["source_ids"] if title.startswith("Phase53") else reconstruction["phase52"]["source_ids"] if title.startswith("Phase52") else reconstruction["phase51"]["source_ids"] if title.startswith("Phase51") else reconstruction["phase50"]["source_ids"] if title.startswith("Phase50") else reconstruction["phase49"]["source_ids"] if title.startswith("Phase49") else reconstruction["phase48"]["source_ids"] if title.startswith("Phase48") else reconstruction["phase47"]["source_ids"] if title.startswith("Phase47") else reconstruction["phase46"]["source_ids"] if title.startswith("Phase46") else reconstruction["phase45"]["source_ids"] if title.startswith("Phase45") else reconstruction["phase44"]["source_ids"] if title.startswith("Phase44") else reconstruction["phase43"]["source_ids"] if title.startswith("Phase43") else reconstruction["phase42"]["source_ids"] if title.startswith("Phase42") else reconstruction["phase41"]["source_ids"] if title.startswith("Phase41") else recent["source_ids"] if title.startswith("Phase40") else reconstruction["source_ids"]
         lines.extend("   " + line for line in _card(title, value, paragraphs, refs, kind, index).splitlines())
     lines += ["   </section>", "", ".. only:: not html", ""]
     for title, value, paragraphs, kind in cards:
         lines += [f"   **{_literal(title)}: {_literal(value)}**", ""]
         lines.extend(f"   {_literal(paragraph)}" for paragraph in paragraphs)
         lines += [""]
+    lines += _render_phase57(reconstruction.get("phase57", {}))
     lines += _render_phase55(reconstruction.get("phase55", {}))
     lines += _render_phase56(reconstruction.get("phase56", {}))
     lines += _render_phase54(reconstruction.get("phase54", {}))
@@ -2839,7 +2872,7 @@ def generate_status(repo_root: Path, output_dir: Path) -> dict[str, Any]:
     output = requested.resolve()
     if output == root or output in root.parents or any(part.is_symlink() for part in (requested, *requested.parents)):
         raise ValueError("Status output must be a dedicated non-symlink directory")
-    if output.exists() and any(path.name not in {"index.rst", "status.json", "phase44-retained-metrics.json", "phase45-metrics.json", "phase45-retained-metrics.json", "phase46-metrics.json", "phase46-retained-metrics.json", "phase47-metrics.json", "phase47-retained-metrics.json", "phase47-aggregation-metrics.json", "phase48-metrics.json", "phase48-retained-metrics.json", "phase48-aggregation-metrics.json", "phase49-metrics.json", "phase49-retained-metrics.json", "phase49-aggregation-metrics.json", "phase50-metrics.json", "phase50-retained-metrics.json", "phase50-aggregation-metrics.json", "phase51-metrics.json", "phase51-retained-metrics.json", "phase51-aggregation-metrics.json", "phase52-metrics.json", "phase52-retained-metrics.json", "phase52-aggregation-metrics.json", "phase53-metrics.json", "phase53-retained-metrics.json", "phase53-aggregation-metrics.json", "phase54-metrics.json", "phase54-retained-metrics.json", "phase54-aggregation-metrics.json", "phase41-metrics.json", "phase55-metrics.json", "phase55-retained-metrics.json", "phase55-aggregation-metrics.json", "phase55-pretraining-metrics.json", "phase56-metrics.json", "phase56-retained-metrics.json", "phase56-aggregation-metrics.json", "phase56-pretraining-metrics.json"} for path in output.iterdir()):
+    if output.exists() and any(path.name not in {"index.rst", "status.json", "phase44-retained-metrics.json", "phase45-metrics.json", "phase45-retained-metrics.json", "phase46-metrics.json", "phase46-retained-metrics.json", "phase47-metrics.json", "phase47-retained-metrics.json", "phase47-aggregation-metrics.json", "phase48-metrics.json", "phase48-retained-metrics.json", "phase48-aggregation-metrics.json", "phase49-metrics.json", "phase49-retained-metrics.json", "phase49-aggregation-metrics.json", "phase50-metrics.json", "phase50-retained-metrics.json", "phase50-aggregation-metrics.json", "phase51-metrics.json", "phase51-retained-metrics.json", "phase51-aggregation-metrics.json", "phase52-metrics.json", "phase52-retained-metrics.json", "phase52-aggregation-metrics.json", "phase53-metrics.json", "phase53-retained-metrics.json", "phase53-aggregation-metrics.json", "phase54-metrics.json", "phase54-retained-metrics.json", "phase54-aggregation-metrics.json", "phase41-metrics.json", "phase55-metrics.json", "phase55-retained-metrics.json", "phase55-aggregation-metrics.json", "phase55-pretraining-metrics.json", "phase56-metrics.json", "phase56-retained-metrics.json", "phase56-aggregation-metrics.json", "phase56-pretraining-metrics.json", "phase57-metrics.json", "phase57-retained-metrics.json", "phase57-aggregation-metrics.json", "phase57-pretraining-metrics.json"} for path in output.iterdir()):
         raise ValueError("Status output contains unexpected files; use a fresh dedicated directory")
     history = _git(root, "log", "-1", "--format=%H%n%cI")
     lines = history.decode("utf-8", errors="replace").splitlines() if history else []
@@ -2968,6 +3001,14 @@ def generate_status(repo_root: Path, output_dir: Path) -> dict[str, Any]:
         if record:
             metric_rows = record.pop("metric_rows")
             download = {"source_hashes": record["source_hashes"], "metric_rows": metric_rows}
+            encoded = (json.dumps(download, separators=(",", ":"), sort_keys=True, allow_nan=False) + "\n").encode()
+            _write(output / filename, encoded)
+            record["metric_download"] = {"filename": filename, "sha256": hashlib.sha256(encoded).hexdigest(), "bytes": len(encoded), "metric_count": len(metric_rows)}
+    phase57 = manifest.get("reconstruction", {}).get("phase57", {})
+    for record, filename in ((phase57, "phase57-metrics.json"), (phase57.get("retained_tree_checks", {}), "phase57-retained-metrics.json"), (phase57.get("aggregation_supplement", {}), "phase57-aggregation-metrics.json"), (phase57.get("pretraining_metrics", {}), "phase57-pretraining-metrics.json")):
+        if record:
+            metric_rows = record.pop("metric_rows")
+            download = {"source_hashes": record["source_hashes"], "metric_rows": metric_rows, "independent_validation": False, "strict_selection_overlap": 100, "scientific_classification": "SELECTION_CONTAMINATED_DIAGNOSTICS", "classification_scope": "phase57_reconstruction_evaluation"}
             encoded = (json.dumps(download, separators=(",", ":"), sort_keys=True, allow_nan=False) + "\n").encode()
             _write(output / filename, encoded)
             record["metric_download"] = {"filename": filename, "sha256": hashlib.sha256(encoded).hexdigest(), "bytes": len(encoded), "metric_count": len(metric_rows)}
@@ -3280,4 +3321,150 @@ def _render_phase56(record):
     lines += ['', 'Oracle values are truth-scored diagnostics after generation, not deployable rankings. Isolated leaves do not count as exact nontrivial LCAG components.',
         'Hold 70,000 training events: no controlled size study establishes that growth is currently better. Stop parent-dose tuning and test late pretraining leaf-PID balance (0.4 versus 0.2), with parent weight 2 and unchanged dominance fail guard.',
         'Phase57 reuses exactly Phase56 selection (1000 events), reserves 100 fresh strict events and leaves 291 untouched. This is not independent cross-phase selection replication. Validation capacity needs planning separately from training dataset growth.', '']
+    return lines
+
+
+def _phase57_retained_projection(value):
+    raw = _mapping(value)
+    if (raw.get("status") != "COMPLETE" or raw.get("version") != "phase57-retained-tree-export-v1"
+        or raw.get("all_returned_beam_candidates_checked") is not True
+        or raw.get("independent_validation") is not False or raw.get("strict_selection_overlap") != 100
+        or raw.get("original_job_status") != "FAILED_POST_TRAINING_COHORT_AUDIT" or raw.get("sealed_test_accessed") is not False):
+        raise ValueError("Phase57 retained-tree coverage is incomplete")
+    result = {"version": "phase57-retained-tree-export-v1", "status": "COMPLETE",
+              "source_ids": _refs("reconstruction_phase57_retained"), "independent_validation": False, "strict_selection_overlap": 100,
+              "evaluator_revision": _sha(raw.get("evaluator_revision")),
+              "source_hashes": [_sha(item) for item in _list(raw.get("source_hashes"))],
+              "all_returned_beam_candidates_checked": True,
+              "aggregate_metric_count": _integer(raw.get("aggregate_metric_count")),
+              "detailed_metric_count": _integer(raw.get("detailed_metric_count")),
+              "tree_metric_scalar_rows": _integer(raw.get("tree_metric_scalar_rows")),
+              "tree_metric_export_sha256": _sha(raw.get("tree_metric_export_sha256")), "arms": {}}
+    metrics = ("source_recall", "source_precision", "lcag_pair_accuracy", "mother_pid_coverage",
+               "mother_pid_accuracy", "perfect_lcag", "coherent_retained_forest", "target_representable", "root_pid_accuracy")
+    def points(value):
+        output = {}
+        value = _mapping(value)
+        for key in metrics:
+            point = _mapping(value.get(key))
+            num, den = _number(point.get("numerator")), _number(point.get("denominator"))
+            if num is None or den is None or num < 0 or den < num:
+                raise ValueError("Invalid retained-tree metric counts")
+            output[key] = {"numerator": num, "denominator": den, "value": num / den if den else None}
+        for key in ("unit_count", "available_unit_count", "unavailable_unit_count", "truth_mother_count", "matched_mother_count"):
+            output[key] = _integer(value.get(key))
+            if output[key] is None or output[key] < 0:
+                raise ValueError("Missing retained-tree coverage count")
+        if output['unit_count'] != output['available_unit_count'] + output['unavailable_unit_count']:
+            raise ValueError("Inconsistent retained-tree coverage count")
+        output['unit_semantics_counts'] = {key: _integer(_mapping(value.get('unit_semantics_counts')).get(key, 0)) for key in ('retained_full_forest', 'retained_b_halves', 'retained_explicit_components_no_b_partition')}
+        return output
+    for arm in ("pretraining_balance_control", "lower_late_pid_pretraining"):
+        record = _mapping(_mapping(raw.get('arms')).get(arm))
+        if record.get('primary_repeat_identical') is not True:
+            raise ValueError('Retained-tree repeat was not verified')
+        result['arms'][arm] = {'primary_repeat_identical': True, 'beam_candidate_count': _integer(record.get('beam_candidate_count')),
+            'primary_structure': {scope: {key: _integer(_mapping(_mapping(record.get('primary_structure')).get(scope)).get(key)) for key in ('isolated_leaf_units', 'single_source_composite_units', 'nontrivial_topology_units', 'source_empty_units', 'representable_nontrivial_units', 'events_without_flagged_target_incompatibility')} for scope in ('full', 'half')},
+            'primary': {scope: points(_mapping(record.get('primary')).get(scope)) for scope in ('full', 'half')},
+            'beam': {scope: {ranking: points(_mapping(_mapping(record.get('beam')).get(scope)).get(ranking)) for ranking in ('average_link_probability', 'learned_confidence_mean', 'learned_confidence_sum', 'normalized_joint_log_probability', 'oracle_diagnostic')} for scope in ('full', 'half')}}
+    for arm in result['arms'].values():
+        for scope, counts in arm['primary_structure'].items():
+            if any(value is None for value in counts.values()):
+                raise ValueError('Missing retained-reference composition count')
+            if sum(counts[key] for key in ('isolated_leaf_units', 'single_source_composite_units', 'nontrivial_topology_units', 'source_empty_units')) != arm['primary'][scope]['unit_count']:
+                raise ValueError('Retained-reference composition does not cover all units')
+            if counts['representable_nontrivial_units'] > counts['nontrivial_topology_units']:
+                raise ValueError('Invalid retained-reference representability count')
+    registry = json.loads(Path(__file__).with_name('phase57_retained_metric_registry.json').read_text())
+    allowed, seen, rows = set(map(tuple, registry)), set(), []
+    for row in _list(raw.get('metric_rows')):
+        identity = (row.get('arm'), row.get('view'), row.get('metric'))
+        if identity not in allowed:
+            continue
+        if identity in seen:
+            raise ValueError('Duplicate retained-tree metric')
+        number = row.get('value')
+        if number is not None and _number(number) is None and type(number) is not bool:
+            raise ValueError('Invalid retained-tree scalar')
+        seen.add(identity)
+        rows.append(dict(arm=identity[0], view=identity[1], metric=identity[2], value=number))
+    if seen != allowed or len(rows) != result['aggregate_metric_count']:
+        raise ValueError('Incomplete retained-tree metric registry')
+    result['metric_rows'] = rows
+    return result
+
+
+def _phase57_aggregation_projection(value):
+    raw = _mapping(value)
+    if (raw.get('version') != 'phase57-aggregation-supplement-v1' or raw.get('status') != 'COMPLETE'
+        or raw.get('independent_validation') is not False or raw.get('strict_selection_overlap') != 100):
+        raise ValueError('Missing Phase57 aggregation supplement')
+    registry = json.loads(Path(__file__).with_name('phase57_aggregation_metric_registry.json').read_text())
+    allowed, seen, rows = set(map(tuple, registry)), set(), []
+    for row in _list(raw.get('metric_rows')):
+        identity = (row.get('arm'), row.get('view'), row.get('metric'))
+        if identity not in allowed:
+            continue
+        if identity in seen or (row.get('value') is not None and _number(row.get('value')) is None):
+            raise ValueError('Invalid Phase57 aggregation scalar')
+        seen.add(identity)
+        rows.append(dict(arm=identity[0], view=identity[1], metric=identity[2], value=row.get('value')))
+    if seen != allowed:
+        raise ValueError('Incomplete Phase57 aggregation registry')
+    primary = {arm: {r['metric']: r['value'] for r in rows if r['arm'] == arm and r['view'] == 'primary_complete_target_direct'} for arm in ('pretraining_balance_control', 'lower_late_pid_pretraining')}
+    return {'metric_rows': rows, 'primary': primary, 'source_hashes': [_sha(x) for x in _list(raw.get('source_hashes'))],
+            'source_ids': _refs('reconstruction_phase57_aggregation')}
+
+
+def _phase57_pretraining_projection(value):
+    raw = _mapping(value)
+    if (raw.get('version') != 'phase57-pretraining-export-v1' or raw.get('status') != 'COMPLETE'
+        or raw.get('independent_validation') is not False):
+        raise ValueError('Phase57 pretraining evidence is incomplete')
+    registry = json.loads(Path(__file__).with_name('phase57_pretraining_metric_registry.json').read_text())
+    allowed, seen, rows = set(map(tuple, registry)), set(), []
+    for row in _list(raw.get('metric_rows')):
+        identity = (row.get('arm'), row.get('view'), row.get('metric'))
+        if identity not in allowed:
+            continue
+        if identity in seen or (row.get('value') is not None and type(row.get('value')) is not bool and _number(row.get('value')) is None):
+            raise ValueError('Invalid Phase57 pretraining scalar')
+        seen.add(identity)
+        rows.append(dict(arm=identity[0], view=identity[1], metric=identity[2], value=row.get('value')))
+    if seen != allowed:
+        raise ValueError('Incomplete Phase57 pretraining metric registry')
+    return {'metric_rows': rows, 'scalar_rows': _integer(raw.get('scalar_rows')),
+            'source_hashes': [_sha(x) for x in _list(raw.get('source_hashes'))],
+            'final_validation': {arm: {r['metric']: r['value'] for r in rows if r['arm'] == arm and r['view'] == 'validation_step_2188'} for arm in ('pretraining_balance_control', 'lower_late_pid_pretraining')},
+            'source_ids': _refs('reconstruction_phase57_pretraining')}
+
+
+def _render_phase57(record):
+    if not record:return []
+    labels=('pretraining_balance_control','lower_late_pid_pretraining');arms=record['arms'];retained=record['retained_tree_checks']['arms']
+    lines=['Phase57: complete diagnostics, invalid independent validation','-'*64,'',
+        'Both arms finished 2,188 refinement and 4,376 reconstruction steps, then failed the ordered-cohort audit. Original failed receipts remain unchanged.',
+        'Reconstruction selected 734 intended events plus 266 unintended events, including all 100 reserved strict events. Both arms used the same actual sequence.',
+        'Recovered evaluations are in-sample diagnostics. Numerical threshold checks do not certify independent gate passage; neither model is promoted.',
+        'Selection recovery is 289/3533 versus 283/3533 (late leaf-PID weights 0.4 versus 0.2). This is not a held-out effect.', '',
+        ':download:`Phase57 original-policy diagnostics <phase57-metrics.json>`; :download:`Phase57 all retained full/half and beam metrics <phase57-retained-metrics.json>`;',
+        ':download:`Phase57 micro/macro and exact combinations <phase57-aggregation-metrics.json>`; :download:`Phase57 pretraining metrics <phase57-pretraining-metrics.json>`.',
+        'See :doc:`../../phase57` for cohort failure, detailed review and corrected next-study design.','']
+    lines+=_table(['Original-policy diagnostic','Late PID 0.4','Late PID 0.2'],[[k,*[_metric_point(arms[a]['endpoints'][k]) for a in labels]] for k in arms[labels[0]]['endpoints']])
+    lines+=_table(['Numerical threshold check (diagnostic only)','0.4','0.2'],[[k,*[arms[a]['gates'][k] for a in labels]] for k in arms[labels[0]]['gates']])
+    for scope in ('full','half'):
+        lines += [f'Phase57 retained {scope} diagnostics','~'*48,'']
+        keys=('source_precision','source_recall','lcag_pair_accuracy','perfect_lcag','coherent_retained_forest','mother_pid_coverage','root_pid_accuracy','target_representable')
+        lines+=_table(['Retained diagnostic','0.4','0.2'],[[k,*[_metric_point(retained[a]['primary'][scope][k]) for a in labels]] for k in keys])
+        lines+=_table(['Beam ranking','0.4 LCAG','0.2 LCAG','0.4 exact','0.2 exact'],[[rank,*[_metric_point(retained[a]['beam'][scope][rank]['lcag_pair_accuracy']) for a in labels],*[_metric_point(retained[a]['beam'][scope][rank]['perfect_lcag']) for a in labels]] for rank in retained[labels[0]]['beam'][scope]])
+    lines += ['Phase57 pretraining execution', '~'*48, '',
+        'Both refinements completed 2,188 steps and 70,000 presentations; models are identical at step 1,094. Validation below uses the reused selection cohort and is not independent reconstruction evidence.', '']
+    pre=record['pretraining_metrics']['final_validation']
+    keys=('validation_leaf_pid_accuracy','validation_parent_ranking_accuracy','validation_relation_accuracy','validation_fsp_only_relation_accuracy_separate','validation_effective_rank','validation_loss_parent','validation_loss_lca')
+    lines+=_table(['Pretraining selection metric','Late PID 0.4','Late PID 0.2'],[[k,*[pre[a][k] for a in labels]] for k in keys])
+    lines+=_table(['Arm','Returned beam candidates'],[[a,retained[a]['beam_candidate_count']] for a in labels])
+    lines += [f"Phase58 submission snapshot: {_literal(record['next_study_status'])}; two bounded jobs, no automatic chain.", '']
+    lines+=['','All returned beam candidates are checked in both scopes, including incompatible retained targets. Oracle values are post-generation truth diagnostics, not deployable rankings.','',
+        'Hold 70,000 training events; no controlled learning curve supports immediate growth. Phase57 cannot establish a pretraining benefit independently. Repeat the intended balance comparison with corrected selection enforcement.',
+        'Validation-data expansion is now a priority: only 125 events remained untouched after actual Phase57 selection. Phase58 reserves 100 fresh strict events, leaves 25, and excludes every non-selection validation UID before training. The sealed test remains closed.','']
     return lines

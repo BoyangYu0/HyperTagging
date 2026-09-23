@@ -1,5 +1,23 @@
 # Current repository audit status
 
+## Phase57 review — 2026-09-23
+
+Both arms completed 2188-step pretraining refinement and 4376-step reconstruction,
+then failed the ordered validation cohort audit before evaluation. The trainer
+reselected 1000 events with the new seed: 734 intended plus 266 unintended,
+including all 100 reserved strict events. All recovered results are selection-
+contaminated diagnostics; original failed receipts are preserved. No promotion
+or independent treatment effect is established. Only125 validation events remain
+untouched after actual selection.
+
+Hold70000 training events. Prior studies establish neither a controlled data-
+growth benefit nor superiority of improved pretraining. Repeat the intended
+late-PID0.4vs0.2 contrast at parent2 using corrected eligibility and fresh strict
+validation. Phase58 excludes every non-selection validation UID and tests the
+actual selector before any training. Its100 fresh strict events leave25, making
+additional independent validation data a priority. Sealed test remains closed.
+
+
 ## Phase55 review — 2026-09-21
 
 Both arms completed refinement and reconstruction, but original jobs failed in
