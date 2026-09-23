@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase58 verified submission snapshot and Phase57 publication metadata only.
+  - 778e0a67d07cc7fc1efe754a79a0b97d7abfb2b9
   # Phase57 complete diagnostic review and corrected bounded Phase58 comparison; historical audit scope unchanged.
   - cd88f096677787139a33dc0dc1cabc79905449ec
   # Phase57 diagnostic recovery after all reserved strict events entered selection; no independent validation claim.
