@@ -3713,11 +3713,11 @@ def _render_phase58(record):
         'See :doc:`../../phase58` for the complete review, limitations and training receipts.', '']
     lines += _table(['Original policy metric', 'Completed lower-PID arm'], [[k,_metric_point(v)] for k,v in arm['endpoints'].items()])
     lines += _table(['Strict gate', 'Completed arm'], [[k,v] for k,v in arm['gates'].items()])
-    lines += ['Retained full and half metrics', '~' * 32, '', f"Every returned beam candidate was checked: {retained['beam_candidate_count']} coherent candidates on 20 strict events.", '']
+    lines += ['Phase58 retained full and half metrics', '~' * 40, '', f"Every returned beam candidate was checked: {retained['beam_candidate_count']} coherent candidates on 20 strict events.", '']
     keys=('source_precision','source_recall','lcag_pair_accuracy','perfect_lcag','coherent_retained_forest','mother_pid_coverage','root_pid_accuracy')
     lines += _table(['Retained metric','Full','Half'], [[key, _metric_point(retained['primary']['full'][key]), _metric_point(retained['primary']['half'][key])] for key in keys])
     for scope in ('full','half'):
-        lines += [f'{scope.title()} retained beam rankings', '~' * 32, '']
+        lines += [f'Phase58 {scope} retained beam rankings', '~' * 40, '']
         lines += _table(['Ranking','LCAG','Exact components','Coherent forest'], [[rank,*[_metric_point(points[key]) for key in ('lcag_pair_accuracy','perfect_lcag','coherent_retained_forest')]] for rank,points in retained['beam'][scope].items()])
     lines += ['', 'Oracle values are truth-scored diagnostics after generation, not deployable rankings. Isolated leaves do not count as exact nontrivial LCAG components.',
         'Hold 70,000 training events: no controlled size study establishes that growth is currently better. Prioritize objective stability and new independent validation. Phase59 tests late PID0.2 versus0.1 at parent2 with the unchanged fail guard.',

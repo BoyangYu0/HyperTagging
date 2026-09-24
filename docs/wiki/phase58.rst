@@ -274,7 +274,7 @@ All 60 returned coherent beam candidates are checked in both scopes. Search rema
 No exact component deeper than one generation occurs in any of the seven views or returned beam candidates. Views, scopes, repeats and alternative candidates are not independent trials.
 
 Uncertainty and pretraining
---------------------------
+---------------------------
 
 .. list-table::
    :header-rows: 1
@@ -334,7 +334,7 @@ Intervals use 10,000 resamples of whole events and ratios of summed counts, cond
 The complete pretraining download retains all recorded validation checkpoints. The failed control has no step 2188 endpoint; earlier checkpoints cannot be compared as matched final performance.
 
 Decision across the studies and Phase59
---------------------------------------
+---------------------------------------
 
 Hold the training set at 70,000 events. Phase40 changed size, compute and cohort
 together and did not establish a controlled learning curve. Longer pretraining
