@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase59 retained evidence admission version correction; no jobs submitted from rejected render.
+  - 07e2bc4243c7025f4ef686f39c103f4df0704afe
   # Phase58 complete available metrics; Phase59 feasibility pilot with final25 untouched events.
   - b140bdf55e903b49780c3c9ed0095a3424e10d4e
   # Measured Phase57 total publication allowance; per-file and content privacy checks unchanged.
