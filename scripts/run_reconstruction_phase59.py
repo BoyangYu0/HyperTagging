@@ -207,6 +207,19 @@ def validate_closeout_basis(prereg: dict[str, Any]) -> dict[str, Any]:
     return closeout
 
 
+def validate_retained_basis(retained, retained_binding):
+    if (
+        retained.get("status") != "COMPLETE"
+        or retained.get("version") != "phase58-retained-tree-export-v1"
+        or retained.get("version") != retained_binding.get("version")
+        or retained.get("all_returned_beam_candidates_checked") is not True
+        or retained.get("source_boundary")
+        != "native_phase58_one_arm_pretraining_failure"
+        or retained.get("sealed_test_accessed") is not False
+    ):
+        raise RuntimeError("phase59 retained-tree evidence is incomplete")
+
+
 def validate_seed_contract(config: dict[str, Any], cohort_seed: int) -> None:
     """Reject stale replay seeds before rendering or allocating a training job."""
     if (
@@ -311,16 +324,7 @@ def verify_contract(path: Path) -> tuple[dict[str, Any], dict[str, str]]:
     if sha256(retained_path) != retained_binding["sha256"]:
         raise RuntimeError("phase59 retained-tree evidence hash changed")
     retained = json.loads(retained_path.read_text())
-    if (
-        retained.get("status") != "COMPLETE"
-        or retained.get("version") != "phase57-retained-tree-export-v1"
-        or retained.get("version") != retained_binding.get("version")
-        or retained.get("all_returned_beam_candidates_checked") is not True
-        or retained.get("source_boundary")
-        != "native_phase58_one_arm_pretraining_failure"
-        or retained.get("sealed_test_accessed") is not False
-    ):
-        raise RuntimeError("phase59 retained-tree evidence is incomplete")
+    validate_retained_basis(retained, retained_binding)
     evaluation_contract = dict(contract["evaluation_contract"])
     if evaluation_contract.get("retained_tree_checks") != {
         "version": "retained-direct-tree-checks-v1",

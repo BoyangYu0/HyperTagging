@@ -225,3 +225,15 @@ def test_confirmatory_claim_or_extra_validation_budget_rejected():
         p[key] = value
         with pytest.raises(RuntimeError, match="feasibility"):
             validate_closeout_basis(p)
+
+
+def test_retained_evidence_accepts_native_phase58_and_rejects_diagnostic_phase57():
+    from scripts.run_reconstruction_phase59 import validate_retained_basis
+
+    p = prereg()
+    binding = p["phase58_retained_metric_basis"]
+    evidence = json.loads((ROOT / binding["path"]).read_text())
+    validate_retained_basis(evidence, binding)
+    evidence["version"] = "phase57-retained-tree-export-v1"
+    with pytest.raises(RuntimeError, match="retained-tree"):
+        validate_retained_basis(evidence, binding)
