@@ -393,3 +393,18 @@ Metric completeness
      - 917047
 
 The private complete-metrics archive preserves native reports, logs, checkpoints metadata, source hashes and every per-tree scalar export. Public downloads contain allowlisted aggregate fields; no event identifiers or private paths are published. Missing physical momentum-resolution estimates and failed-control reconstruction remain explicitly unavailable.
+
+Submission and validation
+-------------------------
+
+Both Phase59 jobs were submitted from immutable source
+``3cbc6f8e89f7198f1886061a6ef1f36dc9d14593``, tagged
+``reconstruction-phase59-pretraining-stability-pilot-20260924-v2``.
+The submission receipt and scheduler records were verified against both
+contracts. These are submitted experiments, not completed results.
+
+The source passed 18 campaign tests, 21 frozen-source preflight tests,
+193 focused reconstruction/search tests and both two-step CPU training smokes.
+The complete tree CSV matches all 4,581,879 regenerated source scalars. All
+42 earlier metric downloads remain byte-identical. The broad CPU suite and
+both documentation layouts are checked before publication is declared complete.
