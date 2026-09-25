@@ -237,3 +237,23 @@ def test_retained_evidence_accepts_native_phase58_and_rejects_diagnostic_phase57
     evidence["version"] = "phase57-retained-tree-export-v1"
     with pytest.raises(RuntimeError, match="retained-tree"):
         validate_retained_basis(evidence, binding)
+
+
+@pytest.mark.parametrize("count,explicit", [(25, False), (20, True)])
+def test_evaluator_receives_bound_pilot_and_beam_counts(tmp_path, monkeypatch, count, explicit):
+    from scripts import run_reconstruction_phase59_full_decay as runner
+    import hypertagging.evaluation.retained_tree_checks as checks
+    manifest = tmp_path / "cohort.json"
+    manifest.write_text(json.dumps({"event_uid_count": count, "event_uids": list(range(count))}))
+    calls = []
+    monkeypatch.setattr(runner, "_legacy_run_evaluator", lambda **kw: calls.append(kw) or {})
+    monkeypatch.setattr(checks, "validate_retained_tree_report", lambda report: None)
+    kw = {"cohort_manifest": manifest, "contract": {"evaluation_contract": {"max_events": 25}}}
+    if explicit:
+        kw["max_events"] = count
+    runner._run_evaluator(**kw)
+    assert calls[0]["max_events"] == count
+    kw["max_events"] = 100
+    with pytest.raises(RuntimeError, match="count differs"):
+        runner._run_evaluator(**kw)
+    assert len(calls) == 1

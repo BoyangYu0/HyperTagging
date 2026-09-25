@@ -37,6 +37,13 @@ def _run_evaluator(**kwargs):
         validate_retained_tree_report,
     )
 
+    # Every invocation must explicitly bind its size to the authenticated cohort.
+    # The shared legacy runner defaults to 100, while this feasibility pilot has 25.
+    manifest = json.loads(Path(kwargs["cohort_manifest"]).read_text())
+    count = kwargs.get("max_events", kwargs["contract"]["evaluation_contract"]["max_events"])
+    if count != manifest["event_uid_count"] or count != len(manifest["event_uids"]):
+        raise RuntimeError("Phase59 evaluation count differs from bound cohort")
+    kwargs["max_events"] = count
     report = _legacy_run_evaluator(**kwargs)
     validate_retained_tree_report(report)
     return report
