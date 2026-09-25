@@ -14,7 +14,7 @@ Phase59 complete metrics and provenance
 
 All seven views per arm are included: primary direct, identical strict repeat, three independent checkpoint tracks, contracted diagnostic, and beam direct. Every returned candidate is checked in both full and half scopes, including targets outside the training policy. Contracted and oracle results remain diagnostic. Different checkpoint-selection tracks and the identical repeat are not independent training replications.
 
-:download:`Original aggregate and checkpoint metrics <_generated/status/phase59-metrics.json>`; :download:`retained full/half and beam metrics <_generated/status/phase59-retained-metrics.json>`; :download:`micro/macro and exact-count metrics <_generated/status/phase59-aggregation-metrics.json>`; :download:`pretraining execution and validation metrics <_generated/status/phase59-pretraining-metrics.json>`.
+The :doc:`dashboard <_generated/status/index>` provides four Phase59 downloads: original aggregate and checkpoint metrics; retained full/half and beam metrics; micro/macro and exact-count metrics; and pretraining execution and validation metrics.
 
 The private complete-metrics bundle additionally preserves native reports, every exported scalar, candidate/tree rows, all training logs, checkpoint hashes, source contracts, uncertainty calculations and verification receipts. No model weights or event identifiers are published on this page. The :doc:`dashboard <_generated/status/index>` retains all older studies and metric downloads.
 
