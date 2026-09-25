@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase59 authored review routes downloads through the existing generated dashboard.
+  - dc6a7c3983caac17163840dc94864f16cbaa0d0e
   # Phase59 feasibility metrics, fresh-validation Phase60 contracts and shared capacity admission repair; prior audit scope unchanged.
   - 4c076796ef365c6e1fb31f75dc6779c02af3cdf3
   # Verified Phase60 submission snapshot and Phase59 review validation metadata only.
