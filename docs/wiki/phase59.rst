@@ -512,3 +512,20 @@ This is one replication of the existing objective contrast, not another dose sea
 Phase60 submission details are recorded in the dashboard snapshot and immutable contracts. No promotion, sealed-test access or automatic follow-on campaign is authorized.
 
 Daughter-sum four-momentum closure checks implementation consistency. It is not physical mother momentum resolution, which remains unavailable.
+
+Phase60 submission and review validation
+------------------------------------------
+
+Both Phase60 jobs were submitted from immutable source
+``4c076796ef365c6e1fb31f75dc6779c02af3cdf3``, tagged
+``reconstruction-phase60-fresh-validation-pretraining-replication-20260925``.
+The submission receipt and scheduler records were verified against both contracts.
+These are submitted experiments, not completed results.
+
+The frozen source passed 19 preflight tests. The Phase59 evaluator repair
+passed 20 campaign tests, and 193 focused reconstruction/search tests and both
+two-step CPU training smokes passed. The broad practical CPU suite initially
+had one audit-ledger failure (1740 passed, 34 skipped); after recording the new
+scientific repair, all 15 audit tests passed. The final published revision is
+also subject to the complete CPU CI suite and both strict documentation layouts.
+All 46 earlier metric downloads are preserved byte for byte.
