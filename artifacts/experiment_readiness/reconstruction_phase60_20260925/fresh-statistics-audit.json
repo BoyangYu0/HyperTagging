@@ -1,0 +1,29 @@
+{
+  "construction": "full_record_scan_not_sidecars",
+  "event_identity_validation": {
+    "category_mismatches": 0,
+    "duplicate_event_uids": 0,
+    "event_uid_stream_sha256": "c6ee70d303fd50d098c42c65191609e4aa03db1a748d919af97e8ed95c3721f8",
+    "sealed_test_opened": false,
+    "source_mismatches": 0,
+    "status": "passed",
+    "task_binding": "selection_to_sidecar_to_completion_marker_validated",
+    "unique_event_uids": 170000,
+    "validated_events": 170000,
+    "validation_scope": "all_opened_train_and_validation_event_records"
+  },
+  "index_path": "artifacts/experiment_readiness/reconstruction_phase60_20260925/train_070k.complete_only.index.json",
+  "index_sha256": "10283f3e4adc13dd05fa6161b862411bc2e08c2f02eaa429a6df695caf9bf28b",
+  "normalizer_identical_to_phase59": true,
+  "normalizer_scope": "train",
+  "sealed_test_accessed": false,
+  "source_files": {
+    "scripts/build_dataset_index.py": "6e7028f9283607aedf674c92b6c4df3f9a8dabeb64143d890d8965dc719f935c",
+    "scripts/build_reconstruction_phase60_index_audit.py": "53be9ab5aee63e0ec258ff78dc7a67798c7bffe961eafb1a382aef1f7e91aa16",
+    "src/hypertagging/data/dataset_index.py": "3e9e26b9cc88d9373c5997f06069f1a783980bbad6a2e6b4f01c920b9baf8c00",
+    "src/hypertagging/data/heterogeneous.py": "a40d1788dd0b708998c331b46c2c539898d34a4d92395d0311df4be9eba3940f"
+  },
+  "status": "PASS",
+  "training_payloads_identical": true,
+  "version": "phase60-fresh-statistics-audit-v1"
+}

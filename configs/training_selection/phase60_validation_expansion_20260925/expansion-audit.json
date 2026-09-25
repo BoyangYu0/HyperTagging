@@ -1,0 +1,53 @@
+{
+  "all_historical_roles_preserved": true,
+  "catalog_note": "Historical source-role catalog is preserved; only selected train/validation payloads are materialized in the flat snapshot. Sealed test is not materialized or opened.",
+  "category_shard_quotas": {
+    "ccbar": 2,
+    "charged": 1,
+    "ddbar": 1,
+    "mixed": 1,
+    "ssbar": 1,
+    "taupair": 2,
+    "uubar": 2
+  },
+  "fresh_tasks": [
+    1508,
+    1468,
+    978,
+    268,
+    318,
+    1908,
+    1608,
+    1818,
+    468,
+    1798
+  ],
+  "fresh_validation_events": 50000,
+  "materialized_roles": [
+    "train",
+    "validation"
+  ],
+  "materialized_shards": 34,
+  "new_shard_hashes_verified": {
+    "mdst_00268.parquet": "d7d7a29baa166938de5c4c6d9387f0abba60dc8a13b07be1fe52eeb642195ba5",
+    "mdst_00318.parquet": "0dfa910c4f25ce28b9f156fa9baae93183e1f6aaaf17290301351bcfd3afec34",
+    "mdst_00468.parquet": "2594cfa1cca40278b642cc13bd891970d5acaa267a2a130cbe2fc51cafddbfb7",
+    "mdst_00978.parquet": "c7a1cecdebac3d93a2a9eec39b1a9ff2310753e5ad8c9e16d695f3e4667a21da",
+    "mdst_01468.parquet": "52c6b555683c632b7856b1ff84fea7b2009165ad812e59aa22f6d15b0b89c323",
+    "mdst_01508.parquet": "816a3ae8d049ddc4a10976aede86534a3875f0e49c3b70c33d956610e462f593",
+    "mdst_01608.parquet": "3628a28e55a3ef7e3bfc6884002d648805dd3c4d26cc2c3c8ee9018ed5ad1199",
+    "mdst_01798.parquet": "8ca26c82544caa50c299c43dfe59bdee0a4df6d961e363082da7c9c2905b1e08",
+    "mdst_01818.parquet": "38a4b9765d1f801c71ca5f1d268c5209db609160e8480fdfc96995212abf48bc",
+    "mdst_01908.parquet": "48806e9b438650ac5c57d571106a056a39bb785a3bce57652af4c88250d5216d"
+  },
+  "new_sources_disjoint_from_entire_prior_1m_inventory": true,
+  "prior_inventory_sha256": "e115242f496705056ddb727313008a4fb878e4d57d86e540a6138765a1d5d577",
+  "prior_roles_sha256": "243dc803984196c1eb77f62b2768834a442e1d34b06b2617ab900b20810c0674",
+  "sealed_test_accessed": false,
+  "selection_seed": 20260925,
+  "status": "SOURCE_ROLES_BOUND_UID_SCAN_REQUIRED",
+  "train_events": 70000,
+  "training_payloads_identical": true,
+  "validation_events": 100000,
+  "version": "phase60-validation-source-expansion-v1"
+}

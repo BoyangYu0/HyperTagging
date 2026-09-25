@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase59 evaluation-only cohort-count binding; models and scientific scoring unchanged.
+  - c952365cf9c798886178ebe09402482ad4f23e3a
   # Phase58 publication heading lengths and unique dashboard anchors only.
   - 29cffd847e826efefad12f15bd05d6747f723446
   # Phase59 verified submission snapshot and Phase58 publication metadata only.

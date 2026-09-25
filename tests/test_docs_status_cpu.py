@@ -34,6 +34,12 @@ def evidence(tmp_path, monkeypatch):
     monkeypatch.delenv("SOURCE_DATE_EPOCH", raising=False)
     monkeypatch.setattr(status, "_git", lambda *_args: None)
     documents = {
+        "reconstruction_phase59": {"reserved": True},
+        "reconstruction_phase59_retained": {"reserved": True},
+        "reconstruction_phase59_aggregation": {"reserved": True},
+        "reconstruction_phase59_pretraining": {"reserved": True},
+        "reconstruction_phase60_submission": {"reserved": True},
+
         "reconstruction_phase58": {"reserved": True},
         "reconstruction_phase58_retained": {"reserved": True},
         "reconstruction_phase58_aggregation": {"reserved": True},
@@ -181,7 +187,7 @@ def test_status_is_deterministic_and_preserves_record_scope(evidence, tmp_path, 
     assert manifest["pretraining"]["selected_profile_state"] == "NONE_SELECTED"
     assert manifest["pretraining"]["submission_performed"] is False
     assert manifest["pretraining"]["pretraining_success_gate_passed"] is False
-    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 70
+    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 75
     assert manifest["provenance"]["external_filesystem_or_network_artifacts_opened"] is False
     assert source_info(manifest, "issue_ledger")["freshness"]["status"] == "stale"
     assert source_info(manifest, "current_status")["freshness"]["status"] == "unknown"
@@ -1093,3 +1099,24 @@ def test_phase58_available_metrics_and_failed_control_boundary():
     for key,value in [('independent_validation',False),('strict_selection_overlap',1),('comparison_available',True)]:
         bad=dict(raw);bad[key]=value
         with pytest.raises(ValueError):status._phase58_projection(bad)
+
+
+def test_phase59_feasibility_and_complete_full_half_beam_coverage():
+    raw=json.loads((ROOT/status.SOURCE_PATHS['reconstruction_phase59']).read_text())
+    labels=('pretraining_balance_control','lower_late_pid_pretraining')
+    record=status._phase41_projection(raw,phase=59,labels=labels)
+    assert record['status']=='FEASIBILITY_COMPLETE'
+    assert record['scientific_mode']=='FEASIBILITY_ONLY_NOT_CONFIRMATORY'
+    assert record['independent_validation'] and record['strict_event_count']==25
+    assert record['strict_selection_overlap']==0 and record['promotion_authorized'] is False
+    for key,value in [('status','COMPLETED'),('scientific_mode','CONFIRMATORY'),('strict_event_count',100),('independent_validation',False),('strict_selection_overlap',1)]:
+        bad=json.loads(json.dumps(raw));bad[key]=value
+        with pytest.raises(ValueError):status._phase41_projection(bad,phase=59,labels=labels)
+    retained=json.loads((ROOT/status.SOURCE_PATHS['reconstruction_phase59_retained']).read_text())
+    projected=status._phase59_retained_projection(retained)
+    assert set(projected['arms'])==set(labels)
+    for arm in labels:
+        assert set(projected['arms'][arm]['beam'])=={'full','half'}
+        assert projected['arms'][arm]['beam_candidate_count']>0
+    retained['all_returned_beam_candidates_checked']=False
+    with pytest.raises(ValueError):status._phase59_retained_projection(retained)

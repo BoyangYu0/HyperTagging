@@ -1,5 +1,32 @@
 # Current repository audit status
 
+## Phase59 review — 2026-09-25
+
+Both arms completed 2188 pretraining and 4376 reconstruction steps. Original
+jobs failed before strict scoring because the evaluator requested 100 events
+from the correct 25-event cohort. Count-bound CPU recovery preserved the models,
+cohort, scoring code and original failed receipts. All fourteen views and all
+121 returned candidates are checked in full and half scopes. Selection/strict
+overlap is zero, but this remains a feasibility pilot, not confirmatory quality
+evidence. Configured full roots are 0/25 in both arms; retained full/half LCAG
+counts tie. The modest exact-component and forest differences are shallow and
+mixed. No promotion or sealed-test access.
+
+Hold the same 70000 training events. Pretraining superiority and benefits from
+training-set growth or longer pretraining remain unestablished. The immediate
+data requirement is independent validation: all prior 50000 validation events
+are exhausted. Phase60 adds 50000 events from source files disjoint from the
+entire old inventory, preserving historical roles, training payloads and
+train-only normalization. One bounded late-PID 0.2 versus 0.1 replication uses
+parent weight 2, fresh seed 20260927, fresh selection 1000 / strict 100 / beam 20,
+and the same compute and acceptance thresholds. The expanded index exposes one
+14-daughter level-5 target; both arms raise that shared limit from 13 to 14,
+keeping global capacity 16. No target is discarded. Different validation,
+seed and shared capacity prohibit causal cross-phase comparisons. No automatic
+chain is authorized. See the Phase59 review and dashboard for complete metrics
+and the verified submission snapshot; existing scientific audit scope remains
+unchanged.
+
 ## Phase58 review — 2026-09-24
 
 Control failed pretraining at attempted1753 (gradient dominance23.1619>20);

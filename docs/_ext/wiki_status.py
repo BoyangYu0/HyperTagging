@@ -105,6 +105,11 @@ SOURCE_PATHS.update({
     "reconstruction_phase58_aggregation": "artifacts/codex/reconstruction_phase58_aggregation_20260924.json",
     "reconstruction_phase58_pretraining": "artifacts/codex/reconstruction_phase58_pretraining_20260924.json",
     "reconstruction_phase59_submission": "artifacts/codex/reconstruction_phase59_submission_20260924.json",
+    "reconstruction_phase59": "artifacts/codex/reconstruction_phase59_closeout_20260925.json",
+    "reconstruction_phase59_retained": "artifacts/codex/reconstruction_phase59_retained_metrics_20260925.json",
+    "reconstruction_phase59_aggregation": "artifacts/codex/reconstruction_phase59_aggregation_20260925.json",
+    "reconstruction_phase59_pretraining": "artifacts/codex/reconstruction_phase59_pretraining_20260925.json",
+    "reconstruction_phase60_submission": "artifacts/codex/reconstruction_phase60_submission_20260925.json",
 })
 SOURCE_IDS = {key: f"source-{index:02d}" for index, key in enumerate(SOURCE_PATHS, 1)}
 FRESHNESS_DAYS = 30
@@ -699,6 +704,18 @@ def _collect(payloads: dict[str, Any], revision: str | None) -> dict[str, Any]:
             record['next_study_status'] = submission['status']
             record['submission_task_count'] = _integer(submission.get('task_count'))
             record['submission_source_revision'] = _sha(submission.get('source_revision'))
+    reconstruction['phase59'] = _phase41_projection(payloads.get('reconstruction_phase59'), phase=59, labels=('pretraining_balance_control','lower_late_pid_pretraining'))
+    if reconstruction['phase59']:
+        record=reconstruction['phase59']
+        record['retained_tree_checks']=_phase59_retained_projection(payloads.get('reconstruction_phase59_retained'))
+        record['aggregation_supplement']=_phase59_aggregation_projection(payloads.get('reconstruction_phase59_aggregation'))
+        record['pretraining_metrics']=_phase59_pretraining_projection(payloads.get('reconstruction_phase59_pretraining'))
+        if reconstruction['phase58']:reconstruction['phase58']['next_study_status']='FEASIBILITY_COMPLETE'
+        submission=_mapping(payloads.get('reconstruction_phase60_submission'))
+        if submission.get('status') in {'PREPARED','SUBMITTED','RUNNING'}:
+            record['next_study_status']=submission['status']
+            record['submission_task_count']=_integer(submission.get('task_count'))
+            record['submission_source_revision']=_sha(submission.get('source_revision'))
     science = {"source_ids": _refs("verification_runs", "notebook_registry"),
                "real_pilot": _notebook_record(notebook_runs.get("real_mdst_pilot"))["result"],
                "trained_physics": _notebook_record(notebook_runs.get("trained_physics_validation"))["result"],
@@ -733,6 +750,16 @@ def _phase41_projection(raw: Any, *, phase=41, labels=("pointer32_control", "lev
               "beam_event_count": _integer(raw.get("beam_event_count")),
               "sealed_test_accessed": _boolean(raw.get("sealed_test_accessed")),
               "source_hashes": [_sha(value) for value in _list(raw.get("source_hashes"))], "arms": {}}
+    if phase == 59:
+        if (raw.get('status') != 'FEASIBILITY_COMPLETE' or raw.get('scientific_mode') != 'FEASIBILITY_ONLY_NOT_CONFIRMATORY'
+            or raw.get('independent_validation') is not True or raw.get('strict_selection_overlap') != 0
+            or raw.get('strict_event_count') != 25 or raw.get('beam_event_count') != 20
+            or raw.get('original_job_status') != 'FAILED_EVALUATOR_COUNT_MISMATCH'
+            or raw.get('sealed_test_accessed') is not False):
+            raise ValueError('Phase59 fresh25-event feasibility classification must remain explicit')
+        result.update(status='FEASIBILITY_COMPLETE',scientific_mode='FEASIBILITY_ONLY_NOT_CONFIRMATORY',
+            independent_validation=True,strict_selection_overlap=0,original_job_status='FAILED_EVALUATOR_COUNT_MISMATCH',
+            promotion_authorized=False)
     if phase == 57:
         if (raw.get('status')!='DIAGNOSTIC_COMPLETE' or raw.get('independent_validation') is not False
             or raw.get('strict_selection_overlap')!=100 or raw.get('source_boundary')!='selection_contaminated_diagnostic_recovery'
@@ -802,6 +829,9 @@ def _phase41_projection(raw: Any, *, phase=41, labels=("pointer32_control", "lev
     if seen != allowed:
         raise ValueError("Phase41 metric registry is incomplete")
     result["metric_rows"] = rows
+    if phase == 59:
+        for arm in labels:
+            result['arms'][arm]['complete_target_count'] = point(raw['arms'][arm]['complete_target_count'])
     return result
 
 
@@ -2754,6 +2784,12 @@ def _render(manifest: dict[str, Any]) -> str:
             ['Control failed pretraining at step1753; reconstruction unavailable.',
              'Completed lower-PID arm: zero full roots; all full/half beam candidates checked.',
              f"Phase59: {record['next_study_status']}; feasibility pilot, fixed70k training; independent validation expansion urgent."], 'warning'))
+    if reconstruction.get('phase59'):
+        record=reconstruction['phase59']
+        cards.insert(0, ('Phase59 pretraining stability pilot', 'FEASIBILITY ONLY / NO PROMOTION',
+            ['Both models completed training; CPU evaluation recovered after a cohort-size runner error.',
+             'All full/half trees and returned beam candidates checked on 25 fresh strict events (beam 20).',
+             f"Phase60: {record['next_study_status']}; fixed 70k training and expanded independent validation."], 'warning'))
     lines = ["Model performance and scientific status", "=======================================", "",
              "Recorded measurements from tracked evidence. Missing measurements are UNAVAILABLE;",
              "NOT_RUN describes a recorded evaluation status. Historical results do not verify",
@@ -2765,13 +2801,14 @@ def _render(manifest: dict[str, Any]) -> str:
              ".. raw:: html", "",
              '   <section class="status-dashboard" aria-label="Recorded model performance">']
     for index, (title, value, paragraphs, kind) in enumerate(cards):
-        refs = reconstruction["phase58"]["source_ids"] if title.startswith("Phase58") else reconstruction["phase57"]["source_ids"] if title.startswith("Phase57") else reconstruction["phase56"]["source_ids"] if title.startswith("Phase56") else reconstruction["phase55"]["source_ids"] if title.startswith("Phase55") else reconstruction["phase54"]["source_ids"] if title.startswith("Phase54") else reconstruction["phase53"]["source_ids"] if title.startswith("Phase53") else reconstruction["phase52"]["source_ids"] if title.startswith("Phase52") else reconstruction["phase51"]["source_ids"] if title.startswith("Phase51") else reconstruction["phase50"]["source_ids"] if title.startswith("Phase50") else reconstruction["phase49"]["source_ids"] if title.startswith("Phase49") else reconstruction["phase48"]["source_ids"] if title.startswith("Phase48") else reconstruction["phase47"]["source_ids"] if title.startswith("Phase47") else reconstruction["phase46"]["source_ids"] if title.startswith("Phase46") else reconstruction["phase45"]["source_ids"] if title.startswith("Phase45") else reconstruction["phase44"]["source_ids"] if title.startswith("Phase44") else reconstruction["phase43"]["source_ids"] if title.startswith("Phase43") else reconstruction["phase42"]["source_ids"] if title.startswith("Phase42") else reconstruction["phase41"]["source_ids"] if title.startswith("Phase41") else recent["source_ids"] if title.startswith("Phase40") else reconstruction["source_ids"]
+        refs = reconstruction["phase59"]["source_ids"] if title.startswith("Phase59") else reconstruction["phase58"]["source_ids"] if title.startswith("Phase58") else reconstruction["phase57"]["source_ids"] if title.startswith("Phase57") else reconstruction["phase56"]["source_ids"] if title.startswith("Phase56") else reconstruction["phase55"]["source_ids"] if title.startswith("Phase55") else reconstruction["phase54"]["source_ids"] if title.startswith("Phase54") else reconstruction["phase53"]["source_ids"] if title.startswith("Phase53") else reconstruction["phase52"]["source_ids"] if title.startswith("Phase52") else reconstruction["phase51"]["source_ids"] if title.startswith("Phase51") else reconstruction["phase50"]["source_ids"] if title.startswith("Phase50") else reconstruction["phase49"]["source_ids"] if title.startswith("Phase49") else reconstruction["phase48"]["source_ids"] if title.startswith("Phase48") else reconstruction["phase47"]["source_ids"] if title.startswith("Phase47") else reconstruction["phase46"]["source_ids"] if title.startswith("Phase46") else reconstruction["phase45"]["source_ids"] if title.startswith("Phase45") else reconstruction["phase44"]["source_ids"] if title.startswith("Phase44") else reconstruction["phase43"]["source_ids"] if title.startswith("Phase43") else reconstruction["phase42"]["source_ids"] if title.startswith("Phase42") else reconstruction["phase41"]["source_ids"] if title.startswith("Phase41") else recent["source_ids"] if title.startswith("Phase40") else reconstruction["source_ids"]
         lines.extend("   " + line for line in _card(title, value, paragraphs, refs, kind, index).splitlines())
     lines += ["   </section>", "", ".. only:: not html", ""]
     for title, value, paragraphs, kind in cards:
         lines += [f"   **{_literal(title)}: {_literal(value)}**", ""]
         lines.extend(f"   {_literal(paragraph)}" for paragraph in paragraphs)
         lines += [""]
+    lines += _render_phase59(reconstruction.get("phase59", {}))
     lines += _render_phase58(reconstruction.get("phase58", {}))
     lines += _render_phase57(reconstruction.get("phase57", {}))
     lines += _render_phase55(reconstruction.get("phase55", {}))
@@ -2897,7 +2934,7 @@ def generate_status(repo_root: Path, output_dir: Path) -> dict[str, Any]:
     output = requested.resolve()
     if output == root or output in root.parents or any(part.is_symlink() for part in (requested, *requested.parents)):
         raise ValueError("Status output must be a dedicated non-symlink directory")
-    if output.exists() and any(path.name not in {"index.rst", "status.json", "phase44-retained-metrics.json", "phase45-metrics.json", "phase45-retained-metrics.json", "phase46-metrics.json", "phase46-retained-metrics.json", "phase47-metrics.json", "phase47-retained-metrics.json", "phase47-aggregation-metrics.json", "phase48-metrics.json", "phase48-retained-metrics.json", "phase48-aggregation-metrics.json", "phase49-metrics.json", "phase49-retained-metrics.json", "phase49-aggregation-metrics.json", "phase50-metrics.json", "phase50-retained-metrics.json", "phase50-aggregation-metrics.json", "phase51-metrics.json", "phase51-retained-metrics.json", "phase51-aggregation-metrics.json", "phase52-metrics.json", "phase52-retained-metrics.json", "phase52-aggregation-metrics.json", "phase53-metrics.json", "phase53-retained-metrics.json", "phase53-aggregation-metrics.json", "phase54-metrics.json", "phase54-retained-metrics.json", "phase54-aggregation-metrics.json", "phase41-metrics.json", "phase55-metrics.json", "phase55-retained-metrics.json", "phase55-aggregation-metrics.json", "phase55-pretraining-metrics.json", "phase56-metrics.json", "phase56-retained-metrics.json", "phase56-aggregation-metrics.json", "phase56-pretraining-metrics.json", "phase57-metrics.json", "phase57-retained-metrics.json", "phase57-aggregation-metrics.json", "phase57-pretraining-metrics.json", "phase58-metrics.json", "phase58-retained-metrics.json", "phase58-aggregation-metrics.json", "phase58-pretraining-metrics.json"} for path in output.iterdir()):
+    if output.exists() and any(path.name not in {"index.rst", "status.json", "phase44-retained-metrics.json", "phase45-metrics.json", "phase45-retained-metrics.json", "phase46-metrics.json", "phase46-retained-metrics.json", "phase47-metrics.json", "phase47-retained-metrics.json", "phase47-aggregation-metrics.json", "phase48-metrics.json", "phase48-retained-metrics.json", "phase48-aggregation-metrics.json", "phase49-metrics.json", "phase49-retained-metrics.json", "phase49-aggregation-metrics.json", "phase50-metrics.json", "phase50-retained-metrics.json", "phase50-aggregation-metrics.json", "phase51-metrics.json", "phase51-retained-metrics.json", "phase51-aggregation-metrics.json", "phase52-metrics.json", "phase52-retained-metrics.json", "phase52-aggregation-metrics.json", "phase53-metrics.json", "phase53-retained-metrics.json", "phase53-aggregation-metrics.json", "phase54-metrics.json", "phase54-retained-metrics.json", "phase54-aggregation-metrics.json", "phase41-metrics.json", "phase55-metrics.json", "phase55-retained-metrics.json", "phase55-aggregation-metrics.json", "phase55-pretraining-metrics.json", "phase56-metrics.json", "phase56-retained-metrics.json", "phase56-aggregation-metrics.json", "phase56-pretraining-metrics.json", "phase57-metrics.json", "phase57-retained-metrics.json", "phase57-aggregation-metrics.json", "phase57-pretraining-metrics.json", "phase58-metrics.json", "phase58-retained-metrics.json", "phase58-aggregation-metrics.json", "phase58-pretraining-metrics.json", "phase59-metrics.json", "phase59-retained-metrics.json", "phase59-aggregation-metrics.json", "phase59-pretraining-metrics.json"} for path in output.iterdir()):
         raise ValueError("Status output contains unexpected files; use a fresh dedicated directory")
     history = _git(root, "log", "-1", "--format=%H%n%cI")
     lines = history.decode("utf-8", errors="replace").splitlines() if history else []
@@ -3015,6 +3052,14 @@ def generate_status(repo_root: Path, output_dir: Path) -> dict[str, Any]:
             record["metric_download"] = {"filename": filename, "sha256": hashlib.sha256(encoded).hexdigest(), "bytes": len(encoded), "metric_count": len(metric_rows)}
     phase55 = manifest.get("reconstruction", {}).get("phase55", {})
     for record, filename in ((phase55, "phase55-metrics.json"), (phase55.get("retained_tree_checks", {}), "phase55-retained-metrics.json"), (phase55.get("aggregation_supplement", {}), "phase55-aggregation-metrics.json"), (phase55.get("pretraining_metrics", {}), "phase55-pretraining-metrics.json")):
+        if record:
+            metric_rows = record.pop("metric_rows")
+            download = {"source_hashes": record["source_hashes"], "metric_rows": metric_rows}
+            encoded = (json.dumps(download, separators=(",", ":"), sort_keys=True, allow_nan=False) + "\n").encode()
+            _write(output / filename, encoded)
+            record["metric_download"] = {"filename": filename, "sha256": hashlib.sha256(encoded).hexdigest(), "bytes": len(encoded), "metric_count": len(metric_rows)}
+    phase59 = manifest.get("reconstruction", {}).get("phase59", {})
+    for record, filename in ((phase59, "phase59-metrics.json"), (phase59.get("retained_tree_checks", {}), "phase59-retained-metrics.json"), (phase59.get("aggregation_supplement", {}), "phase59-aggregation-metrics.json"), (phase59.get("pretraining_metrics", {}), "phase59-pretraining-metrics.json")):
         if record:
             metric_rows = record.pop("metric_rows")
             download = {"source_hashes": record["source_hashes"], "metric_rows": metric_rows}
@@ -3722,4 +3767,163 @@ def _render_phase58(record):
     lines += ['', 'Oracle values are truth-scored diagnostics after generation, not deployable rankings. Isolated leaves do not count as exact nontrivial LCAG components.',
         'Hold 70,000 training events: no controlled size study establishes that growth is currently better. Prioritize objective stability and new independent validation. Phase59 tests late PID0.2 versus0.1 at parent2 with the unchanged fail guard.',
         'Phase59 reuses exactly Phase58 selection (1000 events), reserves the final25 fresh strict events and leaves zero untouched. It is a feasibility pilot, not a confirmatory quality study. This is not independent cross-phase selection replication. Validation capacity needs planning separately from training dataset growth.', '']
+    return lines
+
+
+def _phase59_retained_projection(value):
+    raw = _mapping(value)
+    if (raw.get("status") != "COMPLETE" or raw.get("version") != "phase59-retained-tree-export-v1"
+        or raw.get("all_returned_beam_candidates_checked") is not True
+        or raw.get("original_job_status") != "FAILED_EVALUATOR_COUNT_MISMATCH" or raw.get("sealed_test_accessed") is not False):
+        raise ValueError("Phase59 retained-tree coverage is incomplete")
+    result = {"version": "phase59-retained-tree-export-v1", "status": "COMPLETE",
+              "source_ids": _refs("reconstruction_phase59_retained"),
+              "evaluator_revision": _sha(raw.get("evaluator_revision")),
+              "source_hashes": [_sha(item) for item in _list(raw.get("source_hashes"))],
+              "all_returned_beam_candidates_checked": True,
+              "aggregate_metric_count": _integer(raw.get("aggregate_metric_count")),
+              "detailed_metric_count": _integer(raw.get("detailed_metric_count")),
+              "tree_metric_scalar_rows": _integer(raw.get("tree_metric_scalar_rows")),
+              "tree_metric_export_sha256": _sha(raw.get("tree_metric_export_sha256")), "arms": {}}
+    metrics = ("source_recall", "source_precision", "lcag_pair_accuracy", "mother_pid_coverage",
+               "mother_pid_accuracy", "perfect_lcag", "coherent_retained_forest", "target_representable", "root_pid_accuracy")
+    def points(value):
+        output = {}
+        value = _mapping(value)
+        for key in metrics:
+            point = _mapping(value.get(key))
+            num, den = _number(point.get("numerator")), _number(point.get("denominator"))
+            if num is None or den is None or num < 0 or den < num:
+                raise ValueError("Invalid retained-tree metric counts")
+            output[key] = {"numerator": num, "denominator": den, "value": num / den if den else None}
+        for key in ("unit_count", "available_unit_count", "unavailable_unit_count", "truth_mother_count", "matched_mother_count"):
+            output[key] = _integer(value.get(key))
+            if output[key] is None or output[key] < 0:
+                raise ValueError("Missing retained-tree coverage count")
+        if output['unit_count'] != output['available_unit_count'] + output['unavailable_unit_count']:
+            raise ValueError("Inconsistent retained-tree coverage count")
+        output['unit_semantics_counts'] = {key: _integer(_mapping(value.get('unit_semantics_counts')).get(key, 0)) for key in ('retained_full_forest', 'retained_b_halves', 'retained_explicit_components_no_b_partition')}
+        return output
+    for arm in ("pretraining_balance_control", "lower_late_pid_pretraining"):
+        record = _mapping(_mapping(raw.get('arms')).get(arm))
+        if record.get('primary_repeat_identical') is not True:
+            raise ValueError('Retained-tree repeat was not verified')
+        result['arms'][arm] = {'primary_repeat_identical': True, 'beam_candidate_count': _integer(record.get('beam_candidate_count')),
+            'primary_structure': {scope: {key: _integer(_mapping(_mapping(record.get('primary_structure')).get(scope)).get(key)) for key in ('isolated_leaf_units', 'single_source_composite_units', 'nontrivial_topology_units', 'source_empty_units', 'representable_nontrivial_units', 'events_without_flagged_target_incompatibility')} for scope in ('full', 'half')},
+            'primary': {scope: points(_mapping(record.get('primary')).get(scope)) for scope in ('full', 'half')},
+            'beam': {scope: {ranking: points(_mapping(_mapping(record.get('beam')).get(scope)).get(ranking)) for ranking in ('average_link_probability', 'learned_confidence_mean', 'learned_confidence_sum', 'normalized_joint_log_probability', 'oracle_diagnostic')} for scope in ('full', 'half')}}
+    for arm in result['arms'].values():
+        for scope, counts in arm['primary_structure'].items():
+            if any(value is None for value in counts.values()):
+                raise ValueError('Missing retained-reference composition count')
+            if sum(counts[key] for key in ('isolated_leaf_units', 'single_source_composite_units', 'nontrivial_topology_units', 'source_empty_units')) != arm['primary'][scope]['unit_count']:
+                raise ValueError('Retained-reference composition does not cover all units')
+            if counts['representable_nontrivial_units'] > counts['nontrivial_topology_units']:
+                raise ValueError('Invalid retained-reference representability count')
+    registry = json.loads(Path(__file__).with_name('phase59_retained_metric_registry.json').read_text())
+    allowed, seen, rows = set(map(tuple, registry)), set(), []
+    for row in _list(raw.get('metric_rows')):
+        identity = (row.get('arm'), row.get('view'), row.get('metric'))
+        if identity not in allowed:
+            continue
+        if identity in seen:
+            raise ValueError('Duplicate retained-tree metric')
+        number = row.get('value')
+        if number is not None and _number(number) is None and type(number) is not bool:
+            raise ValueError('Invalid retained-tree scalar')
+        seen.add(identity)
+        rows.append(dict(arm=identity[0], view=identity[1], metric=identity[2], value=number))
+    if seen != allowed or len(rows) != result['aggregate_metric_count']:
+        raise ValueError('Incomplete retained-tree metric registry')
+    result['metric_rows'] = rows
+    return result
+
+
+def _phase59_aggregation_projection(value):
+    raw = _mapping(value)
+    if raw.get('version') != 'phase59-aggregation-supplement-v1' or raw.get('status') != 'COMPLETE':
+        raise ValueError('Missing Phase59 aggregation supplement')
+    registry = json.loads(Path(__file__).with_name('phase59_aggregation_metric_registry.json').read_text())
+    allowed, seen, rows = set(map(tuple, registry)), set(), []
+    for row in _list(raw.get('metric_rows')):
+        identity = (row.get('arm'), row.get('view'), row.get('metric'))
+        if identity not in allowed:
+            continue
+        if identity in seen or (row.get('value') is not None and _number(row.get('value')) is None):
+            raise ValueError('Invalid Phase59 aggregation scalar')
+        seen.add(identity)
+        rows.append(dict(arm=identity[0], view=identity[1], metric=identity[2], value=row.get('value')))
+    if seen != allowed:
+        raise ValueError('Incomplete Phase59 aggregation registry')
+    primary = {arm: {r['metric']: r['value'] for r in rows if r['arm'] == arm and r['view'] == 'primary_complete_target_direct'} for arm in ('pretraining_balance_control', 'lower_late_pid_pretraining')}
+    return {'metric_rows': rows, 'primary': primary, 'source_hashes': [_sha(x) for x in _list(raw.get('source_hashes'))],
+            'source_ids': _refs('reconstruction_phase59_aggregation')}
+
+
+def _phase59_pretraining_projection(value):
+    raw = _mapping(value)
+    if raw.get('version') != 'phase59-pretraining-export-v1' or raw.get('status') != 'COMPLETE':
+        raise ValueError('Phase59 pretraining evidence is incomplete')
+    registry = json.loads(Path(__file__).with_name('phase59_pretraining_metric_registry.json').read_text())
+    allowed, seen, rows = set(map(tuple, registry)), set(), []
+    for row in _list(raw.get('metric_rows')):
+        identity = (row.get('arm'), row.get('view'), row.get('metric'))
+        if identity not in allowed:
+            continue
+        if identity in seen or (row.get('value') is not None and type(row.get('value')) is not bool and _number(row.get('value')) is None):
+            raise ValueError('Invalid Phase59 pretraining scalar')
+        seen.add(identity)
+        rows.append(dict(arm=identity[0], view=identity[1], metric=identity[2], value=row.get('value')))
+    if seen != allowed:
+        raise ValueError('Incomplete Phase59 pretraining metric registry')
+    return {'metric_rows': rows, 'scalar_rows': _integer(raw.get('scalar_rows')),
+            'source_hashes': [_sha(x) for x in _list(raw.get('source_hashes'))],
+            'final_validation': {arm: {r['metric']: r['value'] for r in rows if r['arm'] == arm and r['view'] == 'validation_step_2188'} for arm in ('pretraining_balance_control', 'lower_late_pid_pretraining')},
+            'source_ids': _refs('reconstruction_phase59_pretraining')}
+
+
+def _render_phase59(record):
+    if not record:
+        return []
+    labels = ('pretraining_balance_control', 'lower_late_pid_pretraining')
+    arms, retained = record['arms'], record['retained_tree_checks']
+    lines = ['Phase59: Completed training, recovered feasibility evaluation', '-' * 80, '',
+        'Both arms completed 2,188 pretraining and 4,376 reconstruction steps. Original jobs failed before scoring: the runner requested 100 events from the bound 25-event manifest.',
+        'The repaired CPU runner evaluates the same 25 UIDs and untouched checkpoints. The original failures remain recorded; no training was repeated.',
+        'This is a feasibility pilot, not confirmatory quality evidence. Selection 1,000, strict 25 and beam 20; strict/selection overlap is zero.',
+        ':download:`Phase59 complete original metrics <phase59-metrics.json>`; :download:`Phase59 retained full/half metrics <phase59-retained-metrics.json>`;',
+        ':download:`Phase59 micro/macro and exact counts <phase59-aggregation-metrics.json>`; :download:`Phase59 pretraining metrics <phase59-pretraining-metrics.json>`.', '',
+        'Phase59 pretraining execution', '~'*40, '',
+        'Late PID weights 0.2 and 0.1 executed after step 1094 with parent weight 2 and the unchanged dominance 20 fail guard. Both processed 70,000 training presentations.',
+        'Shared step 1094 model tensors are identical. Reconstruction uses each fixed final refined encoder and freezes PID; objective totals with different weights do not measure representation quality.', '']
+    lines += _table(['Selection recovery (source set plus mother PID)', 'Late PID 0.2', 'Late PID 0.1'],
+        [['Complete targets', *[_metric_point(arms[a]['complete_target_count']) for a in labels]]])
+    pre = record['pretraining_metrics']['final_validation']
+    lines += _table(['Recorded final pretraining validation metric', 'Late PID 0.2', 'Late PID 0.1'],
+        [[key, *[f"{pre[a][key]:.6g}" for a in labels]] for key in ('validation_parent_ranking_accuracy','validation_loss_parent','validation_relation_accuracy','validation_leaf_pid_accuracy','validation_effective_rank')])
+    lines += ['These are recorded validation aggregates over the same 1,000 events and four views; batch-mean diagnostics are not reconstructed micro efficiencies.', '',
+        'Phase59 original-policy gates', '~' * 40, '',
+        'Checkpoint selection uses 1,000 events; strict scoring uses 25 disjoint events and beam its first 20. The unchanged numerical thresholds are descriptive on this smaller pilot.', '']
+    lines += _table(['Original policy metric', 'Late PID 0.2', 'Late PID 0.1'], [[key,*[_metric_point(arms[a]['endpoints'][key]) for a in labels]] for key in arms[labels[0]]['endpoints']])
+    lines += _table(['Strict gate', 'Late PID 0.2', 'Late PID 0.1'], [[key,*[arms[a]['gates'][key] for a in labels]] for key in arms[labels[0]]['gates']])
+    lines += ['Phase59 all retained full and half trees', '~' * 48, '',
+        'All retained roots are checked. Incompatible targets remain failed primary trials, and isolated leaves do not earn trivial LCAG successes.',
+        'Half scope uses B partitions where defined and explicit component fallbacks otherwise. Source coverage is dominated by preserved inputs.', '']
+    lines += _table(['Scope','Metric','Late PID 0.2','Late PID 0.1'], [[scope,key,*[_metric_point(retained['arms'][a]['primary'][scope][key]) for a in labels]] for scope in ('full','half') for key in ('source_recall','source_precision','lcag_pair_accuracy','mother_pid_coverage','mother_pid_accuracy','perfect_lcag','coherent_retained_forest','target_representable','root_pid_accuracy')])
+    lines += _table(['Reference population','Full','Half/component'], [[key,*[retained['arms'][labels[0]]['primary_structure'][scope][key] for scope in ('full','half')]] for key in retained['arms'][labels[0]]['primary_structure']['full']])
+    agg = record['aggregation_supplement']['primary']
+    lines += ['Phase59 micro and macro populations','~' * 40,'','Undefined zero-denominator ratios remain unavailable; defined failures remain zeros. Nontrivial units contain at least two sources.','']
+    lines += _table(['Arm','Scope','Metric','Micro','Unit macro','Event macro'], [[arm,scope,key,*[f"{agg[arm][f'{scope}.greedy.{key}.{kind}']:.6g}" if agg[arm][f'{scope}.greedy.{key}.{kind}'] is not None else 'UNAVAILABLE' for kind in ('micro','unit_macro','event_macro')]] for arm in labels for scope in ('full','half') for key in ('source_recall','source_precision','lcag_pair_accuracy','perfectLCAG')])
+    lines += _table(['Arm','Scope','Nontrivial exact criterion','Numerator','Denominator'], [[arm,scope,key,*[agg[arm][f'{scope}.greedy.exact.nontrivial.{key}.{part}'] for part in ('numerator','denominator')]] for arm in labels for scope in ('full','half') for key in ('source','source_leaf_pid','source_topology','source_topology_all_pid')])
+    lines += ['Phase59 returned beam candidates','~' * 40,'','Every returned candidate receives full and half checks. Model-only rankings and coherent post-inference oracle metrics remain separate; per-unit Oracle@K maxima are bounds, not one event hypothesis.','']
+    lines += _table(['Arm','Returned candidates'],[[a,retained['arms'][a]['beam_candidate_count']] for a in labels])
+    lines += _table(['Arm','Scope','Ranking','LCAG','Mother coverage','Perfect component','Coherent forest'],[[a,scope,rank,*[_metric_point(points[k]) for k in ('lcag_pair_accuracy','mother_pid_coverage','perfect_lcag','coherent_retained_forest')]] for a in labels for scope,rankings in retained['arms'][a]['beam'].items() for rank,points in rankings.items()])
+    lines += ['Phase59 allocation decision', '~'*40, '',
+        'Hold 70,000 training events. The accumulated studies do not identify a controlled data-size benefit, and longer pretraining alone has not shown a stable advantage.',
+        'The immediate data need is independent validation. Phase60 adds 50,000 validation events from disjoint sources, preserving training payloads and every historical source role.',
+        'One new level-5 target needs 14 daughters: both Phase60 arms raise the limit 13 to 14, with the global limit 16 and admission gate unchanged. No target is dropped.',
+        'See the Phase59 review for the evidence-based next-pair decision, uncertainty, limitations and source provenance.',
+        f"Phase60 submission snapshot: {_literal(record['next_study_status'])}. No promotion, sealed-test access or automatic campaign chain.",
+        'Daughter-sum p4 closure is an implementation invariant, not physical momentum resolution.',
+        'See :doc:`../../phase59` for the complete review.','']
     return lines
