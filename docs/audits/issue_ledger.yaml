@@ -19,6 +19,10 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase59 feasibility metrics, fresh-validation Phase60 contracts and shared capacity admission repair; prior audit scope unchanged.
+  - 4c076796ef365c6e1fb31f75dc6779c02af3cdf3
+  # Verified Phase60 submission snapshot and Phase59 review validation metadata only.
+  - 9acb0089dac0d8df60c8544706962f0eb9b8ab1f
   # Phase59 evaluation-only cohort-count binding; models and scientific scoring unchanged.
   - c952365cf9c798886178ebe09402482ad4f23e3a
   # Phase58 publication heading lengths and unique dashboard anchors only.
