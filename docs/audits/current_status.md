@@ -1,5 +1,26 @@
 # Current repository audit status
 
+## Phase60 review — 2026-09-26
+
+Both arms failed before attempted pretraining update 547, after 546 completed
+steps and 17,472 presentations. Weighted shared PID/LCA gradient ratio 28.020851
+exceeded the unchanged 20 fail guard. Both scientific histories and failure
+reports are identical before the late-PID treatment. No validation metrics,
+refined or reconstruction checkpoint, strict predictions or beam candidates
+exist. All 97,546 available scalars are exported; every full/half reconstruction
+view is explicitly unavailable, not zero or skipped. Native failures remain.
+
+Hold 70,000 training events and the existing validation expansion. Prioritize
+objective stability; neither longer pretraining nor training-data growth has an
+established controlled benefit. Phase61 is one adaptive shared early PID 0.5
+pilot, retaining late 0.2 versus 0.1, parent 2, seed 20260927, the authenticated
+selection 1000 / strict 100 / beam 20 reservation, budgets and dominance 20/fail.
+No Phase60 validation or strict outcomes were scored, so reservation reuse does
+not consult strict predictions; 48,900 new validation events remain unreserved.
+No quality winner, independent seed replication, promotion, sealed-test access
+or automatic chain. See Phase60 review and dashboard for metrics and submission.
+Existing repository readiness scope remains unchanged.
+
 ## Phase59 review — 2026-09-25
 
 Both arms completed 2188 pretraining and 4376 reconstruction steps. Original

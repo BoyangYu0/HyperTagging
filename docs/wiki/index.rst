@@ -19,6 +19,7 @@ identifies measurements that remain unavailable.
    training
    reconstruction
    evaluation
+   phase60
    phase59
    phase58
    phase57

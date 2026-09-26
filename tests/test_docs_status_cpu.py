@@ -34,6 +34,8 @@ def evidence(tmp_path, monkeypatch):
     monkeypatch.delenv("SOURCE_DATE_EPOCH", raising=False)
     monkeypatch.setattr(status, "_git", lambda *_args: None)
     documents = {
+        "reconstruction_phase60": {"reserved": True},
+        "reconstruction_phase61_submission": {"reserved": True},
         "reconstruction_phase59": {"reserved": True},
         "reconstruction_phase59_retained": {"reserved": True},
         "reconstruction_phase59_aggregation": {"reserved": True},
@@ -187,7 +189,7 @@ def test_status_is_deterministic_and_preserves_record_scope(evidence, tmp_path, 
     assert manifest["pretraining"]["selected_profile_state"] == "NONE_SELECTED"
     assert manifest["pretraining"]["submission_performed"] is False
     assert manifest["pretraining"]["pretraining_success_gate_passed"] is False
-    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 75
+    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 77
     assert manifest["provenance"]["external_filesystem_or_network_artifacts_opened"] is False
     assert source_info(manifest, "issue_ledger")["freshness"]["status"] == "stale"
     assert source_info(manifest, "current_status")["freshness"]["status"] == "unknown"
@@ -1120,3 +1122,25 @@ def test_phase59_feasibility_and_complete_full_half_beam_coverage():
         assert projected['arms'][arm]['beam_candidate_count']>0
     retained['all_returned_beam_candidates_checked']=False
     with pytest.raises(ValueError):status._phase59_retained_projection(retained)
+
+
+def test_phase60_unavailable_reconstruction_and_complete_numeric_projection(tmp_path):
+    raw = json.loads((ROOT / status.SOURCE_PATHS['reconstruction_phase60']).read_text())
+    raw['private_path'] = '/private/example/secret'
+    raw['arms']['pretraining_balance_control']['history_summary']['private_metric'] = {'last': 42}
+    projected = status._phase60_projection(raw)
+    assert projected['status'] == 'FAILED_PRETRAINING'
+    assert projected['scalar_rows'] == 97546
+    for arm in projected['arms'].values():
+        assert arm['completed_pretraining_steps'] == 546
+        assert arm['last_training_metrics']['cuda_memory_reserved_bytes'] > 1e9
+        assert len(arm['availability']) == 7
+        for scopes in arm['availability'].values():
+            for point in scopes.values():
+                assert point['value'] is point['numerator'] is point['denominator'] is None
+                assert point['status'] == 'UNAVAILABLE_NO_RECONSTRUCTION_CHECKPOINT'
+    encoded = json.dumps(projected)
+    assert 'private_metric' not in encoded and '/private/' not in encoded
+    assert all(row['value'] is not None for row in projected['metric_rows'])
+    raw['arms']['pretraining_balance_control']['strict_events_scored'] = 100
+    assert status._phase60_projection(raw) == {}

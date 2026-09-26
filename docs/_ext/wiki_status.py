@@ -110,6 +110,8 @@ SOURCE_PATHS.update({
     "reconstruction_phase59_aggregation": "artifacts/codex/reconstruction_phase59_aggregation_20260925.json",
     "reconstruction_phase59_pretraining": "artifacts/codex/reconstruction_phase59_pretraining_20260925.json",
     "reconstruction_phase60_submission": "artifacts/codex/reconstruction_phase60_submission_20260925.json",
+    "reconstruction_phase60": "artifacts/codex/reconstruction_phase60_closeout_20260926.json",
+    "reconstruction_phase61_submission": "artifacts/codex/reconstruction_phase61_submission_20260926.json",
 })
 SOURCE_IDS = {key: f"source-{index:02d}" for index, key in enumerate(SOURCE_PATHS, 1)}
 FRESHNESS_DAYS = 30
@@ -716,6 +718,15 @@ def _collect(payloads: dict[str, Any], revision: str | None) -> dict[str, Any]:
             record['next_study_status']=submission['status']
             record['submission_task_count']=_integer(submission.get('task_count'))
             record['submission_source_revision']=_sha(submission.get('source_revision'))
+    reconstruction['phase60'] = _phase60_projection(payloads.get('reconstruction_phase60'))
+    if reconstruction['phase60']:
+        record = reconstruction['phase60']
+        if reconstruction['phase59']:
+            reconstruction['phase59']['next_study_status'] = 'FAILED_PRETRAINING'
+        submission = _mapping(payloads.get('reconstruction_phase61_submission'))
+        record['next_study_status'] = submission.get('status') if submission.get('status') in {'PREPARED', 'SUBMITTED', 'RUNNING'} else 'NOT_SUBMITTED'
+        record['submission_task_count'] = _integer(submission.get('task_count'))
+        record['submission_source_revision'] = _sha(submission.get('source_revision'))
     science = {"source_ids": _refs("verification_runs", "notebook_registry"),
                "real_pilot": _notebook_record(notebook_runs.get("real_mdst_pilot"))["result"],
                "trained_physics": _notebook_record(notebook_runs.get("trained_physics_validation"))["result"],
@@ -2790,6 +2801,12 @@ def _render(manifest: dict[str, Any]) -> str:
             ['Both models completed training; CPU evaluation recovered after a cohort-size runner error.',
              'All full/half trees and returned beam candidates checked on 25 fresh strict events (beam 20).',
              f"Phase60: {record['next_study_status']}; fixed 70k training and expanded independent validation."], 'warning'))
+    if reconstruction.get('phase60'):
+        record = reconstruction['phase60']
+        cards.insert(0, ('Phase60 early pretraining failure', 'RECONSTRUCTION UNAVAILABLE',
+            ['Both arms stopped before optimizer step 547: PID/LCA gradient ratio 28.02 exceeds 20.',
+             '546 completed steps; late-PID treatment, reconstruction and beam search never executed.',
+             f"Phase61: {record['next_study_status']}; shared early PID 0.5 stability pilot, fixed 70k training."], 'warning'))
     lines = ["Model performance and scientific status", "=======================================", "",
              "Recorded measurements from tracked evidence. Missing measurements are UNAVAILABLE;",
              "NOT_RUN describes a recorded evaluation status. Historical results do not verify",
@@ -2801,13 +2818,14 @@ def _render(manifest: dict[str, Any]) -> str:
              ".. raw:: html", "",
              '   <section class="status-dashboard" aria-label="Recorded model performance">']
     for index, (title, value, paragraphs, kind) in enumerate(cards):
-        refs = reconstruction["phase59"]["source_ids"] if title.startswith("Phase59") else reconstruction["phase58"]["source_ids"] if title.startswith("Phase58") else reconstruction["phase57"]["source_ids"] if title.startswith("Phase57") else reconstruction["phase56"]["source_ids"] if title.startswith("Phase56") else reconstruction["phase55"]["source_ids"] if title.startswith("Phase55") else reconstruction["phase54"]["source_ids"] if title.startswith("Phase54") else reconstruction["phase53"]["source_ids"] if title.startswith("Phase53") else reconstruction["phase52"]["source_ids"] if title.startswith("Phase52") else reconstruction["phase51"]["source_ids"] if title.startswith("Phase51") else reconstruction["phase50"]["source_ids"] if title.startswith("Phase50") else reconstruction["phase49"]["source_ids"] if title.startswith("Phase49") else reconstruction["phase48"]["source_ids"] if title.startswith("Phase48") else reconstruction["phase47"]["source_ids"] if title.startswith("Phase47") else reconstruction["phase46"]["source_ids"] if title.startswith("Phase46") else reconstruction["phase45"]["source_ids"] if title.startswith("Phase45") else reconstruction["phase44"]["source_ids"] if title.startswith("Phase44") else reconstruction["phase43"]["source_ids"] if title.startswith("Phase43") else reconstruction["phase42"]["source_ids"] if title.startswith("Phase42") else reconstruction["phase41"]["source_ids"] if title.startswith("Phase41") else recent["source_ids"] if title.startswith("Phase40") else reconstruction["source_ids"]
+        refs = reconstruction["phase60"]["source_ids"] if title.startswith("Phase60") else reconstruction["phase59"]["source_ids"] if title.startswith("Phase59") else reconstruction["phase58"]["source_ids"] if title.startswith("Phase58") else reconstruction["phase57"]["source_ids"] if title.startswith("Phase57") else reconstruction["phase56"]["source_ids"] if title.startswith("Phase56") else reconstruction["phase55"]["source_ids"] if title.startswith("Phase55") else reconstruction["phase54"]["source_ids"] if title.startswith("Phase54") else reconstruction["phase53"]["source_ids"] if title.startswith("Phase53") else reconstruction["phase52"]["source_ids"] if title.startswith("Phase52") else reconstruction["phase51"]["source_ids"] if title.startswith("Phase51") else reconstruction["phase50"]["source_ids"] if title.startswith("Phase50") else reconstruction["phase49"]["source_ids"] if title.startswith("Phase49") else reconstruction["phase48"]["source_ids"] if title.startswith("Phase48") else reconstruction["phase47"]["source_ids"] if title.startswith("Phase47") else reconstruction["phase46"]["source_ids"] if title.startswith("Phase46") else reconstruction["phase45"]["source_ids"] if title.startswith("Phase45") else reconstruction["phase44"]["source_ids"] if title.startswith("Phase44") else reconstruction["phase43"]["source_ids"] if title.startswith("Phase43") else reconstruction["phase42"]["source_ids"] if title.startswith("Phase42") else reconstruction["phase41"]["source_ids"] if title.startswith("Phase41") else recent["source_ids"] if title.startswith("Phase40") else reconstruction["source_ids"]
         lines.extend("   " + line for line in _card(title, value, paragraphs, refs, kind, index).splitlines())
     lines += ["   </section>", "", ".. only:: not html", ""]
     for title, value, paragraphs, kind in cards:
         lines += [f"   **{_literal(title)}: {_literal(value)}**", ""]
         lines.extend(f"   {_literal(paragraph)}" for paragraph in paragraphs)
         lines += [""]
+    lines += _render_phase60(reconstruction.get("phase60", {}))
     lines += _render_phase59(reconstruction.get("phase59", {}))
     lines += _render_phase58(reconstruction.get("phase58", {}))
     lines += _render_phase57(reconstruction.get("phase57", {}))
@@ -2934,7 +2952,7 @@ def generate_status(repo_root: Path, output_dir: Path) -> dict[str, Any]:
     output = requested.resolve()
     if output == root or output in root.parents or any(part.is_symlink() for part in (requested, *requested.parents)):
         raise ValueError("Status output must be a dedicated non-symlink directory")
-    if output.exists() and any(path.name not in {"index.rst", "status.json", "phase44-retained-metrics.json", "phase45-metrics.json", "phase45-retained-metrics.json", "phase46-metrics.json", "phase46-retained-metrics.json", "phase47-metrics.json", "phase47-retained-metrics.json", "phase47-aggregation-metrics.json", "phase48-metrics.json", "phase48-retained-metrics.json", "phase48-aggregation-metrics.json", "phase49-metrics.json", "phase49-retained-metrics.json", "phase49-aggregation-metrics.json", "phase50-metrics.json", "phase50-retained-metrics.json", "phase50-aggregation-metrics.json", "phase51-metrics.json", "phase51-retained-metrics.json", "phase51-aggregation-metrics.json", "phase52-metrics.json", "phase52-retained-metrics.json", "phase52-aggregation-metrics.json", "phase53-metrics.json", "phase53-retained-metrics.json", "phase53-aggregation-metrics.json", "phase54-metrics.json", "phase54-retained-metrics.json", "phase54-aggregation-metrics.json", "phase41-metrics.json", "phase55-metrics.json", "phase55-retained-metrics.json", "phase55-aggregation-metrics.json", "phase55-pretraining-metrics.json", "phase56-metrics.json", "phase56-retained-metrics.json", "phase56-aggregation-metrics.json", "phase56-pretraining-metrics.json", "phase57-metrics.json", "phase57-retained-metrics.json", "phase57-aggregation-metrics.json", "phase57-pretraining-metrics.json", "phase58-metrics.json", "phase58-retained-metrics.json", "phase58-aggregation-metrics.json", "phase58-pretraining-metrics.json", "phase59-metrics.json", "phase59-retained-metrics.json", "phase59-aggregation-metrics.json", "phase59-pretraining-metrics.json"} for path in output.iterdir()):
+    if output.exists() and any(path.name not in {"index.rst", "status.json", "phase60-metrics.json", "phase44-retained-metrics.json", "phase45-metrics.json", "phase45-retained-metrics.json", "phase46-metrics.json", "phase46-retained-metrics.json", "phase47-metrics.json", "phase47-retained-metrics.json", "phase47-aggregation-metrics.json", "phase48-metrics.json", "phase48-retained-metrics.json", "phase48-aggregation-metrics.json", "phase49-metrics.json", "phase49-retained-metrics.json", "phase49-aggregation-metrics.json", "phase50-metrics.json", "phase50-retained-metrics.json", "phase50-aggregation-metrics.json", "phase51-metrics.json", "phase51-retained-metrics.json", "phase51-aggregation-metrics.json", "phase52-metrics.json", "phase52-retained-metrics.json", "phase52-aggregation-metrics.json", "phase53-metrics.json", "phase53-retained-metrics.json", "phase53-aggregation-metrics.json", "phase54-metrics.json", "phase54-retained-metrics.json", "phase54-aggregation-metrics.json", "phase41-metrics.json", "phase55-metrics.json", "phase55-retained-metrics.json", "phase55-aggregation-metrics.json", "phase55-pretraining-metrics.json", "phase56-metrics.json", "phase56-retained-metrics.json", "phase56-aggregation-metrics.json", "phase56-pretraining-metrics.json", "phase57-metrics.json", "phase57-retained-metrics.json", "phase57-aggregation-metrics.json", "phase57-pretraining-metrics.json", "phase58-metrics.json", "phase58-retained-metrics.json", "phase58-aggregation-metrics.json", "phase58-pretraining-metrics.json", "phase59-metrics.json", "phase59-retained-metrics.json", "phase59-aggregation-metrics.json", "phase59-pretraining-metrics.json"} for path in output.iterdir()):
         raise ValueError("Status output contains unexpected files; use a fresh dedicated directory")
     history = _git(root, "log", "-1", "--format=%H%n%cI")
     lines = history.decode("utf-8", errors="replace").splitlines() if history else []
@@ -3058,6 +3076,15 @@ def generate_status(repo_root: Path, output_dir: Path) -> dict[str, Any]:
             encoded = (json.dumps(download, separators=(",", ":"), sort_keys=True, allow_nan=False) + "\n").encode()
             _write(output / filename, encoded)
             record["metric_download"] = {"filename": filename, "sha256": hashlib.sha256(encoded).hexdigest(), "bytes": len(encoded), "metric_count": len(metric_rows)}
+    phase60 = manifest.get("reconstruction", {}).get("phase60", {})
+    if phase60:
+        download = {"status": phase60['status'], "source_revision": phase60['native_source_revision'],
+                    "source_hashes": {"closeout": sources[SOURCE_IDS['reconstruction_phase60']]['sha256'], "native_artifacts": phase60['source_hashes']},
+                    "availability": {a: v['availability'] for a, v in phase60['arms'].items()},
+                    "metric_rows": phase60.pop('metric_rows')}
+        encoded = (json.dumps(download, separators=(",", ":"), sort_keys=True, allow_nan=False) + "\n").encode()
+        _write(output / "phase60-metrics.json", encoded)
+        phase60['metric_download'] = {"filename": "phase60-metrics.json", "sha256": hashlib.sha256(encoded).hexdigest(), "bytes": len(encoded), "metric_count": len(download['metric_rows'])}
     phase59 = manifest.get("reconstruction", {}).get("phase59", {})
     for record, filename in ((phase59, "phase59-metrics.json"), (phase59.get("retained_tree_checks", {}), "phase59-retained-metrics.json"), (phase59.get("aggregation_supplement", {}), "phase59-aggregation-metrics.json"), (phase59.get("pretraining_metrics", {}), "phase59-pretraining-metrics.json")):
         if record:
@@ -3927,3 +3954,60 @@ def _render_phase59(record):
         'Daughter-sum p4 closure is an implementation invariant, not physical momentum resolution.',
         'See :doc:`../../phase59` for the complete review.','']
     return lines
+
+
+def _phase60_projection(value):
+    raw = _mapping(value)
+    if raw.get('version') != 'phase60-failure-metrics-v1' or raw.get('status') != 'FAILED_PRETRAINING':
+        return {}
+    if raw.get('treatment_executed') is not False or raw.get('metric_completeness') != 'ALL_AVAILABLE_EXPORTED':
+        return {}
+    registry = json.loads(Path(__file__).with_name('phase60_metric_registry.json').read_text())
+    result = {'status': 'FAILED_PRETRAINING', 'source_ids': _refs('reconstruction_phase60', 'reconstruction_phase61_submission'),
+              'native_source_revision': _sha(raw.get('native_source_revision')), 'source_hashes': [_sha(v) for v in _list(raw.get('source_hashes'))], 'treatment_executed': False,
+              'metric_completeness': 'ALL_AVAILABLE_EXPORTED', 'scalar_rows': _integer(raw.get('scalar_rows')),
+              'arms': {}, 'metric_rows': []}
+    for arm in ('pretraining_balance_control', 'lower_late_pid_pretraining'):
+        source = _mapping(_mapping(raw.get('arms')).get(arm))
+        if any(source.get(key) != expected for key, expected in {'completed_pretraining_steps':546, 'attempted_pretraining_step':547, 'completed_reconstruction_steps':0, 'validation_metric_records':0, 'strict_events_scored':0, 'beam_candidates_produced':0, 'dominance_threshold':20}.items()):
+            return {}
+        record = {key: _phase60_number(source.get(key)) for key in registry['counts']}
+        record['last_training_metrics'] = {key:_phase60_number(_mapping(source.get('last_training_metrics')).get(key)) for key in registry['history']}
+        record['availability'] = {view:{scope:{'status':'UNAVAILABLE_NO_RECONSTRUCTION_CHECKPOINT', 'numerator':None, 'denominator':None, 'value':None} for scope in ('full','half')} for view in registry['views']}
+        result['arms'][arm] = record
+        for key in registry['counts']:
+            result['metric_rows'].append({'arm':arm,'metric':key,'value':record[key]})
+        for key in registry['history']:
+            summary = _mapping(_mapping(source.get('history_summary')).get(key))
+            for aggregation in ('count','first','last','min','max','mean'):
+                result['metric_rows'].append({'arm':arm,'metric':f'history.{key}.{aggregation}','value':_phase60_number(summary.get(aggregation))})
+        for key in registry['failure']:
+            result['metric_rows'].append({'arm':arm,'metric':f'failure.{key}','value':_phase60_number(_mapping(source.get('failure_metrics')).get(key))})
+    return result
+
+
+def _render_phase60(record):
+    if not record:
+        return []
+    arms = record['arms']; labels = ('pretraining_balance_control','lower_late_pid_pretraining')
+    lines = ['Phase60: Training failure before the treatment contrast', '-'*64, '',
+        'Both arms completed 546 pretraining steps and stopped before update 547. The weighted shared-encoder PID/LCA gradient ratio 28.020851 exceeds the unchanged 20 fail guard.',
+        'There are no reconstruction checkpoints or returned beam trees. Full/half topology, PID, source, forest, micro/macro and beam-ranker/oracle metrics are UNAVAILABLE, not zeros or skipped candidates.',
+        ':download:`Phase60 complete available metrics and full/half availability <phase60-metrics.json>`.', '']
+    lines += _table(['Recorded quantity','Late PID 0.2 planned','Late PID 0.1 planned'],[[key,*[arms[a][key] for a in labels]] for key in ('completed_pretraining_steps','attempted_pretraining_step','training_presentations','gradient_dominance_ratio','dominance_threshold','completed_reconstruction_steps','validation_metric_records','strict_events_scored','beam_candidates_produced')])
+    lines += ['Phase60 last completed training batch','~'*40,'','Training diagnostics only; these are not held-out performance measures.','']
+    lines += _table(['Metric','Control','Candidate'],[[key,*[f"{arms[a]['last_training_metrics'][key]:.6g}" for a in labels]] for key in ('loss','loss_lca','leaf_pid_loss','effective_rank','raw_gradient_norm')])
+    lines += ['Phase60 required reconstruction views','~'*40,'']
+    lines += _table(['View','Full (both arms)','Half (both arms)'],[[view,'UNAVAILABLE','UNAVAILABLE'] for view in arms[labels[0]]['availability']])
+    lines += ['The complete metric download includes every numeric failure diagnostic and every logged-metric count/first/last/min/max/mean. The private archive includes all 97,546 individual scalar rows and native evidence.',
+        'The scientific histories and failure reports match exactly; both still used early PID 1.0. The late 0.2 versus 0.1 contrast did not execute, so neither arm is a quality winner.',
+        'Hold 70,000 training events. The new 50,000 validation events already added in Phase60 provide sufficient capacity; no further data expansion is needed now.',
+        'Phase61 lowers early PID to 0.5 in both arms, retains late 0.2 versus 0.1, the same seed/reservation and budgets, and dominance 20/fail. This adaptive stability pilot is not an independent replication or a guaranteed fix.',
+        f"Phase61 snapshot: {_literal(record['next_study_status'])}. No promotion, sealed-test access or automatic chain.",
+        'See :doc:`../../phase60` for the review, accumulated-study synthesis and limitations.','']
+    return lines
+
+
+def _phase60_number(value):
+    # This metric registry includes byte counters above the general display cap.
+    return float(value) if type(value) in (int, float) and math.isfinite(value) and abs(value) <= 1e15 else None
