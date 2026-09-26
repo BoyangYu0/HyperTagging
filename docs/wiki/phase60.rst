@@ -190,3 +190,22 @@ automatic follow-on or longer campaign is authorized.
 
 The dashboard records the Phase61 submission snapshot. Submission is separate
 from startup and training completion.
+
+Phase61 submission and verification
+-----------------------------------
+
+Both Phase61 jobs were submitted from immutable source
+``9d235fda39108b739b4c8e55b89dc9a4aff399c7``, tagged
+``reconstruction-phase61-early-pid-stability-pilot-20260926``.
+Submission receipts, scheduler records and bound inputs were verified.
+These are submitted experiments, not completed training results.
+
+The frozen source passed 27 preflight tests. All 193 focused reconstruction/search
+tests and both two-step CPU training smokes passed. The broad CPU suite
+(excluding the separately checked dashboard tests) passed 1,777 tests with
+34 skips. The dashboard run had one stale source-count assertion, which was
+corrected and passed a targeted rerun; its other 136 tests passed. Independent verification
+matched every exported scalar to its native source, recomputed all history
+summaries, and rehashed all 34 selected train/validation shards. All 50 earlier
+metric downloads are preserved byte for byte. Publication is subject to the
+complete CPU CI suite, strict documentation builds and live download checks.
