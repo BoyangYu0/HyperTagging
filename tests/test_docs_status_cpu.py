@@ -34,6 +34,12 @@ def evidence(tmp_path, monkeypatch):
     monkeypatch.delenv("SOURCE_DATE_EPOCH", raising=False)
     monkeypatch.setattr(status, "_git", lambda *_args: None)
     documents = {
+        "reconstruction_phase61": {"reserved": True},
+        "reconstruction_phase61_retained": {"reserved": True},
+        "reconstruction_phase61_aggregation": {"reserved": True},
+        "reconstruction_phase61_pretraining": {"reserved": True},
+        "reconstruction_phase62_submission": {"reserved": True},
+
         "reconstruction_phase60": {"reserved": True},
         "reconstruction_phase61_submission": {"reserved": True},
         "reconstruction_phase59": {"reserved": True},
@@ -189,7 +195,7 @@ def test_status_is_deterministic_and_preserves_record_scope(evidence, tmp_path, 
     assert manifest["pretraining"]["selected_profile_state"] == "NONE_SELECTED"
     assert manifest["pretraining"]["submission_performed"] is False
     assert manifest["pretraining"]["pretraining_success_gate_passed"] is False
-    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 77
+    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 82
     assert manifest["provenance"]["external_filesystem_or_network_artifacts_opened"] is False
     assert source_info(manifest, "issue_ledger")["freshness"]["status"] == "stale"
     assert source_info(manifest, "current_status")["freshness"]["status"] == "unknown"
@@ -1144,3 +1150,27 @@ def test_phase60_unavailable_reconstruction_and_complete_numeric_projection(tmp_
     assert all(row['value'] is not None for row in projected['metric_rows'])
     raw['arms']['pretraining_balance_control']['strict_events_scored'] = 100
     assert status._phase60_projection(raw) == {}
+
+
+def test_phase61_complete_views_and_native_boundary():
+    raw = json.loads((ROOT / status.SOURCE_PATHS['reconstruction_phase61']).read_text())
+    projected = status._phase41_projection(raw, phase=61, labels=('pretraining_balance_control', 'lower_late_pid_pretraining'))
+    assert projected['status'] == 'COMPLETED'
+    assert projected['promotion_authorized'] is False
+    assert len(projected['metric_rows']) == 15354
+    assert projected['arms']['pretraining_balance_control']['all_gates_passed'] is True
+    assert projected['arms']['lower_late_pid_pretraining']['all_gates_passed'] is False
+    raw['strict_selection_overlap'] = 1
+    with pytest.raises(ValueError, match='classification'):
+        status._phase41_projection(raw, phase=61)
+
+
+def test_phase61_retained_registry_rejects_missing_half_metric():
+    raw = json.loads((ROOT / status.SOURCE_PATHS['reconstruction_phase61_retained']).read_text())
+    record = status._phase61_retained_projection(raw)
+    assert record['all_returned_beam_candidates_checked']
+    assert all(a['primary']['full']['coherent_retained_forest']['numerator'] == 0 for a in record['arms'].values())
+    i = next(i for i, row in enumerate(raw['metric_rows']) if 'half' in row['metric'])
+    raw['metric_rows'].pop(i)
+    with pytest.raises(ValueError, match='Incomplete'):
+        status._phase61_retained_projection(raw)

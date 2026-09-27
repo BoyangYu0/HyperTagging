@@ -1,5 +1,28 @@
 # Current repository audit status
 
+## Phase61 review — 2026-09-27
+
+Both arms completed 2,188 refinement and 4,376 reconstruction steps, with all
+fourteen native views and exact strict repeats. Control late PID0.2 passes
+original gates and constructs4/100 full roots; candidate0.1 constructs0/100.
+Retained full LCAG is27/3412 versus24/3412, half31/1961 versus28/1961,
+exact nontrivial components14 versus15; primary coherent forests0/100 in both.
+All exact components remain depth one across available views/candidates.
+Paired event intervals include zero. Shared step1094 tensors differ before
+treatment despite matching seeds; first logged loss divergence is step944.
+No quality winner or promotion follows from this adaptive stability pilot.
+
+Hold70,000 training events and existing validation capacity. Prior data scaling
+confounded size, compute and cohort; longer pretraining alone was unsupported.
+Objective/representation quality remains a hypothesis, not demonstrated
+superiority over training-data growth. Phase62 independently replicates the
+same earlyPID0.5 / late0.2vs0.1 schedule at seed20260928, with fresh1000
+selection /100 strict /20 beam and unchanged budgets, parent2, dominance20/fail
+and scientific gates. All51,100 historically used/reserved validation UIDs are
+excluded from the new reservation;47,800 remain. No automatic chain, sealed
+test or promotion. See Phase61 review/dashboard for full metrics and submission.
+Historical audit/readiness scope remains unchanged.
+
 ## Phase60 review — 2026-09-26
 
 Both arms failed before attempted pretraining update 547, after 546 completed
