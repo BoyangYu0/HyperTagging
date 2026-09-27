@@ -19,6 +19,9 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Verified Phase62 submission metadata and measured Phase61 documentation capacity; scientific source remains frozen.
+  - ad7cde6924f5071b31cd3ddcabb98986bdbcc954
+  - 4fac702a677c2b7ce3d76362111d3e3b016e4989
   # Phase61 native complete metrics and bounded Phase62 independent replication; historical audit scope unchanged.
   - f575c717fb65f779411001b7ac287a06cb2a9973
   # Verified Phase61 submission snapshot and Phase60 test evidence; scientific implementation unchanged.
