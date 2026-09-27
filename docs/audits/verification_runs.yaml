@@ -362,3 +362,31 @@ supplemental_runs:
     ci_run: PENDING_PUBLICATION_WORKFLOW
     human_visual_review_status: PASS
     evidence_limitations: CPU fixtures establish software contracts only. Both Phase47 arms fail strict gates, coherent forest agreement is zero, and no exact component above depth one was found. Cross-phase seed and cohort differ. Corrected pretraining quality remains unmeasured. Phase48 is one bounded downstream PID-head adaptation experiment; no promotion or sealed-test access. Final live publication and running-job evidence remain external pending checks.
+  - source_sha: 2e7b2b26dd59eef087b079b5aa430f8e07532270
+    metadata_head: publication_metadata_companion
+    worktree_state: clean_frozen_training_source
+    date: '2026-09-27T15:48:43+00:00'
+    commands:
+      - python -m pytest -q --ignore=tests/test_docs_status_cpu.py
+      - python -m pytest -q tests/test_docs_status_cpu.py tests/test_reconstruction_phase62_campaign_cpu.py
+      - python scripts/validate_audit_integrity.py
+      - python scripts/generate_audit_views.py --check
+      - python scripts/execute_notebook_smoke_tests.py --check-generated
+      - python -m compileall -q src scripts tests
+      - git diff --check
+    pytest:
+      result: PASS
+      passed: 1802
+      skipped: 34
+      warnings: 119
+      duration_seconds: 440.44
+    notebooks:
+      generated_consistency: {result: PASS, count: 18}
+      default_fixture: {result: NOT_RUN, count: 0}
+      real_mdst_pilot: {result: NOT_RUN, count: 0}
+      trained_physics_validation: {result: NOT_RUN, count: 0}
+    real_data_inputs: immutable_phase61_validation_reports_checkpoints_and_native_histories; phase62_fresh_validation_ledger; sealed_test_closed
+    checkpoint: phase61_fixed_refined_and_selected_reconstruction_checkpoints
+    ci_run: PENDING_PUBLICATION_WORKFLOW
+    human_visual_review_status: NOT_REVIEWED
+    evidence_limitations: Agent render review and final live verification are separate external receipts. Phase61 is an adaptive stability pilot with early runtime divergence and mixed shallow quality. Control original gate passage is not exact tree recovery. Phase62 is one bounded independent seed and event replication; scheduler acceptance does not establish startup or completed training. Historical audit scope is unchanged.

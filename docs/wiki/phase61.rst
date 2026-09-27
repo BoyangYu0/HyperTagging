@@ -526,3 +526,20 @@ This is independent event/seed replication within the existing source pool, not 
 Require stable execution plus joint topology and coherent-forest benefit across seeds before adopting a schedule. If the mixed result persists, stop late-PID dose tuning and diagnose representation/assembly errors; this statement authorizes no subsequent campaign. No promotion or automatic chain. The dashboard records the Phase62 submission snapshot.
 
 Uncertainty remains conditional on these two models; different seeds/cohorts/source revisions forbid causal comparisons of raw cross-phase rates. Daughter-sum four-momentum closure is an implementation invariant, not physical momentum resolution; the latter is unavailable.
+
+Phase62 submission and review verification
+------------------------------------------
+
+Both bounded jobs were accepted and released by the scheduler from immutable
+source ``2e7b2b26dd59eef087b079b5aa430f8e07532270``, tagged
+``reconstruction-phase62-early-pid-independent-replication-20260927``.
+The submission snapshot is separate from startup or completed training.
+
+The broad CPU suite passed 1,802 tests with 34 skips. All 193 focused scientific
+tests, 138 dashboard/campaign tests, two new dashboard guards, 24 frozen-source
+preflight tests and both two-step training smokes passed. Counts overlap.
+All 18 generated notebooks match their sources. Every selected train/validation
+shard was rehashed, and every exported native log and retained tree/candidate
+scalar was checked. These software checks do not establish physics quality.
+Final CI, both documentation layouts, live downloads and rendered browser
+checks are recorded in the external publication receipts.
