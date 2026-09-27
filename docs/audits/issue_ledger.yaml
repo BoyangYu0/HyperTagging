@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase61 native complete metrics and bounded Phase62 independent replication; historical audit scope unchanged.
+  - f575c717fb65f779411001b7ac287a06cb2a9973
   # Verified Phase61 submission snapshot and Phase60 test evidence; scientific implementation unchanged.
   - b48527774b1a2aa2b90e96f34921db1c0ec96fbb
   # Phase60 pre-treatment failure metrics and bounded Phase61 early-PID stability pilot; historical readiness scope unchanged.
