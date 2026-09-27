@@ -66,3 +66,13 @@ JSON downloads, retaining all historical and current aggregate metrics. Larger
 new metric families use separately allowlisted downloads with exact registries,
 byte counts and hashes. This keeps both
 files within the existing publication size limit without removing evidence.
+
+Phase61 publication capacity
+----------------------------
+
+The complete 55-download archive raises the bounded total site allowance from
+140 to 150 MiB. The measured standalone preview is 134.9 MB; the previous
+basf2 layout adds approximately 16.1 MB, exceeding the old bound. Final builds
+verify both actual sizes. The 10 MiB per-file limit, 5,000-entry limit, exact
+metric allowlists and all content/privacy checks remain unchanged. This is a
+documentation storage allowance, not a scientific acceptance or stability change.

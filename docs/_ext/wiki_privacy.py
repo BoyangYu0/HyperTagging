@@ -161,9 +161,10 @@ _PATH_FRAGMENT_ORDERED_PATTERNS = tuple(
 )
 _MAX_PUBLICATION_ENTRIES = 5_000
 _MAX_PUBLICATION_FILE_BYTES = 10 * 1024 * 1024
-# Phase57 measures 129.3 MB in the basf2 layout with all historical exports.
-# Keep a bounded total; the 10 MiB per-file limit and content checks are unchanged.
-_MAX_PUBLICATION_BYTES = 140 * 1024 * 1024
+# Phase61 standalone preview measures 134.9 MB with 55 metric downloads.
+# Prior basf2 overhead is 16.1 MB, exceeding the old 140 MiB site bound.
+# Retain all historical evidence; per-file and content privacy limits are unchanged.
+_MAX_PUBLICATION_BYTES = 150 * 1024 * 1024
 _MAX_SOURCE_TEXT_BYTES = 5_000_000
 _MAX_TYPE_ANNOTATION_BYTES = 8_192
 _MAX_MATCH_STATES = 100_000
