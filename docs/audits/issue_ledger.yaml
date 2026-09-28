@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Four open/partial review findings, targeted verification and a read-only Phase62 scheduler observation.
+  - 4b605a8b32c96cb57a296a1b21f09a19d0b55ec1
   # Scientific review and byte-verified artifact archival; scientific source and historical readiness scope unchanged.
   - 18cc4fc15771f13c3bd6e12a1f0d4413c4c0f3af
   # Verified Phase62 submission metadata and measured Phase61 documentation capacity; scientific source remains frozen.
