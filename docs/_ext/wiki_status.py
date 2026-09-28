@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from collections import Counter
 from datetime import date, datetime, timezone
+import gzip
 import hashlib
 import html
 import json
@@ -19,6 +20,19 @@ import subprocess
 from typing import Any
 
 import yaml
+
+
+def load_registry(path: Path):
+    """Accept legacy generator output, rejecting conflicting packed copies."""
+    packed = path.with_suffix(path.suffix + ".gz")
+    if packed.exists():
+        payload = gzip.decompress(packed.read_bytes())
+        if path.exists() and path.read_bytes() != payload:
+            raise ValueError(f"Conflicting metric registry copies: {path.name}")
+    else:
+        payload = path.read_bytes()
+    return json.loads(payload)
+
 
 # Private input-only addresses. Public provenance uses opaque SOURCE_IDS.
 SOURCE_PATHS = {
@@ -847,7 +861,7 @@ def _phase41_projection(raw: Any, *, phase=41, labels=("pointer32_control", "lev
             "beam": {scope: {rank: {metric: point(_mapping(_mapping(_mapping(_mapping(record.get("beam")).get(scope)).get(rank)).get(metric)))
                                       for metric in metrics} for rank in rankings} for scope in ("full", "half")}}
     # Exact authored vocabulary; arbitrary source strings and injected fields cannot publish.
-    registry = json.loads(Path(__file__).with_name(f"phase{phase}_metric_registry.json").read_text())
+    registry = load_registry(Path(__file__).with_name(f"phase{phase}_metric_registry.json"))
     allowed = {tuple(row) for row in registry}
     rows = []
     seen = set()
@@ -1059,7 +1073,7 @@ def _phase44_retained_projection(value):
                 raise ValueError('Retained-reference composition does not cover all units')
             if counts['representable_nontrivial_units'] > counts['nontrivial_topology_units']:
                 raise ValueError('Invalid retained-reference representability count')
-    registry = json.loads(Path(__file__).with_name('phase44_retained_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase44_retained_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -1127,7 +1141,7 @@ def _phase45_retained_projection(value):
                 raise ValueError('Retained-reference composition does not cover all units')
             if counts['representable_nontrivial_units'] > counts['nontrivial_topology_units']:
                 raise ValueError('Invalid retained-reference representability count')
-    registry = json.loads(Path(__file__).with_name('phase45_retained_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase45_retained_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -1196,7 +1210,7 @@ def _phase46_retained_projection(value):
                 raise ValueError('Retained-reference composition does not cover all units')
             if counts['representable_nontrivial_units'] > counts['nontrivial_topology_units']:
                 raise ValueError('Invalid retained-reference representability count')
-    registry = json.loads(Path(__file__).with_name('phase46_retained_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase46_retained_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -1265,7 +1279,7 @@ def _phase47_retained_projection(value):
                 raise ValueError('Retained-reference composition does not cover all units')
             if counts['representable_nontrivial_units'] > counts['nontrivial_topology_units']:
                 raise ValueError('Invalid retained-reference representability count')
-    registry = json.loads(Path(__file__).with_name('phase47_retained_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase47_retained_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -1288,7 +1302,7 @@ def _phase47_aggregation_projection(value):
     raw = _mapping(value)
     if raw.get('version') != 'phase47-aggregation-supplement-v1' or raw.get('status') != 'COMPLETE':
         raise ValueError('Missing Phase47 aggregation supplement')
-    registry = json.loads(Path(__file__).with_name('phase47_aggregation_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase47_aggregation_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -1355,7 +1369,7 @@ def _phase48_retained_projection(value):
                 raise ValueError('Retained-reference composition does not cover all units')
             if counts['representable_nontrivial_units'] > counts['nontrivial_topology_units']:
                 raise ValueError('Invalid retained-reference representability count')
-    registry = json.loads(Path(__file__).with_name('phase48_retained_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase48_retained_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -1378,7 +1392,7 @@ def _phase48_aggregation_projection(value):
     raw = _mapping(value)
     if raw.get('version') != 'phase48-aggregation-supplement-v1' or raw.get('status') != 'COMPLETE':
         raise ValueError('Missing Phase48 aggregation supplement')
-    registry = json.loads(Path(__file__).with_name('phase48_aggregation_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase48_aggregation_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -1445,7 +1459,7 @@ def _phase55_retained_projection(value):
                 raise ValueError('Retained-reference composition does not cover all units')
             if counts['representable_nontrivial_units'] > counts['nontrivial_topology_units']:
                 raise ValueError('Invalid retained-reference representability count')
-    registry = json.loads(Path(__file__).with_name('phase55_retained_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase55_retained_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -1468,7 +1482,7 @@ def _phase55_aggregation_projection(value):
     raw = _mapping(value)
     if raw.get('version') != 'phase55-aggregation-supplement-v1' or raw.get('status') != 'COMPLETE':
         raise ValueError('Missing Phase55 aggregation supplement')
-    registry = json.loads(Path(__file__).with_name('phase55_aggregation_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase55_aggregation_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -1535,7 +1549,7 @@ def _phase54_retained_projection(value):
                 raise ValueError('Retained-reference composition does not cover all units')
             if counts['representable_nontrivial_units'] > counts['nontrivial_topology_units']:
                 raise ValueError('Invalid retained-reference representability count')
-    registry = json.loads(Path(__file__).with_name('phase54_retained_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase54_retained_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -1558,7 +1572,7 @@ def _phase54_aggregation_projection(value):
     raw = _mapping(value)
     if raw.get('version') != 'phase54-aggregation-supplement-v1' or raw.get('status') != 'COMPLETE':
         raise ValueError('Missing Phase54 aggregation supplement')
-    registry = json.loads(Path(__file__).with_name('phase54_aggregation_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase54_aggregation_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -1682,7 +1696,7 @@ def _phase53_retained_projection(value):
                 raise ValueError('Retained-reference composition does not cover all units')
             if counts['representable_nontrivial_units'] > counts['nontrivial_topology_units']:
                 raise ValueError('Invalid retained-reference representability count')
-    registry = json.loads(Path(__file__).with_name('phase53_retained_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase53_retained_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -1705,7 +1719,7 @@ def _phase53_aggregation_projection(value):
     raw = _mapping(value)
     if raw.get('version') != 'phase53-aggregation-supplement-v1' or raw.get('status') != 'COMPLETE':
         raise ValueError('Missing Phase53 aggregation supplement')
-    registry = json.loads(Path(__file__).with_name('phase53_aggregation_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase53_aggregation_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -1828,7 +1842,7 @@ def _phase52_retained_projection(value):
                 raise ValueError('Retained-reference composition does not cover all units')
             if counts['representable_nontrivial_units'] > counts['nontrivial_topology_units']:
                 raise ValueError('Invalid retained-reference representability count')
-    registry = json.loads(Path(__file__).with_name('phase52_retained_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase52_retained_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -1851,7 +1865,7 @@ def _phase52_aggregation_projection(value):
     raw = _mapping(value)
     if raw.get('version') != 'phase52-aggregation-supplement-v1' or raw.get('status') != 'COMPLETE':
         raise ValueError('Missing Phase52 aggregation supplement')
-    registry = json.loads(Path(__file__).with_name('phase52_aggregation_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase52_aggregation_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -1974,7 +1988,7 @@ def _phase51_retained_projection(value):
                 raise ValueError('Retained-reference composition does not cover all units')
             if counts['representable_nontrivial_units'] > counts['nontrivial_topology_units']:
                 raise ValueError('Invalid retained-reference representability count')
-    registry = json.loads(Path(__file__).with_name('phase51_retained_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase51_retained_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -1997,7 +2011,7 @@ def _phase51_aggregation_projection(value):
     raw = _mapping(value)
     if raw.get('version') != 'phase51-aggregation-supplement-v1' or raw.get('status') != 'COMPLETE':
         raise ValueError('Missing Phase51 aggregation supplement')
-    registry = json.loads(Path(__file__).with_name('phase51_aggregation_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase51_aggregation_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -2120,7 +2134,7 @@ def _phase50_retained_projection(value):
                 raise ValueError('Retained-reference composition does not cover all units')
             if counts['representable_nontrivial_units'] > counts['nontrivial_topology_units']:
                 raise ValueError('Invalid retained-reference representability count')
-    registry = json.loads(Path(__file__).with_name('phase50_retained_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase50_retained_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -2143,7 +2157,7 @@ def _phase50_aggregation_projection(value):
     raw = _mapping(value)
     if raw.get('version') != 'phase50-aggregation-supplement-v1' or raw.get('status') != 'COMPLETE':
         raise ValueError('Missing Phase50 aggregation supplement')
-    registry = json.loads(Path(__file__).with_name('phase50_aggregation_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase50_aggregation_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -2266,7 +2280,7 @@ def _phase49_retained_projection(value):
                 raise ValueError('Retained-reference composition does not cover all units')
             if counts['representable_nontrivial_units'] > counts['nontrivial_topology_units']:
                 raise ValueError('Invalid retained-reference representability count')
-    registry = json.loads(Path(__file__).with_name('phase49_retained_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase49_retained_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -2289,7 +2303,7 @@ def _phase49_aggregation_projection(value):
     raw = _mapping(value)
     if raw.get('version') != 'phase49-aggregation-supplement-v1' or raw.get('status') != 'COMPLETE':
         raise ValueError('Missing Phase49 aggregation supplement')
-    registry = json.loads(Path(__file__).with_name('phase49_aggregation_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase49_aggregation_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -3177,7 +3191,7 @@ def _phase55_pretraining_projection(value):
     raw = _mapping(value)
     if raw.get('version') != 'phase55-pretraining-export-v1' or raw.get('status') != 'COMPLETE':
         raise ValueError('Phase55 pretraining evidence is incomplete')
-    registry = json.loads(Path(__file__).with_name('phase55_pretraining_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase55_pretraining_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -3308,7 +3322,7 @@ def _phase56_projection(raw: Any) -> dict[str, Any]:
             "beam": {scope: {rank: {metric: point(_mapping(_mapping(_mapping(_mapping(record.get("beam")).get(scope)).get(rank)).get(metric)))
                                       for metric in metrics} for rank in rankings} for scope in ("full", "half")}}
     # Exact authored vocabulary; arbitrary source strings and injected fields cannot publish.
-    registry = json.loads(Path(__file__).with_name(f"phase{phase}_metric_registry.json").read_text())
+    registry = load_registry(Path(__file__).with_name(f"phase{phase}_metric_registry.json"))
     allowed = {tuple(row) for row in registry}
     rows = []
     seen = set()
@@ -3379,7 +3393,7 @@ def _phase56_retained_projection(value):
                 raise ValueError('Retained-reference composition does not cover all units')
             if counts['representable_nontrivial_units'] > counts['nontrivial_topology_units']:
                 raise ValueError('Invalid retained-reference representability count')
-    registry = json.loads(Path(__file__).with_name('phase56_retained_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase56_retained_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -3402,7 +3416,7 @@ def _phase56_aggregation_projection(value):
     raw = _mapping(value)
     if raw.get('version') != 'phase56-aggregation-supplement-v1' or raw.get('status') != 'COMPLETE':
         raise ValueError('Missing Phase56 aggregation supplement')
-    registry = json.loads(Path(__file__).with_name('phase56_aggregation_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase56_aggregation_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -3423,7 +3437,7 @@ def _phase56_pretraining_projection(value):
     raw = _mapping(value)
     if raw.get('version') != 'phase56-pretraining-export-v1' or raw.get('status') != 'COMPLETE_AVAILABLE_ARTIFACTS':
         raise ValueError('Phase56 pretraining evidence is incomplete')
-    registry = json.loads(Path(__file__).with_name('phase56_pretraining_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase56_pretraining_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -3520,7 +3534,7 @@ def _phase57_retained_projection(value):
                 raise ValueError('Retained-reference composition does not cover all units')
             if counts['representable_nontrivial_units'] > counts['nontrivial_topology_units']:
                 raise ValueError('Invalid retained-reference representability count')
-    registry = json.loads(Path(__file__).with_name('phase57_retained_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase57_retained_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -3544,7 +3558,7 @@ def _phase57_aggregation_projection(value):
     if (raw.get('version') != 'phase57-aggregation-supplement-v1' or raw.get('status') != 'COMPLETE'
         or raw.get('independent_validation') is not False or raw.get('strict_selection_overlap') != 100):
         raise ValueError('Missing Phase57 aggregation supplement')
-    registry = json.loads(Path(__file__).with_name('phase57_aggregation_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase57_aggregation_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -3566,7 +3580,7 @@ def _phase57_pretraining_projection(value):
     if (raw.get('version') != 'phase57-pretraining-export-v1' or raw.get('status') != 'COMPLETE'
         or raw.get('independent_validation') is not False):
         raise ValueError('Phase57 pretraining evidence is incomplete')
-    registry = json.loads(Path(__file__).with_name('phase57_pretraining_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase57_pretraining_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -3676,7 +3690,7 @@ def _phase58_projection(raw: Any) -> dict[str, Any]:
             "beam": {scope: {rank: {metric: point(_mapping(_mapping(_mapping(_mapping(record.get("beam")).get(scope)).get(rank)).get(metric)))
                                       for metric in metrics} for rank in rankings} for scope in ("full", "half")}}
     # Exact authored vocabulary; arbitrary source strings and injected fields cannot publish.
-    registry = json.loads(Path(__file__).with_name(f"phase{phase}_metric_registry.json").read_text())
+    registry = load_registry(Path(__file__).with_name(f"phase{phase}_metric_registry.json"))
     allowed = {tuple(row) for row in registry}
     rows = []
     seen = set()
@@ -3747,7 +3761,7 @@ def _phase58_retained_projection(value):
                 raise ValueError('Retained-reference composition does not cover all units')
             if counts['representable_nontrivial_units'] > counts['nontrivial_topology_units']:
                 raise ValueError('Invalid retained-reference representability count')
-    registry = json.loads(Path(__file__).with_name('phase58_retained_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase58_retained_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -3770,7 +3784,7 @@ def _phase58_aggregation_projection(value):
     raw = _mapping(value)
     if raw.get('version') != 'phase58-aggregation-supplement-v1' or raw.get('status') != 'COMPLETE':
         raise ValueError('Missing Phase58 aggregation supplement')
-    registry = json.loads(Path(__file__).with_name('phase58_aggregation_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase58_aggregation_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -3791,7 +3805,7 @@ def _phase58_pretraining_projection(value):
     raw = _mapping(value)
     if raw.get('version') != 'phase58-pretraining-export-v1' or raw.get('status') != 'COMPLETE_AVAILABLE_ARTIFACTS':
         raise ValueError('Phase58 pretraining evidence is incomplete')
-    registry = json.loads(Path(__file__).with_name('phase58_pretraining_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase58_pretraining_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -3887,7 +3901,7 @@ def _phase59_retained_projection(value):
                 raise ValueError('Retained-reference composition does not cover all units')
             if counts['representable_nontrivial_units'] > counts['nontrivial_topology_units']:
                 raise ValueError('Invalid retained-reference representability count')
-    registry = json.loads(Path(__file__).with_name('phase59_retained_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase59_retained_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -3910,7 +3924,7 @@ def _phase59_aggregation_projection(value):
     raw = _mapping(value)
     if raw.get('version') != 'phase59-aggregation-supplement-v1' or raw.get('status') != 'COMPLETE':
         raise ValueError('Missing Phase59 aggregation supplement')
-    registry = json.loads(Path(__file__).with_name('phase59_aggregation_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase59_aggregation_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -3931,7 +3945,7 @@ def _phase59_pretraining_projection(value):
     raw = _mapping(value)
     if raw.get('version') != 'phase59-pretraining-export-v1' or raw.get('status') != 'COMPLETE':
         raise ValueError('Phase59 pretraining evidence is incomplete')
-    registry = json.loads(Path(__file__).with_name('phase59_pretraining_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase59_pretraining_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -4002,7 +4016,7 @@ def _phase60_projection(value):
         return {}
     if raw.get('treatment_executed') is not False or raw.get('metric_completeness') != 'ALL_AVAILABLE_EXPORTED':
         return {}
-    registry = json.loads(Path(__file__).with_name('phase60_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase60_metric_registry.json'))
     result = {'status': 'FAILED_PRETRAINING', 'source_ids': _refs('reconstruction_phase60', 'reconstruction_phase61_submission'),
               'native_source_revision': _sha(raw.get('native_source_revision')), 'source_hashes': [_sha(v) for v in _list(raw.get('source_hashes'))], 'treatment_executed': False,
               'metric_completeness': 'ALL_AVAILABLE_EXPORTED', 'scalar_rows': _integer(raw.get('scalar_rows')),
@@ -4103,7 +4117,7 @@ def _phase61_retained_projection(value):
                 raise ValueError('Retained-reference composition does not cover all units')
             if counts['representable_nontrivial_units'] > counts['nontrivial_topology_units']:
                 raise ValueError('Invalid retained-reference representability count')
-    registry = json.loads(Path(__file__).with_name('phase61_retained_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase61_retained_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -4133,7 +4147,7 @@ def _phase61_aggregation_projection(value):
     raw = _mapping(value)
     if raw.get('version') != 'phase61-aggregation-supplement-v1' or raw.get('status') != 'COMPLETE':
         raise ValueError('Missing Phase61 aggregation supplement')
-    registry = json.loads(Path(__file__).with_name('phase61_aggregation_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase61_aggregation_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))
@@ -4154,7 +4168,7 @@ def _phase61_pretraining_projection(value):
     raw = _mapping(value)
     if raw.get('version') != 'phase61-pretraining-export-v1' or raw.get('status') != 'COMPLETE':
         raise ValueError('Phase61 pretraining evidence is incomplete')
-    registry = json.loads(Path(__file__).with_name('phase61_pretraining_metric_registry.json').read_text())
+    registry = load_registry(Path(__file__).with_name('phase61_pretraining_metric_registry.json'))
     allowed, seen, rows = set(map(tuple, registry)), set(), []
     for row in _list(raw.get('metric_rows')):
         identity = (row.get('arm'), row.get('view'), row.get('metric'))

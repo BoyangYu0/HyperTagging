@@ -1,0 +1,699 @@
+{
+  "schema_version": 1,
+  "source_commit": "db1ff41467aba5080b04bd89ae532fbdbd8788c2",
+  "archive_root_environment": "HYPERTAGGING_DATA_ROOT",
+  "entries": [
+    {
+      "path": "docs/_ext/phase41_metric_registry.json",
+      "bytes": 2243340,
+      "sha256": "bd7e792af1771096c1f898aa6005df4ed24df5b2fc7b76a157b531451b07ae5f",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase41_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase41_metric_registry.json.gz",
+      "packed_bytes": 86721,
+      "packed_sha256": "f34fe16b1c3c58d844682e5411554d917460c94fd874b0c86bf372eef7b35434"
+    },
+    {
+      "path": "docs/_ext/phase42_metric_registry.json",
+      "bytes": 1664206,
+      "sha256": "2ac89da0fb5fb32123b0136623637540c52e5e685fa751f631b25e008ac8e636",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase42_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase42_metric_registry.json.gz",
+      "packed_bytes": 68431,
+      "packed_sha256": "a9f7d070e80688ccd06fa57d72da9dc64c315c09f0643a80c2256d3b1be159c0"
+    },
+    {
+      "path": "docs/_ext/phase43_metric_registry.json",
+      "bytes": 1709673,
+      "sha256": "219a6d5399b28ffef1b915f19eea8c5a43990744fb128ddf19bd235863fffa59",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase43_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase43_metric_registry.json.gz",
+      "packed_bytes": 70042,
+      "packed_sha256": "6ac0d3f138a588b52ef4e6b736cd87f5cd6c9f65f1a528b2962f942ed668c2da"
+    },
+    {
+      "path": "docs/_ext/phase44_metric_registry.json",
+      "bytes": 1593847,
+      "sha256": "ffe1d251d1f2f6bad4ef06014b18650cb87c6a0916fbfea594372062ec9329ab",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase44_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase44_metric_registry.json.gz",
+      "packed_bytes": 65109,
+      "packed_sha256": "35d5adb0b91e93f863ae971767c38a9b46e7f2aad841a607df5db6ba39215e09"
+    },
+    {
+      "path": "docs/_ext/phase44_retained_metric_registry.json",
+      "bytes": 2548408,
+      "sha256": "27d604007bd3615a58ca12c39e463044f8f96a646f7fbf42c353d43de841600d",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase44_retained_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase44_retained_metric_registry.json.gz",
+      "packed_bytes": 88619,
+      "packed_sha256": "5b5c32ca29bf44ae41a841950856418d632ed227c39de63924cbe72a4c0e366b"
+    },
+    {
+      "path": "docs/_ext/phase45_metric_registry.json",
+      "bytes": 1624129,
+      "sha256": "cf7547b7a737e1fcda61f82fe833df15a42fc5b136bc7ed218d2e8567594889b",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase45_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase45_metric_registry.json.gz",
+      "packed_bytes": 67080,
+      "packed_sha256": "27cc8649252161ab1171f1b32af5a3191e321f591e47bc1ef2dd9df6d4279a95"
+    },
+    {
+      "path": "docs/_ext/phase45_retained_metric_registry.json",
+      "bytes": 2429172,
+      "sha256": "eb8115c514f482c3102b2e60c54e3072a390658a9bf02bf04f18076185938b00",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase45_retained_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase45_retained_metric_registry.json.gz",
+      "packed_bytes": 85948,
+      "packed_sha256": "79f88d0bacd5657d6422621b1c3a126750ff5da9b7ef3c32942834cb18406615"
+    },
+    {
+      "path": "docs/_ext/phase46_metric_registry.json",
+      "bytes": 1647526,
+      "sha256": "004b9f0646f37697991c845aa9b3317ff4b5de5eb297aa1612cf9323c36bcd99",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase46_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase46_metric_registry.json.gz",
+      "packed_bytes": 67588,
+      "packed_sha256": "60e8d64b71b14728966df979a89d1e4db668dc2bbd9e0818b979aeede5a79bc7"
+    },
+    {
+      "path": "docs/_ext/phase46_retained_metric_registry.json",
+      "bytes": 2514057,
+      "sha256": "d1fbb850aff3720ce6151411b7a99a7fe1b0866b9112a6236c05c823fc3e1407",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase46_retained_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase46_retained_metric_registry.json.gz",
+      "packed_bytes": 87820,
+      "packed_sha256": "f4f2d1a361499bc038935089f3abab3ca2e1159eef13c05b01ce7a68ed14c915"
+    },
+    {
+      "path": "docs/_ext/phase47_aggregation_metric_registry.json",
+      "bytes": 595310,
+      "sha256": "39f73ea34b77281f4d45f65a6d652d35fed19273a55b4c40f97b041816e4787d",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase47_aggregation_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase47_aggregation_metric_registry.json.gz",
+      "packed_bytes": 18124,
+      "packed_sha256": "b9feca8d7c652d891dece2355c6737bfc8cb92279d7c9d9c24d71a1e782ce9e4"
+    },
+    {
+      "path": "docs/_ext/phase47_metric_registry.json",
+      "bytes": 1660422,
+      "sha256": "892d3c00ab54929e186c8fff520bc71650795633cd5d28d8a80240bddfc9bfc0",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase47_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase47_metric_registry.json.gz",
+      "packed_bytes": 67536,
+      "packed_sha256": "3f4b25502fde432bc67d2513642679be3fa5368f57481a801638656dd7875c4f"
+    },
+    {
+      "path": "docs/_ext/phase47_retained_metric_registry.json",
+      "bytes": 2568693,
+      "sha256": "5f874bde51c107e7fce30e1867ea1537adb0fcc10cf3df4177f3427997b41b60",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase47_retained_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase47_retained_metric_registry.json.gz",
+      "packed_bytes": 89133,
+      "packed_sha256": "414393475c2217af70b0195cf803a4df7c851ea6f97c4fd1f36c8e2c4da4e6e7"
+    },
+    {
+      "path": "docs/_ext/phase48_aggregation_metric_registry.json",
+      "bytes": 607910,
+      "sha256": "6ead115b1d6f17310a9d15a45c15982e2de17ff06750cc1f185f97e48aac6be0",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase48_aggregation_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase48_aggregation_metric_registry.json.gz",
+      "packed_bytes": 18133,
+      "packed_sha256": "8e7bded1826ecd127107207be3d45d0b7f88358014034504567af2c431d6810e"
+    },
+    {
+      "path": "docs/_ext/phase48_metric_registry.json",
+      "bytes": 1674438,
+      "sha256": "dad5f9607370dd52f418f5548934d476e2daed451400b5599384ebb7563e5f2d",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase48_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase48_metric_registry.json.gz",
+      "packed_bytes": 67808,
+      "packed_sha256": "f6b78a91e15ae98de6396e71fcb8ee1430e8d3db2a05d927888dd73f4aadf3fb"
+    },
+    {
+      "path": "docs/_ext/phase48_retained_metric_registry.json",
+      "bytes": 2534492,
+      "sha256": "fd07b963449c3ebbe62f7996fcd0a510ac9d370810559d887809835fa31eae2d",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase48_retained_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase48_retained_metric_registry.json.gz",
+      "packed_bytes": 87252,
+      "packed_sha256": "d525ec949627d8bf60d489a380084b3ac9efd34c95787c4f2adef6d14f3afd61"
+    },
+    {
+      "path": "docs/_ext/phase49_aggregation_metric_registry.json",
+      "bytes": 607910,
+      "sha256": "6ead115b1d6f17310a9d15a45c15982e2de17ff06750cc1f185f97e48aac6be0",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase49_aggregation_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase49_aggregation_metric_registry.json.gz",
+      "packed_bytes": 18133,
+      "packed_sha256": "8e7bded1826ecd127107207be3d45d0b7f88358014034504567af2c431d6810e"
+    },
+    {
+      "path": "docs/_ext/phase49_metric_registry.json",
+      "bytes": 1541121,
+      "sha256": "fb654c6da9d5e0514753b496cac49fc84da70862b74acc178abbf28a94b923cc",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase49_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase49_metric_registry.json.gz",
+      "packed_bytes": 62460,
+      "packed_sha256": "d74b20cf63464a38ad01513a0f40b10610fb81e8cd408731b500c749f892ab69"
+    },
+    {
+      "path": "docs/_ext/phase49_retained_metric_registry.json",
+      "bytes": 2511569,
+      "sha256": "4431b04a6130b3476f7a5f3b98d1ebf20f8ed17a8d3f9bbf6bc6d98188c4b184",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase49_retained_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase49_retained_metric_registry.json.gz",
+      "packed_bytes": 88414,
+      "packed_sha256": "4a17defa486cd39f6ae070195807f52f30745bf3d1847525080a5a7960fc276c"
+    },
+    {
+      "path": "docs/_ext/phase50_aggregation_metric_registry.json",
+      "bytes": 607910,
+      "sha256": "6ead115b1d6f17310a9d15a45c15982e2de17ff06750cc1f185f97e48aac6be0",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase50_aggregation_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase50_aggregation_metric_registry.json.gz",
+      "packed_bytes": 18133,
+      "packed_sha256": "8e7bded1826ecd127107207be3d45d0b7f88358014034504567af2c431d6810e"
+    },
+    {
+      "path": "docs/_ext/phase50_metric_registry.json",
+      "bytes": 1673992,
+      "sha256": "351682df9a63b4382884f438231c54fc34d96ff98ff2596d5a484d659523b3e8",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase50_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase50_metric_registry.json.gz",
+      "packed_bytes": 67443,
+      "packed_sha256": "24a1c2ff02c1d830f9dc8f2aa8922de7215f9df6f2952813a70a0ef53f359dde"
+    },
+    {
+      "path": "docs/_ext/phase50_retained_metric_registry.json",
+      "bytes": 2557842,
+      "sha256": "ac309ff2c0d03a88a191255932261c270ff5294557d188350ad44f3f0b95e952",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase50_retained_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase50_retained_metric_registry.json.gz",
+      "packed_bytes": 89672,
+      "packed_sha256": "0e0c2de82f97c7f8ad80cf3ad96b991e6a93e4f0beaefb27912e0e4d39be4a80"
+    },
+    {
+      "path": "docs/_ext/phase51_aggregation_metric_registry.json",
+      "bytes": 607910,
+      "sha256": "6ead115b1d6f17310a9d15a45c15982e2de17ff06750cc1f185f97e48aac6be0",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase51_aggregation_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase51_aggregation_metric_registry.json.gz",
+      "packed_bytes": 18133,
+      "packed_sha256": "8e7bded1826ecd127107207be3d45d0b7f88358014034504567af2c431d6810e"
+    },
+    {
+      "path": "docs/_ext/phase51_metric_registry.json",
+      "bytes": 1661032,
+      "sha256": "a1d1087876e143c356b6c8f12c7a0e665d930a1d74a2e0ef0eae8033260685da",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase51_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase51_metric_registry.json.gz",
+      "packed_bytes": 67873,
+      "packed_sha256": "db15407adf31704b2c0ab2c14d9611712b82306797ad478ab9ad3b13e45d7bcf"
+    },
+    {
+      "path": "docs/_ext/phase51_retained_metric_registry.json",
+      "bytes": 2533473,
+      "sha256": "b999649a1d8a2573c2b17b31d2a3dc3b833352e12a6ed5ab220ff8958dd8f249",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase51_retained_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase51_retained_metric_registry.json.gz",
+      "packed_bytes": 89963,
+      "packed_sha256": "5e239479d346ad46358f21dad9c5ecb5b112431795afca0f79afe87d4072ba17"
+    },
+    {
+      "path": "docs/_ext/phase52_aggregation_metric_registry.json",
+      "bytes": 602870,
+      "sha256": "2ad21e41499aec1ce03a56093e7fdabe17f1b54046a92bdbe9a6b7a91cf217fc",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase52_aggregation_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase52_aggregation_metric_registry.json.gz",
+      "packed_bytes": 18126,
+      "packed_sha256": "d0f997a1c11f28dbd955b1e574fb236a7ad2be4613c876b8da6c36e9a9d98031"
+    },
+    {
+      "path": "docs/_ext/phase52_metric_registry.json",
+      "bytes": 1616703,
+      "sha256": "6844cba84392d654711f0e2dc2039caa2d82fd4288ab2faaaf8ff8f651cd5cf2",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase52_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase52_metric_registry.json.gz",
+      "packed_bytes": 65712,
+      "packed_sha256": "c3fa1b71d0dc320cac4d0294c985620709dd33749b1fe103b6c9414387ef3d62"
+    },
+    {
+      "path": "docs/_ext/phase52_retained_metric_registry.json",
+      "bytes": 2536032,
+      "sha256": "f8e4648161190a2b65b0117bb4b38894e6127c9917d3b52c0c4553fe5a38542e",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase52_retained_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase52_retained_metric_registry.json.gz",
+      "packed_bytes": 89826,
+      "packed_sha256": "607741d9a25e67d6af706e061367707342c9e25be9a5ec797e6d80e9612521c3"
+    },
+    {
+      "path": "docs/_ext/phase53_aggregation_metric_registry.json",
+      "bytes": 597830,
+      "sha256": "91057d79fe6061a0ff2e7dc7f844d827c8354e7e42bf2decf39e98671a0c99e3",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase53_aggregation_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase53_aggregation_metric_registry.json.gz",
+      "packed_bytes": 18120,
+      "packed_sha256": "56fd964230f38e37f1ede0f0202941e3bec79638d4e8f626ab9e154421b722ee"
+    },
+    {
+      "path": "docs/_ext/phase53_metric_registry.json",
+      "bytes": 1623074,
+      "sha256": "bef6bb14cfa19794b62e232879dee743eff6936d10cb74cbf0804052af5218c0",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase53_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase53_metric_registry.json.gz",
+      "packed_bytes": 66850,
+      "packed_sha256": "4999996480ee109b197f31ddadb8754cf67949e282c38360c48d2ed3ac0fb715"
+    },
+    {
+      "path": "docs/_ext/phase53_retained_metric_registry.json",
+      "bytes": 2512906,
+      "sha256": "2b19ac893bb2f12ed68445a1e74602d9eee8079c1a519aaa0013cd483be05e30",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase53_retained_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase53_retained_metric_registry.json.gz",
+      "packed_bytes": 89527,
+      "packed_sha256": "546a64a2d1ae84bc84caea8eaedb6150e6a2604b6d57f0586a89edd9071a0b02"
+    },
+    {
+      "path": "docs/_ext/phase54_aggregation_metric_registry.json",
+      "bytes": 597830,
+      "sha256": "91057d79fe6061a0ff2e7dc7f844d827c8354e7e42bf2decf39e98671a0c99e3",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase54_aggregation_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase54_aggregation_metric_registry.json.gz",
+      "packed_bytes": 18120,
+      "packed_sha256": "56fd964230f38e37f1ede0f0202941e3bec79638d4e8f626ab9e154421b722ee"
+    },
+    {
+      "path": "docs/_ext/phase54_metric_registry.json",
+      "bytes": 1621999,
+      "sha256": "26062e2d5a6bc10c8a55e3a70162b33aee1b1d6327aacf01ba327673587abcdc",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase54_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase54_metric_registry.json.gz",
+      "packed_bytes": 66841,
+      "packed_sha256": "fd3edc31d643bc30537bb6fa1fa66c8648911600ba7d377dee50511fe37d09f7"
+    },
+    {
+      "path": "docs/_ext/phase54_retained_metric_registry.json",
+      "bytes": 2592684,
+      "sha256": "bca1e924ce4b7361134cbd5676de767d40fbb8471a35d26a7b030541a95f13f1",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase54_retained_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase54_retained_metric_registry.json.gz",
+      "packed_bytes": 92689,
+      "packed_sha256": "cf3f0b6f7dc40a1a1561f45b6c96c6a8f292de58278d062fdc231b9a06dabdb7"
+    },
+    {
+      "path": "docs/_ext/phase55_aggregation_metric_registry.json",
+      "bytes": 628070,
+      "sha256": "be565cd8618b246b2b674b7be06194bf583d599ac2554a9d63df69be541fa82a",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase55_aggregation_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase55_aggregation_metric_registry.json.gz",
+      "packed_bytes": 18285,
+      "packed_sha256": "aa4c7ded10514b2377b9d68c3027d662f8861d17ae0f13c5fd04855f9c0070ff"
+    },
+    {
+      "path": "docs/_ext/phase55_metric_registry.json",
+      "bytes": 1705248,
+      "sha256": "657fc4cd255c4b0613ad625e1228039e1fec5f516fc9c5b1324c30dadfb55481",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase55_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase55_metric_registry.json.gz",
+      "packed_bytes": 68211,
+      "packed_sha256": "a2f8b3c19898362593e8ac8626defd41e25e464a54e8d90c4bedab5d2f48f943"
+    },
+    {
+      "path": "docs/_ext/phase55_pretraining_metric_registry.json",
+      "bytes": 28634,
+      "sha256": "77065e19a18136cbdf6bd4c6ae79cc4cdaeb46b0495b8e6cf93719f8d5fbd070",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase55_pretraining_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase55_pretraining_metric_registry.json.gz",
+      "packed_bytes": 1807,
+      "packed_sha256": "fdc9b2b26386849960f9a304ddc00d32b8e9c958342a266b8142e9bcd7898d86"
+    },
+    {
+      "path": "docs/_ext/phase55_retained_metric_registry.json",
+      "bytes": 2769846,
+      "sha256": "18ee8c7a8c2c81c56a74261f79db8d77e5e4e334e1b75d5dfd8b3cbfead23e82",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase55_retained_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase55_retained_metric_registry.json.gz",
+      "packed_bytes": 93208,
+      "packed_sha256": "92d1cadd561be2ce98f4f2ee8f2fd8ce86e6ad96a36ea093a3aa8b483339d031"
+    },
+    {
+      "path": "docs/_ext/phase56_aggregation_metric_registry.json",
+      "bytes": 319076,
+      "sha256": "38ea59f33bac97b99eab98a9920cf363a974e9d29b26778838e3f39a3764a028",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase56_aggregation_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase56_aggregation_metric_registry.json.gz",
+      "packed_bytes": 9329,
+      "packed_sha256": "9cc17acaef34ea9411ef13524bfe3c18658c020bd1cc3ade47639ce121cf1943"
+    },
+    {
+      "path": "docs/_ext/phase56_metric_registry.json",
+      "bytes": 941239,
+      "sha256": "7d4dce726f8db63b6a5fea2dd5df997c2a002476df434122ffbce1cd9bde96e3",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase56_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase56_metric_registry.json.gz",
+      "packed_bytes": 37550,
+      "packed_sha256": "1936a274c6ad19aa7fed718d323ecde1c84941e08c3a90b06377945da425a5c3"
+    },
+    {
+      "path": "docs/_ext/phase56_pretraining_metric_registry.json",
+      "bytes": 21800,
+      "sha256": "55c10642128bc7b50029ba8ad9f6709661e61bdb417bdf7f3bbb96bee99dbead",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase56_pretraining_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase56_pretraining_metric_registry.json.gz",
+      "packed_bytes": 1519,
+      "packed_sha256": "52666728467ec254b528c37578f0b807c335a1b7cc88bfdd67a917bbadb96e24"
+    },
+    {
+      "path": "docs/_ext/phase56_retained_metric_registry.json",
+      "bytes": 1408864,
+      "sha256": "090fc020a8c4768524c94b44f0ab58ce9d5d936e3d64cb6d69d6503956a9e25e",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase56_retained_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase56_retained_metric_registry.json.gz",
+      "packed_bytes": 47663,
+      "packed_sha256": "a29e2873f54e06c68a171a95dfcadf420a86b5fc427dea141f1017f8fe799b09"
+    },
+    {
+      "path": "docs/_ext/phase57_aggregation_metric_registry.json",
+      "bytes": 635630,
+      "sha256": "b0a2bf6120dc345fe6563692d8e7e280f252533ed81fd0869fe4c92548f68557",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase57_aggregation_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase57_aggregation_metric_registry.json.gz",
+      "packed_bytes": 18303,
+      "packed_sha256": "da9b02dcad4a3a9f62b246b44ef673950c9d64010f2a5b1c7d524a70adbe43cf"
+    },
+    {
+      "path": "docs/_ext/phase57_metric_registry.json",
+      "bytes": 1713166,
+      "sha256": "5d1cd25abb7e569df9438974c4bc9246947970536c9c613eb17751993c65efac",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase57_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase57_metric_registry.json.gz",
+      "packed_bytes": 68413,
+      "packed_sha256": "c404ce107e2d0c76f51cff9182c774ed46e38c1d07791e079196267126794c0c"
+    },
+    {
+      "path": "docs/_ext/phase57_pretraining_metric_registry.json",
+      "bytes": 28600,
+      "sha256": "550555db37da2c5009bccce863a2523436ef76b9951e9579154fb996dc39441b",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase57_pretraining_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase57_pretraining_metric_registry.json.gz",
+      "packed_bytes": 1792,
+      "packed_sha256": "db3cd06087001523d9432867e6b1c830f1224acb09b636adb8865bd03e1ce501"
+    },
+    {
+      "path": "docs/_ext/phase57_retained_metric_registry.json",
+      "bytes": 2701490,
+      "sha256": "baa17949342e31a0b66617b438a01ee7302bd94bee6f50cb83559d4eea5e2c31",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase57_retained_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase57_retained_metric_registry.json.gz",
+      "packed_bytes": 90855,
+      "packed_sha256": "3153c2f3f14c971648ef246fe55b0f0e643ea034670d8bd1ac76ef9aaf0b88d1"
+    },
+    {
+      "path": "docs/_ext/phase58_aggregation_metric_registry.json",
+      "bytes": 316556,
+      "sha256": "b2e8d13365e48ec60921499b9d746b219c8aba36d736effce6b987d50568f49a",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase58_aggregation_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase58_aggregation_metric_registry.json.gz",
+      "packed_bytes": 9330,
+      "packed_sha256": "d22dfc5c454e2cbc5abf68744abb9031bbb6ce50e17ce2d58431f3426095131f"
+    },
+    {
+      "path": "docs/_ext/phase58_metric_registry.json",
+      "bytes": 867649,
+      "sha256": "3c7f01ddb3401f62cdad569e0bea5cb23233e10547310f8ee28e938825404dd7",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase58_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase58_metric_registry.json.gz",
+      "packed_bytes": 34147,
+      "packed_sha256": "436b321c11ff20b3838761741d9b5b70d4f07714df9ce9528c31f24e759e54e7"
+    },
+    {
+      "path": "docs/_ext/phase58_pretraining_metric_registry.json",
+      "bytes": 21989,
+      "sha256": "0d17ccfac9ef796168dd52c2cfba0d3d14aba8f727b556824fdd7bf0eeea17a6",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase58_pretraining_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase58_pretraining_metric_registry.json.gz",
+      "packed_bytes": 1519,
+      "packed_sha256": "4c6870c85042f0eb963784a3a85603e1f8bdfb5a9aabcf777c0934f48da0220a"
+    },
+    {
+      "path": "docs/_ext/phase58_retained_metric_registry.json",
+      "bytes": 1334420,
+      "sha256": "b7bcb0bad48d7ca815d3580a8a655eb4e5458ca255d8df4247989f10bde08da9",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase58_retained_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase58_retained_metric_registry.json.gz",
+      "packed_bytes": 45566,
+      "packed_sha256": "fb1fe33364f961b5099b0fee282ebf52933b41fd589cf4f5eaa75fad245ff553"
+    },
+    {
+      "path": "docs/_ext/phase59_aggregation_metric_registry.json",
+      "bytes": 635630,
+      "sha256": "b0a2bf6120dc345fe6563692d8e7e280f252533ed81fd0869fe4c92548f68557",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase59_aggregation_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase59_aggregation_metric_registry.json.gz",
+      "packed_bytes": 18303,
+      "packed_sha256": "da9b02dcad4a3a9f62b246b44ef673950c9d64010f2a5b1c7d524a70adbe43cf"
+    },
+    {
+      "path": "docs/_ext/phase59_metric_registry.json",
+      "bytes": 1659266,
+      "sha256": "16c9eaeb88e1f5d3ed5114253675786b423a249c06373f81b31554bfcada19e7",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase59_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase59_metric_registry.json.gz",
+      "packed_bytes": 63939,
+      "packed_sha256": "33ab322a2c844c4ea8922170b6d311440d939e59a88babc46eab62e0ae694be7"
+    },
+    {
+      "path": "docs/_ext/phase59_pretraining_metric_registry.json",
+      "bytes": 28600,
+      "sha256": "550555db37da2c5009bccce863a2523436ef76b9951e9579154fb996dc39441b",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase59_pretraining_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase59_pretraining_metric_registry.json.gz",
+      "packed_bytes": 1792,
+      "packed_sha256": "db3cd06087001523d9432867e6b1c830f1224acb09b636adb8865bd03e1ce501"
+    },
+    {
+      "path": "docs/_ext/phase59_retained_metric_registry.json",
+      "bytes": 2482324,
+      "sha256": "6181bbae4cbd300645679eac614bcbaf1769a1a944f9b8b3bfe44fd773e856df",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase59_retained_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase59_retained_metric_registry.json.gz",
+      "packed_bytes": 82036,
+      "packed_sha256": "9ef50cdfe9a8913ac1bb9734e95bd9a251ff8e87d9ee13df1172e95ea566c37c"
+    },
+    {
+      "path": "docs/_ext/phase60_metric_registry.json",
+      "bytes": 119344,
+      "sha256": "b261de317f98885ed01042f643c8d065f89d606057c06376c334f21f456d023a",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase60_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase60_metric_registry.json.gz",
+      "packed_bytes": 6850,
+      "packed_sha256": "d68f87e6560c9718410f23c4f5f97500d4c3a6d16f37d148f15eaf6f01fd4842"
+    },
+    {
+      "path": "docs/_ext/phase61_aggregation_metric_registry.json",
+      "bytes": 635630,
+      "sha256": "b0a2bf6120dc345fe6563692d8e7e280f252533ed81fd0869fe4c92548f68557",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase61_aggregation_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase61_aggregation_metric_registry.json.gz",
+      "packed_bytes": 18303,
+      "packed_sha256": "da9b02dcad4a3a9f62b246b44ef673950c9d64010f2a5b1c7d524a70adbe43cf"
+    },
+    {
+      "path": "docs/_ext/phase61_metric_registry.json",
+      "bytes": 1690799,
+      "sha256": "3298ecff9619b29ab59459f2d7c549f8a93fb5220f81cd91ffceafcbe36e7dfb",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase61_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase61_metric_registry.json.gz",
+      "packed_bytes": 67177,
+      "packed_sha256": "ec75d897a7f7d0fb460b8a86edcbe893df313e7cc4f011916c4108371c4c9fcf"
+    },
+    {
+      "path": "docs/_ext/phase61_pretraining_metric_registry.json",
+      "bytes": 28600,
+      "sha256": "550555db37da2c5009bccce863a2523436ef76b9951e9579154fb996dc39441b",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase61_pretraining_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase61_pretraining_metric_registry.json.gz",
+      "packed_bytes": 1792,
+      "packed_sha256": "db3cd06087001523d9432867e6b1c830f1224acb09b636adb8865bd03e1ce501"
+    },
+    {
+      "path": "docs/_ext/phase61_retained_metric_registry.json",
+      "bytes": 2666839,
+      "sha256": "591fab20e7424653a541e82d821f8c30dc3fc04f690d82e92a677d61a54e966f",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/docs/_ext/phase61_retained_metric_registry.json",
+      "kind": "registry",
+      "packed_path": "docs/_ext/phase61_retained_metric_registry.json.gz",
+      "packed_bytes": 89528,
+      "packed_sha256": "b534c3d940b555abdce3bf0c17f6e6fd000b21a028c462f0e933c60b03a6cf20"
+    },
+    {
+      "path": "notebooks/production_10m_ri_all_exp/figures/category_coverage.png",
+      "bytes": 54395,
+      "sha256": "4ae16371395599138e6be323ae53d8e78cd2035bead99ff653a5e2c6e48bc8dd",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/notebooks/production_10m_ri_all_exp/figures/category_coverage.png",
+      "kind": "generated_report"
+    },
+    {
+      "path": "notebooks/production_10m_ri_all_exp/figures/extreme_topology_trees.png",
+      "bytes": 989491,
+      "sha256": "4b3c309d58c7ef3ff0a393001aa4cd6a0a58958de538863c751a3c0b0060e9bd",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/notebooks/production_10m_ri_all_exp/figures/extreme_topology_trees.png",
+      "kind": "generated_report"
+    },
+    {
+      "path": "notebooks/production_10m_ri_all_exp/figures/klm_by_category.png",
+      "bytes": 58156,
+      "sha256": "3216fdb9391d43eb09cfc2ff9dc477d9dadae99b1987bb83e30b8e3c3dec57a8",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/notebooks/production_10m_ri_all_exp/figures/klm_by_category.png",
+      "kind": "generated_report"
+    },
+    {
+      "path": "notebooks/production_10m_ri_all_exp/figures/manifest_categories.png",
+      "bytes": 18681,
+      "sha256": "38772dbe94f9801f8ce89f4cfff49b9fd2c0628279b9f1ee965b77abb2bc13d6",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/notebooks/production_10m_ri_all_exp/figures/manifest_categories.png",
+      "kind": "generated_report"
+    },
+    {
+      "path": "notebooks/production_10m_ri_all_exp/figures/representative_category_trees.png",
+      "bytes": 959244,
+      "sha256": "83631b90fd7f554e204b6ddbd58c140b46948bac0d06e4a957f705d8cde1f6f7",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/notebooks/production_10m_ri_all_exp/figures/representative_category_trees.png",
+      "kind": "generated_report"
+    },
+    {
+      "path": "notebooks/production_10m_ri_all_exp/figures/throughput_memory.png",
+      "bytes": 145806,
+      "sha256": "ec2bd78a248fb1914da5737c315fa19a89134baafc2df6d90ba5e4ab171a34fb",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/notebooks/production_10m_ri_all_exp/figures/throughput_memory.png",
+      "kind": "generated_report"
+    },
+    {
+      "path": "notebooks/production_10m_ri_all_exp/figures/topology_leaf_modes.png",
+      "bytes": 114917,
+      "sha256": "40c2fedeca39dba5aa32017b64f15892545354a97b0e91d7f7122cd9f1fe242b",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/notebooks/production_10m_ri_all_exp/figures/topology_leaf_modes.png",
+      "kind": "generated_report"
+    },
+    {
+      "path": "notebooks/production_10m_ri_all_exp/inspect_production_manifest.executed.ipynb",
+      "bytes": 37125,
+      "sha256": "ba01406b81d1eb6c865b06c4ca019b055bd44ec63a5b144457853837a77201c3",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/notebooks/production_10m_ri_all_exp/inspect_production_manifest.executed.ipynb",
+      "kind": "generated_report"
+    },
+    {
+      "path": "notebooks/production_10m_ri_all_exp/reports/artifact.json",
+      "bytes": 733650,
+      "sha256": "d46e64538f5fe03c5198af2c61cc23b643f1acb439d973bb01c3d536208893e6",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/notebooks/production_10m_ri_all_exp/reports/artifact.json",
+      "kind": "generated_report"
+    },
+    {
+      "path": "notebooks/production_10m_ri_all_exp/reports/report_data.sqlite",
+      "bytes": 176128,
+      "sha256": "fe4f366058da9e3dd058b368e336b5bcf8bc466a6d04626bac5205db927d9948",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/notebooks/production_10m_ri_all_exp/reports/report_data.sqlite",
+      "kind": "generated_report"
+    },
+    {
+      "path": "notebooks/production_10m_ri_all_exp/reports/shard_metrics.csv",
+      "bytes": 236248,
+      "sha256": "41efeafae54bef9f9515081d81b0be39bfcd6cbedae0a09fe0e75a818dacec70",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/notebooks/production_10m_ri_all_exp/reports/shard_metrics.csv",
+      "kind": "generated_report"
+    },
+    {
+      "path": "notebooks/production_10m_ri_all_exp/reports/validation_report.html",
+      "bytes": 615275,
+      "sha256": "f20650bfffaa629d10e0eb4d28f97f9743e1220fca4c4311ab4ddc3dc2a67687",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/notebooks/production_10m_ri_all_exp/reports/validation_report.html",
+      "kind": "generated_report"
+    },
+    {
+      "path": "notebooks/production_10m_ri_all_exp/validate_mdst_10m_campaign.executed.ipynb",
+      "bytes": 36968,
+      "sha256": "15278421fd2d92e615929099651b3cc91fbc829afbdf81ee994e83a6745b9390",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/notebooks/production_10m_ri_all_exp/validate_mdst_10m_campaign.executed.ipynb",
+      "kind": "generated_report"
+    },
+    {
+      "path": "reports/pretraining_run_15749624_20260815/artifact.json",
+      "bytes": 679575,
+      "sha256": "391f6463a566db05d3d0587e52f108121909b65d3a7671741d9828df1bb19a59",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/reports/pretraining_run_15749624_20260815/artifact.json",
+      "kind": "generated_report"
+    },
+    {
+      "path": "reports/pretraining_run_15749624_20260815/evidence.json",
+      "bytes": 3159111,
+      "sha256": "e0c5d116f26a07ecfd1cb5277c89178605b09991b113d90612b8567b96f5ac76",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/reports/pretraining_run_15749624_20260815/evidence.json",
+      "kind": "generated_report"
+    },
+    {
+      "path": "reports/pretraining_run_15749624_20260815/report.html",
+      "bytes": 738671,
+      "sha256": "99ad5077a71762b6b25d9e4d08ce7667d9cf19f843c238355e25d165e5c22b22",
+      "data_path": "repository_archive/db1ff41467aba5080b04bd89ae532fbdbd8788c2/reports/pretraining_run_15749624_20260815/report.html",
+      "kind": "generated_report"
+    }
+  ]
+}

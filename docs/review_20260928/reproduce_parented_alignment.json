@@ -1,0 +1,34 @@
+{
+  "truth_targets": 1,
+  "reported_representable": 1,
+  "training_target_mask": [
+    [
+      true,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  ],
+  "training_pointer_valid": [
+    [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  ],
+  "inference_pointer_valid": [
+    [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true
+    ]
+  ]
+}

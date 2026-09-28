@@ -1,5 +1,25 @@
 # Current repository audit status
 
+## Scientific design review — 2026-09-28
+
+The [cross-pipeline review](../scientific_review_20260928.md) supports holding
+70,000 training events and preserving the immutable Phase62 replication, but
+prioritizes correctness and diagnostic repair before another loss-weight study.
+A bounded CPU reproducer confirms that predicted-context target alignment can
+select already-parented daughters that strict inference correctly forbids.
+Pretraining channel retrieval also mixes repeated views of the same branch,
+and parent accuracy averages unsupported FSP-view zeros. Native radial losses
+and gradients motivate a saturation diagnostic; saturation is not yet directly
+confirmed. Current per-level checkpoints cannot use full v1 ONNX export, and
+basf2 search differs from offline search.
+
+These findings do not establish their real-data incidence or a new physics
+improvement. Scientific source/checkpoints and existing jobs are unchanged;
+no sealed test, new training or live scheduler query was performed. Detailed
+loss inventories, historical study limitations, proposed controlled experiments,
+artifact storage migration and online-operation procedure accompany the review.
+Historical verification records below retain their original scope.
+
 ## Phase61 review — 2026-09-27
 
 Both arms completed 2,188 refinement and 4,376 reconstruction steps, with all

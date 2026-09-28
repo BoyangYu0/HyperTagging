@@ -4,6 +4,11 @@ This package is the verified forensic report for the H100-NVL pretraining job
 `15749624` at repository commit
 `1ae7d74f9d82822b55c4ff8923f1c07981b953e4`.
 
+The generated `report.html`, `artifact.json` and `evidence.json` were moved
+to the checksum-verified data archive on 2026-09-28. Restore them beside the
+retained builders using the [storage guide](../../docs/repository_storage.md).
+The historical findings below refer to the original, unchanged bytes.
+
 The Slurm job ended `FAILED` after 3,342 of 17,500 planned optimizer steps when
 the next clipped gradient norm became non-finite. All 14 saved checkpoints are
 CPU-loadable and contain finite model and optimizer tensors, but the run never

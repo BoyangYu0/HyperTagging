@@ -1,6 +1,6 @@
 # 10M RI mDST production evidence
 
-This directory is the compact, reviewable Git bundle for the completed 10M
+This directory retains source and summary evidence for the completed 10M
 run-independent mDST production. The dataset itself remains outside Git at:
 
 ```text
@@ -14,12 +14,11 @@ failed publications.
 
 ## Review entry points
 
-- [`validate_mdst_10m_campaign.executed.ipynb`](validate_mdst_10m_campaign.executed.ipynb)
-  is the executed numerical and visual validation notebook.
-- [`inspect_production_manifest.executed.ipynb`](inspect_production_manifest.executed.ipynb)
-  is the executed manifest and publication-contract audit.
-- [`reports/validation_report.html`](reports/validation_report.html) is the
-  standalone validation report.
+- `validate_mdst_10m_campaign.executed.ipynb` is the archived executed
+  numerical and visual validation notebook.
+- `inspect_production_manifest.executed.ipynb` is the archived executed
+  manifest and publication-contract audit.
+- `reports/validation_report.html` is the archived standalone report.
 - [`reports/DATASET_CARD.md`](reports/DATASET_CARD.md) summarizes the immutable
   dataset contract and downstream entry points.
 - [`reports/final_validation.json`](reports/final_validation.json) contains the
@@ -27,12 +26,12 @@ failed publications.
 - [`reports/campaign_metadata.json`](reports/campaign_metadata.json) records
   source, Condor, schema, feature-contract, and artifact provenance.
 
-The unexecuted notebook files are retained beside the executed copies so the
-analysis can be reviewed or rerun. The `figures/` directory contains the
-publication plots and representative/extreme event-tree visualizations. The
-`reports/` directory includes the source-backed report artifact, SQLite source,
-queries, delivery receipt, shard metrics, readiness record, and validation
-method.
+The unexecuted notebooks, queries, delivery receipt, readiness record and
+validation method remain in Git. Executed copies, figures, report HTML,
+report artifact, SQLite source and shard CSV moved to the checksum-verified
+data archive on 2026-09-28. Follow the
+[storage guide](../../docs/repository_storage.md) to restore their original
+relative paths before opening those outputs. No historical values changed.
 
 ## Re-execution
 

@@ -1,0 +1,5070 @@
+{
+  "review_date": "2026-09-28",
+  "source_revision": "db1ff41467aba5080b04bd89ae532fbdbd8788c2",
+  "repository": "/home/b/Boyang.Yu/HyperTagging_uni/HyperTagging_phase61_review_20260927",
+  "scope": "Historical family inventory and study evidence through Phase61; Phase62 submitted snapshot only. No training jobs, test-role access, or fresh physics evaluation performed. Not every raw artifact byte was re-audited.",
+  "tracked_evidence": [
+    {
+      "path": "artifacts/codex/ht_positive_weight_calibration_comparison_20260816.json",
+      "bytes": 18910,
+      "sha256": "77a81c732f793ba3b04a726bdb1951d570eb89b1381b3a3af61b5a7e7c385ece"
+    },
+    {
+      "path": "artifacts/codex/ht_positive_weight_calibration_preregistration_20260816.json",
+      "bytes": 7172,
+      "sha256": "1f99b05afd193ca7d20361b596ab5ff831da7ae5ca35058913bf07b5e3179801",
+      "arm_roles": [
+        {},
+        {}
+      ]
+    },
+    {
+      "path": "artifacts/codex/ht_positive_weight_calibration_preregistration_midpoint_20260816.json",
+      "bytes": 6797,
+      "sha256": "de40afaa31c11ea55cbab46e3e21134b42b8dc89fbef1edcc7a7215ddab34fff",
+      "arm_roles": [
+        {}
+      ]
+    },
+    {
+      "path": "artifacts/codex/ht_positive_weight_calibration_report_artifact_20260816.json",
+      "bytes": 15210,
+      "sha256": "da51a391b5f00ff216ff1a9da5166df6ee109962216d887b320fb5c7b34a113e"
+    },
+    {
+      "path": "artifacts/codex/ht_positive_weight_calibration_report_delivery_receipt_20260816.json",
+      "bytes": 1299,
+      "sha256": "039161fc91f23f85f85655a17f696e619cf07a76b2a83f1f9091971410e2b8b8"
+    },
+    {
+      "path": "artifacts/codex/ht_positive_weight_midpoint_audit_20260817.md",
+      "bytes": 2515,
+      "sha256": "810ddd83f28ab84a069c51f851c5e8aeab41e2a6f872ea9e9e8242cc79a0d0a5"
+    },
+    {
+      "path": "artifacts/codex/ht_positive_weight_midpoint_readiness_20260817.json",
+      "bytes": 4190,
+      "sha256": "c301ddb9a5b57503c08920999e557e03843da45da6952bacc66d37515773aa83"
+    },
+    {
+      "path": "artifacts/codex/ht_pretraining_1m_batch_efficiency_parallel_study_authorization_20260823.json",
+      "bytes": 12479,
+      "sha256": "e5f54854e0d34d8b46c6676f0ee3d19d0f7b060706788555edbd27f33fcbb966"
+    },
+    {
+      "path": "artifacts/codex/ht_pretraining_1m_batch_efficiency_parallel_study_authorization_20260823.md",
+      "bytes": 5035,
+      "sha256": "d43c98922e2a69aaa02ff3f3126a4816eac005cd296559983648529c2ee3fe85"
+    },
+    {
+      "path": "artifacts/codex/ht_pretraining_1m_batch_efficiency_readiness_20260823.json",
+      "bytes": 8955,
+      "sha256": "f2d39e7600cdac262fb252817a45f0c187e943296894733d52e907ab82622c22"
+    },
+    {
+      "path": "artifacts/codex/ht_pretraining_1m_batch_efficiency_readiness_20260823.md",
+      "bytes": 7618,
+      "sha256": "3e12b7dc2779092baca7b4e9d56348144e6a6423df7246909d7c77a71832c5e9"
+    },
+    {
+      "path": "artifacts/codex/ht_pretraining_1m_phase3_batch_efficiency_selection_20260823.json",
+      "bytes": 1954,
+      "sha256": "5f3c079fba960c7878c48855c9351cc2d9fc8200c6583f225a8d50696f0d0776",
+      "phase": 3
+    },
+    {
+      "path": "artifacts/codex/ht_pretraining_1m_phase3_execution_authorization_20260823.json",
+      "bytes": 9790,
+      "sha256": "1af20420655a95aa7ce0a3d1ad4a6e357c7fe45510c3f8bafaf80ad3fdbb7991",
+      "phase": 3
+    },
+    {
+      "path": "artifacts/codex/ht_pretraining_1m_phase3_execution_authorization_20260823.md",
+      "bytes": 6648,
+      "sha256": "ff3325fca433000c9ff146f8063297226e48ccc0b956733dae99a3c208e154ff",
+      "phase": 3
+    },
+    {
+      "path": "artifacts/codex/ht_pretraining_1m_phase3_recovery_20260823.json",
+      "bytes": 5121,
+      "sha256": "90e119c1fb121d9cc985d47a6914ac82a67ffc7ee85e6a28a750652d2caf3e75",
+      "phase": 3
+    },
+    {
+      "path": "artifacts/codex/ht_pretraining_1m_phase3_recovery_20260823.md",
+      "bytes": 8364,
+      "sha256": "a9639523e775b59a691abc29b1c0fae99be4f8f452c270f80a9a4decafa3bf7a",
+      "phase": 3
+    },
+    {
+      "path": "artifacts/codex/ht_pretraining_1m_provenance_blocker_20260821.json",
+      "bytes": 5504,
+      "sha256": "98c3424099354352410399b830d98fe732f1f2e5553d60c0ed1f49403c980fb9"
+    },
+    {
+      "path": "artifacts/codex/ht_pretraining_1m_provenance_blocker_20260821.md",
+      "bytes": 3196,
+      "sha256": "0241bdfbff88b1b61f7d86767a64c93ddd13b4be71ab072dc93212039b7eaf3e"
+    },
+    {
+      "path": "artifacts/codex/ht_reconstruction_fullscale_readiness_20260817.md",
+      "bytes": 4008,
+      "sha256": "9d62e61710591b9909a8c5e7471ec4a4d35f23908d938b3881a769f2fcb92141"
+    },
+    {
+      "path": "artifacts/codex/ht_reconstruction_fullscale_readiness_machine_20260817.json",
+      "bytes": 2599,
+      "sha256": "ce3f5abf9b8a82c7b80acead08bc341ea5ecb9c40d0d552dd3580f92689a26aa"
+    },
+    {
+      "path": "artifacts/codex/ht_transfer_eval_shape_20260816.md",
+      "bytes": 5883,
+      "sha256": "fa4acb52075d1ef31deb16e7f815b5598e3f3c472655730ce719aa74711069a9"
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase34_comparison_no_promotion_20260904.json",
+      "bytes": 4370,
+      "sha256": "25b8855368ffe1084ffeaf8a0ecf1f91d582ccaf0ba7ff5d1dad0046071a7501",
+      "phase": 34,
+      "status": "terminal_comparison_complete",
+      "arm_roles": [
+        {
+          "role": "resume_source_baseline"
+        },
+        {
+          "role": "parent_ranking_winner"
+        },
+        {
+          "role": "configured_objective_winner"
+        }
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase40r1_beam_both_20260909.json",
+      "bytes": 1539,
+      "sha256": "a06ce361c1d56b115173ad50ab57859e2458c1b81ab5cfb033b1b4069da3e4eb",
+      "phase": 40,
+      "sealed_test_accessed": false
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase40r1_closeout_20260909.json",
+      "bytes": 8657,
+      "sha256": "5e8ba75290ab39742f4c4e5356ebbdbf41c7159696674537197e8a651093e453",
+      "phase": 40,
+      "status": "COMPLETED",
+      "status_date": "2026-09-09",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "sealed_test_accessed": false,
+      "promotion_authorized": false
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase40r1_threshold_diagnostic_20260909.json",
+      "bytes": 2382,
+      "sha256": "d5aed609dfdfa9e1a7d36782ce749e6ea2280cb8ba52e8b0c9b11f0f1bec352c",
+      "phase": 40,
+      "status_date": "2026-09-09",
+      "sealed_test_accessed": false,
+      "promotion_authorized": false
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase41_closeout_20260909.json",
+      "bytes": 3042740,
+      "sha256": "de68dbc44cc9c7c60de32d4e29c98903ec38d22bbc301f110d896b42495e463f",
+      "phase": 41,
+      "status": "COMPLETED",
+      "status_date": "2026-09-09",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "sealed_test_accessed": false,
+      "promotion_authorized": false,
+      "arm_roles": [
+        "level1_pointer24",
+        "pointer32_control"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase42_closeout_20260910.json",
+      "bytes": 2293315,
+      "sha256": "b825251b3c1eeaa4dd3e343c0cb498e031276c7ef6ee0595af8bf8850cf183b4",
+      "phase": 42,
+      "status": "COMPLETED",
+      "status_date": "2026-09-10",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "sealed_test_accessed": false,
+      "promotion_authorized": false,
+      "arm_roles": [
+        "pretrain108128",
+        "pretrain81096_control"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase42_submission_20260909.json",
+      "bytes": 264,
+      "sha256": "fbb2cd623473539e9a0196aa6dd4b668c453ec8fcac5edc5c4050ea246430372",
+      "phase": 42,
+      "status": "SUBMITTED",
+      "status_date": "2026-09-09",
+      "sealed_test_accessed": false
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase43_closeout_20260911.json",
+      "bytes": 2343996,
+      "sha256": "746cf206e473e36632aa7c90ffc660ea7fd4b7e97b4102f544c1b2fe4b62afe7",
+      "phase": 43,
+      "status": "COMPLETED",
+      "status_date": "2026-09-11",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "sealed_test_accessed": false,
+      "promotion_authorized": false,
+      "arm_roles": [
+        "early_adaptation",
+        "late_adaptation_control"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase43_submission_20260910.json",
+      "bytes": 264,
+      "sha256": "8bd39c4e3d8650d7b603cbd2e801e33b5ad1d37a8706f93e166ce850aafbf352",
+      "phase": 43,
+      "status": "SUBMITTED",
+      "status_date": "2026-09-10",
+      "sealed_test_accessed": false
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase44_closeout_20260911.json",
+      "bytes": 2203157,
+      "sha256": "379f3078f59b8278aaba37b85975cce69416a072517dbc328debcebc8f090041",
+      "phase": 44,
+      "status": "RECOVERED_DIAGNOSTIC",
+      "status_date": "2026-09-11",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "sealed_test_accessed": false,
+      "promotion_authorized": false,
+      "original_job_status": "FAILED",
+      "arm_roles": [
+        "early_adaptation",
+        "late_adaptation_control"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase44_retained_metrics_20260911.json",
+      "bytes": 3295675,
+      "sha256": "2bfb5e84c106e29d6796b81c4dbfe31cfb53542110f914960f82fd3b10278b11",
+      "phase": 44,
+      "status": "COMPLETE",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "sealed_test_accessed": false,
+      "original_job_status": "FAILED",
+      "arm_roles": [
+        "early_adaptation",
+        "late_adaptation_control"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase44_submission_20260911.json",
+      "bytes": 264,
+      "sha256": "20b3198c4071aceee93ebd58373a7d98466aaaf37dbff9bda680c917201901e3",
+      "phase": 44,
+      "status": "SUBMITTED",
+      "status_date": "2026-09-11",
+      "sealed_test_accessed": false
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase45_closeout_20260912.json",
+      "bytes": 2255748,
+      "sha256": "427b0d20b69577d208f7c2a08a35a907ca579c3049f64e0bdc684b427e17a517",
+      "phase": 45,
+      "status": "COMPLETED",
+      "status_date": "2026-09-12",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "sealed_test_accessed": false,
+      "promotion_authorized": false,
+      "arm_roles": [
+        "encoder_lr005_control",
+        "encoder_lr010"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase45_retained_metrics_20260912.json",
+      "bytes": 3162832,
+      "sha256": "f018588c6211ba2dc53e6d33eb9397c3b17eeb26a477b1c89249e4859a09b0df",
+      "phase": 45,
+      "status": "COMPLETE",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "sealed_test_accessed": false,
+      "original_job_status": "COMPLETED",
+      "arm_roles": [
+        "encoder_lr005_control",
+        "encoder_lr010"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase45_submission_20260911.json",
+      "bytes": 264,
+      "sha256": "da4538a365a1959709975526582fb156dde0e9f5bd0840c972116d29c7f280b0",
+      "phase": 45,
+      "status": "SUBMITTED",
+      "status_date": "2026-09-11",
+      "sealed_test_accessed": false
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase46_closeout_20260913.json",
+      "bytes": 2265823,
+      "sha256": "ca222ddf334bcac509075d09478ad226bd811940bd6e49805fc293a1327b2827",
+      "phase": 46,
+      "status": "COMPLETED",
+      "status_date": "2026-09-13",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "sealed_test_accessed": false,
+      "promotion_authorized": false,
+      "arm_roles": [
+        "frozen_encoder",
+        "late_adaptation_control"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase46_retained_metrics_20260913.json",
+      "bytes": 3246087,
+      "sha256": "f01d97091944414710bfdd522c8dc82927338146e302d7119d82fd8860bee6c5",
+      "phase": 46,
+      "status": "COMPLETE",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "sealed_test_accessed": false,
+      "original_job_status": "COMPLETED",
+      "arm_roles": [
+        "frozen_encoder",
+        "late_adaptation_control"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase46_submission_20260912.json",
+      "bytes": 442,
+      "sha256": "a5c0c0bc966ed24523def99f6852d703c1b501fa5f31b6d067345ff125217643",
+      "phase": 46,
+      "status": "SUBMITTED",
+      "status_date": "2026-09-12",
+      "sealed_test_accessed": false,
+      "promotion_authorized": false
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase47_aggregation_20260914.json",
+      "bytes": 793907,
+      "sha256": "24c7255b9ec731331ba4d7a3bf7ee9094b20dc4d0a2154d755c6bd9323e32a2c",
+      "phase": 47,
+      "status": "COMPLETE"
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase47_closeout_20260914.json",
+      "bytes": 2276274,
+      "sha256": "a4ccaaecc6b702768c235679707d0702f9e7d005d65c89e692ddf2d60cf1f22b",
+      "phase": 47,
+      "status": "COMPLETED",
+      "status_date": "2026-09-14",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "sealed_test_accessed": false,
+      "promotion_authorized": false,
+      "arm_roles": [
+        "frozen_encoder",
+        "late_adaptation_control"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase47_retained_metrics_20260914.json",
+      "bytes": 3315485,
+      "sha256": "7a4e7aaba586b114a85bc316a6dc9a11793a9354116dd939b20c7c016d1a480e",
+      "phase": 47,
+      "status": "COMPLETE",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "sealed_test_accessed": false,
+      "original_job_status": "COMPLETED",
+      "arm_roles": [
+        "frozen_encoder",
+        "late_adaptation_control"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase47_submission_20260913.json",
+      "bytes": 475,
+      "sha256": "f2980f552802aaf4f77b2d2d84f4ccf4fb85d3c0b0ea66f15be84c03fe3950d4",
+      "phase": 47,
+      "status": "SUBMITTED",
+      "status_date": "2026-09-13",
+      "sealed_test_accessed": false,
+      "promotion_authorized": false
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase48_aggregation_20260914.json",
+      "bytes": 805976,
+      "sha256": "d770507ab13395b95de377b4d6a4af8bb04cf3b4217edfd697eba377348e7733",
+      "phase": 48,
+      "status": "COMPLETE"
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase48_closeout_20260914.json",
+      "bytes": 2305855,
+      "sha256": "89b0b39a3e04baae044b616168b576b31becb1c244684e458699f518167d8a46",
+      "phase": 48,
+      "status": "COMPLETED",
+      "status_date": "2026-09-14",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "sealed_test_accessed": false,
+      "promotion_authorized": false,
+      "arm_roles": [
+        "late_adaptation_control",
+        "late_pid_adaptation"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase48_retained_metrics_20260914.json",
+      "bytes": 3270621,
+      "sha256": "874c97814ffdb3b2b75fdd63312ce22f0217add711288db8990882ebb389645c",
+      "phase": 48,
+      "status": "COMPLETE",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "sealed_test_accessed": false,
+      "original_job_status": "COMPLETED",
+      "arm_roles": [
+        "late_adaptation_control",
+        "late_pid_adaptation"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase48_submission_20260914.json",
+      "bytes": 475,
+      "sha256": "fdcf3cfe5ee9d77f7e4c83bdcba169648a1128c0db0abc55b3b88727ccb5c6bb",
+      "phase": 48,
+      "status": "SUBMITTED",
+      "status_date": "2026-09-14",
+      "sealed_test_accessed": false,
+      "promotion_authorized": false
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase49_aggregation_20260915.json",
+      "bytes": 809171,
+      "sha256": "882689520e3c0b09838fcea473cd165af90ff0b0ccd01d140e0cee9eaee0cc46",
+      "phase": 49,
+      "status": "COMPLETE"
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase49_closeout_20260915.json",
+      "bytes": 2123546,
+      "sha256": "0a6ab546fdc2e69fe899e28cd9f341f1f8c1670f7ef6edc03bf22e4fdbd91870",
+      "phase": 49,
+      "status": "COMPLETED",
+      "status_date": "2026-09-15",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "sealed_test_accessed": false,
+      "promotion_authorized": false,
+      "arm_roles": [
+        "late_adaptation_control",
+        "late_pid_adaptation"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase49_retained_metrics_20260915.json",
+      "bytes": 3241907,
+      "sha256": "ee38a21f5b4c94ead183760df7346655709a6468046acd7bd5a151cec868a2db",
+      "phase": 49,
+      "status": "COMPLETE",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "sealed_test_accessed": false,
+      "original_job_status": "COMPLETED",
+      "arm_roles": [
+        "late_adaptation_control",
+        "late_pid_adaptation"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase49_submission_20260914.json",
+      "bytes": 166,
+      "sha256": "6ae0622139c8bb37aba26cd5f210a7844df2980d288241a81c91ebbaae791b34",
+      "phase": 49,
+      "status": "SUBMITTED",
+      "sealed_test_accessed": false,
+      "promotion_authorized": false
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase50_aggregation_20260916.json",
+      "bytes": 809429,
+      "sha256": "bca58d4dec6cd0a0b6d8561a9f0d73759af4bbb9653e8347cd28d1b054ecb554",
+      "phase": 50,
+      "status": "COMPLETE"
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase50_closeout_20260916.json",
+      "bytes": 2309336,
+      "sha256": "0bcbd5610a642cdfa83943d92f2c04f8e8f516f1aadf31716e7f21c266ad7357",
+      "phase": 50,
+      "status": "COMPLETED",
+      "status_date": "2026-09-16",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "sealed_test_accessed": false,
+      "promotion_authorized": false,
+      "arm_roles": [
+        "late_adaptation_control",
+        "late_pid_adaptation"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase50_retained_metrics_20260916.json",
+      "bytes": 3300744,
+      "sha256": "c287d86feed8a44caf040315319486b7935f2952a471954ca53b935970e35838",
+      "phase": 50,
+      "status": "COMPLETE",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "sealed_test_accessed": false,
+      "original_job_status": "COMPLETED",
+      "arm_roles": [
+        "late_adaptation_control",
+        "late_pid_adaptation"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase50_submission_20260915.json",
+      "bytes": 209,
+      "sha256": "dc2276d63c799f52581bd462d007d5dba69db13f6735568f47e136c72902f2f0",
+      "phase": 50,
+      "status": "SUBMITTED",
+      "status_date": "2026-09-15",
+      "sealed_test_accessed": false,
+      "promotion_authorized": false
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase51_aggregation_20260917.json",
+      "bytes": 809132,
+      "sha256": "71f868a60ba9600f8bc99a32b5db307973eccd315eba666f648ae186439664b8",
+      "phase": 51,
+      "status": "COMPLETE"
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase51_closeout_20260917.json",
+      "bytes": 2286362,
+      "sha256": "4eed9608ba09efdd929ec1abf9361b9fdee8ff3173c361fe1e2b85cb7043610d",
+      "phase": 51,
+      "status": "COMPLETED",
+      "status_date": "2026-09-17",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "sealed_test_accessed": false,
+      "promotion_authorized": false,
+      "arm_roles": [
+        "late_adaptation_control",
+        "late_pid_adaptation"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase51_retained_metrics_20260917.json",
+      "bytes": 3278148,
+      "sha256": "b46b96674a68cc8cfb4502e6562f42aa09f98eb203454fa45470383fa46f8a5a",
+      "phase": 51,
+      "status": "COMPLETE",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "sealed_test_accessed": false,
+      "original_job_status": "COMPLETED",
+      "arm_roles": [
+        "late_adaptation_control",
+        "late_pid_adaptation"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase51_submission_20260916.json",
+      "bytes": 209,
+      "sha256": "7c38dfb83928d9477ac33cab57ea0f63b6e7d8eaa74fff39510ad9173639d9e6",
+      "phase": 51,
+      "status": "SUBMITTED",
+      "status_date": "2026-09-16",
+      "sealed_test_accessed": false,
+      "promotion_authorized": false
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase52_aggregation_20260917.json",
+      "bytes": 801381,
+      "sha256": "83dc659847cb92a17cee82c6ce3ed2943f11c7a9db53706f3c56a3d169ee0b5f",
+      "phase": 52,
+      "status": "COMPLETE"
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase52_closeout_20260917.json",
+      "bytes": 2233094,
+      "sha256": "d1484de1f614b07dd5b8feea50db74509c6934d6bd55b6db0ee80442430e0ce6",
+      "phase": 52,
+      "status": "COMPLETED",
+      "status_date": "2026-09-17",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "sealed_test_accessed": false,
+      "promotion_authorized": false,
+      "arm_roles": [
+        "late_adaptation_control",
+        "stronger_recovery"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase52_retained_metrics_20260917.json",
+      "bytes": 3265852,
+      "sha256": "12f64bed4cc05fdffc964f8fc9ea43752a5fd82b1a98898242dd5734289a4412",
+      "phase": 52,
+      "status": "COMPLETE",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "sealed_test_accessed": false,
+      "original_job_status": "COMPLETED",
+      "arm_roles": [
+        "late_adaptation_control",
+        "stronger_recovery"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase52_submission_20260917.json",
+      "bytes": 209,
+      "sha256": "7fd16767035f2ab2f96df5eff644bb1eba04f20e776c141e1481984b76f611ad",
+      "phase": 52,
+      "status": "SUBMITTED",
+      "status_date": "2026-09-17",
+      "sealed_test_accessed": false,
+      "promotion_authorized": false
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase53_aggregation_20260918.json",
+      "bytes": 799451,
+      "sha256": "0ee9ded1a671c390aab0a74f32cd7d95c763cd06f3c4afc44256a0e30381101b",
+      "phase": 53,
+      "status": "COMPLETE"
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase53_closeout_20260918.json",
+      "bytes": 2250070,
+      "sha256": "b61cb49385fcb882f27acd7e4e72c0df2e9579c702dabd5c4468d5471cf1efc9",
+      "phase": 53,
+      "status": "COMPLETED",
+      "status_date": "2026-09-18",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "sealed_test_accessed": false,
+      "promotion_authorized": false,
+      "arm_roles": [
+        "late_adaptation_control",
+        "weaker_recovery"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase53_retained_metrics_20260918.json",
+      "bytes": 3258908,
+      "sha256": "c5f9e3b0e65414a175f1aa1b1b7d3b16d517f62d536acd94e63365c9b10eeb2f",
+      "phase": 53,
+      "status": "COMPLETE",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "sealed_test_accessed": false,
+      "original_job_status": "COMPLETED",
+      "arm_roles": [
+        "late_adaptation_control",
+        "weaker_recovery"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase53_submission_20260917.json",
+      "bytes": 209,
+      "sha256": "d6e9815e9ec31a37cf673e24f75c8b1444d7dcb72ea08bb7ae663c5a1bdfdff0",
+      "phase": 53,
+      "status": "SUBMITTED",
+      "status_date": "2026-09-17",
+      "sealed_test_accessed": false,
+      "promotion_authorized": false
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase54_aggregation_20260920.json",
+      "bytes": 798885,
+      "sha256": "d844b3c320dd7ac4f13ed72f940302fa5a279f8c857b098902bfeb9b3beceaec",
+      "phase": 54,
+      "status": "COMPLETE"
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase54_closeout_20260920.json",
+      "bytes": 2239769,
+      "sha256": "c4fc6fc988d34212e6da260610770c9c93cfd89b7b7339e263e85ea3ab14ff2e",
+      "phase": 54,
+      "status": "COMPLETED",
+      "status_date": "2026-09-20",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "sealed_test_accessed": false,
+      "promotion_authorized": false,
+      "arm_roles": [
+        "late_adaptation_control",
+        "weaker_recovery"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase54_retained_metrics_20260920.json",
+      "bytes": 3349023,
+      "sha256": "9567a6ee87db117a5079f264997126d7a65c001d1c383b2d5af5eed44d7fe8e5",
+      "phase": 54,
+      "status": "COMPLETE",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "sealed_test_accessed": false,
+      "original_job_status": "COMPLETED",
+      "arm_roles": [
+        "late_adaptation_control",
+        "weaker_recovery"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase54_submission_20260918.json",
+      "bytes": 209,
+      "sha256": "be494677f41a40e1127c469a392d9a6dc1437c04fe6e08d4edeb4c0bc8cb92f2",
+      "phase": 54,
+      "status": "SUBMITTED",
+      "status_date": "2026-09-18",
+      "sealed_test_accessed": false,
+      "promotion_authorized": false
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase55_aggregation_20260921.json",
+      "bytes": 828907,
+      "sha256": "e15848c2f7b492be81f0fe84077fbd36c31c5abc9dea50e3e1e17281efcf46c5",
+      "phase": 55,
+      "status": "COMPLETE"
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase55_closeout_20260921.json",
+      "bytes": 2321972,
+      "sha256": "e6012d88eca0e521bfa2a4f5cfb250362c93ee2773f9764084ecd012711926da",
+      "phase": 55,
+      "status": "COMPLETED",
+      "status_date": "2026-09-21",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "sealed_test_accessed": false,
+      "promotion_authorized": false,
+      "original_job_status": "FAILED_POST_TRAINING_EVALUATION",
+      "arm_roles": [
+        "late_adaptation_control",
+        "stronger_parent_pretraining"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase55_pretraining_20260921.json",
+      "bytes": 42974,
+      "sha256": "0d89500bb3eaf5efc08f0207d4088e7078d24d7278aa2605a79f81db85e93d9e",
+      "phase": 55,
+      "status": "COMPLETE"
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase55_retained_metrics_20260921.json",
+      "bytes": 3544211,
+      "sha256": "f902a041951a10d23d98ceebcbc09bf4d8dc228342ab71d1e1d5ff19e49443de",
+      "phase": 55,
+      "status": "COMPLETE",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "sealed_test_accessed": false,
+      "original_job_status": "FAILED_POST_TRAINING_EVALUATION",
+      "arm_roles": [
+        "late_adaptation_control",
+        "stronger_parent_pretraining"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase55_submission_20260920.json",
+      "bytes": 209,
+      "sha256": "5565f5f2741efe33a0b5dd88b13323f00000fcb8685912be40dd86df689b310d",
+      "phase": 55,
+      "status": "SUBMITTED",
+      "status_date": "2026-09-20",
+      "sealed_test_accessed": false,
+      "promotion_authorized": false
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase56_aggregation_20260922.json",
+      "bytes": 526023,
+      "sha256": "fa65f8d0f2ddf9bba936b31dfedf923c36607138c169bc13d61cf7c295e0191d",
+      "phase": 56,
+      "status": "COMPLETE"
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase56_closeout_20260922.json",
+      "bytes": 1266700,
+      "sha256": "1ef98724382e16510d76b67b7a5ec605b3383c4dafd97b0de5f04693e23d6b2d",
+      "phase": 56,
+      "status": "INCOMPLETE_COMPARISON",
+      "status_date": "2026-09-22",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "sealed_test_accessed": false,
+      "promotion_authorized": false,
+      "arm_roles": [
+        "late_adaptation_control",
+        "stronger_parent_pretraining"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase56_pretraining_20260922.json",
+      "bytes": 32911,
+      "sha256": "ab72b8083547decd52df7c1fb9f3bbac21fa1e385c5c294b2eebbaed93f75d21",
+      "phase": 56,
+      "status": "COMPLETE_AVAILABLE_ARTIFACTS",
+      "arm_roles": [
+        "late_adaptation_control",
+        "stronger_parent_pretraining"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase56_retained_metrics_20260922.json",
+      "bytes": 1791189,
+      "sha256": "78d4ff518c7ed1bdea1d1f4012ba9c79746c01b4d07b18572fd9c47d2c73c296",
+      "phase": 56,
+      "status": "COMPLETE",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "sealed_test_accessed": false,
+      "arm_roles": [
+        "stronger_parent_pretraining"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase56_submission_20260921.json",
+      "bytes": 209,
+      "sha256": "27c6a9064d16e37e0756dc9a03368b235f9a45c5c3979f8d0f12de8ba13ae6df",
+      "phase": 56,
+      "status": "SUBMITTED",
+      "status_date": "2026-09-21",
+      "sealed_test_accessed": false,
+      "promotion_authorized": false
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase57_aggregation_20260923.json",
+      "bytes": 836013,
+      "sha256": "a95a0ce23310eef2cc9d560086a1ab9f5a7d425d52b704c1f4c3f2459410ea3f",
+      "phase": 57,
+      "status": "COMPLETE",
+      "strict_selection_overlap": 100,
+      "independent_validation": false
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase57_closeout_20260923.json",
+      "bytes": 2328186,
+      "sha256": "dc61d5cc8ec3c3eb1afd2330ca56f43609b50c60c2d8b662fece7d9e26f0d8d4",
+      "phase": 57,
+      "status": "DIAGNOSTIC_COMPLETE",
+      "status_date": "2026-09-23",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "strict_selection_overlap": 100,
+      "independent_validation": false,
+      "sealed_test_accessed": false,
+      "promotion_authorized": false,
+      "original_job_status": "FAILED_POST_TRAINING_COHORT_AUDIT",
+      "arm_roles": [
+        "lower_late_pid_pretraining",
+        "pretraining_balance_control"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase57_pretraining_20260923.json",
+      "bytes": 42930,
+      "sha256": "12430a815cc89849686e5a7f4b759d48972fa9cb77d651824acfef7211e3da0d",
+      "phase": 57,
+      "status": "COMPLETE",
+      "independent_validation": false,
+      "arm_roles": [
+        "lower_late_pid_pretraining",
+        "pretraining_balance_control"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase57_retained_metrics_20260923.json",
+      "bytes": 3457338,
+      "sha256": "ad95a103ec81d2c92cfafd72c03c510aed8aff6e89d068ee2166e2dcd523aa62",
+      "phase": 57,
+      "status": "COMPLETE",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "strict_selection_overlap": 100,
+      "independent_validation": false,
+      "sealed_test_accessed": false,
+      "original_job_status": "FAILED_POST_TRAINING_COHORT_AUDIT",
+      "arm_roles": [
+        "lower_late_pid_pretraining",
+        "pretraining_balance_control"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase57_submission_20260922.json",
+      "bytes": 209,
+      "sha256": "a02727349a801bf73aa710660642084438c60b5ae04b5ba61c7bbf02eb59e8f0",
+      "phase": 57,
+      "status": "SUBMITTED",
+      "status_date": "2026-09-22",
+      "sealed_test_accessed": false,
+      "promotion_authorized": false
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase58_aggregation_20260924.json",
+      "bytes": 416792,
+      "sha256": "7bbf582653ec6623ed4c4b50cd35f38c043ae60a0fffc6d6d626f99e0c5e98fc",
+      "phase": 58,
+      "status": "COMPLETE"
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase58_closeout_20260924.json",
+      "bytes": 1176478,
+      "sha256": "06c7cf6c334e94c4bdf784157ec3427366f2c61fe1792bab4936338e23ea541e",
+      "phase": 58,
+      "status": "INCOMPLETE_COMPARISON",
+      "status_date": "2026-09-24",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "strict_selection_overlap": 0,
+      "independent_validation": true,
+      "sealed_test_accessed": false,
+      "promotion_authorized": false,
+      "arm_roles": [
+        "lower_late_pid_pretraining",
+        "pretraining_balance_control"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase58_pretraining_20260924.json",
+      "bytes": 33096,
+      "sha256": "b93e197b6219957240b08b48567a7ab535b2abd97b6a3979814a6c78c1d9accb",
+      "phase": 58,
+      "status": "COMPLETE_AVAILABLE_ARTIFACTS",
+      "arm_roles": [
+        "lower_late_pid_pretraining",
+        "pretraining_balance_control"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase58_retained_metrics_20260924.json",
+      "bytes": 1710322,
+      "sha256": "733b46c454038e300dff1ab66c02cde196113ed4b8091fd72fa963632cf909f6",
+      "phase": 58,
+      "status": "COMPLETE",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "sealed_test_accessed": false,
+      "arm_roles": [
+        "lower_late_pid_pretraining"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase58_submission_20260923.json",
+      "bytes": 209,
+      "sha256": "9c0a4f54bc9aa29344ad908d8d02e9d2d47950a99cf173f7db35f7d8dff38c2f",
+      "phase": 58,
+      "status": "SUBMITTED",
+      "status_date": "2026-09-23",
+      "sealed_test_accessed": false,
+      "promotion_authorized": false
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase59_aggregation_20260925.json",
+      "bytes": 834869,
+      "sha256": "20b5c54ae3c27bcea660244f15dfd38052fe275067cbcf660654830f317e94dd",
+      "phase": 59,
+      "status": "COMPLETE",
+      "strict_selection_overlap": 0,
+      "independent_validation": true
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase59_closeout_20260925.json",
+      "bytes": 2239609,
+      "sha256": "d4a598c7629797108d8a02be50fbe0b3af64caf5c4bd1af78e2ed8a9957089be",
+      "phase": 59,
+      "status": "FEASIBILITY_COMPLETE",
+      "status_date": "2026-09-25",
+      "strict_event_count": 25,
+      "beam_event_count": 20,
+      "strict_selection_overlap": 0,
+      "independent_validation": true,
+      "sealed_test_accessed": false,
+      "promotion_authorized": false,
+      "original_job_status": "FAILED_EVALUATOR_COUNT_MISMATCH",
+      "arm_roles": [
+        "lower_late_pid_pretraining",
+        "pretraining_balance_control"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase59_pretraining_20260925.json",
+      "bytes": 42888,
+      "sha256": "674585f102839545be3056ef4e9d93685f50d937c0219bea3c6beb9ea44ba9fd",
+      "phase": 59,
+      "status": "COMPLETE",
+      "independent_validation": true,
+      "arm_roles": [
+        "lower_late_pid_pretraining",
+        "pretraining_balance_control"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase59_retained_metrics_20260925.json",
+      "bytes": 3175161,
+      "sha256": "8d5297353f7e2f1d6cfa547903366623c2c18ac7e8cfe2077b7948fe28307af9",
+      "phase": 59,
+      "status": "COMPLETE",
+      "strict_event_count": 25,
+      "beam_event_count": 20,
+      "strict_selection_overlap": 0,
+      "independent_validation": true,
+      "sealed_test_accessed": false,
+      "original_job_status": "FAILED_EVALUATOR_COUNT_MISMATCH",
+      "arm_roles": [
+        "lower_late_pid_pretraining",
+        "pretraining_balance_control"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase59_submission_20260924.json",
+      "bytes": 209,
+      "sha256": "9046477e0712259978d732891074e21ede3213cd5fec0e05f612232aba7b75c7",
+      "phase": 59,
+      "status": "SUBMITTED",
+      "status_date": "2026-09-24",
+      "sealed_test_accessed": false,
+      "promotion_authorized": false
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase60_closeout_20260926.json",
+      "bytes": 567906,
+      "sha256": "4d00c33644c4d53016d703335b982b22b54ecc0007fce9b0fd50d9cb89be23e8",
+      "phase": 60,
+      "status": "FAILED_PRETRAINING",
+      "sealed_test_accessed": false,
+      "arm_roles": [
+        "lower_late_pid_pretraining",
+        "pretraining_balance_control"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase60_submission_20260925.json",
+      "bytes": 209,
+      "sha256": "b3d2cc3302064503b2388c471858682731c1b5f08deb4e247671b9b59a881726",
+      "phase": 60,
+      "status": "SUBMITTED",
+      "status_date": "2026-09-25",
+      "sealed_test_accessed": false,
+      "promotion_authorized": false
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase61_aggregation_20260927.json",
+      "bytes": 836996,
+      "sha256": "612f4589dbe6a4a652ea0a6760db4332203fa2ed40864ff2d9454783672b5c05",
+      "phase": 61,
+      "status": "COMPLETE",
+      "strict_selection_overlap": 0,
+      "independent_validation": true
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase61_closeout_20260927.json",
+      "bytes": 2281136,
+      "sha256": "486de9044f4bbfc60716cf79f5f43492d17bd7e7035752e11999a11f867f965b",
+      "phase": 61,
+      "status": "COMPLETED",
+      "status_date": "2026-09-27",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "strict_selection_overlap": 0,
+      "independent_validation": true,
+      "sealed_test_accessed": false,
+      "promotion_authorized": false,
+      "original_job_status": "COMPLETED",
+      "arm_roles": [
+        "lower_late_pid_pretraining",
+        "pretraining_balance_control"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase61_pretraining_20260927.json",
+      "bytes": 42934,
+      "sha256": "4a462af5a9f45bcd922603dfd76b66670527635ff3cd254f3e6a5d7320f04c71",
+      "phase": 61,
+      "status": "COMPLETE",
+      "independent_validation": true,
+      "arm_roles": [
+        "lower_late_pid_pretraining",
+        "pretraining_balance_control"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase61_retained_metrics_20260927.json",
+      "bytes": 3403999,
+      "sha256": "e2fda71405b0d80e895bf41149f2efff937f0aff76227878315b4012e64c8688",
+      "phase": 61,
+      "status": "COMPLETE",
+      "strict_event_count": 100,
+      "beam_event_count": 20,
+      "strict_selection_overlap": 0,
+      "independent_validation": true,
+      "sealed_test_accessed": false,
+      "original_job_status": "COMPLETED",
+      "arm_roles": [
+        "lower_late_pid_pretraining",
+        "pretraining_balance_control"
+      ]
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase61_submission_20260926.json",
+      "bytes": 209,
+      "sha256": "a3866e8c40a25ea01701492bfc2d666428012e74c2fa9c6769054cdf76d49c05",
+      "phase": 61,
+      "status": "SUBMITTED",
+      "status_date": "2026-09-26",
+      "sealed_test_accessed": false,
+      "promotion_authorized": false
+    },
+    {
+      "path": "artifacts/codex/reconstruction_phase62_submission_20260927.json",
+      "bytes": 209,
+      "sha256": "d9201a182de4eaca37578651dd59a4535246a512e498d66c95f1ce304d4cd647",
+      "phase": 62,
+      "status": "SUBMITTED",
+      "status_date": "2026-09-27",
+      "sealed_test_accessed": false,
+      "promotion_authorized": false
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase34_checkpoint_comparison_20260904.json",
+      "bytes": 3190,
+      "sha256": "2a3a6023813424eb7a3f57962bc5feeb190f9e144ca835c15bed4ad7443a938f",
+      "phase": 34,
+      "scientific_question": "Which phase-3/4 pretraining checkpoint gives the best downstream level-reconstruction validation performance under an otherwise identical frozen-transfer run?"
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase34_confirmation_20260904.json",
+      "bytes": 3155,
+      "sha256": "bd927df0fc52dc7624f48701626a539001f6b86249f7472fa3c312f3a9720bfe",
+      "phase": 34,
+      "scientific_question": "Does the step-54064 exploratory baseline retain its small rollout edge-F1 advantage over the best pretraining-complete step-81096 checkpoint on two new disjoint validation cohorts?",
+      "arm_roles": [
+        {
+          "role": "exploratory_baseline_54064"
+        },
+        {
+          "role": "eligible_parent_81096"
+        }
+      ]
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase35_evaluation_cohort_20260904.json",
+      "bytes": 62220,
+      "sha256": "5fc8e9f6a2cb92ce1483e85163138ade36cfcf7081cf3db427ebfd716afbef36",
+      "phase": 35
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase35_improvement_20260904.json",
+      "bytes": 15759,
+      "sha256": "145658df6cfc41dab872ff57eb011d09cc411188f8bf342c7f7d5ca626b11ef2",
+      "phase": 35,
+      "scientific_question": "Can globally depth-balanced replay, rollout-conditioned training with protected teacher supervision, and conservative late encoder adaptation improve the observed one-level reconstruction collapse while preserving structural validity?",
+      "arm_roles": [
+        {
+          "role": "depth_balanced_fallback_frozen",
+          "hypothesis": "A globally depth-balanced, four-train-size-equivalent replay budget improves depth even when unrepresentable predicted contexts retain historical teacher fallback.",
+          "overrides": {
+            "freeze_pretrained_encoder_steps": 2188,
+            "unrepresentable_target_policy": "fallback_teacher",
+            "auxiliary_teacher_weight": 0.0
+          }
+        },
+        {
+          "role": "depth_balanced_masked_aux_frozen",
+          "hypothesis": "Masking targets that cannot be represented in predicted context while retaining a 0.25 auxiliary teacher loss avoids false no-object supervision and protects link learning without arbitrary recovery logits.",
+          "overrides": {
+            "freeze_pretrained_encoder_steps": 2188,
+            "unrepresentable_target_policy": "masked_representable_only",
+            "auxiliary_teacher_weight": 0.25
+          }
+        },
+        {
+          "role": "depth_balanced_masked_aux_encoder_adapt",
+          "hypothesis": "Unfreezing the exactly transferred encoder halfway through training at 0.05 times decoder LR improves rollout-conditioned representations beyond the frozen masked-context arm.",
+          "overrides": {
+            "freeze_pretrained_encoder_steps": 1094,
+            "unrepresentable_target_policy": "masked_representable_only",
+            "auxiliary_teacher_weight": 0.25
+          }
+        }
+      ]
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase35_masked_repair_20260904.json",
+      "bytes": 7417,
+      "sha256": "b39ba56287684e2f8897890c60c94f8ba1d500e58f298f24d127ba2fece81a9f",
+      "phase": 35
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase35_validation_exclusions_20260904.json",
+      "bytes": 116740,
+      "sha256": "e7bf2cdc05f915f5cff55f2bff50bbcfb1d91657f037e5cc2faab32a6095f75b",
+      "phase": 35
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase36_20260905.json",
+      "bytes": 10695,
+      "sha256": "f2c40b798a949596fc752018217037c901a75d1d4ed53f417d82736cb8359023",
+      "phase": 36,
+      "scientific_question": "Does all-level loss weighting plus explicit recovery supervision, with a preregistered 0.35 pointer threshold, improve semantic full-decay hierarchy recovery over the controlled phase35-style baseline?",
+      "arm_roles": [
+        {
+          "role": "controlled_baseline",
+          "hypothesis": "The corrected selection rule alone is the controlled reference.",
+          "overrides": {
+            "auxiliary_teacher_weight": 0.25,
+            "freeze_pretrained_encoder_steps": 1094,
+            "level_loss_weights": [],
+            "recovery_objective_weight": 1.0,
+            "rollout_pointer_threshold": 0.5,
+            "unrepresentable_target_policy": "masked_representable_only"
+          }
+        },
+        {
+          "role": "all_level_weighted_recovery_pointer035",
+          "hypothesis": "Increasing loss weight toward levels 3-6 and explicit recovery supervision improves root, LCAG, and exact-mother recovery.",
+          "overrides": {
+            "auxiliary_teacher_weight": 0.25,
+            "freeze_pretrained_encoder_steps": 1094,
+            "level_loss_weights": [
+              [
+                1,
+                1.0
+              ],
+              [
+                2,
+                1.0
+              ],
+              [
+                3,
+                1.25
+              ],
+              [
+                4,
+                1.5
+              ],
+              [
+                5,
+                2.0
+              ],
+              [
+                6,
+                3.0
+              ]
+            ],
+            "recovery_objective_weight": 2.0,
+            "rollout_pointer_threshold": 0.35,
+            "unrepresentable_target_policy": "recovery_objective"
+          }
+        }
+      ]
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase36_validation_cohort_20260905.json",
+      "bytes": 67070,
+      "sha256": "4a63d6fd302366270a07c4c1145e54cd4d2dc8a9d55262bed5641f18bd02ae18",
+      "phase": 36
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase37_20260906.json",
+      "bytes": 10597,
+      "sha256": "c916818135042b9bbf7dc624e9be3c55920b927a455b4211d1c3ee72dbe87e49",
+      "phase": 37,
+      "scientific_question": "Does increasing auxiliary teacher anchoring from 0.25 to 0.50, while holding the successful phase36 weighted/recovery contract fixed, improve exact hierarchy recovery without losing rollout recall?",
+      "arm_roles": [
+        {
+          "role": "phase36_weighted_recovery_reference",
+          "hypothesis": "Repeating the successful phase36 weighted/recovery contract on a fresh cohort provides the paired reference.",
+          "overrides": {
+            "auxiliary_teacher_weight": 0.25,
+            "freeze_pretrained_encoder_steps": 1094
+          }
+        },
+        {
+          "role": "teacher_anchor_050",
+          "hypothesis": "Stronger auxiliary teacher anchoring improves exact mother/link assignment and half-tree precision while retaining the phase36 depth and source-recall gains.",
+          "overrides": {
+            "auxiliary_teacher_weight": 0.5,
+            "freeze_pretrained_encoder_steps": 1094
+          }
+        }
+      ]
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase37_validation_cohort_20260906.json",
+      "bytes": 67815,
+      "sha256": "4e68135600ec9882962e86a8234aa312ba3d8df4d5f91c519b4574ad70eae55b",
+      "phase": 37
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase38_20260906.json",
+      "bytes": 10659,
+      "sha256": "ecefaf82559471466569dd04c9f68f3bd946a93c3f61b6a68915cb34f0738c34",
+      "phase": 38,
+      "scientific_question": "Does increasing the pointer-positive loss weight from 16 to 24, while holding the phase37 teacher-anchored weighted/recovery contract fixed, recover exact mothers and roots without exhausting precision?",
+      "arm_roles": [
+        {
+          "role": "teacher_anchor_050_pointer16_reference",
+          "hypothesis": "Repeating the phase37 teacher-anchor candidate with the established pointer-positive weight provides the paired reference.",
+          "overrides": {
+            "freeze_pretrained_encoder_steps": 1094,
+            "pointer_positive_weight": 16.0
+          }
+        },
+        {
+          "role": "teacher_anchor_050_pointer24",
+          "hypothesis": "A stronger positive pointer loss recovers missing daughter links and enables nonzero exact-mother, LCAG, and root completion while the preregistered precision gates limit false associations.",
+          "overrides": {
+            "freeze_pretrained_encoder_steps": 1094,
+            "pointer_positive_weight": 24.0
+          }
+        }
+      ]
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase38_validation_cohort_20260906.json",
+      "bytes": 68492,
+      "sha256": "17b4ef42a7d1e715567442de5cb20ca164421e1d8eafeea555b5fb9151028e6c",
+      "phase": 38
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase39_20260907.json",
+      "bytes": 11057,
+      "sha256": "ea49e265f6bb65e2821deac1a956707840ecc58398866b57249a04faaba1354e",
+      "phase": 39,
+      "scientific_question": "Does increasing the pointer-positive loss weight from 24 to 32, while holding the best phase38 teacher-anchored weighted/recovery contract fixed, produce reproducible hierarchy recovery without exhausting precision?",
+      "arm_roles": [
+        {
+          "role": "teacher_anchor_050_pointer24_reference",
+          "hypothesis": "Repeating the best phase38 pointer-24 candidate on a fresh cohort provides the paired reference after its one-root result failed a clean cross-environment replay.",
+          "overrides": {
+            "freeze_pretrained_encoder_steps": 1094,
+            "pointer_positive_weight": 24.0
+          }
+        },
+        {
+          "role": "teacher_anchor_050_pointer32",
+          "hypothesis": "Additional positive pointer weight increases complete daughter-link recall and root recovery while stricter precision and hierarchy gates limit false associations.",
+          "overrides": {
+            "freeze_pretrained_encoder_steps": 1094,
+            "pointer_positive_weight": 32.0
+          }
+        }
+      ]
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase39_validation_cohort_20260907.json",
+      "bytes": 69194,
+      "sha256": "cf42dfb5cb2b2f6a7d4bce66485bf5437e75a3e83510192b71fed1eddc68f815",
+      "phase": 39
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase40_20260907.json",
+      "bytes": 11342,
+      "sha256": "de2f420c05ec1a0a92a6b4cb3ad27688036ee24d042fa359c1e526a9b4796cbc",
+      "phase": 40,
+      "scientific_question": "Does doubling reconstruction data and training exposure improve hierarchy recovery, and does added per-level query capacity provide a further controlled gain without exhausting precision?",
+      "arm_roles": [
+        {
+          "role": "doubled_data_control",
+          "hypothesis": "The phase39 pointer-32 architecture receives exactly twice the training data and twice its four-size-equivalent step budget.",
+          "overrides": {
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          }
+        },
+        {
+          "role": "doubled_data_query_scale",
+          "hypothesis": "More decoder query slots reduce competition among simultaneous mothers while leaving encoder size, data, optimizer, and losses fixed.",
+          "overrides": {
+            "freeze_pretrained_encoder_steps": 2188,
+            "n_queries_by_level": [
+              [
+                1,
+                24
+              ],
+              [
+                2,
+                12
+              ],
+              [
+                3,
+                8
+              ],
+              [
+                4,
+                6
+              ],
+              [
+                5,
+                4
+              ],
+              [
+                6,
+                2
+              ]
+            ],
+            "pointer_positive_weight": 32.0
+          }
+        }
+      ]
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase40_validation_cohort_20260907.json",
+      "bytes": 69991,
+      "sha256": "7a0258ffb12cbce68f75023a76ce18af9e99a01eb56fd9a0e71d3f1f3247b981",
+      "phase": 40
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase40r1_20260908.json",
+      "bytes": 334024,
+      "sha256": "d39470718ea741fd4bf9dcbfd419c6bc4a08985cde1d62abae24f23703ea345b",
+      "phase": 40,
+      "scientific_question": "Does doubling reconstruction data and training exposure improve hierarchy recovery, and does added per-level query capacity provide a further controlled gain without exhausting precision?",
+      "arm_roles": [
+        {
+          "role": "doubled_data_control",
+          "hypothesis": "The phase39 pointer-32 architecture receives exactly twice the training data and twice its four-size-equivalent step budget.",
+          "overrides": {
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          }
+        },
+        {
+          "role": "doubled_data_query_scale",
+          "hypothesis": "More decoder query slots reduce competition among simultaneous mothers while leaving encoder size, data, optimizer, and losses fixed.",
+          "overrides": {
+            "freeze_pretrained_encoder_steps": 2188,
+            "n_queries_by_level": [
+              [
+                1,
+                24
+              ],
+              [
+                2,
+                12
+              ],
+              [
+                3,
+                8
+              ],
+              [
+                4,
+                6
+              ],
+              [
+                5,
+                4
+              ],
+              [
+                6,
+                2
+              ]
+            ],
+            "pointer_positive_weight": 32.0
+          }
+        }
+      ]
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase41_20260909.json",
+      "bytes": 334905,
+      "sha256": "ec819bc28f62aeb9cd7bee0628cccf2b62b68679d8bb09190617d0253cce1caa",
+      "phase": 41,
+      "scientific_question": "Does a level-specific pointer class-balance correction improve exact full-decay topology without sacrificing the phase40r1 control's depth, source recall, or tree validity?",
+      "arm_roles": [
+        {
+          "role": "pointer32_control",
+          "hypothesis": "The phase40r1 winning decoder is reproduced on the untouched phase41 cohort with its scalar pointer-positive weight of 32.",
+          "overrides": {
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          }
+        },
+        {
+          "role": "level1_pointer24",
+          "hypothesis": "Reducing only the level-1 pointer-positive weight from 32 to 24 will reduce low-level over-linking while preserving the higher-level pointer recall needed for complete roots.",
+          "overrides": {
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0,
+            "pointer_positive_weights_by_level": [
+              [
+                1,
+                24.0
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase41_validation_cohort_20260909.json",
+      "bytes": 70659,
+      "sha256": "a2ed513277d7b50a5b30a347d435e403c1d7ba3b7fabafbd7e4629812bfbe4e3",
+      "phase": 41
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase42_20260909.json",
+      "bytes": 333693,
+      "sha256": "2dd49fe64212fa089124fd9a181ed6415f0ab2d73183b64de7347c9c559cc6c8",
+      "phase": 42,
+      "scientific_question": "Does extending pretraining from 81096 to 108128 steps improve strict downstream reconstruction with the current decoder, fixed 70k train data and identical 4376-step budgets?",
+      "arm_roles": [
+        {
+          "role": "pretrain81096_control",
+          "hypothesis": "Reproduce the current pretraining transfer control.",
+          "overrides": {
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          }
+        },
+        {
+          "role": "pretrain108128",
+          "hypothesis": "Additional pretrained encoder and PID state improve downstream topology.",
+          "overrides": {
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          }
+        }
+      ]
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase42_validation_cohort_20260909.json",
+      "bytes": 70928,
+      "sha256": "f59fc00841c0ca77034c1fe95be65d8400113a90a3c1ae49bc12d9d21d14acb5",
+      "phase": 42
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase43_20260910.json",
+      "bytes": 333882,
+      "sha256": "341a18a58862903a78ac38044f9c8a629fd453f47d281f96a0d1934238e7a7f8",
+      "phase": 43,
+      "scientific_question": "Does task-specific encoder adaptation from step zero improve strict reconstruction versus the current 2188-step freeze, at fixed pretrained checkpoint, 70k data, and 4376-step budget?",
+      "arm_roles": [
+        {
+          "role": "late_adaptation_control",
+          "hypothesis": "Reproduce the current late-adaptation control.",
+          "overrides": {
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          }
+        },
+        {
+          "role": "early_adaptation",
+          "hypothesis": "Earlier task-specific representation adaptation improves topology.",
+          "overrides": {
+            "freeze_pretrained_encoder_steps": 0,
+            "pointer_positive_weight": 32.0
+          }
+        }
+      ]
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase43_validation_cohort_20260910.json",
+      "bytes": 71133,
+      "sha256": "1467cb0e1c98cdd1f46b3571d908a10233b293f4778f9870e1686bc3c3239d26",
+      "phase": 43
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase44_20260911.json",
+      "bytes": 334002,
+      "sha256": "d33c47a20e3031f7b2b6de8f4cb143168c0d3cbfcf0a2f3fb22c468021c5177e",
+      "phase": 44,
+      "scientific_question": "Does the small Phase43 advantage replicate with a new seed and untouched validation cohort when comparing task-specific encoder adaptation from step zero against the current 2188-step freeze, at fixed pretrained checkpoint, 70k data, and 4376-step budget?",
+      "arm_roles": [
+        {
+          "role": "late_adaptation_control",
+          "hypothesis": "Reproduce the current late-adaptation control.",
+          "overrides": {
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          }
+        },
+        {
+          "role": "early_adaptation",
+          "hypothesis": "Earlier task-specific representation adaptation improves topology.",
+          "overrides": {
+            "freeze_pretrained_encoder_steps": 0,
+            "pointer_positive_weight": 32.0
+          }
+        }
+      ]
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase44_validation_cohort_20260911.json",
+      "bytes": 71415,
+      "sha256": "a696ba06abec935883936e4259c9a9c22fd8e282c9e738264b89cac1c1d0b6e3",
+      "phase": 44
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase45_20260911.json",
+      "bytes": 335217,
+      "sha256": "c5dea3df866677f097965b2d00cbf0bc5c3526595318157d994fbb1f26becb6c",
+      "phase": 45,
+      "scientific_question": "At fixed 70k data, pretrained checkpoint 81096, 2188 frozen encoder steps and 4376 total steps, does increasing the encoder learning-rate multiplier from 0.05 to 0.10 improve strict downstream hierarchy reconstruction?",
+      "arm_roles": [
+        {
+          "role": "encoder_lr005_control",
+          "hypothesis": "Reproduce the late-adaptation learning-rate control.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          }
+        },
+        {
+          "role": "encoder_lr010",
+          "hypothesis": "Stronger late task-specific encoder adaptation improves topology.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.1,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          }
+        }
+      ]
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase45_validation_cohort_20260911.json",
+      "bytes": 71647,
+      "sha256": "29b5c257d0254bb948dcd98c7dc30f1e86e02320a196b9888c8ba85a74fce50a",
+      "phase": 45
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase46_20260912.json",
+      "bytes": 335758,
+      "sha256": "c33043d0808f208c4396398a8765acd3e85dd1dc6ba18b00b51a71944529e4ca",
+      "phase": 46,
+      "scientific_question": "With corrected reconstructed targets and fresh train-only statistics, does late encoder adaptation improve strict hierarchy reconstruction relative to keeping the same pretrained encoder frozen?",
+      "arm_roles": [
+        {
+          "role": "late_adaptation_control",
+          "hypothesis": "Measure task-specific encoder adaptation under corrected supervision.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          }
+        },
+        {
+          "role": "frozen_encoder",
+          "hypothesis": "Measure fixed pretrained representation under the same corrected supervision.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_pretrained_encoder_steps": 4376,
+            "pointer_positive_weight": 32.0
+          }
+        }
+      ]
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase46_audit_exclusions_20260912.json",
+      "bytes": 30009,
+      "sha256": "9eb43a84184a986424340053a31ea6040c949cd95fd8dc6d201d78f0097da9ac",
+      "phase": 46,
+      "sealed_test_accessed": false
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase46_validation_cohort_20260912.json",
+      "bytes": 72160,
+      "sha256": "dcdc3f8b1febf13a66364ecf87b67f4bdfcfff06b83f3d6b335c9a4b3a24c1f7",
+      "phase": 46
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase47_20260913.json",
+      "bytes": 336189,
+      "sha256": "6e071c98f1b2e80781d93bc29c2a1450af50d0207501faa1e9ddb03fc38530b1",
+      "phase": 47,
+      "scientific_question": "Does the Phase46 tradeoff between primary source-set recovery and strict retained topology repeat with a second training/replay seed and a fresh disjoint validation cohort?",
+      "arm_roles": [
+        {
+          "role": "late_adaptation_control",
+          "hypothesis": "Measure task-specific encoder adaptation under corrected supervision.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          }
+        },
+        {
+          "role": "frozen_encoder",
+          "hypothesis": "Measure fixed pretrained representation under the same corrected supervision.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_pretrained_encoder_steps": 4376,
+            "pointer_positive_weight": 32.0
+          }
+        }
+      ]
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase47_validation_cohort_20260913.json",
+      "bytes": 72320,
+      "sha256": "bce2ce7fde33ebdda20dfbdca5b9026087b24f73784b31d0dbbd5e53b6aef524",
+      "phase": 47
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase48_20260914.json",
+      "bytes": 336527,
+      "sha256": "737a640098317afe435990cb17d723f30ee4a50129b78c315775098093fd4b6f",
+      "phase": 48,
+      "scientific_question": "Does unfreezing the transferred detector PID head after step 2188 improve strict topology and primary source-set plus mother-PID recovery versus keeping it frozen, with the same late encoder adaptation?",
+      "arm_roles": [
+        {
+          "role": "late_adaptation_control",
+          "hypothesis": "Reference late encoder adaptation with the historical PID head frozen.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_leaf_pid_head_steps": 4376,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          }
+        },
+        {
+          "role": "late_pid_adaptation",
+          "hypothesis": "Adapt the historical PID head to corrected downstream detector context after decoder warmup; test whether PID-dependent quantities and strict topology improve.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_leaf_pid_head_steps": 2188,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          }
+        }
+      ]
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase48_validation_cohort_20260914.json",
+      "bytes": 72546,
+      "sha256": "70880e265ae48e77896c43c07c2a1b963108a4c3d84017bbfa5c073799c37e22",
+      "phase": 48
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase49_20260914.json",
+      "bytes": 336812,
+      "sha256": "08fe0471c49036dd6db8da28088e46368b3dfac794d97d60c6e810ecb32591b3",
+      "phase": 49,
+      "scientific_question": "With gradient-safe mixed precision in both arms, does unfreezing the transferred detector PID head after step 2188 improve strict topology and primary source-set plus mother-PID recovery versus keeping it frozen, with the same late encoder adaptation?",
+      "arm_roles": [
+        {
+          "role": "late_adaptation_control",
+          "hypothesis": "Reference late encoder adaptation with the historical PID head frozen.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_leaf_pid_head_steps": 4376,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          }
+        },
+        {
+          "role": "late_pid_adaptation",
+          "hypothesis": "Adapt the historical PID head to corrected downstream detector context after decoder warmup; test whether PID-dependent quantities and strict topology improve.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_leaf_pid_head_steps": 2188,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          }
+        }
+      ]
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase49_validation_cohort_20260914.json",
+      "bytes": 72825,
+      "sha256": "9baaa5109972c0653f5fc54f9c1f893bc6a9feb35c8b9ba50195ae49b8628e8e",
+      "phase": 49
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase50_20260915.json",
+      "bytes": 337059,
+      "sha256": "ccfbdb205d1586d514a5cabbfb04fa928e07fd520173ab2b069886768d33a79d",
+      "phase": 50,
+      "scientific_question": "Does the Phase49 late PID adaptation signal replicate with a new training seed and untouched validation cohort: does unfreezing the transferred detector PID head after step 2188 improve strict topology and primary source-set plus mother-PID recovery versus keeping it frozen, with the same late encoder adaptation?",
+      "arm_roles": [
+        {
+          "role": "late_adaptation_control",
+          "hypothesis": "Reference late encoder adaptation with the historical PID head frozen.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_leaf_pid_head_steps": 4376,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          }
+        },
+        {
+          "role": "late_pid_adaptation",
+          "hypothesis": "Adapt the historical PID head to corrected downstream detector context after decoder warmup; test whether PID-dependent quantities and strict topology improve.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_leaf_pid_head_steps": 2188,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          }
+        }
+      ]
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase50_validation_cohort_20260915.json",
+      "bytes": 73093,
+      "sha256": "6736cb00ee529303461175fe18d4a39c6daab0a59d6b7a41f6a53a6e0eb9d7cc",
+      "phase": 50
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase51_20260916.json",
+      "bytes": 337221,
+      "sha256": "6e0bbee221687794637af5298169e21369a1fed883ff92b9f2e043540d82a313",
+      "phase": 51,
+      "scientific_question": "At fixed 70000 events, does a tenfold lower PID learning-rate multiplier of 0.1 when unfreezing the transferred detector PID head after step 2188 improve strict topology and primary source-set plus mother-PID recovery versus keeping it frozen, with the same late encoder adaptation?",
+      "arm_roles": [
+        {
+          "role": "late_adaptation_control",
+          "hypothesis": "Reference late encoder adaptation with the historical PID head frozen.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_leaf_pid_head_steps": 4376,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          }
+        },
+        {
+          "role": "late_pid_adaptation",
+          "hypothesis": "Adapt the PID head after decoder warmup at multiplier 0.1 to test whether a smaller update preserves primary recovery while retaining topology gains. This is an exploratory dose study, not a proven remedy.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_leaf_pid_head_steps": 2188,
+            "freeze_pretrained_encoder_steps": 2188,
+            "leaf_pid_lr_multiplier": 0.1,
+            "pointer_positive_weight": 32.0
+          }
+        }
+      ]
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase51_validation_cohort_20260916.json",
+      "bytes": 73286,
+      "sha256": "efc5647353e20897caa81ba2431b2060cac89cb69372e1f156f51aa864dd0287",
+      "phase": 51
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase52_20260917.json",
+      "bytes": 336657,
+      "sha256": "40fe92639841ae6e7de5b78cd90ae4025812e93aa96682b75d895a72f8736b47",
+      "phase": 52,
+      "scientific_question": "At fixed 70000 events and frozen PID, does increasing the existing recovery-objective weight from 2 to 4 improve recursive full/half reconstruction without degrading source precision?",
+      "arm_roles": [
+        {
+          "role": "late_adaptation_control",
+          "hypothesis": "Reference late encoder adaptation with the historical PID head frozen.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_leaf_pid_head_steps": 4376,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          }
+        },
+        {
+          "role": "stronger_recovery",
+          "hypothesis": "Double the existing object-presence recovery term for targets missing from predicted context. This tests a downstream objective bottleneck; it cannot repair structurally incompatible targets.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_leaf_pid_head_steps": 4376,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0,
+            "recovery_objective_weight": 4.0
+          }
+        }
+      ]
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase52_validation_cohort_20260917.json",
+      "bytes": 73551,
+      "sha256": "50644433e3162be092c33bb4365c1f13afd6b8d76db45cfd0c3152ce9703d99c",
+      "phase": 52
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase53_20260917.json",
+      "bytes": 336803,
+      "sha256": "7035d35b9c72d21b8ba360a9110ebe1013a0f4a2611d847f65b1cc832dba1317",
+      "phase": 53,
+      "scientific_question": "At fixed 70000 events and frozen PID, does reducing the existing recovery-objective weight from 2 to 1 improve recursive full/half reconstruction without degrading source recall or precision?",
+      "arm_roles": [
+        {
+          "role": "late_adaptation_control",
+          "hypothesis": "Reference late encoder adaptation with the historical PID head frozen.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_leaf_pid_head_steps": 4376,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          }
+        },
+        {
+          "role": "weaker_recovery",
+          "hypothesis": "Halve the existing object-presence recovery term for targets missing from predicted context. This tests a downstream objective bottleneck; it cannot repair structurally incompatible targets.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_leaf_pid_head_steps": 4376,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0,
+            "recovery_objective_weight": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase53_validation_cohort_20260917.json",
+      "bytes": 73768,
+      "sha256": "dd01d34e83b20a34f974ef90e05e25fc452be4b3f4f2366322280334ef9d046c",
+      "phase": 53
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase54_20260918.json",
+      "bytes": 336857,
+      "sha256": "55d4c62c90aefa8f027a03617561c5fde9293263507057db5ceba13d09055529",
+      "phase": 54,
+      "scientific_question": "At fixed 70000 events and frozen PID, does the mixed Phase53 recovery-weight 2 versus 1 effect reproduce on a fresh seed and untouched cohort while retaining all full/half gates?",
+      "arm_roles": [
+        {
+          "role": "late_adaptation_control",
+          "hypothesis": "Reference late encoder adaptation with the historical PID head frozen.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_leaf_pid_head_steps": 4376,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          }
+        },
+        {
+          "role": "weaker_recovery",
+          "hypothesis": "Halve the existing object-presence recovery term for targets missing from predicted context. This tests a downstream objective bottleneck; it cannot repair structurally incompatible targets.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_leaf_pid_head_steps": 4376,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0,
+            "recovery_objective_weight": 1.0
+          }
+        }
+      ]
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase54_validation_cohort_20260918.json",
+      "bytes": 74025,
+      "sha256": "b87ab0c554263e8a38adab4aacb40cd61439a880dad10bfc2304e74370e85549",
+      "phase": 54
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase55_20260920.json",
+      "bytes": 341644,
+      "sha256": "0c271aa079aa53fa44e1b1fc73b901fdc92bbe43a04f2deb656808b07d8081fc",
+      "phase": 55,
+      "scientific_question": "At fixed 70000 events and matched compute, does increasing direct-parent ranking weight during parameter-initialized pretraining refinement improve downstream recursive reconstruction?",
+      "arm_roles": [
+        {
+          "role": "late_adaptation_control",
+          "hypothesis": "Reference parent-ranking weight 1 during matched corrected pretraining refinement, followed by identical late encoder adaptation.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_leaf_pid_head_steps": 4376,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          },
+          "pretraining_parent_ranking_weight": 1.0
+        },
+        {
+          "role": "stronger_parent_pretraining",
+          "hypothesis": "Increase direct-parent ranking weight to 2 during pretraining refinement to test whether more direct structural supervision transfers to recursive assembly.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_leaf_pid_head_steps": 4376,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          },
+          "pretraining_parent_ranking_weight": 2.0
+        }
+      ]
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase55_validation_cohort_20260920.json",
+      "bytes": 74323,
+      "sha256": "44024902dd427641e727c979a282b0e967c9cedfdbe557538f06caeb0fe105b6",
+      "phase": 55
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase56_20260921.json",
+      "bytes": 342114,
+      "sha256": "16519185fa108f6859019d3ec64955c1007ef9832c5ed331aef8e40bde6ab968",
+      "phase": 56,
+      "scientific_question": "Does the mixed Phase55 parent-ranking weight contrast reproduce with a fresh seed and untouched validation cohort at the same training data and compute?",
+      "arm_roles": [
+        {
+          "role": "late_adaptation_control",
+          "hypothesis": "Reference parent-ranking weight 1 during matched corrected pretraining refinement, followed by identical late encoder adaptation.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_leaf_pid_head_steps": 4376,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          },
+          "pretraining_parent_ranking_weight": 1.0
+        },
+        {
+          "role": "stronger_parent_pretraining",
+          "hypothesis": "Increase direct-parent ranking weight to 2 during pretraining refinement to test whether more direct structural supervision transfers to recursive assembly.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_leaf_pid_head_steps": 4376,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          },
+          "pretraining_parent_ranking_weight": 2.0
+        }
+      ]
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase56_validation_cohort_20260921.json",
+      "bytes": 45738,
+      "sha256": "239e982f12177ce1f9387038d2a70ce33c5e36d0c26bddb24ca443903f8102dd",
+      "phase": 56
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase57_20260922.json",
+      "bytes": 342283,
+      "sha256": "7fc0d4fa432ce9b51d5b5231cf675e8fc44bea592891dc636791bf4d6eff707e",
+      "phase": 57,
+      "scientific_question": "Does reducing late leaf-PID objective weight from 0.4 to 0.2 improve balanced representation and downstream reconstruction at fixed parent weight 2, data and compute?",
+      "arm_roles": [
+        {
+          "role": "pretraining_balance_control",
+          "hypothesis": "Late leaf-PID phase weight 0.4 with parent weight 2, followed by identical reconstruction.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_leaf_pid_head_steps": 4376,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          },
+          "pretraining_leaf_pid_phase_weights": [
+            1.0,
+            1.0,
+            0.4,
+            0.4
+          ],
+          "pretraining_parent_ranking_weight": 2.0
+        },
+        {
+          "role": "lower_late_pid_pretraining",
+          "hypothesis": "Late leaf-PID phase weight 0.2 with parent weight 2, followed by identical reconstruction.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_leaf_pid_head_steps": 4376,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          },
+          "pretraining_leaf_pid_phase_weights": [
+            1.0,
+            1.0,
+            0.2,
+            0.2
+          ],
+          "pretraining_parent_ranking_weight": 2.0
+        }
+      ]
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase57_observed_validation_20260923.json",
+      "bytes": 29438,
+      "sha256": "a98b24bfc2ca578a59512065c8837d176e14a91c7a86de723d17f9deee717372",
+      "phase": 57,
+      "strict_selection_overlap": 100,
+      "sealed_test_accessed": false
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase57_validation_cohort_20260922.json",
+      "bytes": 44494,
+      "sha256": "54de7f1ae6b98d5485a2883602199ca4cd16cae4f3384621ec2d486e626fb512",
+      "phase": 57
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase58_20260923.json",
+      "bytes": 342447,
+      "sha256": "21f7c7b920a0f22746dc2b993a077e9b6f4e0118ed93de393815ec5d3f2673a5",
+      "phase": 58,
+      "scientific_question": "With corrected selection eligibility and fresh strict validation, does lower late pretraining PID weight improve joint reconstruction quality at fixed data and compute? Phase57 is selection-contaminated and cannot establish that contrast independently.",
+      "arm_roles": [
+        {
+          "role": "pretraining_balance_control",
+          "hypothesis": "Late leaf-PID phase weight 0.4 with parent weight 2, followed by identical reconstruction.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_leaf_pid_head_steps": 4376,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          },
+          "pretraining_leaf_pid_phase_weights": [
+            1.0,
+            1.0,
+            0.4,
+            0.4
+          ],
+          "pretraining_parent_ranking_weight": 2.0
+        },
+        {
+          "role": "lower_late_pid_pretraining",
+          "hypothesis": "Late leaf-PID phase weight 0.2 with parent weight 2, followed by identical reconstruction.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_leaf_pid_head_steps": 4376,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          },
+          "pretraining_leaf_pid_phase_weights": [
+            1.0,
+            1.0,
+            0.2,
+            0.2
+          ],
+          "pretraining_parent_ranking_weight": 2.0
+        }
+      ]
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase58_validation_cohort_20260923.json",
+      "bytes": 44955,
+      "sha256": "97974e1bc353a8df7c5b0316c1d636a8db21a4593708b9fc725e9f3ee7b21bb9",
+      "phase": 58
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase59_20260924.json",
+      "bytes": 342267,
+      "sha256": "5fa1024b201f5b97fc9c756944b18e3da4b7a603715685a53c8aefdc67394af7",
+      "phase": 59,
+      "scientific_question": "Does late PID weight0.1 versus0.2 improve objective stability at fixed parent2, data and compute? Only25 fresh strict events remain: feasibility and descriptive reconstruction, not confirmatory quality evidence.",
+      "arm_roles": [
+        {
+          "role": "pretraining_balance_control",
+          "hypothesis": "Late PID weight0.2 with fixed parent2; test stability without weakening fail guard.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_leaf_pid_head_steps": 4376,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          },
+          "pretraining_leaf_pid_phase_weights": [
+            1.0,
+            1.0,
+            0.2,
+            0.2
+          ],
+          "pretraining_parent_ranking_weight": 2.0
+        },
+        {
+          "role": "lower_late_pid_pretraining",
+          "hypothesis": "Late PID weight0.1 with fixed parent2; test stability without weakening fail guard.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_leaf_pid_head_steps": 4376,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          },
+          "pretraining_leaf_pid_phase_weights": [
+            1.0,
+            1.0,
+            0.1,
+            0.1
+          ],
+          "pretraining_parent_ranking_weight": 2.0
+        }
+      ]
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase59_validation_cohort_20260924.json",
+      "bytes": 40933,
+      "sha256": "43a5375b8e1b671c8ed99deeaa0382e6061496bbf9776bd788b8d4ab0d629165",
+      "phase": 59
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase60_20260925.json",
+      "bytes": 347442,
+      "sha256": "6cdd7e2a1832c8ee5323e3607a13aba3dc2bb789a3fa645882f7e0f8d9dc2e7d",
+      "phase": 60,
+      "scientific_question": "Replicate late PID 0.2 versus 0.1 at fixed parent 2 on independently sourced fresh selection and strict cohorts; test stability and downstream topology jointly. Both arms share the required level-5 cardinality repair 13 to 14. No new dose sweep, duration increase or training-size contrast.",
+      "arm_roles": [
+        {
+          "role": "pretraining_balance_control",
+          "hypothesis": "Replicate the registered late-PID contrast on fresh sources; require joint topology and forest evidence, not weighted-loss reduction.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_leaf_pid_head_steps": 4376,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          },
+          "pretraining_leaf_pid_phase_weights": [
+            1.0,
+            1.0,
+            0.2,
+            0.2
+          ],
+          "pretraining_parent_ranking_weight": 2.0
+        },
+        {
+          "role": "lower_late_pid_pretraining",
+          "hypothesis": "Replicate the registered late-PID contrast on fresh sources; require joint topology and forest evidence, not weighted-loss reduction.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_leaf_pid_head_steps": 4376,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          },
+          "pretraining_leaf_pid_phase_weights": [
+            1.0,
+            1.0,
+            0.1,
+            0.1
+          ],
+          "pretraining_parent_ranking_weight": 2.0
+        }
+      ]
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase60_validation_cohort_20260925.json",
+      "bytes": 37684,
+      "sha256": "6bfef4af0e83780b528884a9bf807e4027ff26fff06f7a5f65d638dedcf94cb3",
+      "phase": 60
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase61_20260926.json",
+      "bytes": 347972,
+      "sha256": "d18a77006f49f557359aa716b8c1e4f3821df60e5d8777b42db3f397ece16e30",
+      "phase": 61,
+      "scientific_question": "Can a shared early PID weight 0.5 permit the planned late-PID 0.2 versus 0.1 contrast to execute under the unchanged gradient-dominance guard? This is an adaptive stability pilot, not an independent replication of Phase59.",
+      "arm_roles": [
+        {
+          "role": "pretraining_balance_control",
+          "hypothesis": "Shared early weight reduction is a stability intervention; late PID treatment remains unexecuted and unproven. Require downstream topology and forest evidence if both arms complete.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_leaf_pid_head_steps": 4376,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          },
+          "pretraining_leaf_pid_phase_weights": [
+            0.5,
+            0.5,
+            0.2,
+            0.2
+          ],
+          "pretraining_parent_ranking_weight": 2.0
+        },
+        {
+          "role": "lower_late_pid_pretraining",
+          "hypothesis": "Shared early weight reduction is a stability intervention; late PID treatment remains unexecuted and unproven. Require downstream topology and forest evidence if both arms complete.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_leaf_pid_head_steps": 4376,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          },
+          "pretraining_leaf_pid_phase_weights": [
+            0.5,
+            0.5,
+            0.1,
+            0.1
+          ],
+          "pretraining_parent_ranking_weight": 2.0
+        }
+      ]
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase62_20260927.json",
+      "bytes": 347850,
+      "sha256": "4ef887da717fb2ca90bc18b874dbb6c8b7a4c4fec88eb388d70fae9fcf1795a0",
+      "phase": 62,
+      "scientific_question": "Replicate Phase61 earlyPID0.5 and latePID0.2 versus0.1 at seed20260928 on untouched validation. Does either schedule reproducibly improve joint topology and coherent forests at fixed data and budgets?",
+      "arm_roles": [
+        {
+          "role": "pretraining_balance_control",
+          "hypothesis": "Neither late-PID schedule is established as superior. Require replicated joint topology and coherent-forest evidence; preserve stability failures.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_leaf_pid_head_steps": 4376,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          },
+          "pretraining_leaf_pid_phase_weights": [
+            0.5,
+            0.5,
+            0.2,
+            0.2
+          ],
+          "pretraining_parent_ranking_weight": 2.0
+        },
+        {
+          "role": "lower_late_pid_pretraining",
+          "hypothesis": "Neither late-PID schedule is established as superior. Require replicated joint topology and coherent-forest evidence; preserve stability failures.",
+          "overrides": {
+            "encoder_lr_multiplier": 0.05,
+            "freeze_leaf_pid_head_steps": 4376,
+            "freeze_pretrained_encoder_steps": 2188,
+            "pointer_positive_weight": 32.0
+          },
+          "pretraining_leaf_pid_phase_weights": [
+            0.5,
+            0.5,
+            0.1,
+            0.1
+          ],
+          "pretraining_parent_ranking_weight": 2.0
+        }
+      ]
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase62_used_validation_20260927.json",
+      "bytes": 1477541,
+      "sha256": "f4aff4d8ec2fc81539dab70abe22993e6a4d2464a5b49e4345e919093bc6bfb5",
+      "phase": 62,
+      "sealed_test_accessed": false
+    },
+    {
+      "path": "configs/reconstruction/ht_reconstruction_phase62_validation_cohort_20260927.json",
+      "bytes": 37847,
+      "sha256": "090355678981ca3e06776e13448ee05437849c3a3413bbcdb229c8c7ee961563",
+      "phase": 62
+    },
+    {
+      "path": "docs/audits/current_status.md",
+      "bytes": 44702,
+      "sha256": "bb24067170bf6421d636d5d252a8939014f871f3280ebfd022819e30c627bda6"
+    },
+    {
+      "path": "docs/historical_migration_provenance.md",
+      "bytes": 17144,
+      "sha256": "e1ae54ba4961bc4e6cb314254ea304bc4575bcf5919f03618d2d991698f86cc5"
+    },
+    {
+      "path": "docs/wiki/phase41.rst",
+      "bytes": 7712,
+      "sha256": "5ee58a7232d3efa0b0990cc3c2c12bc55bb6f0eaf2325c585c2fd1f5606bf4cc",
+      "phase": 41
+    },
+    {
+      "path": "docs/wiki/phase42.rst",
+      "bytes": 7225,
+      "sha256": "e15ef214d52932e308de4c3f3cbf9d5ccdba7f972a7c27bcd7eb671d9cc02caa",
+      "phase": 42
+    },
+    {
+      "path": "docs/wiki/phase43.rst",
+      "bytes": 8517,
+      "sha256": "b771634d83aa9054ebcdd1afbf1a46bd781f637a0b438bee972664750c1bb893",
+      "phase": 43
+    },
+    {
+      "path": "docs/wiki/phase44.rst",
+      "bytes": 19289,
+      "sha256": "4614b18bc6e3d35cac2863e2633cbf413cb1859b64fe8fa9bfce127b82f3d6cd",
+      "phase": 44
+    },
+    {
+      "path": "docs/wiki/phase45.rst",
+      "bytes": 8139,
+      "sha256": "bb356b62c6afe509d1cdce600f5b57d5e215af4a570b94c60695f9cd8b984322",
+      "phase": 45
+    },
+    {
+      "path": "docs/wiki/phase46.rst",
+      "bytes": 9235,
+      "sha256": "123549bfa5520cb74ed4c5056db6fa1912a3aab747e3a46897309a628eced5d9",
+      "phase": 46
+    },
+    {
+      "path": "docs/wiki/phase47.rst",
+      "bytes": 12301,
+      "sha256": "ab41cc63ced986dddacd249d2bb226d106a5e4d8adc309f6a6d646785006efd0",
+      "phase": 47
+    },
+    {
+      "path": "docs/wiki/phase48.rst",
+      "bytes": 6917,
+      "sha256": "9acd54266f57a94deab094cd681051550a9b52b25df4cdc7273e07625804b5df",
+      "phase": 48
+    },
+    {
+      "path": "docs/wiki/phase49.rst",
+      "bytes": 7909,
+      "sha256": "7c962edd1d39757add468720941930c80dd9fda268c66e0d8f4375a36dbaa927",
+      "phase": 49
+    },
+    {
+      "path": "docs/wiki/phase50.rst",
+      "bytes": 8688,
+      "sha256": "1b38e0a85e357feffa563d53f549d8ea5a87fe3dbd10a3e0fae5a9f914ba17d9",
+      "phase": 50
+    },
+    {
+      "path": "docs/wiki/phase51.rst",
+      "bytes": 7992,
+      "sha256": "29668d08e303917d2f7e1af4f871a797a3b6c7a9cb4e8f5673d86217c1fd56f4",
+      "phase": 51
+    },
+    {
+      "path": "docs/wiki/phase52.rst",
+      "bytes": 8838,
+      "sha256": "7092f8342e67aed7ead81e746bae4a0012b01c9e4ef7488b79a5de812aac27d3",
+      "phase": 52
+    },
+    {
+      "path": "docs/wiki/phase53.rst",
+      "bytes": 12209,
+      "sha256": "117fc7299dc4d481b62c11894c3873569a3033d9d95159982235dbe91c60f25e",
+      "phase": 53
+    },
+    {
+      "path": "docs/wiki/phase54.rst",
+      "bytes": 13935,
+      "sha256": "f03f031ffb4127c86bdf804318b9663759d70d422a26735a69bb14a565819a2c",
+      "phase": 54
+    },
+    {
+      "path": "docs/wiki/phase55.rst",
+      "bytes": 20174,
+      "sha256": "a0f61b4994479eb50bc66d3a9727bde985bf587376472591356ca62cb481ec24",
+      "phase": 55
+    },
+    {
+      "path": "docs/wiki/phase56.rst",
+      "bytes": 9755,
+      "sha256": "c775acb27a276d7d21bb10ec5aeb7bf708798bf5689bd2e8f461010ec5d71572",
+      "phase": 56
+    },
+    {
+      "path": "docs/wiki/phase57.rst",
+      "bytes": 21680,
+      "sha256": "85b45bda3abaaab6b00a14b8dd60277b740c991304873318e10066f836faeff2",
+      "phase": 57
+    },
+    {
+      "path": "docs/wiki/phase58.rst",
+      "bytes": 13113,
+      "sha256": "978eef7759d10f8f7e9814d7ce50ed183c4da9794e6bf006b4a571a162cbc69c",
+      "phase": 58
+    },
+    {
+      "path": "docs/wiki/phase59.rst",
+      "bytes": 20180,
+      "sha256": "a5dc7b702a4a4135882bf6ce54dc6ce141348c4a59fdb0faf9683db4c27f0c73",
+      "phase": 59
+    },
+    {
+      "path": "docs/wiki/phase60.rst",
+      "bytes": 9769,
+      "sha256": "2fed8ec8af889ce4d0985d5533a04197716a17773909b168d6137eb1218dc149",
+      "phase": 60
+    },
+    {
+      "path": "docs/wiki/phase61.rst",
+      "bytes": 21220,
+      "sha256": "a3f96ac8c556cae9264fb4e61d7517907917319420747406de832ec1a4c54b92",
+      "phase": 61
+    },
+    {
+      "path": "notebooks/production_10m_ri_all_exp/reports/DATASET_CARD.md",
+      "bytes": 1670,
+      "sha256": "bbacdadddc58a48a8057dc542ccdd687ab063ddbf0bb9406bbf7833cf2a398c7"
+    },
+    {
+      "path": "reports/hyperbolic_reconstruction_technical_report_20260814/README.md",
+      "bytes": 5439,
+      "sha256": "9ff56cd3ee39fa7b950a8b97fd2e5637973774c472a3ae83a9733e5cdff08032"
+    },
+    {
+      "path": "reports/pretraining_run_15749624_20260815/README.md",
+      "bytes": 1376,
+      "sha256": "b52f4fe243474e2bbd2dca7eacc1d55b9d5d5740b33b0d796e1a7210f6093127"
+    }
+  ],
+  "external_historical_families": [
+    {
+      "family_path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging/artifacts/runs/ht-pretrain-1m-phase3-selected-20260823",
+      "result_records": [],
+      "interpretation": "Results record execution only; not automatically independent or comparable physics trials."
+    },
+    {
+      "family_path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging/artifacts/runs/ht-pretrain-production-1m-h100-20260821",
+      "result_records": [],
+      "interpretation": "Results record execution only; not automatically independent or comparable physics trials."
+    },
+    {
+      "family_path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging/artifacts/runs/ht-reconstruction-calibration-20260824",
+      "result_records": [
+        {
+          "path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging/artifacts/runs/ht-reconstruction-calibration-20260824/ht-recon-cal-v2-h100nvl-b32-20260824/15979439/result.json",
+          "sha256": "6d68ad039989f25bcf439ecdf17f41038e4ed831c71b724b8cefdee0b2a3917e",
+          "status": "completed",
+          "experiment": "ht-recon-cal-v2-h100nvl-b32-20260824",
+          "optimizer_steps": 128,
+          "elapsed_seconds": 259.2420247970149
+        },
+        {
+          "path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging/artifacts/runs/ht-reconstruction-calibration-20260824/ht-recon-cal-v2-h100nvl-b64-20260824/15979440/result.json",
+          "sha256": "2e61ed62cf65ddbc85dff56be7a1e29907281186dc0fe9fcdaa65f31d248a493",
+          "status": "completed",
+          "experiment": "ht-recon-cal-v2-h100nvl-b64-20260824",
+          "optimizer_steps": 128,
+          "elapsed_seconds": 668.7980595229892
+        },
+        {
+          "path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging/artifacts/runs/ht-reconstruction-calibration-20260824/ht-recon-cal-v2-v100-b32-20260824/15979441/result.json",
+          "sha256": "42d903b84ed6d519a7d36d807c722289b7cfefcedcc310ac564033e950304aac",
+          "status": "completed",
+          "experiment": "ht-recon-cal-v2-v100-b32-20260824",
+          "optimizer_steps": 128,
+          "elapsed_seconds": 423.193884185981
+        },
+        {
+          "path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging/artifacts/runs/ht-reconstruction-calibration-20260824/recon-cal-lr050-h100nvl-b32-20260824/15986318/result.json",
+          "sha256": "f309f0e57bae1f3f8bc4b060c799dd4ae85ad17ce9262034ed5d1446a0fe6823",
+          "status": "completed",
+          "experiment": "recon-cal-lr050-h100nvl-b32-20260824",
+          "optimizer_steps": 128,
+          "elapsed_seconds": 262.1162223368883
+        }
+      ],
+      "interpretation": "Results record execution only; not automatically independent or comparable physics trials."
+    },
+    {
+      "family_path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging/artifacts/runs/ht-reconstruction-stage-a-20260825",
+      "result_records": [],
+      "interpretation": "Results record execution only; not automatically independent or comparable physics trials."
+    },
+    {
+      "family_path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging/artifacts/runs/ht-reconstruction-transfer-fullscale-20260824",
+      "result_records": [
+        {
+          "path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging/artifacts/runs/ht-reconstruction-transfer-fullscale-20260824/15979725/result.json",
+          "sha256": "b172a802b5d79a42f8ea6f11729615d8a2ec48eb12b868c48cce78b8d05767eb",
+          "status": "completed",
+          "experiment": "ht-reconstruction-transfer-fullscale-20260824",
+          "optimizer_steps": 2188,
+          "elapsed_seconds": 15469.980644269963
+        }
+      ],
+      "interpretation": "Results record execution only; not automatically independent or comparable physics trials."
+    },
+    {
+      "family_path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging/artifacts/runs/pretrain-035k-diagnostic-v100-r3",
+      "result_records": [],
+      "interpretation": "Results record execution only; not automatically independent or comparable physics trials."
+    },
+    {
+      "family_path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging/artifacts/runs/pretrain-035k-h100-bf16-stable-20260815",
+      "result_records": [],
+      "interpretation": "Results record execution only; not automatically independent or comparable physics trials."
+    },
+    {
+      "family_path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging/artifacts/runs/pretrain-035k-h100-channel-dominance-resume-20260815",
+      "result_records": [],
+      "interpretation": "Results record execution only; not automatically independent or comparable physics trials."
+    },
+    {
+      "family_path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging/artifacts/runs/pretrain-035k-h100-channel-memory-resume-20260815",
+      "result_records": [],
+      "interpretation": "Results record execution only; not automatically independent or comparable physics trials."
+    },
+    {
+      "family_path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging/artifacts/runs/pretrain-035k-small-candidate-diag4-0c5e054",
+      "result_records": [],
+      "interpretation": "Results record execution only; not automatically independent or comparable physics trials."
+    },
+    {
+      "family_path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging/artifacts/runs/pretrain-035k-small-candidate-science-1ae7d74",
+      "result_records": [],
+      "interpretation": "Results record execution only; not automatically independent or comparable physics trials."
+    },
+    {
+      "family_path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging/artifacts/runs/pretrain-035k-v100-mass-safe-resume-20260815",
+      "result_records": [],
+      "interpretation": "Results record execution only; not automatically independent or comparable physics trials."
+    },
+    {
+      "family_path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging/artifacts/studies/diagnostics",
+      "result_records": [],
+      "interpretation": "Results record execution only; not automatically independent or comparable physics trials."
+    },
+    {
+      "family_path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging/artifacts/studies/frozen-reference",
+      "result_records": [],
+      "interpretation": "Results record execution only; not automatically independent or comparable physics trials."
+    },
+    {
+      "family_path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging/artifacts/studies/pretraining-checkpoint-comparison",
+      "result_records": [
+        {
+          "path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging/artifacts/studies/pretraining-checkpoint-comparison/pretrain-035k-val2000-step2188-study-20260815/15772672/result.json",
+          "sha256": "f5a88f9ac1ed54fd3e4bd5e1ecc65a06360bd4f5b9169ef0cfec8d07e2a3c094",
+          "status": "completed",
+          "optimizer_steps": 0
+        },
+        {
+          "path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging/artifacts/studies/pretraining-checkpoint-comparison/pretrain-035k-val2000-step4376-study-20260815/15772673/result.json",
+          "sha256": "dfbd2c33718d6b8611ccd903624d6344ec036909b060efec20779d761153c318",
+          "status": "completed",
+          "optimizer_steps": 0
+        }
+      ],
+      "interpretation": "Results record execution only; not automatically independent or comparable physics trials."
+    },
+    {
+      "family_path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging/artifacts/studies/reconstruction-transfer-probe",
+      "result_records": [
+        {
+          "path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging/artifacts/studies/reconstruction-transfer-probe/pretrain-035k-transfer-step3282-query-activation-balance-retry-study-20260816/15774286/result.json",
+          "sha256": "74c3da05e88dbe9d4d2d706f6424b2e5948c2ff993d004904a1b5a5ecab28479",
+          "status": "completed",
+          "optimizer_steps": 100,
+          "checkpoint_step": 3282,
+          "elapsed_seconds": 641.7910425369628
+        }
+      ],
+      "interpretation": "Results record execution only; not automatically independent or comparable physics trials."
+    },
+    {
+      "family_path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging_reconstruction_hpo_clearance_20260825/artifacts/runs/reconstruction-stage-a-paired-rerun-20260825-v1-authorized",
+      "result_records": [],
+      "interpretation": "Results record execution only; not automatically independent or comparable physics trials."
+    },
+    {
+      "family_path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging_reconstruction_hpo_clearance_20260825/artifacts/runs/reconstruction-stage-a-paired-rerun-20260825-v1-clearance",
+      "result_records": [],
+      "interpretation": "Results record execution only; not automatically independent or comparable physics trials."
+    },
+    {
+      "family_path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging_reconstruction_hpo_clearance_20260825/artifacts/runs/reconstruction-stage-a-paired-rerun-20260825-v2-uv-nosync-clearance",
+      "result_records": [],
+      "interpretation": "Results record execution only; not automatically independent or comparable physics trials."
+    },
+    {
+      "family_path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging_reconstruction_hpo_clearance_20260825/artifacts/runs/reconstruction-stage-a-paired-rerun-20260825-v2r1-authorized",
+      "result_records": [],
+      "interpretation": "Results record execution only; not automatically independent or comparable physics trials."
+    },
+    {
+      "family_path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging_reconstruction_hpo_clearance_20260825/artifacts/runs/reconstruction-stage-a-paired-rerun-20260826-v2r2-identity-sacct-clearance",
+      "result_records": [],
+      "interpretation": "Results record execution only; not automatically independent or comparable physics trials."
+    },
+    {
+      "family_path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging_reconstruction_hpo_clearance_20260825/artifacts/runs/reconstruction-stage-a-paired-rerun-20260826-v2r3-snapshot-closure-sacct-capability",
+      "result_records": [],
+      "interpretation": "Results record execution only; not automatically independent or comparable physics trials."
+    },
+    {
+      "family_path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging_reconstruction_hpo_clearance_20260825/artifacts/runs/reconstruction-stage-a-paired-rerun-20260826-v2r3r1-controller-identity-restart-clearance",
+      "result_records": [],
+      "interpretation": "Results record execution only; not automatically independent or comparable physics trials."
+    },
+    {
+      "family_path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging_reconstruction_hpo_clearance_20260825/artifacts/runs/reconstruction-stage-a-paired-rerun-20260826-v2r3r2-atomic-restart-evidence-clearance",
+      "result_records": [],
+      "interpretation": "Results record execution only; not automatically independent or comparable physics trials."
+    },
+    {
+      "family_path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging_reconstruction_hpo_clearance_20260825/artifacts/runs/reconstruction-stage-a-paired-rerun-20260827-v2r4-tag-tree-identity-clearance",
+      "result_records": [],
+      "interpretation": "Results record execution only; not automatically independent or comparable physics trials."
+    },
+    {
+      "family_path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging_reconstruction_hpo_clearance_20260825/artifacts/runs/reconstruction-stage-a-paired-rerun-20260827-v2r5r1-pinned-tag-tree-identity-clearance",
+      "result_records": [],
+      "interpretation": "Results record execution only; not automatically independent or comparable physics trials."
+    },
+    {
+      "family_path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging_reconstruction_hpo_clearance_20260825/artifacts/runs/reconstruction-stage-a-paired-rerun-20260827-v2r5r4-pinned-tag-tree-identity-clearance",
+      "result_records": [],
+      "interpretation": "Results record execution only; not automatically independent or comparable physics trials."
+    },
+    {
+      "family_path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging_reconstruction_hpo_clearance_20260825/artifacts/runs/reconstruction-stage-a-paired-rerun-20260827-v2r5r8-pinned-tag-tree-identity-clearance",
+      "result_records": [
+        {
+          "path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging_reconstruction_hpo_clearance_20260825/artifacts/runs/reconstruction-stage-a-paired-rerun-20260827-v2r5r8-pinned-tag-tree-identity-clearance/recon_stage_a_paired_q32_h100nvl_20260827_v2r5r8_pinned_tag_tree_identity_clearance/16036155/result.json",
+          "sha256": "af36ef09f28ae985d6f56a7c95d8f96e41d881b523244d430e0b8e4408b455e9",
+          "status": "completed",
+          "experiment": "recon-stage-a-paired-q32-h100nvl-20260827-v2r5r8-pinned-tag-tree-identity-clearance",
+          "optimizer_steps": 512,
+          "elapsed_seconds": 4087.1163090108894
+        },
+        {
+          "path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging_reconstruction_hpo_clearance_20260825/artifacts/runs/reconstruction-stage-a-paired-rerun-20260827-v2r5r8-pinned-tag-tree-identity-clearance/recon_stage_a_paired_relbias_h100nvl_20260827_v2r5r8_pinned_tag_tree_identity_clearance/16036157/result.json",
+          "sha256": "a236779d4a050a85763773dc790d108d9439157f799804e4c628b9ae65402f20",
+          "status": "completed",
+          "experiment": "recon-stage-a-paired-relbias-h100nvl-20260827-v2r5r8-pinned-tag-tree-identity-clearance",
+          "optimizer_steps": 512,
+          "elapsed_seconds": 4368.140798103064
+        }
+      ],
+      "interpretation": "Results record execution only; not automatically independent or comparable physics trials."
+    },
+    {
+      "family_path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/active/HyperTagging_reconstruction_phase34_20260904/artifacts/runs/ht-pretrain-1m-phase3-orderfix-20260901",
+      "result_records": [],
+      "interpretation": "Results record execution only; not automatically independent or comparable physics trials."
+    }
+  ],
+  "phase61_summary": {
+    "reconstruction_phase61_closeout_20260927.json": {
+      "arms": {
+        "lower_late_pid_pretraining": {
+          "all_gates_passed": false,
+          "beam": {
+            "full": {
+              "average_link_probability": {
+                "lcag_pair_accuracy": {
+                  "denominator": 608.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 43.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "perfect_lcag": {
+                  "denominator": 4.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "source_precision": {
+                  "denominator": 18.0,
+                  "numerator": 17.0,
+                  "value": 0.9444444444444444
+                },
+                "source_recall": {
+                  "denominator": 71.0,
+                  "numerator": 17.0,
+                  "value": 0.23943661971830985
+                }
+              },
+              "greedy": {
+                "lcag_pair_accuracy": {
+                  "denominator": 608.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 43.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "perfect_lcag": {
+                  "denominator": 4.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "source_precision": {
+                  "denominator": 12.0,
+                  "numerator": 12.0,
+                  "value": 1.0
+                },
+                "source_recall": {
+                  "denominator": 71.0,
+                  "numerator": 12.0,
+                  "value": 0.16901408450704225
+                }
+              },
+              "learned_confidence_mean": {
+                "lcag_pair_accuracy": {
+                  "denominator": 608.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 43.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "perfect_lcag": {
+                  "denominator": 4.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "source_precision": {
+                  "denominator": 18.0,
+                  "numerator": 17.0,
+                  "value": 0.9444444444444444
+                },
+                "source_recall": {
+                  "denominator": 71.0,
+                  "numerator": 17.0,
+                  "value": 0.23943661971830985
+                }
+              },
+              "learned_confidence_sum": {
+                "lcag_pair_accuracy": {
+                  "denominator": 608.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 43.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "perfect_lcag": {
+                  "denominator": 4.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "source_precision": {
+                  "denominator": 19.0,
+                  "numerator": 18.0,
+                  "value": 0.9473684210526315
+                },
+                "source_recall": {
+                  "denominator": 71.0,
+                  "numerator": 18.0,
+                  "value": 0.2535211267605634
+                }
+              },
+              "normalized_joint_log_probability": {
+                "lcag_pair_accuracy": {
+                  "denominator": 608.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 43.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "perfect_lcag": {
+                  "denominator": 4.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "source_precision": {
+                  "denominator": 14.0,
+                  "numerator": 13.0,
+                  "value": 0.9285714285714286
+                },
+                "source_recall": {
+                  "denominator": 71.0,
+                  "numerator": 13.0,
+                  "value": 0.18309859154929578
+                }
+              },
+              "oracle_at_k": {
+                "lcag_pair_accuracy": {
+                  "denominator": 608.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 43.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "perfect_lcag": {
+                  "denominator": 4.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "source_precision": {
+                  "denominator": 19.0,
+                  "numerator": 18.0,
+                  "value": 0.9473684210526315
+                },
+                "source_recall": {
+                  "denominator": 71.0,
+                  "numerator": 18.0,
+                  "value": 0.2535211267605634
+                }
+              }
+            },
+            "half": {
+              "average_link_probability": {
+                "lcag_pair_accuracy": {
+                  "denominator": 363.0,
+                  "numerator": 2.0,
+                  "value": 0.005509641873278237
+                },
+                "mother_pid_coverage": {
+                  "denominator": 58.0,
+                  "numerator": 2.0,
+                  "value": 0.034482758620689655
+                },
+                "perfect_lcag": {
+                  "denominator": 21.0,
+                  "numerator": 2.0,
+                  "value": 0.09523809523809523
+                },
+                "source_precision": {
+                  "denominator": 49.0,
+                  "numerator": 29.0,
+                  "value": 0.5918367346938775
+                },
+                "source_recall": {
+                  "denominator": 109.0,
+                  "numerator": 29.0,
+                  "value": 0.26605504587155965
+                }
+              },
+              "greedy": {
+                "lcag_pair_accuracy": {
+                  "denominator": 363.0,
+                  "numerator": 1.0,
+                  "value": 0.0027548209366391185
+                },
+                "mother_pid_coverage": {
+                  "denominator": 58.0,
+                  "numerator": 1.0,
+                  "value": 0.017241379310344827
+                },
+                "perfect_lcag": {
+                  "denominator": 21.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "source_precision": {
+                  "denominator": 47.0,
+                  "numerator": 25.0,
+                  "value": 0.5319148936170213
+                },
+                "source_recall": {
+                  "denominator": 109.0,
+                  "numerator": 25.0,
+                  "value": 0.22935779816513763
+                }
+              },
+              "learned_confidence_mean": {
+                "lcag_pair_accuracy": {
+                  "denominator": 363.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 58.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "perfect_lcag": {
+                  "denominator": 21.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "source_precision": {
+                  "denominator": 49.0,
+                  "numerator": 29.0,
+                  "value": 0.5918367346938775
+                },
+                "source_recall": {
+                  "denominator": 109.0,
+                  "numerator": 29.0,
+                  "value": 0.26605504587155965
+                }
+              },
+              "learned_confidence_sum": {
+                "lcag_pair_accuracy": {
+                  "denominator": 363.0,
+                  "numerator": 1.0,
+                  "value": 0.0027548209366391185
+                },
+                "mother_pid_coverage": {
+                  "denominator": 58.0,
+                  "numerator": 1.0,
+                  "value": 0.017241379310344827
+                },
+                "perfect_lcag": {
+                  "denominator": 21.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "source_precision": {
+                  "denominator": 53.0,
+                  "numerator": 28.0,
+                  "value": 0.5283018867924528
+                },
+                "source_recall": {
+                  "denominator": 109.0,
+                  "numerator": 28.0,
+                  "value": 0.25688073394495414
+                }
+              },
+              "normalized_joint_log_probability": {
+                "lcag_pair_accuracy": {
+                  "denominator": 363.0,
+                  "numerator": 2.0,
+                  "value": 0.005509641873278237
+                },
+                "mother_pid_coverage": {
+                  "denominator": 58.0,
+                  "numerator": 2.0,
+                  "value": 0.034482758620689655
+                },
+                "perfect_lcag": {
+                  "denominator": 21.0,
+                  "numerator": 1.0,
+                  "value": 0.047619047619047616
+                },
+                "source_precision": {
+                  "denominator": 44.0,
+                  "numerator": 25.0,
+                  "value": 0.5681818181818182
+                },
+                "source_recall": {
+                  "denominator": 109.0,
+                  "numerator": 25.0,
+                  "value": 0.22935779816513763
+                }
+              },
+              "oracle_at_k": {
+                "lcag_pair_accuracy": {
+                  "denominator": 363.0,
+                  "numerator": 3.0,
+                  "value": 0.008264462809917356
+                },
+                "mother_pid_coverage": {
+                  "denominator": 58.0,
+                  "numerator": 3.0,
+                  "value": 0.05172413793103448
+                },
+                "perfect_lcag": {
+                  "denominator": 21.0,
+                  "numerator": 2.0,
+                  "value": 0.09523809523809523
+                },
+                "source_precision": {
+                  "denominator": 53.0,
+                  "numerator": 35.0,
+                  "value": 0.660377358490566
+                },
+                "source_recall": {
+                  "denominator": 109.0,
+                  "numerator": 35.0,
+                  "value": 0.3211009174311927
+                }
+              }
+            }
+          },
+          "complete_target_count": {
+            "denominator": 3576.0,
+            "numerator": 326.0
+          },
+          "endpoints": {
+            "exact_mother_coverage": {
+              "denominator": 194.0,
+              "numerator": 2.0,
+              "value": 0.010309278350515464
+            },
+            "full_lcag": {
+              "denominator": 2941.0,
+              "numerator": 2.0,
+              "value": 0.0006800408024481469
+            },
+            "full_root_completion": {
+              "denominator": 100,
+              "numerator": 0,
+              "value": 0.0
+            },
+            "full_source_precision": {
+              "denominator": 89.0,
+              "numerator": 72.0,
+              "value": 0.8089887640449438
+            },
+            "full_source_recall": {
+              "denominator": 347.0,
+              "numerator": 72.0,
+              "value": 0.207492795389049
+            },
+            "half_lcag": {
+              "denominator": 1924.0,
+              "numerator": 28.0,
+              "value": 0.014553014553014554
+            },
+            "half_perfect_lcag": {
+              "denominator": 149.0,
+              "numerator": 13.0,
+              "value": 0.087248322147651
+            },
+            "half_root_pid_accuracy": {
+              "denominator": 149.0,
+              "numerator": 37.0,
+              "value": 0.2483221476510067
+            },
+            "half_source_precision": {
+              "denominator": 354.0,
+              "numerator": 197.0,
+              "value": 0.556497175141243
+            },
+            "half_source_recall": {
+              "denominator": 663.0,
+              "numerator": 197.0,
+              "value": 0.2971342383107089
+            }
+          },
+          "forest": {
+            "accepted_mother_count": 389,
+            "b_root_count": 32,
+            "empty_level_count": 350,
+            "leftover_input_fsp_count": 3166
+          },
+          "gates": {
+            "minimum_complete_target_efficiency": true,
+            "minimum_depth_fraction": true,
+            "minimum_full_source_precision": true,
+            "minimum_full_source_recall": true,
+            "minimum_half_lcag": true,
+            "minimum_half_perfect_lcag": true,
+            "minimum_half_root_pid_accuracy": true,
+            "minimum_half_source_precision": true,
+            "minimum_half_source_recall": true,
+            "nonzero_exact_mother_coverage": true,
+            "nonzero_full_lcag": true,
+            "nonzero_full_root_completion": false,
+            "primary_repeat_identical": true,
+            "structural_guardrails": true
+          },
+          "optimizer_steps": 4376,
+          "primary_repeat_identical": true,
+          "selected": {
+            "micro_complete_target_efficiency": 0.09116331096196868,
+            "predicted_depth_fraction": 1.7371666666666679,
+            "predicted_tree_validity_rate": 1.0,
+            "step": 4376
+          },
+          "training_elapsed_seconds": 61576.10115932906
+        },
+        "pretraining_balance_control": {
+          "all_gates_passed": true,
+          "beam": {
+            "full": {
+              "average_link_probability": {
+                "lcag_pair_accuracy": {
+                  "denominator": 608.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 43.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "perfect_lcag": {
+                  "denominator": 4.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "source_precision": {
+                  "denominator": 14.0,
+                  "numerator": 14.0,
+                  "value": 1.0
+                },
+                "source_recall": {
+                  "denominator": 71.0,
+                  "numerator": 14.0,
+                  "value": 0.19718309859154928
+                }
+              },
+              "greedy": {
+                "lcag_pair_accuracy": {
+                  "denominator": 608.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 43.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "perfect_lcag": {
+                  "denominator": 4.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "source_precision": {
+                  "denominator": 14.0,
+                  "numerator": 14.0,
+                  "value": 1.0
+                },
+                "source_recall": {
+                  "denominator": 71.0,
+                  "numerator": 14.0,
+                  "value": 0.19718309859154928
+                }
+              },
+              "learned_confidence_mean": {
+                "lcag_pair_accuracy": {
+                  "denominator": 608.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 43.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "perfect_lcag": {
+                  "denominator": 4.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "source_precision": {
+                  "denominator": 14.0,
+                  "numerator": 14.0,
+                  "value": 1.0
+                },
+                "source_recall": {
+                  "denominator": 71.0,
+                  "numerator": 14.0,
+                  "value": 0.19718309859154928
+                }
+              },
+              "learned_confidence_sum": {
+                "lcag_pair_accuracy": {
+                  "denominator": 608.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 43.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "perfect_lcag": {
+                  "denominator": 4.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "source_precision": {
+                  "denominator": 14.0,
+                  "numerator": 14.0,
+                  "value": 1.0
+                },
+                "source_recall": {
+                  "denominator": 71.0,
+                  "numerator": 14.0,
+                  "value": 0.19718309859154928
+                }
+              },
+              "normalized_joint_log_probability": {
+                "lcag_pair_accuracy": {
+                  "denominator": 608.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 43.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "perfect_lcag": {
+                  "denominator": 4.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "source_precision": {
+                  "denominator": 15.0,
+                  "numerator": 15.0,
+                  "value": 1.0
+                },
+                "source_recall": {
+                  "denominator": 71.0,
+                  "numerator": 15.0,
+                  "value": 0.2112676056338028
+                }
+              },
+              "oracle_at_k": {
+                "lcag_pair_accuracy": {
+                  "denominator": 608.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 43.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "perfect_lcag": {
+                  "denominator": 4.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "source_precision": {
+                  "denominator": 15.0,
+                  "numerator": 15.0,
+                  "value": 1.0
+                },
+                "source_recall": {
+                  "denominator": 71.0,
+                  "numerator": 15.0,
+                  "value": 0.2112676056338028
+                }
+              }
+            },
+            "half": {
+              "average_link_probability": {
+                "lcag_pair_accuracy": {
+                  "denominator": 363.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 58.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "perfect_lcag": {
+                  "denominator": 21.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "source_precision": {
+                  "denominator": 43.0,
+                  "numerator": 23.0,
+                  "value": 0.5348837209302325
+                },
+                "source_recall": {
+                  "denominator": 109.0,
+                  "numerator": 23.0,
+                  "value": 0.21100917431192662
+                }
+              },
+              "greedy": {
+                "lcag_pair_accuracy": {
+                  "denominator": 363.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 58.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "perfect_lcag": {
+                  "denominator": 21.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "source_precision": {
+                  "denominator": 41.0,
+                  "numerator": 22.0,
+                  "value": 0.5365853658536586
+                },
+                "source_recall": {
+                  "denominator": 109.0,
+                  "numerator": 22.0,
+                  "value": 0.2018348623853211
+                }
+              },
+              "learned_confidence_mean": {
+                "lcag_pair_accuracy": {
+                  "denominator": 363.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 58.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "perfect_lcag": {
+                  "denominator": 21.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "source_precision": {
+                  "denominator": 40.0,
+                  "numerator": 23.0,
+                  "value": 0.575
+                },
+                "source_recall": {
+                  "denominator": 109.0,
+                  "numerator": 23.0,
+                  "value": 0.21100917431192662
+                }
+              },
+              "learned_confidence_sum": {
+                "lcag_pair_accuracy": {
+                  "denominator": 363.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 58.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "perfect_lcag": {
+                  "denominator": 21.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "source_precision": {
+                  "denominator": 41.0,
+                  "numerator": 22.0,
+                  "value": 0.5365853658536586
+                },
+                "source_recall": {
+                  "denominator": 109.0,
+                  "numerator": 22.0,
+                  "value": 0.2018348623853211
+                }
+              },
+              "normalized_joint_log_probability": {
+                "lcag_pair_accuracy": {
+                  "denominator": 363.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 58.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "perfect_lcag": {
+                  "denominator": 21.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "source_precision": {
+                  "denominator": 40.0,
+                  "numerator": 23.0,
+                  "value": 0.575
+                },
+                "source_recall": {
+                  "denominator": 109.0,
+                  "numerator": 23.0,
+                  "value": 0.21100917431192662
+                }
+              },
+              "oracle_at_k": {
+                "lcag_pair_accuracy": {
+                  "denominator": 363.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 58.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "perfect_lcag": {
+                  "denominator": 21.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "source_precision": {
+                  "denominator": 43.0,
+                  "numerator": 26.0,
+                  "value": 0.6046511627906976
+                },
+                "source_recall": {
+                  "denominator": 109.0,
+                  "numerator": 26.0,
+                  "value": 0.23853211009174313
+                }
+              }
+            }
+          },
+          "complete_target_count": {
+            "denominator": 3576.0,
+            "numerator": 330.0
+          },
+          "endpoints": {
+            "exact_mother_coverage": {
+              "denominator": 194.0,
+              "numerator": 4.0,
+              "value": 0.020618556701030927
+            },
+            "full_lcag": {
+              "denominator": 2941.0,
+              "numerator": 4.0,
+              "value": 0.0013600816048962938
+            },
+            "full_root_completion": {
+              "denominator": 100,
+              "numerator": 4,
+              "value": 0.04
+            },
+            "full_source_precision": {
+              "denominator": 85.0,
+              "numerator": 73.0,
+              "value": 0.8588235294117647
+            },
+            "full_source_recall": {
+              "denominator": 347.0,
+              "numerator": 73.0,
+              "value": 0.21037463976945245
+            },
+            "half_lcag": {
+              "denominator": 1924.0,
+              "numerator": 28.0,
+              "value": 0.014553014553014554
+            },
+            "half_perfect_lcag": {
+              "denominator": 149.0,
+              "numerator": 12.0,
+              "value": 0.08053691275167785
+            },
+            "half_root_pid_accuracy": {
+              "denominator": 149.0,
+              "numerator": 30.0,
+              "value": 0.20134228187919462
+            },
+            "half_source_precision": {
+              "denominator": 353.0,
+              "numerator": 189.0,
+              "value": 0.5354107648725213
+            },
+            "half_source_recall": {
+              "denominator": 663.0,
+              "numerator": 189.0,
+              "value": 0.2850678733031674
+            }
+          },
+          "forest": {
+            "accepted_mother_count": 387,
+            "b_root_count": 24,
+            "empty_level_count": 343,
+            "leftover_input_fsp_count": 3200
+          },
+          "gates": {
+            "minimum_complete_target_efficiency": true,
+            "minimum_depth_fraction": true,
+            "minimum_full_source_precision": true,
+            "minimum_full_source_recall": true,
+            "minimum_half_lcag": true,
+            "minimum_half_perfect_lcag": true,
+            "minimum_half_root_pid_accuracy": true,
+            "minimum_half_source_precision": true,
+            "minimum_half_source_recall": true,
+            "nonzero_exact_mother_coverage": true,
+            "nonzero_full_lcag": true,
+            "nonzero_full_root_completion": true,
+            "primary_repeat_identical": true,
+            "structural_guardrails": true
+          },
+          "optimizer_steps": 4376,
+          "primary_repeat_identical": true,
+          "selected": {
+            "micro_complete_target_efficiency": 0.09228187919463088,
+            "predicted_depth_fraction": 1.7963499999999994,
+            "predicted_tree_validity_rate": 1.0,
+            "step": 4000
+          },
+          "training_elapsed_seconds": 62042.1784597449
+        }
+      },
+      "audit_version": "phase61-closeout-v1",
+      "beam_event_count": 20,
+      "evaluation_role": "validation",
+      "independent_validation": true,
+      "metric_completeness": "COMPLETE",
+      "next_study_status": "PREPARED",
+      "original_job_status": "COMPLETED",
+      "promotion_authorized": false,
+      "scientific_mode": "ADAPTIVE_STABILITY_PILOT",
+      "sealed_test_accessed": false,
+      "source_boundary": "native_immutable_training_and_evaluation",
+      "source_hashes": [
+        "b5ebebe78c198ca9041480156688d96d9ebc97a0e638cc1c15487f2a26bcbe04",
+        "7449996a3185ef41f84c55a36a58c0942688187df7948a95bc8b294eb1f262ef",
+        "ba6445c11982d15c7aff336a5254dcf23fc1adbb16ef40898cc2cba521ab59d6",
+        "a19603c37e2d83e1784cdb16a875ee4c158ffdb1328fbc07c18615d139181970",
+        "a096f2c3581fde12bd1545972e7a616ec23d543cbe59d7ffa2f5e2e5e79e445f",
+        "bbcf127d533df232ae3f403af3a10a60131340e3251cf4d2d9bcc49b963e81b1",
+        "a157f7332d98f6117450b749649c29b68fc91bd8761fae1526c19a43ee8402bd",
+        "bc43b4054a859dba8211d2d336963016eb6dd8e384c5f479d52a46307aefe62e",
+        "1ac3708ee56adcc173d873d8ec689fdc1ff518edf7a06fc93120cb8efc48c2c7",
+        "5f99e8c2b992f7d6cf5015f90dfb5c4f199f56c4e461a188298fc42e73a7c750",
+        "10f820a5572f7905cf5e33a8a25f1af95e43828bbd9a0ed16c6563d9060236c7",
+        "4593f5cc1d414a2799cb28523d52bae5d12a4e0ee860a2d90083f62143a427bc",
+        "546b68740cf3a104fe5db7c338ae90bef6c31a38a1b20c40606544f79df444e4",
+        "f9114cc553fb9122143c066295599306647a8eb0adab99e1ef43a6d1ffad1963",
+        "dce48b5ddad50262548b548be903df7bf47bca5cc607514e65458ca6e673fb5e",
+        "d53364bf10295e88181932f8dc251eaab3f964e157759307ed893ebb66f8f643",
+        "7d5d9bf041bcb1d8c0675277bb169eacdcfa7c72337196f202fbf28b54954f92",
+        "539a2726f62d23569bbb04f74470e046b0e21c9d03cc3b62ae26c857c5f9d7a8",
+        "685b0e1ea5a430d7ca3536e01747f4f19499a0c65a1ec9e37f6d307c4acc24fc",
+        "25c843aea9166047a270f396b9b65583683857cfc36b0f4695bf0f64af8c0246",
+        "35f67df1529284728dbf4644da2503ebcf6c73731541ab3665162aacfbb00cf8",
+        "28dcd24c4f3866d42ca4d1261412620e2b8745b8e709e453e40427f20c2fe35e",
+        "44c0804ddf3a7b171a931bfe08e6a355b1a4ddba3e6124a7940711c460083b8a"
+      ],
+      "status": "COMPLETED",
+      "status_date": "2026-09-27",
+      "strict_event_count": 100,
+      "strict_selection_overlap": 0,
+      "train_events": 70000,
+      "training_history_checkpoint_records": 26,
+      "training_history_log_records": 8840,
+      "training_history_scalar_rows": 749104
+    },
+    "reconstruction_phase61_retained_metrics_20260927.json": {
+      "aggregate_metric_count": 19451,
+      "all_returned_beam_candidates_checked": true,
+      "arms": {
+        "lower_late_pid_pretraining": {
+          "beam": {
+            "full": {
+              "average_link_probability": {
+                "available_unit_count": 635,
+                "coherent_retained_forest": {
+                  "denominator": 20.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "lcag_pair_accuracy": {
+                  "denominator": 673.0,
+                  "numerator": 3.0,
+                  "value": 0.004457652303120356
+                },
+                "matched_mother_count": 3,
+                "mother_pid_accuracy": {
+                  "denominator": 3.0,
+                  "numerator": 2.0,
+                  "value": 0.6666666666666666
+                },
+                "mother_pid_coverage": {
+                  "denominator": 107.0,
+                  "numerator": 3.0,
+                  "value": 0.028037383177570093
+                },
+                "perfect_lcag": {
+                  "denominator": 22.0,
+                  "numerator": 3.0,
+                  "value": 0.13636363636363635
+                },
+                "root_pid_accuracy": {
+                  "denominator": 297.0,
+                  "numerator": 63.0,
+                  "value": 0.21212121212121213
+                },
+                "source_precision": {
+                  "denominator": 669.0,
+                  "numerator": 617.0,
+                  "value": 0.922272047832586
+                },
+                "source_recall": {
+                  "denominator": 736.0,
+                  "numerator": 617.0,
+                  "value": 0.8383152173913043
+                },
+                "target_representable": {
+                  "denominator": 635.0,
+                  "numerator": 606.0,
+                  "value": 0.9543307086614173
+                },
+                "truth_mother_count": 107,
+                "unavailable_unit_count": 0,
+                "unit_count": 635,
+                "unit_semantics_counts": {
+                  "retained_full_forest": 20
+                }
+              },
+              "learned_confidence_mean": {
+                "available_unit_count": 635,
+                "coherent_retained_forest": {
+                  "denominator": 20.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "lcag_pair_accuracy": {
+                  "denominator": 673.0,
+                  "numerator": 1.0,
+                  "value": 0.0014858841010401188
+                },
+                "matched_mother_count": 1,
+                "mother_pid_accuracy": {
+                  "denominator": 1.0,
+                  "numerator": 1.0,
+                  "value": 1.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 107.0,
+                  "numerator": 1.0,
+                  "value": 0.009345794392523364
+                },
+                "perfect_lcag": {
+                  "denominator": 22.0,
+                  "numerator": 1.0,
+                  "value": 0.045454545454545456
+                },
+                "root_pid_accuracy": {
+                  "denominator": 297.0,
+                  "numerator": 62.0,
+                  "value": 0.20875420875420875
+                },
+                "source_precision": {
+                  "denominator": 667.0,
+                  "numerator": 618.0,
+                  "value": 0.9265367316341829
+                },
+                "source_recall": {
+                  "denominator": 736.0,
+                  "numerator": 618.0,
+                  "value": 0.8396739130434783
+                },
+                "target_representable": {
+                  "denominator": 635.0,
+                  "numerator": 606.0,
+                  "value": 0.9543307086614173
+                },
+                "truth_mother_count": 107,
+                "unavailable_unit_count": 0,
+                "unit_count": 635,
+                "unit_semantics_counts": {
+                  "retained_full_forest": 20
+                }
+              },
+              "learned_confidence_sum": {
+                "available_unit_count": 635,
+                "coherent_retained_forest": {
+                  "denominator": 20.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "lcag_pair_accuracy": {
+                  "denominator": 673.0,
+                  "numerator": 2.0,
+                  "value": 0.0029717682020802376
+                },
+                "matched_mother_count": 2,
+                "mother_pid_accuracy": {
+                  "denominator": 2.0,
+                  "numerator": 2.0,
+                  "value": 1.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 107.0,
+                  "numerator": 2.0,
+                  "value": 0.018691588785046728
+                },
+                "perfect_lcag": {
+                  "denominator": 22.0,
+                  "numerator": 1.0,
+                  "value": 0.045454545454545456
+                },
+                "root_pid_accuracy": {
+                  "denominator": 297.0,
+                  "numerator": 61.0,
+                  "value": 0.2053872053872054
+                },
+                "source_precision": {
+                  "denominator": 667.0,
+                  "numerator": 611.0,
+                  "value": 0.9160419790104948
+                },
+                "source_recall": {
+                  "denominator": 736.0,
+                  "numerator": 611.0,
+                  "value": 0.8301630434782609
+                },
+                "target_representable": {
+                  "denominator": 635.0,
+                  "numerator": 606.0,
+                  "value": 0.9543307086614173
+                },
+                "truth_mother_count": 107,
+                "unavailable_unit_count": 0,
+                "unit_count": 635,
+                "unit_semantics_counts": {
+                  "retained_full_forest": 20
+                }
+              },
+              "normalized_joint_log_probability": {
+                "available_unit_count": 635,
+                "coherent_retained_forest": {
+                  "denominator": 20.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "lcag_pair_accuracy": {
+                  "denominator": 673.0,
+                  "numerator": 3.0,
+                  "value": 0.004457652303120356
+                },
+                "matched_mother_count": 3,
+                "mother_pid_accuracy": {
+                  "denominator": 3.0,
+                  "numerator": 3.0,
+                  "value": 1.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 107.0,
+                  "numerator": 3.0,
+                  "value": 0.028037383177570093
+                },
+                "perfect_lcag": {
+                  "denominator": 22.0,
+                  "numerator": 2.0,
+                  "value": 0.09090909090909091
+                },
+                "root_pid_accuracy": {
+                  "denominator": 297.0,
+                  "numerator": 65.0,
+                  "value": 0.21885521885521886
+                },
+                "source_precision": {
+                  "denominator": 660.0,
+                  "numerator": 609.0,
+                  "value": 0.9227272727272727
+                },
+                "source_recall": {
+                  "denominator": 736.0,
+                  "numerator": 609.0,
+                  "value": 0.8274456521739131
+                },
+                "target_representable": {
+                  "denominator": 635.0,
+                  "numerator": 606.0,
+                  "value": 0.9543307086614173
+                },
+                "truth_mother_count": 107,
+                "unavailable_unit_count": 0,
+                "unit_count": 635,
+                "unit_semantics_counts": {
+                  "retained_full_forest": 20
+                }
+              },
+              "oracle_diagnostic": {
+                "available_unit_count": 635,
+                "coherent_retained_forest": {
+                  "denominator": 20.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "lcag_pair_accuracy": {
+                  "denominator": 673.0,
+                  "numerator": 4.0,
+                  "value": 0.005943536404160475
+                },
+                "matched_mother_count": 4,
+                "mother_pid_accuracy": {
+                  "denominator": 4.0,
+                  "numerator": 3.0,
+                  "value": 0.75
+                },
+                "mother_pid_coverage": {
+                  "denominator": 107.0,
+                  "numerator": 4.0,
+                  "value": 0.037383177570093455
+                },
+                "perfect_lcag": {
+                  "denominator": 22.0,
+                  "numerator": 3.0,
+                  "value": 0.13636363636363635
+                },
+                "root_pid_accuracy": {
+                  "denominator": 297.0,
+                  "numerator": 65.0,
+                  "value": 0.21885521885521886
+                },
+                "source_precision": {
+                  "denominator": 673.0,
+                  "numerator": 624.0,
+                  "value": 0.9271916790490342
+                },
+                "source_recall": {
+                  "denominator": 736.0,
+                  "numerator": 624.0,
+                  "value": 0.8478260869565217
+                },
+                "target_representable": {
+                  "denominator": 635.0,
+                  "numerator": 606.0,
+                  "value": 0.9543307086614173
+                },
+                "truth_mother_count": 107,
+                "unavailable_unit_count": 0,
+                "unit_count": 635,
+                "unit_semantics_counts": {
+                  "retained_full_forest": 20
+                }
+              }
+            },
+            "half": {
+              "average_link_probability": {
+                "available_unit_count": 529,
+                "coherent_retained_forest": {
+                  "denominator": 20.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "lcag_pair_accuracy": {
+                  "denominator": 382.0,
+                  "numerator": 3.0,
+                  "value": 0.007853403141361256
+                },
+                "matched_mother_count": 3,
+                "mother_pid_accuracy": {
+                  "denominator": 3.0,
+                  "numerator": 2.0,
+                  "value": 0.6666666666666666
+                },
+                "mother_pid_coverage": {
+                  "denominator": 103.0,
+                  "numerator": 3.0,
+                  "value": 0.02912621359223301
+                },
+                "perfect_lcag": {
+                  "denominator": 26.0,
+                  "numerator": 3.0,
+                  "value": 0.11538461538461539
+                },
+                "root_pid_accuracy": {
+                  "denominator": 252.0,
+                  "numerator": 53.0,
+                  "value": 0.21031746031746032
+                },
+                "source_precision": {
+                  "denominator": 559.0,
+                  "numerator": 507.0,
+                  "value": 0.9069767441860465
+                },
+                "source_recall": {
+                  "denominator": 626.0,
+                  "numerator": 507.0,
+                  "value": 0.8099041533546326
+                },
+                "target_representable": {
+                  "denominator": 529.0,
+                  "numerator": 498.0,
+                  "value": 0.941398865784499
+                },
+                "truth_mother_count": 103,
+                "unavailable_unit_count": 0,
+                "unit_count": 529,
+                "unit_semantics_counts": {
+                  "retained_b_halves": 4,
+                  "retained_explicit_components_no_b_partition": 16
+                }
+              },
+              "learned_confidence_mean": {
+                "available_unit_count": 529,
+                "coherent_retained_forest": {
+                  "denominator": 20.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "lcag_pair_accuracy": {
+                  "denominator": 382.0,
+                  "numerator": 1.0,
+                  "value": 0.002617801047120419
+                },
+                "matched_mother_count": 1,
+                "mother_pid_accuracy": {
+                  "denominator": 1.0,
+                  "numerator": 1.0,
+                  "value": 1.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 103.0,
+                  "numerator": 1.0,
+                  "value": 0.009708737864077669
+                },
+                "perfect_lcag": {
+                  "denominator": 26.0,
+                  "numerator": 1.0,
+                  "value": 0.038461538461538464
+                },
+                "root_pid_accuracy": {
+                  "denominator": 252.0,
+                  "numerator": 52.0,
+                  "value": 0.20634920634920634
+                },
+                "source_precision": {
+                  "denominator": 559.0,
+                  "numerator": 509.0,
+                  "value": 0.9105545617173524
+                },
+                "source_recall": {
+                  "denominator": 626.0,
+                  "numerator": 509.0,
+                  "value": 0.8130990415335463
+                },
+                "target_representable": {
+                  "denominator": 529.0,
+                  "numerator": 498.0,
+                  "value": 0.941398865784499
+                },
+                "truth_mother_count": 103,
+                "unavailable_unit_count": 0,
+                "unit_count": 529,
+                "unit_semantics_counts": {
+                  "retained_b_halves": 4,
+                  "retained_explicit_components_no_b_partition": 16
+                }
+              },
+              "learned_confidence_sum": {
+                "available_unit_count": 529,
+                "coherent_retained_forest": {
+                  "denominator": 20.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "lcag_pair_accuracy": {
+                  "denominator": 382.0,
+                  "numerator": 2.0,
+                  "value": 0.005235602094240838
+                },
+                "matched_mother_count": 2,
+                "mother_pid_accuracy": {
+                  "denominator": 2.0,
+                  "numerator": 2.0,
+                  "value": 1.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 103.0,
+                  "numerator": 2.0,
+                  "value": 0.019417475728155338
+                },
+                "perfect_lcag": {
+                  "denominator": 26.0,
+                  "numerator": 1.0,
+                  "value": 0.038461538461538464
+                },
+                "root_pid_accuracy": {
+                  "denominator": 252.0,
+                  "numerator": 51.0,
+                  "value": 0.20238095238095238
+                },
+                "source_precision": {
+                  "denominator": 558.0,
+                  "numerator": 502.0,
+                  "value": 0.899641577060932
+                },
+                "source_recall": {
+                  "denominator": 626.0,
+                  "numerator": 502.0,
+                  "value": 0.8019169329073482
+                },
+                "target_representable": {
+                  "denominator": 529.0,
+                  "numerator": 498.0,
+                  "value": 0.941398865784499
+                },
+                "truth_mother_count": 103,
+                "unavailable_unit_count": 0,
+                "unit_count": 529,
+                "unit_semantics_counts": {
+                  "retained_b_halves": 4,
+                  "retained_explicit_components_no_b_partition": 16
+                }
+              },
+              "normalized_joint_log_probability": {
+                "available_unit_count": 529,
+                "coherent_retained_forest": {
+                  "denominator": 20.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "lcag_pair_accuracy": {
+                  "denominator": 382.0,
+                  "numerator": 3.0,
+                  "value": 0.007853403141361256
+                },
+                "matched_mother_count": 3,
+                "mother_pid_accuracy": {
+                  "denominator": 3.0,
+                  "numerator": 3.0,
+                  "value": 1.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 103.0,
+                  "numerator": 3.0,
+                  "value": 0.02912621359223301
+                },
+                "perfect_lcag": {
+                  "denominator": 26.0,
+                  "numerator": 2.0,
+                  "value": 0.07692307692307693
+                },
+                "root_pid_accuracy": {
+                  "denominator": 252.0,
+                  "numerator": 56.0,
+                  "value": 0.2222222222222222
+                },
+                "source_precision": {
+                  "denominator": 549.0,
+                  "numerator": 504.0,
+                  "value": 0.9180327868852459
+                },
+                "source_recall": {
+                  "denominator": 626.0,
+                  "numerator": 504.0,
+                  "value": 0.805111821086262
+                },
+                "target_representable": {
+                  "denominator": 529.0,
+                  "numerator": 498.0,
+                  "value": 0.941398865784499
+                },
+                "truth_mother_count": 103,
+                "unavailable_unit_count": 0,
+                "unit_count": 529,
+                "unit_semantics_counts": {
+                  "retained_b_halves": 4,
+                  "retained_explicit_components_no_b_partition": 16
+                }
+              },
+              "oracle_diagnostic": {
+                "available_unit_count": 529,
+                "coherent_retained_forest": {
+                  "denominator": 20.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "lcag_pair_accuracy": {
+                  "denominator": 382.0,
+                  "numerator": 4.0,
+                  "value": 0.010471204188481676
+                },
+                "matched_mother_count": 4,
+                "mother_pid_accuracy": {
+                  "denominator": 4.0,
+                  "numerator": 3.0,
+                  "value": 0.75
+                },
+                "mother_pid_coverage": {
+                  "denominator": 103.0,
+                  "numerator": 4.0,
+                  "value": 0.038834951456310676
+                },
+                "perfect_lcag": {
+                  "denominator": 26.0,
+                  "numerator": 3.0,
+                  "value": 0.11538461538461539
+                },
+                "root_pid_accuracy": {
+                  "denominator": 252.0,
+                  "numerator": 55.0,
+                  "value": 0.21825396825396826
+                },
+                "source_precision": {
+                  "denominator": 561.0,
+                  "numerator": 515.0,
+                  "value": 0.9180035650623886
+                },
+                "source_recall": {
+                  "denominator": 626.0,
+                  "numerator": 515.0,
+                  "value": 0.8226837060702875
+                },
+                "target_representable": {
+                  "denominator": 529.0,
+                  "numerator": 498.0,
+                  "value": 0.941398865784499
+                },
+                "truth_mother_count": 103,
+                "unavailable_unit_count": 0,
+                "unit_count": 529,
+                "unit_semantics_counts": {
+                  "retained_b_halves": 4,
+                  "retained_explicit_components_no_b_partition": 16
+                }
+              }
+            }
+          },
+          "beam_candidate_count": 61,
+          "primary": {
+            "full": {
+              "available_unit_count": 3323,
+              "coherent_retained_forest": {
+                "denominator": 100.0,
+                "numerator": 0.0,
+                "value": 0.0
+              },
+              "lcag_pair_accuracy": {
+                "denominator": 3412.0,
+                "numerator": 24.0,
+                "value": 0.007033997655334115
+              },
+              "matched_mother_count": 24,
+              "mother_pid_accuracy": {
+                "denominator": 24.0,
+                "numerator": 24.0,
+                "value": 1.0
+              },
+              "mother_pid_coverage": {
+                "denominator": 544.0,
+                "numerator": 24.0,
+                "value": 0.04411764705882353
+              },
+              "perfect_lcag": {
+                "denominator": 142.0,
+                "numerator": 15.0,
+                "value": 0.1056338028169014
+              },
+              "root_pid_accuracy": {
+                "denominator": 1772.0,
+                "numerator": 366.0,
+                "value": 0.20654627539503387
+              },
+              "source_precision": {
+                "denominator": 3531.0,
+                "numerator": 3172.0,
+                "value": 0.8983290852449731
+              },
+              "source_recall": {
+                "denominator": 3880.0,
+                "numerator": 3172.0,
+                "value": 0.8175257731958763
+              },
+              "target_representable": {
+                "denominator": 3323.0,
+                "numerator": 3185.0,
+                "value": 0.9584712609088173
+              },
+              "truth_mother_count": 544,
+              "unavailable_unit_count": 0,
+              "unit_count": 3323,
+              "unit_semantics_counts": {
+                "retained_full_forest": 100
+              }
+            },
+            "half": {
+              "available_unit_count": 2738,
+              "coherent_retained_forest": {
+                "denominator": 100.0,
+                "numerator": 0.0,
+                "value": 0.0
+              },
+              "lcag_pair_accuracy": {
+                "denominator": 1961.0,
+                "numerator": 28.0,
+                "value": 0.014278429372768995
+              },
+              "matched_mother_count": 28,
+              "mother_pid_accuracy": {
+                "denominator": 28.0,
+                "numerator": 28.0,
+                "value": 1.0
+              },
+              "mother_pid_coverage": {
+                "denominator": 523.0,
+                "numerator": 28.0,
+                "value": 0.05353728489483748
+              },
+              "perfect_lcag": {
+                "denominator": 163.0,
+                "numerator": 15.0,
+                "value": 0.09202453987730061
+              },
+              "root_pid_accuracy": {
+                "denominator": 1513.0,
+                "numerator": 320.0,
+                "value": 0.21150033046926636
+              },
+              "source_precision": {
+                "denominator": 2931.0,
+                "numerator": 2610.0,
+                "value": 0.8904810644831116
+              },
+              "source_recall": {
+                "denominator": 3274.0,
+                "numerator": 2610.0,
+                "value": 0.7971899816737935
+              },
+              "target_representable": {
+                "denominator": 2738.0,
+                "numerator": 2594.0,
+                "value": 0.9474068663257852
+              },
+              "truth_mother_count": 523,
+              "unavailable_unit_count": 0,
+              "unit_count": 2738,
+              "unit_semantics_counts": {
+                "retained_b_halves": 21,
+                "retained_explicit_components_no_b_partition": 79
+              }
+            }
+          },
+          "primary_repeat_identical": true,
+          "primary_structure": {
+            "full": {
+              "events_without_flagged_target_incompatibility": 22,
+              "isolated_leaf_units": 3089,
+              "nontrivial_topology_units": 142,
+              "representable_nontrivial_units": 96,
+              "single_source_composite_units": 92,
+              "source_empty_units": 0
+            },
+            "half": {
+              "events_without_flagged_target_incompatibility": 22,
+              "isolated_leaf_units": 2483,
+              "nontrivial_topology_units": 163,
+              "representable_nontrivial_units": 111,
+              "single_source_composite_units": 92,
+              "source_empty_units": 0
+            }
+          }
+        },
+        "pretraining_balance_control": {
+          "beam": {
+            "full": {
+              "average_link_probability": {
+                "available_unit_count": 635,
+                "coherent_retained_forest": {
+                  "denominator": 20.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "lcag_pair_accuracy": {
+                  "denominator": 673.0,
+                  "numerator": 1.0,
+                  "value": 0.0014858841010401188
+                },
+                "matched_mother_count": 1,
+                "mother_pid_accuracy": {
+                  "denominator": 1.0,
+                  "numerator": 1.0,
+                  "value": 1.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 107.0,
+                  "numerator": 1.0,
+                  "value": 0.009345794392523364
+                },
+                "perfect_lcag": {
+                  "denominator": 22.0,
+                  "numerator": 1.0,
+                  "value": 0.045454545454545456
+                },
+                "root_pid_accuracy": {
+                  "denominator": 297.0,
+                  "numerator": 61.0,
+                  "value": 0.2053872053872054
+                },
+                "source_precision": {
+                  "denominator": 666.0,
+                  "numerator": 605.0,
+                  "value": 0.9084084084084084
+                },
+                "source_recall": {
+                  "denominator": 736.0,
+                  "numerator": 605.0,
+                  "value": 0.8220108695652174
+                },
+                "target_representable": {
+                  "denominator": 635.0,
+                  "numerator": 606.0,
+                  "value": 0.9543307086614173
+                },
+                "truth_mother_count": 107,
+                "unavailable_unit_count": 0,
+                "unit_count": 635,
+                "unit_semantics_counts": {
+                  "retained_full_forest": 20
+                }
+              },
+              "learned_confidence_mean": {
+                "available_unit_count": 635,
+                "coherent_retained_forest": {
+                  "denominator": 20.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "lcag_pair_accuracy": {
+                  "denominator": 673.0,
+                  "numerator": 1.0,
+                  "value": 0.0014858841010401188
+                },
+                "matched_mother_count": 1,
+                "mother_pid_accuracy": {
+                  "denominator": 1.0,
+                  "numerator": 1.0,
+                  "value": 1.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 107.0,
+                  "numerator": 1.0,
+                  "value": 0.009345794392523364
+                },
+                "perfect_lcag": {
+                  "denominator": 22.0,
+                  "numerator": 1.0,
+                  "value": 0.045454545454545456
+                },
+                "root_pid_accuracy": {
+                  "denominator": 297.0,
+                  "numerator": 63.0,
+                  "value": 0.21212121212121213
+                },
+                "source_precision": {
+                  "denominator": 665.0,
+                  "numerator": 609.0,
+                  "value": 0.9157894736842105
+                },
+                "source_recall": {
+                  "denominator": 736.0,
+                  "numerator": 609.0,
+                  "value": 0.8274456521739131
+                },
+                "target_representable": {
+                  "denominator": 635.0,
+                  "numerator": 606.0,
+                  "value": 0.9543307086614173
+                },
+                "truth_mother_count": 107,
+                "unavailable_unit_count": 0,
+                "unit_count": 635,
+                "unit_semantics_counts": {
+                  "retained_full_forest": 20
+                }
+              },
+              "learned_confidence_sum": {
+                "available_unit_count": 635,
+                "coherent_retained_forest": {
+                  "denominator": 20.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "lcag_pair_accuracy": {
+                  "denominator": 673.0,
+                  "numerator": 1.0,
+                  "value": 0.0014858841010401188
+                },
+                "matched_mother_count": 1,
+                "mother_pid_accuracy": {
+                  "denominator": 1.0,
+                  "numerator": 1.0,
+                  "value": 1.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 107.0,
+                  "numerator": 1.0,
+                  "value": 0.009345794392523364
+                },
+                "perfect_lcag": {
+                  "denominator": 22.0,
+                  "numerator": 1.0,
+                  "value": 0.045454545454545456
+                },
+                "root_pid_accuracy": {
+                  "denominator": 297.0,
+                  "numerator": 61.0,
+                  "value": 0.2053872053872054
+                },
+                "source_precision": {
+                  "denominator": 667.0,
+                  "numerator": 603.0,
+                  "value": 0.904047976011994
+                },
+                "source_recall": {
+                  "denominator": 736.0,
+                  "numerator": 603.0,
+                  "value": 0.8192934782608695
+                },
+                "target_representable": {
+                  "denominator": 635.0,
+                  "numerator": 606.0,
+                  "value": 0.9543307086614173
+                },
+                "truth_mother_count": 107,
+                "unavailable_unit_count": 0,
+                "unit_count": 635,
+                "unit_semantics_counts": {
+                  "retained_full_forest": 20
+                }
+              },
+              "normalized_joint_log_probability": {
+                "available_unit_count": 635,
+                "coherent_retained_forest": {
+                  "denominator": 20.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "lcag_pair_accuracy": {
+                  "denominator": 673.0,
+                  "numerator": 1.0,
+                  "value": 0.0014858841010401188
+                },
+                "matched_mother_count": 1,
+                "mother_pid_accuracy": {
+                  "denominator": 1.0,
+                  "numerator": 1.0,
+                  "value": 1.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 107.0,
+                  "numerator": 1.0,
+                  "value": 0.009345794392523364
+                },
+                "perfect_lcag": {
+                  "denominator": 22.0,
+                  "numerator": 1.0,
+                  "value": 0.045454545454545456
+                },
+                "root_pid_accuracy": {
+                  "denominator": 297.0,
+                  "numerator": 63.0,
+                  "value": 0.21212121212121213
+                },
+                "source_precision": {
+                  "denominator": 666.0,
+                  "numerator": 608.0,
+                  "value": 0.9129129129129129
+                },
+                "source_recall": {
+                  "denominator": 736.0,
+                  "numerator": 608.0,
+                  "value": 0.8260869565217391
+                },
+                "target_representable": {
+                  "denominator": 635.0,
+                  "numerator": 606.0,
+                  "value": 0.9543307086614173
+                },
+                "truth_mother_count": 107,
+                "unavailable_unit_count": 0,
+                "unit_count": 635,
+                "unit_semantics_counts": {
+                  "retained_full_forest": 20
+                }
+              },
+              "oracle_diagnostic": {
+                "available_unit_count": 635,
+                "coherent_retained_forest": {
+                  "denominator": 20.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "lcag_pair_accuracy": {
+                  "denominator": 673.0,
+                  "numerator": 1.0,
+                  "value": 0.0014858841010401188
+                },
+                "matched_mother_count": 1,
+                "mother_pid_accuracy": {
+                  "denominator": 1.0,
+                  "numerator": 1.0,
+                  "value": 1.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 107.0,
+                  "numerator": 1.0,
+                  "value": 0.009345794392523364
+                },
+                "perfect_lcag": {
+                  "denominator": 22.0,
+                  "numerator": 1.0,
+                  "value": 0.045454545454545456
+                },
+                "root_pid_accuracy": {
+                  "denominator": 297.0,
+                  "numerator": 64.0,
+                  "value": 0.21548821548821548
+                },
+                "source_precision": {
+                  "denominator": 666.0,
+                  "numerator": 613.0,
+                  "value": 0.9204204204204204
+                },
+                "source_recall": {
+                  "denominator": 736.0,
+                  "numerator": 613.0,
+                  "value": 0.8328804347826086
+                },
+                "target_representable": {
+                  "denominator": 635.0,
+                  "numerator": 606.0,
+                  "value": 0.9543307086614173
+                },
+                "truth_mother_count": 107,
+                "unavailable_unit_count": 0,
+                "unit_count": 635,
+                "unit_semantics_counts": {
+                  "retained_full_forest": 20
+                }
+              }
+            },
+            "half": {
+              "average_link_probability": {
+                "available_unit_count": 529,
+                "coherent_retained_forest": {
+                  "denominator": 20.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "lcag_pair_accuracy": {
+                  "denominator": 382.0,
+                  "numerator": 1.0,
+                  "value": 0.002617801047120419
+                },
+                "matched_mother_count": 1,
+                "mother_pid_accuracy": {
+                  "denominator": 1.0,
+                  "numerator": 1.0,
+                  "value": 1.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 103.0,
+                  "numerator": 1.0,
+                  "value": 0.009708737864077669
+                },
+                "perfect_lcag": {
+                  "denominator": 26.0,
+                  "numerator": 1.0,
+                  "value": 0.038461538461538464
+                },
+                "root_pid_accuracy": {
+                  "denominator": 252.0,
+                  "numerator": 51.0,
+                  "value": 0.20238095238095238
+                },
+                "source_precision": {
+                  "denominator": 552.0,
+                  "numerator": 498.0,
+                  "value": 0.9021739130434783
+                },
+                "source_recall": {
+                  "denominator": 626.0,
+                  "numerator": 498.0,
+                  "value": 0.7955271565495208
+                },
+                "target_representable": {
+                  "denominator": 529.0,
+                  "numerator": 498.0,
+                  "value": 0.941398865784499
+                },
+                "truth_mother_count": 103,
+                "unavailable_unit_count": 0,
+                "unit_count": 529,
+                "unit_semantics_counts": {
+                  "retained_b_halves": 4,
+                  "retained_explicit_components_no_b_partition": 16
+                }
+              },
+              "learned_confidence_mean": {
+                "available_unit_count": 529,
+                "coherent_retained_forest": {
+                  "denominator": 20.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "lcag_pair_accuracy": {
+                  "denominator": 382.0,
+                  "numerator": 1.0,
+                  "value": 0.002617801047120419
+                },
+                "matched_mother_count": 1,
+                "mother_pid_accuracy": {
+                  "denominator": 1.0,
+                  "numerator": 1.0,
+                  "value": 1.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 103.0,
+                  "numerator": 1.0,
+                  "value": 0.009708737864077669
+                },
+                "perfect_lcag": {
+                  "denominator": 26.0,
+                  "numerator": 1.0,
+                  "value": 0.038461538461538464
+                },
+                "root_pid_accuracy": {
+                  "denominator": 252.0,
+                  "numerator": 54.0,
+                  "value": 0.21428571428571427
+                },
+                "source_precision": {
+                  "denominator": 552.0,
+                  "numerator": 501.0,
+                  "value": 0.907608695652174
+                },
+                "source_recall": {
+                  "denominator": 626.0,
+                  "numerator": 501.0,
+                  "value": 0.8003194888178914
+                },
+                "target_representable": {
+                  "denominator": 529.0,
+                  "numerator": 498.0,
+                  "value": 0.941398865784499
+                },
+                "truth_mother_count": 103,
+                "unavailable_unit_count": 0,
+                "unit_count": 529,
+                "unit_semantics_counts": {
+                  "retained_b_halves": 4,
+                  "retained_explicit_components_no_b_partition": 16
+                }
+              },
+              "learned_confidence_sum": {
+                "available_unit_count": 529,
+                "coherent_retained_forest": {
+                  "denominator": 20.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "lcag_pair_accuracy": {
+                  "denominator": 382.0,
+                  "numerator": 1.0,
+                  "value": 0.002617801047120419
+                },
+                "matched_mother_count": 1,
+                "mother_pid_accuracy": {
+                  "denominator": 1.0,
+                  "numerator": 1.0,
+                  "value": 1.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 103.0,
+                  "numerator": 1.0,
+                  "value": 0.009708737864077669
+                },
+                "perfect_lcag": {
+                  "denominator": 26.0,
+                  "numerator": 1.0,
+                  "value": 0.038461538461538464
+                },
+                "root_pid_accuracy": {
+                  "denominator": 252.0,
+                  "numerator": 52.0,
+                  "value": 0.20634920634920634
+                },
+                "source_precision": {
+                  "denominator": 552.0,
+                  "numerator": 496.0,
+                  "value": 0.8985507246376812
+                },
+                "source_recall": {
+                  "denominator": 626.0,
+                  "numerator": 496.0,
+                  "value": 0.792332268370607
+                },
+                "target_representable": {
+                  "denominator": 529.0,
+                  "numerator": 498.0,
+                  "value": 0.941398865784499
+                },
+                "truth_mother_count": 103,
+                "unavailable_unit_count": 0,
+                "unit_count": 529,
+                "unit_semantics_counts": {
+                  "retained_b_halves": 4,
+                  "retained_explicit_components_no_b_partition": 16
+                }
+              },
+              "normalized_joint_log_probability": {
+                "available_unit_count": 529,
+                "coherent_retained_forest": {
+                  "denominator": 20.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "lcag_pair_accuracy": {
+                  "denominator": 382.0,
+                  "numerator": 1.0,
+                  "value": 0.002617801047120419
+                },
+                "matched_mother_count": 1,
+                "mother_pid_accuracy": {
+                  "denominator": 1.0,
+                  "numerator": 1.0,
+                  "value": 1.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 103.0,
+                  "numerator": 1.0,
+                  "value": 0.009708737864077669
+                },
+                "perfect_lcag": {
+                  "denominator": 26.0,
+                  "numerator": 1.0,
+                  "value": 0.038461538461538464
+                },
+                "root_pid_accuracy": {
+                  "denominator": 252.0,
+                  "numerator": 54.0,
+                  "value": 0.21428571428571427
+                },
+                "source_precision": {
+                  "denominator": 553.0,
+                  "numerator": 500.0,
+                  "value": 0.9041591320072333
+                },
+                "source_recall": {
+                  "denominator": 626.0,
+                  "numerator": 500.0,
+                  "value": 0.7987220447284346
+                },
+                "target_representable": {
+                  "denominator": 529.0,
+                  "numerator": 498.0,
+                  "value": 0.941398865784499
+                },
+                "truth_mother_count": 103,
+                "unavailable_unit_count": 0,
+                "unit_count": 529,
+                "unit_semantics_counts": {
+                  "retained_b_halves": 4,
+                  "retained_explicit_components_no_b_partition": 16
+                }
+              },
+              "oracle_diagnostic": {
+                "available_unit_count": 529,
+                "coherent_retained_forest": {
+                  "denominator": 20.0,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "lcag_pair_accuracy": {
+                  "denominator": 382.0,
+                  "numerator": 1.0,
+                  "value": 0.002617801047120419
+                },
+                "matched_mother_count": 1,
+                "mother_pid_accuracy": {
+                  "denominator": 1.0,
+                  "numerator": 1.0,
+                  "value": 1.0
+                },
+                "mother_pid_coverage": {
+                  "denominator": 103.0,
+                  "numerator": 1.0,
+                  "value": 0.009708737864077669
+                },
+                "perfect_lcag": {
+                  "denominator": 26.0,
+                  "numerator": 1.0,
+                  "value": 0.038461538461538464
+                },
+                "root_pid_accuracy": {
+                  "denominator": 252.0,
+                  "numerator": 55.0,
+                  "value": 0.21825396825396826
+                },
+                "source_precision": {
+                  "denominator": 553.0,
+                  "numerator": 505.0,
+                  "value": 0.9132007233273056
+                },
+                "source_recall": {
+                  "denominator": 626.0,
+                  "numerator": 505.0,
+                  "value": 0.8067092651757188
+                },
+                "target_representable": {
+                  "denominator": 529.0,
+                  "numerator": 498.0,
+                  "value": 0.941398865784499
+                },
+                "truth_mother_count": 103,
+                "unavailable_unit_count": 0,
+                "unit_count": 529,
+                "unit_semantics_counts": {
+                  "retained_b_halves": 4,
+                  "retained_explicit_components_no_b_partition": 16
+                }
+              }
+            }
+          },
+          "beam_candidate_count": 49,
+          "primary": {
+            "full": {
+              "available_unit_count": 3323,
+              "coherent_retained_forest": {
+                "denominator": 100.0,
+                "numerator": 0.0,
+                "value": 0.0
+              },
+              "lcag_pair_accuracy": {
+                "denominator": 3412.0,
+                "numerator": 27.0,
+                "value": 0.007913247362250879
+              },
+              "matched_mother_count": 25,
+              "mother_pid_accuracy": {
+                "denominator": 25.0,
+                "numerator": 24.0,
+                "value": 0.96
+              },
+              "mother_pid_coverage": {
+                "denominator": 544.0,
+                "numerator": 25.0,
+                "value": 0.04595588235294118
+              },
+              "perfect_lcag": {
+                "denominator": 142.0,
+                "numerator": 14.0,
+                "value": 0.09859154929577464
+              },
+              "root_pid_accuracy": {
+                "denominator": 1772.0,
+                "numerator": 380.0,
+                "value": 0.2144469525959368
+              },
+              "source_precision": {
+                "denominator": 3532.0,
+                "numerator": 3178.0,
+                "value": 0.8997734994337486
+              },
+              "source_recall": {
+                "denominator": 3880.0,
+                "numerator": 3178.0,
+                "value": 0.8190721649484536
+              },
+              "target_representable": {
+                "denominator": 3323.0,
+                "numerator": 3185.0,
+                "value": 0.9584712609088173
+              },
+              "truth_mother_count": 544,
+              "unavailable_unit_count": 0,
+              "unit_count": 3323,
+              "unit_semantics_counts": {
+                "retained_full_forest": 100
+              }
+            },
+            "half": {
+              "available_unit_count": 2738,
+              "coherent_retained_forest": {
+                "denominator": 100.0,
+                "numerator": 0.0,
+                "value": 0.0
+              },
+              "lcag_pair_accuracy": {
+                "denominator": 1961.0,
+                "numerator": 31.0,
+                "value": 0.01580826109127996
+              },
+              "matched_mother_count": 29,
+              "mother_pid_accuracy": {
+                "denominator": 29.0,
+                "numerator": 28.0,
+                "value": 0.9655172413793104
+              },
+              "mother_pid_coverage": {
+                "denominator": 523.0,
+                "numerator": 29.0,
+                "value": 0.055449330783938815
+              },
+              "perfect_lcag": {
+                "denominator": 163.0,
+                "numerator": 14.0,
+                "value": 0.08588957055214724
+              },
+              "root_pid_accuracy": {
+                "denominator": 1513.0,
+                "numerator": 332.0,
+                "value": 0.21943159286186384
+              },
+              "source_precision": {
+                "denominator": 2915.0,
+                "numerator": 2604.0,
+                "value": 0.8933104631217839
+              },
+              "source_recall": {
+                "denominator": 3274.0,
+                "numerator": 2604.0,
+                "value": 0.7953573610262675
+              },
+              "target_representable": {
+                "denominator": 2738.0,
+                "numerator": 2594.0,
+                "value": 0.9474068663257852
+              },
+              "truth_mother_count": 523,
+              "unavailable_unit_count": 0,
+              "unit_count": 2738,
+              "unit_semantics_counts": {
+                "retained_b_halves": 21,
+                "retained_explicit_components_no_b_partition": 79
+              }
+            }
+          },
+          "primary_repeat_identical": true,
+          "primary_structure": {
+            "full": {
+              "events_without_flagged_target_incompatibility": 22,
+              "isolated_leaf_units": 3089,
+              "nontrivial_topology_units": 142,
+              "representable_nontrivial_units": 96,
+              "single_source_composite_units": 92,
+              "source_empty_units": 0
+            },
+            "half": {
+              "events_without_flagged_target_incompatibility": 22,
+              "isolated_leaf_units": 2483,
+              "nontrivial_topology_units": 163,
+              "representable_nontrivial_units": 111,
+              "single_source_composite_units": 92,
+              "source_empty_units": 0
+            }
+          }
+        }
+      },
+      "beam_event_count": 20,
+      "detailed_metric_count": 320876,
+      "evaluator_revision": "9d235fda39108b739b4c8e55b89dc9a4aff399c7",
+      "independent_validation": true,
+      "original_job_status": "COMPLETED",
+      "scientific_mode": "ADAPTIVE_STABILITY_PILOT",
+      "sealed_test_accessed": false,
+      "source_boundary": "native_immutable_training_and_evaluation",
+      "source_hashes": [
+        "7449996a3185ef41f84c55a36a58c0942688187df7948a95bc8b294eb1f262ef",
+        "ba6445c11982d15c7aff336a5254dcf23fc1adbb16ef40898cc2cba521ab59d6",
+        "a19603c37e2d83e1784cdb16a875ee4c158ffdb1328fbc07c18615d139181970",
+        "a096f2c3581fde12bd1545972e7a616ec23d543cbe59d7ffa2f5e2e5e79e445f",
+        "bbcf127d533df232ae3f403af3a10a60131340e3251cf4d2d9bcc49b963e81b1",
+        "a157f7332d98f6117450b749649c29b68fc91bd8761fae1526c19a43ee8402bd",
+        "bc43b4054a859dba8211d2d336963016eb6dd8e384c5f479d52a46307aefe62e",
+        "546b68740cf3a104fe5db7c338ae90bef6c31a38a1b20c40606544f79df444e4",
+        "f9114cc553fb9122143c066295599306647a8eb0adab99e1ef43a6d1ffad1963",
+        "dce48b5ddad50262548b548be903df7bf47bca5cc607514e65458ca6e673fb5e",
+        "d53364bf10295e88181932f8dc251eaab3f964e157759307ed893ebb66f8f643",
+        "7d5d9bf041bcb1d8c0675277bb169eacdcfa7c72337196f202fbf28b54954f92",
+        "539a2726f62d23569bbb04f74470e046b0e21c9d03cc3b62ae26c857c5f9d7a8",
+        "685b0e1ea5a430d7ca3536e01747f4f19499a0c65a1ec9e37f6d307c4acc24fc",
+        "9c4823b3b0ce5f9124bb7d510f244fe13b55a5bfb7d2c63ab94889d9117bba40"
+      ],
+      "status": "COMPLETE",
+      "strict_event_count": 100,
+      "strict_selection_overlap": 0,
+      "tree_metric_export_sha256": "9c4823b3b0ce5f9124bb7d510f244fe13b55a5bfb7d2c63ab94889d9117bba40",
+      "tree_metric_scalar_rows": 10179749,
+      "version": "phase61-retained-tree-export-v1"
+    },
+    "reconstruction_phase61_pretraining_20260927.json": {
+      "arms": {
+        "lower_late_pid_pretraining": {
+          "actual_presentations": 70000.0,
+          "status": "COMPLETED",
+          "training_steps": 2188
+        },
+        "pretraining_balance_control": {
+          "actual_presentations": 70000.0,
+          "status": "COMPLETED",
+          "training_steps": 2188
+        }
+      },
+      "independent_validation": true,
+      "scalar_rows": 1318904,
+      "source_hashes": [
+        "411258b15affba08e4d4599fc8fc408badeff0f3ae5a8f9b075d83060b4e2c6b",
+        "4fa15637e2a66ee46660c27066016aecbb382965b2e8dba0946bc056b4c57b22"
+      ],
+      "status": "COMPLETE",
+      "version": "phase61-pretraining-export-v1"
+    }
+  }
+}
