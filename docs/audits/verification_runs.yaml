@@ -469,3 +469,46 @@ supplemental_runs:
         passed.
       remote_ci_pages: NOT_VERIFIED
       additional_compatibility_layouts: NOT_RUN
+  - source_sha: fef453b744e96461ee8cfccd379dae856ae392be
+    metadata_head: resolved_by_git_rev_parse_HEAD
+    worktree_state: tested_changes_committed
+    date: '2026-09-28T14:19:55.595163+00:00'
+    commands:
+    - CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=ABSOLUTE_SOURCE/src python -m pytest
+      -q
+    - Two-step CPU pretraining and reconstruction dry runs
+    - Heterogeneous-capacity ONNX CPU export and runtime (included in pytest)
+    - ruff check --select F changed Python; compileall src scripts tests docs/_ext; bash -n Phase63 entrypoint; JSON
+      syntax; git diff --check
+    - validate_audit_integrity.py; generate_audit_views.py --check
+    - 'Post-suite CLI/config admission for validation_phase_weighted_objective: PASS'
+    pytest:
+      result: PASS
+      passed: 1958
+      skipped: 34
+      warnings: 201
+      duration_seconds: 634.96
+      log_sha256: 6a99fba0ef70fb52c58602f7d2ca7e8ee3057f92d21815f5a0c95add4f411143
+    notebooks:
+      generated_consistency:
+        result: PASS
+        count: 18
+      default_fixture:
+        result: NOT_RUN
+        count: 0
+      real_mdst_pilot:
+        result: NOT_RUN
+        count: 0
+      trained_physics_validation:
+        result: NOT_RUN
+        count: 0
+    real_data_inputs: 'Phase62 native reports and fixed selection-only development samples: 32 pretraining, 16 reconstruction;
+      sealed test closed'
+    checkpoint: Phase62 control pretraining and reconstruction; read-only diagnostics and export inspection
+    ci_run: REMOTE_NOT_VERIFIED
+    human_visual_review_status: NOT_REVIEWED
+    evidence_limitations: CPU suite validates correctness, not physics benefit. Initial suite failures from missing
+      subprocess PYTHONPATH and stale dashboard/legacy fixture expectations were repaired before the successful complete
+      rerun. Subsequent CLI choice admission checked directly. Development geometry saturation and two ineligible
+      aligned targets are bounded-sample observations. Phase63 is one exploratory seed; no promotion or automatic
+      successor. Full scientific ONNX export, basf2 pilot and host/offline beam parity remain unverified.
