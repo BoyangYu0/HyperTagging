@@ -147,3 +147,18 @@ large scalar/tree exports and job artifacts remain in the data path. The
 existing [online operations proposal](online_study_operations.md) continues to
 define monitoring, planning and bounded execution; no online service is deployed
 by this training submission.
+
+## Submission snapshot
+
+The guarded workflow accepted and released jobs **16742232** (`corrected_recovery`)
+and **16742233** (`masked_only`) from immutable source
+`aeefabdaab6f05bce817081f43109c0a8641827d`, tag
+`phase63-legal-supervision-source-20260928`. Both are pending scheduler priority
+at the recorded snapshot. GPU preflight and training startup are not yet verified.
+The compact submission record binds the native receipt and both contracts.
+
+Verification: **1,958 CPU tests passed, 34 skipped**, both two-step training dry
+runs passed, heterogeneous ONNX execution passed, and static/audit/contract checks
+passed. The full suite preceded the additional CLI choice for the new objective;
+its parser/config admission was then checked directly. CPU tests do not establish
+scientific improvement. Documentation publication is recorded separately.

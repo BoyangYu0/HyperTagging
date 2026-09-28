@@ -5,21 +5,25 @@
 [The new review](../phase62_review_phase63_20260928.md) verifies both Phase62
 native completions, all fourteen reports and exact repeat equality. The control
 passes original gates; lower late PID fails full LCAG and exact-mother coverage.
-Retained full LCAG is23/3274 versus21/3274, exact nontrivial components9/154
-versus11/154, and coherent forests1/100 versus2/100. All exact components and
+Retained full LCAG is 23/3274 versus 21/3274, exact nontrivial components 9/154
+versus 11/154, and coherent forests 1/100 versus 2/100. All exact components and
 coherent-forest mothers remain depth one. There is no established quality winner.
 
 Legal forest supervision, missing-slot confidence masking, unmatched recovery,
 retrieval identity/support, parent support, radial diagnostics and per-level
 ONNX contracts are updated. These are new implementation claims, separate from
 the historical CPU audit boundary. Frozen development observations confirm illegal source-aligned targets
-(30/48 historical versus28/48 legal on16 events) and cap saturation on all
-measured nodes in32 selection events. These small cohorts are not population
+(30/48 historical versus 28/48 legal on 16 events) and cap saturation on all
+measured nodes in 32 selection events. These small cohorts are not population
 estimates. CPU tests cannot establish training benefit,
 beam calibration, host-search parity or real-mDST deployment readiness.
-Phase63 prepares one fixed-encoder corrected-recovery versus masking-only pair,
-with fresh1000/100 validation and no sealed test, promotion or automatic chain.
-Actual submission state is recorded separately after immutable preflight.
+Phase63 submitted one fixed-encoder corrected-recovery versus masking-only pair,
+with fresh 1000/100 validation and no sealed test, promotion or automatic chain.
+Jobs 16742232 and 16742233 were accepted and released from immutable source
+`aeefabdaab6f05bce817081f43109c0a8641827d`; both await scheduler priority.
+GPU startup and training are not yet verified. The submission snapshot binds
+contracts and receipts. Verification passed 1,958 CPU tests, 34 skips, both
+two-step training dry runs, static/audit checks and both source contracts.
 
 
 ## Earlier scientific design review — 2026-09-28
