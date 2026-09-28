@@ -167,3 +167,38 @@ def test_exported_graph_accepts_changing_track_counts_and_signs(tmp_path):
                     getattr(observed, output_name), value.numpy(), rtol=3e-4, atol=3e-5,
                     err_msg=f"level={level}, charges={charges}, output={output_name}",
                 )
+
+
+def test_bundle_v2_exports_and_scores_heterogeneous_level_capacities(tmp_path):
+    import json
+    from hypertagging.deployment.onnx_contract import load_bundle_manifest, with_manifest_hash
+    pytest.importorskip('onnxruntime')
+    payload = _checkpoint('hard')
+    payload['architecture']['n_queries_by_level'] = [[1, 3], [2, 1]]
+    payload['architecture']['max_cardinality_by_level'] = [[1, 4], [2, 2]]
+    model = build_ablation_model(
+        'full_revised', n_features=len(FEATURE_NAMES['common']), n_types=len(PDG_TOKENS),
+        hidden_dim=16, hyper_dim=4, n_queries=2, max_cardinality=6,
+        n_queries_by_level={1: 3, 2: 1}, max_cardinality_by_level={1: 4, 2: 2},
+        n_heads=2, n_context_layers=1, ffn_dim=32, pid_kinematics_mode='hard',
+        type_conditioned_daughter_relation_bias=False,
+    )
+    payload['model_state_dict'] = model.state_dict()
+    checkpoint = tmp_path / 'checkpoint.pt'
+    torch.save(payload, checkpoint)
+    config = ExportConfiguration(levels=(1, 2), max_nodes=8, max_sources=8)
+    manifest_path = export_checkpoint_bundle(checkpoint, tmp_path / 'bundle', configuration=config)
+    bundle = OnnxModelBundle(manifest_path, intra_op_threads=2)
+    assert bundle.manifest['format_version'] == 'hypertagging-onnx-bundle-v2'
+    _, _, policy, _, _ = _restore_deployment_model(payload)
+    for level, queries, cardinality in ((1, 3, 4), (2, 1, 2)):
+        tensors = _example_inputs(config, policy, target_level=level)
+        inputs = {name: tensor.numpy() for name, tensor in tensors.items()}
+        output = bundle.score(level, inputs)
+        assert output.object_logits.shape == (1, queries)
+        assert output.cardinality_logits.shape == (1, queries, cardinality + 1)
+    bad = json.loads(manifest_path.read_text())
+    del bad['contract']['decoder_capacities_by_level']['2']
+    manifest_path.write_text(json.dumps(with_manifest_hash(bad)))
+    with pytest.raises(ValueError, match='every exported level'):
+        load_bundle_manifest(manifest_path)

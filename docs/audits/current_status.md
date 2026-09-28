@@ -1,6 +1,28 @@
 # Current repository audit status
 
-## Scientific design review — 2026-09-28
+## Phase62 closeout and Phase63 repairs — 2026-09-28
+
+[The new review](../phase62_review_phase63_20260928.md) verifies both Phase62
+native completions, all fourteen reports and exact repeat equality. The control
+passes original gates; lower late PID fails full LCAG and exact-mother coverage.
+Retained full LCAG is23/3274 versus21/3274, exact nontrivial components9/154
+versus11/154, and coherent forests1/100 versus2/100. All exact components and
+coherent-forest mothers remain depth one. There is no established quality winner.
+
+Legal forest supervision, missing-slot confidence masking, unmatched recovery,
+retrieval identity/support, parent support, radial diagnostics and per-level
+ONNX contracts are updated. These are new implementation claims, separate from
+the historical CPU audit boundary. Frozen development observations confirm illegal source-aligned targets
+(30/48 historical versus28/48 legal on16 events) and cap saturation on all
+measured nodes in32 selection events. These small cohorts are not population
+estimates. CPU tests cannot establish training benefit,
+beam calibration, host-search parity or real-mDST deployment readiness.
+Phase63 prepares one fixed-encoder corrected-recovery versus masking-only pair,
+with fresh1000/100 validation and no sealed test, promotion or automatic chain.
+Actual submission state is recorded separately after immutable preflight.
+
+
+## Earlier scientific design review — 2026-09-28
 
 The [cross-pipeline review](../scientific_review_20260928.md) supports holding
 70,000 training events and preserving the immutable Phase62 replication, but
@@ -425,8 +447,7 @@ GPU campaign follows from this audit.
 | `IMPLEMENTED_NOT_REAL_VERIFIED` | 6 |
 | `INTENTIONALLY_DEFERRED_SCIENCE` | 4 |
 | `OBSOLETE_OR_DUPLICATE` | 1 |
-| `OPEN` | 3 |
-| `PARTIAL` | 10 |
+| `PARTIAL` | 13 |
 <!-- GENERATED_STATUS_SUMMARY_END -->
 ## Historical production recommendation at the generated audit boundary: NO-GO
 

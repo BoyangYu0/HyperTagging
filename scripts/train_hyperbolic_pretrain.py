@@ -121,7 +121,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--radius-target-mode", choices=("generation_height_radius", "exact_root_depth_radius", "weak_or_learned_radius"), default="generation_height_radius")
     parser.add_argument(
         "--best-metric",
-        choices=("validation_principal_loss", "validation_full_training_objective"),
+        choices=("validation_principal_loss", "validation_full_training_objective", "validation_phase_weighted_objective"),
         default="validation_full_training_objective",
     )
     parser.add_argument("--best-mode", choices=("min", "max"), default="min")

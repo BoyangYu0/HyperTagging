@@ -23,7 +23,6 @@ import torch
 from torch import nn
 
 from hypertagging.deployment.onnx_contract import (
-    BUNDLE_FORMAT_VERSION,
     FEATURE_NAMES,
     MAX_EXACT_PROPOSALS_PER_HYPOTHESIS,
     MODEL_FAMILY,
@@ -391,9 +390,10 @@ def inspect_checkpoint_for_export(
     model, architecture, policy, pid_mode, pid_temperature = (
         _restore_deployment_model(payload)
     )
-    query_count, max_cardinality = _uniform_decoder_capacity(
+    query_count, max_cardinality = _decoder_capacity_envelope(
         model, config.levels
     )
+    capacities = _decoder_capacities(model, config.levels)
     del model
     return {
         "checkpoint": str(checkpoint),
@@ -403,6 +403,7 @@ def inspect_checkpoint_for_export(
         "max_sources": config.max_sources,
         "n_queries": query_count,
         "max_cardinality": max_cardinality,
+        "decoder_capacities_by_level": capacities,
         "architecture": architecture.to_dict(),
         "constraint_policy": policy.to_dict(),
         "pid_kinematics_mode": pid_mode,
@@ -442,7 +443,7 @@ def export_checkpoint_bundle(
     model, architecture, policy, pid_mode, pid_temperature = (
         _restore_deployment_model(payload)
     )
-    query_count, max_cardinality = _uniform_decoder_capacity(
+    query_count, max_cardinality = _decoder_capacity_envelope(
         model, config.levels
     )
     normalizers = _deployment_normalizers(payload)
@@ -457,6 +458,7 @@ def export_checkpoint_bundle(
     try:
         models: dict[str, dict[str, Any]] = {}
         for level in config.levels:
+            level_capacity = _decoder_capacities(model, (level,))[str(level)]
             filename = f"level-{level:02d}.onnx"
             graph_path = staging / filename
             wrapper = _LevelOnnxWrapper(
@@ -476,13 +478,14 @@ def export_checkpoint_bundle(
             runtime_inputs = _validate_onnx_graph(
                 graph_path,
                 max_nodes=config.max_nodes,
-                query_count=query_count,
-                max_cardinality=max_cardinality,
+                query_count=level_capacity["n_queries"],
+                max_cardinality=level_capacity["max_cardinality"],
             )
             models[str(level)] = {
                 "file": filename,
                 "sha256": file_sha256(graph_path),
                 "runtime_inputs": runtime_inputs,
+                "decoder_capacity": level_capacity,
             }
 
         manifest = _build_manifest(
@@ -658,6 +661,19 @@ def _validate_checkpoint_contract(payload: Mapping[str, Any]) -> None:
         raise ValueError("checkpoint is not marked data-compatible")
     if not isinstance(payload.get("architecture"), Mapping):
         raise ValueError("checkpoint architecture is missing")
+
+
+def _decoder_capacities(model: nn.Module, levels: Sequence[int]) -> dict[str, dict[str, int]]:
+    result = {}
+    for level in levels:
+        decoder = model.level_decoders[str(level)] if str(level) in model.level_decoders else model.decoder
+        result[str(level)] = {"n_queries": int(decoder.n_queries), "max_cardinality": int(decoder.max_cardinality)}
+    return result
+
+
+def _decoder_capacity_envelope(model: nn.Module, levels: Sequence[int]) -> tuple[int, int]:
+    capacities = _decoder_capacities(model, levels).values()
+    return max(c["n_queries"] for c in capacities), max(c["max_cardinality"] for c in capacities)
 
 
 def _uniform_decoder_capacity(
@@ -1114,7 +1130,7 @@ def _build_manifest(
         "rollout_pid_kinematics_mode": "soft_decision_hard_construction",
     }
     manifest = {
-        "format_version": BUNDLE_FORMAT_VERSION,
+        "format_version": "hypertagging-onnx-bundle-v2",
         "model_family": MODEL_FAMILY,
         "exporter": {
             "version": EXPORTER_VERSION,
@@ -1135,6 +1151,7 @@ def _build_manifest(
             "n_queries": query_count,
             "max_cardinality": max_cardinality,
             "levels": list(configuration.levels),
+            "decoder_capacities_by_level": {str(level): dict(models[str(level)]["decoder_capacity"]) for level in configuration.levels},
             "pid_tokens": list(PDG_TOKENS),
             "pid_vocabulary_version": PID_VOCABULARY_VERSION,
             "preprocessing_schema_version": SCHEMA_VERSION_V4,

@@ -282,7 +282,11 @@ def constrained_daughter_decode(
         raise ValueError("source_conflict has an invalid shape")
     if insufficient_policy not in {"invalid", "reduce"}:
         raise ValueError("insufficient_policy must be 'invalid' or 'reduce'")
+    if cardinality < 0:
+        raise ValueError("daughter cardinality must be nonnegative")
     selected = torch.zeros_like(pointer_mask)
+    if cardinality == 0:
+        return selected, True
     candidates = (
         pointer_mask
         & torch.isfinite(probabilities)

@@ -74,6 +74,7 @@ from hypertagging.preprocessing.schema_v4 import LEAF_MODE_TO_ID, feature_spec_v
 from hypertagging.training.scheduled_sampling import (
     TeacherForcingSchedule,
     aligned_level_targets,
+    unmatched_object_recovery_loss,
     resolve_unrepresentable_target_policy,
 )
 from hypertagging.training.model_config import resolve_model_architecture
@@ -417,6 +418,8 @@ def train_level_reconstruction(
         if config.resume
         else None
     )
+    if config.scientific_mode and resume_payload is not None and resume_payload.get("feature_contract", {}).get("supervision_contract_version") != "legal-forest-masked-confidence-v2":
+        raise ValueError("scientific resume crosses the corrected supervision_contract_version; use an explicit parameter-only initialization study")
     data_module = build_real_data_module(
         config.data,
         max_events=config.max_events,
@@ -652,6 +655,7 @@ def train_level_reconstruction(
         ),
         empirical_type_prior_mode=config.empirical_type_prior_mode,
         initial_state_policy=config.initial_state_policy,
+        minimum_pointer_probability=config.rollout_pointer_threshold,
     )
     selection_contract = reconstruction_selection_contract(
         best_metric=config.best_metric,
@@ -1471,6 +1475,9 @@ def _optimization_loss(
                     context,
                     target_level=target_level,
                     target_policy=config.target_policy,
+                    pointer_eligibility=constraint_policy.forest_pointer_validity_mask(
+                        context, target_level
+                    ),
                 )
                 target_override = aligned.target_override
                 decision = resolve_unrepresentable_target_policy(
@@ -1513,6 +1520,14 @@ def _optimization_loss(
             level_batch = _with_allowed_types(
                 level_batch, target_level, allowed_types_by_level, constraint_policy
             )
+            # Teacher and predicted entries can coexist in this padded batch.
+            # Build each mask on its own visible forest before padding.
+            for entry_index, entry in enumerate(level_entries):
+                eligible = constraint_policy.forest_pointer_validity_mask(
+                    entry[1], target_level, teacher_prefix=entry[3]
+                )
+                level_batch["pointer_validity_mask"][entry_index].zero_()
+                level_batch["pointer_validity_mask"][entry_index, :eligible.shape[1]] = eligible[0]
             output = model(level_batch, target_level=target_level)
             model_forward_count += 1
         for entry_index, (
@@ -1541,9 +1556,9 @@ def _optimization_loss(
             )
             recovery_loss = loss_output.total * 0.0
             if recovery_missing:
-                count = min(recovery_missing, pointer_output.object_logits.shape[1])
-                top_object_logits = pointer_output.object_logits.topk(count, dim=-1).values
-                recovery_loss = F.softplus(-top_object_logits).mean()
+                recovery_loss = unmatched_object_recovery_loss(
+                    pointer_output.object_logits[0], loss_output.matches[0], recovery_missing
+                )
             recovery_loss = recovery_loss * config.recovery_objective_weight
             if recovery_missing:
                 per_level_components.setdefault("recovery", []).append(recovery_loss)
@@ -1953,7 +1968,9 @@ def _with_allowed_types(
     allowed, bias = policy.type_constraints(target_level, device=batch["node_mask"].device)
     result["allowed_type_mask"] = allowed
     result["type_logit_bias"] = bias
-    result["pointer_validity_mask"] = policy.pointer_validity_mask(batch, target_level)
+    result["pointer_validity_mask"] = policy.forest_pointer_validity_mask(
+        batch, target_level, teacher_prefix=True
+    )
     return result
 
 
@@ -2050,6 +2067,8 @@ def validate_reconstruction(
     if validation_batch_size <= 0:
         raise ValueError("validation_batch_size must be positive")
     restored_uids = tuple(selected_event_uids or ())
+    if restored_uids and isinstance(data_module, RealDataModule):
+        source = data_module.iter_events("train" if used_train_fallback else "validation", shuffle=False, event_uids=restored_uids)
     events, fixed_uids, _selection_contract = select_validation_events(
         source,
         limit=max_validation_events,
@@ -2286,11 +2305,13 @@ def validate_reconstruction(
         truth_depth = int(batch["level_ids"][batch["node_mask"]].max())
         represented = total_targets = 0
         for target_level in range(1, truth_depth + 1):
+            prefix = cached_context_for_level(predicted, target_level)
             alignment = aligned_level_targets(
                 batch,
-                predicted.batch,
+                prefix,
                 target_level=target_level,
                 target_policy=target_policy,
+                pointer_eligibility=(constraint_policy or ReconstructionConstraintPolicy()).forest_pointer_validity_mask(prefix, target_level),
             )
             represented += alignment.representable_count
             total_targets += alignment.truth_target_count
@@ -2574,6 +2595,9 @@ def _save_reconstruction_checkpoint(
             ),
         },
         feature_contract={
+            "supervision_contract_version": "legal-forest-masked-confidence-v2",
+            "confidence_target_contract": "constrained-primary-candidate-iou-v2",
+            "recovery_contract": "unmatched-slot-object-encouragement-v2",
             "feature_spec_revision": feature_spec_v4()["feature_spec_revision"],
             "feature_spec_hash": feature_spec_v4()["feature_spec_hash"],
             "model_feature_contract_hash": feature_spec_v4()["model_feature_contract_hash"],

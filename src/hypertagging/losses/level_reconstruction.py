@@ -11,7 +11,7 @@ from hypertagging.reconstruction.constraints import ReconstructionConstraintPoli
 from hypertagging.losses.physics import charge_consistency_loss, p4_sum_consistency_loss
 from hypertagging.losses.set_matching import hungarian_assignment, matching_cost
 from hypertagging.models.mother_pointer import MotherPointerOutput
-from hypertagging.models.mother_pointer import source_conflict_penalty
+from hypertagging.models.mother_pointer import source_conflict_penalty, constrained_daughter_decode
 from hypertagging.preprocessing.pid_filter import validate_pid_tokens
 from hypertagging.utils.tensor_contractions import boolean_matmul
 
@@ -191,6 +191,33 @@ def level_reconstruction_loss(
             )
             truth_pointer = target_masks[batch_index][target_id].float()
             hard_pointer = predicted_pointer >= 0.5
+            decoded_valid = True
+            if constraint_policy is not None:
+                pointer_mask = batch.get("pointer_validity_mask")
+                if pointer_mask is not None:
+                    allowed = pointer_mask[batch_index, context]
+                elif "node_kind_ids" in batch:
+                    allowed = constraint_policy.pointer_validity_mask(batch, target_level)[batch_index, context]
+                else:
+                    # Legacy loss-only fixtures do not provide detector kinds.
+                    # Production model forwards provide the explicit legal mask.
+                    allowed = torch.ones_like(predicted_pointer, dtype=torch.bool)
+                conflict = batch.get("source_conflict_matrix")
+                indices = context.nonzero(as_tuple=False).flatten()
+                local_conflict = (conflict[batch_index][indices[:, None], indices[None, :]]
+                                  if conflict is not None and constraint_policy.reject_recursive_source_conflicts
+                                  else torch.zeros((len(indices), len(indices)), dtype=torch.bool, device=indices.device))
+                cardinality = int(output.cardinality_logits[batch_index, query_id].argmax())
+                if constraint_policy.daughter_cardinality_policy != "predicted":
+                    cardinality = int(allowed.sum())
+                hard_pointer, decoded_valid = constrained_daughter_decode(
+                    predicted_pointer, cardinality=cardinality, pointer_mask=allowed,
+                    source_conflict=local_conflict,
+                    min_probability=constraint_policy.minimum_pointer_probability,
+                    insufficient_policy=(constraint_policy.cardinality_insufficient_policy
+                        if constraint_policy.daughter_cardinality_policy == "predicted" else "reduce"),
+                )
+                decoded_valid = decoded_valid and int(hard_pointer.sum()) >= constraint_policy.minimum_daughters
             truth_bool = truth_pointer.bool()
             intersection = (hard_pointer & truth_bool).sum().to(predicted_pointer.dtype)
             union = (hard_pointer | truth_bool).sum().clamp_min(1).to(
@@ -199,14 +226,14 @@ def level_reconstruction_loss(
             type_correct = (
                 output.type_logits[batch_index, query_id].argmax() == types[target_id]
             ).to(predicted_pointer.dtype)
-            structurally_valid = predicted_pointer.new_tensor(1.0)
+            structurally_valid = predicted_pointer.new_tensor(float(decoded_valid))
             conflict = batch.get("source_conflict_matrix")
             if conflict is not None and hard_pointer.any():
                 selected_context = context.nonzero(as_tuple=False).flatten()[hard_pointer]
                 selected_conflict = conflict[batch_index][
                     selected_context[:, None], selected_context[None, :]
                 ]
-                structurally_valid = (~torch.triu(selected_conflict, diagonal=1).any()).to(
+                structurally_valid = structurally_valid * (~torch.triu(selected_conflict, diagonal=1).any()).to(
                     predicted_pointer.dtype
                 )
             confidence_targets[batch_index, query_id] = (
@@ -285,10 +312,11 @@ def level_reconstruction_loss(
         "type": torch.stack(type_losses).mean() if type_losses else zero,
         "pointer": torch.stack(pointer_losses).mean() if pointer_losses else zero,
         "cardinality": torch.stack(cardinality_losses).mean() if cardinality_losses else zero,
-        "confidence": F.binary_cross_entropy_with_logits(
-            output.confidence_logits,
-            confidence_targets,
-        ),
+        "confidence": (
+            F.binary_cross_entropy_with_logits(
+                output.confidence_logits, confidence_targets, reduction="none"
+            ) * object_loss_mask
+        ).sum() / object_loss_mask.sum().clamp_min(1),
         "physics": (torch.stack(p4_losses).mean() + torch.stack(charge_losses).mean()) if p4_losses else zero,
         "source_conflict": (
             source_conflict_penalty(

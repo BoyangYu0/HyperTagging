@@ -228,11 +228,7 @@ def _constrained_rollout_model_batch(
         target_level,
         device=batch["node_mask"].device,
     )
-    pointer_validity = policy.pointer_validity_mask(batch, target_level)
-    if "parent_ids" in batch:
-        pointer_validity &= batch["parent_ids"] < 0
-    if policy.reject_recursive_source_conflicts:
-        pointer_validity = _exclude_committed_source_aliases(batch, pointer_validity)
+    pointer_validity = policy.forest_pointer_validity_mask(batch, target_level)
     result["allowed_type_mask"] = allowed
     result["type_logit_bias"] = type_bias
     result["pointer_validity_mask"] = pointer_validity

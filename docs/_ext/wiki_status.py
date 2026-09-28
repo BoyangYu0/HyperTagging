@@ -135,7 +135,7 @@ SOURCE_PATHS.update({
 SOURCE_IDS = {key: f"source-{index:02d}" for index, key in enumerate(SOURCE_PATHS, 1)}
 FRESHNESS_DAYS = 30
 _MAX_SOURCE_BYTES = 5_000_000
-_ISSUE_STATUSES = {"FIXED_AND_TESTED", "IMPLEMENTED_NOT_REAL_VERIFIED", "INTENTIONALLY_DEFERRED_SCIENCE", "OBSOLETE_OR_DUPLICATE", "PARTIAL"}
+_ISSUE_STATUSES = {"OPEN", "FIXED_AND_TESTED", "IMPLEMENTED_NOT_REAL_VERIFIED", "INTENTIONALLY_DEFERRED_SCIENCE", "OBSOLETE_OR_DUPLICATE", "PARTIAL"}
 _NOTEBOOK_GROUPS = {"CORE_CONTRACT", "EXTENDED_ENGINEERING", "HISTORICAL_COMPATIBILITY", "DIAGNOSTIC", "EXTERNAL_SCIENTIFIC"}
 _VERIFICATION_GROUPS = ("generated_consistency", "default_fixture", "first_level_diagnostic", "focused_production_notebooks", "real_mdst_pilot", "trained_physics_validation")
 
@@ -4192,6 +4192,7 @@ def _render_phase61(record):
     labels = ('pretraining_balance_control', 'lower_late_pid_pretraining')
     arms, retained = record['arms'], record['retained_tree_checks']
     lines = ['Phase61: Stable execution, mixed reconstruction quality', '-' * 80, '',
+        'For completed Phase62 outcomes and the Phase63 correction study, see :doc:`../../phase62`.', '',
         'Both arms completed 2,188 refinement and 4,376 reconstruction steps under the unchanged dominance 20 fail guard. No evaluation recovery was needed.',
         'Early PID 0.5 is shared; only late PID 0.2 versus 0.1 differs. Parent weight 2, seed 20260927, selection 1,000, strict 100, beam 20; no strict/selection overlap.',
         'Control passes original gates and constructs 4/100 full roots; candidate constructs 0/100. Neither recovers a coherent primary retained forest. Gate passage is not exact tree recovery or promotion.',

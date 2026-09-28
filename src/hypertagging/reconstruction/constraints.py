@@ -164,6 +164,42 @@ class ReconstructionConstraintPolicy:
             )
         return valid & kind_valid
 
+    def forest_pointer_validity_mask(
+        self, batch: Mapping[str, torch.Tensor], target_level: int,
+        *, teacher_prefix: bool = False,
+    ) -> torch.Tensor:
+        """Legal daughters, keeping consumed nodes available as encoder context.
+
+        Predicted states contain only reconstructed links. Teacher batches contain
+        future truth links, so only mothers below the generation being trained
+        count as committed. Never use teacher_prefix for an inference state.
+        """
+        valid = self.pointer_validity_mask(batch, target_level)
+        adjacency = batch.get("daughter_adjacency")
+        if teacher_prefix and adjacency is not None:
+            visible = batch["node_mask"].bool() & (batch["level_ids"] < target_level)
+            adjacency = adjacency.bool() & visible[:, :, None] & visible[:, None, :]
+            parentless = ~adjacency.any(dim=1)
+        elif "parent_ids" in batch:
+            parentless = batch["parent_ids"] < 0
+        elif adjacency is not None:
+            parentless = ~adjacency.bool().any(dim=1)
+        else:
+            # Legacy leaf-only fixtures have no committed parents.
+            if bool((batch["node_mask"] & (batch["level_ids"] > 0)).any()):
+                raise ValueError("forest eligibility requires reconstructed topology")
+            parentless = torch.ones_like(valid)
+        valid = valid & parentless
+        sources = batch.get("recursive_leaf_source_mask")
+        if self.reject_recursive_source_conflicts and sources is not None and adjacency is not None:
+            from hypertagging.utils.tensor_contractions import boolean_matmul
+            committed = batch["node_mask"].bool() & parentless & adjacency.bool().any(dim=-1)
+            overlaps = boolean_matmul(sources, sources.transpose(1, 2))
+            identity = torch.eye(valid.shape[-1], dtype=torch.bool, device=valid.device)[None]
+            aliases = (overlaps & ~identity & committed[:, None, :]).any(dim=-1)
+            valid = valid & ~aliases
+        return valid
+
     def expected_charge(self, token: int) -> float:
         return REDUCED_TOKEN_CHARGE[int(token)]
 

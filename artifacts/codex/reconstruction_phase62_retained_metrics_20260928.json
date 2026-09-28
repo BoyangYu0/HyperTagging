@@ -1,0 +1,1429 @@
+{
+  "aggregate_metric_count": 19199,
+  "all_returned_beam_candidates_checked": true,
+  "arms": {
+    "lower_late_pid_pretraining": {
+      "beam": {
+        "full": {
+          "average_link_probability": {
+            "available_unit_count": 609,
+            "coherent_retained_forest": {
+              "denominator": 20.0,
+              "numerator": 1.0,
+              "value": 0.05
+            },
+            "lcag_pair_accuracy": {
+              "denominator": 559.0,
+              "numerator": 3.0,
+              "value": 0.005366726296958855
+            },
+            "matched_mother_count": 3,
+            "mother_pid_accuracy": {
+              "denominator": 3.0,
+              "numerator": 3.0,
+              "value": 1.0
+            },
+            "mother_pid_coverage": {
+              "denominator": 111.0,
+              "numerator": 3.0,
+              "value": 0.02702702702702703
+            },
+            "perfect_lcag": {
+              "denominator": 28.0,
+              "numerator": 1.0,
+              "value": 0.03571428571428571
+            },
+            "root_pid_accuracy": {
+              "denominator": 355.0,
+              "numerator": 74.0,
+              "value": 0.2084507042253521
+            },
+            "source_precision": {
+              "denominator": 649.0,
+              "numerator": 584.0,
+              "value": 0.8998459167950693
+            },
+            "source_recall": {
+              "denominator": 712.0,
+              "numerator": 584.0,
+              "value": 0.8202247191011236
+            },
+            "target_representable": {
+              "denominator": 609.0,
+              "numerator": 575.0,
+              "value": 0.9441707717569786
+            },
+            "truth_mother_count": 111,
+            "unavailable_unit_count": 0,
+            "unit_count": 609,
+            "unit_semantics_counts": {
+              "retained_full_forest": 20
+            }
+          },
+          "learned_confidence_mean": {
+            "available_unit_count": 609,
+            "coherent_retained_forest": {
+              "denominator": 20.0,
+              "numerator": 1.0,
+              "value": 0.05
+            },
+            "lcag_pair_accuracy": {
+              "denominator": 559.0,
+              "numerator": 3.0,
+              "value": 0.005366726296958855
+            },
+            "matched_mother_count": 3,
+            "mother_pid_accuracy": {
+              "denominator": 3.0,
+              "numerator": 3.0,
+              "value": 1.0
+            },
+            "mother_pid_coverage": {
+              "denominator": 111.0,
+              "numerator": 3.0,
+              "value": 0.02702702702702703
+            },
+            "perfect_lcag": {
+              "denominator": 28.0,
+              "numerator": 1.0,
+              "value": 0.03571428571428571
+            },
+            "root_pid_accuracy": {
+              "denominator": 355.0,
+              "numerator": 71.0,
+              "value": 0.2
+            },
+            "source_precision": {
+              "denominator": 649.0,
+              "numerator": 577.0,
+              "value": 0.889060092449923
+            },
+            "source_recall": {
+              "denominator": 712.0,
+              "numerator": 577.0,
+              "value": 0.8103932584269663
+            },
+            "target_representable": {
+              "denominator": 609.0,
+              "numerator": 575.0,
+              "value": 0.9441707717569786
+            },
+            "truth_mother_count": 111,
+            "unavailable_unit_count": 0,
+            "unit_count": 609,
+            "unit_semantics_counts": {
+              "retained_full_forest": 20
+            }
+          },
+          "learned_confidence_sum": {
+            "available_unit_count": 609,
+            "coherent_retained_forest": {
+              "denominator": 20.0,
+              "numerator": 1.0,
+              "value": 0.05
+            },
+            "lcag_pair_accuracy": {
+              "denominator": 559.0,
+              "numerator": 2.0,
+              "value": 0.0035778175313059034
+            },
+            "matched_mother_count": 2,
+            "mother_pid_accuracy": {
+              "denominator": 2.0,
+              "numerator": 2.0,
+              "value": 1.0
+            },
+            "mother_pid_coverage": {
+              "denominator": 111.0,
+              "numerator": 2.0,
+              "value": 0.018018018018018018
+            },
+            "perfect_lcag": {
+              "denominator": 28.0,
+              "numerator": 1.0,
+              "value": 0.03571428571428571
+            },
+            "root_pid_accuracy": {
+              "denominator": 355.0,
+              "numerator": 71.0,
+              "value": 0.2
+            },
+            "source_precision": {
+              "denominator": 652.0,
+              "numerator": 575.0,
+              "value": 0.8819018404907976
+            },
+            "source_recall": {
+              "denominator": 712.0,
+              "numerator": 575.0,
+              "value": 0.8075842696629213
+            },
+            "target_representable": {
+              "denominator": 609.0,
+              "numerator": 575.0,
+              "value": 0.9441707717569786
+            },
+            "truth_mother_count": 111,
+            "unavailable_unit_count": 0,
+            "unit_count": 609,
+            "unit_semantics_counts": {
+              "retained_full_forest": 20
+            }
+          },
+          "normalized_joint_log_probability": {
+            "available_unit_count": 609,
+            "coherent_retained_forest": {
+              "denominator": 20.0,
+              "numerator": 1.0,
+              "value": 0.05
+            },
+            "lcag_pair_accuracy": {
+              "denominator": 559.0,
+              "numerator": 3.0,
+              "value": 0.005366726296958855
+            },
+            "matched_mother_count": 3,
+            "mother_pid_accuracy": {
+              "denominator": 3.0,
+              "numerator": 3.0,
+              "value": 1.0
+            },
+            "mother_pid_coverage": {
+              "denominator": 111.0,
+              "numerator": 3.0,
+              "value": 0.02702702702702703
+            },
+            "perfect_lcag": {
+              "denominator": 28.0,
+              "numerator": 1.0,
+              "value": 0.03571428571428571
+            },
+            "root_pid_accuracy": {
+              "denominator": 355.0,
+              "numerator": 76.0,
+              "value": 0.2140845070422535
+            },
+            "source_precision": {
+              "denominator": 649.0,
+              "numerator": 580.0,
+              "value": 0.8936825885978429
+            },
+            "source_recall": {
+              "denominator": 712.0,
+              "numerator": 580.0,
+              "value": 0.8146067415730337
+            },
+            "target_representable": {
+              "denominator": 609.0,
+              "numerator": 575.0,
+              "value": 0.9441707717569786
+            },
+            "truth_mother_count": 111,
+            "unavailable_unit_count": 0,
+            "unit_count": 609,
+            "unit_semantics_counts": {
+              "retained_full_forest": 20
+            }
+          },
+          "oracle_diagnostic": {
+            "available_unit_count": 609,
+            "coherent_retained_forest": {
+              "denominator": 20.0,
+              "numerator": 1.0,
+              "value": 0.05
+            },
+            "lcag_pair_accuracy": {
+              "denominator": 559.0,
+              "numerator": 3.0,
+              "value": 0.005366726296958855
+            },
+            "matched_mother_count": 3,
+            "mother_pid_accuracy": {
+              "denominator": 3.0,
+              "numerator": 3.0,
+              "value": 1.0
+            },
+            "mother_pid_coverage": {
+              "denominator": 111.0,
+              "numerator": 3.0,
+              "value": 0.02702702702702703
+            },
+            "perfect_lcag": {
+              "denominator": 28.0,
+              "numerator": 1.0,
+              "value": 0.03571428571428571
+            },
+            "root_pid_accuracy": {
+              "denominator": 355.0,
+              "numerator": 80.0,
+              "value": 0.22535211267605634
+            },
+            "source_precision": {
+              "denominator": 652.0,
+              "numerator": 596.0,
+              "value": 0.9141104294478528
+            },
+            "source_recall": {
+              "denominator": 712.0,
+              "numerator": 596.0,
+              "value": 0.8370786516853933
+            },
+            "target_representable": {
+              "denominator": 609.0,
+              "numerator": 575.0,
+              "value": 0.9441707717569786
+            },
+            "truth_mother_count": 111,
+            "unavailable_unit_count": 0,
+            "unit_count": 609,
+            "unit_semantics_counts": {
+              "retained_full_forest": 20
+            }
+          }
+        },
+        "half": {
+          "average_link_probability": {
+            "available_unit_count": 521,
+            "coherent_retained_forest": {
+              "denominator": 20.0,
+              "numerator": 1.0,
+              "value": 0.05
+            },
+            "lcag_pair_accuracy": {
+              "denominator": 343.0,
+              "numerator": 2.0,
+              "value": 0.0058309037900874635
+            },
+            "matched_mother_count": 2,
+            "mother_pid_accuracy": {
+              "denominator": 2.0,
+              "numerator": 2.0,
+              "value": 1.0
+            },
+            "mother_pid_coverage": {
+              "denominator": 108.0,
+              "numerator": 2.0,
+              "value": 0.018518518518518517
+            },
+            "perfect_lcag": {
+              "denominator": 31.0,
+              "numerator": 1.0,
+              "value": 0.03225806451612903
+            },
+            "root_pid_accuracy": {
+              "denominator": 297.0,
+              "numerator": 62.0,
+              "value": 0.20875420875420875
+            },
+            "source_precision": {
+              "denominator": 554.0,
+              "numerator": 496.0,
+              "value": 0.8953068592057761
+            },
+            "source_recall": {
+              "denominator": 621.0,
+              "numerator": 496.0,
+              "value": 0.7987117552334944
+            },
+            "target_representable": {
+              "denominator": 521.0,
+              "numerator": 486.0,
+              "value": 0.9328214971209213
+            },
+            "truth_mother_count": 108,
+            "unavailable_unit_count": 0,
+            "unit_count": 521,
+            "unit_semantics_counts": {
+              "retained_b_halves": 3,
+              "retained_explicit_components_no_b_partition": 17
+            }
+          },
+          "learned_confidence_mean": {
+            "available_unit_count": 521,
+            "coherent_retained_forest": {
+              "denominator": 20.0,
+              "numerator": 1.0,
+              "value": 0.05
+            },
+            "lcag_pair_accuracy": {
+              "denominator": 343.0,
+              "numerator": 2.0,
+              "value": 0.0058309037900874635
+            },
+            "matched_mother_count": 2,
+            "mother_pid_accuracy": {
+              "denominator": 2.0,
+              "numerator": 2.0,
+              "value": 1.0
+            },
+            "mother_pid_coverage": {
+              "denominator": 108.0,
+              "numerator": 2.0,
+              "value": 0.018518518518518517
+            },
+            "perfect_lcag": {
+              "denominator": 31.0,
+              "numerator": 1.0,
+              "value": 0.03225806451612903
+            },
+            "root_pid_accuracy": {
+              "denominator": 297.0,
+              "numerator": 58.0,
+              "value": 0.19528619528619529
+            },
+            "source_precision": {
+              "denominator": 553.0,
+              "numerator": 488.0,
+              "value": 0.8824593128390597
+            },
+            "source_recall": {
+              "denominator": 621.0,
+              "numerator": 488.0,
+              "value": 0.785829307568438
+            },
+            "target_representable": {
+              "denominator": 521.0,
+              "numerator": 486.0,
+              "value": 0.9328214971209213
+            },
+            "truth_mother_count": 108,
+            "unavailable_unit_count": 0,
+            "unit_count": 521,
+            "unit_semantics_counts": {
+              "retained_b_halves": 3,
+              "retained_explicit_components_no_b_partition": 17
+            }
+          },
+          "learned_confidence_sum": {
+            "available_unit_count": 521,
+            "coherent_retained_forest": {
+              "denominator": 20.0,
+              "numerator": 1.0,
+              "value": 0.05
+            },
+            "lcag_pair_accuracy": {
+              "denominator": 343.0,
+              "numerator": 3.0,
+              "value": 0.008746355685131196
+            },
+            "matched_mother_count": 3,
+            "mother_pid_accuracy": {
+              "denominator": 3.0,
+              "numerator": 3.0,
+              "value": 1.0
+            },
+            "mother_pid_coverage": {
+              "denominator": 108.0,
+              "numerator": 3.0,
+              "value": 0.027777777777777776
+            },
+            "perfect_lcag": {
+              "denominator": 31.0,
+              "numerator": 1.0,
+              "value": 0.03225806451612903
+            },
+            "root_pid_accuracy": {
+              "denominator": 297.0,
+              "numerator": 59.0,
+              "value": 0.19865319865319866
+            },
+            "source_precision": {
+              "denominator": 559.0,
+              "numerator": 487.0,
+              "value": 0.8711985688729875
+            },
+            "source_recall": {
+              "denominator": 621.0,
+              "numerator": 487.0,
+              "value": 0.784219001610306
+            },
+            "target_representable": {
+              "denominator": 521.0,
+              "numerator": 486.0,
+              "value": 0.9328214971209213
+            },
+            "truth_mother_count": 108,
+            "unavailable_unit_count": 0,
+            "unit_count": 521,
+            "unit_semantics_counts": {
+              "retained_b_halves": 3,
+              "retained_explicit_components_no_b_partition": 17
+            }
+          },
+          "normalized_joint_log_probability": {
+            "available_unit_count": 521,
+            "coherent_retained_forest": {
+              "denominator": 20.0,
+              "numerator": 1.0,
+              "value": 0.05
+            },
+            "lcag_pair_accuracy": {
+              "denominator": 343.0,
+              "numerator": 2.0,
+              "value": 0.0058309037900874635
+            },
+            "matched_mother_count": 2,
+            "mother_pid_accuracy": {
+              "denominator": 2.0,
+              "numerator": 2.0,
+              "value": 1.0
+            },
+            "mother_pid_coverage": {
+              "denominator": 108.0,
+              "numerator": 2.0,
+              "value": 0.018518518518518517
+            },
+            "perfect_lcag": {
+              "denominator": 31.0,
+              "numerator": 1.0,
+              "value": 0.03225806451612903
+            },
+            "root_pid_accuracy": {
+              "denominator": 297.0,
+              "numerator": 63.0,
+              "value": 0.21212121212121213
+            },
+            "source_precision": {
+              "denominator": 553.0,
+              "numerator": 491.0,
+              "value": 0.8878842676311031
+            },
+            "source_recall": {
+              "denominator": 621.0,
+              "numerator": 491.0,
+              "value": 0.7906602254428341
+            },
+            "target_representable": {
+              "denominator": 521.0,
+              "numerator": 486.0,
+              "value": 0.9328214971209213
+            },
+            "truth_mother_count": 108,
+            "unavailable_unit_count": 0,
+            "unit_count": 521,
+            "unit_semantics_counts": {
+              "retained_b_halves": 3,
+              "retained_explicit_components_no_b_partition": 17
+            }
+          },
+          "oracle_diagnostic": {
+            "available_unit_count": 521,
+            "coherent_retained_forest": {
+              "denominator": 20.0,
+              "numerator": 1.0,
+              "value": 0.05
+            },
+            "lcag_pair_accuracy": {
+              "denominator": 343.0,
+              "numerator": 3.0,
+              "value": 0.008746355685131196
+            },
+            "matched_mother_count": 3,
+            "mother_pid_accuracy": {
+              "denominator": 3.0,
+              "numerator": 3.0,
+              "value": 1.0
+            },
+            "mother_pid_coverage": {
+              "denominator": 108.0,
+              "numerator": 3.0,
+              "value": 0.027777777777777776
+            },
+            "perfect_lcag": {
+              "denominator": 31.0,
+              "numerator": 1.0,
+              "value": 0.03225806451612903
+            },
+            "root_pid_accuracy": {
+              "denominator": 297.0,
+              "numerator": 67.0,
+              "value": 0.2255892255892256
+            },
+            "source_precision": {
+              "denominator": 563.0,
+              "numerator": 509.0,
+              "value": 0.9040852575488455
+            },
+            "source_recall": {
+              "denominator": 621.0,
+              "numerator": 509.0,
+              "value": 0.8196457326892109
+            },
+            "target_representable": {
+              "denominator": 521.0,
+              "numerator": 486.0,
+              "value": 0.9328214971209213
+            },
+            "truth_mother_count": 108,
+            "unavailable_unit_count": 0,
+            "unit_count": 521,
+            "unit_semantics_counts": {
+              "retained_b_halves": 3,
+              "retained_explicit_components_no_b_partition": 17
+            }
+          }
+        }
+      },
+      "beam_candidate_count": 62,
+      "primary": {
+        "full": {
+          "available_unit_count": 3149,
+          "coherent_retained_forest": {
+            "denominator": 100.0,
+            "numerator": 2.0,
+            "value": 0.02
+          },
+          "lcag_pair_accuracy": {
+            "denominator": 3274.0,
+            "numerator": 21.0,
+            "value": 0.006414172266340868
+          },
+          "matched_mother_count": 21,
+          "mother_pid_accuracy": {
+            "denominator": 21.0,
+            "numerator": 21.0,
+            "value": 1.0
+          },
+          "mother_pid_coverage": {
+            "denominator": 523.0,
+            "numerator": 21.0,
+            "value": 0.040152963671128104
+          },
+          "perfect_lcag": {
+            "denominator": 154.0,
+            "numerator": 11.0,
+            "value": 0.07142857142857142
+          },
+          "root_pid_accuracy": {
+            "denominator": 1775.0,
+            "numerator": 364.0,
+            "value": 0.20507042253521127
+          },
+          "source_precision": {
+            "denominator": 3346.0,
+            "numerator": 2997.0,
+            "value": 0.8956963538553496
+          },
+          "source_recall": {
+            "denominator": 3678.0,
+            "numerator": 2997.0,
+            "value": 0.8148450244698205
+          },
+          "target_representable": {
+            "denominator": 3149.0,
+            "numerator": 3015.0,
+            "value": 0.9574468085106383
+          },
+          "truth_mother_count": 523,
+          "unavailable_unit_count": 0,
+          "unit_count": 3149,
+          "unit_semantics_counts": {
+            "retained_full_forest": 100
+          }
+        },
+        "half": {
+          "available_unit_count": 2732,
+          "coherent_retained_forest": {
+            "denominator": 100.0,
+            "numerator": 2.0,
+            "value": 0.02
+          },
+          "lcag_pair_accuracy": {
+            "denominator": 1922.0,
+            "numerator": 24.0,
+            "value": 0.012486992715920915
+          },
+          "matched_mother_count": 24,
+          "mother_pid_accuracy": {
+            "denominator": 24.0,
+            "numerator": 24.0,
+            "value": 1.0
+          },
+          "mother_pid_coverage": {
+            "denominator": 507.0,
+            "numerator": 24.0,
+            "value": 0.047337278106508875
+          },
+          "perfect_lcag": {
+            "denominator": 170.0,
+            "numerator": 11.0,
+            "value": 0.06470588235294118
+          },
+          "root_pid_accuracy": {
+            "denominator": 1535.0,
+            "numerator": 318.0,
+            "value": 0.20716612377850163
+          },
+          "source_precision": {
+            "denominator": 2915.0,
+            "numerator": 2589.0,
+            "value": 0.8881646655231561
+          },
+          "source_recall": {
+            "denominator": 3245.0,
+            "numerator": 2589.0,
+            "value": 0.7978428351309708
+          },
+          "target_representable": {
+            "denominator": 2732.0,
+            "numerator": 2588.0,
+            "value": 0.9472913616398243
+          },
+          "truth_mother_count": 507,
+          "unavailable_unit_count": 0,
+          "unit_count": 2732,
+          "unit_semantics_counts": {
+            "retained_b_halves": 16,
+            "retained_explicit_components_no_b_partition": 84
+          }
+        }
+      },
+      "primary_repeat_identical": true,
+      "primary_structure": {
+        "full": {
+          "events_without_flagged_target_incompatibility": 16,
+          "isolated_leaf_units": 2908,
+          "nontrivial_topology_units": 154,
+          "representable_nontrivial_units": 107,
+          "single_source_composite_units": 87,
+          "source_empty_units": 0
+        },
+        "half": {
+          "events_without_flagged_target_incompatibility": 16,
+          "isolated_leaf_units": 2475,
+          "nontrivial_topology_units": 170,
+          "representable_nontrivial_units": 113,
+          "single_source_composite_units": 87,
+          "source_empty_units": 0
+        }
+      }
+    },
+    "pretraining_balance_control": {
+      "beam": {
+        "full": {
+          "average_link_probability": {
+            "available_unit_count": 609,
+            "coherent_retained_forest": {
+              "denominator": 20.0,
+              "numerator": 1.0,
+              "value": 0.05
+            },
+            "lcag_pair_accuracy": {
+              "denominator": 559.0,
+              "numerator": 2.0,
+              "value": 0.0035778175313059034
+            },
+            "matched_mother_count": 2,
+            "mother_pid_accuracy": {
+              "denominator": 2.0,
+              "numerator": 2.0,
+              "value": 1.0
+            },
+            "mother_pid_coverage": {
+              "denominator": 111.0,
+              "numerator": 2.0,
+              "value": 0.018018018018018018
+            },
+            "perfect_lcag": {
+              "denominator": 28.0,
+              "numerator": 1.0,
+              "value": 0.03571428571428571
+            },
+            "root_pid_accuracy": {
+              "denominator": 355.0,
+              "numerator": 78.0,
+              "value": 0.21971830985915494
+            },
+            "source_precision": {
+              "denominator": 643.0,
+              "numerator": 580.0,
+              "value": 0.9020217729393468
+            },
+            "source_recall": {
+              "denominator": 712.0,
+              "numerator": 580.0,
+              "value": 0.8146067415730337
+            },
+            "target_representable": {
+              "denominator": 609.0,
+              "numerator": 575.0,
+              "value": 0.9441707717569786
+            },
+            "truth_mother_count": 111,
+            "unavailable_unit_count": 0,
+            "unit_count": 609,
+            "unit_semantics_counts": {
+              "retained_full_forest": 20
+            }
+          },
+          "learned_confidence_mean": {
+            "available_unit_count": 609,
+            "coherent_retained_forest": {
+              "denominator": 20.0,
+              "numerator": 1.0,
+              "value": 0.05
+            },
+            "lcag_pair_accuracy": {
+              "denominator": 559.0,
+              "numerator": 3.0,
+              "value": 0.005366726296958855
+            },
+            "matched_mother_count": 3,
+            "mother_pid_accuracy": {
+              "denominator": 3.0,
+              "numerator": 3.0,
+              "value": 1.0
+            },
+            "mother_pid_coverage": {
+              "denominator": 111.0,
+              "numerator": 3.0,
+              "value": 0.02702702702702703
+            },
+            "perfect_lcag": {
+              "denominator": 28.0,
+              "numerator": 1.0,
+              "value": 0.03571428571428571
+            },
+            "root_pid_accuracy": {
+              "denominator": 355.0,
+              "numerator": 78.0,
+              "value": 0.21971830985915494
+            },
+            "source_precision": {
+              "denominator": 639.0,
+              "numerator": 579.0,
+              "value": 0.9061032863849765
+            },
+            "source_recall": {
+              "denominator": 712.0,
+              "numerator": 579.0,
+              "value": 0.8132022471910112
+            },
+            "target_representable": {
+              "denominator": 609.0,
+              "numerator": 575.0,
+              "value": 0.9441707717569786
+            },
+            "truth_mother_count": 111,
+            "unavailable_unit_count": 0,
+            "unit_count": 609,
+            "unit_semantics_counts": {
+              "retained_full_forest": 20
+            }
+          },
+          "learned_confidence_sum": {
+            "available_unit_count": 609,
+            "coherent_retained_forest": {
+              "denominator": 20.0,
+              "numerator": 1.0,
+              "value": 0.05
+            },
+            "lcag_pair_accuracy": {
+              "denominator": 559.0,
+              "numerator": 2.0,
+              "value": 0.0035778175313059034
+            },
+            "matched_mother_count": 2,
+            "mother_pid_accuracy": {
+              "denominator": 2.0,
+              "numerator": 2.0,
+              "value": 1.0
+            },
+            "mother_pid_coverage": {
+              "denominator": 111.0,
+              "numerator": 2.0,
+              "value": 0.018018018018018018
+            },
+            "perfect_lcag": {
+              "denominator": 28.0,
+              "numerator": 1.0,
+              "value": 0.03571428571428571
+            },
+            "root_pid_accuracy": {
+              "denominator": 355.0,
+              "numerator": 69.0,
+              "value": 0.19436619718309858
+            },
+            "source_precision": {
+              "denominator": 658.0,
+              "numerator": 565.0,
+              "value": 0.8586626139817629
+            },
+            "source_recall": {
+              "denominator": 712.0,
+              "numerator": 565.0,
+              "value": 0.7935393258426966
+            },
+            "target_representable": {
+              "denominator": 609.0,
+              "numerator": 575.0,
+              "value": 0.9441707717569786
+            },
+            "truth_mother_count": 111,
+            "unavailable_unit_count": 0,
+            "unit_count": 609,
+            "unit_semantics_counts": {
+              "retained_full_forest": 20
+            }
+          },
+          "normalized_joint_log_probability": {
+            "available_unit_count": 609,
+            "coherent_retained_forest": {
+              "denominator": 20.0,
+              "numerator": 1.0,
+              "value": 0.05
+            },
+            "lcag_pair_accuracy": {
+              "denominator": 559.0,
+              "numerator": 1.0,
+              "value": 0.0017889087656529517
+            },
+            "matched_mother_count": 1,
+            "mother_pid_accuracy": {
+              "denominator": 1.0,
+              "numerator": 1.0,
+              "value": 1.0
+            },
+            "mother_pid_coverage": {
+              "denominator": 111.0,
+              "numerator": 1.0,
+              "value": 0.009009009009009009
+            },
+            "perfect_lcag": {
+              "denominator": 28.0,
+              "numerator": 1.0,
+              "value": 0.03571428571428571
+            },
+            "root_pid_accuracy": {
+              "denominator": 355.0,
+              "numerator": 76.0,
+              "value": 0.2140845070422535
+            },
+            "source_precision": {
+              "denominator": 646.0,
+              "numerator": 586.0,
+              "value": 0.9071207430340558
+            },
+            "source_recall": {
+              "denominator": 712.0,
+              "numerator": 586.0,
+              "value": 0.8230337078651685
+            },
+            "target_representable": {
+              "denominator": 609.0,
+              "numerator": 575.0,
+              "value": 0.9441707717569786
+            },
+            "truth_mother_count": 111,
+            "unavailable_unit_count": 0,
+            "unit_count": 609,
+            "unit_semantics_counts": {
+              "retained_full_forest": 20
+            }
+          },
+          "oracle_diagnostic": {
+            "available_unit_count": 609,
+            "coherent_retained_forest": {
+              "denominator": 20.0,
+              "numerator": 1.0,
+              "value": 0.05
+            },
+            "lcag_pair_accuracy": {
+              "denominator": 559.0,
+              "numerator": 3.0,
+              "value": 0.005366726296958855
+            },
+            "matched_mother_count": 3,
+            "mother_pid_accuracy": {
+              "denominator": 3.0,
+              "numerator": 3.0,
+              "value": 1.0
+            },
+            "mother_pid_coverage": {
+              "denominator": 111.0,
+              "numerator": 3.0,
+              "value": 0.02702702702702703
+            },
+            "perfect_lcag": {
+              "denominator": 28.0,
+              "numerator": 1.0,
+              "value": 0.03571428571428571
+            },
+            "root_pid_accuracy": {
+              "denominator": 355.0,
+              "numerator": 81.0,
+              "value": 0.22816901408450704
+            },
+            "source_precision": {
+              "denominator": 644.0,
+              "numerator": 588.0,
+              "value": 0.9130434782608695
+            },
+            "source_recall": {
+              "denominator": 712.0,
+              "numerator": 588.0,
+              "value": 0.8258426966292135
+            },
+            "target_representable": {
+              "denominator": 609.0,
+              "numerator": 575.0,
+              "value": 0.9441707717569786
+            },
+            "truth_mother_count": 111,
+            "unavailable_unit_count": 0,
+            "unit_count": 609,
+            "unit_semantics_counts": {
+              "retained_full_forest": 20
+            }
+          }
+        },
+        "half": {
+          "average_link_probability": {
+            "available_unit_count": 521,
+            "coherent_retained_forest": {
+              "denominator": 20.0,
+              "numerator": 1.0,
+              "value": 0.05
+            },
+            "lcag_pair_accuracy": {
+              "denominator": 343.0,
+              "numerator": 3.0,
+              "value": 0.008746355685131196
+            },
+            "matched_mother_count": 3,
+            "mother_pid_accuracy": {
+              "denominator": 3.0,
+              "numerator": 3.0,
+              "value": 1.0
+            },
+            "mother_pid_coverage": {
+              "denominator": 108.0,
+              "numerator": 3.0,
+              "value": 0.027777777777777776
+            },
+            "perfect_lcag": {
+              "denominator": 31.0,
+              "numerator": 1.0,
+              "value": 0.03225806451612903
+            },
+            "root_pid_accuracy": {
+              "denominator": 297.0,
+              "numerator": 64.0,
+              "value": 0.21548821548821548
+            },
+            "source_precision": {
+              "denominator": 556.0,
+              "numerator": 495.0,
+              "value": 0.8902877697841727
+            },
+            "source_recall": {
+              "denominator": 621.0,
+              "numerator": 495.0,
+              "value": 0.7971014492753623
+            },
+            "target_representable": {
+              "denominator": 521.0,
+              "numerator": 486.0,
+              "value": 0.9328214971209213
+            },
+            "truth_mother_count": 108,
+            "unavailable_unit_count": 0,
+            "unit_count": 521,
+            "unit_semantics_counts": {
+              "retained_b_halves": 3,
+              "retained_explicit_components_no_b_partition": 17
+            }
+          },
+          "learned_confidence_mean": {
+            "available_unit_count": 521,
+            "coherent_retained_forest": {
+              "denominator": 20.0,
+              "numerator": 1.0,
+              "value": 0.05
+            },
+            "lcag_pair_accuracy": {
+              "denominator": 343.0,
+              "numerator": 3.0,
+              "value": 0.008746355685131196
+            },
+            "matched_mother_count": 3,
+            "mother_pid_accuracy": {
+              "denominator": 3.0,
+              "numerator": 3.0,
+              "value": 1.0
+            },
+            "mother_pid_coverage": {
+              "denominator": 108.0,
+              "numerator": 3.0,
+              "value": 0.027777777777777776
+            },
+            "perfect_lcag": {
+              "denominator": 31.0,
+              "numerator": 1.0,
+              "value": 0.03225806451612903
+            },
+            "root_pid_accuracy": {
+              "denominator": 297.0,
+              "numerator": 62.0,
+              "value": 0.20875420875420875
+            },
+            "source_precision": {
+              "denominator": 548.0,
+              "numerator": 491.0,
+              "value": 0.8959854014598541
+            },
+            "source_recall": {
+              "denominator": 621.0,
+              "numerator": 491.0,
+              "value": 0.7906602254428341
+            },
+            "target_representable": {
+              "denominator": 521.0,
+              "numerator": 486.0,
+              "value": 0.9328214971209213
+            },
+            "truth_mother_count": 108,
+            "unavailable_unit_count": 0,
+            "unit_count": 521,
+            "unit_semantics_counts": {
+              "retained_b_halves": 3,
+              "retained_explicit_components_no_b_partition": 17
+            }
+          },
+          "learned_confidence_sum": {
+            "available_unit_count": 521,
+            "coherent_retained_forest": {
+              "denominator": 20.0,
+              "numerator": 1.0,
+              "value": 0.05
+            },
+            "lcag_pair_accuracy": {
+              "denominator": 343.0,
+              "numerator": 2.0,
+              "value": 0.0058309037900874635
+            },
+            "matched_mother_count": 2,
+            "mother_pid_accuracy": {
+              "denominator": 2.0,
+              "numerator": 2.0,
+              "value": 1.0
+            },
+            "mother_pid_coverage": {
+              "denominator": 108.0,
+              "numerator": 2.0,
+              "value": 0.018518518518518517
+            },
+            "perfect_lcag": {
+              "denominator": 31.0,
+              "numerator": 1.0,
+              "value": 0.03225806451612903
+            },
+            "root_pid_accuracy": {
+              "denominator": 297.0,
+              "numerator": 55.0,
+              "value": 0.18518518518518517
+            },
+            "source_precision": {
+              "denominator": 569.0,
+              "numerator": 483.0,
+              "value": 0.8488576449912126
+            },
+            "source_recall": {
+              "denominator": 621.0,
+              "numerator": 483.0,
+              "value": 0.7777777777777778
+            },
+            "target_representable": {
+              "denominator": 521.0,
+              "numerator": 486.0,
+              "value": 0.9328214971209213
+            },
+            "truth_mother_count": 108,
+            "unavailable_unit_count": 0,
+            "unit_count": 521,
+            "unit_semantics_counts": {
+              "retained_b_halves": 3,
+              "retained_explicit_components_no_b_partition": 17
+            }
+          },
+          "normalized_joint_log_probability": {
+            "available_unit_count": 521,
+            "coherent_retained_forest": {
+              "denominator": 20.0,
+              "numerator": 1.0,
+              "value": 0.05
+            },
+            "lcag_pair_accuracy": {
+              "denominator": 343.0,
+              "numerator": 2.0,
+              "value": 0.0058309037900874635
+            },
+            "matched_mother_count": 2,
+            "mother_pid_accuracy": {
+              "denominator": 2.0,
+              "numerator": 2.0,
+              "value": 1.0
+            },
+            "mother_pid_coverage": {
+              "denominator": 108.0,
+              "numerator": 2.0,
+              "value": 0.018518518518518517
+            },
+            "perfect_lcag": {
+              "denominator": 31.0,
+              "numerator": 1.0,
+              "value": 0.03225806451612903
+            },
+            "root_pid_accuracy": {
+              "denominator": 297.0,
+              "numerator": 62.0,
+              "value": 0.20875420875420875
+            },
+            "source_precision": {
+              "denominator": 559.0,
+              "numerator": 501.0,
+              "value": 0.8962432915921288
+            },
+            "source_recall": {
+              "denominator": 621.0,
+              "numerator": 501.0,
+              "value": 0.8067632850241546
+            },
+            "target_representable": {
+              "denominator": 521.0,
+              "numerator": 486.0,
+              "value": 0.9328214971209213
+            },
+            "truth_mother_count": 108,
+            "unavailable_unit_count": 0,
+            "unit_count": 521,
+            "unit_semantics_counts": {
+              "retained_b_halves": 3,
+              "retained_explicit_components_no_b_partition": 17
+            }
+          },
+          "oracle_diagnostic": {
+            "available_unit_count": 521,
+            "coherent_retained_forest": {
+              "denominator": 20.0,
+              "numerator": 1.0,
+              "value": 0.05
+            },
+            "lcag_pair_accuracy": {
+              "denominator": 343.0,
+              "numerator": 3.0,
+              "value": 0.008746355685131196
+            },
+            "matched_mother_count": 3,
+            "mother_pid_accuracy": {
+              "denominator": 3.0,
+              "numerator": 3.0,
+              "value": 1.0
+            },
+            "mother_pid_coverage": {
+              "denominator": 108.0,
+              "numerator": 3.0,
+              "value": 0.027777777777777776
+            },
+            "perfect_lcag": {
+              "denominator": 31.0,
+              "numerator": 1.0,
+              "value": 0.03225806451612903
+            },
+            "root_pid_accuracy": {
+              "denominator": 297.0,
+              "numerator": 67.0,
+              "value": 0.2255892255892256
+            },
+            "source_precision": {
+              "denominator": 560.0,
+              "numerator": 505.0,
+              "value": 0.9017857142857143
+            },
+            "source_recall": {
+              "denominator": 621.0,
+              "numerator": 505.0,
+              "value": 0.8132045088566827
+            },
+            "target_representable": {
+              "denominator": 521.0,
+              "numerator": 486.0,
+              "value": 0.9328214971209213
+            },
+            "truth_mother_count": 108,
+            "unavailable_unit_count": 0,
+            "unit_count": 521,
+            "unit_semantics_counts": {
+              "retained_b_halves": 3,
+              "retained_explicit_components_no_b_partition": 17
+            }
+          }
+        }
+      },
+      "beam_candidate_count": 60,
+      "primary": {
+        "full": {
+          "available_unit_count": 3149,
+          "coherent_retained_forest": {
+            "denominator": 100.0,
+            "numerator": 1.0,
+            "value": 0.01
+          },
+          "lcag_pair_accuracy": {
+            "denominator": 3274.0,
+            "numerator": 23.0,
+            "value": 0.007025045815516188
+          },
+          "matched_mother_count": 23,
+          "mother_pid_accuracy": {
+            "denominator": 23.0,
+            "numerator": 23.0,
+            "value": 1.0
+          },
+          "mother_pid_coverage": {
+            "denominator": 523.0,
+            "numerator": 23.0,
+            "value": 0.04397705544933078
+          },
+          "perfect_lcag": {
+            "denominator": 154.0,
+            "numerator": 9.0,
+            "value": 0.05844155844155844
+          },
+          "root_pid_accuracy": {
+            "denominator": 1775.0,
+            "numerator": 367.0,
+            "value": 0.2067605633802817
+          },
+          "source_precision": {
+            "denominator": 3355.0,
+            "numerator": 2984.0,
+            "value": 0.8894187779433681
+          },
+          "source_recall": {
+            "denominator": 3678.0,
+            "numerator": 2984.0,
+            "value": 0.811310494834149
+          },
+          "target_representable": {
+            "denominator": 3149.0,
+            "numerator": 3015.0,
+            "value": 0.9574468085106383
+          },
+          "truth_mother_count": 523,
+          "unavailable_unit_count": 0,
+          "unit_count": 3149,
+          "unit_semantics_counts": {
+            "retained_full_forest": 100
+          }
+        },
+        "half": {
+          "available_unit_count": 2732,
+          "coherent_retained_forest": {
+            "denominator": 100.0,
+            "numerator": 1.0,
+            "value": 0.01
+          },
+          "lcag_pair_accuracy": {
+            "denominator": 1922.0,
+            "numerator": 25.0,
+            "value": 0.013007284079084287
+          },
+          "matched_mother_count": 25,
+          "mother_pid_accuracy": {
+            "denominator": 25.0,
+            "numerator": 25.0,
+            "value": 1.0
+          },
+          "mother_pid_coverage": {
+            "denominator": 507.0,
+            "numerator": 25.0,
+            "value": 0.04930966469428008
+          },
+          "perfect_lcag": {
+            "denominator": 170.0,
+            "numerator": 9.0,
+            "value": 0.052941176470588235
+          },
+          "root_pid_accuracy": {
+            "denominator": 1535.0,
+            "numerator": 316.0,
+            "value": 0.20586319218241042
+          },
+          "source_precision": {
+            "denominator": 2927.0,
+            "numerator": 2583.0,
+            "value": 0.8824735223778613
+          },
+          "source_recall": {
+            "denominator": 3245.0,
+            "numerator": 2583.0,
+            "value": 0.7959938366718028
+          },
+          "target_representable": {
+            "denominator": 2732.0,
+            "numerator": 2588.0,
+            "value": 0.9472913616398243
+          },
+          "truth_mother_count": 507,
+          "unavailable_unit_count": 0,
+          "unit_count": 2732,
+          "unit_semantics_counts": {
+            "retained_b_halves": 16,
+            "retained_explicit_components_no_b_partition": 84
+          }
+        }
+      },
+      "primary_repeat_identical": true,
+      "primary_structure": {
+        "full": {
+          "events_without_flagged_target_incompatibility": 16,
+          "isolated_leaf_units": 2908,
+          "nontrivial_topology_units": 154,
+          "representable_nontrivial_units": 107,
+          "single_source_composite_units": 87,
+          "source_empty_units": 0
+        },
+        "half": {
+          "events_without_flagged_target_incompatibility": 16,
+          "isolated_leaf_units": 2475,
+          "nontrivial_topology_units": 170,
+          "representable_nontrivial_units": 113,
+          "single_source_composite_units": 87,
+          "source_empty_units": 0
+        }
+      }
+    }
+  },
+  "beam_event_count": 20,
+  "detailed_metric_count": 316932,
+  "evaluator_revision": "2e7b2b26dd59eef087b079b5aa430f8e07532270",
+  "independent_validation": true,
+  "original_job_status": "COMPLETED",
+  "scientific_mode": "INDEPENDENT_SEED_REPLICATION",
+  "sealed_test_accessed": false,
+  "source_boundary": "native_immutable_training_and_evaluation",
+  "source_hashes": [
+    "a9c2110be07619e3d1ec0c28c388692b9371834a86fb16703c9c8b091ea10999",
+    "c7c85f1609c93a4cbc5370fe49cb70c7b1432bb50d728f85064c1cafa53f41ed",
+    "d193bfc3350117d6dd68a0ca83a2a24c7c07d176e9661e8105fb42a04a9200ba",
+    "13c6453d5e375d91b7b82839d27dc42e1b8146d39db6e31674ad18a6c53ae5e8",
+    "47d456691e539eb780bae7daed9b40334229f2a66da619ce2b1927b3dcb08943",
+    "203b9de15a29baf83df2aa42802b6d757b70b9c3e2c351be63293ec75f30f6e0",
+    "3fd7002d217ce71e5e053ad0dc5b9fe0839f4425821f40026cf794aa71f23aa3",
+    "0bafc0fae0da3f87ff7152d81eb5f9d43a110228128aaeb2ed13b8f6e72b74ed",
+    "51dbea466123528173b46850de12c95fbae574e98330a184a2b1db0dd1523e4d",
+    "2badd4790df7d894584d6250dc5a4ecae3f47c7ab2e5ce869301a032d944426f",
+    "982d6962f9af38f99bb143fe9c7a962ce8e3c2af6b75feab9b855fa45c88c203",
+    "e374bafea11d4d05dd723f7e962286642f577bb7fb536820b25d2ee7c406ebbc",
+    "3b43980cced3ecfcc83331aa59ffea7476e9d5723975769cc24902813a83d0f3",
+    "08611794735eb71402e67ca8b1bccb7c83e6e7f9ab21b8c5e7e10ce4e0835d4e",
+    "04655f82eb6e7b34385a8cddc0906c03eda604f9d68c61862cc9baaa1fa560ac"
+  ],
+  "status": "COMPLETE",
+  "strict_event_count": 100,
+  "strict_selection_overlap": 0,
+  "tree_metric_export_sha256": "04655f82eb6e7b34385a8cddc0906c03eda604f9d68c61862cc9baaa1fa560ac",
+  "tree_metric_scalar_rows": 9975537,
+  "version": "phase62-retained-tree-export-v1"
+}

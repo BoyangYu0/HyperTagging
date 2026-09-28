@@ -1,0 +1,172 @@
+{
+  "event_count": 100,
+  "interval": "paired event-cluster percentile 95%, ratio of summed counts",
+  "limitation": "Independent-seed replication with 100 events; conditional on two trained models; does not measure training-seed uncertainty. Degenerate all-zero intervals do not imply zero population uncertainty.",
+  "perfect_components": {
+    "lower_late_pid_pretraining/full": [
+      {
+        "count": 11,
+        "depth": 1,
+        "leaves": 2,
+        "mothers": 1
+      }
+    ],
+    "lower_late_pid_pretraining/half": [
+      {
+        "count": 11,
+        "depth": 1,
+        "leaves": 2,
+        "mothers": 1
+      }
+    ],
+    "pretraining_balance_control/full": [
+      {
+        "count": 9,
+        "depth": 1,
+        "leaves": 2,
+        "mothers": 1
+      }
+    ],
+    "pretraining_balance_control/half": [
+      {
+        "count": 9,
+        "depth": 1,
+        "leaves": 2,
+        "mothers": 1
+      }
+    ]
+  },
+  "replicates": 10000,
+  "report_sha256": {
+    "lower_late_pid_pretraining": "3b43980cced3ecfcc83331aa59ffea7476e9d5723975769cc24902813a83d0f3",
+    "pretraining_balance_control": "203b9de15a29baf83df2aa42802b6d757b70b9c3e2c351be63293ec75f30f6e0"
+  },
+  "scopes": {
+    "full": {
+      "coherent_retained_forest": {
+        "candidate_minus_control": 0.01,
+        "ci95": [
+          0.0,
+          0.030000000000000002
+        ],
+        "defined_paired_draws": 10000,
+        "paired_event_counts_identical": false,
+        "undefined_paired_draws": 0
+      },
+      "lcag_pair_accuracy": {
+        "candidate_minus_control": -0.0006108735491753203,
+        "ci95": [
+          -0.0019953607915529107,
+          0.0005492170083390598
+        ],
+        "defined_paired_draws": 10000,
+        "paired_event_counts_identical": false,
+        "undefined_paired_draws": 0
+      },
+      "mother_pid_coverage": {
+        "candidate_minus_control": -0.0038240917782026776,
+        "ci95": [
+          -0.011718913578308208,
+          0.0035714285714285726
+        ],
+        "defined_paired_draws": 10000,
+        "paired_event_counts_identical": false,
+        "undefined_paired_draws": 0
+      },
+      "perfect_lcag": {
+        "candidate_minus_control": 0.012987012987012984,
+        "ci95": [
+          -0.013793103448275862,
+          0.0476261762189905
+        ],
+        "defined_paired_draws": 10000,
+        "paired_event_counts_identical": false,
+        "undefined_paired_draws": 0
+      },
+      "source_precision": {
+        "candidate_minus_control": 0.0062775759119815255,
+        "ci95": [
+          -0.007625178916395042,
+          0.02006562556319278
+        ],
+        "defined_paired_draws": 10000,
+        "paired_event_counts_identical": false,
+        "undefined_paired_draws": 0
+      },
+      "source_recall": {
+        "candidate_minus_control": 0.0035345296356715794,
+        "ci95": [
+          -0.00822157417120937,
+          0.015108661100905607
+        ],
+        "defined_paired_draws": 10000,
+        "paired_event_counts_identical": false,
+        "undefined_paired_draws": 0
+      }
+    },
+    "half": {
+      "coherent_retained_forest": {
+        "candidate_minus_control": 0.01,
+        "ci95": [
+          0.0,
+          0.030000000000000002
+        ],
+        "defined_paired_draws": 10000,
+        "paired_event_counts_identical": false,
+        "undefined_paired_draws": 0
+      },
+      "lcag_pair_accuracy": {
+        "candidate_minus_control": -0.0005202913631633718,
+        "ci95": [
+          -0.0029976243892442253,
+          0.0017976456532712278
+        ],
+        "defined_paired_draws": 10000,
+        "paired_event_counts_identical": false,
+        "undefined_paired_draws": 0
+      },
+      "mother_pid_coverage": {
+        "candidate_minus_control": -0.0019723865877712063,
+        "ci95": [
+          -0.011029614660433711,
+          0.00630252100840336
+        ],
+        "defined_paired_draws": 10000,
+        "paired_event_counts_identical": false,
+        "undefined_paired_draws": 0
+      },
+      "perfect_lcag": {
+        "candidate_minus_control": 0.011764705882352948,
+        "ci95": [
+          -0.0124223602484472,
+          0.043478260869565216
+        ],
+        "defined_paired_draws": 10000,
+        "paired_event_counts_identical": false,
+        "undefined_paired_draws": 0
+      },
+      "source_precision": {
+        "candidate_minus_control": 0.005691143145294841,
+        "ci95": [
+          -0.00984908604137418,
+          0.02103989113667282
+        ],
+        "defined_paired_draws": 10000,
+        "paired_event_counts_identical": false,
+        "undefined_paired_draws": 0
+      },
+      "source_recall": {
+        "candidate_minus_control": 0.001848998459167972,
+        "ci95": [
+          -0.011444744550920857,
+          0.01506137972544563
+        ],
+        "defined_paired_draws": 10000,
+        "paired_event_counts_identical": false,
+        "undefined_paired_draws": 0
+      }
+    }
+  },
+  "seed": 20260928,
+  "version": "phase62-paired-event-bootstrap-v1"
+}

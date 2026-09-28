@@ -1,0 +1,47 @@
+{
+  "by_level": {
+    "1": {
+      "historical_representable": 25,
+      "legal_representable": 25,
+      "truth_targets": 25
+    },
+    "2": {
+      "historical_representable": 5,
+      "legal_representable": 3,
+      "truth_targets": 10
+    },
+    "3": {
+      "historical_representable": 0,
+      "legal_representable": 0,
+      "truth_targets": 5
+    },
+    "4": {
+      "historical_representable": 0,
+      "legal_representable": 0,
+      "truth_targets": 4
+    },
+    "5": {
+      "historical_representable": 0,
+      "legal_representable": 0,
+      "truth_targets": 2
+    },
+    "6": {
+      "historical_representable": 0,
+      "legal_representable": 0,
+      "truth_targets": 2
+    }
+  },
+  "checkpoint_sha256": "052ee61510e7ccb3747fb179167b4dc995375913dc96480e6b9f3175fbc54d64",
+  "cohort_sha256": "090355678981ca3e06776e13448ee05437849c3a3413bbcdb229c8c7ee961563",
+  "event_count": 16,
+  "interpretation": "Post-generation truth audit only. Legal support is not proposal survival or a causal estimate of training benefit.",
+  "native_diagnostic_sha256": "57c6fa9632e0ee7eb9343e4517ec5d3cf76f8482f5abedd3044e731c56fc659e",
+  "sealed_test_accessed": false,
+  "strict_overlap": 0,
+  "totals": {
+    "historical_representable": 30,
+    "legal_representable": 28,
+    "truth_targets": 48
+  },
+  "version": "development-eligibility-census-v1"
+}

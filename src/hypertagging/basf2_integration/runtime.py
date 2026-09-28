@@ -13,7 +13,7 @@ import itertools
 import math
 import os
 from pathlib import Path
-from typing import Any, Callable, Iterable, Mapping, Protocol, Sequence
+from typing import Any, Callable, Mapping, Protocol, Sequence
 
 import numpy as np
 
@@ -266,7 +266,11 @@ class OnnxModelBundle:
             raise ValueError(f"missing ONNX inputs for level {level}: {missing}")
         values = session.run(list(MODEL_OUTPUT_NAMES), {name: inputs[name] for name in names})
         outputs = ModelOutputs(*[np.asarray(value) for value in values])
-        _validate_model_outputs(outputs, self.manifest["contract"])
+        contract = dict(self.manifest["contract"])
+        capacity = contract.get("decoder_capacities_by_level", {}).get(str(level))
+        if capacity is not None:
+            contract.update(capacity)
+        _validate_model_outputs(outputs, contract)
         return outputs
 
 

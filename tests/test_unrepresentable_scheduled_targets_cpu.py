@@ -63,3 +63,5 @@ def test_absent_earlier_composite_falls_back_instead_of_all_no_object():
         unrepresentable_target_counts=[1],
     )
     assert float(loss.components["object"]) == 0.0
+
+    assert float(loss.components["confidence"]) == 0.0

@@ -378,8 +378,15 @@ class RealDataModule:
         *,
         shuffle: bool = False,
         epoch: int = 0,
+        event_uids: Iterable[str] | None = None,
     ) -> Iterator[HeterogeneousEvent]:
-        records: Iterator[dict] = self._records()
+        requested = None if event_uids is None else frozenset(str(uid) for uid in event_uids)
+        records: Iterator[dict] = (
+            self._indexed_uid_records(requested)
+            if requested is not None and self.dataset_index is not None
+            and self.selection_manifest_hash is not None and self.max_events is None
+            else self._records()
+        )
         if shuffle and self.shuffle_buffer_size > 0:
             from hypertagging.data.streaming import BoundedShuffleBuffer
 
@@ -400,6 +407,11 @@ class RealDataModule:
             )
             if assigned != split:
                 continue
+            # Identity filtering follows source-role validation and precedes
+            # expensive topology/tensor construction. Selection order and
+            # missing-UID checks stay with the fixed-cohort selector.
+            if requested is not None and str(record["event_uid"]) not in requested:
+                continue
             event = heterogeneous_event_from_record(record)
             if (
                 self.max_nodes is not None
@@ -413,6 +425,44 @@ class RealDataModule:
                     f"exceeding max_nodes={self.max_nodes}"
                 )
             yield event
+
+    def _indexed_uid_records(self, requested: frozenset[str]) -> Iterator[dict]:
+        """Read fixed UID payloads from authenticated native event-row shards.
+
+        The index/manifest binding is checked when constructing this module.
+        Validate every declared source role and cross-check the selected row's
+        identity columns against its payload. Legacy layouts retain full reads.
+        """
+        for input_path in self.input_paths:
+            parquet = pq.ParquetFile(input_path)
+            names = set(parquet.schema_arrow.names)
+            if not {"event_uid", "source_file", "event_json"} <= names:
+                for record in iter_event_records_v4(input_path):
+                    _assigned_split(record, self.split_config, event_overrides=self.split_overrides,
+                                    source_overrides=self.source_split_overrides, require_source_override=True)
+                    if str(record["event_uid"]) in requested:
+                        yield record
+                continue
+            metadata = parquet.schema_arrow.metadata or {}
+            version = json.loads(metadata.get(b"schema_version", b'"direct-mdst-tree-v4"').decode())
+            if version != "direct-mdst-tree-v4":
+                raise ValueError("indexed UID reads require native schema-v4 event rows")
+            for group in range(parquet.num_row_groups):
+                identities = parquet.read_row_group(group, columns=["event_uid", "source_file"]).to_pylist()
+                positions = []
+                for position, identity in enumerate(identities):
+                    _assigned_split(identity, self.split_config, event_overrides=self.split_overrides,
+                                    source_overrides=self.source_split_overrides, require_source_override=True)
+                    if str(identity["event_uid"]) in requested:
+                        positions.append(position)
+                if not positions:
+                    continue
+                payloads = parquet.read_row_group(group, columns=["event_json"]).take(positions).column(0).to_pylist()
+                for position, text in zip(positions, payloads, strict=True):
+                    record = json.loads(text)
+                    if any(str(record.get(key, "")) != str(identities[position][key]) for key in ("event_uid", "source_file")):
+                        raise ValueError("indexed UID identity columns disagree with event payload")
+                    yield record
 
     def _records(self) -> Iterator[dict]:
         emitted = 0

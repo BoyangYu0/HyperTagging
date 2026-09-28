@@ -438,6 +438,7 @@ def train_hyperbolic_pretraining(
     if config.best_metric not in {
         "validation_principal_loss",
         "validation_full_training_objective",
+        "validation_phase_weighted_objective",
     }:
         raise ValueError(
             "best_metric must explicitly select validation_principal_loss or "
@@ -547,6 +548,8 @@ def train_hyperbolic_pretraining(
         if config.resume
         else None
     )
+    if config.scientific_mode and resume_payload is not None and resume_payload.get("feature_contract", {}).get("validation_metric_contract_version") != "support-aware-development-v2":
+        raise ValueError("scientific resume crosses the corrected validation_metric_contract_version; use an explicit parameter-only initialization study")
     presentation_progress = (
         progress_from_checkpoint(
             resume_payload,
@@ -1793,12 +1796,22 @@ def _validate_pretraining(
     totals: dict[str, list[float]] = {}
     retrieval_embeddings: list[torch.Tensor] = []
     retrieval_ids: list[torch.Tensor] = []
+    retrieval_event_ids: list[torch.Tensor] = []
+    retrieval_view_ids: list[torch.Tensor] = []
+    parent_counts: dict[str, list[float]] = {}
+    phase_objective_sum = 0.0
+    phase_objective_support = 0
+    retrieval_source_ids: list[torch.Tensor] = []
+    source_names = {}
+    from hypertagging.training.pretraining_diagnostics import channel_retrieval_metrics, radial_cap_diagnostics
     event_limit = config.validation_events or (
         config.validation_batches * config.batch_size
     )
     restored_uids = tuple(selected_event_uids or ())
     events, fixed_uids, _selection_contract = select_validation_events(
-        data_module.iter_events(split, shuffle=False),
+        data_module.iter_events(split, shuffle=False, **(
+            {"event_uids": restored_uids} if restored_uids and isinstance(data_module, RealDataModule) else {}
+        )),
         limit=event_limit,
         scientific_mode=config.scientific_mode,
         selection_manifest_hash=data_module.selection_manifest_hash,
@@ -1994,6 +2007,18 @@ def _validate_pretraining(
             + config.candidate_correctness_weight * correctness_loss
             + config.hard_negative_weight * hard_negative_loss
         )
+        phase_index = DEFAULT_PRETRAINING_PHASES.index(validation_phase)
+        active_objectives = set(validation_phase.objectives)
+        phase_objective = (
+            loss_output.total
+            + _leaf_pid_training_weight(config, phase_index=phase_index) * leaf_loss
+            + config.corruption_class_weight * corruption_loss * ("corruption" in active_objectives)
+            + config.candidate_correctness_weight * correctness_loss * ("candidate_correctness" in active_objectives)
+            + config.hard_negative_weight * hard_negative_loss * ("hard_negative" in active_objectives)
+        )
+        support = int(raw_batch["node_mask"].shape[0])
+        phase_objective_sum += float(phase_objective) * support
+        phase_objective_support += support
         totals.setdefault("validation_principal_loss", []).append(float(principal_loss))
         stage_prefix = f"validation_{validation_view_name}"
         totals.setdefault(f"{stage_prefix}_principal_loss", []).append(
@@ -2074,7 +2099,23 @@ def _validate_pretraining(
             b_side=validation_batch["b_side"],
             parent_negative_mask=parent_negative_mask,
         )
-        totals.setdefault("validation_parent_ranking_accuracy", []).append(float(ranking))
+        parents = validation_batch["parent_ids"]
+        active = validation_batch["node_mask"] & (parents >= 0)
+        active &= validation_batch["node_mask"].gather(1, parents.clamp_min(0))
+        negatives = parent_negative_mask & validation_batch["node_mask"][:, :, None] & validation_batch["node_mask"][:, None, :]
+        support = int((active & negatives.any(-1)).sum())
+        for prefix in ("validation_parent_coarse_separation", f"{stage_prefix}_parent_coarse_separation"):
+            counts = parent_counts.setdefault(prefix, [0., 0.])
+            counts[0] += round(float(ranking) * support)
+            counts[1] += support
+        # Recompute the small final projection only; no extra encoder forward.
+        with torch.autocast(device_type=device.type, enabled=False):
+            tangent = model.encoder.tangent_scale(model.encoder.hyper_projection(encoded.tree_projection.float()))
+        for name, value in radial_cap_diagnostics(
+            tangent, validation_batch["node_mask"], validation_batch["level_ids"],
+            model.encoder.max_tangent_norm,
+        ).items():
+            totals.setdefault(f"{stage_prefix}_{name}", []).append(value)
         correlation = loss_output.diagnostics.get("radius_level_correlation")
         if correlation is not None:
             totals.setdefault("validation_radius_level_monotonicity", []).append(float(-correlation))
@@ -2095,6 +2136,22 @@ def _validate_pretraining(
         if selected.any():
             retrieval_embeddings.append(branch_embeddings.reshape(-1, branch_embeddings.shape[-1])[selected].cpu())
             retrieval_ids.append(full_channel_ids.reshape(-1)[selected].cpu())
+            event_indices = torch.arange(
+                (batch_index - 1) * config.batch_size,
+                (batch_index - 1) * config.batch_size + branch_mask.shape[0],
+                device=selected.device,
+            )[:, None].expand_as(branch_mask).reshape(-1)
+            retrieval_event_ids.append(event_indices[selected].cpu())
+            batch_sources = []
+            for event in events[(batch_index - 1) * config.batch_size:batch_index * config.batch_size]:
+                source = event.source_file
+                if not source:
+                    batch_sources.append(-1)
+                else:
+                    batch_sources.append(source_names.setdefault(source, len(source_names)))
+            source_indices = torch.tensor(batch_sources, device=selected.device)[:, None].expand_as(branch_mask).reshape(-1)
+            retrieval_source_ids.append(source_indices[selected].cpu())
+            retrieval_view_ids.append(torch.full((int(selected.sum()),), view_index))
         completed_event_views += int(raw_batch["node_mask"].shape[0])
         print(
             json.dumps(
@@ -2113,25 +2170,32 @@ def _validate_pretraining(
             flush=True,
         )
     if retrieval_embeddings:
-        embeddings = F.normalize(torch.cat(retrieval_embeddings), dim=-1)
-        ids = torch.cat(retrieval_ids)
-        similarity = embeddings @ embeddings.T
-        similarity.fill_diagonal_(float("-inf"))
-        has_peer = (ids[:, None] == ids[None, :]).fill_diagonal_(False).any(dim=-1)
-        if has_peer.any():
-            nearest = similarity.argmax(dim=-1)
-            totals["validation_channel_retrieval_accuracy"] = [
-                float((ids[nearest[has_peer]] == ids[has_peer]).float().mean())
-            ]
-            totals["validation_channel_retrieval_queries"] = [
-                float(has_peer.sum())
-            ]
+        retrieval = channel_retrieval_metrics(
+            torch.cat(retrieval_embeddings), torch.cat(retrieval_ids),
+            torch.cat(retrieval_event_ids), view_ids=torch.cat(retrieval_view_ids),
+            source_ids=torch.cat(retrieval_source_ids),
+        )
+        totals.update({name: [value] for name, value in retrieval.items()})
+    for prefix, (numerator, denominator) in parent_counts.items():
+        totals[prefix + "_correct"] = [numerator]
+        totals[prefix + "_support"] = [denominator]
+        if denominator:
+            totals[prefix + "_accuracy"] = [numerator / denominator]
+    # Compatibility name now has supported micro semantics, explicitly versioned.
+    if parent_counts.get("validation_parent_coarse_separation", [0, 0])[1]:
+        totals["validation_parent_ranking_accuracy"] = totals["validation_parent_coarse_separation_accuracy"]
+    totals["validation_parent_ranking_accuracy_denominator"] = [parent_counts.get("validation_parent_coarse_separation", [0, 0])[1]]
+    totals["validation_parent_metric_contract_version"] = [2.0]
     model.train()
     metrics = {
         name: sum(values) / len(values)
         for name, values in totals.items()
         if values
     }
+    metrics["validation_phase_weighted_objective"] = phase_objective_sum / max(phase_objective_support, 1)
+    metrics["validation_phase_weighted_objective_event_views"] = float(phase_objective_support)
+    metrics["validation_fixed_reference_objective"] = metrics["validation_full_training_objective"]
+    metrics["validation_objective_contract_version"] = 2.0
     metrics["validation_batches"] = float(batch_count)
     metrics["validation_events"] = float(event_count)
     metrics["validation_named_view_evaluations"] = float(len(validation_work))
@@ -2906,6 +2970,7 @@ def _save_pretrain_checkpoint(
         normalizer_state=data_module.normalization_state(),
         split_manifest_hash=data_module.split_manifest_hash,
         feature_contract={
+            "validation_metric_contract_version": "support-aware-development-v2",
             "feature_spec_revision": feature_spec_v4()["feature_spec_revision"],
             "feature_spec_hash": feature_spec_v4()["feature_spec_hash"],
             "model_feature_contract_hash": feature_spec_v4()["model_feature_contract_hash"],

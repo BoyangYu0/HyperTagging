@@ -130,7 +130,8 @@ def load_bundle_manifest(path: str | Path) -> dict[str, Any]:
     payload = json.loads(manifest_path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
         raise ValueError("ONNX bundle manifest must be a JSON object")
-    _require_equal("format_version", payload.get("format_version"), BUNDLE_FORMAT_VERSION)
+    _require_member("format_version", payload.get("format_version"),
+                    {BUNDLE_FORMAT_VERSION, "hypertagging-onnx-bundle-v2"})
     _require_equal("model_family", payload.get("model_family"), MODEL_FAMILY)
     contract = _mapping(payload.get("contract"), "contract")
     for positive in ("max_nodes", "max_sources", "n_queries", "max_cardinality"):
@@ -145,6 +146,20 @@ def load_bundle_manifest(path: str | Path) -> dict[str, Any]:
         raise ValueError("contract.levels must be a non-empty positive-integer list")
     if levels != list(range(1, max(levels) + 1)):
         raise ValueError("contract.levels must be contiguous and start at one")
+    capacities = contract.get("decoder_capacities_by_level")
+    if payload["format_version"] == "hypertagging-onnx-bundle-v2":
+        if not isinstance(capacities, dict) or set(capacities) != {str(level) for level in levels}:
+            raise ValueError("v2 requires capacity for every exported level")
+        for level, capacity in capacities.items():
+            if not isinstance(capacity, dict) or set(capacity) != {"n_queries", "max_cardinality"}:
+                raise ValueError("invalid per-level decoder capacity")
+            for name, value in capacity.items():
+                if type(value) is not int or value <= 0 or value > contract[name]:
+                    raise ValueError("per-level decoder capacity exceeds envelope")
+            if payload.get("models", {}).get(level, {}).get("decoder_capacity") != capacity:
+                raise ValueError("model and contract decoder capacities disagree")
+    elif capacities is not None:
+        raise ValueError("per-level capacities require bundle v2")
     pid_tokens = contract.get("pid_tokens")
     if not isinstance(pid_tokens, list) or not pid_tokens or any(
         not isinstance(token, int) or isinstance(token, bool) for token in pid_tokens
@@ -216,7 +231,9 @@ def load_bundle_manifest(path: str | Path) -> dict[str, Any]:
         )
     if policy["minimum_daughters"] < 2:
         raise ValueError("reconstructed mothers require at least two daughters")
-    if policy["minimum_daughters"] > contract["max_cardinality"]:
+    if policy["minimum_daughters"] > contract["max_cardinality"] or (
+        capacities is not None and any(c["max_cardinality"] < policy["minimum_daughters"] for c in capacities.values())
+    ):
         raise ValueError("minimum_daughters exceeds the model cardinality capacity")
     for name in ("object_threshold", "pointer_threshold", "confidence_threshold"):
         value = policy.get(name)

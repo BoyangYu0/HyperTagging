@@ -429,7 +429,9 @@ def _select_evaluation_events(
     found: dict[str, HeterogeneousEvent] = {}
     seen: set[str] = set()
     cutoff: int | None = None
-    for event in data_module.iter_events(split, shuffle=False):
+    for event in data_module.iter_events(split, shuffle=False, **(
+        {"event_uids": cohort_uids} if isinstance(data_module, RealDataModule) else {}
+    )):
         uid = str(event.event_uid)
         if uid not in rank:
             continue

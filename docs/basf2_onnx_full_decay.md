@@ -141,3 +141,14 @@ Particle tree materialization, Track PID detector-availability parity, and
 non-interference with existing DataStore objects. Before physics use, export
 all intended levels/capacities and validate reconstruction efficiency, purity,
 calibration, and input-list selection on a representative sample.
+
+
+## Per-level capacities (bundle v2)
+
+New exports use `hypertagging-onnx-bundle-v2` with a positive query/cardinality
+capacity for every exported level, bound in both graph entry and contract.
+Top-level capacities are allocation envelopes; runtime shape validation uses
+the actual selected level. V1 bundles retain uniform-capacity support. This
+removes the export restriction for heterogeneous scientific decoders without
+reshaping their checkpoint tensors. Host proposal/ranking semantics remain the
+separately documented deployment policy; per-level export is not search parity.

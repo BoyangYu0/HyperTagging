@@ -194,6 +194,7 @@ def aligned_level_targets(
     target_level: int,
     target_policy: str = "complete_only",
     min_daughters: int = 2,
+    pointer_eligibility: torch.Tensor | None = None,
 ) -> AlignedLevelTargets:
     """Build source-aligned truth targets on an arbitrary predicted context."""
 
@@ -209,7 +210,11 @@ def aligned_level_targets(
     elif target_policy not in {"reconstructable_partial", "diagnostic_all"}:
         raise ValueError(f"unknown reconstruction target policy: {target_policy}")
     truth_nodes = eligible.nonzero(as_tuple=False).flatten()
-    predicted_mask = predicted_context["node_mask"][0]
+    predicted_mask = predicted_context["node_mask"][0].bool().clone()
+    if pointer_eligibility is not None:
+        if pointer_eligibility.shape != predicted_context["node_mask"].shape:
+            raise ValueError("pointer eligibility must have the context node-mask shape")
+        predicted_mask &= pointer_eligibility[0].bool()
     predicted_sources = predicted_context["recursive_leaf_source_mask"][0][predicted_mask]
     predicted_positions = predicted_mask.nonzero(as_tuple=False).flatten()
     target_types = []
@@ -299,3 +304,19 @@ __all__ = [
     "scheduled_sampling_probability",
     "combine_sampled_context_losses",
 ]
+
+
+def unmatched_object_recovery_loss(
+    object_logits: torch.Tensor, matches: list[tuple[int, int]], missing: int
+) -> torch.Tensor:
+    """Encourage only unmatched slots; this does not repair missing subtrees."""
+    if object_logits.ndim != 1 or missing < 0:
+        raise ValueError("recovery requires one event's logits and nonnegative missing count")
+    unmatched = torch.ones_like(object_logits, dtype=torch.bool)
+    for query_id, _ in matches:
+        unmatched[query_id] = False
+    count = min(missing, int(unmatched.sum()))
+    if not count:
+        return object_logits.sum() * 0.0
+    logits = object_logits[unmatched].topk(count).values
+    return torch.nn.functional.softplus(-logits).mean()
