@@ -469,30 +469,50 @@ supplemental_runs:
         passed.
       remote_ci_pages: NOT_VERIFIED
       additional_compatibility_layouts: NOT_RUN
-  - source_sha: fef453b744e96461ee8cfccd379dae856ae392be
+  - source_sha: 7acddc096d7cb6e4e03005f24739a98e5cff185b
     metadata_head: resolved_by_git_rev_parse_HEAD
-    worktree_state: tested_changes_committed
-    date: '2026-09-28T14:19:55.595163+00:00'
+    worktree_state: clean_committed_source_with_pending_audit_metadata
+    date: '2026-08-14T16:48:02+02:00'
     commands:
-    - CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=ABSOLUTE_SOURCE/src python -m pytest
-      -q
-    - Two-step CPU pretraining and reconstruction dry runs
-    - Heterogeneous-capacity ONNX CPU export and runtime (included in pytest)
-    - ruff check --select F changed Python; compileall src scripts tests docs/_ext; bash -n Phase63 entrypoint; JSON
-      syntax; git diff --check
-    - validate_audit_integrity.py; generate_audit_views.py --check
-    - 'Post-suite CLI/config admission for validation_phase_weighted_objective: PASS'
+    - /home/b/Boyang.Yu/.local/bin/uv lock --check
+    - /home/b/Boyang.Yu/.local/bin/uv sync --frozen --all-extras
+    - /home/b/Boyang.Yu/.local/bin/uv pip check
+    - /home/b/Boyang.Yu/.local/bin/uv run --frozen --all-extras python -c 'import scipy, yaml'
+    - /home/b/Boyang.Yu/.local/bin/uv run --frozen --all-extras python scripts/check_uv_lock_direct_dependencies.py
+    - /home/b/Boyang.Yu/.local/bin/uv run --frozen --all-extras python -m pytest -q tests/test_uv_lock_direct_dependencies_cpu.py
+      tests/test_training_provenance_status_cpu.py
+    - CUDA_VISIBLE_DEVICES='' /home/b/Boyang.Yu/.local/bin/uv run --frozen --all-extras python -m pytest -q
+    - /home/b/Boyang.Yu/.local/bin/uv run --frozen --all-extras python scripts/validate_training_provenance.py
+    - /home/b/Boyang.Yu/.local/bin/uv run --frozen --all-extras python scripts/validate_training_provenance.py --require-scientific-slurm-ready
+    - /home/b/Boyang.Yu/.local/bin/uv run --frozen --all-extras python scripts/validate_audit_integrity.py
+    - /home/b/Boyang.Yu/.local/bin/uv run --frozen --all-extras python scripts/generate_audit_views.py --check
+    - git diff --check
     pytest:
       result: PASS
-      passed: 1958
-      skipped: 34
-      warnings: 201
-      duration_seconds: 634.96
-      log_sha256: 6a99fba0ef70fb52c58602f7d2ca7e8ee3057f92d21815f5a0c95add4f411143
+      passed: 463
+      skipped: 8
+      warnings: 24
+      duration_seconds: 263.22
+      wall_seconds: 266.22
+    dependency_lock:
+      uv_version: 0.5.20
+      previous_sha256: 89c26ccc9d6e748482252a46ee1b5f8d096501f86c7ba3f69850353a5e3e0a6e
+      sha256: 38e6093c27f6cd70e56dcab4a30c561629a9b6ee968f6b73243709c8b2f5cc91
+      direct_runtime_dependencies: 10
+      added_package_records:
+      - scipy==1.15.3
+      - scipy==1.17.1
+      - scipy==1.18.0
+      removed_package_records: []
+      frozen_syncs: two_no_change
+      uv_pip_check: PASS_124_PACKAGES
+      imports:
+        scipy: 1.18.0
+        PyYAML: 6.0.3
     notebooks:
       generated_consistency:
-        result: PASS
-        count: 18
+        result: NOT_RUN
+        count: 0
       default_fixture:
         result: NOT_RUN
         count: 0
@@ -502,13 +522,62 @@ supplemental_runs:
       trained_physics_validation:
         result: NOT_RUN
         count: 0
-    real_data_inputs: 'Phase62 native reports and fixed selection-only development samples: 32 pretraining, 16 reconstruction;
-      sealed test closed'
-    checkpoint: Phase62 control pretraining and reconstruction; read-only diagnostics and export inspection
-    ci_run: REMOTE_NOT_VERIFIED
+    real_data_inputs: NOT_ACCESSED_DEPENDENCY_REPRODUCIBILITY_ONLY
+    checkpoint: none
+    ci_run: PASS at 95f3e411149878243fdba73f658f8ea12d27c1ce; master and review-branch CPU correctness workflows
     human_visual_review_status: NOT_REVIEWED
-    evidence_limitations: CPU suite validates correctness, not physics benefit. Initial suite failures from missing
-      subprocess PYTHONPATH and stale dashboard/legacy fixture expectations were repaired before the successful complete
-      rerun. Subsequent CLI choice admission checked directly. Development geometry saturation and two ineligible
-      aligned targets are bounded-sample observations. Phase63 is one exploratory seed; no promotion or automatic
-      successor. Full scientific ONNX export, basf2 pilot and host/offline beam parity remain unverified.
+    evidence_limitations: Dependency reproducibility and the complete CPU suite are verified only; the production
+      source object/tree, fresh scientific-allocation preflight, final review/tag, convergence, scientific performance,
+      sealed test, remote CI, and full training remain absent or deliberately blocked.
+    remote_cpu_ci:
+      source_sha: 95f3e411149878243fdba73f658f8ea12d27c1ce
+      master: https://github.com/BoyangYu0/HyperTagging/actions/runs/36435536676
+      review_branch: https://github.com/BoyangYu0/HyperTagging/actions/runs/36435536571
+      result: PASS
+    documentation_build:
+      result: PASS
+      source_sha: 95f3e411149878243fdba73f658f8ea12d27c1ce
+      completed_at: '2026-09-28T14:45:12.335391+00:00'
+      command: python scripts/build_docs.py --output DATA_ROOT/phase62_review_20260928/docs-build-final
+      source_state: clean and unchanged throughout Sphinx and subsequent validation
+      checks:
+        coverage:
+          api_definitions: 1342
+          api_symbols: 3765
+          catalog_definitions: 1925
+          catalog_entries: 459
+          package_modules: 124
+          repository_files: 1487
+          repository_python_modules: 872
+          sphinx_indexed_modules: 124
+          sphinx_indexed_symbols: 3721
+        generated_privacy:
+          privacy: PASS
+          raw_source_hash_rules: 1289
+          sensitive_literal_rules: 60
+          source_downloads: 0
+          textual_files_scanned: 648
+        html:
+          html_pages: 623
+          local_links_checked: 54886
+          remote_assets: 0
+        html_privacy:
+          privacy: PASS
+          raw_source_hash_rules: 1289
+          sensitive_literal_rules: 60
+          source_downloads: 0
+          textual_files_scanned: 696
+      log_sha256: 947354f6b72c59e2a6216190ef157d18697abaf207274b875499be6258b2391c
+      previous_attempt: Authored Phase62 page contained a repository artifact-path literal forbidden by the site publication
+        policy; page corrected, then complete frozen-source build passed.
+      remote_ci_pages: IN_PROGRESS at observation; deployment not yet verified
+      additional_compatibility_layouts: NOT_RUN locally; handled by remote documentation workflow
+    phase63_submission:
+      source_sha: aeefabdaab6f05bce817081f43109c0a8641827d
+      job_ids:
+      - '16742232'
+      - '16742233'
+      scheduler_snapshot: both PENDING (Priority)
+      training_started_verified: false
+      selection_preflight: both PASS; 1000 selection events and zero strict overlap
+      sealed_test_accessed: false

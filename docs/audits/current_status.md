@@ -24,6 +24,10 @@ Jobs 16742232 and 16742233 were accepted and released from immutable source
 GPU startup and training are not yet verified. The submission snapshot binds
 contracts and receipts. Verification passed 1,958 CPU tests, 34 skips, both
 two-step training dry runs, static/audit checks and both source contracts.
+The frozen standalone documentation build passed all coverage, privacy and
+54,886 local-link checks across 623 HTML pages. GitHub CPU correctness passed
+on both branches at `95f3e411149878243fdba73f658f8ea12d27c1ce`; Pages deployment
+remained in progress at this observation.
 
 
 ## Earlier scientific design review — 2026-09-28
