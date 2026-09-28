@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase63 scheduler submission snapshot and public review projection only.
+  - ff084066b1c08282cd8c7c11c6dd46d566e76d6a
   # Corrected supervision, supported diagnostics, heterogeneous ONNX and Phase62 evidence/Phase63 contracts; historical audit scope unchanged.
   - fef453b744e96461ee8cfccd379dae856ae392be
   # Four open/partial review findings, targeted verification and a read-only Phase62 scheduler observation.
