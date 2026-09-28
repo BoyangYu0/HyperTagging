@@ -431,3 +431,41 @@ supplemental_runs:
       real-data incidence unmeasured. Radius saturation remains inference. Both Phase62 jobs observed RUNNING in a
       read-only scheduler query. All74 archived files byte-verified; expanded registries retained as portable gzip.
       Complete site build is recorded separately; no new jobs or online deployment.
+    documentation_build:
+      result: PASS
+      source_sha: f2beafc5da91f19ca29b99e3e3ab50d4716046e8
+      completed_at: '2026-09-28T09:32:39.756539+00:00'
+      command: python scripts/build_docs.py --output DATA_ROOT/scientific_review_20260928/docs-build-final
+      source_state: clean and unchanged throughout Sphinx and validation
+      checks:
+        coverage:
+          api_definitions: 1335
+          api_symbols: 3758
+          catalog_definitions: 1871
+          catalog_entries: 447
+          package_modules: 123
+          repository_files: 1461
+          repository_python_modules: 858
+          sphinx_indexed_modules: 123
+          sphinx_indexed_symbols: 3714
+        generated_privacy:
+          privacy: PASS
+          raw_source_hash_rules: 1261
+          sensitive_literal_rules: 58
+          source_downloads: 0
+          textual_files_scanned: 635
+        html:
+          html_pages: 609
+          local_links_checked: 53248
+          remote_assets: 0
+        html_privacy:
+          privacy: PASS
+          raw_source_hash_rules: 1261
+          sensitive_literal_rules: 58
+          source_downloads: 0
+          textual_files_scanned: 682
+      log_sha256: a0282f330df369c9b74967b3b74b98a1a7f671965e8694d5bab32b23a7c40a86
+      previous_attempt: Failed coverage because review files changed during the first long build; rerun on frozen source
+        passed.
+      remote_ci_pages: NOT_VERIFIED
+      additional_compatibility_layouts: NOT_RUN
