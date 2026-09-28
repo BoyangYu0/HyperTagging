@@ -15,7 +15,8 @@ basf2 search differs from offline search.
 
 These findings do not establish their real-data incidence or a new physics
 improvement. Scientific source/checkpoints and existing jobs are unchanged;
-no sealed test, new training or live scheduler query was performed. Detailed
+no sealed test or new training was performed. A final read-only scheduler
+observation found both Phase62 jobs running; no terminal outcome is claimed. Detailed
 loss inventories, historical study limitations, proposed controlled experiments,
 artifact storage migration and online-operation procedure accompany the review.
 Historical verification records below retain their original scope.
@@ -424,7 +425,8 @@ GPU campaign follows from this audit.
 | `IMPLEMENTED_NOT_REAL_VERIFIED` | 6 |
 | `INTENTIONALLY_DEFERRED_SCIENCE` | 4 |
 | `OBSOLETE_OR_DUPLICATE` | 1 |
-| `PARTIAL` | 9 |
+| `OPEN` | 3 |
+| `PARTIAL` | 10 |
 <!-- GENERATED_STATUS_SUMMARY_END -->
 ## Historical production recommendation at the generated audit boundary: NO-GO
 

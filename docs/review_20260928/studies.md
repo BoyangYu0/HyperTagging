@@ -115,3 +115,11 @@ Full-LCAG candidate-minus-control difference is−0.088 percentage points, paire
 ## Phase62 status boundary
 
 The checked-in record is `SUBMITTED`, not completed. The external last saved startup record is `/project/agkuhr/users/boyang/data/HyperTagging_artifacts/phase61_review_20260927/phase62-startup-verification.json`, timestamp2026-09-27T16:33:00Z, both pending. The handoff explicitly says do not resubmit jobs16731598/16731599. This review has not made a live scheduler query, so it does not claim their state on28 September. A current monitoring client must carry both observation time and state freshness rather than display that snapshot as live.
+
+## Final live-status supplement by the integrating reviewer
+
+A read-only scheduler query on 2026-09-28 observed both Phase62 jobs RUNNING.
+See `phase62_scheduler_observation.json` for timestamp, IDs and elapsed times.
+This supersedes the stale pending snapshot for operational status only; no
+completed outcome, startup-contract verification or physics claim follows.
+Neither job was altered or resubmitted.

@@ -1,0 +1,18 @@
+{
+  "observed_at": "2026-09-28T08:50:59.442450+00:00",
+  "scope": "read_only_scheduler_state_not_training_or_physics_validation",
+  "jobs": [
+    {
+      "job_id": "16731598",
+      "state": "RUNNING",
+      "elapsed": "15:57:23",
+      "exit_code": "0:0"
+    },
+    {
+      "job_id": "16731599",
+      "state": "RUNNING",
+      "elapsed": "14:01:11",
+      "exit_code": "0:0"
+    }
+  ]
+}

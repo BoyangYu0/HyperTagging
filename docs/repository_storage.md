@@ -19,6 +19,10 @@ reason to delete them. This cleanup does not rewrite Git history or reclaim
 historical blobs from the remote object database. Old checkouts and active
 training sources are not removed.
 
+The original source commit also remains a recovery source in Git history if
+the external archive is unavailable. Its full revision and each original
+repository path are recorded in the manifest.
+
 ## Data location
 
 On the current institute host, set:

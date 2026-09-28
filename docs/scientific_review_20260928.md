@@ -23,8 +23,10 @@ Phase62 under its immutable contract, then prioritize a verified training
 eligibility defect and misleading pretraining diagnostics before another
 loss-weight sweep. Use failure decomposition to decide whether the following
 experiment should change preprocessing, geometry, proposal generation or
-ranking. Existing Phase62 submission records are historical observations;
-this review did not query its live scheduler state or resubmit it.
+ranking. A final read-only scheduler check on 2026-09-28 observed both Phase62 jobs
+running; this is execution state, not completion or validated physics evidence.
+The timestamped [observation](review_20260928/phase62_scheduler_observation.json)
+is preserved. Neither job was altered or resubmitted.
 
 ## Goal and what counts as success
 
@@ -66,7 +68,7 @@ curriculum and reconstruction phase numbers must not be conflated.
 | Phases55–58 | Parent/PID studies include evaluator repair, missing controls and selection contamination; no reproducible quality winner. |
 | Phases59–60 | Phase59 is a 25-event feasibility pilot; Phase60 fails before late-PID treatment and has no physics endpoints. |
 | Phase61 | Both schedules complete with mixed shallow quality; pre-treatment divergence prevents an identical-prefix causal comparison. |
-| Phase62 | Fresh seed and untouched cohort replication submitted; no completed outcome verified here. |
+| Phase62 | Fresh seed and untouched cohort replication running at final scheduler check; no completed outcome verified here. |
 
 Latest completed Phase61, control late PID0.2 versus candidate0.1:
 

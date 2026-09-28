@@ -390,3 +390,44 @@ supplemental_runs:
     ci_run: PENDING_PUBLICATION_WORKFLOW
     human_visual_review_status: NOT_REVIEWED
     evidence_limitations: Agent render review and final live verification are separate external receipts. Phase61 is an adaptive stability pilot with early runtime divergence and mixed shallow quality. Control original gate passage is not exact tree recovery. Phase62 is one bounded independent seed and event replication; scheduler acceptance does not establish startup or completed training. Historical audit scope is unchanged.
+
+  - source_sha: 18cc4fc15771f13c3bd6e12a1f0d4413c4c0f3af
+    metadata_head: resolved_by_git_rev_parse_HEAD
+    worktree_state: reviewed_cleanup_with_followup_audit_metadata
+    date: '2026-09-28T08:53:40.556082+00:00'
+    commands:
+    - 193 focused inference/search/truth-separation CPU tests
+    - 203 initial storage/status/privacy/repository tests; 59 remaining documentation tests; 3 final storage tests;
+      isolated status collection
+    - 15 audit-integrity regression tests
+    - python scripts/manage_repository_artifacts.py verify (portable and external archive)
+    - python scripts/validate_audit_integrity.py
+    - python scripts/generate_audit_views.py --check
+    - python scripts/execute_notebook_smoke_tests.py --check-generated
+    - compileall of changed Python and git diff --check
+    pytest:
+      result: PASS
+      passed: 470
+      skipped: 0
+      scope: targeted unique tests; three repeated storage checks not counted twice
+    notebooks:
+      generated_consistency:
+        result: PASS
+        count: 18
+      default_fixture:
+        result: NOT_RUN
+        count: 0
+      real_mdst_pilot:
+        result: NOT_RUN
+        count: 0
+      trained_physics_validation:
+        result: NOT_RUN
+        count: 0
+    real_data_inputs: existing native Phase61 logs and tracked study receipts; sealed test closed
+    checkpoint: no new checkpoint evaluation
+    ci_run: REMOTE_NOT_VERIFIED
+    human_visual_review_status: NOT_REVIEWED
+    evidence_limitations: Scientific code unchanged. CPU reproducer confirms predicted-context eligibility mismatch;
+      real-data incidence unmeasured. Radius saturation remains inference. Both Phase62 jobs observed RUNNING in a
+      read-only scheduler query. All74 archived files byte-verified; expanded registries retained as portable gzip.
+      Complete site build is recorded separately; no new jobs or online deployment.

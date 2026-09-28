@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Scientific review and byte-verified artifact archival; scientific source and historical readiness scope unchanged.
+  - 18cc4fc15771f13c3bd6e12a1f0d4413c4c0f3af
   # Verified Phase62 submission metadata and measured Phase61 documentation capacity; scientific source remains frozen.
   - ad7cde6924f5071b31cd3ddcabb98986bdbcc954
   - 4fac702a677c2b7ce3d76362111d3e3b016e4989
@@ -1492,3 +1494,47 @@ items:
     external_evidence_required: []
     last_verified_sha: ed3b942b4b7dc747c8bf47c0fbf628a224386a11
     notes: Phase48 final models are identical across all 464 tensors and PID heads have no optimizer state; both heads match pretraining. CPU model reproduction restores gradients and parameter updates when autocast cache is disabled. Reconstruction now uses that context, logs PID gradient availability and fails on missing trainable supervised PID gradients. Phase49 real GPU candidate records two gradient tensors on all 2188 post-unfreeze steps, 2188 optimizer updates per PID tensor and changed PID weights. Control remains frozen. All fourteen views and 121 beam candidates were reviewed; modest mixed topology gains require replication and do not establish promotion-grade physics.
+  - id: TRAIN-025
+    title: Predicted-context target alignment accepts already-parented daughters
+    originating_audit: docs/scientific_review_20260928.md
+    first_reported_sha: db1ff41467aba5080b04bd89ae532fbdbd8788c2
+    current_status: OPEN
+    current_evidence_files: [src/hypertagging/training/scheduled_sampling.py, src/hypertagging/training/reconstruction_trainer.py, docs/review_20260928/reproduce_parented_alignment.json]
+    current_tests: []
+    notebook_evidence: []
+    external_evidence_required: [Incidence audit on frozen development events and matched corrected reconstruction validation]
+    last_verified_sha: db1ff41467aba5080b04bd89ae532fbdbd8788c2
+    notes: Share legal forest eligibility across predicted alignment and decoder masking; preserve future-parent teacher-prefix semantics. Six-node CPU reproducer confirms the defect; real-data incidence and impact remain unmeasured.
+  - id: TRAIN-026
+    title: Channel retrieval admits repeated views of the same physical branch
+    originating_audit: docs/scientific_review_20260928.md
+    first_reported_sha: db1ff41467aba5080b04bd89ae532fbdbd8788c2
+    current_status: OPEN
+    current_evidence_files: [src/hypertagging/training/pretrain_trainer.py, docs/review_20260928/pretraining.md]
+    current_tests: []
+    notebook_evidence: []
+    external_evidence_required: [Corrected per-view cross-event and cross-source retrieval with peer counts]
+    last_verified_sha: db1ff41467aba5080b04bd89ae532fbdbd8788c2
+    notes: Validation concatenates curriculum views and excludes only the diagonal. Exclude same event/branch identities and version the metric; current retrieval is not independent cross-event generalization.
+  - id: TRAIN-027
+    title: Parent ranking diagnostic averages unsupported views and measures coarse separation
+    originating_audit: docs/scientific_review_20260928.md
+    first_reported_sha: db1ff41467aba5080b04bd89ae532fbdbd8788c2
+    current_status: OPEN
+    current_evidence_files: [src/hypertagging/losses/hyperbolic_pretraining.py, src/hypertagging/training/pretrain_trainer.py, docs/review_20260928/pretraining.md]
+    current_tests: []
+    notebook_evidence: []
+    external_evidence_required: [Supported micro parent metrics and same-branch immediate-parent discrimination study]
+    last_verified_sha: db1ff41467aba5080b04bd89ae532fbdbd8788c2
+    notes: FSP-only unsupported zero enters the average. Report supported counts and distinguish other-branch separation from immediate-parent discrimination; no new physics result is claimed.
+  - id: MODEL-029
+    title: Radial hierarchy may saturate at the model tangent cap
+    originating_audit: docs/scientific_review_20260928.md
+    first_reported_sha: db1ff41467aba5080b04bd89ae532fbdbd8788c2
+    current_status: PARTIAL
+    current_evidence_files: [src/hypertagging/models/hyperbolic.py, docs/review_20260928/pretraining_native_evidence.json]
+    current_tests: []
+    notebook_evidence: []
+    external_evidence_required: [Read-only pre-cap activation and derivative diagnostics on a frozen development cohort]
+    last_verified_sha: db1ff41467aba5080b04bd89ae532fbdbd8788c2
+    notes: Native radius loss and nearly absent radius gradients motivate saturation diagnosis. Pre-cap activation saturation is an inference, not directly verified; zero ball-boundary fraction does not exclude tangent-cap saturation.

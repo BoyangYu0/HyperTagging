@@ -10,7 +10,8 @@ by hand. The complete source/test/notebook mapping is in
 |---|---:|
 | `IMPLEMENTED_NOT_REAL_VERIFIED` | 6 |
 | `INTENTIONALLY_DEFERRED_SCIENCE` | 4 |
-| `PARTIAL` | 9 |
+| `OPEN` | 3 |
+| `PARTIAL` | 10 |
 
 ## Items
 
@@ -127,3 +128,27 @@ by hand. The complete source/test/notebook mapping is in
 - Status: `PARTIAL`
 - Next external evidence: representative multi-category KLM/K_L pilot denominators, 100k canary if KLM is included, and real worker/storage/index timings
 - Current boundary: The required fields and explicit included/excluded_by_policy/unresolved decision are implemented; current scope is unresolved, resource results are fixture-only, and schema-v4 remains selected.
+
+### TRAIN-025: Predicted-context target alignment accepts already-parented daughters
+
+- Status: `OPEN`
+- Next external evidence: Incidence audit on frozen development events and matched corrected reconstruction validation
+- Current boundary: Share legal forest eligibility across predicted alignment and decoder masking; preserve future-parent teacher-prefix semantics. Six-node CPU reproducer confirms the defect; real-data incidence and impact remain unmeasured.
+
+### TRAIN-026: Channel retrieval admits repeated views of the same physical branch
+
+- Status: `OPEN`
+- Next external evidence: Corrected per-view cross-event and cross-source retrieval with peer counts
+- Current boundary: Validation concatenates curriculum views and excludes only the diagonal. Exclude same event/branch identities and version the metric; current retrieval is not independent cross-event generalization.
+
+### TRAIN-027: Parent ranking diagnostic averages unsupported views and measures coarse separation
+
+- Status: `OPEN`
+- Next external evidence: Supported micro parent metrics and same-branch immediate-parent discrimination study
+- Current boundary: FSP-only unsupported zero enters the average. Report supported counts and distinguish other-branch separation from immediate-parent discrimination; no new physics result is claimed.
+
+### MODEL-029: Radial hierarchy may saturate at the model tangent cap
+
+- Status: `PARTIAL`
+- Next external evidence: Read-only pre-cap activation and derivative diagnostics on a frozen development cohort
+- Current boundary: Native radius loss and nearly absent radius gradients motivate saturation diagnosis. Pre-cap activation saturation is an inference, not directly verified; zero ball-boundary fraction does not exclude tangent-cap saturation.
