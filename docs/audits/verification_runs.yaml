@@ -581,3 +581,44 @@ supplemental_runs:
       training_started_verified: false
       selection_preflight: both PASS; 1000 selection events and zero strict overlap
       sealed_test_accessed: false
+  - source_sha: 227bbf1b09a90fb2c9e1c216983acfaa7b974831
+    metadata_head: resolved_by_git_rev_parse_HEAD
+    worktree_state: task_changes_committed_unrelated_user_files_preserved
+    date: '2026-09-29T12:59:27.812591+00:00'
+    commands:
+    - CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=ABSOLUTE_SOURCE/src python -m pytest
+      -q --ignore=tests/test_study_operations_cpu.py --ignore=tests/test_study_operations_mcp_cpu.py
+    - Two-step CPU pretraining and reconstruction dry runs
+    - Phase63 native completed-arm receipt, source, checkpoint, cohort, seven reports, both scopes, all returned candidates
+      and exact repeat validation
+    - ruff check --select F changed Python; compileall changed Python; bash -n Phase63 wrapper; git diff --check
+    - validate_audit_integrity.py; generate_audit_views.py --check
+    pytest:
+      result: PASS
+      passed: 1977
+      skipped: 34
+      warnings: 202
+      duration_seconds: 613.42
+      log_sha256: 7669f6f00b4e71e8dc05306e4894d1ffc809f635ff4dcb15293aa77b8e518d73
+      scope: Tracked project tests plus new admission/retry regressions. Unrelated user-owned untracked study-operations
+        tests excluded.
+    notebooks:
+      generated_consistency:
+        result: PASS
+        count: 18
+      default_fixture:
+        result: NOT_RUN
+        count: 0
+      real_mdst_pilot:
+        result: NOT_RUN
+        count: 0
+    real_data_inputs: Phase63 completed recovery arm native evidence; failed masking-only receipt/log; no new raw
+      training or sealed-test access
+    checkpoint: read-only existing Phase63 recovery checkpoints; 4376 updates verified
+    ci_run: NOT_RUN for this revision at recording
+    human_visual_review_status: NOT_REVIEWED
+    evidence_limitations: Phase63 pair incomplete. Recovery fails half precision/exactness gates; masking-only never
+      trained. All exact nontrivial components remain depth one. The only scientific source repair permits zero inactive
+      recovery weight; positive active behavior is unchanged. A bounded explicit failed-arm continuation preserves
+      the original design. No paired winner, cross-phase causal improvement, successor or promotion is claimed. Full
+      documentation/site build not repeated for this admission repair.

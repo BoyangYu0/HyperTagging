@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase63 partial evidence and admission-only repair with explicit zero-step arm continuation.
+  - 227bbf1b09a90fb2c9e1c216983acfaa7b974831
   # Phase63 scheduler submission snapshot and public review projection only.
   - ff084066b1c08282cd8c7c11c6dd46d566e76d6a
   # Corrected supervision, supported diagnostics, heterogeneous ONNX and Phase62 evidence/Phase63 contracts; historical audit scope unchanged.
@@ -1506,11 +1508,11 @@ items:
     first_reported_sha: db1ff41467aba5080b04bd89ae532fbdbd8788c2
     current_status: PARTIAL
     current_evidence_files: [src/hypertagging/training/scheduled_sampling.py, src/hypertagging/training/reconstruction_trainer.py, docs/review_20260928/reproduce_parented_alignment.json]
-    current_tests: [tests/test_scientific_review_repairs_cpu.py]
+    current_tests: [tests/test_scientific_review_repairs_cpu.py, tests/test_phase63_inactive_recovery_cpu.py]
     notebook_evidence: []
     external_evidence_required: [Incidence audit on frozen development events and matched corrected reconstruction validation]
-    last_verified_sha: db1ff41467aba5080b04bd89ae532fbdbd8788c2
-    notes: Legal forest eligibility now drives predicted alignment and decoder masks; teacher prefixes exclude only already formed parents. CPU regressions pass. A frozen16-event development census finds30/48 historical versus28/48 legal targets, with both false positives at level2. Phase63 training benefit remains unverified; historical checkpoints are unchanged.
+    last_verified_sha: 227bbf1b09a90fb2c9e1c216983acfaa7b974831
+    notes: Legal forest eligibility now drives predicted alignment and decoder masks; teacher prefixes exclude only already formed parents. CPU regressions pass. A frozen16-event development census finds30/48 historical versus28/48 legal targets, with both false positives at level2. Phase63 recovery completed but fails half-source precision and exactness gates. Masking-only failed before training because zero inactive recovery weight was rejected; admission is repaired and actual trainer-entry/optimizer-step regressions pass. The paired training benefit remains unverified; historical checkpoints are unchanged.
   - id: TRAIN-026
     title: Channel retrieval admits repeated views of the same physical branch
     originating_audit: docs/scientific_review_20260928.md
