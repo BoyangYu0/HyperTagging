@@ -1,5 +1,21 @@
 # Current repository audit status
 
+## Phase63 continuation — 2026-09-29
+
+[The partial review](../phase63_review_20260929.md) verifies completed recovery
+arm 16742232 and all seven evaluation views. It fails half-source precision and
+half-perfect-LCAG gates: retained full LCAG is 24/3939, exact nontrivial full
+components 3/155 and coherent forests 2/100. All exact full components remain
+depth one. These are not a paired comparison or a cross-phase causal estimate.
+
+Masking-only arm 16742233 failed before any optimizer update because admission
+incorrectly required a positive inactive recovery weight. The repair admits zero
+only for inactive recovery; active recovery still requires a positive finite
+weight. New tests exercise actual trainer admission and a masking-only optimizer
+step. The same preregistered missing arm is being prepared for a guarded retry;
+no scientific successor, promotion or sealed-test access follows from this
+partial result. Native completed/failed run evidence remains immutable.
+
 ## Phase62 closeout and Phase63 repairs — 2026-09-28
 
 [The new review](../phase62_review_phase63_20260928.md) verifies both Phase62

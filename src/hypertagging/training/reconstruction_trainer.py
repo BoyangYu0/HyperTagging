@@ -398,9 +398,11 @@ def train_level_reconstruction(
         )
     if (
         not math.isfinite(config.recovery_objective_weight)
-        or config.recovery_objective_weight <= 0
+        or config.recovery_objective_weight < 0
+        or (config.unrepresentable_target_policy == "recovery_objective"
+            and config.recovery_objective_weight == 0)
     ):
-        raise ValueError("recovery_objective_weight must be finite and positive")
+        raise ValueError("recovery_objective_weight must be finite and nonnegative, and positive when recovery_objective is active")
     seed_everything(config.seed)
     if config.resume and config.num_workers > 0:
         raise ValueError(

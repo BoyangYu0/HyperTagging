@@ -96,6 +96,7 @@ SOURCE_FILES = (
     "src/hypertagging/training/reconstruction_trainer.py",
     "tests/test_confidence_calibration_cpu.py",
     "tests/test_reconstruction_phase63_campaign_cpu.py",
+    "tests/test_phase63_inactive_recovery_cpu.py",
     "tests/test_reconstruction_autocast_gradient_cpu.py",
     "tests/test_full_reconstruction_evaluation_suite_cpu.py",
 )
