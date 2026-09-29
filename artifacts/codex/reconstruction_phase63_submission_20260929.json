@@ -1,0 +1,51 @@
+{
+  "schema_version": "hypertagging-phase63-arm-continuation-snapshot-v1",
+  "observed_at": "2026-09-29T13:01:55.328229+00:00",
+  "status": "INCOMPLETE_PAIR_REPLACEMENT_SUBMITTED",
+  "source_sha": "e543c1ae716946f1140a96e1fa5a705e83be55d7",
+  "source_tag": "phase63-masked-admission-source-20260929",
+  "receipt": {
+    "path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/phase63_review_20260929/training-source/artifacts/slurm/reconstruction-phase63/phase63-masked-retry-submission-20260929.json",
+    "sha256": "c06ac990488c166565ea43668c3525335396e3c7c20bce8453d6c06ba90a75d1"
+  },
+  "contract": {
+    "path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/phase63_review_20260929/training-source/artifacts/slurm/reconstruction-phase63/contracts/phase63_masked_only_contract_20260928.json",
+    "sha256": "97de925e8f71f39407939651df8e8e71ad6e8ab0f65273bdaa4bd9615bca36fa",
+    "contract_sha256": "1fa836f51b878953637162f1320f7eb27befcd210bdba4a99c7f9f5fec60d50f"
+  },
+  "replacement_job": {
+    "job_id": "16760614",
+    "arm_role": "masked_only",
+    "scheduler_state": "PENDING",
+    "reason": "Priority",
+    "gpu_startup_verified": false,
+    "optimizer_step_verified": false,
+    "source_root": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/phase63_review_20260929/training-source"
+  },
+  "completed_arm": {
+    "job_id": "16742232",
+    "arm_role": "corrected_recovery",
+    "status": "COMPLETED",
+    "optimizer_steps": 4376,
+    "all_preregistered_gates_passed": false,
+    "source_root": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/phase62_review_20260928/training-source"
+  },
+  "failed_attempt": {
+    "automatic_retry": false,
+    "optimizer_steps_before_retry": 0,
+    "original_job_id": "16742233",
+    "original_source_sha": "aeefabdaab6f05bce817081f43109c0a8641827d",
+    "receipt_path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/phase62_review_20260928/training-source/artifacts/slurm/reconstruction-phase63/jobs/16742233/attempt-00/receipt.json",
+    "receipt_sha256": "7fe72861c3ce6dfc6d9385047e8aed2f0df9a9cc2527fb7134d6fce5f7cffedc",
+    "scientific_change": "inactive_weight_admission_only"
+  },
+  "paired_comparison_available": false,
+  "automatic_successor": false,
+  "promotion_authorized": false,
+  "sealed_test_accessed": false,
+  "validation_preflight": {
+    "selection_events": 1000,
+    "strict_overlap": 0,
+    "status": "PASS"
+  }
+}

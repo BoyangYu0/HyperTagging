@@ -82,3 +82,16 @@ controlled experiment. The previously measured radial saturation remains a
 priority for a separate reconditioning/parameterization study. Seed replication,
 beam-candidate calibration and host/offline search parity remain distinct work.
 The sealed test stays closed; there is no automatic successor or promotion.
+
+## Verified repair and submission
+
+The full CPU suite passed **1,977 tests with 34 skips**, including the real
+trainer-entry checks and a masking-only optimizer step. Both two-step training
+dry runs, static checks, audit integrity and native retry/cohort preflight passed.
+
+Replacement masking-only job **16760614** was accepted and released from source
+`e543c1ae716946f1140a96e1fa5a705e83be55d7`, tagged
+`phase63-masked-admission-source-20260929`. Its recorded state is **PENDING (Priority)**;
+GPU startup and optimizer progress are not yet verified. The completed recovery
+arm retains its original source and evidence. The repository submission snapshot
+binds the native receipt, contract, original failed attempt and both run roots.

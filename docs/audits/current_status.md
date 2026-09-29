@@ -12,7 +12,10 @@ Masking-only arm 16742233 failed before any optimizer update because admission
 incorrectly required a positive inactive recovery weight. The repair admits zero
 only for inactive recovery; active recovery still requires a positive finite
 weight. New tests exercise actual trainer admission and a masking-only optimizer
-step. The same preregistered missing arm is being prepared for a guarded retry;
+step. Replacement job 16760614 was accepted and released for the same
+preregistered arm, and is pending scheduler priority; GPU startup is unverified.
+The full CPU suite passed 1,977 tests with 34 skips, both dry runs and native
+source/cohort/retry checks passed;
 no scientific successor, promotion or sealed-test access follows from this
 partial result. Native completed/failed run evidence remains immutable.
 
