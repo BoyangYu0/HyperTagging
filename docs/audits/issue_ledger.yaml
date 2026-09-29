@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Native Phase63 replacement submission snapshot and review only.
+  - 80626bd9d3797af73d312dd916a87a65dbe9efb4
   # Phase63 partial evidence and admission-only repair with explicit zero-step arm continuation.
   - 227bbf1b09a90fb2c9e1c216983acfaa7b974831
   # Phase63 scheduler submission snapshot and public review projection only.
