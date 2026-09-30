@@ -106,3 +106,8 @@ to accommodate further studies; the 10 MiB per-file limit is unchanged.
 Scans set ``capacity_review_required`` when site bytes, largest-file bytes,
 or matcher work reaches 80% of its bound. Review that signal before adding
 more results; it does not suppress any check or automatically raise a limit.
+
+Complete documentation validation has a bounded 60-minute job allowance.
+The Phase64 archive approached the previous 45-minute timeout on a slower
+runner. Keep all layouts and privacy checks, and review runtime growth along
+with the reported publication capacity when extending the archive.
