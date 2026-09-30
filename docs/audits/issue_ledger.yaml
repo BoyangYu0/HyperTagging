@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase64 diagnostics, parameter-only projection intervention and bounded matched contracts.
+  - 354951cc51875aee85b53d152edda4e79430494d
   # Phase63 native paired closeout and uncertainty review; training behavior unchanged.
   - 9f3ecededbf64994989c0656c88a7776578932df
   # Native Phase63 replacement submission snapshot and review only.
@@ -1544,9 +1546,9 @@ items:
     originating_audit: docs/scientific_review_20260928.md
     first_reported_sha: db1ff41467aba5080b04bd89ae532fbdbd8788c2
     current_status: PARTIAL
-    current_evidence_files: [src/hypertagging/models/hyperbolic.py, docs/review_20260928/pretraining_native_evidence.json]
-    current_tests: [tests/test_scientific_review_repairs_cpu.py]
+    current_evidence_files: [src/hypertagging/models/hyperbolic.py, artifacts/codex/phase64_radial_diagnostics_20260930.json, docs/phase64_plan_20260930.md]
+    current_tests: [tests/test_scientific_review_repairs_cpu.py, tests/test_phase64_projection_initialization_cpu.py, tests/test_reconstruction_phase64_campaign_cpu.py]
     notebook_evidence: []
-    external_evidence_required: [Read-only pre-cap activation and derivative diagnostics on a frozen development cohort]
-    last_verified_sha: db1ff41467aba5080b04bd89ae532fbdbd8788c2
-    notes: Pre-cap norm, cap derivative, saturation fraction and per-level radial variance diagnostics are implemented. A frozen32-event development census confirms100% sampled saturation with mean cap derivatives about7.4–8.5e-8. This is not a population estimate; no untested geometry reparameterization or radius-weight increase is applied.
+    external_evidence_required: [Post-refinement radial usability and matched nontrivial reconstruction quality with independent seed replication]
+    last_verified_sha: 354951cc51875aee85b53d152edda4e79430494d
+    notes: Saturation persists in both completed Phase63 encoders on 32 previously used selection events. A scale fitted only on 128 training events restores measured radial derivatives and spread before refinement. Phase64 tests that single initialization intervention against an unchanged parameter-only control, with equal refinement and masking-only reconstruction. The full CPU suite passes 2011 tests; native parameter probes preserve the source and all non-projection tensors. Post-refinement stability and physics benefit remain unverified. No inference kernel, radius weight, promotion or sealed-test policy is changed.

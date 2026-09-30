@@ -693,3 +693,63 @@ supplemental_runs:
       log_sha256: d67efae891e417a26d058e3644a3abe5b909e67ad4dee986a052ceb8a5ace122
       earlier_attempts: Direct docutils/minimal Sphinx harnesses rejected; rerendering with shared configuration and
         external doctrees passed; short title underline corrected before final source commit
+  - source_sha: 354951cc51875aee85b53d152edda4e79430494d
+    metadata_head: resolved_by_git_rev_parse_HEAD
+    worktree_state: task_changes_committed_unrelated_user_files_preserved
+    date: '2026-09-30T10:19:15.550104+00:00'
+    commands:
+    - CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 PYTHONPATH=ABSOLUTE_SOURCE/src python -m pytest
+      -q --ignore=tests/test_study_operations_cpu.py --ignore=tests/test_study_operations_mcp_cpu.py
+    - Two-step CPU pretraining and reconstruction dry runs
+    - Phase64 native calibration and 141-tensor parameter-initialization/admission probes for both arms
+    - ruff --select F; compileall; bash -n; JSON and git diff checks; preregistration builder --help
+    - New-page Sphinx rendering and public privacy/local-link validation
+    - generate_audit_views.py; validate_audit_integrity.py
+    pytest:
+      result: PASS
+      passed: 2011
+      skipped: 34
+      warnings: 202
+      duration_seconds: 645.67
+      log_sha256: 261142a0ebf39f0e51cf17270be2108009f41803e910b5f9290718ab79877dad
+      focused_new_tests: 34
+      scope: Tracked suite plus new Phase64 tests; two unrelated user-owned untracked study-operations test files
+        excluded
+    notebooks:
+      generated_consistency:
+        result: NOT_RUN_SEPARATELY
+        count: 0
+      default_fixture:
+        result: NOT_RUN_SEPARATELY
+        count: 0
+      real_mdst_pilot:
+        result: NOT_RUN
+        count: 0
+    real_data_inputs: 128 existing training calibration events and32 previously used Phase63 selection events; no
+      strict or sealed-test evaluation
+    checkpoint: Read-only Phase62 final control and both selected Phase63 encoders; separate parameter-only probes
+      stored on the data volume
+    ci_run: NOT_RUN at recording
+    human_visual_review_status: NOT_REVIEWED
+    evidence_limitations: Measured saturation repair is pre-refinement and uses a fixed pretraining input policy,
+      not strict rollout. Phase64 is one exploratory pair with equal2188 refinement and4376 reconstruction updates;
+      no quality result, promotion, sealed test or automatic successor. Full local site build not repeated. Immutable
+      source checks and submission follow this source snapshot.
+    standalone_new_page_validation:
+      html:
+        html_pages: 3
+        local_links_checked: 46
+        remote_assets: 0
+      html_privacy:
+        privacy: PASS
+        raw_source_hash_rules: 1321
+        sensitive_literal_rules: 61
+        source_downloads: 0
+        textual_files_scanned: 17
+      workflow:
+        action_pins: 5
+        deployment_branch: master
+        permission_boundary: PASS
+        shell_pipefail: true
+        workflow: .github/workflows/docs.yml
+    native_diagnostics_sha256: 862c5b90c53b40b4c43b5890903bae98ef189018072631264c36a3ab0afd4486

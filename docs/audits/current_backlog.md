@@ -149,5 +149,5 @@ by hand. The complete source/test/notebook mapping is in
 ### MODEL-029: Radial hierarchy may saturate at the model tangent cap
 
 - Status: `PARTIAL`
-- Next external evidence: Read-only pre-cap activation and derivative diagnostics on a frozen development cohort
-- Current boundary: Pre-cap norm, cap derivative, saturation fraction and per-level radial variance diagnostics are implemented. A frozen32-event development census confirms100% sampled saturation with mean cap derivatives about7.4–8.5e-8. This is not a population estimate; no untested geometry reparameterization or radius-weight increase is applied.
+- Next external evidence: Post-refinement radial usability and matched nontrivial reconstruction quality with independent seed replication
+- Current boundary: Saturation persists in both completed Phase63 encoders on 32 previously used selection events. A scale fitted only on 128 training events restores measured radial derivatives and spread before refinement. Phase64 tests that single initialization intervention against an unchanged parameter-only control, with equal refinement and masking-only reconstruction. The full CPU suite passes 2011 tests; native parameter probes preserve the source and all non-projection tensors. Post-refinement stability and physics benefit remain unverified. No inference kernel, radius weight, promotion or sealed-test policy is changed.
