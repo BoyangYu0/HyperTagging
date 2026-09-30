@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Verified Phase64 native submission snapshot and current scheduler observation.
+  - f46e148ae635c1588c23486518d3c833d311ef69
   # Phase64 diagnostics, parameter-only projection intervention and bounded matched contracts.
   - 354951cc51875aee85b53d152edda4e79430494d
   # Phase63 native paired closeout and uncertainty review; training behavior unchanged.

@@ -753,3 +753,17 @@ supplemental_runs:
         shell_pipefail: true
         workflow: .github/workflows/docs.yml
     native_diagnostics_sha256: 862c5b90c53b40b4c43b5890903bae98ef189018072631264c36a3ab0afd4486
+    phase64_submission:
+      source_sha: ac3e35bbe93908d4e05f89a7c82df5bebad94c00
+      source_tag: phase64-radial-source-20260930
+      job_ids:
+      - '16773575'
+      - '16773576'
+      scheduler_snapshot: both PENDING (Priority)
+      training_started_verified: false
+      frozen_source_focused_tests_passed: 34
+      frozen_source_test_log_sha256: 9df361f778693b59b4a97a9829425d3c4730bb410e7d28c95b2061f6562b0dbe
+      frozen_contracts_both_passed: true
+      selection_strict_overlap: 0
+      native_receipt_file_sha256: 6a82cec8655b387c1a761b0307bbfd99579a8dabb101b43d27d8b4f7042d4c3d
+      sealed_test_accessed: false
