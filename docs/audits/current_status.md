@@ -1,5 +1,30 @@
 # Current repository audit status
 
+## Phase63 completed paired closeout — 2026-09-30
+
+[The completed review](../phase63_closeout_20260930.md) verifies both completed
+arms, fourteen native views, all 119 returned beam candidates in both scopes,
+source/checkpoint/cohort hashes and exact primary repeats. Replacement masking
+job 16760614 completed with exit 0 and 4,376 updates; original zero-step failure
+16742233 remains immutable. The source difference is admission-only.
+
+Selection recovery is 292/3718 versus 310/3718, retained full LCAG 24/3939
+versus 27/3939, exact full components 3/155 in both and coherent forests 2/100
+in both. Neither passes every original gate. No exact component deeper than one
+appears across any view/candidate. Masking's two coherent forests have no mothers;
+recovery has one with a single shallow mother and one without mothers. Aggregate
+source gains include isolated leaves; nontrivial source and topology paired
+intervals span zero. No recursive quality winner or B-pair success is established.
+
+Use masking as a simpler experimental baseline, acknowledging the lost shallow
+forest, and stop recovery-dose tuning. A separate radial-projection diagnostic
+and controlled reconditioning study are proposed; the exact intervention and
+post-training geometry evidence are not yet established. No successor has been
+submitted, checkpoint promoted or sealed test opened. Hold 70,000 train events;
+46,700 validation events remain unreserved. Large exports remain on the data
+volume. Focused verification passed 62 CPU tests; the prior full-suite record
+remains separate. Earlier dated observations below retain their historical scope.
+
 ## Phase63 continuation — 2026-09-29
 
 [The partial review](../phase63_review_20260929.md) verifies completed recovery

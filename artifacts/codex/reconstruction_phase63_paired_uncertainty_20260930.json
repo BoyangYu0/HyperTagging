@@ -1,0 +1,258 @@
+{
+  "event_count": 100,
+  "interval": "paired event-cluster percentile 95%, ratio of summed counts",
+  "limitation": "Exploratory single-seed paired study with 100 events; conditional on two trained models; does not measure training-seed uncertainty. Degenerate all-zero intervals do not imply zero population uncertainty.",
+  "nontrivial_scopes": {
+    "full": {
+      "source_precision": {
+        "ci95": [
+          -0.07964635162922425,
+          0.052419950390248445
+        ],
+        "counts_by_arm": {
+          "corrected_recovery": {
+            "denominator": 302,
+            "numerator": 230
+          },
+          "masked_only": {
+            "denominator": 301,
+            "numerator": 225
+          }
+        },
+        "defined_paired_draws": 10000,
+        "masked_only_minus_corrected_recovery": -0.014081098325669394,
+        "population": "explicit retained components with at least two truth sources",
+        "undefined_paired_draws": 0
+      },
+      "source_recall": {
+        "ci95": [
+          -0.037190432044126816,
+          0.022376844585313777
+        ],
+        "counts_by_arm": {
+          "corrected_recovery": {
+            "denominator": 728,
+            "numerator": 230
+          },
+          "masked_only": {
+            "denominator": 728,
+            "numerator": 225
+          }
+        },
+        "defined_paired_draws": 10000,
+        "masked_only_minus_corrected_recovery": -0.006868131868131844,
+        "population": "explicit retained components with at least two truth sources",
+        "undefined_paired_draws": 0
+      }
+    },
+    "half": {
+      "source_precision": {
+        "ci95": [
+          -0.04871897321392088,
+          0.06509687951066613
+        ],
+        "counts_by_arm": {
+          "corrected_recovery": {
+            "denominator": 349,
+            "numerator": 242
+          },
+          "masked_only": {
+            "denominator": 352,
+            "numerator": 247
+          }
+        },
+        "defined_paired_draws": 10000,
+        "masked_only_minus_corrected_recovery": 0.008294803334201628,
+        "population": "explicit retained components with at least two truth sources",
+        "undefined_paired_draws": 0
+      },
+      "source_recall": {
+        "ci95": [
+          -0.01282142857142858,
+          0.02814575668383613
+        ],
+        "counts_by_arm": {
+          "corrected_recovery": {
+            "denominator": 728,
+            "numerator": 242
+          },
+          "masked_only": {
+            "denominator": 728,
+            "numerator": 247
+          }
+        },
+        "defined_paired_draws": 10000,
+        "masked_only_minus_corrected_recovery": 0.006868131868131899,
+        "population": "explicit retained components with at least two truth sources",
+        "undefined_paired_draws": 0
+      }
+    }
+  },
+  "perfect_components": {
+    "corrected_recovery/full": [
+      {
+        "count": 3,
+        "depth": 1,
+        "leaves": 2,
+        "mothers": 1
+      }
+    ],
+    "corrected_recovery/half": [
+      {
+        "count": 2,
+        "depth": 1,
+        "leaves": 2,
+        "mothers": 1
+      }
+    ],
+    "masked_only/full": [
+      {
+        "count": 3,
+        "depth": 1,
+        "leaves": 2,
+        "mothers": 1
+      }
+    ],
+    "masked_only/half": [
+      {
+        "count": 3,
+        "depth": 1,
+        "leaves": 2,
+        "mothers": 1
+      }
+    ]
+  },
+  "replicates": 10000,
+  "report_sha256": {
+    "corrected_recovery": "21752154d5619bbc61209841a58e5fd79c9c834c10d0aec0ec0748b950ecdd5e",
+    "masked_only": "6dca05a0b814cb320d010065f590d0c63137ce98cba6b157c027c187410a7756"
+  },
+  "scopes": {
+    "full": {
+      "coherent_retained_forest": {
+        "ci95": [
+          -0.03,
+          0.03
+        ],
+        "defined_paired_draws": 10000,
+        "masked_only_minus_corrected_recovery": 0.0,
+        "paired_event_counts_identical": false,
+        "undefined_paired_draws": 0
+      },
+      "lcag_pair_accuracy": {
+        "ci95": [
+          -0.0007942969601381978,
+          0.0023898941618299757
+        ],
+        "defined_paired_draws": 10000,
+        "masked_only_minus_corrected_recovery": 0.0007616146230007611,
+        "paired_event_counts_identical": false,
+        "undefined_paired_draws": 0
+      },
+      "mother_pid_coverage": {
+        "ci95": [
+          -0.005555813234384664,
+          0.017057569296375266
+        ],
+        "defined_paired_draws": 10000,
+        "masked_only_minus_corrected_recovery": 0.005714285714285713,
+        "paired_event_counts_identical": false,
+        "undefined_paired_draws": 0
+      },
+      "perfect_lcag": {
+        "ci95": [
+          -0.030537863532056383,
+          0.031446540880503145
+        ],
+        "defined_paired_draws": 10000,
+        "masked_only_minus_corrected_recovery": 0.0,
+        "paired_event_counts_identical": false,
+        "undefined_paired_draws": 0
+      },
+      "source_precision": {
+        "ci95": [
+          0.008242163690195764,
+          0.03014466725882084
+        ],
+        "defined_paired_draws": 10000,
+        "masked_only_minus_corrected_recovery": 0.019413653750265936,
+        "paired_event_counts_identical": false,
+        "undefined_paired_draws": 0
+      },
+      "source_recall": {
+        "ci95": [
+          0.004574195032499068,
+          0.023443413041678164
+        ],
+        "defined_paired_draws": 10000,
+        "masked_only_minus_corrected_recovery": 0.014084507042253502,
+        "paired_event_counts_identical": false,
+        "undefined_paired_draws": 0
+      }
+    },
+    "half": {
+      "coherent_retained_forest": {
+        "ci95": [
+          -0.03,
+          0.03
+        ],
+        "defined_paired_draws": 10000,
+        "masked_only_minus_corrected_recovery": 0.0,
+        "paired_event_counts_identical": false,
+        "undefined_paired_draws": 0
+      },
+      "lcag_pair_accuracy": {
+        "ci95": [
+          -0.0010168286145755437,
+          0.004881149227005423
+        ],
+        "defined_paired_draws": 10000,
+        "masked_only_minus_corrected_recovery": 0.0018450184501845011,
+        "paired_event_counts_identical": false,
+        "undefined_paired_draws": 0
+      },
+      "mother_pid_coverage": {
+        "ci95": [
+          -0.004065247628036363,
+          0.020243598862019915
+        ],
+        "defined_paired_draws": 10000,
+        "masked_only_minus_corrected_recovery": 0.007889546351084811,
+        "paired_event_counts_identical": false,
+        "undefined_paired_draws": 0
+      },
+      "perfect_lcag": {
+        "ci95": [
+          -0.018867924528301886,
+          0.03164556962025317
+        ],
+        "defined_paired_draws": 10000,
+        "masked_only_minus_corrected_recovery": 0.005780346820809247,
+        "paired_event_counts_identical": false,
+        "undefined_paired_draws": 0
+      },
+      "source_precision": {
+        "ci95": [
+          0.012519827267331942,
+          0.03749216323934633
+        ],
+        "defined_paired_draws": 10000,
+        "masked_only_minus_corrected_recovery": 0.02518912969902387,
+        "paired_event_counts_identical": false,
+        "undefined_paired_draws": 0
+      },
+      "source_recall": {
+        "ci95": [
+          0.009993577166734241,
+          0.030339650709326184
+        ],
+        "defined_paired_draws": 10000,
+        "masked_only_minus_corrected_recovery": 0.020142547257514742,
+        "paired_event_counts_identical": false,
+        "undefined_paired_draws": 0
+      }
+    }
+  },
+  "seed": 20260930,
+  "version": "phase63-paired-event-bootstrap-v1"
+}
