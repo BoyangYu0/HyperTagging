@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Measured full-site capacity margin and proactive bounded-publication review signals.
+  - 0118fa8113d51a6d002695b1b35cde0a68881bc2
   # Documentation work capacity and exact-commit branch CI promotion; scientific source unchanged.
   - 38d222d2da8f2ecbab429709a0cc9c5cc152d9c6
   # Verified Phase64 native submission snapshot and current scheduler observation.

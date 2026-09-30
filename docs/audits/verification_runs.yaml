@@ -789,3 +789,30 @@ supplemental_runs:
       work/state bounds and all content checks. Branch CI and exact-commit
       promotion prevent publishing unverified updates. Full remote CPU/docs
       verification must succeed before master promotion. No scientific changes.
+
+  - source_sha: 0118fa8113d51a6d002695b1b35cde0a68881bc2
+    metadata_head: resolved_by_git_rev_parse_HEAD
+    worktree_state: clean_committed_metadata_tree
+    date: '2026-09-30'
+    commands:
+      - python -m pytest -q tests/test_docs_privacy_cpu.py tests/test_docs_wiki_cpu.py tests/test_ci_promotion_cpu.py
+      - python -m pytest -q tests/test_docs_privacy_cpu.py
+    pytest:
+      result: PASS
+      focused_suite_passed: 88
+      final_privacy_suite_passed: 50
+    notebooks: {result: NOT_RUN, reason: notebook source unchanged}
+    real_data_inputs: NOT_RUN
+    checkpoint: none
+    ci_run: PENDING_FINAL_BRANCH_VALIDATION
+    human_visual_review_status: NOT_REVIEWED
+    evidence_limitations: >-
+      Prior candidate 69762258549f51a69658b48644f74a1d3f5610fc passed complete
+      remote CPU CI (36706543776; 2017 passed, 39 skipped) and documentation
+      CI (36706543763; HTML, regeneration, text and basf2 all passed). Basf2
+      used 301420128 matcher operations, confirming the old 300M ceiling failure,
+      and 154020059 publication bytes, near the old 157286400 byte ceiling.
+      Reserve fixed 256 MiB total capacity and report 80 percent review signals
+      for total bytes, per-file bytes and matcher operations. Per-file and
+      content checks remain active. Final branch must pass CI before promotion.
+      No scientific source, checkpoints, cohorts or active jobs changed.
