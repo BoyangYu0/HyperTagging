@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Bounded documentation runtime margin; all validation and publication gates retained.
+  - caaeb53be8e4103bb673da22550d201718562898
   # Measured full-site capacity margin and proactive bounded-publication review signals.
   - 0118fa8113d51a6d002695b1b35cde0a68881bc2
   # Documentation work capacity and exact-commit branch CI promotion; scientific source unchanged.

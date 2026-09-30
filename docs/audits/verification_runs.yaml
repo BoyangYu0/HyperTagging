@@ -816,3 +816,26 @@ supplemental_runs:
       for total bytes, per-file bytes and matcher operations. Per-file and
       content checks remain active. Final branch must pass CI before promotion.
       No scientific source, checkpoints, cohorts or active jobs changed.
+
+  - source_sha: caaeb53be8e4103bb673da22550d201718562898
+    metadata_head: resolved_by_git_rev_parse_HEAD
+    worktree_state: clean_committed_metadata_tree
+    date: '2026-09-30'
+    commands:
+      - python -m pytest -q tests/test_docs_wiki_cpu.py -k 'workflow or security_validators'
+      - python scripts/validate_docs.py --workflow
+    pytest: {result: PASS, passed: 9, deselected: 21, duration_seconds: 1.38}
+    notebooks: {result: NOT_RUN, reason: notebook source unchanged}
+    real_data_inputs: NOT_RUN
+    checkpoint: none
+    ci_run: PENDING_FINAL_BRANCH_VALIDATION
+    human_visual_review_status: NOT_REVIEWED
+    evidence_limitations: >-
+      Prior candidate d1cdf03d550a498773ae8051aec956b8e4698ff6 passed remote
+      CPU CI (36709258762; 2020 passed, 39 skipped), notebook execution,
+      documentation regression tests and the complete HTML build. Its
+      documentation run 36709258694 approached the 45-minute job limit while
+      compatibility checks were still running. Increase the bounded job
+      allowance to 60 minutes; retain every check, immutable action pin,
+      permission boundary and exact-commit promotion gate. Final branch
+      validation remains required before master promotion.
