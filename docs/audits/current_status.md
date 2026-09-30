@@ -1,6 +1,6 @@
 # Current repository audit status
 
-## Phase64 preparation — 2026-09-30
+## Phase64 submitted — 2026-09-30
 
 [The next-study specification](../phase64_plan_20260930.md) binds a single
 train-calibrated projection initialization contrast. Both completed Phase63
@@ -16,8 +16,11 @@ prior reservations and leaves 45600 unreserved. The 34 new focused checks pass,
 including actual CPU optimizer steps and both registered trainer admissions.
 The full suite passed 2,011 tests with 34 skips; both training dry runs, native
 initialization probes and static/audit checks pass. Frozen-source verification
-precedes submission; no scheduler
-acceptance is claimed by this preparation snapshot. No promotion, sealed-test
+passed, including 34 focused tests rerun on tagged source
+`ac3e35bbe93908d4e05f89a7c82df5bebad94c00`. Jobs 16773575 (control) and
+16773576 (reconditioned) were accepted and released; both are pending priority.
+GPU startup and training progress are not yet verified. The submission snapshot
+binds both native contracts and the immutable receipt. No promotion, sealed-test
 access or automatic successor is authorized.
 
 ## Phase63 completed paired closeout — 2026-09-30

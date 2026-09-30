@@ -1,0 +1,51 @@
+{
+  "all_source_contracts_verified": true,
+  "automatic_successor_authorized": false,
+  "frozen_source_tests_passed": 34,
+  "full_cpu_tests": {
+    "passed": 2011,
+    "skipped": 34
+  },
+  "jobs": [
+    {
+      "arm_role": "radial_control",
+      "contract_file_sha256": "fd1e64137ee28300124000fc603beb6deb438528747b995eadf6cf70655e414f",
+      "contract_path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/phase64_review_20260930/training-source/artifacts/slurm/reconstruction-phase64/contracts/phase64_radial_control_contract_20260930.json",
+      "contract_sha256": "ce7aaf57f751976ce32a2cb284f0d2752e8f242deacffb7e318f8c8cdbad73bc",
+      "gpu_startup_verified": false,
+      "job_id": "16773575",
+      "projection_scale": 1.0,
+      "scheduler_reason_at_observation": "Priority",
+      "scheduler_state_at_submission": "PENDING"
+    },
+    {
+      "arm_role": "radial_reconditioned",
+      "contract_file_sha256": "95be4aca785036995086db388ad07fa11f008665e1cc1a1d303e74346eac2b1c",
+      "contract_path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/phase64_review_20260930/training-source/artifacts/slurm/reconstruction-phase64/contracts/phase64_radial_reconditioned_contract_20260930.json",
+      "contract_sha256": "5a3bdab100de64b9a2088b5366913d49d67e45e6bfe612e901950c1ab35cb267",
+      "gpu_startup_verified": false,
+      "job_id": "16773576",
+      "projection_scale": 0.016935500334518513,
+      "scheduler_reason_at_observation": "Priority",
+      "scheduler_state_at_submission": "PENDING"
+    }
+  ],
+  "large_artifact_storage": "project_data_volume",
+  "native_submission_receipt": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/phase64_review_20260930/training-source/artifacts/slurm/reconstruction-phase64/phase64-submission-20260930.json",
+  "native_submission_receipt_canonical_sha256": "445ab5bc07e7b0f12712326d38a060b1712b1c62b61a4f5368e681dac855e4c4",
+  "native_submission_receipt_file_sha256": "6a82cec8655b387c1a761b0307bbfd99579a8dabb101b43d27d8b4f7042d4c3d",
+  "observed_at": "2026-09-30T10:24:44.588870+00:00",
+  "promotion_authorized": false,
+  "scheduler_observation": [
+    "16773576|PENDING|(Priority)",
+    "16773575|PENDING|(Priority)"
+  ],
+  "sealed_test_accessed": false,
+  "snapshot_version": "phase64-submission-snapshot-v1",
+  "source_root": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/phase64_review_20260930/training-source",
+  "source_sha": "ac3e35bbe93908d4e05f89a7c82df5bebad94c00",
+  "source_tag": "phase64-radial-source-20260930",
+  "status": "SUBMITTED_PENDING",
+  "strict_selection_overlap": 0,
+  "study_id": "phase64-radial-reconditioning-20260930"
+}

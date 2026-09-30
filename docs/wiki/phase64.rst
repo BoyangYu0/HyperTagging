@@ -19,7 +19,10 @@ refinement together with nontrivial topology, exact component depth, source
 precision/recall and coherent forests. Isolated leaves and generated depth must
 not stand in for recursive accuracy.
 
-The study is prepared for one bounded paired submission after verification.
+Both study arms were accepted and released from the verified immutable source.
+The first scheduler observation is pending priority; GPU startup is unverified.
+The full CPU suite passed 2011 tests with 34 skips, and the frozen source passed
+all 34 focused tests.
 There is no automatic restart, successor, promotion or sealed-test access.
 The detailed repository specification is ``docs/phase64_plan_20260930.md``.
 This page records the study contract and does not poll the scheduler.
