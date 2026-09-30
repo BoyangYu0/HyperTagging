@@ -2,7 +2,7 @@ name: Documentation and Pages
 
 on:
   push:
-    branches: [master]
+    branches: ["**"]
   pull_request:
   workflow_dispatch:
 
@@ -60,6 +60,9 @@ jobs:
           wait "$regeneration_pid" || regeneration_status=$?
           wait "$text_layout_pid" || text_layout_status=$?
           wait "$basf2_layout_pid" || basf2_layout_status=$?
+          echo "Regeneration status: $regeneration_status"
+          echo "Text layout status: $text_layout_status"
+          echo "basf2 layout status: $basf2_layout_status"
           test "$regeneration_status" -eq 0
           test "$text_layout_status" -eq 0
           test "$basf2_layout_status" -eq 0

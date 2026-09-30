@@ -167,3 +167,17 @@ admission/watchdog or tiny-test guards; never bypass them or borrow an active
 training GPU. Keep CPU workers/BLAS threads bounded and large data/checkpoints
 on the configured data/project volume. Report tests actually run, failures,
 external environment limitations, and any unverified scientific claims.
+
+## Git update and CI promotion
+
+- Finish implementation commits and their audit-lineage follow-up before pushing.
+  Validate audit integrity and generated-notebook consistency on the final head.
+- Push the development branch first. Wait for both CPU correctness and the full
+  Documentation and Pages workflow to succeed on that exact commit. A page-only
+  preview or local CPU success does not establish complete documentation success.
+- Use `python scripts/promote_verified_commit.py` to check eligibility, then
+  `--push` to fast-forward master. Never push development and master together
+  before remote checks finish. A changed commit requires fresh remote checks.
+- Preserve all privacy, source-coverage, compatibility and deployment gates.
+  Inspect reported publication byte/work capacity as the study archive grows.
+  Keep local source and Git metadata stable throughout full-site validation.

@@ -176,3 +176,19 @@ def test_publication_size_limits_still_fail_closed(tmp_path, monkeypatch, limit)
     monkeypatch.setattr(privacy, limit, 16)
     with pytest.raises(ValueError, match="publication-resource-limit"):
         privacy.validate_artifact(site)
+
+
+def test_publication_scan_reports_bounded_work_and_bytes(tmp_path):
+    _write(tmp_path, "guide.txt", "Public documentation overview.")
+    result = privacy.validate_artifact(tmp_path)
+    assert result["publication_bytes"] == (tmp_path / "guide.txt").stat().st_size
+    assert 0 <= result["match_operations"] <= result["match_operation_limit"]
+    assert result["publication_bytes"] < result["publication_byte_limit"]
+
+
+def test_publication_work_budget_still_fails_closed(tmp_path, monkeypatch):
+    _write(tmp_path, "guide.txt", "Public documentation overview.")
+    monkeypatch.setattr(privacy, "_MAX_PUBLICATION_MATCH_OPERATIONS", 0)
+    monkeypatch.setattr(privacy, "sensitive_literals", lambda root: {"private-sentinel"})
+    with pytest.raises(ValueError, match="operation limit"):
+        privacy.validate_artifact(tmp_path, tmp_path)

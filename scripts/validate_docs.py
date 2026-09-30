@@ -582,8 +582,8 @@ def validate_workflow() -> dict:
     triggers = workflow.get("on", workflow.get(True))
     _require(isinstance(triggers, dict)
              and set(triggers) == {"push", "pull_request", "workflow_dispatch"},
-             "Docs validation must run on PR, master push and manual dispatch only")
-    _require(triggers["push"] == {"branches": ["master"]}, "Push validation must target master")
+             "Docs validation must run on PR, branch push and manual dispatch only")
+    _require(triggers["push"] == {"branches": ["**"]}, "Push validation must cover every branch before promotion")
     _require(triggers["pull_request"] in (None, {}) and triggers["workflow_dispatch"] in (None, {}),
              "PR/manual validation must not be silently restricted")
     _require(workflow.get("permissions") == {}, "Top-level permissions must be empty")

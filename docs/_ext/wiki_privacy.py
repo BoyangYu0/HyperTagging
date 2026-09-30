@@ -171,9 +171,11 @@ _MAX_MATCH_STATES = 100_000
 _MAX_MATCH_OPERATIONS = 30_000_000
 _MAX_ENCODED_STATES = 4_096
 # A publication contains several independently meaningful parser projections.
-# Ten per-file windows keep the 64 MiB site bounded while allowing the
-# complete generated API inventory and HTML tree to be checked in one pass.
-_MAX_PUBLICATION_MATCH_OPERATIONS = 300_000_000
+# Keep the aggregate work bound aligned with the fixed publication byte bound.
+# The former 300M budget was sized for 64 MiB and exhausted by the Phase64
+# basf2 layout. Five operations per allowed byte preserves comparable density;
+# per-file work/state limits and every content check remain independently active.
+_MAX_PUBLICATION_MATCH_OPERATIONS = 5 * _MAX_PUBLICATION_BYTES
 _SAFE_CSS_CONTENT_VALUES = frozenset({"''", '\"\"', "':'", '\":\"', "'['", '\"[\"', "']'", '\"]\"'})
 _BINARY_ASSETS = {".png", ".gif", ".jpg", ".jpeg", ".ico", ".woff", ".woff2", ".ttf", ".eot"}
 _SAFE_INLINE_SCRIPTS = {
@@ -3684,5 +3686,9 @@ def validate_artifact(
         raise ValueError("Artifact privacy check failed: " + "; ".join(errors[:20]) +
                          "; total=" + str(len(errors)))
     return {"privacy": "PASS", "textual_files_scanned": scanned,
+            "publication_bytes": publication_bytes,
+            "publication_byte_limit": _MAX_PUBLICATION_BYTES,
+            "match_operations": _MAX_PUBLICATION_MATCH_OPERATIONS - publication_match_budget[0],
+            "match_operation_limit": _MAX_PUBLICATION_MATCH_OPERATIONS,
             "sensitive_literal_rules": len(deny),
             "raw_source_hash_rules": len(raw_hashes), "source_downloads": 0}

@@ -76,3 +76,26 @@ basf2 layout adds approximately 16.1 MB, exceeding the old bound. Final builds
 verify both actual sizes. The 10 MiB per-file limit, 5,000-entry limit, exact
 metric allowlists and all content/privacy checks remain unchanged. This is a
 documentation storage allowance, not a scientific acceptance or stability change.
+
+Verified branch promotion
+-------------------------
+
+Finish the implementation commit and its audit-lineage follow-up locally. Run
+audit integrity and generated-notebook consistency checks, then push only the
+development branch. CPU correctness and the complete documentation workflow
+now run for every branch push. An isolated page preview cannot replace the
+full HTML, text, basf2, privacy and regeneration checks. Keep the source checkout
+unchanged during local builds.
+
+After both workflows succeed for that exact branch commit, run
+``python scripts/promote_verified_commit.py`` to inspect eligibility and add
+``--push`` to fast-forward master. The helper verifies the remote branch, exact
+commit, latest workflow runs and clean tracked files; it never force-pushes.
+Any new commit requires new checks. Master runs the checks again before Pages
+deployment. Branch builds have read-only access and cannot publish Pages.
+
+The publication matcher has a fixed aggregate work allowance proportional to
+the fixed site byte allowance. Per-file work and state limits remain enforced.
+Successful scans report actual byte and operation counts with their limits, so
+review both layouts' remaining capacity before adding another study. Never
+remove historical evidence or skip privacy checks to make a build pass.
