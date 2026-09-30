@@ -1,5 +1,25 @@
 # Current repository audit status
 
+## Phase64 preparation — 2026-09-30
+
+[The next-study specification](../phase64_plan_20260930.md) binds a single
+train-calibrated projection initialization contrast. Both completed Phase63
+encoders remain saturated on 32 previously used selection events. Calibration
+on 128 training events gives scale 0.016935500334518513; measured saturation is
+zero after rescaling, with mean derivatives 0.67–0.72. These fixed-input-policy
+encoder diagnostics do not establish rollout quality or post-refinement stability.
+
+Both arms retain masking-only reconstruction and receive equal 2188 refinement
+and 4376 reconstruction updates, with unchanged data size, losses, architecture,
+thresholds, search and dominance guard. Fresh 1000/100 validation excludes all 53300
+prior reservations and leaves 45600 unreserved. The 34 new focused checks pass,
+including actual CPU optimizer steps and both registered trainer admissions.
+The full suite passed 2,011 tests with 34 skips; both training dry runs, native
+initialization probes and static/audit checks pass. Frozen-source verification
+precedes submission; no scheduler
+acceptance is claimed by this preparation snapshot. No promotion, sealed-test
+access or automatic successor is authorized.
+
 ## Phase63 completed paired closeout — 2026-09-30
 
 [The completed review](../phase63_closeout_20260930.md) verifies both completed
