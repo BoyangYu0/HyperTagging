@@ -180,4 +180,6 @@ external environment limitations, and any unverified scientific claims.
   before remote checks finish. A changed commit requires fresh remote checks.
 - Preserve all privacy, source-coverage, compatibility and deployment gates.
   Inspect reported publication byte/work capacity as the study archive grows.
+  If a scan reports `capacity_review_required`, plan capacity before adding the
+  next study; never automatically raise limits or remove checks.
   Keep local source and Git metadata stable throughout full-site validation.

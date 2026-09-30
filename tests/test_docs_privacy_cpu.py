@@ -184,6 +184,7 @@ def test_publication_scan_reports_bounded_work_and_bytes(tmp_path):
     assert result["publication_bytes"] == (tmp_path / "guide.txt").stat().st_size
     assert 0 <= result["match_operations"] <= result["match_operation_limit"]
     assert result["publication_bytes"] < result["publication_byte_limit"]
+    assert result["capacity_review_required"] is False
 
 
 def test_publication_work_budget_still_fails_closed(tmp_path, monkeypatch):
@@ -192,3 +193,26 @@ def test_publication_work_budget_still_fails_closed(tmp_path, monkeypatch):
     monkeypatch.setattr(privacy, "sensitive_literals", lambda root: {"private-sentinel"})
     with pytest.raises(ValueError, match="operation limit"):
         privacy.validate_artifact(tmp_path, tmp_path)
+
+
+@pytest.mark.parametrize("limit", ["_MAX_PUBLICATION_BYTES", "_MAX_PUBLICATION_FILE_BYTES"])
+def test_capacity_review_is_reported_before_byte_limit_failure(tmp_path, monkeypatch, limit):
+    path = _write(tmp_path, "guide.txt", "Public documentation overview.")
+    monkeypatch.setattr(privacy, limit, path.stat().st_size + 1)
+    result = privacy.validate_artifact(tmp_path)
+    assert result["privacy"] == "PASS"
+    assert result["capacity_review_required"] is True
+    assert result["largest_file_bytes"] == path.stat().st_size
+
+
+def test_capacity_review_reports_matcher_headroom(tmp_path, monkeypatch):
+    _write(tmp_path, "guide.txt", "Public documentation overview.")
+    monkeypatch.setattr(privacy, "sensitive_literals", lambda root: {"private-sentinel"})
+    monkeypatch.setattr(privacy, "_source_bodies", lambda root: (set(), []))
+    baseline = privacy.validate_artifact(tmp_path, tmp_path)
+    used = baseline["match_operations"]
+    assert used > 0
+    monkeypatch.setattr(privacy, "_MAX_PUBLICATION_MATCH_OPERATIONS", used + used // 10)
+    result = privacy.validate_artifact(tmp_path, tmp_path)
+    assert result["privacy"] == "PASS"
+    assert result["capacity_review_required"] is True

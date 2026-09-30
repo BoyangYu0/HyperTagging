@@ -99,3 +99,10 @@ the fixed site byte allowance. Per-file work and state limits remain enforced.
 Successful scans report actual byte and operation counts with their limits, so
 review both layouts' remaining capacity before adding another study. Never
 remove historical evidence or skip privacy checks to make a build pass.
+
+The Phase64 complete basf2 build measured 154,020,059 bytes, nearly exhausting
+the former 150 MiB allowance. The fixed publication allowance is now 256 MiB
+to accommodate further studies; the 10 MiB per-file limit is unchanged.
+Scans set ``capacity_review_required`` when site bytes, largest-file bytes,
+or matcher work reaches 80% of its bound. Review that signal before adding
+more results; it does not suppress any check or automatically raise a limit.

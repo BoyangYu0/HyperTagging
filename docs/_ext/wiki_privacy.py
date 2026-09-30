@@ -161,10 +161,11 @@ _PATH_FRAGMENT_ORDERED_PATTERNS = tuple(
 )
 _MAX_PUBLICATION_ENTRIES = 5_000
 _MAX_PUBLICATION_FILE_BYTES = 10 * 1024 * 1024
-# Phase61 standalone preview measures 134.9 MB with 55 metric downloads.
-# Prior basf2 overhead is 16.1 MB, exceeding the old 140 MiB site bound.
-# Retain all historical evidence; per-file and content privacy limits are unchanged.
-_MAX_PUBLICATION_BYTES = 150 * 1024 * 1024
+# Phase64 full basf2 validation measures 154,020,059 bytes, 98% of the
+# former 150 MiB allowance. Reserve bounded growth capacity for future studies
+# and report the 80% review threshold before the next hard-limit failure.
+# Per-file and content privacy limits remain unchanged.
+_MAX_PUBLICATION_BYTES = 256 * 1024 * 1024
 _MAX_SOURCE_TEXT_BYTES = 5_000_000
 _MAX_TYPE_ANNOTATION_BYTES = 8_192
 _MAX_MATCH_STATES = 100_000
@@ -3193,6 +3194,7 @@ def validate_artifact(
         if len(publication_paths) > _MAX_PUBLICATION_ENTRIES:
             raise ValueError("Publication entry limit exceeded")
     publication_bytes = 0
+    largest_file_bytes = 0
     literal_file_budget = [_MAX_MATCH_OPERATIONS]
     raw_body_file_budget = [_MAX_MATCH_OPERATIONS]
     pattern_file_budget = [_MAX_MATCH_OPERATIONS]
@@ -3233,6 +3235,7 @@ def validate_artifact(
             continue
         file_stat = path.stat()
         publication_bytes += file_stat.st_size
+        largest_file_bytes = max(largest_file_bytes, file_stat.st_size)
         if (
             file_stat.st_size > _MAX_PUBLICATION_FILE_BYTES
             or publication_bytes > _MAX_PUBLICATION_BYTES
@@ -3685,10 +3688,19 @@ def validate_artifact(
     if errors:
         raise ValueError("Artifact privacy check failed: " + "; ".join(errors[:20]) +
                          "; total=" + str(len(errors)))
+    match_operations = _MAX_PUBLICATION_MATCH_OPERATIONS - publication_match_budget[0]
+    capacity_review_required = any(used * 5 >= limit * 4 for used, limit in (
+        (publication_bytes, _MAX_PUBLICATION_BYTES),
+        (largest_file_bytes, _MAX_PUBLICATION_FILE_BYTES),
+        (match_operations, _MAX_PUBLICATION_MATCH_OPERATIONS),
+    ))
     return {"privacy": "PASS", "textual_files_scanned": scanned,
+            "capacity_review_required": capacity_review_required,
+            "largest_file_bytes": largest_file_bytes,
+            "file_byte_limit": _MAX_PUBLICATION_FILE_BYTES,
             "publication_bytes": publication_bytes,
             "publication_byte_limit": _MAX_PUBLICATION_BYTES,
-            "match_operations": _MAX_PUBLICATION_MATCH_OPERATIONS - publication_match_budget[0],
+            "match_operations": match_operations,
             "match_operation_limit": _MAX_PUBLICATION_MATCH_OPERATIONS,
             "sensitive_literal_rules": len(deny),
             "raw_source_hash_rules": len(raw_hashes), "source_downloads": 0}
