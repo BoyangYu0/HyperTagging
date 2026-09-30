@@ -767,3 +767,25 @@ supplemental_runs:
       selection_strict_overlap: 0
       native_receipt_file_sha256: 6a82cec8655b387c1a761b0307bbfd99579a8dabb101b43d27d8b4f7042d4c3d
       sealed_test_accessed: false
+
+  - source_sha: 38d222d2da8f2ecbab429709a0cc9c5cc152d9c6
+    metadata_head: resolved_by_git_rev_parse_HEAD
+    worktree_state: clean_committed_metadata_tree
+    date: '2026-09-30'
+    commands:
+      - python -m pytest -q tests/test_docs_privacy_cpu.py tests/test_docs_wiki_cpu.py tests/test_ci_promotion_cpu.py
+      - python scripts/validate_docs.py --workflow
+      - ruff check --select F scripts/promote_verified_commit.py tests/test_ci_promotion_cpu.py docs/_ext/wiki_privacy.py
+    pytest: {result: PASS, passed: 86, duration_seconds: 41.32}
+    notebooks: {result: NOT_RUN, reason: notebook source unchanged}
+    real_data_inputs: NOT_RUN
+    checkpoint: none
+    ci_run: PENDING_BRANCH_VALIDATION
+    human_visual_review_status: NOT_REVIEWED
+    evidence_limitations: >-
+      CI run 36701918457 passed main HTML, regeneration and text checks but basf2
+      exhausted the aggregate publication matcher allowance. Align the bounded
+      allowance with the existing 150 MiB publication size; preserve per-file
+      work/state bounds and all content checks. Branch CI and exact-commit
+      promotion prevent publishing unverified updates. Full remote CPU/docs
+      verification must succeed before master promotion. No scientific changes.
