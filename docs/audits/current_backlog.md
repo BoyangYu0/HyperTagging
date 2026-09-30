@@ -132,7 +132,7 @@ by hand. The complete source/test/notebook mapping is in
 
 - Status: `PARTIAL`
 - Next external evidence: Incidence audit on frozen development events and matched corrected reconstruction validation
-- Current boundary: Legal forest eligibility now drives predicted alignment and decoder masks; teacher prefixes exclude only already formed parents. CPU regressions pass. A frozen16-event development census finds30/48 historical versus28/48 legal targets, with both false positives at level2. Phase63 recovery completed but fails half-source precision and exactness gates. Masking-only failed before training because zero inactive recovery weight was rejected; admission is repaired and actual trainer-entry/optimizer-step regressions pass. The paired training benefit remains unverified; historical checkpoints are unchanged.
+- Current boundary: Legal forest eligibility and missing-slot supervision repairs are implemented and CPU-verified. Both Phase63 arms completed with matched scientific contracts; the replacement changes inactive-weight admission only. All fourteen views and 119 beam candidates are checked. Neither arm passes every original gate; exact components remain depth one. Masking is a simpler experimental baseline, not a demonstrated recursive quality winner. Its coherent forest successes have no mothers; recovery has one shallow nontrivial forest. No promotion, sealed-test access or corrected-versus-historical causal benefit is established.
 
 ### TRAIN-026: Channel retrieval admits repeated views of the same physical branch
 

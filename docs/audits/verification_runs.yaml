@@ -622,3 +622,74 @@ supplemental_runs:
       recovery weight; positive active behavior is unchanged. A bounded explicit failed-arm continuation preserves
       the original design. No paired winner, cross-phase causal improvement, successor or promotion is claimed. Full
       documentation/site build not repeated for this admission repair.
+  - source_sha: 9f3ecededbf64994989c0656c88a7776578932df
+    metadata_head: resolved_by_git_rev_parse_HEAD
+    worktree_state: task_changes_committed_unrelated_user_files_preserved
+    date: '2026-09-30T00:34:16.777244+00:00'
+    commands:
+    - Phase63 native paired closeout validation; both source roots, fourteen views and all 119 beam candidates
+    - 'Paired event bootstrap: 10000 draws on 100 matched events; separate nontrivial source populations'
+    - 'pytest: Phase63 campaign, inactive recovery, retained-tree checks and audit integrity'
+    - 'pytest: documentation status, wiki and privacy checks'
+    - ruff --select F; compileall review scripts; git diff --check
+    - generate_audit_views.py; validate_audit_integrity.py
+    pytest:
+      result: PASS
+      passed: 256
+      skipped: 0
+      warnings: 1
+      groups:
+      - scope: Phase63 and retained-tree/audit
+        passed: 62
+        duration_seconds: 20.9
+        log_sha256: 9b7bad322475e197ffc43a740ad54258535016c624b475ac02a9d010d6abac8a
+      - scope: Documentation status/wiki/privacy
+        passed: 194
+        duration_seconds: 284.47
+        log_sha256: d1111afffa8e3aabd334ec4172d7456255e121e5d3ce1279c37bc5787d933917
+      full_suite: NOT_REPEATED; scientific training code unchanged; prior 1977-pass record remains separate
+    notebooks:
+      generated_consistency:
+        result: NOT_RUN
+        count: 0
+      default_fixture:
+        result: NOT_RUN
+        count: 0
+      real_mdst_pilot:
+        result: NOT_RUN
+        count: 0
+    real_data_inputs: Read-only native Phase63 paired results/checkpoints; no new raw data or sealed-test access
+    checkpoint: Both completed 4376-step arms and all selected checkpoint hashes verified; no checkpoint mutation
+    ci_run: NOT_RUN at recording
+    human_visual_review_status: NOT_REVIEWED
+    evidence_limitations: Both arms fail original half-perfect-LCAG gate; recovery also fails half precision. All
+      exact components across views/candidates remain depth one. Masking primary coherent forests have no mothers;
+      recovery has one shallow nontrivial forest. Event-bootstrap intervals do not measure training-seed uncertainty.
+      Masking is a simpler baseline, not an established recursive quality winner. Proposed geometry study not submitted.
+      Full local documentation build and remote publication not verified in this continuation.
+    external_export:
+      path: /project/agkuhr/users/boyang/data/HyperTagging_artifacts/phase63_closeout_20260930/phase63-all-metrics.json.gz
+      sha256: 765cb91cb321b930bd92ed7f36bb0ba3796805d3f647624cf5111cfd23d2a25c
+      metric_rows: 164784
+    standalone_new_page_validation:
+      scope: New Phase63 page only, using shared Sphinx theme/configuration; not the full generated site
+      result:
+        html:
+          html_pages: 3
+          local_links_checked: 47
+          remote_assets: 0
+        html_privacy:
+          privacy: PASS
+          raw_source_hash_rules: 1305
+          sensitive_literal_rules: 61
+          source_downloads: 0
+          textual_files_scanned: 17
+        workflow:
+          action_pins: 5
+          deployment_branch: master
+          permission_boundary: PASS
+          shell_pipefail: true
+          workflow: .github/workflows/docs.yml
+      log_sha256: d67efae891e417a26d058e3644a3abe5b909e67ad4dee986a052ceb8a5ace122
+      earlier_attempts: Direct docutils/minimal Sphinx harnesses rejected; rerendering with shared configuration and
+        external doctrees passed; short title underline corrected before final source commit
