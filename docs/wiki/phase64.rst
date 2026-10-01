@@ -226,7 +226,7 @@ Downloads
 
 
 Phase65 accepted scheduling snapshot
------------------------------------
+------------------------------------
 
 Both bounded tasks were accepted and released from immutable source
 ``91f7d62900fbcc73ccaaf949251fa97f59dedddd``. The verified scheduling snapshot
