@@ -100,3 +100,12 @@ The hypothesis is that preserving the usable representation may alter recursive 
 ## Verification boundary
 
 Native integrity, exact repeats, checkpoint lineage, fixed-input geometry and paired analyses are real-run evidence. Focused CPU tests, the complete CPU suite, documentation/privacy/link/export checks, browser observations, exact-commit CI and live deployment are recorded separately in the task final manifest and verification ledger. CPU correctness is not trained physics performance. Submission and startup/scheduling receipts are snapshots, not completion claims for the next training.
+
+## Phase65 submission snapshot
+
+Jobs16779196 (late adaptation) and16779197 (fully frozen encoder) were accepted
+and released from source `91f7d62900fbcc73ccaaf949251fa97f59dedddd`. The scheduling
+snapshot verifies PENDING (Priority), exact contract comments, one H100 NVL,
+8 CPUs,64 GiB,36-hour limits and no requeue/restart. GPU startup is not yet
+verified. Native and compact receipts bind source, checkpoint and cohort lineage.
+Full training completion is outside this closeout's exit requirement.

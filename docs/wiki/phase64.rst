@@ -8,7 +8,7 @@ Native integrity and populations
 --------------------------------
 
 
-Both original jobs completed with exit 0 after 2,188 refinement and 4,376 reconstruction updates. Their immutable native source is `ac3e35bbe93908d4e05f89a7c82df5bebad94c00`. Receipt and contract checksums, input bindings, checkpoint hashes, exact selector membership, balanced replay and all fourteen native reports validate. All five reconstruction checkpoint tracks per arm pass the CPU checkpoint-pair lineage validator, with complete encoder/PID key coverage and no shape mismatch. Both primary repeats are exact. Scheduler completion is separate from these scientific checks.
+Both original jobs completed with exit 0 after 2,188 refinement and 4,376 reconstruction updates. Their immutable native source is ``ac3e35bbe93908d4e05f89a7c82df5bebad94c00``. Receipt and contract checksums, input bindings, checkpoint hashes, exact selector membership, balanced replay and all fourteen native reports validate. All five reconstruction checkpoint tracks per arm pass the CPU checkpoint-pair lineage validator, with complete encoder/PID key coverage and no shape mismatch. Both primary repeats are exact. Scheduler completion is separate from these scientific checks.
 
 The single contrast is unchanged versus train-calibrated projection weight/bias rescaling 0.016935500334518513 before matched refinement. Architecture, objective weights, seed 20260930, search, training set and budgets match. Calibration uses 128 training events; geometry diagnostics reuse the same 32 previously used Phase63 selection events. The Phase64 1,000 selection and disjoint 100 strict events exclude 53,300 earlier reservations; beam uses a fixed 20-event subset. There were 45,600 unreserved validation events after Phase64.
 
@@ -174,7 +174,7 @@ All-study synthesis and next allocation
 ---------------------------------------
 
 
-The September 28 :doc:`scientific_review_20260928` covers migration Phases1–13, early pretraining/transfer/resource studies, Stage A and reconstruction Phases34 onward. It found no standalone reconstruction closeouts numbered14–33; those numbers must not be invented. Historical software/runtime evidence, old full-tree labels and modern retained topology metrics are not interchangeable.
+The September 28 `study ledger <https://github.com/BoyangYu0/HyperTagging/blob/master/docs/review_20260928/studies.md>`_ covers migration Phases1–13, early pretraining/transfer/resource studies, Stage A and reconstruction Phases34 onward. It found no standalone reconstruction closeouts numbered14–33; those numbers must not be invented. Historical software/runtime evidence, old full-tree labels and modern retained topology metrics are not interchangeable.
 
 
 .. list-table::
@@ -224,4 +224,12 @@ Downloads
 
 :doc:`Complete dashboard and all Phase64 downloads <_generated/status/index>`.
 
-:download:`Review metrics and download manifest <_generated/status/phase64-review-metrics.json>`.
+
+Phase65 accepted scheduling snapshot
+-----------------------------------
+
+Both bounded tasks were accepted and released from immutable source
+``91f7d62900fbcc73ccaaf949251fa97f59dedddd``. The verified scheduling snapshot
+is pending priority for both; GPU startup is unverified. The native submission
+receipt and contract hashes are retained privately. No automatic successor is
+scheduled. Training completion is not required for this review closeout.

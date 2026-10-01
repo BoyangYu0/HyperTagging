@@ -120,6 +120,44 @@ def main():
             for k, v in json.loads(manifest.read_text()).items()
             if k in ("native_scalar_count", "public_metric_count")
         }
+    submission = (
+        ROOT / "artifacts/codex/reconstruction_phase65_submission_20261001.json"
+    )
+    if submission.exists():
+        receipt = json.loads(submission.read_text())
+        summary["next_study_status"] = "SUBMITTED_AND_RELEASED_PENDING_PRIORITY"
+        summary["next_study"] = {
+            "source_sha": receipt["source_sha"],
+            "native_receipt_sha256": receipt["native_receipt_sha256"],
+            "task_count": 2,
+            "optimizer_steps_per_task": 4376,
+            "seed": 20261001,
+            "train_events": 70000,
+            "remaining_unreserved_validation": 44500,
+            "gpu_startup_verified": all(
+                j["gpu_startup_verified"] for j in receipt["jobs"]
+            ),
+            "scheduler_states": [j["state"] for j in receipt["jobs"]],
+        }
+
+    def schema(value, path=()):
+        if isinstance(value, dict):
+            for key, item in sorted(value.items()):
+                yield from schema(item, path + (key,))
+        elif isinstance(value, list):
+            for index, item in enumerate(value):
+                yield from schema(item, path + (index,))
+        else:
+            yield [
+                list(path),
+                "text" if isinstance(value, str) else "scalar",
+                value if isinstance(value, str) else None,
+            ]
+
+    public_summary = {key: value for key, value in summary.items() if key != "files"}
+    (ROOT / "docs/_ext/phase64_summary_registry.json.gz").write_bytes(
+        gzip.compress(encode(list(schema(public_summary))), mtime=0)
+    )
     (output / "summary.json").write_bytes(encode(summary))
     (ROOT / "docs/_ext/phase64_metric_registry.json.gz").write_bytes(
         gzip.compress(encode(registry), mtime=0)

@@ -60,3 +60,10 @@ def test_public_export_rejects_changed_binding(tmp_path, change):
         d["files"][0]["metric_count"] += 1
     with pytest.raises(ValueError):
         module().generate(ROOT, tmp_path, d)
+
+
+def test_unreviewed_nested_summary_text_cannot_publish(tmp_path):
+    d = summary()
+    d["arms"]["radial_control"]["private_unknown_field"] = "/home/private/checkpoint.pt"
+    with pytest.raises(ValueError, match="summary schema"):
+        module().generate(ROOT, tmp_path, d)

@@ -31,8 +31,10 @@ validation is distinct: the bounded Phase65 pair reserves fresh 1000/100/20,
 excludes 54,400 prior reservations, and leaves 44,500 unreserved. It compares full
 encoder freeze versus existing late adaptation from the same unsaturated Phase64
 refined encoder, with zero extra pretraining and 4,376 reconstruction updates each.
-The user explicitly authorizes this new bounded campaign. Submission is being
-prepared; no automatic successor, sealed-test access or promotion is authorized.
+The user explicitly authorizes this new bounded campaign. Jobs16779196 and16779197 were accepted and released from immutable source
+`91f7d62900fbcc73ccaaf949251fa97f59dedddd`; both are pending priority at the
+verified scheduling snapshot. GPU startup is unverified. No automatic successor,
+sealed-test access or promotion is authorized.
 Final software/publication and scheduler verification are recorded separately.
 
 

@@ -16,6 +16,40 @@ VIEWS = (
 )
 
 
+def summary_leaves(value, path=()):
+    if isinstance(value, dict):
+        for key, item in sorted(value.items()):
+            yield from summary_leaves(item, path + (key,))
+    elif isinstance(value, list):
+        for index, item in enumerate(value):
+            yield from summary_leaves(item, path + (index,))
+    else:
+        yield path, value
+
+
+def validate_summary(value):
+    registry = json.loads(
+        gzip.decompress(
+            Path(__file__).with_name("phase64_summary_registry.json.gz").read_bytes()
+        )
+    )
+    expected = {tuple(row[0]): row[1:] for row in registry}
+    observed = dict(summary_leaves(value))
+    if observed.keys() != expected.keys():
+        raise ValueError("Phase64 summary schema differs from reviewed fields")
+    for path, scalar in observed.items():
+        kind, fixed = expected[path]
+        if kind == "text":
+            if scalar != fixed:
+                raise ValueError(
+                    "Phase64 summary text differs from reviewed vocabulary"
+                )
+        elif scalar is not None and (
+            type(scalar) not in (int, float, bool) or not math.isfinite(scalar)
+        ):
+            raise ValueError("Invalid Phase64 summary scalar")
+
+
 def generate(root, output, summary):
     registry = json.loads(
         gzip.decompress(
@@ -28,6 +62,7 @@ def generate(root, output, summary):
     ):
         raise ValueError("Incomplete Phase64 registry")
     downloads = []
+    bundle_names, bundle_lookup, bundle_records = [], {}, []
     if {f["view"] for f in summary["files"]} != set(VIEWS):
         raise ValueError("Incomplete Phase64 views")
     for info in summary["files"]:
@@ -37,7 +72,9 @@ def generate(root, output, summary):
         if info["filename"] != filename or info["source"] != source:
             raise ValueError("Invalid Phase64 source")
         input_path = root / source
-        if any(p.is_symlink() for p in (input_path, *input_path.parents)) or not input_path.resolve().is_relative_to(root.resolve()):
+        if any(
+            p.is_symlink() for p in (input_path, *input_path.parents)
+        ) or not input_path.resolve().is_relative_to(root.resolve()):
             raise ValueError("Unsafe Phase64 input path")
         data = gzip.decompress(input_path.read_bytes())
         if (
@@ -83,8 +120,18 @@ def generate(root, output, summary):
             or len(seen) != info["metric_count"]
         ):
             raise ValueError("Incomplete Phase64 metric export")
+        for arm_index, metric_index, scalar in value["records"]:
+            name = names[metric_index]
+            if name not in bundle_lookup:
+                bundle_lookup[name] = len(bundle_names)
+                bundle_names.append(name)
+            bundle_records.append(
+                [VIEWS.index(view), arm_index, bundle_lookup[name], scalar]
+            )
         destination = output / filename
-        if destination.is_symlink() or (destination.exists() and destination.stat().st_nlink != 1):
+        if destination.is_symlink() or (
+            destination.exists() and destination.stat().st_nlink != 1
+        ):
             raise ValueError("Unsafe Phase64 output path")
         destination.write_bytes(data)
         downloads.append(
@@ -115,9 +162,38 @@ def generate(root, output, summary):
             "next_study_status",
         )
     }
-    for key in ("geometry", "export_counts"):
+    for key in ("geometry", "export_counts", "next_study"):
         if key in summary:
             public[key] = summary[key]
+    validate_summary(public)
+    bundle = {
+        "version": "phase64-complete-aggregate-bundle-v1",
+        "views": list(VIEWS),
+        "arms": list(ARMS),
+        "metric_names": bundle_names,
+        "columns": ["view_index", "arm_index", "metric_index", "value"],
+        "records": bundle_records,
+        "source_hashes": public["source_hashes"],
+    }
+    bundle_data = (
+        json.dumps(bundle, sort_keys=True, separators=(",", ":"), allow_nan=False)
+        + "\n"
+    ).encode()
+    if len(bundle_data) > 10 * 1024 * 1024:
+        raise ValueError("Phase64 bundle exceeds publication capacity")
+    bundle_path = output / "phase64-all-aggregate-metrics.json"
+    if bundle_path.is_symlink() or (
+        bundle_path.exists() and bundle_path.stat().st_nlink != 1
+    ):
+        raise ValueError("Unsafe Phase64 bundle path")
+    bundle_path.write_bytes(bundle_data)
+    bundle_binding = {
+        "filename": bundle_path.name,
+        "sha256": hashlib.sha256(bundle_data).hexdigest(),
+        "bytes": len(bundle_data),
+        "metric_count": len(bundle_records),
+    }
+    public["complete_aggregate_bundle"] = bundle_binding
     public["downloads"] = downloads
     data = (
         json.dumps(public, sort_keys=True, separators=(",", ":"), allow_nan=False)
@@ -126,6 +202,7 @@ def generate(root, output, summary):
     (output / "phase64-review-metrics.json").write_bytes(data)
     return {
         "status": public["status"],
+        "complete_aggregate_bundle": bundle_binding,
         "metric_count": sum(x["metric_count"] for x in downloads),
         "review_download": {
             "filename": "phase64-review-metrics.json",
@@ -148,7 +225,7 @@ def render(record):
         "",
         "See :doc:`../../phase64` for geometry, all-study synthesis, uncertainty, population definitions and the next bounded study.",
         "",
-        ":download:`Phase64 review, uncertainty and download manifest <phase64-review-metrics.json>`.",
+        ":download:`Complete Phase64 aggregate metric bundle <phase64-all-aggregate-metrics.json>`; :download:`review, uncertainty and download manifest <phase64-review-metrics.json>`.",
         "",
         "Complete aggregate views preserve original and retained full/B-half populations, all registered model-only beam rankings and distinctly labelled diagnostic oracle values. Physical momentum resolution is unavailable; daughter-sum closure is not physical resolution.",
         "",

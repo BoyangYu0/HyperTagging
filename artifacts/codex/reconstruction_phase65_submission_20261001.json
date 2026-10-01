@@ -1,0 +1,32 @@
+{
+  "version": "phase65-submission-snapshot-v1",
+  "status": "SUBMITTED_AND_RELEASED",
+  "observed_at": "2026-10-01T01:59:04.654464+00:00",
+  "source_sha": "91f7d62900fbcc73ccaaf949251fa97f59dedddd",
+  "source_tag": "phase65-unsaturated-source-20261001",
+  "native_receipt_sha256": "79e085623adcdbc01f083b09e5dd093c19800068cd73ed619a9bf3bfd6000287",
+  "native_receipt_internal_sha256": "f3e5b578920997d9c4c4c0ce5e10c6829c837c9f35eaf2e1fdd62c5021c87897",
+  "jobs": [
+    {
+      "job_id": "16779196",
+      "arm": "late_adaptation",
+      "state": "PENDING",
+      "reason": "Priority",
+      "contract_sha256": "c6d7bc7f8dde5d547ba720ab79a01e668cfe78f59d9359c8dcf55f1e462a0e06",
+      "scheduler_contract_verified": true,
+      "gpu_startup_verified": false
+    },
+    {
+      "job_id": "16779197",
+      "arm": "frozen_encoder",
+      "state": "PENDING",
+      "reason": "Priority",
+      "contract_sha256": "ac51be16169dc6892bd16caa04fb088645f986247df12a277665341ffb542280",
+      "scheduler_contract_verified": true,
+      "gpu_startup_verified": false
+    }
+  ],
+  "sealed_test_accessed": false,
+  "automatic_successor": false,
+  "promotion_authorized": false
+}
