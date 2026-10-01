@@ -34,6 +34,7 @@ div.body .status-card h3 { margin: 0 0 .75rem; padding: 0; background: none; fon
 .status-card dd { margin: 0 0 .5rem; }
 .math { white-space: normal; overflow-wrap: anywhere; }
 @media (max-width: 850px) {
+  div.document { display: block; }
   div.sphinxsidebar { float: none; width: auto; margin: 0; }
   div.bodywrapper { margin: 0; }
   div.documentwrapper { float: none; }
