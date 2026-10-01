@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Privacy-safe aggregate PID labels and current review navigation.
+  - 4ba400559cb9da2ae07911cf35ff03d8f3b360b2
   # Complete Phase64 aggregate bundle and accepted bounded Phase65 scheduler snapshot.
   - b30f51502288e5308e4a408601fb3e5679b65c08
   # Phase64 native review and complete metrics; bounded Phase65 transfer contrast.
@@ -1563,4 +1565,4 @@ items:
     notebook_evidence: []
     external_evidence_required: [Post-refinement radial usability and matched nontrivial reconstruction quality with independent seed replication]
     last_verified_sha: 354951cc51875aee85b53d152edda4e79430494d
-    notes: Saturation persists in both completed Phase63 encoders on 32 previously used selection events. A scale fitted only on 128 training events restores measured radial derivatives and spread before refinement. Phase64 tests that single initialization intervention against an unchanged parameter-only control, with equal refinement and masking-only reconstruction. The full CPU suite passes 2011 tests; native parameter probes preserve the source and all non-projection tensors. Post-refinement stability and physics benefit remain unverified. No inference kernel, radius weight, promotion or sealed-test policy is changed.
+    notes: Saturation persists in both completed Phase63 encoders on 32 previously used selection events. A scale fitted only on 128 training events restores measured radial derivatives and spread before refinement. Phase64 tests that single initialization intervention against an unchanged parameter-only control, with equal refinement and masking-only reconstruction. The full CPU suite passes 2011 tests; native parameter probes preserve the source and all non-projection tensors. Phase64 now verifies persistent repaired saturation on the fixed training and reused-selection samples, but neither arm passes every original gate and no recursive quality winner is established; primary coherent forests are zero in both arms. Actual strict rollout saturation remains unmeasured. See docs/phase64_closeout_20261001.md and the Phase65 controlled transfer follow-up. Independent-seed replication and physics benefit remain unverified. No inference kernel, radius weight, promotion or sealed-test policy is changed.

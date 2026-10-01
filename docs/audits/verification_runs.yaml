@@ -886,3 +886,25 @@ supplemental_runs:
       remains private. Full CPU and complete documentation checks continue;
       their final results, browser checks and actual deployment are recorded
       in the task final manifest. Branch-before-master CI gates remain mandatory.
+
+  - source_sha: 4ba400559cb9da2ae07911cf35ff03d8f3b360b2
+    metadata_head: resolved_by_git_rev_parse_HEAD
+    worktree_state: clean_committed_metadata_tree
+    date: '2026-10-01'
+    commands:
+      - python -m pytest -q
+      - python -m pytest -q tests/test_phase64_review_exports_cpu.py
+    pytest: {result: PASS, broad_suite_passed: 2051, skipped: 34, duration_seconds: 841.14, final_export_checks_passed: 8}
+    notebooks: {result: PASS, generated_consistency_count: 18}
+    real_data_inputs: native_Phase64_validation_only
+    checkpoint: immutable_Phase65_encoder_bound
+    ci_run: PENDING_EXACT_COMMIT_BRANCH_VALIDATION
+    human_visual_review_status: NOT_REVIEWED
+    evidence_limitations: >-
+      Broad suite collected before the final two export regression tests; those
+      pass separately. Full documentation scan identified aggregate PID token
+      field names as credential-like. Public labels now explicitly name PID class
+      indices, preserving all counts and the unchanged privacy guard. Fresh full
+      documentation and exact-commit remote checks are required. No physics
+      performance claim follows from CPU correctness. Final publication, browser
+      and scheduler verification are recorded in the task final manifest.
