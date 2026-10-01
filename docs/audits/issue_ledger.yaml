@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Strict Sphinx heading formatting; scientific content unchanged.
+  - 337c1851697c77b220b8076f9bdf7dc477091322
   # Privacy-safe aggregate PID labels and current review navigation.
   - 4ba400559cb9da2ae07911cf35ff03d8f3b360b2
   # Complete Phase64 aggregate bundle and accepted bounded Phase65 scheduler snapshot.
