@@ -1,5 +1,41 @@
 # Current repository audit status
 
+## Phase64 completed review — 2026-10-01
+
+[The completed review](../phase64_closeout_20261001.md) verifies both original
+native receipts, matched contracts, all fourteen reports, all 96 returned beam
+candidates in both scopes, all checkpoint-track transfer lineage and exact repeats.
+Both complete 2,188 refinement and 4,376 reconstruction updates. Control stays
+saturated on fixed train/development diagnostics; reconditioning has zero measured
+saturation after refinement and at selected/final reconstruction checkpoints,
+with mean radial derivatives 0.777–0.804. This geometry repair does not establish
+useful recursive reconstruction.
+
+Retained full LCAG is 24/2619 versus 21/2619, exact nontrivial full components
+2/157 versus 1/157, and coherent forests 0/100 in both. Control fails half-perfect
+LCAG; reconditioning also fails half-source precision. Primary exact components
+are depth one. One auxiliary depth-selected candidate checkpoint recovers a
+depth-two component in both scopes; it is not a primary or coherent-forest success.
+Paired LCAG and nontrivial-source intervals span zero. No quality winner or model
+promotion follows. Physical momentum resolution remains unavailable.
+
+The private complete export contains 13,392,633 native scalar records. The public
+aggregate export contains 152,707 values in eight registered downloads, plus
+review/geometry/uncertainty metadata. Event identities and native operational
+paths remain outside public pages. Prior studies and exports remain preserved.
+
+Hold 70,000 training events; immediate data growth has no controlled supporting
+learning curve. Prioritize representation transfer and assembly diagnostics,
+without claiming pretraining improvement has beaten data growth. Independent
+validation is distinct: the bounded Phase65 pair reserves fresh 1000/100/20,
+excludes 54,400 prior reservations, and leaves 44,500 unreserved. It compares full
+encoder freeze versus existing late adaptation from the same unsaturated Phase64
+refined encoder, with zero extra pretraining and 4,376 reconstruction updates each.
+The user explicitly authorizes this new bounded campaign. Submission is being
+prepared; no automatic successor, sealed-test access or promotion is authorized.
+Final software/publication and scheduler verification are recorded separately.
+
+
 ## Phase64 submitted — 2026-09-30
 
 [The next-study specification](../phase64_plan_20260930.md) binds a single

@@ -22,6 +22,7 @@ revisions only.
 - [Preprocessing contract](docs/preprocessing_design.md)
 - [Full-decay evaluation contract](docs/full_decay_reconstruction_evaluation.md)
 - [basf2 and ONNX deployment](docs/basf2_onnx_full_decay.md)
+- [Phase64 completed review](docs/phase64_closeout_20261001.md)
 - [Phase64 radial reconditioning study](docs/phase64_plan_20260930.md)
 - [Phase63 completed paired review](docs/phase63_closeout_20260930.md)
 - [Phase63 partial results and failed-arm repair](docs/phase63_review_20260929.md)

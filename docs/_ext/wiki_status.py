@@ -8,6 +8,7 @@ from __future__ import annotations
 from collections import Counter
 from datetime import date, datetime, timezone
 import gzip
+import importlib.util
 import hashlib
 import html
 import json
@@ -21,6 +22,10 @@ from typing import Any
 
 import yaml
 
+
+_phase64_spec = importlib.util.spec_from_file_location("wiki_phase64", Path(__file__).with_name("wiki_phase64.py"))
+_phase64 = importlib.util.module_from_spec(_phase64_spec)
+_phase64_spec.loader.exec_module(_phase64)
 
 def load_registry(path: Path):
     """Accept legacy generator output, rejecting conflicting packed copies."""
@@ -132,6 +137,7 @@ SOURCE_PATHS.update({
     "reconstruction_phase61_pretraining": "artifacts/codex/reconstruction_phase61_pretraining_20260927.json",
     "reconstruction_phase62_submission": "artifacts/codex/reconstruction_phase62_submission_20260927.json",
 })
+SOURCE_PATHS["reconstruction_phase64_review"] = "artifacts/codex/phase64_publication_20261001/summary.json"
 SOURCE_IDS = {key: f"source-{index:02d}" for index, key in enumerate(SOURCE_PATHS, 1)}
 FRESHNESS_DAYS = 30
 _MAX_SOURCE_BYTES = 5_000_000
@@ -2852,6 +2858,11 @@ def _render(manifest: dict[str, Any]) -> str:
             ['Both arms completed refinement, reconstruction and all seven evaluation views.',
              'Control passes original gates; neither primary recovers a coherent retained forest.',
              f"Phase62: {record['next_study_status']}; fresh seed and untouched validation; fixed 70,000 training events."], 'warning'))
+    if reconstruction.get("phase64"):
+        cards.insert(0, ("Phase64 completed radial reconditioning", "NO ESTABLISHED QUALITY BENEFIT",
+            ["Saturation remains repaired in the candidate; both primary models recover zero coherent forests.",
+             "Neither arm passes every original gate. Full retained LCAG: 24/2619 versus 21/2619.",
+             "Hold 70,000 training events; next bounded study tests frozen versus late transfer."], "warning"))
     lines = ["Model performance and scientific status", "=======================================", "",
              "Recorded measurements from tracked evidence. Missing measurements are UNAVAILABLE;",
              "NOT_RUN describes a recorded evaluation status. Historical results do not verify",
@@ -2863,13 +2874,14 @@ def _render(manifest: dict[str, Any]) -> str:
              ".. raw:: html", "",
              '   <section class="status-dashboard" aria-label="Recorded model performance">']
     for index, (title, value, paragraphs, kind) in enumerate(cards):
-        refs = reconstruction["phase61"]["source_ids"] if title.startswith("Phase61") else reconstruction["phase60"]["source_ids"] if title.startswith("Phase60") else reconstruction["phase59"]["source_ids"] if title.startswith("Phase59") else reconstruction["phase58"]["source_ids"] if title.startswith("Phase58") else reconstruction["phase57"]["source_ids"] if title.startswith("Phase57") else reconstruction["phase56"]["source_ids"] if title.startswith("Phase56") else reconstruction["phase55"]["source_ids"] if title.startswith("Phase55") else reconstruction["phase54"]["source_ids"] if title.startswith("Phase54") else reconstruction["phase53"]["source_ids"] if title.startswith("Phase53") else reconstruction["phase52"]["source_ids"] if title.startswith("Phase52") else reconstruction["phase51"]["source_ids"] if title.startswith("Phase51") else reconstruction["phase50"]["source_ids"] if title.startswith("Phase50") else reconstruction["phase49"]["source_ids"] if title.startswith("Phase49") else reconstruction["phase48"]["source_ids"] if title.startswith("Phase48") else reconstruction["phase47"]["source_ids"] if title.startswith("Phase47") else reconstruction["phase46"]["source_ids"] if title.startswith("Phase46") else reconstruction["phase45"]["source_ids"] if title.startswith("Phase45") else reconstruction["phase44"]["source_ids"] if title.startswith("Phase44") else reconstruction["phase43"]["source_ids"] if title.startswith("Phase43") else reconstruction["phase42"]["source_ids"] if title.startswith("Phase42") else reconstruction["phase41"]["source_ids"] if title.startswith("Phase41") else recent["source_ids"] if title.startswith("Phase40") else reconstruction["source_ids"]
+        refs = _refs("reconstruction_phase64_review") if title.startswith("Phase64") else reconstruction["phase61"]["source_ids"] if title.startswith("Phase61") else reconstruction["phase60"]["source_ids"] if title.startswith("Phase60") else reconstruction["phase59"]["source_ids"] if title.startswith("Phase59") else reconstruction["phase58"]["source_ids"] if title.startswith("Phase58") else reconstruction["phase57"]["source_ids"] if title.startswith("Phase57") else reconstruction["phase56"]["source_ids"] if title.startswith("Phase56") else reconstruction["phase55"]["source_ids"] if title.startswith("Phase55") else reconstruction["phase54"]["source_ids"] if title.startswith("Phase54") else reconstruction["phase53"]["source_ids"] if title.startswith("Phase53") else reconstruction["phase52"]["source_ids"] if title.startswith("Phase52") else reconstruction["phase51"]["source_ids"] if title.startswith("Phase51") else reconstruction["phase50"]["source_ids"] if title.startswith("Phase50") else reconstruction["phase49"]["source_ids"] if title.startswith("Phase49") else reconstruction["phase48"]["source_ids"] if title.startswith("Phase48") else reconstruction["phase47"]["source_ids"] if title.startswith("Phase47") else reconstruction["phase46"]["source_ids"] if title.startswith("Phase46") else reconstruction["phase45"]["source_ids"] if title.startswith("Phase45") else reconstruction["phase44"]["source_ids"] if title.startswith("Phase44") else reconstruction["phase43"]["source_ids"] if title.startswith("Phase43") else reconstruction["phase42"]["source_ids"] if title.startswith("Phase42") else reconstruction["phase41"]["source_ids"] if title.startswith("Phase41") else recent["source_ids"] if title.startswith("Phase40") else reconstruction["source_ids"]
         lines.extend("   " + line for line in _card(title, value, paragraphs, refs, kind, index).splitlines())
     lines += ["   </section>", "", ".. only:: not html", ""]
     for title, value, paragraphs, kind in cards:
         lines += [f"   **{_literal(title)}: {_literal(value)}**", ""]
         lines.extend(f"   {_literal(paragraph)}" for paragraph in paragraphs)
         lines += [""]
+    lines += _phase64.render(reconstruction.get("phase64", {}))
     lines += _render_phase61(reconstruction.get("phase61", {}))
     lines += _render_phase60(reconstruction.get("phase60", {}))
     lines += _render_phase59(reconstruction.get("phase59", {}))
@@ -2998,7 +3010,7 @@ def generate_status(repo_root: Path, output_dir: Path) -> dict[str, Any]:
     output = requested.resolve()
     if output == root or output in root.parents or any(part.is_symlink() for part in (requested, *requested.parents)):
         raise ValueError("Status output must be a dedicated non-symlink directory")
-    if output.exists() and any(path.name not in {"index.rst", "status.json", "phase61-metrics.json", "phase61-retained-metrics.json", "phase61-aggregation-metrics.json", "phase61-pretraining-metrics.json", "phase60-metrics.json", "phase44-retained-metrics.json", "phase45-metrics.json", "phase45-retained-metrics.json", "phase46-metrics.json", "phase46-retained-metrics.json", "phase47-metrics.json", "phase47-retained-metrics.json", "phase47-aggregation-metrics.json", "phase48-metrics.json", "phase48-retained-metrics.json", "phase48-aggregation-metrics.json", "phase49-metrics.json", "phase49-retained-metrics.json", "phase49-aggregation-metrics.json", "phase50-metrics.json", "phase50-retained-metrics.json", "phase50-aggregation-metrics.json", "phase51-metrics.json", "phase51-retained-metrics.json", "phase51-aggregation-metrics.json", "phase52-metrics.json", "phase52-retained-metrics.json", "phase52-aggregation-metrics.json", "phase53-metrics.json", "phase53-retained-metrics.json", "phase53-aggregation-metrics.json", "phase54-metrics.json", "phase54-retained-metrics.json", "phase54-aggregation-metrics.json", "phase41-metrics.json", "phase55-metrics.json", "phase55-retained-metrics.json", "phase55-aggregation-metrics.json", "phase55-pretraining-metrics.json", "phase56-metrics.json", "phase56-retained-metrics.json", "phase56-aggregation-metrics.json", "phase56-pretraining-metrics.json", "phase57-metrics.json", "phase57-retained-metrics.json", "phase57-aggregation-metrics.json", "phase57-pretraining-metrics.json", "phase58-metrics.json", "phase58-retained-metrics.json", "phase58-aggregation-metrics.json", "phase58-pretraining-metrics.json", "phase59-metrics.json", "phase59-retained-metrics.json", "phase59-aggregation-metrics.json", "phase59-pretraining-metrics.json"} for path in output.iterdir()):
+    if output.exists() and any(path.name not in ({"phase64-" + view.replace("_", "-") + ".json" for view in _phase64.VIEWS} | {"phase64-review-metrics.json"}) and path.name not in {"index.rst", "status.json", "phase61-metrics.json", "phase61-retained-metrics.json", "phase61-aggregation-metrics.json", "phase61-pretraining-metrics.json", "phase60-metrics.json", "phase44-retained-metrics.json", "phase45-metrics.json", "phase45-retained-metrics.json", "phase46-metrics.json", "phase46-retained-metrics.json", "phase47-metrics.json", "phase47-retained-metrics.json", "phase47-aggregation-metrics.json", "phase48-metrics.json", "phase48-retained-metrics.json", "phase48-aggregation-metrics.json", "phase49-metrics.json", "phase49-retained-metrics.json", "phase49-aggregation-metrics.json", "phase50-metrics.json", "phase50-retained-metrics.json", "phase50-aggregation-metrics.json", "phase51-metrics.json", "phase51-retained-metrics.json", "phase51-aggregation-metrics.json", "phase52-metrics.json", "phase52-retained-metrics.json", "phase52-aggregation-metrics.json", "phase53-metrics.json", "phase53-retained-metrics.json", "phase53-aggregation-metrics.json", "phase54-metrics.json", "phase54-retained-metrics.json", "phase54-aggregation-metrics.json", "phase41-metrics.json", "phase55-metrics.json", "phase55-retained-metrics.json", "phase55-aggregation-metrics.json", "phase55-pretraining-metrics.json", "phase56-metrics.json", "phase56-retained-metrics.json", "phase56-aggregation-metrics.json", "phase56-pretraining-metrics.json", "phase57-metrics.json", "phase57-retained-metrics.json", "phase57-aggregation-metrics.json", "phase57-pretraining-metrics.json", "phase58-metrics.json", "phase58-retained-metrics.json", "phase58-aggregation-metrics.json", "phase58-pretraining-metrics.json", "phase59-metrics.json", "phase59-retained-metrics.json", "phase59-aggregation-metrics.json", "phase59-pretraining-metrics.json"} for path in output.iterdir()):
         raise ValueError("Status output contains unexpected files; use a fresh dedicated directory")
     history = _git(root, "log", "-1", "--format=%H%n%cI")
     lines = history.decode("utf-8", errors="replace").splitlines() if history else []
@@ -3181,6 +3193,8 @@ def generate_status(repo_root: Path, output_dir: Path) -> dict[str, Any]:
         _write(output / "phase41-metrics.json", encoded)
         phase41["metric_download"] = {"filename": "phase41-metrics.json", "sha256": hashlib.sha256(encoded).hexdigest(), "bytes": len(encoded), "metric_count": len(rows)}
         phase41["metric_rows"] = [row for row in rows if row["view"] == "training_best"]
+    if payloads.get("reconstruction_phase64_review") and not payloads["reconstruction_phase64_review"].get("reserved"):
+        manifest["reconstruction"]["phase64"] = _phase64.generate(root, output, payloads["reconstruction_phase64_review"])
     manifest = _compact_exact_numbers(manifest)
     _write(output / "status.json", (json.dumps(manifest, separators=(",", ":"), sort_keys=True, allow_nan=False) + "\n").encode())
     _write(output / "index.rst", _render(manifest).encode())

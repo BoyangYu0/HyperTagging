@@ -1,0 +1,258 @@
+{
+  "event_count": 100,
+  "interval": "paired event-cluster percentile 95%, ratio of summed counts",
+  "limitation": "Exploratory single-seed paired study with 100 events; conditional on two trained models; does not measure training-seed uncertainty. Degenerate all-zero intervals do not imply zero population uncertainty.",
+  "nontrivial_scopes": {
+    "full": {
+      "source_precision": {
+        "ci95": [
+          -0.025254394861392807,
+          0.12126004525808075
+        ],
+        "counts_by_arm": {
+          "radial_control": {
+            "denominator": 318,
+            "numerator": 232
+          },
+          "radial_reconditioned": {
+            "denominator": 292,
+            "numerator": 226
+          }
+        },
+        "defined_paired_draws": 10000,
+        "population": "explicit retained components with at least two truth sources",
+        "radial_reconditioned_minus_radial_control": 0.04441285431205311,
+        "undefined_paired_draws": 0
+      },
+      "source_recall": {
+        "ci95": [
+          -0.038461538461538436,
+          0.018362665072267813
+        ],
+        "counts_by_arm": {
+          "radial_control": {
+            "denominator": 653,
+            "numerator": 232
+          },
+          "radial_reconditioned": {
+            "denominator": 653,
+            "numerator": 226
+          }
+        },
+        "defined_paired_draws": 10000,
+        "population": "explicit retained components with at least two truth sources",
+        "radial_reconditioned_minus_radial_control": -0.009188361408882073,
+        "undefined_paired_draws": 0
+      }
+    },
+    "half": {
+      "source_precision": {
+        "ci95": [
+          -0.029077168287668313,
+          0.10827307035083243
+        ],
+        "counts_by_arm": {
+          "radial_control": {
+            "denominator": 340,
+            "numerator": 237
+          },
+          "radial_reconditioned": {
+            "denominator": 312,
+            "numerator": 229
+          }
+        },
+        "defined_paired_draws": 10000,
+        "population": "explicit retained components with at least two truth sources",
+        "radial_reconditioned_minus_radial_control": 0.03691553544494719,
+        "undefined_paired_draws": 0
+      },
+      "source_recall": {
+        "ci95": [
+          -0.036545434580465504,
+          0.00941952252599153
+        ],
+        "counts_by_arm": {
+          "radial_control": {
+            "denominator": 653,
+            "numerator": 237
+          },
+          "radial_reconditioned": {
+            "denominator": 653,
+            "numerator": 229
+          }
+        },
+        "defined_paired_draws": 10000,
+        "population": "explicit retained components with at least two truth sources",
+        "radial_reconditioned_minus_radial_control": -0.012251148545176116,
+        "undefined_paired_draws": 0
+      }
+    }
+  },
+  "perfect_components": {
+    "radial_control/full": [
+      {
+        "count": 2,
+        "depth": 1,
+        "leaves": 2,
+        "mothers": 1
+      }
+    ],
+    "radial_control/half": [
+      {
+        "count": 2,
+        "depth": 1,
+        "leaves": 2,
+        "mothers": 1
+      }
+    ],
+    "radial_reconditioned/full": [
+      {
+        "count": 1,
+        "depth": 1,
+        "leaves": 2,
+        "mothers": 1
+      }
+    ],
+    "radial_reconditioned/half": [
+      {
+        "count": 1,
+        "depth": 1,
+        "leaves": 2,
+        "mothers": 1
+      }
+    ]
+  },
+  "replicates": 10000,
+  "report_sha256": {
+    "radial_control": "761df9e2df65ddbcf39d01bd986695a6a1e160d2ca254056ab7e550e7e1dd5b3",
+    "radial_reconditioned": "4d4f5622e6ed36b40cf7eb3bd39bd7bbbd6e064b485324550c4ad617b7d709b3"
+  },
+  "scopes": {
+    "full": {
+      "coherent_retained_forest": {
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "defined_paired_draws": 10000,
+        "paired_event_counts_identical": true,
+        "radial_reconditioned_minus_radial_control": 0.0,
+        "undefined_paired_draws": 0
+      },
+      "lcag_pair_accuracy": {
+        "ci95": [
+          -0.006144414695054448,
+          0.0020704240109260894
+        ],
+        "defined_paired_draws": 10000,
+        "paired_event_counts_identical": false,
+        "radial_reconditioned_minus_radial_control": -0.0011454753722794971,
+        "undefined_paired_draws": 0
+      },
+      "mother_pid_coverage": {
+        "ci95": [
+          -0.00957854406130268,
+          0.01301518438177874
+        ],
+        "defined_paired_draws": 10000,
+        "paired_event_counts_identical": false,
+        "radial_reconditioned_minus_radial_control": 0.0019083969465648817,
+        "undefined_paired_draws": 0
+      },
+      "perfect_lcag": {
+        "ci95": [
+          -0.020836975524475523,
+          0.0
+        ],
+        "defined_paired_draws": 10000,
+        "paired_event_counts_identical": false,
+        "radial_reconditioned_minus_radial_control": -0.006369426751592357,
+        "undefined_paired_draws": 0
+      },
+      "source_precision": {
+        "ci95": [
+          -0.002808201635238786,
+          0.015072067170068893
+        ],
+        "defined_paired_draws": 10000,
+        "paired_event_counts_identical": false,
+        "radial_reconditioned_minus_radial_control": 0.005823528381921128,
+        "undefined_paired_draws": 0
+      },
+      "source_recall": {
+        "ci95": [
+          -0.007198483273818684,
+          0.007665125465318468
+        ],
+        "defined_paired_draws": 10000,
+        "paired_event_counts_identical": false,
+        "radial_reconditioned_minus_radial_control": 0.000276090557702946,
+        "undefined_paired_draws": 0
+      }
+    },
+    "half": {
+      "coherent_retained_forest": {
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "defined_paired_draws": 10000,
+        "paired_event_counts_identical": true,
+        "radial_reconditioned_minus_radial_control": 0.0,
+        "undefined_paired_draws": 0
+      },
+      "lcag_pair_accuracy": {
+        "ci95": [
+          -0.010885369289004961,
+          0.003074569850233476
+        ],
+        "defined_paired_draws": 10000,
+        "paired_event_counts_identical": false,
+        "radial_reconditioned_minus_radial_control": -0.002599090318388564,
+        "undefined_paired_draws": 0
+      },
+      "mother_pid_coverage": {
+        "ci95": [
+          -0.012174443266171788,
+          0.012269938650306747
+        ],
+        "defined_paired_draws": 10000,
+        "paired_event_counts_identical": false,
+        "radial_reconditioned_minus_radial_control": 0.0,
+        "undefined_paired_draws": 0
+      },
+      "perfect_lcag": {
+        "ci95": [
+          -0.0189873417721519,
+          0.0
+        ],
+        "defined_paired_draws": 10000,
+        "paired_event_counts_identical": false,
+        "radial_reconditioned_minus_radial_control": -0.005847953216374269,
+        "undefined_paired_draws": 0
+      },
+      "source_precision": {
+        "ci95": [
+          -0.0036173809794784097,
+          0.017144801595711672
+        ],
+        "defined_paired_draws": 10000,
+        "paired_event_counts_identical": false,
+        "radial_reconditioned_minus_radial_control": 0.0064299266523323295,
+        "undefined_paired_draws": 0
+      },
+      "source_recall": {
+        "ci95": [
+          -0.008363114431247765,
+          0.007004306212231609
+        ],
+        "defined_paired_draws": 10000,
+        "paired_event_counts_identical": false,
+        "radial_reconditioned_minus_radial_control": -0.0006178560395427857,
+        "undefined_paired_draws": 0
+      }
+    }
+  },
+  "seed": 20260930,
+  "version": "phase64-paired-event-bootstrap-v1"
+}
