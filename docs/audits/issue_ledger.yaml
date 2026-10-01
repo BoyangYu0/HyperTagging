@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Complete Phase64 aggregate bundle and accepted bounded Phase65 scheduler snapshot.
+  - b30f51502288e5308e4a408601fb3e5679b65c08
   # Phase64 native review and complete metrics; bounded Phase65 transfer contrast.
   - 4945a67d986d642fe150aa5e8eefbe120db73591
   # Bounded documentation runtime margin; all validation and publication gates retained.

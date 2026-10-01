@@ -862,3 +862,27 @@ supplemental_runs:
       recursive benefit. Full CPU suite and complete documentation validation are
       in progress; no pass claimed for unfinished checks. Phase65 submission
       remains pending. CPU correctness does not establish physics quality.
+
+  - source_sha: b30f51502288e5308e4a408601fb3e5679b65c08
+    metadata_head: resolved_by_git_rev_parse_HEAD
+    worktree_state: clean_committed_metadata_tree
+    date: '2026-10-01'
+    commands:
+      - python -m pytest -xq tests/test_docs_status_cpu.py
+      - python -m pytest -q tests/test_phase64_review_exports_cpu.py
+      - python scripts/execute_notebook_smoke_tests.py --check-generated
+    pytest: {result: PASS, dashboard_regressions_passed: 119, final_export_checks_passed: 7}
+    notebooks: {result: PASS, generated_consistency_count: 18}
+    real_data_inputs: native_Phase64_validation_only
+    checkpoint: immutable_Phase65_encoder_bound
+    ci_run: PENDING_EXACT_COMMIT_BRANCH_VALIDATION
+    human_visual_review_status: NOT_REVIEWED
+    evidence_limitations: >-
+      Frozen training source91f7d62900fbcc73ccaaf949251fa97f59dedddd passed37
+      focused tests and both native contract guards. Exactly two Phase65 jobs
+      were accepted and released; both are pending priority in the verified
+      scheduling snapshot. GPU startup is not yet verified. The public bundle
+      contains152707 aggregate values in4847764 bytes; all event-level material
+      remains private. Full CPU and complete documentation checks continue;
+      their final results, browser checks and actual deployment are recorded
+      in the task final manifest. Branch-before-master CI gates remain mandatory.
