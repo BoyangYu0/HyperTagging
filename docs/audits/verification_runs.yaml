@@ -839,3 +839,26 @@ supplemental_runs:
       allowance to 60 minutes; retain every check, immutable action pin,
       permission boundary and exact-commit promotion gate. Final branch
       validation remains required before master promotion.
+
+  - source_sha: 4945a67d986d642fe150aa5e8eefbe120db73591
+    metadata_head: resolved_by_git_rev_parse_HEAD
+    worktree_state: clean_committed_metadata_tree
+    date: '2026-10-01'
+    commands:
+      - python -m pytest -q tests/test_phase64_review_exports_cpu.py tests/test_reconstruction_phase65_campaign_cpu.py
+      - python scripts/train_hyperbolic_pretrain.py --dry-run --tiny --device cpu --max-steps 2 --batch-size 2
+      - python scripts/train_level_reconstruction.py --dry-run --tiny --device cpu --max-steps 2 --batch-size 2
+    pytest: {result: PASS, passed: 26}
+    notebooks: {result: NOT_RUN, reason: notebook source unchanged}
+    real_data_inputs: native_Phase64_validation_only
+    checkpoint: native_Phase64_all_tracks_verified
+    ci_run: PENDING_FINAL_BRANCH_VALIDATION
+    human_visual_review_status: NOT_REVIEWED
+    evidence_limitations: >-
+      Native receipts, contracts, all fourteen reports, all checkpoint tracks,
+      exact repeats and34 selected shard hashes verified. Complete export has
+      13392633 native scalar records and152707 public aggregate values. Fixed-input
+      diagnostics show persistent repaired saturation without established joint
+      recursive benefit. Full CPU suite and complete documentation validation are
+      in progress; no pass claimed for unfinished checks. Phase65 submission
+      remains pending. CPU correctness does not establish physics quality.
