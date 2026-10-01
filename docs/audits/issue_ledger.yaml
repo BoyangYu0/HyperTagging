@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Browser-observed narrow viewport sidebar overflow repair.
+  - 825995ff81454c0b8e6ce63cf1bc7295924ed3c0
   # Strict Sphinx heading formatting; scientific content unchanged.
   - 337c1851697c77b220b8076f9bdf7dc477091322
   # Privacy-safe aggregate PID labels and current review navigation.
