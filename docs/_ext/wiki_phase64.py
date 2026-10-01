@@ -50,6 +50,16 @@ def validate_summary(value):
             raise ValueError("Invalid Phase64 summary scalar")
 
 
+def public_pid_labels(value):
+    """Name aggregate PID class indices without credential-like token keys."""
+    names = {"predicted_token": "predicted_pid_class_index", "truth_token": "truth_pid_class_index"}
+    if isinstance(value, dict):
+        return {names.get(key, key): public_pid_labels(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [public_pid_labels(item) for item in value]
+    return value
+
+
 def generate(root, output, summary):
     registry = json.loads(
         gzip.decompress(
@@ -166,6 +176,7 @@ def generate(root, output, summary):
         if key in summary:
             public[key] = summary[key]
     validate_summary(public)
+    public = public_pid_labels(public)
     bundle = {
         "version": "phase64-complete-aggregate-bundle-v1",
         "views": list(VIEWS),

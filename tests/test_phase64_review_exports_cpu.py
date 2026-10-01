@@ -67,3 +67,16 @@ def test_unreviewed_nested_summary_text_cannot_publish(tmp_path):
     d["arms"]["radial_control"]["private_unknown_field"] = "/home/private/checkpoint.pt"
     with pytest.raises(ValueError, match="summary schema"):
         module().generate(ROOT, tmp_path, d)
+
+
+def test_aggregate_pid_confusion_uses_public_class_indices(tmp_path):
+    import sys
+    sys.path.insert(0, str(ROOT / "docs/_ext"))
+    from wiki_privacy import _contains_private_fields
+    module().generate(ROOT, tmp_path, summary())
+    value = json.loads((tmp_path / "phase64-review-metrics.json").read_text())
+    assert not _contains_private_fields(value)
+    row = value["arms"]["radial_control"]["retained_primary"]["full/greedy"]["leaf_pid_confusion"][0]
+    assert "predicted_pid_class_index" in row
+    assert "truth_pid_class_index" in row
+    assert "predicted_token" not in row

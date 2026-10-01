@@ -4206,7 +4206,7 @@ def _render_phase61(record):
     labels = ('pretraining_balance_control', 'lower_late_pid_pretraining')
     arms, retained = record['arms'], record['retained_tree_checks']
     lines = ['Phase61: Stable execution, mixed reconstruction quality', '-' * 80, '',
-        'For the completed Phase63 paired review, see :doc:`../../phase63`; the next bounded study is :doc:`../../phase64`, and earlier outcomes are in :doc:`../../phase62`.', '',
+        'For the latest completed paired review and bounded Phase65 follow-up, see :doc:`../../phase64`; earlier outcomes are in :doc:`../../phase63` and :doc:`../../phase62`.', '',
         'Both arms completed 2,188 refinement and 4,376 reconstruction steps under the unchanged dominance 20 fail guard. No evaluation recovery was needed.',
         'Early PID 0.5 is shared; only late PID 0.2 versus 0.1 differs. Parent weight 2, seed 20260927, selection 1,000, strict 100, beam 20; no strict/selection overlap.',
         'Control passes original gates and constructs 4/100 full roots; candidate constructs 0/100. Neither recovers a coherent primary retained forest. Gate passage is not exact tree recovery or promotion.',
