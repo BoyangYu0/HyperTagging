@@ -73,7 +73,7 @@ All four measured curriculum views remain unsaturated on the fixed 128 training 
 
 Each arm executes 280,064 replay slots: 175,096 sampled teacher and 104,968 predicted-context slots. The logged target totals are 442,861 in each arm; 111,563 late-adaptation targets and 111,567 frozen targets are unrepresentable in their sampled contexts (about 25.2%). Recovery, teacher fallback and skipped-slot counts are zero. These counts are repeated training exposures, not unique-event prevalence or a causal attribution of strict failures. Existing auxiliary teacher supervision remains active for sampled predicted contexts. The inherited nominal expected-slot metadata used half the actual slot budget; it is preserved in native exports and explicitly corrected for the next preregistration. Native execution counts, not that stale metadata, define delivered exposure.
 
-Beam generates candidates and every registered ranking without truth. Oracle scores are computed afterward and labelled diagnostic. No retained candidate recovers an exact nontrivial component or coherent forest on the 20-event subset; ranking alone cannot select an exact component absent from that retained pool. This does not rule out a different or wider proposal search. Candidate-rank cohorts shrink when fewer candidates are returned; their denominators are preserved and never treated as the full 20-event population.
+The beam subset returns 55 late-adaptation and 58 frozen candidates (113 total), all checked in both scopes. Beam generates candidates and every registered ranking without truth. Oracle scores are computed afterward and labelled diagnostic. No retained candidate recovers an exact nontrivial component or coherent forest on the 20-event subset; ranking alone cannot select an exact component absent from that retained pool. This does not rule out a different or wider proposal search. Candidate-rank cohorts shrink when fewer candidates are returned; their denominators are preserved and never treated as the full 20-event population.
 
 | Retained LCAG scope / ranking | Late adaptation | Frozen encoder |
 | --- | ---: | ---: |
@@ -131,3 +131,7 @@ Exactly two tasks are allowed, each one H100 NVL, 8 CPUs, 64 GiB and at most 36 
 ## Verification boundary
 
 Native validity and real-run findings are separated from software tests. Focused and full CPU checks, audit/privacy/link/export checks, desktop/narrow browser checks, exact-revision branch/master CI and actual live downloads are recorded in the final manifest. Passing software tests is not physics performance.
+
+## Phase66 accepted scheduling snapshot
+
+Both tasks were accepted and released from immutable source `f83538ccc7d0b06f70034f52f3f3eca680b2514e`. The 2026-10-03 08:13 Asia/Shanghai snapshot verifies pending Resources for mixed contexts and pending Priority for teacher-only. Exact contract comments, resource ceilings, no requeue and source bindings match. GPU startup is not yet verified; pending scheduling is an accepted closeout state. No campaign beyond this pair is authorized.

@@ -129,7 +129,7 @@ def main():
     )
     if submission.exists():
         receipt = json.loads(submission.read_text())
-        summary["next_study_status"] = "SUBMITTED_AND_RELEASED_PENDING_PRIORITY"
+        summary["next_study_status"] = "SUBMITTED_AND_SCHEDULING_VERIFIED"
         summary["next_study"] = {
             "source_sha": receipt["source_sha"],
             "native_receipt_sha256": receipt["native_receipt_sha256"],

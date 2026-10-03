@@ -32,7 +32,11 @@ selection/strict/beam excludes 55,500 reservations and leaves 43,400 unreserved.
 Original gates and strict truth-free inference remain unchanged. Exactly two tasks,
 one H100 NVL, 8 CPUs, 64 GiB and 36 hours each are authorized. No automatic
 successor, sealed-test access or model promotion. Scheduling and software/publication
-verification are recorded separately from physics findings.
+verification are recorded separately from physics findings. Phase66 jobs16803454
+(mixed contexts) and16803455 (teacher-only) are accepted and released from
+`f83538ccc7d0b06f70034f52f3f3eca680b2514e`; the checked snapshot is PENDING
+Resources/Priority, with exact contracts and resource bindings. No GPU startup
+claim is made.
 
 
 ## Phase64 completed review — 2026-10-01

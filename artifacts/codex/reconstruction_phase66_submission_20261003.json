@@ -1,0 +1,30 @@
+{
+  "observed_at": "2026-10-03T00:13:05.298705+00:00",
+  "source_sha": "f83538ccc7d0b06f70034f52f3f3eca680b2514e",
+  "native_receipt_sha256": "9de4ea849a573ca0c5736c7f5bde9ed0e0431adcfabe9370f81768d1933dd952",
+  "jobs": [
+    {
+      "arm": "scheduled_mixed",
+      "job_id": "16803454",
+      "contract_sha256": "19a5cf673e06fb163be96e0c8d828fe3fa019c76f5c541c529dc0f9d92fa8362",
+      "state": "PENDING",
+      "reason": "Resources",
+      "scheduler_contract_verified": true,
+      "gpu_startup_verified": false,
+      "startup_status": "NOT_STARTED"
+    },
+    {
+      "arm": "teacher_only",
+      "job_id": "16803455",
+      "contract_sha256": "575cf19f5a703b38593c878560ecb7e950027ee967b8f7de952ff92d7a2c055e",
+      "state": "PENDING",
+      "reason": "Priority",
+      "scheduler_contract_verified": true,
+      "gpu_startup_verified": false,
+      "startup_status": "NOT_STARTED"
+    }
+  ],
+  "sealed_test_accessed": false,
+  "promotion_authorized": false,
+  "automatic_successor": false
+}
