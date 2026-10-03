@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase66 accepted scheduling and Phase65 source-count fixture update.
+  - ec2adf5bcb5159d62682717e1123c053b7cbc690
   # Phase65 native review, aggregate publication and bounded Phase66 context diagnostic.
   - da61d7a6f77f0e1ab8079a9521974ee82066e936
   # Browser-observed narrow viewport sidebar overflow repair.
