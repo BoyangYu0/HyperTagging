@@ -284,7 +284,7 @@ Hypothesis A: generated contexts lose legal target support and teacher-only trai
 
 All original numerical, structural, p4-closure, source-exclusivity and exact-repeat gates remain unchanged. Checkpoint selection remains on the selection cohort only. Also require joint nontrivial LCAG/source evidence and nontrivial coherent forests for a useful-recursion claim; report depth at least two and paired uncertainty. Verify actual context execution, finite optimization and all checkpoint lineages. No strict-cohort tuning, truth-assisted inference, extra dose, automatic successor, test access or model promotion follows.
 
-Exactly two tasks are allowed, each one H100 NVL, 8 CPUs, 64 GiB and at most 36 hours with no requeue. Source/config/checkpoint/selection hashes and native admission tests are required before guarded submission. The accepted scheduling snapshot is recorded separately; next-job full completion is not required for this review.
+Exactly two tasks are allowed, each one H100 NVL, 8 CPUs, 64 GiB and at most 36 hours with no requeue. Source, configuration, checkpoint and selection hashes and native admission tests are required before guarded submission. The accepted scheduling snapshot is recorded separately; next-job full completion is not required for this review.
 
 
 Verification boundary
@@ -297,9 +297,9 @@ Native validity and real-run findings are separated from software tests. Focused
 Downloads
 ---------
 
-:download:`Complete aggregate metric bundle <_generated/status/phase65-all-aggregate-metrics.json>`.
+The :doc:`dashboard download section <_generated/status/index>` provides the complete aggregate bundle.
 
-:download:`Review, uncertainty and integrity manifest <_generated/status/phase65-review-metrics.json>`.
+The same section provides review, uncertainty, integrity manifest and all per-view downloads.
 
 :doc:`Dashboard with all per-view downloads <_generated/status/index>`.
 
