@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Strict Phase65 RST references/headings; undefined count label clarified.
+  - aef3e6cfbce29afe9392daeef73684b5ea3620ee
   # Phase65 authored links use the guarded generated download section.
   - f8aa63fdaa24188faeab6e7465bb6141bb7f42ae
   # Phase66 accepted scheduling and Phase65 source-count fixture update.
