@@ -908,3 +908,27 @@ supplemental_runs:
       documentation and exact-commit remote checks are required. No physics
       performance claim follows from CPU correctness. Final publication, browser
       and scheduler verification are recorded in the task final manifest.
+
+  - source_sha: da61d7a6f77f0e1ab8079a9521974ee82066e936
+    metadata_head: resolved_by_git_rev_parse_HEAD
+    worktree_state: clean_committed_metadata_tree
+    date: '2026-10-03'
+    commands:
+      - python -m pytest -q tests/test_phase65_review_exports_cpu.py tests/test_reconstruction_phase66_campaign_cpu.py
+      - python -m pytest -q tests/test_phase66_context_execution_cpu.py
+      - python scripts/execute_notebook_smoke_tests.py --check-generated
+    pytest: {result: PASS, campaign_and_export_passed: 30, actual_context_optimizer_passed: 1}
+    notebooks: {result: PASS, generated_consistency_count: 18}
+    real_data_inputs: native_Phase65_train_and_validation_only
+    checkpoint: immutable_Phase64_refined_encoder_bound_for_Phase66
+    ci_run: PENDING_EXACT_COMMIT_VALIDATION
+    human_visual_review_status: NOT_REVIEWED
+    evidence_limitations: >-
+      Both Phase65 native receipts,14 views,113 retained beam candidates,exact repeats,
+      all34 shards and ten checkpoint-track lineages validate. No exact nontrivial
+      component occurs. The sole frozen primary coherent forest is mother-free.
+      Complete private export11854614 scalar records; public169212 values.
+      Phase66 tests context regime at equal updates/replay slots,not equal FLOPs.
+      Full CPU and complete documentation checks are in progress. Final results,
+      browser checks,CI,live downloads and scheduler acceptance are recorded in
+      the task final manifest. No model promotion,sealed test or successor chain.
