@@ -1,5 +1,40 @@
 # Current repository audit status
 
+## Phase65 completed review — 2026-10-03
+
+[The completed review](../phase65_closeout_20261003.md) authenticates both native
+jobs, all fourteen views, five checkpoint tracks per arm, exact repeats, all
+34 data shards and the single freeze-versus-late intervention. Both finish
+4,376 reconstruction updates with zero new pretraining. Full freeze keeps all
+121 encoder entries identical; late adaptation changes them without measured
+radial re-saturation on fixed train/development diagnostics.
+
+Retained full LCAG is 20/3162 versus 16/3162; half LCAG 23/1761 versus 17/1761.
+Both have zero exact nontrivial components (0/153 full, 0/172 half), including
+all auxiliary views and beam candidates. Late adaptation has no primary coherent
+forest; frozen encoding has one mother-free depth-zero forest in both scopes.
+Neither passes the original half-perfect-LCAG gate. The half LCAG paired interval
+favors late adaptation conditionally; full LCAG and nontrivial-source intervals
+span zero. No recursive quality winner, promotion or physical p4-resolution claim.
+
+Complete exports preserve 11,854,614 native scalar records, 166,922 closeout rows
+and 169,212 public aggregate values. Private event identities, native paths and
+checkpoints stay outside public pages. Historical exports remain preserved.
+
+Hold 70,000 training events. Neither data growth nor improved pretraining has a
+controlled demonstrated advantage; longer pretraining and repaired geometry alone
+have not delivered useful recursive assembly. Phase66 is one bounded context
+exposure diagnostic: existing mixed predicted/teacher contexts versus teacher-only,
+same repaired encoder, late adaptation, frozen PID, 4,376 updates each, seed
+20261003. This is equal updates/replay slots, not equal FLOPs; conditional auxiliary
+teacher supervision is intrinsically inactive in teacher-only. Fresh 1000/100/20
+selection/strict/beam excludes 55,500 reservations and leaves 43,400 unreserved.
+Original gates and strict truth-free inference remain unchanged. Exactly two tasks,
+one H100 NVL, 8 CPUs, 64 GiB and 36 hours each are authorized. No automatic
+successor, sealed-test access or model promotion. Scheduling and software/publication
+verification are recorded separately from physics findings.
+
+
 ## Phase64 completed review — 2026-10-01
 
 [The completed review](../phase64_closeout_20261001.md) verifies both original

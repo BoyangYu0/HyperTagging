@@ -123,3 +123,18 @@ See `phase62_scheduler_observation.json` for timestamp, IDs and elapsed times.
 This supersedes the stale pending snapshot for operational status only; no
 completed outcome, startup-contract verification or physics claim follows.
 Neither job was altered or resubmitted.
+
+
+## Subsequent evidence — update 2026-10-03
+
+The preceding ledger is the dated September 28 review. Later results supersede
+its pending Phase62 state: [Phase62](../phase62_review_phase63_20260928.md),
+[Phase63](../phase63_closeout_20260930.md), [Phase64](../phase64_closeout_20261001.md)
+and [Phase65](../phase65_closeout_20261003.md). Phase62 did not establish a late-PID
+winner; corrected recovery versus masking in Phase63 did not establish deep quality.
+Phase64 repaired fixed-sample radial saturation without a joint recursive benefit.
+Phase65 full freeze preserves that geometry but has zero exact nontrivial components
+in every view/candidate, as does late adaptation; its one primary forest has no
+mothers. These studies do not isolate a data-size effect or prove improved pretraining
+beats data growth. The next bounded Phase66 tests training-context exposure at fixed
+70,000-event data and update budget, retaining original gates and fresh validation.
