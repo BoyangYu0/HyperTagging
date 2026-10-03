@@ -33,7 +33,7 @@ The strict population contains 3,083 retained full units: 2,835 isolated leaves,
 | Retained full mother pid coverage | 20/541 | 16/541 |
 | Retained full mother pid accuracy | 19/20 | 15/16 |
 | Retained full leaf pid accuracy | 1138/2210 | 1156/2210 |
-| Retained full both halves perfect lcag | 0/0 | 0/0 |
+| Retained full both halves perfect lcag | UNAVAILABLE (0/0) | UNAVAILABLE (0/0) |
 | Retained half lcag pair accuracy | 23/1761 | 17/1761 |
 | Retained half perfect lcag | 0/172 | 0/172 |
 | Retained half coherent retained forest | 0/100 | 1/100 |
@@ -96,7 +96,7 @@ The private integrity-bound bundle contains **11,854,614 native scalar records**
 
 ## Cumulative evidence and allocation
 
-The dated [all-study ledger](review_20260928/studies.md) covers migration Phases1–13, named early production/pretraining/transfer families, Stage A and reconstruction Phase34 onward. No standalone reconstruction Phase14–33 closeouts were found; no such results are invented. Its dated Phase62 pending state is superseded by the later completed reviews linked below. Different cohorts, seeds, source corrections and metric definitions prevent pooling these studies as one learning curve.
+The dated [all-study ledger](review_20260928/studies.md) covers migration Phases1–13, named early production/pretraining/transfer families, Stage A and reconstruction Phase34 onward. No standalone reconstruction Phase14–33 closeouts were found; no such results are invented. Its dated Phase62 pending state is superseded by the completed [Phase62](phase62_review_phase63_20260928.md), [Phase63](phase63_closeout_20260930.md), [Phase64](phase64_closeout_20261001.md) and current Phase65 reviews. Different cohorts, seeds, source corrections and metric definitions prevent pooling these studies as one learning curve.
 
 | Evidence family | Decision-relevant finding |
 | --- | --- |

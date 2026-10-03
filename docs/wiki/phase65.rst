@@ -8,7 +8,7 @@ Native validity and population boundaries
 -----------------------------------------
 
 
-Both original native jobs completed with exit 0 after 4,376 reconstruction updates and zero additional pretraining. Immutable source `91f7d62900fbcc73ccaaf949251fa97f59dedddd`, receipt/contract hashes, all 34 data shards, five checkpoint tracks per arm, selection identities, replay counts, seven evaluation views per arm and exact primary repeats have been checked. The common Phase64 refined encoder is authenticated; full freeze preserves all 121 encoder entries at every retained track, while late adaptation changes encoder tensors after the freeze boundary. Encoder/PID transfer has complete key coverage and no shape mismatch. Scheduler success is separate from these native checks. No CPU evaluation recovery was needed.
+Both original native jobs completed with exit 0 after 4,376 reconstruction updates and zero additional pretraining. Immutable source ``91f7d62900fbcc73ccaaf949251fa97f59dedddd``, receipt/contract hashes, all 34 data shards, five checkpoint tracks per arm, selection identities, replay counts, seven evaluation views per arm and exact primary repeats have been checked. The common Phase64 refined encoder is authenticated; full freeze preserves all 121 encoder entries at every retained track, while late adaptation changes encoder tensors after the freeze boundary. Encoder/PID transfer has complete key coverage and no shape mismatch. Scheduler success is separate from these native checks. No CPU evaluation recovery was needed.
 
 The single registered contrast is late adaptation after 2,188 updates versus full freeze through 4,376. Both use seed 20261001, the same 70,000 training events, repaired pretrained encoder, frozen PID head, architecture, objectives, inference/search settings and selection rules. Fresh 1,000 selection and 100 strict events exclude 54,400 prior reservations; beam uses the fixed first 20 strict events. After Phase65, 44,500 validation events remain unreserved. Same seed does not establish bitwise common-prefix identity.
 
@@ -85,8 +85,8 @@ Primary results
      - 1138/2210
      - 1156/2210
    * - Retained full both halves perfect lcag
-     - 0/0
-     - 0/0
+     - UNAVAILABLE (0/0)
+     - UNAVAILABLE (0/0)
    * - Retained half lcag pair accuracy
      - 23/1761
      - 17/1761
@@ -235,7 +235,7 @@ Cumulative evidence and allocation
 ----------------------------------
 
 
-The dated :doc:`scientific_review_20260928` covers migration Phases1–13, named early production/pretraining/transfer families, Stage A and reconstruction Phase34 onward. No standalone reconstruction Phase14–33 closeouts were found; no such results are invented. Its dated Phase62 pending state is superseded by the later completed reviews linked below. Different cohorts, seeds, source corrections and metric definitions prevent pooling these studies as one learning curve.
+The dated `all-study ledger <https://github.com/BoyangYu0/HyperTagging/blob/master/docs/review_20260928/studies.md>`_ covers migration Phases1–13, named early production/pretraining/transfer families, Stage A and reconstruction Phase34 onward. No standalone reconstruction Phase14–33 closeouts were found; no such results are invented. Its dated Phase62 pending state is superseded by the completed :doc:`phase62`, :doc:`phase63`, :doc:`phase64` and current Phase65 reviews. Different cohorts, seeds, source corrections and metric definitions prevent pooling these studies as one learning curve.
 
 
 .. list-table::
@@ -304,6 +304,6 @@ The same section provides review, uncertainty, integrity manifest and all per-vi
 :doc:`Dashboard with all per-view downloads <_generated/status/index>`.
 
 Phase66 accepted scheduling snapshot
------------------------------------
+------------------------------------
 
 Both tasks were accepted and released from immutable source ``f83538ccc7d0b06f70034f52f3f3eca680b2514e``. The 2026-10-03 08:13 Asia/Shanghai snapshot verifies pending Resources for mixed contexts and pending Priority for teacher-only. Contract/resource/source bindings and no requeue match. GPU startup is not yet verified. No campaign beyond this pair is authorized.
