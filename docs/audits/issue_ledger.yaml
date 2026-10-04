@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Strict Phase67 scheduling heading length.
+  - ac25f384b1f883737a68694123159bc31e52f3c7
   # Remove operational scheduler identifiers from authored Phase67 publication.
   - 01d2f3f1105259ddc91e10a8488b5e3faedb563e
   # Phase68 accepted scheduling and completed Phase67 publication metadata.
