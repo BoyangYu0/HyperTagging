@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Complete Phase67 review, bounded encoder ablation and unchanged-gate CI runtime isolation.
+  - ccc54e2506340618bbefff31e35513568fe7d08a
   # Phase66 strict Sphinx link to the existing repository study ledger.
   - dcc46efbed517d1a3f9bb7a27853a659f8a5998d
   # Phase67 scheduler acceptance and complete Phase66 reviewed publication snapshot.
