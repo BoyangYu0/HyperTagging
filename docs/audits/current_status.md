@@ -1,5 +1,42 @@
 # Current repository audit status
 
+## Phase66 completed review — 2026-10-04
+
+[The completed context review](../phase66_closeout_20261004.md) authenticates both
+native completions, fourteen full/half views, exact repeats, all 34 input shards,
+five registered tracks per arm and all 26 saved checkpoint files. Both execute
+4,376 reconstruction updates and 280,064 replay slots, with zero new pretraining.
+Teacher-only preserves all 442,511 target exposures; mixed loses 111,794 targets
+in generated contexts. This does not make teacher-only a better strict decoder.
+
+Mixed versus teacher-only retained full LCAG is 22/2966 versus21/2966, exact full
+components3/151 versus1/151 and coherent forests3/100 versus1/100. All exact
+components in every view/candidate are depth one. Mixed has two shallow primary
+forests and one mother-free forest; teacher-only has one shared shallow forest.
+Neither passes all original gates. Teacher-only improves nontrivial full-source
+recall but lowers precision. Paired LCAG uncertainty includes zero. No deep
+recursive winner, physical momentum-resolution claim or model promotion follows.
+Fixed-input geometry remains unsaturated in both arms (128 train,32 development
+samples); this is not a census of generated rollout states.
+
+The complete private export contains11,823,675 native scalars, including18,218
+saved-checkpoint metadata scalars. Public exports preserve169,464 aggregate values;
+the closeout projection has157,120 rows. Every saved checkpoint metric is exported;
+unregistered strict auxiliary-track evaluations remain unavailable, not zero.
+Private identities, host paths, logs and checkpoint contents remain unpublished.
+
+Hold70,000 training events. Neither larger data nor better pretraining has yet
+established a controlled advantage. Prioritize falsifiable representation/objective
+improvements over simply longer pretraining as a future direction. One bounded
+Phase67 confirmation repeats the context contrast with independent seed20261004,
+fresh1000 selection/100 strict/20 beam events, excluding56,600 prior reservations
+and leaving42,300 untouched. Same repaired encoder,late adaptation,frozen PID and
+4,376 updates per arm; equal replay slots,not FLOPs or conditional auxiliary loss.
+All scientific gates and truth-free inference remain unchanged. Exactly two tasks,
+one H100 NVL,8 CPUs,64 GiB,36 hours each,no requeue. Submission and publication
+verification are recorded separately. No automatic successor,sealed test or promotion.
+
+
 ## Phase65 completed review — 2026-10-03
 
 [The completed review](../phase65_closeout_20261003.md) authenticates both native
