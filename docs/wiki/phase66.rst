@@ -12,7 +12,7 @@ Both native jobs completed with exit 0 from frozen source ``f83538ccc7d0b06f7003
 
 Both arms use the same repaired Phase64 refinement encoder, late encoder adaptation after 2,188 updates, frozen PID, 4,376 reconstruction updates, 280,064 replay slots, 70,000 training events and seed 20261003. No new pretraining occurs. Mixed predicted-context probability rises linearly to 0.5 over 2,188 updates; teacher-only uses 0.0. All other registered configurations match. Equal updates and replay slots do not mean equal FLOPs: conditional auxiliary teacher supervision is inactive in teacher-only, while mixed also performs sampled rollouts. Same seed does not establish bitwise common-prefix identity.
 
-Fresh selection 1,000 and strict 100 exclude 55,500 prior reservations; the beam cohort is the fixed first 20 strict events. There is no strict-selection overlap. After Phase66, 43,400 validation events remain unreserved. Full retained scope has 3,020 units: 2,792 isolated leaves, 77 single-source composites and 151 nontrivial units. Half/component scope has 2,604 units: 2,361 leaves, 77 single-source composites and 166 nontrivial units. Nontrivial representability is 111/151 full and 121/166 half; 35/100 events have no flagged incompatibility. These are eligibility diagnostics, not achievable efficiencies. Original complete-only and retained-tree populations keep separate denominators; explicit component fallback never invents B halves.
+Fresh selection 1,000 and strict 100 exclude 55,500 prior reservations; the beam cohort is the fixed first 20 strict events. There is no strict-selection overlap. After Phase66, 43,400 validation events remain unreserved. Full retained scope has 3,020 units: 2,792 isolated leaves, 77 single-source composites and 151 nontrivial units. Half/component scope has 2,604 units: 2,361 leaves, 77 single-source composites and 166 nontrivial units. Nontrivial representability is 111/151 full and 121/166 half; 35/100 events have no flagged incompatibility. These are eligibility diagnostics, not achievable efficiencies. Original complete-only and retained-tree populations keep separate denominators; 15 events have explicit B halves and85 use component fallback; no B halves are invented.
 
 
 Primary results
@@ -223,7 +223,7 @@ Both arms transfer all 121 encoder entries and both PID-head entries without sha
      - 9/443
      - 8/443
 
-All returned candidates receive both scope checks. Model-only top-1 rankings remain deployable diagnostics; oracle values consult truth only after generation. Mixed beam contains shallow exact candidates; teacher-only contains none. No retained candidate supplies a depth-two exact structure. Oracle ranking cannot select a deep success absent from this bounded candidate pool, but wider or different proposals are untested. Candidate-rank denominators shrink when fewer candidates are returned and are preserved.
+All 110 returned candidates (52 mixed,58 teacher-only) receive both scope checks. Model-only top-1 rankings remain deployable diagnostics; oracle values consult truth only after generation. Mixed beam contains shallow exact candidates; teacher-only contains none. No retained candidate supplies a depth-two exact structure. Oracle ranking cannot select a deep success absent from this bounded candidate pool, but wider or different proposals are untested. Candidate-rank denominators shrink when fewer candidates are returned and are preserved.
 
 
 Complete exports
@@ -302,3 +302,8 @@ Downloads
 ---------
 
 :doc:`Complete aggregate bundle, review manifest and every per-view download <_generated/status/index>`.
+
+Phase67 accepted scheduling snapshot
+------------------------------------
+
+Both tasks were accepted and released from immutable source ``427a98c1fdae71e5aa32ddd60231a37802108025``. The 2026-10-04 08:50 Asia/Shanghai snapshot verifies scheduled mixed PENDING (Priority), teacher only PENDING (Priority). Exact contract comments, resource limits, source and no-requeue bindings match. GPU startup is not yet verified. No further campaign is authorized.
