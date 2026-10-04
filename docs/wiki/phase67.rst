@@ -306,3 +306,8 @@ Downloads
 ---------
 
 :doc:`Complete aggregate bundle, review manifest and all per-view downloads <_generated/status/index>`.
+
+Phase68 accepted scheduling snapshot
+-----------------------------------
+
+Phase68 jobs16812911 (refined encoder) and16812912 (pre-refinement encoder) were accepted and released from source ee4c7255024aa75295c35e32e438c26cde1ed468. The 2026-10-04 21:06 Asia/Shanghai snapshot verifies both PENDING (Priority), with exact contract/resource/no-requeue bindings. GPU startup is not yet verified. This records scheduler acceptance, not scientific success.

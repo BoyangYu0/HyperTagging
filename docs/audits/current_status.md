@@ -27,6 +27,8 @@ Submission/CI/live publication verification is recorded separately. No successor
 sealed test or scientific promotion. Neither training growth nor better pretraining
 has established a comparative advantage; historical holds do not rule out scaling.
 
+Phase68 jobs16812911 (refined encoder) and16812912 (pre-refinement encoder) were accepted and released from source ee4c7255024aa75295c35e32e438c26cde1ed468. The 2026-10-04 21:06 Asia/Shanghai snapshot verifies both PENDING (Priority), with exact contract/resource/no-requeue bindings. GPU startup is not yet verified. This records scheduler acceptance, not scientific success.
+
 ## Phase66 completed review — 2026-10-04
 
 [The completed context review](../phase66_closeout_20261004.md) authenticates both

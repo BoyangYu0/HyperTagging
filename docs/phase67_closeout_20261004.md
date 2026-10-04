@@ -137,3 +137,7 @@ Exactly two guarded tasks request one H100 NVL, eight CPUs, 64 GiB and 36 hours 
 ## Verification and publication
 
 All registered native outputs and saved checkpoints are authenticated before publication. Focused scientific, admission, broad CPU, audit, privacy, links, exports and desktop/narrow browser checks are recorded in the final manifest, alongside exact-revision branch/master CI and actual live download verification. The publication workflow retains all privacy/layout/regeneration gates and existing byte/work/runtime limits. Phase66 used 58.53 minutes of its 60-minute job limit; Phase67 moves text and basf2 validation to separate read-only matrix runners, with deployment depending on every build and compatibility result. Final measured runtimes and capacity are reported rather than inferred from a local preview.
+
+## Phase68 accepted scheduling snapshot
+
+Phase68 jobs16812911 (refined encoder) and16812912 (pre-refinement encoder) were accepted and released from source ee4c7255024aa75295c35e32e438c26cde1ed468. The 2026-10-04 21:06 Asia/Shanghai snapshot verifies both PENDING (Priority), with exact contract/resource/no-requeue bindings. GPU startup is not yet verified. This records scheduler acceptance, not scientific success.
