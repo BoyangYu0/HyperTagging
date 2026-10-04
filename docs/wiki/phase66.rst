@@ -237,7 +237,7 @@ Cumulative evidence and allocation
 ----------------------------------
 
 
-The dated :doc:`all-study ledger <scientific_review_20260928>` covers migration Phases1–13, named early production/pretraining/transfer families, Stage A and reconstruction Phase34 onward. No standalone reconstruction Phase14–33 closeouts were found; no such results are invented. Its dated Phase62 pending state is superseded by the completed :doc:`Phase62 <phase62>`, :doc:`Phase63 <phase63>`, :doc:`Phase64 <phase64>` and :doc:`Phase65 <phase65>` reviews. Different cohorts, seeds, source corrections and metric definitions prevent pooling these studies as one learning curve.
+The dated `all-study ledger <https://github.com/BoyangYu0/HyperTagging/blob/master/docs/review_20260928/studies.md>`_ covers migration Phases1–13, named early production/pretraining/transfer families, Stage A and reconstruction Phase34 onward. No standalone reconstruction Phase14–33 closeouts were found; no such results are invented. Its dated Phase62 pending state is superseded by the completed :doc:`Phase62 <phase62>`, :doc:`Phase63 <phase63>`, :doc:`Phase64 <phase64>` and :doc:`Phase65 <phase65>` reviews. Different cohorts, seeds, source corrections and metric definitions prevent pooling these studies as one learning curve.
 
 
 .. list-table::
