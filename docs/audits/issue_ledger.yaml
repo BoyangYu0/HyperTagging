@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase66 strict Sphinx link to the existing repository study ledger.
+  - dcc46efbed517d1a3f9bb7a27853a659f8a5998d
   # Phase67 scheduler acceptance and complete Phase66 reviewed publication snapshot.
   - 2157c7f5a3d4f08aef6e5098e8b02ada6d6e1d09
   # Phase66 full native review/exports and one bounded Phase67 seed confirmation.
