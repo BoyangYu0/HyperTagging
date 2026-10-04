@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Remove operational scheduler identifiers from authored Phase67 publication.
+  - 01d2f3f1105259ddc91e10a8488b5e3faedb563e
   # Phase68 accepted scheduling and completed Phase67 publication metadata.
   - cb06cb8c600a501539a3773a73ee4f7a5d777fe7
   # Complete Phase67 review, bounded encoder ablation and unchanged-gate CI runtime isolation.
