@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase66 full native review/exports and one bounded Phase67 seed confirmation.
+  - f9e3b7fd144a4a0c1f8031c9554b1633b7f835ac
   # Strict Phase65 RST references/headings; undefined count label clarified.
   - aef3e6cfbce29afe9392daeef73684b5ea3620ee
   # Phase65 authored links use the guarded generated download section.

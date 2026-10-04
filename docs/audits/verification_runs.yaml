@@ -932,3 +932,27 @@ supplemental_runs:
       Full CPU and complete documentation checks are in progress. Final results,
       browser checks,CI,live downloads and scheduler acceptance are recorded in
       the task final manifest. No model promotion,sealed test or successor chain.
+
+  - source_sha: f9e3b7fd144a4a0c1f8031c9554b1633b7f835ac
+    metadata_head: resolved_by_git_rev_parse_HEAD
+    worktree_state: clean_committed_metadata_tree
+    date: '2026-10-04'
+    commands:
+      - python -m pytest -q tests/test_reconstruction_phase67_campaign_cpu.py tests/test_phase67_context_execution_cpu.py tests/test_phase64_projection_initialization_cpu.py
+      - python -m pytest -q tests/test_bounded_search_cpu.py tests/test_full_depth_beam_cpu.py tests/test_full_depth_beam_regressions_cpu.py tests/test_hierarchical_inference_cpu.py tests/test_full_decay_metrics_cpu.py tests/test_full_decay_runner_cpu.py tests/test_full_decay_cli_cpu.py tests/test_recursive_source_exclusivity_cpu.py tests/test_no_truth_leakage_cpu.py
+      - python scripts/execute_notebook_smoke_tests.py --check-generated
+    pytest: {result: PASS, campaign_and_optimizer_passed: 34, scientific_focused_passed: 193}
+    notebooks: {result: PASS, generated_consistency_count: 18}
+    real_data_inputs: native_Phase66_train_and_validation_only
+    checkpoint: immutable_Phase64_refined_encoder_bound_for_Phase67
+    ci_run: PENDING_EXACT_COMMIT_VALIDATION
+    human_visual_review_status: NOT_REVIEWED
+    evidence_limitations: >-
+      Both native completions,14 views,exact repeats,34 data shards,26 checkpoint
+      lineages and frozen PID/normalizers pass. Complete export11823675 native
+      scalars and169464 public values. No exact depth-two component in any view
+      or candidate. Teacher-only improves nontrivial full-source recall but loses
+      precision. Neither passes original gates. Phase67 is one seed confirmation
+      with42300 validation events remaining; matched steps/slots are not FLOPs.
+      Full CPU,documentation,browser,exact CI and live-download checks are ongoing
+      and recorded in the task final manifest. No sealed test or model promotion.
