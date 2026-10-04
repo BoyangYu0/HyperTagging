@@ -111,3 +111,13 @@ Complete documentation validation has a bounded 60-minute job allowance.
 The Phase64 archive approached the previous 45-minute timeout on a slower
 runner. Keep all layouts and privacy checks, and review runtime growth along
 with the reported publication capacity when extending the archive.
+
+Phase67 runtime review
+----------------------
+
+Phase66 measured 58.53 minutes against the unchanged 60-minute job bound.
+Standalone HTML and independent regeneration remain in the build job; text and
+basf2 builds run on separate read-only matrix runners. All layouts retain full
+privacy, coverage and link checks. Deployment depends on both jobs, including
+both matrix entries; fail-fast is disabled so failures remain observable.
+No timeout, byte/work bound, historical download or scientific gate is removed.

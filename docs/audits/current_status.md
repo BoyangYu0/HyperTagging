@@ -1,5 +1,32 @@
 # Current repository audit status
 
+## Phase67 completed confirmation — 2026-10-04
+
+[The complete Phase67 review](../phase67_closeout_20261004.md) authenticates both
+native completions, fourteen full/half views, exact repeats, all34 data shards,
+five registered tracks per arm and all26 saved checkpoints. Full retained LCAG
+is14/3714 mixed versus18/3714 teacher-only; exact nontrivial components are0/129
+in both, and coherent forests1/100 versus0/100. The sole primary forest has no
+mothers. Both fail original gates. One shared auxiliary depth-two component at
+step1000 is duplicated across identical depth/validity model tracks and scopes;
+it is not a primary success or treatment advantage. Paired full LCAG spans zero.
+
+Teacher-only preserves442789 target exposures; mixed loses111238. Its precision
+loss/recall gain repeats Phase66 conditionally, without broad two-seed generality.
+All48 fixed train/development geometry views remain unsaturated. Complete exports
+contain11980367 private native/checkpoint scalars,153842 closeout rows and165964
+public aggregate values. Missing strict saved-track evaluations remain unavailable.
+
+End context-regime tuning. Hold70000 for one bounded Phase68 encoder-transfer
+contrast: refined versus train-rescaled pre-refinement encoder parameters, same
+refined PID and train normalization, same mixed context, late adaptation,4376
+updates/280064 slots and seed20261004. No extra pretraining; this hybrid parameter
+ablation is not pretraining versus no pretraining. Fresh1000/100/20 excludes57700
+reservations and leaves41200. Exactly two1-H100-NVL/8CPU/64GiB/36h jobs, no requeue.
+Submission/CI/live publication verification is recorded separately. No successor,
+sealed test or scientific promotion. Neither training growth nor better pretraining
+has established a comparative advantage; historical holds do not rule out scaling.
+
 ## Phase66 completed review — 2026-10-04
 
 [The completed context review](../phase66_closeout_20261004.md) authenticates both

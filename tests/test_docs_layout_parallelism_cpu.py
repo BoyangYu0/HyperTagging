@@ -13,8 +13,11 @@ ROOT = Path(__file__).resolve().parents[1]
 @pytest.mark.parametrize('regeneration_exit,text_exit,basf2_exit', list(product((0, 5), (0, 7), (0, 9))))
 def test_layout_step_propagates_each_failure(tmp_path, regeneration_exit, text_exit, basf2_exit):
     workflow = yaml.safe_load((ROOT / '.github/workflows/docs.yml').read_text())
-    step = next(step for step in workflow['jobs']['build']['steps']
-                if step.get('name') == 'Validate coverage, regeneration and compatibility layouts')
+    regeneration = next(step for step in workflow['jobs']['build']['steps']
+                        if step.get('name') == 'Validate coverage and independent regeneration')
+    compatibility = workflow['jobs']['compatibility']['steps'][-1]
+    assert workflow['jobs']['deploy']['needs'] == ['build', 'compatibility']
+    assert workflow['jobs']['compatibility']['strategy']['fail-fast'] is False
     fake_python = tmp_path / 'python'
     fake_python.write_text('''#!/bin/bash
 case "$*" in
@@ -28,9 +31,12 @@ esac
     env = {**os.environ, 'PATH': str(tmp_path) + os.pathsep + os.environ['PATH'],
            'RUNNER_TEMP': str(tmp_path), 'TEXT_EXIT': str(text_exit),
            'BASF2_EXIT': str(basf2_exit), 'REGENERATION_EXIT': str(regeneration_exit)}
-    result = subprocess.run(['bash', '--noprofile', '--norc', '-e', '-o', 'pipefail',
-                             '-c', step['run']], env=env, capture_output=True, timeout=10)
-    assert (result.returncode == 0) == (regeneration_exit == text_exit == basf2_exit == 0)
+    results = []
+    for step, layout in [(regeneration, ''), (compatibility, 'text'), (compatibility, 'basf2')]:
+        result = subprocess.run(['bash', '--noprofile', '--norc', '-e', '-o', 'pipefail',
+                                 '-c', step['run']], env={**env, 'DOCS_LAYOUT': layout}, capture_output=True, timeout=10)
+        results.append(result.returncode)
+    assert results == [regeneration_exit, text_exit, basf2_exit]
     assert (tmp_path / 'regeneration-finished').exists()
     assert (tmp_path / 'text-finished').exists()
     assert (tmp_path / 'basf2-finished').exists()

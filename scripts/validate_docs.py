@@ -591,13 +591,16 @@ def validate_workflow() -> dict:
              "Workflow requires explicit Bash with pipefail")
     _require(workflow.get("concurrency", {}).get("cancel-in-progress") is False,
              "Publication concurrency must preserve running validations")
-    _require(set(workflow.get("jobs", {})) == {"build", "deploy"}, "Unexpected workflow jobs")
+    _require(set(workflow.get("jobs", {})) == {"build", "compatibility", "deploy"}, "Unexpected workflow jobs")
     build, deploy = workflow["jobs"]["build"], workflow["jobs"]["deploy"]
+    compatibility = workflow["jobs"]["compatibility"]
+    _require(compatibility.get("permissions") == {"contents": "read"} and "if" not in compatibility, "Compatibility must run read-only on every event")
+    _require(compatibility.get("strategy") == {"fail-fast": False, "max-parallel": 2, "matrix": {"layout": ["text", "basf2"]}}, "Every compatibility layout must run without cancellation")
     _require(build.get("permissions") == {"contents": "read"}, "Build permissions must be contents:read only")
     _require(deploy.get("permissions") == {"pages": "write", "id-token": "write"},
              "Deployment permissions must be pages:write and id-token:write only")
     _require("if" not in build, "PR documentation validation must not be gated away")
-    _require(deploy.get("needs") == "build", "Deployment must depend on successful build")
+    _require(deploy.get("needs") == ["build", "compatibility"], "Deployment must depend on successful build")
     _require(deploy.get("environment", {}).get("name") == "github-pages",
              "Deployment must use the github-pages environment")
     _require(deploy.get("concurrency") == {"group": "github-pages", "cancel-in-progress": False},
@@ -609,8 +612,8 @@ def validate_workflow() -> dict:
              "Docs workflow must not consume secrets or privileged untrusted events")
     expected_actions = {"actions/" + name + "@" + digest for name, digest in ACTION_PINS.items()}
     observed_actions = []
-    for job in (build, deploy):
-        _require(isinstance(job.get("timeout-minutes"), int) and 0 < job["timeout-minutes"] <= (60 if job is build else 30),
+    for job in (build, compatibility, deploy):
+        _require(isinstance(job.get("timeout-minutes"), int) and 0 < job["timeout-minutes"] <= (30 if job is deploy else 60),
                  "Workflow jobs require bounded timeouts")
         _require(job.get("runs-on") == "ubuntu-24.04", "Workflow runner must be the reviewed hosted image")
         _require(not job.get("continue-on-error"), "Workflow jobs must fail closed")
@@ -627,13 +630,19 @@ def validate_workflow() -> dict:
             if "uses" in step:
                 _require(step["uses"] in expected_actions, "Unexpected or unverified immutable action pin")
                 observed_actions.append(step["uses"])
-    _require(set(observed_actions) == expected_actions and len(observed_actions) == len(expected_actions),
-             "Every reviewed action must occur exactly once")
+    _require(set(observed_actions) == expected_actions and len(observed_actions) == len(expected_actions) + 2,
+             "Reviewed action ownership differs")
     build_actions = [step["uses"] for step in build["steps"] if "uses" in step]
     _require(build_actions == ["actions/checkout@" + ACTION_PINS["checkout"],
                                "actions/setup-python@" + ACTION_PINS["setup-python"],
                                "actions/upload-pages-artifact@" + ACTION_PINS["upload-pages-artifact"]],
              "Build action order or ownership differs")
+    _require([step['uses'] for step in compatibility['steps'] if 'uses' in step] == build_actions[:2], 'Compatibility actions must only checkout and set up Python')
+    _require(compatibility['steps'][0].get('with') == {'fetch-depth': 0, 'persist-credentials': False}, 'Compatibility source identity or credential boundary differs')
+    compatibility_commands = [step['run'] for step in compatibility['steps'] if 'run' in step]
+    _require(any('--builder text' in command and '--layout basf2' in command and '*) exit 1' in command for command in compatibility_commands), 'Text and basf2 validation are required and unknown layouts must fail')
+    _require(all('if' not in step for step in compatibility['steps'] if 'run' in step), 'Compatibility checks cannot be skipped')
+    _require(compatibility['steps'][-1].get('env') == {'DOCS_LAYOUT': '${{ matrix.layout }}'}, 'Compatibility matrix binding differs')
     checkout = build["steps"][0]
     _require(checkout.get("uses") == build_actions[0]
              and checkout.get("with") == {"fetch-depth": 0, "persist-credentials": False},
@@ -653,8 +662,7 @@ def validate_workflow() -> dict:
              "Documentation regression checks are missing")
     _require(any("scripts/build_docs.py" in command for command in commands),
              "Strict documentation build is missing")
-    _require(any("--builder text" in command and "--layout basf2" in command for command in commands),
-             "Text and basf2 discovery validation are missing")
+
     _require(all("if" not in step for step in build["steps"] if "run" in step),
              "Required validation steps must not be conditionally skipped")
     _require(any("scripts/validate_docs.py" in command
