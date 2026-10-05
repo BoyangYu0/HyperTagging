@@ -348,6 +348,6 @@ Downloads
 :doc:`Complete aggregate bundle, review manifest and all per-view downloads <_generated/status/index>`.
 
 Phase69 accepted scheduling snapshot
------------------------------------
+------------------------------------
 
 The two bounded Phase69 tasks were accepted and released from source 54cc4c89af8c0792e09d25f5c64a664660d74b96. The 2026-10-05 08:45 Asia/Shanghai snapshot verifies both PENDING (Priority), with exact contract/resource/no-requeue bindings. GPU startup is not yet verified. Acceptance is not scientific success.
