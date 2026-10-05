@@ -130,6 +130,11 @@ to the repository root.
   separate. List recovered B channels and continuum source types with evaluated,
   correct and unavailable counts. Current retained/reduced-PID truth is a proxy,
   not an FEI-equivalent physical efficiency or generator-quark reconstruction.
+  Also report inclusive candidate-group efficiency: exact FSP source-set
+  equality for model-produced groups, independent of intermediate tree/PID
+  correctness, with the same per-B/beam accounting and channel/type coverage.
+  Keep membership availability separate from PID availability; do not invent
+  continuum parton ancestry or combine disconnected predicted components.
   Preserve missing truth as unavailable, not zero measured success. See the
   post-study tagging contract in `docs/full_decay_reconstruction_evaluation.md`.
 - Full scope contributes one eligible root unit/event; B-half scope contributes

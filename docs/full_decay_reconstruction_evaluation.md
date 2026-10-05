@@ -108,6 +108,48 @@ unavailable and report any-tag event acceptance and distinct fake-candidate
 yield. Candidate yield divided by 2*N can exceed one and is not an efficiency.
 Never include continuum in the generic true-B efficiency denominator.
 
+### Inclusive FSP grouping efficiency
+
+Each evaluation also reports `inclusive_fsp_grouping`, a separate, graFEI-inspired
+inclusive candidate-group efficiency. Let T be the complete retained FSP source
+set of a true B, and G an FSP source set belonging to an actual reconstructed
+composite in an accepted hypothesis. A B is inclusively recovered exactly when
+some G equals T. The group must omit none of its target FSPs and include no
+foreign FSPs. A whole-event group containing both Bs therefore cannot count as
+a correct individual B group.
+
+Only source membership is compared. Intermediate decay topology, daughter PID,
+B-candidate PID and wrappers above the group do not need to match truth. Candidates
+must still be structurally valid and source-exclusive. Evaluation never joins
+disconnected components, invents groups or changes inference ranking. Individual
+input leaves are not newly reconstructed composite groups. This measures recovery
+among model-produced groups, not the accuracy of a separately selected two-group
+output partition or graFEI's `perfectEvent` variable.
+
+For each top-ranked hypothesis and retained beam pool at K, count each true B at
+most once with denominator 2*N_BB. Keep per-event any-B, both-B and coherent-pair
+results separate; the two recovered groups may occur in different beam hypotheses.
+Membership availability is independent of PID availability: missing truth PID can
+make exact reconstruction unavailable while inclusive grouping remains measurable.
+Unknown target membership retains its trial and is reported separately; a
+proven-success fraction with unknown targets is explicitly a lower bound.
+
+Include inclusive success counts, rates and covered flags beside the exact
+metrics in B-channel and continuum-type tables. Continuum retains component-level
+inclusive diagnostics using its actual component population. The original q/qbar
+inclusive efficiency remains unavailable without parton-to-FSP ancestry; continuum
+source flavor or a hadronic component must not be substituted for that ancestry.
+All metrics refer to the retained detector-source population, not unobserved or
+unretained generator particles. Direct graFEI comparison requires identical input
+FSP populations, truth groups, candidate policies and working points.
+
+The [official graFEI documentation](https://software.belle2.org/development/sphinx/analysis/doc/GraFEI.html)
+distinguishes tree and mass-hypothesis correctness. The membership-only metric
+above implements the requested inclusive grouping criterion and does not replace
+those separate metrics.
+
+### Matched algorithm comparisons
+
 For an FEI comparison, recompute both algorithms with the same population,
 truth-matching rules, hadronic/semileptonic definition and selections, and compare
 at matched purity or background acceptance. FEI's documented tag-side efficiency

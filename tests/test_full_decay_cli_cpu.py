@@ -211,6 +211,9 @@ def test_cli_report_keeps_greedy_results_and_adds_parallel_beam_metrics(
         assert b_counts["event_any_correct"]["denominator"] == 1
         assert "b_channel_coverage" in tagging["summaries"]["full/greedy"]
         assert "continuum_type_coverage" in tagging["summaries"]["full/greedy"]
+        inclusive = event_tagging["greedy"]["inclusive_fsp_grouping"]
+        assert inclusive["top1"]["b_reconstruction"]["per_b_correct"]["denominator"] == 2
+        assert "inclusive_fsp_grouping" in tagging["summaries"]["full/greedy"]
         runtime = report['runtime_environment']
         assert runtime['torch_version'] == str(torch.__version__)
         assert runtime['cpu_capability'] == torch.backends.cpu.get_cpu_capability()

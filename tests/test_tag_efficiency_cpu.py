@@ -243,3 +243,44 @@ def test_unknown_category_with_one_truth_B_is_incomplete_two_trial_BB(category, 
     summary = summarize_tag_efficiency_events([record])
     assert sum(channel["evaluated_b_trials"] for channel in summary["b_channel_coverage"]) == 2
     assert sum(channel["unavailable_count"] for channel in summary["b_channel_coverage"]) == 1
+
+
+def test_inclusive_missing_root_PID_uses_side_membership_and_keeps_channel_ids():
+    truth = _full_tree()
+    predicted = _clone(truth)
+    truth["b_side"] = torch.tensor([[0, 0, 1, 1, 0, 1, 0, 1, 0, 1, -1]])
+    truth["truth_pid_available"].zero_()
+    truth["truth_pid_labels"].zero_()
+    record = evaluate_tag_efficiency_event(truth, [predicted], source_category="unknown",
+        event=SimpleNamespace(b1_full_truth_channel_id=71, b2_full_truth_channel_id=72))
+    inclusive = record["inclusive_fsp_grouping"]
+    assert record["top1"]["b_reconstruction"]["unknown_truth_trials"] == 2
+    assert inclusive["top1"]["b_reconstruction"]["known_truth_trials"] == 2
+    assert inclusive["top1"]["b_reconstruction"]["per_b_correct"]["value"] == 1
+    summary = summarize_tag_efficiency_events([record])["inclusive_fsp_grouping"]
+    assert {channel["full_truth_channel_id"] for channel in summary["b_channel_coverage"]} == {71, 72}
+    assert all(channel["unavailable_count"] == 0 for channel in summary["b_channel_coverage"])
+
+
+def test_inclusive_does_not_construct_B_by_union_of_disconnected_components():
+    truth = _full_tree()
+    predicted = _clone(truth)
+    predicted["node_mask"][0, [8, 9, 10]] = False
+    record = _evaluate(truth, [predicted])
+    metrics = record["inclusive_fsp_grouping"]["top1"]["b_reconstruction"]
+    assert metrics["per_b_correct"]["value"] == 0
+    assert metrics["known_failed_trials"] == 2
+
+
+def test_inclusive_singleton_truth_membership_does_not_count_input_FSP_automatically():
+    truth = _full_tree()
+    # Declare only one retained detector FSP for each B side. No generated
+    # composite in the prediction groups those singletons into a B candidate.
+    truth["b_side"] = torch.tensor([[0, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1]])
+    predicted = _clone(truth)
+    predicted["node_mask"][0, 6:] = False
+    record = _evaluate(truth, [predicted])
+    inclusive = record["inclusive_fsp_grouping"]
+    assert inclusive["single_input_FSPs_count_as_reconstructed_groups"] is False
+    assert inclusive["top1"]["b_reconstruction"]["per_b_correct"]["numerator"] == 0
+    assert inclusive["top1"]["b_reconstruction"]["known_truth_trials"] == 2
