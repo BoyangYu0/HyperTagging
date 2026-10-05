@@ -1,0 +1,30 @@
+{
+  "observed_at": "2026-10-05T19:56:18.665791+00:00",
+  "source_sha": "fc05d79ea4fef264cf8cd5718bde420504170590",
+  "native_receipt_sha256": "f0ea42a3458d3e14c150793a4d66e78560dd40b45b2176cc53791670474745da",
+  "jobs": [
+    {
+      "arm": "type_bias",
+      "job_id": "16836879",
+      "contract_sha256": "0b3269883d2d3e47a4d6b08d4f6a96209864f60f9b9d6704f814a1f472192179",
+      "state": "PENDING",
+      "reason": "Priority",
+      "scheduler_contract_verified": true,
+      "gpu_startup_verified": false,
+      "startup_status": "NOT_STARTED"
+    },
+    {
+      "arm": "no_type_bias",
+      "job_id": "16836880",
+      "contract_sha256": "d27e4caef0dda8925bdfa4e3701a8aca8a3be7296286a689fe581a6567bed586",
+      "state": "PENDING",
+      "reason": "Priority",
+      "scheduler_contract_verified": true,
+      "gpu_startup_verified": false,
+      "startup_status": "NOT_STARTED"
+    }
+  ],
+  "sealed_test_accessed": false,
+  "promotion_authorized": false,
+  "automatic_successor": false
+}

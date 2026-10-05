@@ -1,5 +1,33 @@
 # Current repository audit status
 
+## Phase69 completed hybrid encoder confirmation — 2026-10-05
+
+[The complete review](../phase69_closeout_20261005.md) authenticates both native
+completions, fourteen full and half reports, exact repeats,34 input shards and26
+saved checkpoints. Refined versus pre-refinement retained full LCAG is24/3561
+versus25/3561, exact nontrivial5/159 versus6/159. Pre-refinement passes all original
+gates; refined fails half-perfect-LCAG. Refined has one shallow and one mother-free
+primary forest; pre-refinement has none. All exact components in every report and
+candidate are depth one. Original gate passing does not establish deep quality.
+
+Paired LCAG spans zero. Phase68 full nontrivial recall is not confirmed; Phase69
+half recall is exploratory and cannot replace joint recursive usefulness. This
+hybrid parameter contrast shares refined PID and normalization and cannot establish
+all pretraining benefit. All48 fixed geometry views remain unsaturated. Complete
+exports preserve12451136 native/checkpoint scalars and165915 public values. Physical
+momentum resolution and unregistered strict checkpoint tracks remain unavailable.
+
+End this encoder family. Hold70000 training events for one Phase70 decoder
+relation-bias module ablation, enabled versus disabled, same refined encoder/PID,
+train normalization, mixed context, late adaptation,4376 updates/280064 slots and
+zero new pretraining. Seed20261006; fresh1000 selection/100 strict/20 beam excludes
+59900 reservations and leaves39000 unreserved. Module removal changes parameter
+count and random-number consumption; no equal-FLOP or bitwise-prefix claim.
+Training-size growth remains untested under controlled compute; task alignment is
+a diagnostic priority, not a demonstrated superior alternative to scaling.
+Exactly two1-H100-NVL/8CPU/64GiB/36h tasks, no requeue. Acceptance and actual
+scheduling are recorded separately. No further campaign, sealed test or promotion.
+
 ## Phase68 completed hybrid encoder review — 2026-10-05
 
 [The complete review](../phase68_closeout_20261005.md) verifies both native
@@ -1006,3 +1034,5 @@ claims. This update does not expand the historical scientific verification scope
 
 
 The two bounded Phase69 tasks were accepted and released from source 54cc4c89af8c0792e09d25f5c64a664660d74b96. The 2026-10-05 08:45 Asia/Shanghai snapshot verifies both PENDING (Priority), with exact contract/resource/no-requeue bindings. GPU startup is not yet verified. Acceptance is not scientific success.
+
+The two Phase70 tasks were accepted and released from frozen source fc05d79ea4fef264cf8cd5718bde420504170590. The 2026-10-05 21:56 CEST snapshot verifies both PENDING for Priority with exact contract, resource and no-requeue bindings. GPU startup is not yet verified. Scheduler acceptance is not scientific success.

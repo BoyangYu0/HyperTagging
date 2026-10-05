@@ -153,3 +153,21 @@ fail; paired LCAG spans zero. The refined source-recall signal remains explorato
 It does not compare all pretraining to no pretraining or identify a data-size effect.
 One bounded Phase69 independent-seed confirmation is authorized;70000 training
 events, fresh validation, unchanged gates. No campaign beyond that pair.
+
+
+## Phase69 confirmation supplement — 2026-10-05
+
+[Phase69](../phase69_closeout_20261005.md) supersedes the earlier pending statement.
+Pre-refinement passes all original gates but has no deep exact component or primary
+coherent forest. Refined has one shallow and one mother-free primary forest and
+fails half-perfect-LCAG. Full retained LCAG24/3561 versus25/3561 and exact5/159
+versus6/159 remain nearly tied. Full nontrivial recall is not confirmed; a half
+recall signal is exploratory. All exact components remain shallow and all48 fixed
+geometry views unsaturated. End the hybrid encoder-refinement family without a
+joint recursive winner; this does not test all pretraining versus none.
+The newly authorized single Phase70 tests the type-conditioned daughter relation
+bias module, holding the refined encoder,70000 train events and4376 updates fixed.
+Module removal changes parameter count and random-number consumption. Its earlier
+Stage A signal was insufficient. No model promotion, sealed test or further chain.
+Neither training scaling nor improved pretraining has established comparative
+superiority. Fresh validation reservations leave39000 events unreserved.
