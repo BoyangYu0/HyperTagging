@@ -19,6 +19,10 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed post-study two-trial tag accounting and readable channel/type coverage.
+  - ba1d68a8dce07b6da82c31d513108291a1712b00
+  # Retained-pool recovery includes all B candidates; incomplete truth keeps two trials.
+  - cf340f01a9cf2c0933f578951663cfb8cea499f4
   # Reviewed Phase69 evidence, Phase70 bounded source and complete publication.
   - de2d4c1a67d68791fce84ff5dc42ea358f27d9d3
   - fc05d79ea4fef264cf8cd5718bde420504170590
