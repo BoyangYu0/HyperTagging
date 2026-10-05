@@ -56,7 +56,7 @@ Teacher-forced scores remain separate from strict detector-only rollout. Source/
 
 ## Paired uncertainty
 
-Intervals use 10,000 paired event-cluster bootstrap draws, seed 20261004, ratios of summed counts, and pre-refinement minus refined differences. They are exploratory, conditional on the two fitted models, unadjusted for multiple comparisons, and omit training-seed/source-domain uncertainty. A zero-width empirical forest interval from all-zero outcomes does not establish zero population success probability. Under an independent identical Bernoulli-event model, zero of 100 implies a one-sided 95% upper bound of about 2.95%; heterogeneous events limit that model.
+Intervals use 10,000 paired event-cluster bootstrap draws, seed 20261004, ratios of summed counts, and pre-refinement minus refined differences. They are exploratory, conditional on the two fitted models, unadjusted for multiple comparisons, and omit training-seed and source-domain uncertainty. A zero-width empirical forest interval from all-zero outcomes does not establish zero population success probability. Under an independent identical Bernoulli-event model, zero of 100 implies a one-sided 95% upper bound of about 2.95%; heterogeneous events limit that model.
 
 | Endpoint | Difference (percentage points) | Paired 95% interval |
 | --- | ---: | ---: |
