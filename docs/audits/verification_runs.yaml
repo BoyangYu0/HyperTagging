@@ -956,3 +956,27 @@ supplemental_runs:
       with42300 validation events remaining; matched steps/slots are not FLOPs.
       Full CPU,documentation,browser,exact CI and live-download checks are ongoing
       and recorded in the task final manifest. No sealed test or model promotion.
+
+  - source_sha: 54cc4c89af8c0792e09d25f5c64a664660d74b96
+    metadata_head: resolved_by_git_rev_parse_HEAD
+    worktree_state: clean_frozen_training_source_with_separate_publication_review
+    date: '2026-10-05'
+    commands:
+      - python -m pytest -q tests/test_reconstruction_phase69_campaign_cpu.py tests/test_phase68_encoder_initialization_cpu.py tests/test_pretraining_parameter_initialization_cpu.py tests/test_reconstruction_autocast_gradient_cpu.py
+      - python -m pytest -q tests/test_bounded_search_cpu.py tests/test_full_depth_beam_cpu.py tests/test_full_depth_beam_regressions_cpu.py tests/test_hierarchical_inference_cpu.py tests/test_full_decay_metrics_cpu.py tests/test_full_decay_runner_cpu.py tests/test_full_decay_cli_cpu.py tests/test_recursive_source_exclusivity_cpu.py tests/test_no_truth_leakage_cpu.py
+      - python scripts/execute_notebook_smoke_tests.py --check-generated
+    pytest: {result: PASS, frozen_campaign_and_admission_passed: 35, scientific_focused_passed: 193}
+    notebooks: {result: PASS, generated_consistency_count: 18}
+    real_data_inputs: native_Phase68_train_and_validation_only
+    checkpoint: immutable_hybrid_encoder_pair_bound_for_Phase69
+    ci_run: PENDING_EXACT_COMMIT_VALIDATION
+    human_visual_review_status: NOT_REVIEWED
+    evidence_limitations: >-
+      Both native completions,14 reports,34 shards,26 checkpoints,exact repeats,
+      encoder-only intervention and all134 proposal candidates authenticate.
+      All exact components are shallow;primary coherent forests zero;both original
+      gate sets fail.Paired LCAG spans zero.Full nontrivial recall signal is exploratory.
+      Complete export12573261 native scalars and178022 public values.Phase69 is one
+      independent-seed hybrid confirmation,not all pretraining versus no pretraining.
+      Full CPU,documentation,privacy,browser,exact branch/master CI and actual live
+      downloads are recorded in the task final manifest.No sealed test or promotion.

@@ -1,5 +1,33 @@
 # Current repository audit status
 
+## Phase68 completed hybrid encoder review — 2026-10-05
+
+[The complete review](../phase68_closeout_20261005.md) verifies both native
+completions, fourteen registered views, exact repeats,34 input shards and26 saved
+checkpoints. Refined versus train-rescaled pre-refinement encoder gives retained
+full LCAG28/3944 versus27/3944, exact nontrivial3/137 versus2/137, and zero primary
+coherent forests. All exact components across every view/candidate are depth one.
+Both original gate sets fail. A shared shallow beam forest and a mother-free
+auxiliary forest are exploratory, not primary recursive success. Paired LCAG
+uncertainty spans zero; refined full nontrivial source recall has a conditional
+exploratory advantage, insufficient for the joint quality claim.
+
+This is a hybrid parameter ablation with identical refined PID and train
+normalization:119 changed encoder entries,20 identical nonencoder entries,
+including2 PID entries. It cannot establish all pretraining benefit. All48 fixed
+geometry views remain unsaturated. Exports preserve12573261 private native and
+checkpoint scalars,165795 closeout rows and178022 public aggregate values.
+Physical MC momentum resolution and unregistered strict tracks remain unavailable.
+
+Hold70000 training events for one Phase69 independent-seed confirmation of this
+contrast, seed20261005,4376 updates/280064 slots per arm and zero extra pretraining.
+Fresh1000/100/20 excludes58800 prior reservations and leaves40100 unreserved.
+Training growth remains untested under controlled compute; prioritize measurable
+representation/objective usefulness over merely longer duration, without declaring
+it superior to data growth. Exactly two1-H100-NVL/8CPU/64GiB/36h tasks, no requeue.
+Submission and actual scheduling verification are recorded separately. No sealed
+test, scientific promotion, further campaign or automatic chain.
+
 ## Phase67 completed confirmation — 2026-10-04
 
 [The complete Phase67 review](../phase67_closeout_20261004.md) authenticates both
@@ -975,3 +1003,6 @@ UIDs remain untouched. This is not independent selection replication.
 The detailed review is [Phase56](../wiki/phase56.rst). New local verification,
 frozen-source and submission receipts are kept separately from historical audit
 claims. This update does not expand the historical scientific verification scope.
+
+
+The two bounded Phase69 tasks were accepted and released from source 54cc4c89af8c0792e09d25f5c64a664660d74b96. The 2026-10-05 08:45 Asia/Shanghai snapshot verifies both PENDING (Priority), with exact contract/resource/no-requeue bindings. GPU startup is not yet verified. Acceptance is not scientific success.

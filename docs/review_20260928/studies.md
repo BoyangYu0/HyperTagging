@@ -138,3 +138,18 @@ in every view/candidate, as does late adaptation; its one primary forest has no
 mothers. These studies do not isolate a data-size effect or prove improved pretraining
 beats data growth. The next bounded Phase66 tests training-context exposure at fixed
 70,000-event data and update budget, retaining original gates and fresh validation.
+
+
+## Subsequent evidence — update 2026-10-05
+
+The completed [Phase66](../phase66_closeout_20261004.md) and
+[Phase67](../phase67_closeout_20261004.md) context studies restore target support
+under teacher-only training but exchange nontrivial precision for recall without
+establishing useful recursive quality. Context tuning is closed.
+[Phase68](../phase68_closeout_20261005.md) is an encoder-only hybrid contrast with
+shared refined PID/normalization: full LCAG28/3944 versus27/3944, exact3/137 versus
+2/137, zero primary forests, all exact components shallow. Both original gates
+fail; paired LCAG spans zero. The refined source-recall signal remains exploratory.
+It does not compare all pretraining to no pretraining or identify a data-size effect.
+One bounded Phase69 independent-seed confirmation is authorized;70000 training
+events, fresh validation, unchanged gates. No campaign beyond that pair.

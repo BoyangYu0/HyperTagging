@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase69 bounded independent-seed hybrid encoder confirmation from Phase68 native evidence.
+  - 54cc4c89af8c0792e09d25f5c64a664660d74b96
   # Strict Phase67 scheduling heading length.
   - ac25f384b1f883737a68694123159bc31e52f3c7
   # Remove operational scheduler identifiers from authored Phase67 publication.
