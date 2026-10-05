@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Clarify proposal oracle and separate oracle-at-K semantics.
+  - 55d6924cf5ac051a8b808bad08e01a291a88943b
   # Complete Phase68 native metrics, reviewed publication and Phase69 acceptance.
   - 86adb766c037310f8e7006785836b23945d79dae
   # Phase69 bounded independent-seed hybrid encoder confirmation from Phase68 native evidence.
