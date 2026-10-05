@@ -227,9 +227,12 @@ def test_recovery_checks_later_correct_Bs_after_two_early_false_Bs():
 
 
 @pytest.mark.parametrize("category", ["", "unknown"])
-def test_unknown_category_with_one_truth_B_is_incomplete_two_trial_BB(category):
+@pytest.mark.parametrize("with_side_metadata", [False, True])
+def test_unknown_category_with_one_truth_B_is_incomplete_two_trial_BB(category, with_side_metadata):
     truth = _full_tree()
     truth["truth_pid_labels"][0, 9] = 4
+    if with_side_metadata:
+        truth["b_side"] = torch.tensor([[0, 0, -1, -1, 0, -1, 0, -1, 0, -1, -1]])
     record = evaluate_tag_efficiency_event(truth, [truth], source_category=category)
     assert record["sample_kind"] == "bbbar"
     metrics = record["top1"]["b_reconstruction"]

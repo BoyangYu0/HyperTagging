@@ -7,6 +7,7 @@ No helper in this module is called while generating or ranking hypotheses.
 from __future__ import annotations
 
 from collections import Counter, defaultdict
+from dataclasses import replace
 import json
 from typing import Any, Iterable, Mapping, Sequence
 
@@ -153,7 +154,14 @@ def evaluate_tag_efficiency_event(
     normalized = source_category.lower().replace("_", "").replace("-", "")
     continuum = _is_continuum_category(source_category)
     roots = [] if continuum else _truth_b_roots(truth)
-    expected_bb = bool(roots) or normalized in {"charged", "mixed", "generic", "bbbar", "bbar", "genericbbbar"}
+    explicit_b_present = any(int(truth.pid[node]) in B_ROOT_TOKENS for node in truth.positions)
+    if not continuum and not roots and explicit_b_present:
+        # Side labels may be incomplete when only one retained B survives.
+        # Discover explicit trees independently, but never create hemispheres.
+        roots = _truth_b_roots(replace(truth, b_side=None))
+    if len(roots) == 2 and truth.source_set(roots[0]) & truth.source_set(roots[1]):
+        roots = []
+    expected_bb = explicit_b_present or normalized in {"charged", "mixed", "generic", "bbbar", "bbar", "genericbbbar"}
     sample_kind = "continuum" if continuum else "bbbar" if expected_bb else "other_or_unknown"
     roots = sorted(roots, key=lambda root: (tuple(sorted(truth.source_set(root))), root)) if len(roots) <= 2 else []
     accepted = [_accepted_b_roots(view) for view in predictions]
