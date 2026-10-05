@@ -178,11 +178,17 @@ def generate(root, output, summary):
             public[key] = summary[key]
     validate_summary(public)
     public = public_pid_labels(public)
+    # Losslessly share repeated dotted metric-name segments. Individual views
+    # retain their original plain names; every bundle record remains explicit.
+    name_segments = list(dict.fromkeys(part for name in bundle_names for part in name.split(".")))
+    segment_indices = {part: index for index, part in enumerate(name_segments)}
     bundle = {
-        "version": "phase68-complete-aggregate-bundle-v1",
+        "version": "phase68-complete-aggregate-bundle-v2",
         "views": list(VIEWS),
         "arms": list(ARMS),
-        "metric_names": bundle_names,
+        "metric_name_encoding": "dot_joined_segment_indices",
+        "metric_name_segments": name_segments,
+        "metric_names": [[segment_indices[part] for part in name.split(".")] for name in bundle_names],
         "columns": ["view_index", "arm_index", "metric_index", "value"],
         "records": bundle_records,
         "source_hashes": public["source_hashes"],

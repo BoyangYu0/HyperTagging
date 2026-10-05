@@ -145,6 +145,8 @@ Exactly two guarded tasks request one H100 NVL, eight CPUs, 64 GiB and 36 hours 
 
 Focused scientific and frozen-source admission checks pass. Broad CPU, full documentation layouts, audit, privacy, export/link checks, desktop/narrow browser verification, exact branch/master CI and actual live downloads are recorded in the final manifest. The publication retains existing hard byte/file/work/runtime limits and all historical studies. The prior capacity plan is remeasured for this archive; unchanged checks remain mandatory.
 
+The complete aggregate JSON bundle uses version 2: each record remains `[view_index, arm_index, metric_index, value]`, while repeated dotted metric-name segments share a dictionary. Decode a name with `".".join(bundle["metric_name_segments"][i] for i in bundle["metric_names"][metric_index])`. The nine individual views retain plain names. Exact round-trip comparison covers every one of the 178,022 values. This lossless change saves approximately 1.51 MB after the initial basf2 measurement exceeded the prior growth plan; no historical artifact, metric or privacy/capacity check is removed.
+
 
 ## Phase69 accepted scheduling snapshot
 

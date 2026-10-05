@@ -347,6 +347,15 @@ Downloads
 
 :doc:`Complete aggregate bundle, review manifest and all per-view downloads <_generated/status/index>`.
 
+The complete JSON bundle uses version 2 to share repeated metric-name segments
+without dropping or rounding values. Each record is
+``[view_index, arm_index, metric_index, value]``. Decode its metric name with
+``".".join(bundle["metric_name_segments"][i] for i in bundle["metric_names"][metric_index])``;
+the ``views`` and ``arms`` arrays decode the other indices. Individual view
+downloads retain plain metric names. Full round-trip comparison verifies all
+178,022 values. This reduces new publication growth within the prior capacity
+plan while preserving all historical downloads and unchanged scan limits.
+
 Phase69 accepted scheduling snapshot
 ------------------------------------
 

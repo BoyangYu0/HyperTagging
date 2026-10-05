@@ -45,6 +45,21 @@ def test_all_registered_phase68_views_publish(tmp_path):
     assert (
         "/project/" not in text and "event_uid" not in text and "16812911" not in text
     )
+    bundle_path = tmp_path / "phase68-all-aggregate-metrics.json"
+    bundle = json.loads(bundle_path.read_text())
+    assert bundle["version"] == "phase68-complete-aggregate-bundle-v2"
+    names = [".".join(bundle["metric_name_segments"][i] for i in parts)
+             for parts in bundle["metric_names"]]
+    decoded = {(bundle["views"][view], bundle["arms"][arm], names[metric]): value
+               for view, arm, metric, value in bundle["records"]}
+    expected = {}
+    for binding in out["downloads"]:
+        view = json.loads((tmp_path / binding["filename"]).read_text())
+        expected.update({(view["view"], view["arms"][arm], view["metric_names"][metric]): value
+                         for arm, metric, value in view["records"]})
+    assert decoded == expected
+    assert len(decoded) == len(bundle["records"]) == 178022
+    assert bundle_path.stat().st_size < 4 * 1024 * 1024
 
 
 @pytest.mark.parametrize("change", ["missing_view", "path", "hash", "count"])
