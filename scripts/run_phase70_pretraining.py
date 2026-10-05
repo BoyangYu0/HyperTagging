@@ -1,7 +1,6 @@
 """Bind the preregistered encoder-transfer artifact without additional pretraining."""
 
 from pathlib import Path
-import json
 from scripts.run_reconstruction_phase35 import atomic_json, finite_checkpoint, sha256
 
 
