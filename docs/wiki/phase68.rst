@@ -265,7 +265,7 @@ All 134 returned proposal candidates (65 refined, 69 pre-refinement) are checked
      - 5/35
      - 3/35
 
-Greedy has no exact component or coherent forest on the 20-event beam subset. Average-link ranking recovers the same one-mother shallow forest in both arms; refined learned-confidence mean and normalized-joint ranking also recover it. Learned-confidence sum does not. Oracle recovers one coherent forest in each arm, with full exact-component counts 5/31 versus 3/31. The larger component-wise oracle count combines recoveries across candidates and must not be called one coherent event success. Small candidate/ranking improvements do not produce deep topology or justify a general search winner.
+Greedy has no exact component or coherent forest on the 20-event beam subset. Average-link ranking recovers the same one-mother shallow forest in both arms; refined learned-confidence mean and normalized-joint ranking also recover it. Learned-confidence sum does not. Oracle recovers one coherent forest in each arm, with full exact-component counts 5/31 versus 3/31. This proposal oracle chooses one candidate per event and scope by its registered truth-only ranking. Its component counts aggregate across events and are not counts of coherent forests. Separate oracle-at-K summaries may recover different truth components from different candidates; their coherent-forest conjunction still requires one candidate. Small candidate/ranking improvements do not produce deep topology or justify a general search winner.
 
 
 Complete exports
