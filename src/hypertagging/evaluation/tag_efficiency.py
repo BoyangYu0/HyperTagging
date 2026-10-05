@@ -24,6 +24,7 @@ VERSION = "two-trial-retained-tag-efficiency-v1"
 _NAMES = dict(zip(PDG_TOKENS[1:], LEGACY_PARTICLE_NAMES))
 _LIMITATIONS = ["retained_tree_and_reduced_PID_not_full_Belle_II_MC_matching", "no_common_FEI_candidate_selection_or_kinematic_working_point"]
 _SLOT_POLICY = "first_two_source_disjoint_outermost_B_subtrees_in_model_construction_order_per_hypothesis"
+_RECOVERY_POLICY = "all_qualifying_source_disjoint_outermost_B_subtrees_per_ranked_hypothesis_each_truth_B_at_most_once"
 
 
 def _ratio(numerator: int, denominator: int) -> dict[str, Any]:
@@ -64,12 +65,12 @@ def _safe_signature(view, root, *, require_truth=False):
     return signature if view.source_set(root) else None
 
 
-def _selected_b_roots(view) -> list[int]:
-    """Truth-blind two-slot policy: earliest constructed disjoint B subtrees.
+def _accepted_b_roots(view) -> list[int]:
+    """Return all qualifying disjoint B subtrees in a coherent hypothesis.
 
     Tensor positions are construction order, independent of truth alignment.
-    Only outermost B subtrees qualify. Each coherent hypothesis has its own
-    slots; slots are never carried across competing beam states.
+    Only outermost B subtrees qualify. Recovery uses the full accepted set;
+    the separate nominal two-slot acceptance statistic uses its first two.
     """
     b_nodes = [node for node in view.positions if int(view.pid[node]) in B_ROOT_TOKENS]
     candidates = []
@@ -93,8 +94,6 @@ def _selected_b_roots(view) -> list[int]:
             continue
         selected.append(node)
         used.update(keys)
-        if len(selected) == 2:
-            break
     return selected
 
 
@@ -154,12 +153,14 @@ def evaluate_tag_efficiency_event(
     normalized = source_category.lower().replace("_", "").replace("-", "")
     continuum = _is_continuum_category(source_category)
     roots = [] if continuum else _truth_b_roots(truth)
-    expected_bb = len(roots) == 2 or normalized in {"charged", "mixed", "generic", "bbbar", "bbar", "genericbbbar"}
+    expected_bb = bool(roots) or normalized in {"charged", "mixed", "generic", "bbbar", "bbar", "genericbbbar"}
     sample_kind = "continuum" if continuum else "bbbar" if expected_bb else "other_or_unknown"
     roots = sorted(roots, key=lambda root: (tuple(sorted(truth.source_set(root))), root)) if len(roots) <= 2 else []
-    selected = [_selected_b_roots(view) for view in predictions]
+    accepted = [_accepted_b_roots(view) for view in predictions]
+    selected = [nodes[:2] for nodes in accepted]
     signatures = [[_safe_signature(view, root) for root in nodes]
-                  for view, nodes in zip(predictions, selected)]
+                  for view, nodes in zip(predictions, accepted)]
+    selected_signatures = [candidate[:2] for candidate in signatures]
     truth_signatures = [_safe_signature(truth, root, require_truth=True) for root in roots]
     successes = [[bool(signature is not None and signature in candidates) for signature in truth_signatures]
                  for candidates in signatures]
@@ -203,7 +204,8 @@ def evaluate_tag_efficiency_event(
         item = {"requested_k": k, "evaluated_hypothesis_count": min(k, len(batches)),
                 "oracle_uses_truth": True, "oracle_is_deployable_performance": False,
                 "any_b_event_acceptance": _ratio(int(any(selected[:k])), 1),
-                "unique_selected_b_candidate_count": len({signature for candidate in signatures[:k] for signature in candidate if signature is not None}),
+                "unique_selected_b_candidate_count": len({signature for candidate in selected_signatures[:k] for signature in candidate if signature is not None}),
+                "unique_accepted_b_candidate_count": len({signature for candidate in signatures[:k] for signature in candidate if signature is not None}),
                 "two_slot_acceptance": {"value": None, "reason": "slots_not_identified_across_competing_hypotheses"}}
         if expected_bb and not continuum:
             item["b_reconstruction"] = b_metrics(pool_correct)
@@ -242,7 +244,8 @@ def evaluate_tag_efficiency_event(
         "physical_fei_comparison_ready": False,
         "physical_fei_comparison_limitations": list(_LIMITATIONS),
         "slot_policy": _SLOT_POLICY,
-        "top1": {"selected_b_candidate_count": len(selected[0]), "tag_slot_acceptance": _ratio(len(selected[0]), 2),
+        "recovery_candidate_policy": _RECOVERY_POLICY,
+        "top1": {"selected_b_candidate_count": len(selected[0]), "accepted_b_candidate_count": len(accepted[0]), "tag_slot_acceptance": _ratio(len(selected[0]), 2),
                  "tag_event_acceptance": _ratio(int(bool(selected[0])), 1)},
         "pool_at_k": pool, "b_units": units, "continuum": continuum_record,
     }
@@ -269,6 +272,8 @@ def _summary(records):
                "top1": {}, "pool_at_k": {}}
     for name in ("tag_slot_acceptance", "tag_event_acceptance"):
         summary["top1"][name] = _sum_ratios(row["top1"][name] for row in rows)
+    for name in ("selected_b_candidate_count", "accepted_b_candidate_count"):
+        summary["top1"][name] = sum(row["top1"][name] for row in rows)
     def reconstruction(items):
         items = list(items)
         result = {name: _sum_ratios(item[name] for item in items) for name in ("per_b_correct", "event_any_correct", "event_both_correct")}
@@ -285,6 +290,7 @@ def _summary(records):
         summary["pool_at_k"][key] = {"b_reconstruction": result,
             "any_b_event_acceptance": _sum_ratios(item["any_b_event_acceptance"] for item in items),
             "unique_selected_b_candidate_count": sum(item["unique_selected_b_candidate_count"] for item in items),
+            "unique_accepted_b_candidate_count": sum(item["unique_accepted_b_candidate_count"] for item in items),
             "two_slot_acceptance": {"value": None, "reason": "slots_not_identified_across_competing_hypotheses"}}
     return summary
 
@@ -343,6 +349,7 @@ def summarize_tag_efficiency_events(records: Iterable[Mapping[str, Any]]) -> dic
     result = {"version": VERSION, "truth_used_for_inference": False,
         "physical_fei_comparison_ready": False, "physical_fei_comparison_limitations": list(_LIMITATIONS),
         "slot_policy": _SLOT_POLICY, "correctness": "exact_detector_sources_and_unordered_retained_tree_with_all_reduced_PID_tokens",
+        "recovery_candidate_policy": _RECOVERY_POLICY,
         "summary": _summary(rows),
         "by_source_category": {key: _summary(value) for key, value in sorted(categories.items())},
         "b_channel_coverage": sorted(channels.values(), key=lambda channel: (channel["full_truth_channel_id"] or 0, channel["retained_signed_channel_id"] or 0)),

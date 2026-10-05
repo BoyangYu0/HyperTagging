@@ -194,3 +194,49 @@ def test_hypothesis_inputs_unmodified_and_invalid_prefix_rejected():
     assert all(torch.equal(predicted[key], value) for key, value in original.items())
     with pytest.raises(ValueError, match="positive"):
         _evaluate(truth, [predicted], oracle_ks=[0])
+
+
+def test_recovery_checks_later_correct_Bs_after_two_early_false_Bs():
+    # Four disjoint B candidates in construction order: two false, then two
+    # exact. Nominal acceptance has two slots; truth recovery checks all four.
+    size = 16
+    adjacency = torch.zeros((1, size, size), dtype=torch.bool)
+    for root, leaves in {12: (6, 7, 8), 13: (9, 10, 11),
+                         14: (0, 1, 2), 15: (3, 4, 5)}.items():
+        adjacency[0, root, list(leaves)] = True
+    pid = torch.tensor([[9] * 12 + [21, 38, 21, 38]])
+    predicted = {"node_mask": torch.ones((1, size), dtype=torch.bool),
+                 "daughter_adjacency": adjacency,
+                 "current_pid_tokens": pid.clone(), "truth_pid_labels": pid.clone(),
+                 "pid_labels": pid.clone(), "truth_pid_available": torch.ones((1, size), dtype=torch.bool),
+                 "level_ids": torch.tensor([[0] * 12 + [1] * 4]),
+                 "node_ids": torch.arange(size).reshape(1, size)}
+    truth = _clone(predicted)
+    truth["node_mask"][0, [12, 13]] = False
+    record = _evaluate(truth, [predicted])
+    top1 = record["top1"]
+    assert top1["selected_b_candidate_count"] == 2
+    assert top1["accepted_b_candidate_count"] == 4
+    assert top1["b_reconstruction"]["per_b_correct"]["numerator"] == 2
+    pool = record["pool_at_k"]["1"]
+    assert pool["b_reconstruction"]["per_b_correct"]["value"] == 1
+    assert pool["b_reconstruction"]["coherent_event_both_correct"]["value"] == 1
+    assert pool["unique_accepted_b_candidate_count"] == 4
+    summary = summarize_tag_efficiency_events([record])
+    assert summary["summary"]["top1"]["accepted_b_candidate_count"] == 4
+
+
+@pytest.mark.parametrize("category", ["", "unknown"])
+def test_unknown_category_with_one_truth_B_is_incomplete_two_trial_BB(category):
+    truth = _full_tree()
+    truth["truth_pid_labels"][0, 9] = 4
+    record = evaluate_tag_efficiency_event(truth, [truth], source_category=category)
+    assert record["sample_kind"] == "bbbar"
+    metrics = record["top1"]["b_reconstruction"]
+    assert metrics["per_b_correct"]["denominator"] == 2
+    assert metrics["per_b_correct"]["numerator"] == 1
+    assert metrics["unknown_truth_trials"] == 1
+    assert metrics["known_failed_trials"] == 0
+    summary = summarize_tag_efficiency_events([record])
+    assert sum(channel["evaluated_b_trials"] for channel in summary["b_channel_coverage"]) == 2
+    assert sum(channel["unavailable_count"] for channel in summary["b_channel_coverage"]) == 1

@@ -69,8 +69,10 @@ event correct-tag efficiency = (N1 + N2) / N
 ```
 
 Score greedy, model-ranked top-1, and the retained pool at each requested K
-separately. Top-K recovery is truth-evaluated candidate-pool recall, not a
-truth-selected deployable candidate. Two Bs recovered in different incompatible
+separately. Top-1 refers to the highest-ranked event hypothesis; correct-B
+recovery inspects all accepted B candidates in that hypothesis, including
+candidates beyond the two nominal background-acceptance slots. Top-K recovery
+is truth-evaluated candidate-pool recall, not a truth-selected deployable candidate. Two Bs recovered in different incompatible
 hypotheses do not establish a coherent reconstructed pair. Channel labels,
 source categories, truth topology, and correctness tests are evaluation-only.
 
