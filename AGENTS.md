@@ -122,6 +122,16 @@ to the repository root.
   candidate generation/ranking is complete; label them as oracle metrics and
   keep deployable top-1 and existing greedy metric keys separate. Report search
   limits, pruning, candidate ranks/scores, and numerator/denominator counts.
+- Every new reconstruction-study evaluation must retain the shared evaluator's
+  `tag_efficiency` report and channel/type coverage, including greedy, model-ranked
+  top-1 and retained beam-pool results. Generic B-pair tagging uses two trials per
+  input collision and counts each true B at most once; also report event-level
+  efficiency. Keep continuum fake-B acceptance and retained-component recovery
+  separate. List recovered B channels and continuum source types with evaluated,
+  correct and unavailable counts. Current retained/reduced-PID truth is a proxy,
+  not an FEI-equivalent physical efficiency or generator-quark reconstruction.
+  Preserve missing truth as unavailable, not zero measured success. See the
+  post-study tagging contract in `docs/full_decay_reconstruction_evaluation.md`.
 - Full scope contributes one eligible root unit/event; B-half scope contributes
   two units plus one event-level both-halves result. Continuum uses explicit
   top-level retained components, never invented truth hemispheres. Direct-target

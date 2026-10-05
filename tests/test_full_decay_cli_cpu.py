@@ -198,6 +198,19 @@ def test_cli_report_keeps_greedy_results_and_adds_parallel_beam_metrics(
         )
     greedy, beam, ranking = [json.loads(path.read_text()) for path in paths]
     for report in (greedy, beam, ranking):
+        tagging = report["tag_efficiency"]
+        assert tagging["version"] == "tag-efficiency-study-v1"
+        assert not tagging["replaces_preregistered_metrics"]
+        assert "full/greedy" in tagging["summaries"]
+        # The tag evaluation must survive --omit-trees and --scope full:
+        # neither serialized trees nor a separate half-scope run is required.
+        event_tagging = report["events"][0]["scopes"]["full"]["tag_efficiency"]
+        assert "greedy" in event_tagging
+        b_counts = event_tagging["greedy"]["top1"]["b_reconstruction"]
+        assert b_counts["per_b_correct"]["denominator"] == 2
+        assert b_counts["event_any_correct"]["denominator"] == 1
+        assert "b_channel_coverage" in tagging["summaries"]["full/greedy"]
+        assert "continuum_type_coverage" in tagging["summaries"]["full/greedy"]
         runtime = report['runtime_environment']
         assert runtime['torch_version'] == str(torch.__version__)
         assert runtime['cpu_capability'] == torch.backends.cpu.get_cpu_capability()
@@ -210,6 +223,13 @@ def test_cli_report_keeps_greedy_results_and_adds_parallel_beam_metrics(
         assert not retained["replaces_preregistered_metrics"]
         assert report["events"][0]["scopes"]["full"]["retained_tree_metrics"]["available"]
     retained_beam = beam["events"][0]["scopes"]["full"]["retained_tree_beam"]
+    assert "full/full_depth_beam" in beam["tag_efficiency"]["summaries"]
+    assert "full/proposal_beam_normalized_joint" in ranking["tag_efficiency"]["summaries"]
+    assert (
+        greedy["tag_efficiency"]["summaries"]["full/greedy"]
+        == beam["tag_efficiency"]["summaries"]["full/greedy"]
+        == ranking["tag_efficiency"]["summaries"]["full/greedy"]
+    )
     assert retained_beam["candidate_count"] == len(beam["events"][0]["scopes"]["full"]["beam"]["candidates"])
     for candidate in retained_beam["candidates"]:
         assert candidate["metrics"]["available"]

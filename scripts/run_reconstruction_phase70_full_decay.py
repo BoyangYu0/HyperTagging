@@ -85,6 +85,11 @@ def _decision_payload(report: dict[str, Any]) -> dict[str, Any]:
 
     return {
         "retained_tree_checks": report["retained_tree_checks"],
+        **(
+            {"tag_efficiency": report["tag_efficiency"]}
+            if "tag_efficiency" in report
+            else {}
+        ),
         "summaries": report["summaries"],
         "summaries_by_source_category": report["summaries_by_source_category"],
         "summaries_by_target_shape": report["summaries_by_target_shape"],

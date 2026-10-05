@@ -50,6 +50,11 @@ from hypertagging.evaluation.beam_decay_metrics import (  # noqa: E402
     evaluate_ranked_decay_candidates,
     summarize_beam_decay_evaluations,
 )
+from hypertagging.evaluation.tag_efficiency import (  # noqa: E402
+    evaluate_tag_efficiency_event,
+    summarize_tag_efficiency_events,
+    validate_tag_efficiency_report,
+)
 from hypertagging.evaluation.trained_context import (  # noqa: E402
     load_trained_evaluation_context,
 )
@@ -397,6 +402,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     scopes = ("full", "half") if args.scope == "both" else (args.scope,)
     event_records: list[dict[str, Any]] = []
+    tag_rows: dict[str, list[dict[str, Any]]] = defaultdict(list)
     metric_rows: dict[str, list[Any]] = defaultdict(list)
     diagnostic_rows: dict[str, list[dict[str, Any]]] = defaultdict(list)
     metric_rows_by_category: dict[str, dict[str, list[Any]]] = defaultdict(
@@ -508,6 +514,12 @@ def main(argv: list[str] | None = None) -> int:
                 "inference": diagnostics,
                 "metrics": evaluation.as_dict(),
             }
+            tag_greedy = evaluate_tag_efficiency_event(
+                truth_batch, [inference.batch],
+                source_category=event.source_category, event=event, oracle_ks=[1],
+            )
+            scope_record["tag_efficiency"] = {"greedy": tag_greedy}
+            tag_rows[f"{scope}/greedy"].append(tag_greedy)
             if not args.omit_trees:
                 phase_started = time.perf_counter()
                 scope_record["reconstructed_tree"] = serialize_reconstructed_tree(
@@ -598,6 +610,13 @@ def main(argv: list[str] | None = None) -> int:
                         )
                     serialization_wall_seconds += time.perf_counter() - phase_started
                 scope_record["beam"] = beam_record
+                tag_beam = evaluate_tag_efficiency_event(
+                    truth_batch, [candidate.batch for candidate in beam.candidates],
+                    source_category=event.source_category, event=event,
+                    oracle_ks=oracle_ks,
+                )
+                scope_record["tag_efficiency"]["full_depth_beam"] = tag_beam
+                tag_rows[f"{scope}/full_depth_beam"].append(tag_beam)
                 beam_rows[scope].append(beam_evaluation)
                 beam_search_rows[scope].append(beam.diagnostics)
                 beam_top1_diagnostics[scope].append(candidate_diagnostics[0])
@@ -699,7 +718,14 @@ def main(argv: list[str] | None = None) -> int:
                         ),
                     )
                     ranking_selections[ranking] = selected_index
+                    tag_selected = evaluate_tag_efficiency_event(
+                        truth_batch, [candidates[selected_index][0].batch],
+                        source_category=event.source_category, event=event,
+                        oracle_ks=[1],
+                    )
                     for scope in scopes:
+                        record["scopes"][scope]["tag_efficiency"][f"proposal_beam/{ranking}"] = tag_selected
+                        tag_rows[f"{scope}/proposal_beam/{ranking}"].append(tag_selected)
                         retained_checks.add(f"{scope}/proposal_beam/{ranking}", retained_diagnostic_candidates[selected_index][scope], event.source_category)
                     for scope in scopes:
                         beam_metric_rows[scope][ranking].append(
@@ -710,6 +736,13 @@ def main(argv: list[str] | None = None) -> int:
                     retained_checks.add(f"{scope}/proposal_beam/oracle_diagnostic", retained_diagnostic_candidates[retained_oracle_indices[scope]][scope], event.source_category)
                     ranked_indices = sorted(range(len(candidates)), key=lambda index: (-candidates[index][0].ranking_scores()["normalized_joint_log_probability"], index))
                     retained_checks.add_beam(f"{scope}/proposal_beam_normalized_joint", [retained_diagnostic_candidates[index][scope] for index in ranked_indices], [candidates[index][0].ranking_scores()["normalized_joint_log_probability"] for index in ranked_indices], [1, args.beam_width])
+                    tag_pool = evaluate_tag_efficiency_event(
+                        truth_batch, [candidates[index][0].batch for index in ranked_indices],
+                        source_category=event.source_category, event=event,
+                        oracle_ks=[1, args.beam_width],
+                    )
+                    record["scopes"][scope]["tag_efficiency"]["proposal_beam_normalized_joint"] = tag_pool
+                    tag_rows[f"{scope}/proposal_beam_normalized_joint"].append(tag_pool)
                 oracle_candidate_indices = {
                     scope: max(
                         range(len(candidates)),
@@ -766,6 +799,14 @@ def main(argv: list[str] | None = None) -> int:
     phase_seconds["total_before_report_write"] = time.perf_counter() - run_started
 
     report = {
+        "tag_efficiency": {
+            "version": "tag-efficiency-study-v1",
+            "replaces_preregistered_metrics": False,
+            "summaries": {
+                name: summarize_tag_efficiency_events(rows)
+                for name, rows in sorted(tag_rows.items())
+            },
+        },
         "retained_tree_checks": retained_checks.as_dict(),
         "report_version": (BEAM_REPORT_VERSION if args.beam_search else REPORT_VERSION),
         "created_utc": datetime.now(timezone.utc).isoformat(),
@@ -984,6 +1025,7 @@ def main(argv: list[str] | None = None) -> int:
         },
     }
     validate_retained_tree_report(report)
+    validate_tag_efficiency_report(report)
     _atomic_write_json(output, report)
     print(f"Wrote {output}", file=sys.stderr, flush=True)
     return 0

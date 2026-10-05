@@ -45,6 +45,78 @@ That implementation and `scripts/evaluate_reconstruction.py` should remain
 available for historical regression tests. They must not be used to claim
 performance for the current level-autoregressive model.
 
+## Required tagging evaluation after each reconstruction study
+
+Every new invocation of `scripts/evaluate_full_decay.py` includes a versioned
+`tag_efficiency` block, its per-event records, and B-channel/continuum-type
+coverage. This runs for both inference scopes, including when tree serialization
+is disabled. Preserve the block in study exports and report its counts at
+closeout. Historical reports without this block have unavailable tagging metrics;
+do not relabel their LCAG accuracy as a tagging efficiency or silently overwrite
+their immutable receipts. These additive diagnostics do not replace preregistered
+training or promotion gates.
+
+For generic `charged` and `mixed` B-pair events, each collision contributes two
+B reconstruction trials. A retained candidate pool succeeds for a particular
+true B when at least one candidate correctly reconstructs it. Repeated beam
+hypotheses or duplicate B candidates never create another success for that B.
+If N0, N1 and N2 events recover zero, one and two distinct Bs, respectively:
+
+```text
+N = N0 + N1 + N2
+per-B correct-tag efficiency = (N1 + 2*N2) / (2*N)
+event correct-tag efficiency = (N1 + N2) / N
+```
+
+Score greedy, model-ranked top-1, and the retained pool at each requested K
+separately. Top-K recovery is truth-evaluated candidate-pool recall, not a
+truth-selected deployable candidate. Two Bs recovered in different incompatible
+hypotheses do not establish a coherent reconstructed pair. Channel labels,
+source categories, truth topology, and correctness tests are evaluation-only.
+
+The native schema-v4 metric uses exact retained source membership and unordered
+recursive topology/PID agreement, including the B root and leaves. It does not
+require the other B to be correct. Missing truth and an absent or inconsistent
+two-B target are explicitly unavailable; they do not disappear from the nominal
+two-trial population. A retained-tree proxy is **not a physical FEI tag
+efficiency**: the reduced PID vocabulary, unretained daughters, FSR/missing-particle
+policy and common candidate selections need a validated physical truth-matching
+adapter before such a comparison. The report exposes that limitation rather
+than reporting an unsupported physical efficiency.
+
+List every evaluated B channel with evaluated, correct and unavailable counts,
+the resulting rate, and whether it was recovered. Include readable canonical
+retained decay signatures plus stored full-truth/reconstructable channel IDs
+when available. Associate IDs using the truth B-side provenance, not tensor/root
+ordering. The readable signature describes retained topology; it is not proof
+of complete coverage of the original physical decay. Missing channel metadata
+belongs in an explicit unknown category.
+
+For `ccbar`, `uubar`, `ddbar` and `ssbar`, report continuum source type and the
+correctly reconstructed retained components with their actual component
+denominators. The current schema lacks generator-quark ancestry; reconstruction
+of the original q or qbar is unavailable. Do not invent truth hemispheres or
+infer quark reconstruction from recovery of a retained hadronic component.
+
+Continuum also has two nominal B-tag attempts per collision for background
+bookkeeping. These measure fake-B acceptance, not true-B efficiency. State the
+truth-independent slot-selection policy and count a slot at most once. If two
+stable accepted slots cannot be defined for a pooled beam, mark that metric
+unavailable and report any-tag event acceptance and distinct fake-candidate
+yield. Candidate yield divided by 2*N can exceed one and is not an efficiency.
+Never include continuum in the generic true-B efficiency denominator.
+
+For an FEI comparison, recompute both algorithms with the same population,
+truth-matching rules, hadronic/semileptonic definition and selections, and compare
+at matched purity or background acceptance. FEI's documented tag-side efficiency
+is event-based, so report both normalizations; simply halving its published
+event efficiency is not exact when double tags occur. Retain beam width, candidate
+counts and runtime alongside the comparison. Estimate uncertainties by resampling
+whole collision events, since the two B trials are correlated.
+
+Sources: [FEI definitions](https://software.belle2.org/release-09-00-07/sphinx/analysis/doc/FullEventInterpretation.html)
+and [the FEI paper](https://arxiv.org/html/1807.08680).
+
 ## Current inference algorithm
 
 The current model factorizes an unordered tree by generation level,

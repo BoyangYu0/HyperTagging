@@ -68,6 +68,7 @@ def main():
         )
         count = 0
         inventory = []
+        tagging_reports = {}
         export = a.output / f"{arm}-all-native-scalars.jsonl.gz"
         with gzip.open(export, "wt") as out:
             for path in sorted(run.rglob("*")):
@@ -102,6 +103,11 @@ def main():
                         and isinstance(doc, dict)
                         and "summaries" in doc
                     ):
+                        if "tag_efficiency" in doc:
+                            # Numeric leaves already enter the private scalar archive.
+                            # Preserve channel/type labels separately without changing
+                            # the historical aggregate-only public export schema.
+                            tagging_reports[rel] = doc["tag_efficiency"]
                         aggregate = {
                             k: doc[k]
                             for k in (
@@ -133,6 +139,28 @@ def main():
             history_file = a.output / f"{arm}-training-history.json.gz"
             with gzip.open(history_file, "wt") as f:
                 json.dump(histories, f, separators=(",", ":"), allow_nan=False)
+        if tagging_reports:
+            tagging_file = a.output / f"{arm}-tag-efficiency.json"
+            tagging_file.write_text(
+                json.dumps(
+                    {
+                        "version": "reconstruction-tag-efficiency-export-v1",
+                        "arm": arm,
+                        "reports": tagging_reports,
+                    },
+                    indent=2,
+                    sort_keys=True,
+                    allow_nan=False,
+                )
+                + "\n"
+            )
+            manifest["files"].append(
+                {
+                    "name": tagging_file.name,
+                    "sha256": digest(tagging_file),
+                    "bytes": tagging_file.stat().st_size,
+                }
+            )
         manifest["arms"][arm] = {
             "native_scalar_count": count,
             "native_inventory": inventory,

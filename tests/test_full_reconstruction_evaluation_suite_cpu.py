@@ -48,6 +48,10 @@ def _report(*, uids: list[str], scope: str, topology: str, beam: bool) -> dict:
         for ranking in suite.MODEL_ONLY_BEAM_RANKINGS
     }
     return {
+        "tag_efficiency": {
+            "version": "tag-efficiency-study-v1",
+            "summaries": {"fixture": {"nominal_trials": 2 * len(uids)}},
+        },
         "checkpoint_pair": {"compatible": True},
         "context": {"evaluated_event_uids": uids},
         "evaluator_code_provenance": {"git_head": "fixture"},
@@ -163,6 +167,14 @@ def test_full_suite_runs_every_component_and_writes_one_index(
     assert receipt["results"]["contracted_topology_diagnostic"]["summaries"][
         "half"
     ]
+    for view, count in (
+        ("strict_checkpoint_direct", 4),
+        ("contracted_topology_diagnostic", 4),
+        ("beam_search", 2),
+    ):
+        tagging = receipt["results"][view]["tag_efficiency"]
+        assert tagging["version"] == "tag-efficiency-study-v1"
+        assert tagging["summaries"]["fixture"]["nominal_trials"] == count
     assert receipt["results"]["beam_search"]["event_count"] == 1
     assert receipt["results"]["beam_search"]["evaluated_scopes"] == [
         "full", "half"

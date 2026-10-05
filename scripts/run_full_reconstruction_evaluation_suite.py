@@ -112,6 +112,11 @@ def _decision_payload(report: dict[str, Any]) -> dict[str, Any]:
     """Keep scientific results and exclude only timestamps and timing."""
 
     return {
+        **(
+            {"tag_efficiency": report["tag_efficiency"]}
+            if "tag_efficiency" in report
+            else {}
+        ),
         "summaries": report["summaries"],
         "summaries_by_source_category": report["summaries_by_source_category"],
         "summaries_by_target_shape": report["summaries_by_target_shape"],
@@ -641,6 +646,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         },
         "results": {
             "strict_checkpoint_direct": {
+                **(
+                    {"tag_efficiency": primary["tag_efficiency"]}
+                    if "tag_efficiency" in primary
+                    else {}
+                ),
                 "summaries": primary["summaries"],
                 "summaries_by_source_category": primary[
                     "summaries_by_source_category"
@@ -649,6 +659,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             },
             "contracted_topology_diagnostic": (
                 {
+                    **(
+                        {"tag_efficiency": contracted["tag_efficiency"]}
+                        if "tag_efficiency" in contracted
+                        else {}
+                    ),
                     "summaries": contracted["summaries"],
                     "summaries_by_source_category": contracted[
                         "summaries_by_source_category"
@@ -661,6 +676,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                 else None
             ),
             "beam_search": {
+                **(
+                    {"tag_efficiency": beam["tag_efficiency"]}
+                    if "tag_efficiency" in beam
+                    else {}
+                ),
                 "event_count": beam["beam_search"]["event_count"],
                 "evaluated_scopes": beam["beam_search"]["evaluated_scopes"],
                 "greedy_same_cohort_summary_by_scope": beam["summaries"],
