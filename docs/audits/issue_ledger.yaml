@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Inclusive FSP membership accounting, channel coverage and independent regression tests.
+  - ebe9a1e13d2fa8c9dcfc8d369135129c1440d003
   # Explicit incomplete B truth remains in fixed two-trial accounting.
   - c582c67dccdbabbce5bec32be3140645bc6865ff
   # Reviewed post-study two-trial tag accounting and readable channel/type coverage.
