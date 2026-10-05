@@ -1,5 +1,5 @@
 Phase69 completed hybrid encoder confirmation
-============================================
+=============================================
 
 **End this encoder-refinement ablation family: the second seed does not establish a joint recursive-quality benefit. Hold 70,000 training events for one bounded decoder relation-bias study.** Increasing training data is not demonstrated necessary now; improving task-aligned representations and their use by the decoder is a better diagnostic priority than simply longer pretraining, but neither has a proven comparative advantage over scaling. No scientific model is promoted.
 

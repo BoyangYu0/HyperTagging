@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase69 strict heading repair, no scientific changes.
+  - c9461d07c2c4037efac318c0ab583d2f44641e5b
   # Inclusive FSP membership accounting, channel coverage and independent regression tests.
   - ebe9a1e13d2fa8c9dcfc8d369135129c1440d003
   # Explicit incomplete B truth remains in fixed two-trial accounting.
