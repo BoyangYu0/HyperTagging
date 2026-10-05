@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase69 strict heading repair, no scientific changes.
+  - c9461d07c2c4037efac318c0ab583d2f44641e5b
   # Reviewed Phase69 evidence, Phase70 bounded source and complete publication.
   - de2d4c1a67d68791fce84ff5dc42ea358f27d9d3
   - fc05d79ea4fef264cf8cd5718bde420504170590
