@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Lossless Phase68 bundle-name dictionary preserves all values and the prior capacity envelope.
+  - 3c0f5ddcb25095ad691e533726a8ebe3636007c4
   # Plain uncertainty wording preserves the text-layout privacy gate.
   - 33dbc91cc703d2ee15104b614db3c67a768e6305
   # Strict Sphinx scheduling heading length.
