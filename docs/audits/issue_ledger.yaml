@@ -19,6 +19,10 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed Phase69 evidence, Phase70 bounded source and complete publication.
+  - de2d4c1a67d68791fce84ff5dc42ea358f27d9d3
+  - fc05d79ea4fef264cf8cd5718bde420504170590
+  - e95167c250c6152ac09dfdd667b7f001d54ca6c4
   # Lossless Phase68 bundle-name dictionary preserves all values and the prior capacity envelope.
   - 3c0f5ddcb25095ad691e533726a8ebe3636007c4
   # Plain uncertainty wording preserves the text-layout privacy gate.

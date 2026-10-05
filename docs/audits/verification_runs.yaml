@@ -980,3 +980,28 @@ supplemental_runs:
       independent-seed hybrid confirmation,not all pretraining versus no pretraining.
       Full CPU,documentation,privacy,browser,exact branch/master CI and actual live
       downloads are recorded in the task final manifest.No sealed test or promotion.
+
+  - source_sha: fc05d79ea4fef264cf8cd5718bde420504170590
+    metadata_head: resolved_by_git_rev_parse_HEAD
+    worktree_state: clean_frozen_training_source_with_separate_publication_review
+    date: '2026-10-05'
+    commands:
+      - python -m pytest -q tests/test_reconstruction_phase70_campaign_cpu.py tests/test_reconstruction_phase35_improvement_cpu.py tests/test_reconstruction_autocast_gradient_cpu.py
+      - python -m pytest -q tests/test_bounded_search_cpu.py tests/test_full_depth_beam_cpu.py tests/test_full_depth_beam_regressions_cpu.py tests/test_hierarchical_inference_cpu.py tests/test_full_decay_metrics_cpu.py tests/test_full_decay_runner_cpu.py tests/test_full_decay_cli_cpu.py tests/test_recursive_source_exclusivity_cpu.py tests/test_no_truth_leakage_cpu.py
+      - python scripts/execute_notebook_smoke_tests.py --check-generated
+    pytest: {result: PASS, frozen_campaign_and_admission_passed: 39, frozen_skipped: 5, scientific_focused_passed: 193}
+    notebooks: {result: PASS, generated_consistency_count: 18}
+    real_data_inputs: native_Phase69_train_and_validation_only
+    checkpoint: identical_authenticated_refined_encoder_for_Phase70
+    ci_run: PENDING_EXACT_COMMIT_VALIDATION
+    human_visual_review_status: NOT_REVIEWED
+    evidence_limitations: >-
+      Both native completions,14 reports,34 shards,26 checkpoints,131 candidates
+      and hybrid controls authenticate. Complete export12451136 private scalars
+      and165915 public values. Only pre-refinement passes original gates; no
+      exact deep components. Full recall signal not confirmed, half exploratory.
+      Phase70 is a decoder module ablation with different parameter count and RNG
+      consumption, not an equal-FLOP or bitwise-prefix comparison. Both jobs
+      accepted and PENDING Priority. Broad CPU, full documentation, privacy,
+      browser, exact CI and live downloads are recorded in the task final manifest.
+      No scientific promotion, sealed test or further automatic campaign.
