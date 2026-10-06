@@ -503,7 +503,7 @@ All48 fixed-input geometry views are unsaturated. They are not a census of gener
 Public exports omit collision identities, raw reports, private paths, scheduler identifiers and checkpoint filenames. Lossless typed-DAG parts preserve scalar types, unavailable values and all channel tables; the standalone decoder verifies the decoded digest. Download the manifest, all parts and decoder into one directory. The decoded object retains arms, native_additive_tagging, native_additional_diagnostics and extended_paired_uncertainty. A separate native scalar decoder restores every compact metric name to JSONL and verifies the178,049-record binding. The private bundle keeps raw records, native receipts and full integrity manifests. Historical reports and downloads retain their original bytes.
 
 What the complete study history supports
----------------------------------------
+----------------------------------------
 
 The objective is retained reconstruction efficiency. Loss, leaf retention,
 configured root production, syntax validity and daughter-sum closure cannot
@@ -598,7 +598,7 @@ promotion or sealed-test access follows from this review.
 
 
 One next bounded objective study: Phase71
-----------------------------------------
+-----------------------------------------
 
 End the decoder-bias family. Disabled bias improves exact nontrivial component
 recovery but lowers retained LCAG and source recall, reduces inclusive continuum
