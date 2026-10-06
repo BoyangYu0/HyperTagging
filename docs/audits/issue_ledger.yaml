@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed identity-only stratified reservation and resumable CPU evaluation; focused reservation checks pass.
+  - a18d590b5b7009c7016fa4743d2cbf004e7ba694
   # Reviewed deployment retirement, compact dashboard, category policy and CI deduplication; CPU suite and strict HTML regeneration validated.
   - b8f612b3cd27ada79a2493c397ecca1022201026
   # Measured CI runtime repair retains every publication check in one post-build validator call.
