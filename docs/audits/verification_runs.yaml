@@ -1035,3 +1035,31 @@ supplemental_runs:
       physical FEI matching; continuum quark ancestry remains unavailable.
       Full documentation and exact-commit remote CI remain required before
       master promotion. Existing scientific training/promotion gates unchanged.
+
+  - source_sha: 2d633d220a08bde88c0ec07d17e3be9769b4ba43
+    metadata_head: resolved_by_git_rev_parse_HEAD
+    worktree_state: clean_committed_metadata_tree
+    date: '2026-10-06'
+    commands:
+      - python -m pytest -q tests/test_phase69_efficiencies_exports_cpu.py tests/test_tag_efficiency_cpu.py tests/test_docs_status_cpu.py
+      - python -m pytest -q tests/test_bounded_search_cpu.py tests/test_full_depth_beam_cpu.py tests/test_full_depth_beam_regressions_cpu.py tests/test_hierarchical_inference_cpu.py tests/test_full_decay_metrics_cpu.py tests/test_full_decay_runner_cpu.py tests/test_full_decay_cli_cpu.py tests/test_recursive_source_exclusivity_cpu.py tests/test_no_truth_leakage_cpu.py
+    pytest: {result: PASS_WITH_FIXTURE_RERUN, combined_passed: 168, stale_source_count_fixture_failures: 1, fixed_fixture_rerun_passed: 1, scientific_focused_passed: 229}
+    real_data_inputs: authenticated_original_Phase69_validation_cohorts_only
+    checkpoint: original_immutable_Phase69_checkpoints
+    ci_run: PENDING_EXACT_COMMIT_VALIDATION
+    human_visual_review_status: PENDING
+    evidence_limitations: >-
+      All14 registered reports and131 retained candidates are evaluated with
+      native54cc4c8 and additive a7658a1 sources. All2611 prediction batch hashes
+      and current native scientific metrics agree exactly. Archived counts and
+      all160 candidate ranking orders agree;5972 archived continuous values
+      differ by at most1.4052270018716229e-6. Historical prediction tensors are
+      unavailable, so no direct archived bitwise identity is claimed.
+      Additive exports contain12052353 private scalar records and127974 public
+      numeric values; all original evidence and downloads are preserved.
+      Both primary arms have0/32 exact retained B tags and inclusive B groups.
+      Sparse zero bootstrap intervals are not evidence of population zero.
+      Full CPU, documentation, privacy, browser and publication proofs are
+      recorded separately in the task efficiencies final manifest. GitHub
+      SSH authentication was unavailable at this record; no remote success
+      is inferred. Existing Phase70 jobs and frozen source are unchanged.
