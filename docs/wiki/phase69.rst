@@ -621,9 +621,10 @@ Complete coverage comprises 14 registered reports, 2480 event-scope records and 
 Downloads and lossless decoding
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* :download:`Complete Phase69 v3 bundle, including all original aggregate metrics and the additive efficiencies <_generated/status/phase69-complete-aggregate-metrics-v3.json>`
-* :download:`Additive counts, hashes and integrity manifest <_generated/status/phase69-efficiencies-integrity.json>`
-* :download:`Standalone Python decoder <_generated/status/phase69-efficiencies-decoder.txt>`
+The :doc:`generated dashboard download section <_generated/status/index>`
+provides the complete Phase69 v3 bundle, the additive integrity manifest and
+standalone Python decoder. The original v2 bundle and all historical downloads
+remain available alongside them.
 
 Run the decoder with the downloaded bundle filename and a new output filename.
 It verifies the native-bundle and decoded-efficiency hashes and writes the
