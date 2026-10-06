@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Exhaustive scalar export, immutable-report continuum uncertainty, complete packaging and restored Pages staging fixtures; focused tests pass.
+  - 6792c2fb7b90d0bf722e4b0f8c9fc81c98851461
   # Authenticated 12,000-event Phase70 reservation; public diagnostic labels and restored CI documentation.
   - bf1b69d0e4553453fd14d4f459929813c7d5496e
   - 9183a6c00c8b378f4b059f837a22077179cea140
