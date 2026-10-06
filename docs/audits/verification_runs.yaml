@@ -1063,3 +1063,28 @@ supplemental_runs:
       recorded separately in the task efficiencies final manifest. GitHub
       SSH authentication was unavailable at this record; no remote success
       is inferred. Existing Phase70 jobs and frozen source are unchanged.
+
+  - source_sha: 630be4726df32d8e25d2dff4b70ff93023c42198
+    metadata_head: resolved_by_git_rev_parse_HEAD
+    worktree_state: clean_committed_metadata_tree
+    date: '2026-10-06'
+    commands:
+      - python -m pytest -q tests/test_docs_preservation_cpu.py tests/test_docs_layout_parallelism_cpu.py tests/test_docs_wiki_cpu.py
+    pytest: {result: PASS, focused_publication_contracts_passed: 72}
+    real_data_inputs: unchanged_Phase69_additive_exports
+    checkpoint: none_changed_or_retrained
+    ci_run: PENDING_EXACT_COMMIT_VALIDATION
+    human_visual_review_status: PRIOR_SCIENTIFIC_LAYOUT_PASSED_FINAL_REVISION_PENDING
+    evidence_limitations: >-
+      The preceding exact-source CPU and both compatibility jobs passed.
+      Main CI reached the fixed60-minute bound during a duplicate independent
+      validation call, after strict site privacy, links and capacity passed.
+      Equivalent local HTML/text/basf2 and fresh regeneration all passed.
+      Builder options now include fresh regeneration and workflow checks in
+      its existing independent validator call; no check, permission boundary,
+      timeout or publication byte/work limit is removed or enlarged.
+      The default builder behavior is unchanged. Missing flags, wrong upload
+      output binding, Sphinx failure and validator failure all fail closed.
+      Metrics, evaluator source, checkpoints, cohorts and Phase70 jobs are
+      unchanged. Broad CPU and final exact-source publication proofs remain
+      required and are recorded in the task final manifest.
