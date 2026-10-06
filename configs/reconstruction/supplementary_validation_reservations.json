@@ -44,6 +44,30 @@
       },
       "requirement": "Exclude this immutable supplemental cohort from all future training, fitting, selection and adaptive reservations. Repeated arms/scopes use the same identities.",
       "sealed_test_accessed": false
+    },
+    {
+      "version": "phase71-objective-reservation-binding-v1",
+      "status": "RESERVED",
+      "role": "validation",
+      "cohort_manifest": {
+        "artifact_relative_path": "phase70_review_20261006/phase71/reservation.json",
+        "sha256": "d45b340d2cfc3e53ed180058233a29f3c1af3b41336358d6252a874ab0fc8be8"
+      },
+      "prior_exclusion_count": 85000,
+      "reserved_count": 13000,
+      "remaining_unreserved_count": 62000,
+      "primary_by_category": {
+        "ccbar": 2000,
+        "charged": 2000,
+        "ddbar": 2000,
+        "mixed": 2000,
+        "ssbar": 2000,
+        "uubar": 2000
+      },
+      "primary_count": 12000,
+      "selection_count": 1000,
+      "requirement": "Exclude every event_uid from future training, fitting, selection and adaptive reservations. The separate 12000-event primary cohort is shared across arms/scopes; reservation is not processed coverage.",
+      "sealed_test_accessed": false
     }
   ],
   "storage_contract": "Resolve artifact_relative_path under the configured external HyperTagging artifact root; authenticate SHA-256 before consuming UIDs. See docs/repository_storage.md."
