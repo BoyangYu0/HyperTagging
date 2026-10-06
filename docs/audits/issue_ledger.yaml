@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed deployment retirement, compact dashboard, category policy and CI deduplication; CPU suite and strict HTML regeneration validated.
+  - b8f612b3cd27ada79a2493c397ecca1022201026
   # Measured CI runtime repair retains every publication check in one post-build validator call.
   - 630be4726df32d8e25d2dff4b70ff93023c42198
   # Strict Sphinx underline width for additive Phase69 download section.
