@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Restore the empty Pages marker required by unchanged strict staging; no data or limit change.
+  - 2d744a31e775424e83fdb8c4143334b80a745260
   # Authenticated Phase71 reservation and accepted bounded scheduling; frozen47-test source remains unchanged.
   - d63e649d344428482d0895111b9048a6c889f86a
   - 06ae486f06234c8dcd28c9aa3b62a4f303496b71
