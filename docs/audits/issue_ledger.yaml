@@ -19,6 +19,7 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  - 9dbc57f2c51cab65d51ca5797b73e66c68340b3e  # Reviewed decoder publication-input location; privacy rules unchanged.
   # Reviewed authenticated Phase69 supplement:12000 collisions per arm, bounded aggregate exports and reserved-cohort binding; focused checks pass.
   - 11ad02a85a8ec248a858349eef26f5d3e401b6a6
   # Reviewed identity-only stratified reservation and resumable CPU evaluation; focused reservation checks pass.
