@@ -153,7 +153,9 @@ def generate(root,output):
     if len(identities)!=len(native['records']):raise ValueError('Duplicate native metric')
     if privacy._contains_private_fields(native) or privacy.redact(native_data.decode())!=native_data.decode():raise ValueError('Private native aggregate')
     (output/'phase70-native-aggregates.json').write_bytes(native_data)
-    (output/'phase70-native-integrity.json').write_bytes(canonical(native_binding))
+    native_decoder=(Path(__file__).parents[1]/'wiki/phase70_native_decoder.txt').read_bytes()
+    (output/'phase70-native-decoder.txt').write_bytes(native_decoder)
+    (output/'phase70-native-integrity.json').write_bytes(canonical({**native_binding,'decoder':{'filename':'phase70-native-decoder.txt','sha256':hashlib.sha256(native_decoder).hexdigest(),'bytes':len(native_decoder)}}))
     # Only compact review fields enter the dashboard status file; channels stay in the lossless download.
     return {'version':value['version'],'status':value['status'],'coverage':value['coverage'],
             'evaluator_revision':value['evaluator_revision'],'downloads':manifest['files'],
@@ -178,7 +180,7 @@ def render(record):
                 lines += [f'   * - {scope} {kind} {key}',f'     - {vals[0]}',f'     - {vals[1]}']
     lines += ['', 'The 60-collision width-two beam (10 per category) is diagnostic only. All native 100-event reports and 20-event proposal-beam evidence remain diagnostic and retain their original gates. Full and half views do not multiply sample size. See :doc:`../../phase70` for continuum, channel, uncertainty and study decisions.','',
               f':download:`Complete supplemental aggregates <{BUNDLE}>`; :download:`integrity <{INTEGRITY}>`; :download:`standalone decoder <{DECODER}>`.','',
-              ':download:`Complete native aggregate scalar records <phase70-native-aggregates.json>`; :download:`native integrity <phase70-native-integrity.json>`.','']
+              ':download:`Complete native aggregate scalar records <phase70-native-aggregates.json>`; :download:`native integrity <phase70-native-integrity.json>`; :download:`native scalar decoder <phase70-native-decoder.txt>`.','']
     for part in record['downloads']:
         if part['filename'].startswith('phase70-policy-part-'):
             lines += [f":download:`{part['filename']} <{part['filename']}>`.",'']

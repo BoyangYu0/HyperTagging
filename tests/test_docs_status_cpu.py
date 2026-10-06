@@ -34,6 +34,8 @@ def evidence(tmp_path, monkeypatch):
     monkeypatch.delenv("SOURCE_DATE_EPOCH", raising=False)
     monkeypatch.setattr(status, "_git", lambda *_args: None)
     documents = {
+        "reconstruction_phase70_review": {"reserved": True},
+        "reconstruction_phase70_policy": {"reserved": True},
         "reconstruction_phase68_review": {"reserved": True},
         "reconstruction_phase69_review": {"reserved": True},
         "reconstruction_phase69_efficiencies": {"reserved": True},
@@ -202,7 +204,7 @@ def test_status_is_deterministic_and_preserves_record_scope(evidence, tmp_path, 
     assert manifest["pretraining"]["selected_profile_state"] == "NONE_SELECTED"
     assert manifest["pretraining"]["submission_performed"] is False
     assert manifest["pretraining"]["pretraining_success_gate_passed"] is False
-    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 89
+    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 91
     assert manifest["provenance"]["external_filesystem_or_network_artifacts_opened"] is False
     assert source_info(manifest, "issue_ledger")["freshness"]["status"] == "stale"
     assert source_info(manifest, "current_status")["freshness"]["status"] == "unknown"
@@ -794,7 +796,7 @@ def test_phase48_all_tree_and_beam_publication(tmp_path):
     assert phase['metric_download']['metric_count'] == 15936
     retained = phase['retained_tree_checks']
     assert retained['metric_download']['metric_count'] == 19316
-    assert retained['tree_metric_scalar_rows'] == 8953020
+    assert retained['tree_metric_scalar_rows'] == 9153020
     assert sum(a['beam_candidate_count'] for a in retained['arms'].values()) == 92
     assert manifest['reconstruction']['phase47']['next_study_status'] == 'COMPLETED'
     page = (tmp_path/'phase48-status/index.rst').read_text()

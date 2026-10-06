@@ -47,21 +47,35 @@ The complete metric contract is maintained in
 ``docs/full_decay_reconstruction_evaluation.md`` and the implementation in
 :py:mod:`hypertagging.evaluation.tag_efficiency`.
 
-Latest measured efficiencies: Phase69
+Complete final evaluation policy
+--------------------------------
+
+Every model or arm needs at least **2,000 distinct processed collision events
+in each of charged, mixed, ccbar, uubar, ddbar and ssbar**: at least12,000 per
+arm, using the same immutable category-stratified cohort across arms and scopes.
+These are collision counts, not pooled categories, candidates, B trials or
+planned reservations. Fresh deterministic ledger reservations must be disjoint
+from training, fitting, checkpoint selection and prior adaptive reservations.
+Capacity shortages must be reported; never duplicate events, lower the quota,
+condition on easy truth, or open sealed test data. Smaller native, beam, oracle
+and auxiliary samples remain visibly diagnostic with their actual category counts.
+Nominal unavailable-truth trials and failed-event accounting are retained.
+
+Latest measured efficiencies: Phase70
 -------------------------------------
 
-The :doc:`Phase69 supplementary evaluation <phase69_policy>` is the current
+The :doc:`Phase70 decoder evaluation <phase70>` is the current
 complete greedy evaluation: 2,000 processed collisions in each of six source
 categories, 12,000 per arm and scope. Its 4,000 charged/mixed B-pair collisions
 supply 8,000 nominal B trials and 4,000 event trials. Continuum supplies the
 remaining 8,000 collisions and has separate fake-B and component metrics.
 
 In both full and half scope, exact retained tagging is **0/8,000** for both
-arms. Inclusive grouping is **0/8,000** for refined and **1/8,000 (0.0125%)**
-for pre-refinement; event-any recovery is respectively **0/4,000** and
-**1/4,000 (0.025%)**. Neither arm recovers both Bs in one event. Sixteen exact
-truth trials and one inclusive membership trial remain unavailable, included
-in the nominal denominators. Full and half views reuse the same collisions.
+arms. Inclusive grouping is **0/8,000** with bias enabled and **1/8,000 (0.0125%)**
+with bias disabled; event-any recovery is respectively **0/4,000** and
+**1/4,000 (0.025%)**. Neither arm recovers both Bs in one event. Twenty-four exact
+truth trials remain unavailable within the nominal denominators; inclusive
+membership is available for all8,000 B trials. Full and half views reuse the same collisions.
 
 The 60-event-per-arm beam is diagnostic: ten collisions per category, with
 0/40 exact and inclusive B successes in each arm/scope for top1 and retained

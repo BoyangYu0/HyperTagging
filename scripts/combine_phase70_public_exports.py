@@ -40,6 +40,7 @@ def main():
     module.validate(result)
     result.update(values)
     result['complete_export_cardinality'] = bindings
+    result = module.sibling('wiki_phase69').public_pid_labels(result)
     module.validate(result)
     privacy = module.sibling('wiki_privacy')
     data = module.canonical(result)

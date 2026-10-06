@@ -12,6 +12,8 @@ Dated reports and complete downloads are retained as evidence:
 .. toctree::
    :maxdepth: 1
 
+   phase69_policy
+   phase69
    phase68
    phase67
    phase66

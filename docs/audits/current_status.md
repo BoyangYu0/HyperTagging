@@ -1,5 +1,41 @@
 # Current repository audit status
 
+## Phase70 complete category-policy review — 2026-10-06
+
+Both original training jobs and all14 native views/26 checkpoints authenticate.
+The separately versioned supplement processes exactly2,000 distinct collisions
+per required category,12,000 per frozen arm in full and half scope, without
+execution failures. Native100-event/20-beam and supplemental60-event beam
+results remain diagnostics. The source-safe validation expansion resolves four
+category shortages without training growth, fitting on validation or sealed-test
+access. Every original training payload and train normalizer is preserved.
+
+Exact retained B tagging is0/8,000 in both arms/scopes; inclusive grouping is
+0/8,000 enabled versus1/8,000 disabled. All24 unavailable exact-truth trials
+remain nominal; inclusive membership is complete. Disabled bias improves exact
+nontrivial components315/18,445 to522/18,445 but lowers retained LCAG3,559/729,425
+to3,306/729,425 and nontrivial recall. Pooled continuum fake-B events rise499/8,000
+to608/8,000. No joint efficiency winner or physical FEI claim is supported.
+All source-conflict and failed daughter-sum-closure counters are zero.
+
+[Complete review, uncertainty, all-study synthesis and downloads](../wiki/phase70.rst).
+Exports retain11,711,302 native and63,089 checkpoint scalar records,178,049 native
+public values, all additive/native candidates, and complete supplemental reports.
+The bounded lossless public supplement contains1,743,071 numeric records with
+integrity/cardinality manifests. Historical downloads remain preserved.
+
+End the bias family. Hold70,000 training events for one Phase71 auxiliary teacher
+objective contrast0.5 versus1.0 at fixed mixed contexts and enabled-bias reference.
+This prioritizes a task-objective test; neither pretraining superiority nor a
+training-data scaling effect is established. The next12000 primary and1000
+selection events are freshly reserved; reservation is not processed coverage.
+Minimal shared cardinality repair admits four newly exposed validation targets.
+No scientific model promotion, sealed test or automatic successor is authorized.
+
+Publication uses exact branch CPU/docs checks, guarded master promotion and live
+Pages/download verification. Recorded scheduler states are snapshots, not live
+status or scientific validation.
+
 ## Phase69 supplementary category-policy evaluation — 2026-10-06
 
 Both frozen step4000 arms processed the same 12,000 distinct validation collisions
