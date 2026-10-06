@@ -1,5 +1,11 @@
 # Current repository audit status
 
+## Phase69 additive tagging evaluation — 2026-10-06
+
+Additive CPU evaluation covers both arms, all 14 registered reports and all 131 retained beam candidates in full/B-half scope. Original counts, categories and gates are preserved; current frozen-source/additive predictions and metrics agree exactly. Small archived kinematic and beam-score roundoff is recorded separately. The strict cohort has 16 B-pair collisions and 32 nominal B trials. Exact retained B tagging and inclusive FSP grouping have zero successes in every registered view and pool. These retained proxies are not physical FEI efficiencies. Sparse zero-success bootstrap intervals do not prove zero population efficiency. Prioritize independent validation precision separately from training-size growth; the already accepted Phase70 decoder study and frozen source remain unchanged. No extra training or reservation was made.
+
+[Complete review and downloads](../wiki/phase69.rst).
+
 ## Phase69 completed hybrid encoder confirmation — 2026-10-05
 
 [The complete review](../phase69_closeout_20261005.md) authenticates both native

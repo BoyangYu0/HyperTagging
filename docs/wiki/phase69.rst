@@ -276,7 +276,7 @@ Complete exports
 
 Every native JSON and JSONL scalar record is exported privately: 12,432,918 records plus 18,218 available checkpoint metadata scalars, for **12,451,136 total**. The closeout projection contains 153,634 rows. Public downloads preserve **165,915 aggregate values** across seven report views, training-history summaries and saved-checkpoint metrics. Full and B-half topology, LCAG, source, PID, p4 closure, constraints, target shape, category, confidence and search populations retain their counts and denominators. Null, false and zero remain distinct.
 
-The complete public bundle uses the established lossless dotted-name segment dictionary. Decode each metric name by joining its indexed segments with dots; each record indexes view, arm and metric followed by the original typed scalar. Individual views retain readable names. Bundle and per-view hashes, byte counts and cardinalities are in the download manifest. The private tar bundle includes every native report and retained candidate, metadata exports and a member integrity manifest. Private event identities, host paths, checkpoint contents and native logs are excluded from public pages. All historical downloads remain available.
+The original native public bundle uses the established lossless dotted-name segment dictionary. Decode each metric name by joining its indexed segments with dots; each record indexes view, arm and metric followed by the original typed scalar. Individual views retain readable names. Bundle and per-view hashes, byte counts and cardinalities are in the download manifest. The private tar bundle includes every native report and retained candidate, metadata exports and a member integrity manifest. Private event identities, host paths, checkpoint contents and native logs are excluded from public pages. All historical downloads remain available.
 
 
 Cumulative evidence and allocation
@@ -359,3 +359,279 @@ Scheduling snapshot
 -------------------
 
 The two Phase70 tasks were accepted and released from frozen source fc05d79ea4fef264cf8cd5718bde420504170590. The 2026-10-05 21:56 CEST snapshot verifies both PENDING for Priority with exact contract, resource and no-requeue bindings. GPU startup is not yet verified. Scheduler acceptance is not scientific success.
+
+Additive exact tagging and inclusive FSP grouping evaluation
+------------------------------------------------------------
+
+This separately versioned evaluation extends the original Phase69 review. It
+uses the original immutable checkpoints and strict/beam cohorts, with no
+training, new selection, retuning or replacement of preregistered gates. The
+native and additive evaluators are rerun on CPU with the original deterministic
+settings. Inference tensor fingerprints and every scientific report field agree
+exactly between these two evaluators. Archived counts and categorical outcomes
+are checked separately; small floating-point differences in kinematic diagnostics and beam scores are recorded, and archived values remain unchanged in the original
+bundle. The original reports did not save prediction trees, so historical tensor
+identity cannot be established directly from those reports.
+
+Exact retained B tagging requires the retained recursive source/topology/PID
+signature. Inclusive FSP grouping requires exact source membership of an actual,
+valid reconstructed composite and ignores PID and internal topology. Neither is
+a physical FEI efficiency. A single FSP is not a reconstructed group; no unions,
+partitions or truth-defined cuts are invented. Every accepted B candidate is
+examined for recovery, while nominal acceptance slots follow the evaluator's
+separate two-slot policy.
+
+Generic B-pair collisions retain two nominal trials. Unknown or incomplete truth
+stays in the denominator and is reported separately; proven successes then give
+a lower bound. Any-B, both-B and coherent-pair event counts are distinct. Pools
+deduplicate each truth B across candidates; successes in incompatible hypotheses
+do not establish a coherent pair. Greedy, each model-ranked top1, individual
+retained candidate ranks and oracle pool@K remain separate. Candidate-rank tables
+use only collisions where that rank exists. Full and B-half views are alternative
+evaluations of the same collisions and must not be pooled as independent data.
+The tagging definitions remain exact retained/source-based in the contracted
+diagnostic report; its contraction label applies to the original legacy metrics.
+
+Continuum tables use explicit retained truth components, never invented quark
+hemispheres. They report inclusive and exact component recovery and false B-slot
+and event acceptance. Original-quark reconstruction efficiency is unavailable
+without the required ancestry. Other or unknown source categories remain
+explicit in the aggregate tables.
+
+The downloadable channel tables retain zero-success channels, stored channel
+identifiers, retained signed PID descriptions, known failures, unknown trials and
+coverage. They do not supply unavailable full-generator decay descriptions.
+Uncertainty resamples whole collisions, pairing the arms on the same collision
+indices and keeping both B trials together. Percentile intervals are exploratory,
+not simultaneous channel claims. A degenerate zero bootstrap interval does not
+prove an underlying efficiency is zero; sparse channel tables are descriptive.
+
+Registered efficiency results
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+All comparisons below list refined then pre-refinement encoder. These are additive retained-truth diagnostics, not replacement primary gates.
+
+.. list-table::
+   :header-rows: 1
+   :widths: auto
+
+   * - Scope and metric
+     - Correct B trials
+     - Any-B events
+     - Both-B events
+     - Coherent pairs
+     - Unknown B trials
+   * - full; Exact retained B
+     - 0/32 versus 0/32
+     - 0/16 versus 0/16
+     - 0/16 versus 0/16
+     - 0/16 versus 0/16
+     - 0 versus 0
+   * - full; Inclusive FSP grouping
+     - 0/32 versus 0/32
+     - 0/16 versus 0/16
+     - 0/16 versus 0/16
+     - 0/16 versus 0/16
+     - 0 versus 0
+   * - half; Exact retained B
+     - 0/32 versus 0/32
+     - 0/16 versus 0/16
+     - 0/16 versus 0/16
+     - 0/16 versus 0/16
+     - 0 versus 0
+   * - half; Inclusive FSP grouping
+     - 0/32 versus 0/32
+     - 0/16 versus 0/16
+     - 0/16 versus 0/16
+     - 0/16 versus 0/16
+     - 0 versus 0
+
+The unchanged 100-collision strict cohort contains 16 B-pair collisions (32 nominal B trials), 66 continuum collisions and 18 other/unknown-category collisions. Acceptance accounting retains 200 nominal slots over all 100 collisions. The two B trials are not independent observations. Repeated views, arms and the nested 20-collision beam subset are not additional independent validation events.
+
+Channel coverage retains all evaluated channels, including zero successes and unknown truth. The full signed descriptions and per-channel counts are in the complete download.
+
+.. list-table::
+   :header-rows: 1
+   :widths: auto
+
+   * - Scope, arm, definition
+     - Channels
+     - Covered top1
+     - B trials
+     - Unknown trials
+   * - full; refined encoder; exact
+     - 32
+     - 0
+     - 32
+     - 0
+   * - full; refined encoder; inclusive
+     - 32
+     - 0
+     - 32
+     - 0
+   * - full; pre refinement encoder; exact
+     - 32
+     - 0
+     - 32
+     - 0
+   * - full; pre refinement encoder; inclusive
+     - 32
+     - 0
+     - 32
+     - 0
+   * - half; refined encoder; exact
+     - 32
+     - 0
+     - 32
+     - 0
+   * - half; refined encoder; inclusive
+     - 32
+     - 0
+     - 32
+     - 0
+   * - half; pre refinement encoder; exact
+     - 32
+     - 0
+     - 32
+     - 0
+   * - half; pre refinement encoder; inclusive
+     - 32
+     - 0
+     - 32
+     - 0
+
+Continuum recovery and fake-B acceptance use their own component, slot and collision denominators.
+
+.. list-table::
+   :header-rows: 1
+   :widths: auto
+
+   * - Scope/type
+     - Collisions
+     - Exact components
+     - Inclusive components
+     - Fake B slots
+     - Fake B events
+   * - full; ccbar
+     - 23
+     - 1/85 versus 0/85
+     - 3/85 versus 4/85
+     - 1/46 versus 2/46
+     - 1/23 versus 2/23
+   * - full; ddbar
+     - 8
+     - 0/19 versus 2/19
+     - 4/19 versus 4/19
+     - 0/16 versus 1/16
+     - 0/8 versus 1/8
+   * - full; ssbar
+     - 9
+     - 0/22 versus 0/22
+     - 1/22 versus 1/22
+     - 2/18 versus 2/18
+     - 2/9 versus 2/9
+   * - full; uubar
+     - 26
+     - 1/65 versus 2/65
+     - 6/65 versus 6/65
+     - 0/52 versus 1/52
+     - 0/26 versus 1/26
+   * - half; ccbar
+     - 23
+     - 1/85 versus 0/85
+     - 3/85 versus 4/85
+     - 1/46 versus 2/46
+     - 1/23 versus 2/23
+   * - half; ddbar
+     - 8
+     - 0/19 versus 2/19
+     - 4/19 versus 4/19
+     - 0/16 versus 1/16
+     - 0/8 versus 1/8
+   * - half; ssbar
+     - 9
+     - 0/22 versus 0/22
+     - 1/22 versus 1/22
+     - 2/18 versus 2/18
+     - 2/9 versus 2/9
+   * - half; uubar
+     - 26
+     - 1/65 versus 2/65
+     - 6/65 versus 6/65
+     - 0/52 versus 1/52
+     - 0/26 versus 1/26
+
+The registered search is the bounded proposal-beam diagnostic, with requested pool K=4 and actual pool sizes retained in the export. Oracle recovery is not deployable top1.
+
+.. list-table::
+   :header-rows: 1
+   :widths: auto
+
+   * - Proposal pool@4
+     - Correct B trials
+     - Any-B events
+     - Both-B events
+     - Coherent pairs
+   * - full; exact
+     - 0/16 versus 0/16
+     - 0/8 versus 0/8
+     - 0/8 versus 0/8
+     - 0/8 versus 0/8
+   * - full; inclusive
+     - 0/16 versus 0/16
+     - 0/8 versus 0/8
+     - 0/8 versus 0/8
+     - 0/8 versus 0/8
+   * - half; exact
+     - 0/16 versus 0/16
+     - 0/8 versus 0/8
+     - 0/8 versus 0/8
+     - 0/8 versus 0/8
+   * - half; inclusive
+     - 0/16 versus 0/16
+     - 0/8 versus 0/8
+     - 0/8 versus 0/8
+     - 0/8 versus 0/8
+
+No registered report, model-ranked top1 or retained pool has an exact retained B-tag or inclusive B-grouping success. All four model-only ranking rules and every individual retained candidate remain available separately in the bundle. This does not establish zero population efficiency.
+
+Primary full-view paired differences are pre-refinement minus refined, in percentage points. Full and half results are not independent replicates.
+
+.. list-table::
+   :header-rows: 1
+   :widths: auto
+
+   * - Endpoint
+     - Difference (pp)
+     - Paired percentile 95% interval (pp)
+   * - Exact retained continuum components
+     - 1.047
+     - [-1.005, 3.244]
+   * - Inclusive continuum membership
+     - 0.524
+     - [0.000, 1.676]
+   * - Continuum fake-B event acceptance
+     - 4.545
+     - [-4.348, 13.515]
+
+The collision bootstrap uses 10,000 paired resamples at seed 20261006. Zero-success endpoints have degenerate percentile intervals; these are an observed-sample property, not evidence of precise zero population efficiency. Independent validation expansion would improve precision for rare tagging outcomes. It is distinct from increasing the training set and does not change the original cohort reservations or the already submitted Phase70 campaign.
+
+Complete coverage comprises 14 registered reports, 2480 event-scope records and 262 retained-candidate scope records. The additive evaluator revision is ``a7658a1722c002c92486d4750d5fd0a5ff7f6445``. The original 165,915 aggregate metric records remain byte-preserved; the extension contains 127,974 public numeric/null/bool records, including counts, availability, lineage metadata and uncertainty.
+
+Downloads and lossless decoding
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* :download:`Complete Phase69 v3 bundle, including all original aggregate metrics and the additive efficiencies <_generated/status/phase69-complete-aggregate-metrics-v3.json>`
+* :download:`Additive counts, hashes and integrity manifest <_generated/status/phase69-efficiencies-integrity.json>`
+* :download:`Standalone Python decoder <_generated/status/phase69-efficiencies-decoder.txt>`
+
+Run the decoder with the downloaded bundle filename and a new output filename.
+It verifies the native-bundle and decoded-efficiency hashes and writes the
+additive efficiencies as ordinary nested JSON. The
+``native_aggregate_bundle`` retains the unchanged v2 segment dictionary and all
+explicit native records. ``additive_efficiencies`` uses ``typed-json-dag-v1``:
+nodes are typed JSON values, dictionaries and lists reference only earlier nodes,
+and ``root`` identifies the decoded object. Sharing repeated channel tables is
+lossless; scalar types, nulls, array order and every count are preserved and
+crosschecked. Historical individual views and the original complete bundle remain
+available above.

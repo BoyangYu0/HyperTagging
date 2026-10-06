@@ -218,7 +218,13 @@ def generate(root, output, summary):
         + "\n"
     ).encode()
     (output / "phase69-review-metrics.json").write_bytes(data)
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("wiki_phase69_efficiencies", Path(__file__).with_name("wiki_phase69_efficiencies.py"))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    efficiencies = module.generate(root, output, bundle)
     return {
+        "efficiencies": efficiencies,
         "status": public["status"],
         "complete_aggregate_bundle": bundle_binding,
         "metric_count": sum(x["metric_count"] for x in downloads),
@@ -241,9 +247,13 @@ def render(record):
         "Refined versus pre-refinement encoder: full LCAG 24/3561 versus 25/3561; exact nontrivial components 5/159 versus 6/159. Refined has one shallow and one mother-free primary forest; pre-refinement has none. Only pre-refinement passes every original gate. No exact component is deeper than one generation.",
         "The full-source recall signal is not confirmed; paired LCAG spans zero. Shared refined PID and normalization make this a hybrid contrast, not all pretraining versus none. End this family. Hold 70,000 for one Phase70 decoder relation-bias ablation; no model promotion.",
         "",
+        "Additive exact tagging and inclusive FSP grouping evaluation is included for both arms, all registered full/B-half views and every retained beam candidate. Primary exact B tags and inclusive B groups are both 0/32 in each arm; all registered pools also have zero successes. The 16 B-pair collisions give limited precision. Original gates and downloads are preserved. See the review for counts, unknowns and collision-resampled uncertainty.",
+        "",
+        ":download:`Complete Phase69 bundle including tagging efficiencies <phase69-complete-aggregate-metrics-v3.json>`; :download:`additive integrity manifest <phase69-efficiencies-integrity.json>`; :download:`standalone decoder <phase69-efficiencies-decoder.txt>`.",
+        "",
         "See :doc:`../../phase69` for geometry, the cumulative evidence, uncertainty and next-study gates.",
         "",
-        ":download:`Complete Phase69 aggregate metric bundle <phase69-all-aggregate-metrics.json>`; :download:`review, uncertainty and download manifest <phase69-review-metrics.json>`.",
+        ":download:`Original Phase69 native aggregate bundle (v2) <phase69-all-aggregate-metrics.json>`; :download:`review, uncertainty and download manifest <phase69-review-metrics.json>`.",
         "",
         "All registered native full/B-half views, saved-checkpoint metrics, model-only rankings and labelled oracle diagnostics retain their denominators. Unavailable physical momentum resolution is distinct from daughter-sum closure.",
         "",

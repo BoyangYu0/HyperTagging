@@ -1,0 +1,16 @@
+{
+  "version": "phase69-additive-tag-efficiencies-v1",
+  "bytes": 5102032,
+  "sha256": "d91c11b35e5e0545056530b65ca8486363b276f69b89d93c79d9dee1e7042748",
+  "counts": {
+    "additive_native_scalar_records": 12052353,
+    "event_scope_records": 2480,
+    "public_numeric_records": 127974,
+    "registered_reports": 14,
+    "retained_candidate_scope_records": 262,
+    "tagging_scalar_records_including_all_summaries_and_candidates": 361436
+  },
+  "evaluator_revision": "a7658a1722c002c92486d4750d5fd0a5ff7f6445",
+  "exporter_sha256": "c7723e7af023a7a5103239382d882ded97f29733818724bf42e450e4aec2796b",
+  "status_date": "2026-10-06"
+}

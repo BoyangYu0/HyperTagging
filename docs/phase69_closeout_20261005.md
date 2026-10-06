@@ -108,7 +108,7 @@ No beam-subset candidate has a coherent forest or deep exact component. Greedy r
 
 Every native JSON and JSONL scalar record is exported privately: 12,432,918 records plus 18,218 available checkpoint metadata scalars, for **12,451,136 total**. The closeout projection contains 153,634 rows. Public downloads preserve **165,915 aggregate values** across seven report views, training-history summaries and saved-checkpoint metrics. Full and B-half topology, LCAG, source, PID, p4 closure, constraints, target shape, category, confidence and search populations retain their counts and denominators. Null, false and zero remain distinct.
 
-The complete public bundle uses the established lossless dotted-name segment dictionary. Decode each metric name by joining its indexed segments with dots; each record indexes view, arm and metric followed by the original typed scalar. Individual views retain readable names. Bundle and per-view hashes, byte counts and cardinalities are in the download manifest. The private tar bundle includes every native report and retained candidate, metadata exports and a member integrity manifest. Private event identities, host paths, checkpoint contents and native logs are excluded from public pages. All historical downloads remain available.
+The original native public bundle uses the established lossless dotted-name segment dictionary. Decode each metric name by joining its indexed segments with dots; each record indexes view, arm and metric followed by the original typed scalar. Individual views retain readable names. Bundle and per-view hashes, byte counts and cardinalities are in the download manifest. The private tar bundle includes every native report and retained candidate, metadata exports and a member integrity manifest. Private event identities, host paths, checkpoint contents and native logs are excluded from public pages. All historical downloads remain available.
 
 ## Cumulative evidence and allocation
 
@@ -153,3 +153,10 @@ Exactly two guarded tasks request one H100 NVL, eight CPUs, 64 GiB and 36 hours 
 Native scientific validation passes. Focused and broad CPU checks, all documentation layouts, audit, privacy, export integrity, preserved historical links, desktop and narrow browser checks, exact branch and master CI, and actual live downloads are recorded in the task final manifest. GitHub Pages remains the publication host. The measured Phase68 capacity repair and v2 decoder are preserved; new growth must fit the existing 16 MiB planning envelope and unchanged hard byte, file, work and runtime limits.
 
 The two Phase70 tasks were accepted and released from frozen source fc05d79ea4fef264cf8cd5718bde420504170590. The 2026-10-05 21:56 CEST snapshot verifies both PENDING for Priority with exact contract, resource and no-requeue bindings. GPU startup is not yet verified. Scheduler acceptance is not scientific success.
+
+
+## Additive Phase69 tagging evaluation — 2026-10-06
+
+Additive CPU evaluation covers both arms, all 14 registered reports and all 131 retained beam candidates in full/B-half scope. Original counts, categories and gates are preserved; current frozen-source/additive predictions and metrics agree exactly. Small archived kinematic and beam-score roundoff is recorded separately. The strict cohort has 16 B-pair collisions and 32 nominal B trials. Exact retained B tagging and inclusive FSP grouping have zero successes in every registered view and pool. These retained proxies are not physical FEI efficiencies. Sparse zero-success bootstrap intervals do not prove zero population efficiency. Prioritize independent validation precision separately from training-size growth; the already accepted Phase70 decoder study and frozen source remain unchanged. No extra training or reservation was made.
+
+[Full counts, channel tables, uncertainty and complete bundle](wiki/phase69.rst).
