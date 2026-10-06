@@ -644,3 +644,9 @@ The bounded scheduling contract permits exactly two one-H100-NVL tasks, each
 with8 CPU cores,64GiB and a36-hour ceiling, no requeue. Future primary evaluation
 is bounded to50 CPU tasks (48 primary chunks and two diagnostic beams), at most
 16 concurrent, one CPU/16GiB/four hours each. There is no subsequent campaign.
+
+Both tasks were accepted and released from frozen source
+``1545d8ee80f26bc291498ae8718cb6e4a984f0bb``. The 2026-10-06 18:46 CEST
+snapshot verifies both pending for scheduler priority, with contract hashes,
+resources and no-requeue authenticated. GPU startup is not yet verified.
+Scheduler acceptance is not scientific success.

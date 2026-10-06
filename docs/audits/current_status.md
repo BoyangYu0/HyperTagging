@@ -1100,3 +1100,9 @@ claims. This update does not expand the historical scientific verification scope
 The two bounded Phase69 tasks were accepted and released from source 54cc4c89af8c0792e09d25f5c64a664660d74b96. The 2026-10-05 08:45 Asia/Shanghai snapshot verifies both PENDING (Priority), with exact contract/resource/no-requeue bindings. GPU startup is not yet verified. Acceptance is not scientific success.
 
 The two Phase70 tasks were accepted and released from frozen source fc05d79ea4fef264cf8cd5718bde420504170590. The 2026-10-05 21:56 CEST snapshot verifies both PENDING for Priority with exact contract, resource and no-requeue bindings. GPU startup is not yet verified. Scheduler acceptance is not scientific success.
+
+Both tasks were accepted and released from frozen source
+`1545d8ee80f26bc291498ae8718cb6e4a984f0bb`. The 2026-10-06 18:46 CEST
+snapshot verifies both pending for scheduler priority, with contract hashes,
+resources and no-requeue authenticated. GPU startup is not yet verified.
+Scheduler acceptance is not scientific success.
