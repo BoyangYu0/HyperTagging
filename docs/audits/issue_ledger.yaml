@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Native beam and fixed geometry diagnostic category counts authenticated against original reports and index markers.
+  - df15cd07d98c0d0e050606b4e69daa416845c867
   # Warning-fatal Sphinx found two short section underlines; prose and scientific exports unchanged.
   - 473ceaded9c2197fc1607b3b761a85203b3a61bb
   # Restore the empty Pages marker required by unchanged strict staging; no data or limit change.
