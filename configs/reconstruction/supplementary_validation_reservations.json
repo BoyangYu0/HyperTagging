@@ -22,6 +22,28 @@
       },
       "requirement": "Future adaptive study cohort builders must include this supplementary reservation in their exclusion union; never select from this cohort for training, normalization or checkpoint selection.",
       "sealed_test_accessed": false
+    },
+    {
+      "version": "phase70-policy-reservation-binding-v1",
+      "status": "RESERVED",
+      "role": "validation",
+      "cohort_manifest": {
+        "artifact_relative_path": "phase70_review_20261006/supplemental-v1/cohort.json",
+        "sha256": "aab762084fde8e2b8b22a3f3f4932224d0e8d9a5bae8ebb05580f7696a1aa35c"
+      },
+      "prior_exclusion_count": 73000,
+      "reserved_count": 12000,
+      "remaining_unreserved_count": 75000,
+      "by_category": {
+        "ccbar": 2000,
+        "charged": 2000,
+        "ddbar": 2000,
+        "mixed": 2000,
+        "ssbar": 2000,
+        "uubar": 2000
+      },
+      "requirement": "Exclude this immutable supplemental cohort from all future training, fitting, selection and adaptive reservations. Repeated arms/scopes use the same identities.",
+      "sealed_test_accessed": false
     }
   ],
   "storage_contract": "Resolve artifact_relative_path under the configured external HyperTagging artifact root; authenticate SHA-256 before consuming UIDs. See docs/repository_storage.md."
