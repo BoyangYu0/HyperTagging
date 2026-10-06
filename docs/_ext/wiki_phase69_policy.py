@@ -126,7 +126,7 @@ def generate(root,output):
     decoded=canonical(value).decode()
     if privacy._contains_private_fields(value) or privacy.redact(decoded)!=decoded:
         raise ValueError('Private policy aggregate fields')
-    decoder=(Path(__file__).with_name('phase69_policy_decoder.txt')).read_bytes()
+    decoder=(Path(__file__).parents[1]/'wiki/phase69_policy_decoder.txt').read_bytes()
     main={'version':'phase69-policy-aggregate-download-v1','encoding':'typed-json-dag-parts-v1',
           'root':binding['root'],'nodes':binding['nodes'],'decoded_sha256':binding['decoded_sha256'],
           'parts':[{k:v for k,v in part.items() if k!='source'} for part in binding['parts']]}
