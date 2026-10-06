@@ -63,6 +63,12 @@ def event_ratios(event):
             rows=metric.get('rows',[metric])
             for name in ('lcag_pair_accuracy','perfectLCAG','source_precision','source_recall'):
                 values[f'{scope}/{pop}/{name}'] = [sum(x[name+'_numerator'] for x in rows),sum(x[name+'_denominator'] for x in rows)]
+        retained=record['retained_tree_metrics']
+        for name in ('source_precision','source_recall','perfectLCAG'):
+            rows=[row for row in retained['rows'] if row['truth_leaf_count']>=2 and row['truth_mother_count']>0]
+            values[f'{scope}/nontrivial_retained/{name}']=[sum(row[name+'_numerator'] for row in rows),sum(row[name+'_denominator'] for row in rows)]
+        forest=retained['coherent_retained_forest']
+        values[f'{scope}/retained/coherent_forest']=[forest['numerator'],forest['denominator']]
         tag=record['tag_efficiency']['greedy']
         for pop,metrics in [('exact_tag',tag),('inclusive_group',tag['inclusive_fsp_grouping'])]:
             for name in ('per_b_correct','event_any_correct','event_both_correct'):
@@ -130,7 +136,7 @@ def aggregate(out):
         seen=set();counts={cat:{scope:{'requested':2000,'unique_attempted':0,'processed':0,'failed':0,
                                     'invalid_rollout':0,'truth_unavailable':0,'retained_tree_truth_unavailable':0,'exact_tag_truth_unavailable_events':0,
                                     'inclusive_membership_unavailable_events':0} for scope in ('full','half')} for cat in CATEGORIES}
-        points[arm]={};sources=[];beam=None
+        points[arm]={};sources=[];beam=None;shapes=Counter();forests=Counter()
         for i,task in enumerate(plan['tasks']):
             if task['arm']!=arm:continue
             folder=out/'tasks'/f'{i:03d}';receipt=load(folder/'receipt.json')
@@ -202,6 +208,12 @@ def aggregate(out):
                     count['invalid_rollout']+=int(not record['inference']['rollout_event_valid'])
                     count['truth_unavailable']+=int(not record['metrics']['available'])
                     count['retained_tree_truth_unavailable']+=int(not record['retained_tree_metrics']['available'])
+                    tree=record['retained_tree_metrics']
+                    for row in tree['rows']:
+                        if row['perfectLCAG_numerator']:
+                            shapes[(scope,cat,row['truth_leaf_count'],row['truth_mother_count'],row['truth_retained_depth'])]+=1
+                    if tree['coherent_retained_forest']['numerator']:
+                        forests[(scope,cat,max((r['truth_retained_depth'] for r in tree['rows']),default=0),sum(r['truth_mother_count'] for r in tree['rows']))]+=1
                     tag=record['tag_efficiency']['greedy'];tags[f'{scope}/greedy'].append(tag)
                     count['exact_tag_truth_unavailable_events']+=int(tag['top1'].get('b_reconstruction',{}).get('unknown_truth_trials',0)>0 or (tag.get('continuum') or {}).get('unknown_retained_component_count',0)>0)
                     count['inclusive_membership_unavailable_events']+=int(tag['inclusive_fsp_grouping']['top1'].get('b_reconstruction',{}).get('unknown_truth_trials',0)>0 or (tag['inclusive_fsp_grouping'].get('continuum') or {}).get('unknown_retained_component_count',0)>0)
@@ -217,7 +229,24 @@ def aggregate(out):
             'retained_tree_checks':merge_statistics(retained),
             'tag_efficiency':{'version':'tag-efficiency-study-v1','replaces_preregistered_metrics':False,
                               'summaries':{key:summarize_tag_efficiency_events(rows) for key,rows in tags.items()}}},
-            'beam_diagnostic':beam}
+            'beam_diagnostic':beam,
+            'exact_component_shapes':[{'scope':s,'category':c,'leaves':l,'mothers':m,'depth':d,'count':n} for (s,c,l,m,d),n in sorted(shapes.items())],
+            'coherent_forest_shapes':[{'scope':s,'category':c,'maximum_depth':d,'mothers':m,'count':n} for (s,c,d,m),n in sorted(forests.items())]}
+        from scipy.stats import beta
+        bounds={}
+        for key,rows in tags.items():
+            for category in ('charged','mixed'):
+                selected=[r for r in rows if r['source_category']==category]
+                for kind in ('exact','inclusive'):
+                    family=[r if kind=='exact' else r['inclusive_fsp_grouping'] for r in selected]
+                    success=sum(r['top1']['b_reconstruction']['event_any_correct']['numerator'] for r in family)
+                    trials=sum(r['top1']['b_reconstruction']['event_any_correct']['denominator'] for r in family)
+                    bounds[key+'/'+category+'/'+kind]={'successes':success,'collision_trials':trials,
+                      'one_sided_95_upper':float(beta.ppf(.95,success+1,trials-success)) if success<trials else 1.,
+                      'lower_95_two_sided':float(beta.ppf(.025,success,trials-success+1)) if success else 0.,
+                      'upper_95_two_sided':float(beta.ppf(.975,success+1,trials-success)) if success<trials else 1.}
+        public['arms'][arm]['sparse_event_uncertainty']={'method':'Clopper-Pearson per-category collision event-any proven-success; two Bs stay clustered; conditional iid collisions within source category, not source-domain uncertainty or simultaneous intervals; unavailable truth limits identification of full-truth efficiency','bounds':bounds}
+
         public['source_hashes']+=sources
         atomic_json(out/f'{arm}-aggregate.json',public['arms'][arm])
     for cat in CATEGORIES:

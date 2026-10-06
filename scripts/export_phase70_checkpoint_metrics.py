@@ -31,10 +31,18 @@ def main():
                 for name,state in cp.items():
                     if name.endswith('state_dict') and isinstance(state,dict):
                         assert all(torch.isfinite(t).all() for t in state.values() if isinstance(t,torch.Tensor))
-                # Every available JSON-like scalar in checkpoint metadata, excluding
-                # numerical tensors, optimizer state, and random generator arrays.
-                metadata={k:v for k,v in cp.items() if not k.endswith('state_dict') and k not in ('optimizer','optimizer_state','rng_state','rng_states','scaler','scheduler')}
-                rows=list(leaves(metadata))
+                # Retain every JSON-like numeric/bool/null scalar, including
+                # optimizer/scheduler/scaler settings and counters. Numerical
+                # tensors and generator arrays are bound by checkpoint hashes.
+                def checkpoint_leaves(value, prefix=""):
+                    if isinstance(value,dict):
+                        for key,item in sorted(value.items(),key=lambda item:str(item[0])):
+                            yield from checkpoint_leaves(item,f"{prefix}.{key}" if prefix else str(key))
+                    elif isinstance(value,(list,tuple)):
+                        for i,item in enumerate(value):yield from checkpoint_leaves(item,f"{prefix}.{i}")
+                    elif value is None or type(value) in (bool,int,float):
+                        yield {"metric":prefix,"value":value}
+                rows=list(checkpoint_leaves(cp))
                 for row in rows:
                     out.write(json.dumps({'arm':arm,'checkpoint_track':path.name,**row},separators=(',',':'))+'\n')
                 count+=len(rows)

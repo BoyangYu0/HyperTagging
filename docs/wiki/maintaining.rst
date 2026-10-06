@@ -58,8 +58,9 @@ cancelled. Full documentation builds run weekly or by manual dispatch in
 in ``.github/workflows/full-notebook-smoke.yml`` on the same cadence.
 Run relevant local checks when changing documentation or notebooks. The full
 documentation workflow still checks HTML, text and basf2 layouts, privacy,
-links, source coverage and independent generation. It has read-only permissions
-and does not upload or deploy a website.
+links, source coverage and independent generation. The authorized Phase70 publication restores exact branch validation and a
+master-only Pages deployment after all layouts succeed. Build permissions stay
+read-only; only the guarded deployment job receives Pages write access.
 
 Metric download indexing
 ------------------------

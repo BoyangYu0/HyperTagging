@@ -1,0 +1,23 @@
+{
+  "version": "phase70-policy-handoff-integration-v1",
+  "patch_sha256": "ad6157a8f318f67b6d36ed7fba61aae1dc0596ee16fd302e5e56871f1026e5a7",
+  "original_source_revision": "8ac0cb71ef3452a00bdbc72bd1abea5a5b7e6d92",
+  "integrated_base": "0dca3e0e",
+  "all_exact_added_policy_lines_preserved": true,
+  "files": [
+    "AGENTS.md",
+    "docs/full_decay_reconstruction_evaluation.md",
+    "scripts/README.md"
+  ],
+  "required_distinct_processed_per_category_per_model": 2000,
+  "categories": [
+    "charged",
+    "mixed",
+    "ccbar",
+    "uubar",
+    "ddbar",
+    "ssbar"
+  ],
+  "shared_immutable_cohort": true,
+  "sealed_test_accessed": false
+}

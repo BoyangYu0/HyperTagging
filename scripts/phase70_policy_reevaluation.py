@@ -123,7 +123,8 @@ def prepare(out, historical_receipts):
                 'shortfall_by_category': {cat: max(0, 2000-counts[cat]) for cat in CATEGORIES},
                 'selection_uses_truth': False, 'sealed_test_accessed': False,
                 'source_bindings': inputs, 'shards': shards,
-                'training_overlap': 0, 'prior_reservation_overlap': 0}
+                'training_overlap': 0, 'prior_reservation_overlap': 0,
+                'external_sample_authority': 'Source-safe immutable validation expansion; identical train payloads and normalization; explicit UIDs. Established external-sample flag relaxes dataset/split identity only, all scientific checks retained.'}
     atomic_json(out / 'coverage-authentication.json', coverage)
     if selected is None:
         raise SystemExit(2)
@@ -213,7 +214,7 @@ def run_task(out, task_id):
             '--scope','both','--truth-topology-mode','checkpoint_direct',
             '--max-events',str(task['count']),'--max-level','6','--object-threshold','0.6',
             '--pointer-threshold','0.35','--threads','1','--omit-trees',
-            '--allow-finetuned-encoder','--deterministic-algorithms','--output',str(dest/'report.json')]
+            '--allow-finetuned-encoder','--diagnostic-external-independent-sample','--deterministic-algorithms','--output',str(dest/'report.json')]
     if task['view'] == 'beam_diagnostic':
         cmd += ['--beam-search','--beam-width','2','--beam-max-candidate-expansions-per-query','32',
                 '--beam-max-proposals-per-level','8','--beam-max-candidates-per-query','2']

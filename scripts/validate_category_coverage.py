@@ -5,6 +5,7 @@ def validate_coverage(records, *, quota=2000, diagnostic=False):
     seen=set();counts={cat:Counter(requested=0, attempted=0, processed=0, failed=0, truth_unavailable=0) for cat in CATEGORIES}
     for row in records:
         uid=row["event_uid"];cat=row["source_category"]
+        if any(type(row[k]) is not bool for k in ("attempted","processed")): raise ValueError("Coverage flags must be boolean")
         if uid in seen: raise ValueError("Duplicate collision identity")
         if cat not in counts: raise ValueError("Unauthenticated category")
         seen.add(uid);c=counts[cat];c["requested"]+=1

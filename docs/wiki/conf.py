@@ -51,7 +51,7 @@ html_use_index = True
 html_domain_indices = True
 html_title = "HyperTagging documentation"
 html_short_title = "HyperTagging"
-html_extra_path = []
+html_extra_path = [".nojekyll"]
 smartquotes = False
 epub_show_urls = "footnote"
 

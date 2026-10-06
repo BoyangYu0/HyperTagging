@@ -4,6 +4,7 @@ from __future__ import annotations
 import importlib.util
 import ast
 from pathlib import Path
+import subprocess
 import sys
 
 import pytest
@@ -74,7 +75,7 @@ def test_rst_sources_are_hashed_without_a_source_view_or_download(tmp_path):
 
 
 def _site(tmp_path):
-    for name in ("objects.inv", "searchindex.js"):
+    for name in ("objects.inv", "searchindex.js", ".nojekyll"):
         (tmp_path / name).write_text("")
     return tmp_path
 
@@ -132,9 +133,44 @@ def test_local_html_validator_fails_closed_on_raw_name_disagreement(tmp_path):
         validation.validate_html(site)
 
 
+def test_pages_workflow_privileges_and_untrusted_events():
+    assert validation.validate_workflow()["permission_boundary"] == "PASS"
+
+
 def test_security_validators_have_no_assert_statements():
     for path in (ROOT / "scripts/validate_docs.py", ROOT / "docs/_ext/wiki_privacy.py"):
         assert not any(isinstance(node, ast.Assert) for node in ast.walk(ast.parse(path.read_text())))
+
+
+@pytest.mark.parametrize("before,after", [
+    ("contents: read", "contents: write"),
+    ("timeout-minutes: 60", "timeout-minutes: 61"),
+    ("timeout-minutes: 10", "timeout-minutes: 31"),
+    ("persist-credentials: false", "persist-credentials: true"),
+    ("-e -o pipefail", "-e"),
+    ("github.ref == 'refs/heads/master'", "github.ref == 'refs/heads/other'"),
+    ("3d3c42e5aac5ba805825da76410c181273ba90b1", "v7"),
+    (" --check-generation", ""),
+    (" --workflow", ""),
+    ('--output "$RUNNER_TEMP/hypertagging-docs"', '--output "$RUNNER_TEMP/other-docs"'),
+])
+def test_mutated_workflow_fails_even_with_python_optimization(tmp_path, before, after):
+    target = tmp_path / ".github/workflows/docs.yml"
+    target.parent.mkdir(parents=True)
+    original = (ROOT / ".github/workflows/docs.yml").read_text()
+    assert before in original
+    target.write_text(original.replace(before, after))
+    program = (
+        "import importlib.util, pathlib, sys; "
+        "spec=importlib.util.spec_from_file_location('validation',sys.argv[1]); "
+        "module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module); "
+        "module.ROOT=pathlib.Path(sys.argv[2]); module.validate_workflow()"
+    )
+    result = subprocess.run([sys.executable, "-O", "-c", program,
+                             str(ROOT / "scripts/validate_docs.py"), str(tmp_path)],
+                            capture_output=True, text=True)
+    assert result.returncode != 0
+    assert "ValueError" in result.stderr
 
 
 def test_docs_configuration_does_not_import_hypertagging_or_fetch_inventory():

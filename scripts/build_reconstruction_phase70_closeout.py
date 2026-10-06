@@ -156,11 +156,11 @@ def build(recovery_source, masking_source):
         )
     payload = {
         "audit_version": "phase70-closeout-v1",
-        "status_date": "2026-10-05",
+        "status_date": "2026-10-06",
         "status": "COMPLETED_PAIR_REVIEWED",
         "independent_validation": True,
         "strict_selection_overlap": 0,
-        "scientific_mode": "ENCODER_TRANSFER_PILOT",
+        "scientific_mode": "DECODER_RELATION_BIAS_PILOT",
         "metric_completeness": "BOTH_COMPLETED_ARMS_ALL_FOURTEEN_VIEWS",
         "evaluation_role": "validation",
         "train_events": 70000,

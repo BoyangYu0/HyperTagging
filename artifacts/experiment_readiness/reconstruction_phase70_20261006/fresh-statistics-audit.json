@@ -1,0 +1,24 @@
+{
+  "version": "phase70-index-authentication-v1",
+  "status": "PASS",
+  "created_utc": "2026-10-06T15:26:30.327078+00:00",
+  "train_events": 70000,
+  "validation_events": 160000,
+  "normalizer_scope": "train",
+  "normalizer_identical_to_phase70_training": true,
+  "training_payloads_identical": true,
+  "event_identity_validation": {
+    "status": "passed",
+    "validation_scope": "all_opened_train_and_validation_event_records",
+    "validated_events": 230000,
+    "unique_event_uids": 230000,
+    "duplicate_event_uids": 0,
+    "source_mismatches": 0,
+    "category_mismatches": 0,
+    "task_binding": "selection_to_sidecar_to_completion_marker_validated",
+    "event_uid_stream_sha256": "3ee4ac090ff3cbe6ffd44b3af9483f8c4016f5bed4a491f6935873ba4a7df209",
+    "sealed_test_opened": false
+  },
+  "index_sha256": "ce444757099908f9144ccaedadce7bb466d80c112aa9afa541daadeacda9513c",
+  "sealed_test_accessed": false
+}

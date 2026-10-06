@@ -1,4 +1,4 @@
-"""Scheduled documentation layouts must propagate every build failure."""
+"""All independent publication checks must finish; any failure blocks publication."""
 import os
 from itertools import product
 from pathlib import Path
@@ -16,6 +16,7 @@ def test_layout_step_propagates_each_failure(tmp_path, regeneration_exit, text_e
     regeneration = next(step for step in workflow['jobs']['build']['steps']
                         if step.get('name') == 'Validate coverage and independent regeneration')
     compatibility = workflow['jobs']['compatibility']['steps'][-1]
+    assert workflow['jobs']['deploy']['needs'] == ['build', 'compatibility']
     assert workflow['jobs']['compatibility']['strategy']['fail-fast'] is False
     fake_python = tmp_path / 'python'
     fake_python.write_text('''#!/bin/bash

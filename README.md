@@ -34,7 +34,8 @@ separately.
 - [Online study monitoring and execution proposal](docs/online_study_operations.md)
 - [External artifact storage and recovery](docs/repository_storage.md)
 
-Build and inspect the documentation locally:
+The [dashboard](https://boyangyu0.github.io/HyperTagging/wiki/_generated/status/)
+is published through the validated GitHub Pages workflow. Build locally:
 
 ```bash
 python3.11 -m venv .venv-docs
@@ -114,7 +115,8 @@ Full HTML/text/basf2 documentation builds and all notebook execution run weekly
 or on manual dispatch. When changing documentation or notebooks, run the relevant
 local checks before review; use the full workflows for archive/layout validation.
 Documentation builds retain privacy, link, coverage and regeneration checks.
-The repository has no website publishing workflow.
+For the authorized Phase70 review, exact branch CPU and Documentation and Pages
+validation precede guarded master promotion and GitHub Pages publication.
 
 ## Core workflows
 
