@@ -156,10 +156,21 @@ def render(record):
     def ratio(value):
         n,d=value['numerator'],value['denominator']
         return f'{n:g}/{d:g}' if d else 'UNAVAILABLE (0/0)'
-    lines=['Phase69 supplementary category-policy evaluation','~'*48,'',
-           'The frozen step4000 pair has now processed 2,000 distinct validation collisions in each of charged, mixed, ccbar, uubar, ddbar and ssbar: 12,000 per arm in each full/half view. The shared cohort excludes training, normalization and all 61,000 prior reservations through Phase70. Historical 100-event and 20-event reports remain unchanged.','',
-           '.. list-table:: Frozen checkpoint comparison on the new cohort','   :header-rows: 1','',
-           '   * - Endpoint','     - Refined encoder','     - Pre-refinement encoder']
+    lines=['Phase69: latest efficiency evaluation','-'*37,'',
+           'The frozen step4000 pair processed 2,000 distinct validation collisions in each of charged, mixed, ccbar, uubar, ddbar and ssbar: 12,000 per arm in each full/half view, with no failed executions. The shared cohort excludes training, normalization and all 61,000 prior reservations through Phase70.','',
+           'Tagging efficiencies','~'*20,'',
+           'The 4,000 B-pair collisions contribute 8,000 nominal B trials and 4,000 event trials per arm and scope. Full and half are separate evaluations of the same collisions, not additional samples. Exact tagging requires the retained source set, tree and PID; inclusive grouping requires only an exact source-set match in one model-produced group.','',
+           '.. list-table:: Primary greedy efficiencies on the new cohort','   :header-rows: 1','',
+           '   * - Endpoint (full and half separately)','     - Refined encoder','     - Pre-refinement encoder']
+    for kind, label in [('exact','Exact retained B tagging'),('inclusive','Inclusive FSP grouping')]:
+        for key, unit in [('per_b_correct','per B'),('event_any_correct','events with at least one B'),('event_both_correct','events with both Bs')]:
+            for scope in ('full','half'):
+                vals=[ratio(record['arms'][arm]['tag'][scope][kind]['top1']['b_reconstruction'][key]) for arm in ('refined_encoder','pre_refinement_encoder')]
+                lines += [f'   * - {scope}: {label}, {unit}',f'     - {vals[0]}',f'     - {vals[1]}']
+    lines += ['', 'Inclusive pre-refinement recovery is 1/8,000 B trials (0.0125%) and 1/4,000 events (0.025%) in each scope. Sixteen exact-tag truth trials and one inclusive membership trial are unavailable and remain in nominal denominators. These are lower bounds with unavailable truth, not physical FEI efficiencies. One inclusive group does not establish a recursive-quality advantage. Continuum fake-B acceptance is reported separately from B efficiency.','',
+              'Tree reconstruction','~'*19,'',
+              '.. list-table:: Frozen checkpoint tree comparison','   :header-rows: 1','',
+              '   * - Endpoint','     - Refined encoder','     - Pre-refinement encoder']
     for scope in ('full','half'):
         for label,group,key in [('primary LCAG','tree','lcag_pair_accuracy'),('retained LCAG','retained','lcag_pair_accuracy'),('retained exact component','retained','perfect_lcag')]:
             vals=[]
@@ -167,9 +178,6 @@ def render(record):
                 data=record['arms'][arm][group]
                 metric=data[scope]['decay_metrics'][key] if group=='tree' else data[scope+'/greedy'][key]
                 vals.append(ratio(metric))
-            lines += [f'   * - {scope} {label}',f'     - {vals[0]}',f'     - {vals[1]}']
-        for label,kind in [('exact retained B tagging','exact'),('inclusive FSP B grouping','inclusive')]:
-            vals=[ratio(record['arms'][arm]['tag'][scope][kind]['top1']['b_reconstruction']['per_b_correct']) for arm in ('refined_encoder','pre_refinement_encoder')]
             lines += [f'   * - {scope} {label}',f'     - {vals[0]}',f'     - {vals[1]}']
     lines += ['', 'A separately bounded width-two beam uses 60 collisions per arm (10 per category). Its model-ranked top1 and retained-pool/oracle results are diagnostic and do not meet the quota. Missing truth remains in nominal tagging denominators. These are retained proxies, not physical FEI efficiencies.','',
               f':download:`Supplementary full aggregate bundle <{BUNDLE}>`; :download:`integrity manifest <{INTEGRITY}>`; :download:`standalone decoder <{DECODER}>`.','',

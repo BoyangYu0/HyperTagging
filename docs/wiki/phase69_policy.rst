@@ -8,13 +8,14 @@ encoder. Its measurements and complete downloads are in the
 <phase69>`, 100-event reports, 20-event proposal-beam diagnostic, auxiliary
 checkpoint tracks and their selection/gates remain historical evidence.
 
-Measured results
-----------------
+Tagging efficiencies
+--------------------
 
 Exact retained B tagging is 0/8,000 nominal B trials in each arm and scope;
 event-any and event-both success are 0/4,000. Sixteen exact-tag truth trials
 remain unavailable. Inclusive FSP grouping is 0/8,000 for refined and 1/8,000
-for pre-refinement in both scopes, with event-any counts 0/4,000 and 1/4,000;
+for pre-refinement (0.0125%) in both scopes, with event-any counts 0/4,000 and
+1/4,000 (0.025%);
 no event has both B groups correct. One membership trial is unavailable.
 These are lower bounds with unknown truth, not measured physical efficiencies.
 
@@ -24,6 +25,9 @@ four evaluated B trials, one correct pre-refinement group, zero refined groups,
 and zero membership-unavailable trials in that channel, in each scope.
 No channel has a proven exact retained-B tag. Full channel tables, including
 zero successes and unknowns, are preserved in the aggregate download.
+
+Tree reconstruction and beam diagnostics
+----------------------------------------
 
 Full retained LCAG is 3,262/730,991 versus 3,266/730,991, refined versus
 pre-refinement. The paired pre-minus-refined difference is 0.000547 percentage

@@ -47,6 +47,33 @@ The complete metric contract is maintained in
 ``docs/full_decay_reconstruction_evaluation.md`` and the implementation in
 :py:mod:`hypertagging.evaluation.tag_efficiency`.
 
+Latest measured efficiencies: Phase69
+-------------------------------------
+
+The :doc:`Phase69 supplementary evaluation <phase69_policy>` is the current
+complete greedy evaluation: 2,000 processed collisions in each of six source
+categories, 12,000 per arm and scope. Its 4,000 charged/mixed B-pair collisions
+supply 8,000 nominal B trials and 4,000 event trials. Continuum supplies the
+remaining 8,000 collisions and has separate fake-B and component metrics.
+
+In both full and half scope, exact retained tagging is **0/8,000** for both
+arms. Inclusive grouping is **0/8,000** for refined and **1/8,000 (0.0125%)**
+for pre-refinement; event-any recovery is respectively **0/4,000** and
+**1/4,000 (0.025%)**. Neither arm recovers both Bs in one event. Sixteen exact
+truth trials and one inclusive membership trial remain unavailable, included
+in the nominal denominators. Full and half views reuse the same collisions.
+
+The 60-event-per-arm beam is diagnostic: ten collisions per category, with
+0/40 exact and inclusive B successes in each arm/scope for top1 and retained
+pool. It does not satisfy the complete-evaluation quota. The original
+100-event strict and 20-event beam measurements are historical; their smaller
+samples must not be pooled with this supplementary cohort. A single inclusive
+success does not establish a recursive-quality advantage, and zero observed
+successes do not prove zero population efficiency.
+
+See the :doc:`dashboard <_generated/status/index>` for efficiency-first results,
+all-study summaries and the complete download catalogue.
+
 Validation losses and representation diagnostics
 --------------------------------------------------------
 

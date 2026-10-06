@@ -1,7 +1,14 @@
 Phase69 completed hybrid encoder confirmation
 =============================================
 
-The new :doc:`category-policy supplementary evaluation <phase69_policy>` reevaluates the frozen primary pair on a separately reserved cohort. Historical results below retain their original scope.
+The latest :doc:`category-policy supplementary evaluation <phase69_policy>`
+processes 12,000 collisions per arm, including 2,000 in each required category.
+In both full and half scope, exact B tagging is 0/8,000 for both arms; inclusive
+FSP grouping is 0/8,000 refined versus 1/8,000 pre-refinement. Event-any inclusive
+recovery is 0/4,000 versus 1/4,000. Unavailable truth remains in the nominal
+denominators; these retained proxies are not physical FEI efficiencies.
+The :doc:`dashboard <_generated/status/index>` leads with these new efficiency
+results. The original small-cohort study below preserves its historical scope.
 
 **End this encoder-refinement ablation family: the second seed does not establish a joint recursive-quality benefit. Hold 70,000 training events for one bounded decoder relation-bias study.** Increasing training data is not demonstrated necessary now; improving task-aligned representations and their use by the decoder is a better diagnostic priority than simply longer pretraining, but neither has a proven comparative advantage over scaling. No scientific model is promoted.
 

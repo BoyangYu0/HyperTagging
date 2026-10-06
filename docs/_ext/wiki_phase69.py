@@ -245,28 +245,10 @@ def render(record):
     if not record:
         return []
     lines = [
-        "Phase69: hybrid encoder confirmation closes without a recursive winner",
-        "-" * 90,
-        "",
-        "Refined versus pre-refinement encoder: full LCAG 24/3561 versus 25/3561; exact nontrivial components 5/159 versus 6/159. Refined has one shallow and one mother-free primary forest; pre-refinement has none. Only pre-refinement passes every original gate. No exact component is deeper than one generation.",
-        "The full-source recall signal is not confirmed; paired LCAG spans zero. Shared refined PID and normalization make this a hybrid contrast, not all pretraining versus none. End this family. Hold 70,000 for one Phase70 decoder relation-bias ablation; no model promotion.",
-        "",
-        "Additive exact tagging and inclusive FSP grouping evaluation is included for both arms, all registered full/B-half views and every retained beam candidate. Primary exact B tags and inclusive B groups are both 0/32 in each arm; all registered pools also have zero successes. The 16 B-pair collisions give limited precision. Original gates and downloads are preserved. See the review for counts, unknowns and collision-resampled uncertainty.",
-        "",
-        ":download:`Complete Phase69 bundle including tagging efficiencies <phase69-complete-aggregate-metrics-v3.json>`; :download:`additive integrity manifest <phase69-efficiencies-integrity.json>`; :download:`standalone decoder <phase69-efficiencies-decoder.txt>`.",
-        "",
-        "See :doc:`../../phase69` for geometry, the cumulative evidence, uncertainty and next-study gates.",
-        "",
-        ":download:`Original Phase69 native aggregate bundle (v2) <phase69-all-aggregate-metrics.json>`; :download:`review, uncertainty and download manifest <phase69-review-metrics.json>`.",
-        "",
-        "All registered native full/B-half views, saved-checkpoint metrics, model-only rankings and labelled oracle diagnostics retain their denominators. Unavailable physical momentum resolution is distinct from daughter-sum closure.",
-        "",
+        "Original Phase69 study context", "~" * 30, "",
+        "The original 100-event evaluation and 20-event proposal-beam diagnostic remain historical evidence. Only pre-refinement passed every original gate; neither arm established a joint recursive-quality benefit. The new supplementary evaluation above preserves the frozen checkpoint selection and does not replace those gates.", "",
+        "Shared refined PID and normalization make this a hybrid encoder contrast, not all pretraining versus none. See :doc:`../../phase69` for the original study and :doc:`downloads` for every original metric bundle and decoder.", "",
     ]
-    for d in record["downloads"]:
-        lines += [
-            f":download:`{d['view'].replace('_', ' ')} — {d['metric_count']} values <{d['filename']}>`.",
-            "",
-        ]
     if record.get("policy_reevaluation"):
         import importlib.util
         spec = importlib.util.spec_from_file_location("wiki_phase69_policy", Path(__file__).with_name("wiki_phase69_policy.py"))

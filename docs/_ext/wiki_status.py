@@ -2931,32 +2931,16 @@ def _render(manifest: dict[str, Any]) -> str:
     }
     if latest_phase in renderers:
         lines += renderers[latest_phase](reconstruction[latest_phase])
-    lines += ["Earlier studies — summary", "-------------------------", "",
+    lines += ["All studies — summary", "---------------------", "",
               "Historical evidence is retained in the complete metric download; missing newer metrics",
               "are unavailable, not zero. Dated study reports remain archival references.", ""]
     lines += _table(["Study", "Recorded decision", "Summary"], [
         [title, value, " ".join(paragraphs[:2]) if paragraphs else "UNKNOWN"]
-        for title, value, paragraphs, _kind in historical_cards
+        for title, value, paragraphs, _kind in [latest_card, *historical_cards]
     ])
-    # Keep every historical download reachable without rendering its metric tables.
-    historical_downloads = set()
-    def collect_downloads(value):
-        if isinstance(value, dict):
-            filename = value.get("filename")
-            if isinstance(filename, str) and re.fullmatch(r"phase[0-9]+-[a-z0-9-]+\.json", filename):
-                historical_downloads.add(filename)
-            for child in value.values():
-                collect_downloads(child)
-        elif isinstance(value, list):
-            for child in value:
-                collect_downloads(child)
-    for phase, record in reconstruction.items():
-        if phase.startswith("phase") and phase != latest_phase:
-            collect_downloads(record)
-    if historical_downloads:
-        lines += ["Historical metric downloads", "~~~~~~~~~~~~~~~~~~~~~~~~~~~", ""]
-        for filename in sorted(historical_downloads):
-            lines += [f":download:`{filename.removesuffix('.json')} <{filename}>`.", ""]
+    lines += ["Complete evidence archive", "-------------------------", "",
+              "Study summaries above are not cross-cohort rankings. Full historical reports remain in :doc:`../../studies`; every original metric file remains in the download catalogue.", "",
+              ".. toctree::", "   :maxdepth: 1", "", "   downloads", ""]
     if latest_phase == "phase40r1":
         lines += ["Phase40r1 strict full-decay comparison", "----------------------------------------", "",
                   "Both arms used the same untouched 100-event validation cohort. Values are",
@@ -3066,7 +3050,7 @@ def generate_status(repo_root: Path, output_dir: Path) -> dict[str, Any]:
     output = requested.resolve()
     if output == root or output in root.parents or any(part.is_symlink() for part in (requested, *requested.parents)):
         raise ValueError("Status output must be a dedicated non-symlink directory")
-    if output.exists() and any(path.name not in ({"phase69-" + view.replace("_", "-") + ".json" for view in _phase69.VIEWS} | {"phase69-review-metrics.json", "phase69-all-aggregate-metrics.json", "phase69-complete-aggregate-metrics-v3.json", "phase69-efficiencies-integrity.json", "phase69-efficiencies-decoder.txt", "phase69-policy-reevaluation-v1.json", "phase69-policy-integrity.json", "phase69-policy-decoder.txt", "phase69-policy-part-0.json", "phase69-policy-part-1.json", "phase69-policy-part-2.json", "phase69-policy-part-3.json"} | {"phase68-" + view.replace("_", "-") + ".json" for view in _phase68.VIEWS} | {"phase68-review-metrics.json", "phase68-all-aggregate-metrics.json"} | {"phase67-" + view.replace("_", "-") + ".json" for view in _phase67.VIEWS} | {"phase67-review-metrics.json", "phase67-all-aggregate-metrics.json"} | {"phase66-" + view.replace("_", "-") + ".json" for view in _phase66.VIEWS} | {"phase66-review-metrics.json", "phase66-all-aggregate-metrics.json"} | {"phase65-" + view.replace("_", "-") + ".json" for view in _phase65.VIEWS} | {"phase65-review-metrics.json", "phase65-all-aggregate-metrics.json"} | {"phase64-" + view.replace("_", "-") + ".json" for view in _phase64.VIEWS} | {"phase64-review-metrics.json", "phase64-all-aggregate-metrics.json"}) and path.name not in {"index.rst", "status.json", "phase61-metrics.json", "phase61-retained-metrics.json", "phase61-aggregation-metrics.json", "phase61-pretraining-metrics.json", "phase60-metrics.json", "phase44-retained-metrics.json", "phase45-metrics.json", "phase45-retained-metrics.json", "phase46-metrics.json", "phase46-retained-metrics.json", "phase47-metrics.json", "phase47-retained-metrics.json", "phase47-aggregation-metrics.json", "phase48-metrics.json", "phase48-retained-metrics.json", "phase48-aggregation-metrics.json", "phase49-metrics.json", "phase49-retained-metrics.json", "phase49-aggregation-metrics.json", "phase50-metrics.json", "phase50-retained-metrics.json", "phase50-aggregation-metrics.json", "phase51-metrics.json", "phase51-retained-metrics.json", "phase51-aggregation-metrics.json", "phase52-metrics.json", "phase52-retained-metrics.json", "phase52-aggregation-metrics.json", "phase53-metrics.json", "phase53-retained-metrics.json", "phase53-aggregation-metrics.json", "phase54-metrics.json", "phase54-retained-metrics.json", "phase54-aggregation-metrics.json", "phase41-metrics.json", "phase55-metrics.json", "phase55-retained-metrics.json", "phase55-aggregation-metrics.json", "phase55-pretraining-metrics.json", "phase56-metrics.json", "phase56-retained-metrics.json", "phase56-aggregation-metrics.json", "phase56-pretraining-metrics.json", "phase57-metrics.json", "phase57-retained-metrics.json", "phase57-aggregation-metrics.json", "phase57-pretraining-metrics.json", "phase58-metrics.json", "phase58-retained-metrics.json", "phase58-aggregation-metrics.json", "phase58-pretraining-metrics.json", "phase59-metrics.json", "phase59-retained-metrics.json", "phase59-aggregation-metrics.json", "phase59-pretraining-metrics.json"} for path in output.iterdir()):
+    if output.exists() and any(path.name not in ({"phase69-" + view.replace("_", "-") + ".json" for view in _phase69.VIEWS} | {"phase69-review-metrics.json", "phase69-all-aggregate-metrics.json", "phase69-complete-aggregate-metrics-v3.json", "phase69-efficiencies-integrity.json", "phase69-efficiencies-decoder.txt", "phase69-policy-reevaluation-v1.json", "phase69-policy-integrity.json", "phase69-policy-decoder.txt", "phase69-policy-part-0.json", "phase69-policy-part-1.json", "phase69-policy-part-2.json", "phase69-policy-part-3.json"} | {"phase68-" + view.replace("_", "-") + ".json" for view in _phase68.VIEWS} | {"phase68-review-metrics.json", "phase68-all-aggregate-metrics.json"} | {"phase67-" + view.replace("_", "-") + ".json" for view in _phase67.VIEWS} | {"phase67-review-metrics.json", "phase67-all-aggregate-metrics.json"} | {"phase66-" + view.replace("_", "-") + ".json" for view in _phase66.VIEWS} | {"phase66-review-metrics.json", "phase66-all-aggregate-metrics.json"} | {"phase65-" + view.replace("_", "-") + ".json" for view in _phase65.VIEWS} | {"phase65-review-metrics.json", "phase65-all-aggregate-metrics.json"} | {"phase64-" + view.replace("_", "-") + ".json" for view in _phase64.VIEWS} | {"phase64-review-metrics.json", "phase64-all-aggregate-metrics.json"}) and path.name not in {"index.rst", "downloads.rst", "status.json", "phase61-metrics.json", "phase61-retained-metrics.json", "phase61-aggregation-metrics.json", "phase61-pretraining-metrics.json", "phase60-metrics.json", "phase44-retained-metrics.json", "phase45-metrics.json", "phase45-retained-metrics.json", "phase46-metrics.json", "phase46-retained-metrics.json", "phase47-metrics.json", "phase47-retained-metrics.json", "phase47-aggregation-metrics.json", "phase48-metrics.json", "phase48-retained-metrics.json", "phase48-aggregation-metrics.json", "phase49-metrics.json", "phase49-retained-metrics.json", "phase49-aggregation-metrics.json", "phase50-metrics.json", "phase50-retained-metrics.json", "phase50-aggregation-metrics.json", "phase51-metrics.json", "phase51-retained-metrics.json", "phase51-aggregation-metrics.json", "phase52-metrics.json", "phase52-retained-metrics.json", "phase52-aggregation-metrics.json", "phase53-metrics.json", "phase53-retained-metrics.json", "phase53-aggregation-metrics.json", "phase54-metrics.json", "phase54-retained-metrics.json", "phase54-aggregation-metrics.json", "phase41-metrics.json", "phase55-metrics.json", "phase55-retained-metrics.json", "phase55-aggregation-metrics.json", "phase55-pretraining-metrics.json", "phase56-metrics.json", "phase56-retained-metrics.json", "phase56-aggregation-metrics.json", "phase56-pretraining-metrics.json", "phase57-metrics.json", "phase57-retained-metrics.json", "phase57-aggregation-metrics.json", "phase57-pretraining-metrics.json", "phase58-metrics.json", "phase58-retained-metrics.json", "phase58-aggregation-metrics.json", "phase58-pretraining-metrics.json", "phase59-metrics.json", "phase59-retained-metrics.json", "phase59-aggregation-metrics.json", "phase59-pretraining-metrics.json"} for path in output.iterdir()):
         raise ValueError("Status output contains unexpected files; use a fresh dedicated directory")
     history = _git(root, "log", "-1", "--format=%H%n%cI")
     lines = history.decode("utf-8", errors="replace").splitlines() if history else []
@@ -3264,6 +3248,13 @@ def generate_status(repo_root: Path, output_dir: Path) -> dict[str, Any]:
     manifest = _compact_exact_numbers(manifest)
     _write(output / "status.json", (json.dumps(manifest, separators=(",", ":"), sort_keys=True, allow_nan=False) + "\n").encode())
     _write(output / "index.rst", _render(manifest).encode())
+    downloads = ["Study metric downloads", "======================", "",
+                 "Complete latest and historical evidence. Cohorts and metric definitions differ between studies; consult the dated reports before comparing values.", "",
+                 ":doc:`Return to the latest evaluation <index>`.", ""]
+    for path in sorted(output.iterdir()):
+        if path.suffix in {".json", ".txt"}:
+            downloads += [f":download:`{path.name} <{path.name}>`.", ""]
+    _write(output / "downloads.rst", "\n".join(downloads).encode())
     return manifest
 
 
