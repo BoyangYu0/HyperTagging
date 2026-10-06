@@ -53,9 +53,9 @@ Continuous integration
 
 PRs and pushes to master run the CPU correctness suite once, including
 these documentation regressions and audit integrity. Superseded runs are
-cancelled. Full documentation builds run weekly or by manual dispatch in
+cancelled. Full documentation builds run on branch pushes, pull requests and manual dispatch in
 ``.github/workflows/docs.yml``; notebook execution and source consistency run
-in ``.github/workflows/full-notebook-smoke.yml`` on the same cadence.
+in ``.github/workflows/full-notebook-smoke.yml`` on its scheduled and manual cadence.
 Run relevant local checks when changing documentation or notebooks. The full
 documentation workflow still checks HTML, text and basf2 layouts, privacy,
 links, source coverage and independent generation. The authorized Phase70 publication restores exact branch validation and a

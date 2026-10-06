@@ -107,12 +107,12 @@ Fixture results validate software behavior, not physics performance.
 
 ## Continuous integration
 
-PRs and pushes to `master` run one CPU correctness job, including documentation
-regressions and audit integrity. Feature-branch pushes do not duplicate PR runs;
-new commits cancel superseded runs. Cached dependencies use CPU PyTorch wheels.
+PRs, pushes to `master` and the authorized Phase70 review branch run CPU
+correctness, including documentation regressions and audit integrity. New
+commits cancel superseded runs. Cached dependencies use CPU PyTorch wheels.
 
-Full HTML/text/basf2 documentation builds and all notebook execution run weekly
-or on manual dispatch. When changing documentation or notebooks, run the relevant
+Full HTML/text/basf2 documentation builds run on branch pushes, pull requests
+and manual dispatch. Notebook execution retains its weekly/manual schedule. When changing documentation or notebooks, run the relevant
 local checks before review; use the full workflows for archive/layout validation.
 Documentation builds retain privacy, link, coverage and regeneration checks.
 For the authorized Phase70 review, exact branch CPU and Documentation and Pages

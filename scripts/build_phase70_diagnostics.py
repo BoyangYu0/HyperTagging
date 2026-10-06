@@ -6,7 +6,7 @@ def load(p):return json.loads(p.read_text())
 def main():
  p=argparse.ArgumentParser();p.add_argument('--native',type=Path,required=True);p.add_argument('--output',type=Path,required=True);a=p.parse_args()
  close=load(a.native/'closeout.json');geometry=load(a.native/'geometry.json');lineage=load(a.native/'lineage.json');decoder=load(a.native/'decoder-independent-audit.json')
- result={'version':'phase70-additional-scientific-diagnostics-v1','native_coverage_classification':'HISTORICAL_DIAGNOSTIC_NOT_CATEGORY_COMPLIANT','geometry':geometry['models'],'geometry_sample_counts':{'train':len(geometry['train_calibration_event_uids']),'development':len(geometry['development_event_uids'])},'geometry_is_fixed_input_not_generated_state_census':True,'decoder':decoder['arms'],'paired_native_diagnostic':load(a.native/'paired.json'),'arms':{}}
+ result={'version':'phase70-additional-scientific-diagnostics-v1','native_coverage_classification':'HISTORICAL_DIAGNOSTIC_NOT_CATEGORY_COMPLIANT','geometry':geometry['models'],'geometry_sample_counts':{'train':len(geometry['train_calibration_event_uids']),'development':len(geometry['development_event_uids'])},'geometry_is_fixed_input_not_generated_state_census':True,'decoder':{arm:{**row,'independently_verified_tracks':{Path(name).stem:record for name,record in row['independently_verified_tracks'].items()}} for arm,row in decoder['arms'].items()},'paired_native_diagnostic':load(a.native/'paired.json'),'arms':{}}
  for arm,record in close['arms'].items():
   dst={k:record[k] for k in ('optimizer_steps','selected','gates','all_gates_passed','primary_repeat_identical','training_elapsed_seconds','complete_target_count','forest','beam')}
   dst['context_and_encoder_execution']=lineage['arms'][arm]

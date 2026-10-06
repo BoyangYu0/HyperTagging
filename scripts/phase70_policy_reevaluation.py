@@ -1,4 +1,4 @@
-"""Authenticate, reserve and execute the separately versioned Phase69 policy study.
+"""Authenticate, reserve and execute the separately versioned Phase70 policy study.
 
 Raw UIDs, checkpoints and per-event reports belong in the supplied project-volume
 output directory. This command never submits jobs or changes training contracts.
