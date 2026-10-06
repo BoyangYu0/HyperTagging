@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Earlier remote docs270passed/two assertion failures: restore unchanged Phase48 count and assert latest Phase70 tagging; seventeen complete exports now share isolated fixture.
+  - 392975a88f153dba41d4ce34fe106952b4389c8e
   # Remove sixteen identical expensive test projections via fully validated session fixture and isolated copies; every assertion and production check retained.
   - bd9642927f0d8a1d26e003d8d5e8d66aab017a57
   # Native beam and fixed geometry diagnostic category counts authenticated against original reports and index markers.
