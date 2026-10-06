@@ -3,6 +3,7 @@ import argparse, gzip, json
 from pathlib import Path
 import sys
 import torch
+import numpy as np
 ROOT=Path(__file__).resolve().parents[1]
 sys.path[:0]=[str(ROOT),str(ROOT/'src')]
 from scripts.export_phase70_native_metrics import leaves
@@ -33,13 +34,17 @@ def main():
                         assert all(torch.isfinite(t).all() for t in state.values() if isinstance(t,torch.Tensor))
                 # Retain every JSON-like numeric/bool/null scalar, including
                 # optimizer/scheduler/scaler settings and counters. Numerical
-                # tensors and generator arrays are bound by checkpoint hashes.
+                # non-scalar tensors and generator arrays are bound by checkpoint hashes.
                 def checkpoint_leaves(value, prefix=""):
                     if isinstance(value,dict):
                         for key,item in sorted(value.items(),key=lambda item:str(item[0])):
                             yield from checkpoint_leaves(item,f"{prefix}.{key}" if prefix else str(key))
                     elif isinstance(value,(list,tuple)):
                         for i,item in enumerate(value):yield from checkpoint_leaves(item,f"{prefix}.{i}")
+                    elif isinstance(value,torch.Tensor) and value.ndim == 0:
+                        yield {"metric":prefix,"value":value.item()}
+                    elif isinstance(value,np.generic):
+                        yield {"metric":prefix,"value":value.item()}
                     elif value is None or type(value) in (bool,int,float):
                         yield {"metric":prefix,"value":value}
                 rows=list(checkpoint_leaves(cp))

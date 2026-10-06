@@ -151,6 +151,7 @@ def staging_repository(tmp_path, monkeypatch):
     files = {
         "docs/wiki/index.rst": "Wiki\n====\n",
         "docs/wiki/conf.py": "project = 'Fixture'\n",
+        "docs/wiki/.nojekyll": "",
         "docs/wiki/_static/wiki.css": ".wiki { color: black; }\n",
         "docs/index.rst": "Standalone\n==========\n",
         "docs/conf.py": "project = 'Fixture'\n",
@@ -248,7 +249,7 @@ def test_unowned_sphinx_source_is_preserved_but_cannot_join_generated_site(gener
     assert before == after
 
 
-@pytest.mark.parametrize('options', [[], ['--check-generation']])
+@pytest.mark.parametrize('options', [[], ['--check-generation'], ['--workflow'], ['--check-generation', '--workflow']])
 def test_build_additional_checks_share_one_complete_validator(staging_repository, options):
     root, output, calls = staging_repository
     assert build_docs.main(['--output', str(output), *options]) == 0
@@ -258,7 +259,7 @@ def test_build_additional_checks_share_one_complete_validator(staging_repository
     assert checks[1] == str(root / 'scripts/validate_docs.py')
     assert checks[checks.index('--html') + 1] == str(output / 'html')
     assert checks[checks.index('--generated') + 1] == str(output / 'source/wiki/_generated')
-    for flag in ('--check-generation',):
+    for flag in ('--check-generation', '--workflow'):
         assert (flag in checks) == (flag in options)
 
 
