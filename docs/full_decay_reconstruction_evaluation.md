@@ -45,6 +45,70 @@ That implementation and `scripts/evaluate_reconstruction.py` should remain
 available for historical regression tests. They must not be used to claim
 performance for the current level-autoregressive model.
 
+## Minimum category coverage for study evaluation
+
+Effective 2026-10-06, a complete reconstruction-study evaluation requires at
+least **2,000 distinct collision events in each source category**, for every
+compared model/arm:
+
+| Source category | Population | Minimum collision events |
+| --- | --- | ---: |
+| `charged` | Charged B-pair events | 2,000 |
+| `mixed` | Neutral B-pair events | 2,000 |
+| `ccbar` | Charm continuum | 2,000 |
+| `uubar` | Up continuum | 2,000 |
+| `ddbar` | Down continuum | 2,000 |
+| `ssbar` | Strange continuum | 2,000 |
+
+The minimum is **12,000 unique events per model**, not 2,000 pooled across B
+and continuum, and not 2,000 individual B candidates. Count each immutable event
+UID once within its authenticated category. The same fixed cohort should be
+used across compared arms and full/half scopes; repeated inference, checkpoint
+tracks, beam hypotheses, duplicate candidates and the two B trials cannot
+increase sample coverage. Each B category therefore supplies at least 4,000
+nominal per-B trials, while continuum component denominators remain separate
+from collision counts. This is a source-category quota, not a requirement for
+2,000 events in every individual decay channel.
+
+Before evaluation, reserve a deterministic category-stratified validation
+cohort, authenticate its category membership and UID uniqueness, and record its
+manifest/index hashes, per-category counts and exclusion ledger. Keep it
+disjoint from training, normalization fitting, checkpoint selection and prior
+adaptive study reservations under the existing source-role policy. Use the
+same reserved cohort for every compared arm; never select events based on
+reconstruction success, truth completeness or target representability. If a
+category lacks sufficient eligible events, report its shortfall and mark the
+study evaluation incomplete. Do not silently borrow from another category,
+repeat events, lower the quota, or open the sealed test role.
+
+At closeout, report requested, unique attempted, processed, failed and
+truth-unavailable event counts by category and by evaluated inference view.
+Require at least 2,000 actually processed distinct events per category for a
+complete view. Missing truth remains in nominal trials with explicit metric
+availability; it is not a reason to drop or replace an event. Inference or
+infrastructure failures retain their failure accounting and do not count as
+successfully processed events. Planned manifest size alone is not proof that
+the sample requirement was met. Report category-specific efficiencies alongside
+pooled results; an equal-category pooled rate is not a physical mixture estimate.
+
+Apply the requirement to primary strict full/half evaluation and its exact
+and inclusive tagging results. Any beam, oracle or auxiliary view advertised
+as a complete evaluation must independently meet the same category coverage;
+a smaller bounded subset must state its actual category counts and be labelled
+diagnostic. A 20-event beam subset cannot inherit the coverage of a 12,000-event
+greedy cohort. CPU fixtures, smoke tests and in-training checkpoint-selection
+probes may remain small, but do not satisfy final study coverage.
+
+Historical reports and frozen training/submission contracts remain immutable.
+Existing small-cohort results, including Phase69, do not meet this new policy;
+any enlarged evaluation must be a separately versioned supplemental run with
+its own reserved cohort and provenance. Future study plans must budget the
+required data and CPU evaluation work before submission. This policy change
+does not itself run an evaluation, change scientific quality gates, expand
+training data, or authorize access to sealed test data. The low-level evaluator
+still permits diagnostic sample sizes; operators must check this coverage
+requirement before declaring a study evaluation complete.
+
 ## Required tagging evaluation after each reconstruction study
 
 Every new invocation of `scripts/evaluate_full_decay.py` includes a versioned
@@ -590,6 +654,9 @@ CUDA_VISIBLE_DEVICES="" OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 \
   --threads 2 \
   --output artifacts/evaluation/full_decay_validation.json
 ```
+
+The 100-event command above is a diagnostic example, not a complete study
+evaluation under the minimum category-coverage policy.
 
 For new studies, substitute the receipt-bound checkpoint, selection and index
 paths together; the dated selection/index example above predates the documented

@@ -34,7 +34,7 @@ numfig = True
 python_use_unqualified_type_names = True
 viewcode_follow_imported_members = False
 viewcode_enable_epub = False
-# Keep the basf2 extension contract, using a text renderer for offline Pages.
+# Keep the basf2 extension contract, using a text renderer for offline documentation.
 # No MathJax distribution, CDN, browser fetch or runtime JavaScript is needed.
 html_math_renderer = "offline-text"
 mathjax_path = ""
@@ -51,7 +51,7 @@ html_use_index = True
 html_domain_indices = True
 html_title = "HyperTagging documentation"
 html_short_title = "HyperTagging"
-html_extra_path = [".nojekyll"]
+html_extra_path = []
 smartquotes = False
 epub_show_urls = "footnote"
 

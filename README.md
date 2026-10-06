@@ -13,31 +13,27 @@ physics performance is not established by this repository. Treat the
 statement; historical reports and run receipts are evidence for their recorded
 revisions only.
 
+## Start from another device or account
+
+Follow the [remote Codex setup and handoff guide](docs/codex_remote_setup.md)
+for a fresh clone, account access, SSH execution, cloud setup, and bounded CPU
+verification. Open this Git root; historical sibling checkouts and previous
+Codex conversations are not required. External data and HPC access are provisioned
+separately.
+
 ## Documentation
 
-- [Documentation wiki](https://boyangyu0.github.io/HyperTagging/wiki/)
-- [Dashboard](https://boyangyu0.github.io/HyperTagging/wiki/_generated/status/)
-- [Local wiki source](docs/index.rst)
+- [Documentation wiki source](docs/index.rst)
 - [Training and evaluation guide](docs/training.md)
 - [Preprocessing contract](docs/preprocessing_design.md)
 - [Full-decay evaluation contract](docs/full_decay_reconstruction_evaluation.md)
 - [basf2 and ONNX deployment](docs/basf2_onnx_full_decay.md)
 - [Phase69 completed confirmation](docs/phase69_closeout_20261005.md)
-- [Phase68 completed review](docs/phase68_closeout_20261005.md)
-- [Phase67 completed review](docs/phase67_closeout_20261004.md)
-- [Phase66 completed review](docs/phase66_closeout_20261004.md)
-- [Phase65 completed review](docs/phase65_closeout_20261003.md)
-- [Phase64 completed review](docs/phase64_closeout_20261001.md)
-- [Phase64 radial reconditioning study](docs/phase64_plan_20260930.md)
-- [Phase63 completed paired review](docs/phase63_closeout_20260930.md)
-- [Phase63 partial results and failed-arm repair](docs/phase63_review_20260929.md)
-- [Phase62 results and Phase63 corrected supervision](docs/phase62_review_phase63_20260928.md)
-- [Scientific review and next experiments (2026-09-28)](docs/scientific_review_20260928.md)
+- [Earlier studies](docs/wiki/studies.rst)
 - [Online study monitoring and execution proposal](docs/online_study_operations.md)
 - [External artifact storage and recovery](docs/repository_storage.md)
 
-GitHub Pages publishes the validated site from trusted `master` deployments.
-Build the same site locally:
+Build and inspect the documentation locally:
 
 ```bash
 python3.11 -m venv .venv-docs
@@ -50,7 +46,7 @@ docs_html="$(find "$docs_out" -maxdepth 1 -type d -name html -print -quit)"
 
 The build is offline after dependency installation and does not import the
 project, open training data or checkpoints, or require basf2 or CUDA. See the
-[wiki maintenance guide](docs/wiki/maintaining.rst) for its publication and
+[wiki maintenance guide](docs/wiki/maintaining.rst) for its validation and
 privacy boundary.
 
 ## Repository layout
@@ -76,13 +72,15 @@ contributors and coding agents are in [AGENTS.md](AGENTS.md).
 Use the existing lock without relocking dependencies:
 
 ```bash
-uv sync --frozen --all-extras
+uv sync --frozen --all-extras --python 3.11
 source scripts/activate_env.sh project
 python scripts/check_uv_lock_direct_dependencies.py
 ```
 
-Keep environments, datasets, checkpoints, notebook outputs, and other large
-artifacts outside the checkout. The separately frozen CUDA environment and its
+The default `.venv` is local and ignored by Git. Keep datasets, checkpoints,
+notebook outputs, and other large artifacts outside the checkout. The root
+lock selects CUDA 12.6 PyTorch wheels, which also run CPU fixtures without a GPU;
+it is not a CPU-only dependency install. The separately frozen CUDA environment and its
 verification procedure are documented in
 [environment/gpu/README.md](environment/gpu/README.md).
 
@@ -104,6 +102,18 @@ python scripts/execute_notebook_smoke_tests.py --list
 ```
 
 Fixture results validate software behavior, not physics performance.
+
+## Continuous integration
+
+PRs and pushes to `master` run one CPU correctness job, including documentation
+regressions and audit integrity. Feature-branch pushes do not duplicate PR runs;
+new commits cancel superseded runs. Cached dependencies use CPU PyTorch wheels.
+
+Full HTML/text/basf2 documentation builds and all notebook execution run weekly
+or on manual dispatch. When changing documentation or notebooks, run the relevant
+local checks before review; use the full workflows for archive/layout validation.
+Documentation builds retain privacy, link, coverage and regeneration checks.
+The repository has no website publishing workflow.
 
 ## Core workflows
 
@@ -180,29 +190,13 @@ After a training or evaluation run:
    ```bash
    python -m pytest -q tests/test_docs_*_cpu.py
    docs_check="$(mktemp -d)"
-   python scripts/build_docs.py --output "$docs_check"
-   docs_html="$(find "$docs_check" -maxdepth 1 -type d -name html -print -quit)"
-   docs_generated="$(find "$docs_check" -type d -name _generated -print -quit)"
-   python scripts/validate_docs.py \
-     --html "$docs_html" \
-     --generated "$docs_generated" \
-     --check-generation --workflow
+   python scripts/build_docs.py --output "$docs_check" --check-generation
    ```
 
-4. Open a pull request or merge request (PR/MR) containing the evidence and any
-   required allowlist/test update. Review the generated status values, source
-   hashes, freshness warnings, and scientific-claim boundary before merging.
-
-On GitHub, [.github/workflows/docs.yml](.github/workflows/docs.yml) performs the
-PR checks automatically; a successful trusted merge to `master` rebuilds and
-deploys Pages. A GitLab mirror may use an MR for the same review flow, but this
-repository does not ship a GitLab runner or Pages configuration: its MR
-pipeline must run the commands above and the merged revision must reach the
-canonical GitHub `master` branch for this Pages deployment to update.
-
-Training itself deliberately never pushes, opens a PR/MR, or publishes the
-site. The automatic portion begins when reviewed evidence is committed to the
-branch. More detail is in the [maintenance guide](docs/wiki/maintaining.rst).
+Review the generated status values, source hashes, freshness warnings and metric
+populations. The dashboard expands the latest completed study and collects older
+studies in its summary, retaining their metric downloads. See the
+[maintenance guide](docs/wiki/maintaining.rst) for validation details.
 
 ## Historical scope and limitations
 

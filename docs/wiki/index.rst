@@ -20,34 +20,7 @@ identifies measurements that remain unavailable.
    reconstruction
    evaluation
    phase69
-   phase68
-   phase67
-   phase66
-   phase65
-   phase64
-   phase63
-   phase62
-   phase61
-   phase60
-   phase59
-   phase58
-   phase57
-   phase56
-   phase55
-   phase54
-   phase53
-   phase52
-   phase51
-   phase50
-   phase49
-   phase48
-   phase47
-   phase46
-   phase45
-   phase44
-   phase43
-   phase42
-   phase41
+   studies
    _generated/status/index
    setup
    architecture
@@ -64,7 +37,7 @@ identifies measurements that remain unavailable.
    maintaining
 
 Search works with local assets, including when the HTML directory is served
-under a GitHub Pages repository subpath. No live job polling, remote badges,
+under a local server subpath. No live job polling, remote badges,
 fonts, diagrams, or JavaScript services are needed.
 
 * :ref:`genindex`

@@ -198,19 +198,21 @@ def test_validation_overview_preserves_real_only_not_run(tmp_path):
     assert payload["visual_review_status"] == "NOT_REVIEWED"
 
 
-def test_cpu_ci_retains_all_required_machine_readable_evidence_artifacts():
-    workflow = Path(".github/workflows/cpu-tests.yml").read_text(encoding="utf-8")
-    for artifact in (
-        "pytest-summary.txt",
-        "audit-integrity.txt",
-        "generated-notebook-consistency.txt",
-        "notebook_execution_summary.json",
-        "visual_review_index.html",
-        "validation_overview.json",
-    ):
-        assert artifact in workflow
-    assert "workflow_dispatch:" in workflow
-    assert "inputs.source_sha || github.sha" in workflow
+def test_ci_retains_evidence_in_the_workflow_that_produces_it():
+    cpu = yaml.safe_load((ROOT / ".github/workflows/cpu-tests.yml").read_text())
+    notebooks = yaml.safe_load((ROOT / ".github/workflows/full-notebook-smoke.yml").read_text())
+    cpu_steps = cpu["jobs"]["unit"]["steps"]
+    assert any("tee pytest-summary.txt" in step.get("run", "") for step in cpu_steps)
+    upload = next(step for step in cpu_steps if step.get("uses", "").startswith("actions/upload-artifact@"))
+    assert "pytest-summary.txt" in upload["with"]["path"]
+    assert upload["if"] == "always()"
+    notebook_steps = notebooks["jobs"]["all-notebooks"]["steps"]
+    upload = next(step for step in notebook_steps if step.get("uses", "").startswith("actions/upload-artifact@"))
+    assert any("--keep-output " + upload["with"]["path"] in step.get("run", "") for step in notebook_steps)
+    assert upload["if"] == "always()"
+    for workflow in (cpu, notebooks):
+        triggers = workflow.get("on", workflow.get(True))
+        assert "source_sha" in triggers["workflow_dispatch"]["inputs"]
 
 
 def test_audited_code_sha_equal_to_head_passes(tmp_path):

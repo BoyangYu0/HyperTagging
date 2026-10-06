@@ -11,7 +11,7 @@ notebooks:
     required_inputs: [deterministic_schema_v4_fixture]
     machine_readable_outputs: [leaf_composite_execution_report.json, leaf_composite_contract.json]
     scientific_claims_allowed: [software_input_contract_only]
-    CI_frequency: push_and_weekly
+    CI_frequency: weekly
     last_verified_sha: 6e46423e5ed4553aae1fccdce33db6e03f9cb4c8
     expected_sections: [input versus truth daughter histograms, pointer response, gradient]
     default_smoke: true
@@ -23,7 +23,7 @@ notebooks:
     required_inputs: [deterministic_schema_v4_fixture]
     machine_readable_outputs: [streaming_execution_report.json, streaming_report.json]
     scientific_claims_allowed: [bounded_fixture_mechanics_only]
-    CI_frequency: push_and_weekly
+    CI_frequency: weekly
     last_verified_sha: 6e46423e5ed4553aae1fccdce33db6e03f9cb4c8
     expected_sections: [event-row parquet, bounded iteration, online normalization]
     default_smoke: true
@@ -35,7 +35,7 @@ notebooks:
     required_inputs: [deterministic_schema_v4_fixture]
     machine_readable_outputs: [leaf_pid_execution_report.json, leaf_input_leakage_check.json]
     scientific_claims_allowed: [software_pid_contract_only]
-    CI_frequency: push_and_weekly
+    CI_frequency: weekly
     last_verified_sha: 6e46423e5ed4553aae1fccdce33db6e03f9cb4c8
     expected_sections: [reduced-PID contract, energy hypotheses, leakage check]
     default_smoke: true
@@ -47,7 +47,7 @@ notebooks:
     required_inputs: [deterministic_schema_v4_fixture]
     machine_readable_outputs: [dataset_execution_report.json]
     scientific_claims_allowed: [schema_and_fixture_distribution_only]
-    CI_frequency: push_and_weekly
+    CI_frequency: weekly
     last_verified_sha: 6e46423e5ed4553aae1fccdce33db6e03f9cb4c8
     expected_sections: [Dataset/schema overview, PID inspection, Decay-tree visualization, Channel inspection]
     default_smoke: true
@@ -60,7 +60,7 @@ notebooks:
     machine_readable_outputs: [hyperbolic_execution_report.json, curriculum_runtime_report.json, objective_gradient_report.json]
     scientific_claims_allowed: [geometry_mechanics_and_gradient_diagnostics_only]
     diagnostic_sections: [objective_gradient_conflict]
-    CI_frequency: push_and_weekly
+    CI_frequency: weekly
     last_verified_sha: 6e46423e5ed4553aae1fccdce33db6e03f9cb4c8
     expected_sections: [Embedding projections, Radius/depth validation, Anti-collapse diagnostics, Objective-gradient conflict diagnostic]
     default_smoke: true
@@ -108,7 +108,7 @@ notebooks:
     required_inputs: [deterministic_schema_v4_fixture]
     machine_readable_outputs: [capacity_execution_report.json, capacity_report.json]
     scientific_claims_allowed: [fixture_capacity_contract_only]
-    CI_frequency: push_and_weekly
+    CI_frequency: weekly
     last_verified_sha: 6e46423e5ed4553aae1fccdce33db6e03f9cb4c8
     expected_sections: [query usage, focal weighting, Hungarian]
     default_smoke: true
@@ -120,7 +120,7 @@ notebooks:
     required_inputs: [deterministic_schema_v4_fixture]
     machine_readable_outputs: [training_execution_report.json, training_pipeline_pass.json]
     scientific_claims_allowed: [checkpoint_and_transfer_contract_only]
-    CI_frequency: push_and_weekly
+    CI_frequency: weekly
     last_verified_sha: 6e46423e5ed4553aae1fccdce33db6e03f9cb4c8
     expected_sections: [train-only normalizer, Encoder transfer, resume]
     default_smoke: true
@@ -132,7 +132,7 @@ notebooks:
     required_inputs: [deterministic_level_fixture]
     machine_readable_outputs: [reconstruction_execution_report.json, scheduled_context_report.json]
     scientific_claims_allowed: [teacher_forced_and_reference_rollout_contract_only]
-    CI_frequency: push_and_weekly
+    CI_frequency: weekly
     last_verified_sha: 6e46423e5ed4553aae1fccdce33db6e03f9cb4c8
     expected_sections: [stair-causal mask, decoded proposals, teacher-forced, forward/loss/backward]
     default_smoke: true
@@ -144,7 +144,7 @@ notebooks:
     required_inputs: [deterministic_schema_v4_fixture]
     machine_readable_outputs: [qa_execution_report.json, preprocessing_qa.json]
     scientific_claims_allowed: [fixture_p4_closure_only]
-    CI_frequency: push_and_weekly
+    CI_frequency: weekly
     last_verified_sha: 6e46423e5ed4553aae1fccdce33db6e03f9cb4c8
     expected_sections: [Preprocessing QA report, Machine-readable, daughter-summed]
     default_smoke: true
@@ -156,7 +156,7 @@ notebooks:
     required_inputs: [deterministic_manifest_fixture]
     machine_readable_outputs: [manifest_execution_report.json, production_manifest_report.json]
     scientific_claims_allowed: [manifest_mechanics_only]
-    CI_frequency: push_and_weekly
+    CI_frequency: weekly
     last_verified_sha: 6e46423e5ed4553aae1fccdce33db6e03f9cb4c8
     expected_sections: [Production manifest inspection, memory, global UID]
     default_smoke: true

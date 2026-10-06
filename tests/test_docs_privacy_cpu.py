@@ -1,4 +1,4 @@
-"""Representative publication regressions; integration/workflow checks live in test_docs_wiki_cpu."""
+"""Representative publication regressions; integration checks live in test_docs_wiki_cpu."""
 from __future__ import annotations
 
 import json
@@ -29,7 +29,7 @@ def _write(root, relative, text):
     return path
 
 def _validation_site(root, payload):
-    for name in ("objects.inv", "searchindex.js", ".nojekyll"):
+    for name in ("objects.inv", "searchindex.js"):
         _write(root, name, "")
     _write(root, "index.html", payload)
     return root

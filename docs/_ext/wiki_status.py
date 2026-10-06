@@ -2731,8 +2731,6 @@ def _card(title: str, value: str, paragraphs: list[str], sources: list[str], kin
 def _render(manifest: dict[str, Any]) -> str:
     reconstruction = manifest["reconstruction"]
     science = manifest["science"]
-    source = manifest["sources"][SOURCE_IDS["reconstruction_terminal"]]
-    recent_source = manifest["sources"][SOURCE_IDS["reconstruction_phase40r1"]]
     recent = reconstruction["phase40r1"]
     control = recent["arms"]["control"]
     query_scale = recent["arms"]["query_scale"]
@@ -2899,107 +2897,121 @@ def _render(manifest: dict[str, Any]) -> str:
     if reconstruction.get("phase69"):
         cards.insert(0, ("Phase69 encoder confirmation", "NO JOINT RECURSIVE WINNER",
                          ["Refined versus pre-refinement: LCAG24/3561 versus25/3561; exact5/159 versus6/159, all shallow. Only pre-refinement passes original gates. End this family; Phase70 tests decoder relation bias at fixed70000 training events."], "warning"))
+    # Cards are newest first. Keep historical decisions in one compact table.
+    phase_cards = [card for card in cards if card[0].startswith("Phase")]
+    latest_card = max(phase_cards, key=lambda card: int(re.match(r"Phase(\d+)", card[0]).group(1))) if phase_cards else cards[0]
+    historical_cards = [card for card in cards if card is not latest_card]
+    cards = [latest_card]
+    latest_phase = latest_card[0].split()[0].lower()
     lines = ["Model performance and scientific status", "=======================================", "",
              "Recorded measurements from tracked evidence. Missing measurements are UNAVAILABLE;",
              "NOT_RUN describes a recorded evaluation status. Historical results do not verify",
              "the current model. See :doc:`../../evaluation` for metric definitions and populations.", "",
              ":download:`Metric values and source hashes <status.json>`.", "",
-             f"Phase40r1 observation: {_literal(recent_source['recorded_date'])}; freshness: {_literal(recent_source['freshness']['status'])}.",
-             f"Historical Stage A observation: {_literal(source['recorded_date'])}; freshness: {_literal(source['freshness']['status'])}.",
-             "Historical cards use different cohorts; cross-phase differences are not controlled effects.", "",
+             "Only the latest completed study is expanded. Earlier studies appear in the summary below.",
+             "Studies use different cohorts; cross-phase differences are not controlled effects.", "",
              ".. raw:: html", "",
              '   <section class="status-dashboard" aria-label="Recorded model performance">']
     for index, (title, value, paragraphs, kind) in enumerate(cards):
-        refs = _refs("reconstruction_phase69_review") if title.startswith("Phase69") else _refs("reconstruction_phase68_review") if title.startswith("Phase68") else _refs("reconstruction_phase67_review") if title.startswith("Phase67") else _refs("reconstruction_phase66_review") if title.startswith("Phase66") else _refs("reconstruction_phase65_review") if title.startswith("Phase65") else _refs("reconstruction_phase64_review") if title.startswith("Phase64") else reconstruction["phase61"]["source_ids"] if title.startswith("Phase61") else reconstruction["phase60"]["source_ids"] if title.startswith("Phase60") else reconstruction["phase59"]["source_ids"] if title.startswith("Phase59") else reconstruction["phase58"]["source_ids"] if title.startswith("Phase58") else reconstruction["phase57"]["source_ids"] if title.startswith("Phase57") else reconstruction["phase56"]["source_ids"] if title.startswith("Phase56") else reconstruction["phase55"]["source_ids"] if title.startswith("Phase55") else reconstruction["phase54"]["source_ids"] if title.startswith("Phase54") else reconstruction["phase53"]["source_ids"] if title.startswith("Phase53") else reconstruction["phase52"]["source_ids"] if title.startswith("Phase52") else reconstruction["phase51"]["source_ids"] if title.startswith("Phase51") else reconstruction["phase50"]["source_ids"] if title.startswith("Phase50") else reconstruction["phase49"]["source_ids"] if title.startswith("Phase49") else reconstruction["phase48"]["source_ids"] if title.startswith("Phase48") else reconstruction["phase47"]["source_ids"] if title.startswith("Phase47") else reconstruction["phase46"]["source_ids"] if title.startswith("Phase46") else reconstruction["phase45"]["source_ids"] if title.startswith("Phase45") else reconstruction["phase44"]["source_ids"] if title.startswith("Phase44") else reconstruction["phase43"]["source_ids"] if title.startswith("Phase43") else reconstruction["phase42"]["source_ids"] if title.startswith("Phase42") else reconstruction["phase41"]["source_ids"] if title.startswith("Phase41") else recent["source_ids"] if title.startswith("Phase40") else reconstruction["source_ids"]
+        record = reconstruction.get(latest_phase, {})
+        review_key = f"reconstruction_{latest_phase}_review"
+        refs = _refs(review_key) if review_key in SOURCE_IDS else record.get("source_ids", reconstruction["source_ids"])
         lines.extend("   " + line for line in _card(title, value, paragraphs, refs, kind, index).splitlines())
     lines += ["   </section>", "", ".. only:: not html", ""]
     for title, value, paragraphs, kind in cards:
         lines += [f"   **{_literal(title)}: {_literal(value)}**", ""]
         lines.extend(f"   {_literal(paragraph)}" for paragraph in paragraphs)
         lines += [""]
-    lines += _phase69.render(reconstruction.get("phase69", {}))
-    lines += _phase68.render(reconstruction.get("phase68", {}))
-    lines += _phase67.render(reconstruction.get("phase67", {}))
-    lines += _phase66.render(reconstruction.get("phase66", {}))
-    lines += _phase65.render(reconstruction.get("phase65", {}))
-    lines += _phase64.render(reconstruction.get("phase64", {}))
-    lines += _render_phase61(reconstruction.get("phase61", {}))
-    lines += _render_phase60(reconstruction.get("phase60", {}))
-    lines += _render_phase59(reconstruction.get("phase59", {}))
-    lines += _render_phase58(reconstruction.get("phase58", {}))
-    lines += _render_phase57(reconstruction.get("phase57", {}))
-    lines += _render_phase55(reconstruction.get("phase55", {}))
-    lines += _render_phase56(reconstruction.get("phase56", {}))
-    lines += _render_phase54(reconstruction.get("phase54", {}))
-    lines += _render_phase53(reconstruction.get("phase53", {}))
-    lines += _render_phase52(reconstruction.get("phase52", {}))
-    lines += _render_phase51(reconstruction.get("phase51", {}))
-    lines += _render_phase50(reconstruction.get("phase50", {}))
-    lines += _render_phase49(reconstruction.get("phase49", {}))
-    lines += _render_phase48(reconstruction.get("phase48", {}))
-    lines += _render_phase47(reconstruction.get("phase47", {}))
-    lines += _render_phase46(reconstruction.get("phase46", {}))
-    lines += _render_phase45(reconstruction.get("phase45", {}))
-    lines += _render_phase44(reconstruction["phase44"])
-    lines += _render_phase43(reconstruction["phase43"])
-    lines += _render_phase42(reconstruction["phase42"])
-    lines += _render_phase41(reconstruction["phase41"])
-    lines += ["Phase40r1 strict full-decay comparison", "----------------------------------------", "",
-              "Both arms used the same untouched 100-event validation cohort. Values are",
-              "strict checkpoint-direct reconstruction metrics; neither arm passed every",
-              "preregistered hierarchy gate and neither is authorized for promotion.", ""]
-    lines += _table(["Metric", "Control", "Query scale"], [
-        ["selected step", control["selected_step"], query_scale["selected_step"]],
-        ["micro complete-target efficiency", control["micro_complete_target_efficiency"], query_scale["micro_complete_target_efficiency"]],
-        ["predicted depth fraction", control["predicted_depth_fraction"], query_scale["predicted_depth_fraction"]],
-        ["tree validity", control["tree_validity"], query_scale["tree_validity"]],
-        ["full root completion", f"{_display(control['full_root_completion_numerator'])}/{_display(control['full_root_completion_denominator'])}", f"{_display(query_scale['full_root_completion_numerator'])}/{_display(query_scale['full_root_completion_denominator'])}"],
-        ["full LCAG", f"{_display(control['full_lcag_numerator'])}/{_display(control['full_lcag_denominator'])}", f"{_display(query_scale['full_lcag_numerator'])}/{_display(query_scale['full_lcag_denominator'])}"],
-        ["exact mother coverage", f"{_display(control['exact_mother_coverage_numerator'])}/{_display(control['exact_mother_coverage_denominator'])}", f"{_display(query_scale['exact_mother_coverage_numerator'])}/{_display(query_scale['exact_mother_coverage_denominator'])}"],
-        ["full source recall", control["full_source_recall"], query_scale["full_source_recall"]],
-        ["full source precision", control["full_source_precision"], query_scale["full_source_precision"]],
-        ["half-tree source recall", control["half_source_recall"], query_scale["half_source_recall"]],
-        ["half-tree source precision", control["half_source_precision"], query_scale["half_source_precision"]],
-        ["half-tree LCAG", f"{_display(control['half_lcag_numerator'])}/{_display(control['half_lcag_denominator'])}", f"{_display(query_scale['half_lcag_numerator'])}/{_display(query_scale['half_lcag_denominator'])}"],
-        ["perfect half-tree LCAG", f"{_display(control['half_perfect_lcag_numerator'])}/{_display(control['half_perfect_lcag_denominator'])}", f"{_display(query_scale['half_perfect_lcag_numerator'])}/{_display(query_scale['half_perfect_lcag_denominator'])}"],
-        ["all gates passed", control["all_gates_passed"], query_scale["all_gates_passed"]],
-    ])
-    lines += [f"Current best arm: {_literal(recent['current_best_arm'])}. Metric contract:",
-              f"{_literal(recent['metric_contract_version'])} ({_literal(recent['metric_completeness'])}).",
-              "The contract rejects dashboard generation if any strict, half-tree, full-scope beam, or half-scope beam metric is absent.", "",
-              "Current-best beam-search reconstruction", "---------------------------------------", "",
-              f"Beam search used {_literal(recent['beam_event_count'])} validation events. Every registered model-only ranker is shown; oracle-at-k is diagnostic only.", ""]
-    beam_labels = {
-        "greedy": "greedy",
-        "average_link_probability": "average link probability",
-        "learned_confidence_mean": "learned confidence mean",
-        "learned_confidence_sum": "learned confidence sum",
-        "normalized_joint_log_probability": "normalized joint log probability",
-        "oracle_at_k": "oracle at k (diagnostic)",
+    renderers = {
+        **{f"phase{number}": globals()[f"_phase{number}"].render for number in range(64, 70)},
+        **{f"phase{number}": globals()[f"_render_phase{number}"] for number in range(41, 62)},
     }
-    lines += _table(["Scope", "Ranking", "source recall", "source precision", "LCAG pair accuracy", "mother coverage", "perfect LCAG"], [
-        [scope, beam_labels[name], *[_metric_point(beam_rankings_by_scope[scope][name][metric]) for metric in (
-            "source_recall", "source_precision", "lcag_pair_accuracy", "mother_pid_coverage", "perfect_lcag")]]
-        for scope in ("full", "half")
-        for name in beam_labels
+    if latest_phase in renderers:
+        lines += renderers[latest_phase](reconstruction[latest_phase])
+    lines += ["Earlier studies — summary", "-------------------------", "",
+              "Historical evidence is retained in the complete metric download; missing newer metrics",
+              "are unavailable, not zero. Dated study reports remain archival references.", ""]
+    lines += _table(["Study", "Recorded decision", "Summary"], [
+        [title, value, " ".join(paragraphs[:2]) if paragraphs else "UNKNOWN"]
+        for title, value, paragraphs, _kind in historical_cards
     ])
-    lines += [
-              f"Phase41 preregisters pointer/object thresholds {_literal(recent['decision']['phase41_pointer_threshold'])}/{_literal(recent['decision']['phase41_object_threshold'])} on a fresh cohort; this is not a post-hoc phase40 promotion setting.", "",
-              "Stage A validation comparison", "-----------------------------", "",
-              "Values are copied from the terminal receipt. Validation loss and pointer metrics",
-              "describe the validation view; edge/tree results describe rollout. The receipt",
-              "does not retain per-metric sufficient statistics or paired event uncertainties.",
-              "The canonical subtree field is retained under its receipt name.", ""]
-    lines += _table(["Metric", "Relation bias", "q32"], [
-        [name, reconstruction["metrics"]["relbias"][name], reconstruction["metrics"]["q32"][name]]
-        for name in reconstruction["metrics"]["relbias"]])
-    lines += _table(["Cohort", "Relation bias", "q32"], [
-        [name, reconstruction["cohorts"]["relbias"][name], reconstruction["cohorts"]["q32"][name]]
-        for name in ("validation_events", "rollout_events")])
-    lines += ["Unavailable values in this table appear as UNKNOWN. Smaller validation loss is",
-              "better only under comparable objective weights and target populations; it is not",
-              "a full-tree reconstruction efficiency. Tree validity does not imply correct topology.", "",
-              "Training and software context", "-----------------------------", ""]
+    # Keep every historical download reachable without rendering its metric tables.
+    historical_downloads = set()
+    def collect_downloads(value):
+        if isinstance(value, dict):
+            filename = value.get("filename")
+            if isinstance(filename, str) and re.fullmatch(r"phase[0-9]+-[a-z0-9-]+\.json", filename):
+                historical_downloads.add(filename)
+            for child in value.values():
+                collect_downloads(child)
+        elif isinstance(value, list):
+            for child in value:
+                collect_downloads(child)
+    for phase, record in reconstruction.items():
+        if phase.startswith("phase") and phase != latest_phase:
+            collect_downloads(record)
+    if historical_downloads:
+        lines += ["Historical metric downloads", "~~~~~~~~~~~~~~~~~~~~~~~~~~~", ""]
+        for filename in sorted(historical_downloads):
+            lines += [f":download:`{filename.removesuffix('.json')} <{filename}>`.", ""]
+    if latest_phase == "phase40r1":
+        lines += ["Phase40r1 strict full-decay comparison", "----------------------------------------", "",
+                  "Both arms used the same untouched 100-event validation cohort. Values are",
+                  "strict checkpoint-direct reconstruction metrics; neither arm passed every",
+                  "preregistered hierarchy gate and neither is authorized for promotion.", ""]
+        lines += _table(["Metric", "Control", "Query scale"], [
+            ["selected step", control["selected_step"], query_scale["selected_step"]],
+            ["micro complete-target efficiency", control["micro_complete_target_efficiency"], query_scale["micro_complete_target_efficiency"]],
+            ["predicted depth fraction", control["predicted_depth_fraction"], query_scale["predicted_depth_fraction"]],
+            ["tree validity", control["tree_validity"], query_scale["tree_validity"]],
+            ["full root completion", f"{_display(control['full_root_completion_numerator'])}/{_display(control['full_root_completion_denominator'])}", f"{_display(query_scale['full_root_completion_numerator'])}/{_display(query_scale['full_root_completion_denominator'])}"],
+            ["full LCAG", f"{_display(control['full_lcag_numerator'])}/{_display(control['full_lcag_denominator'])}", f"{_display(query_scale['full_lcag_numerator'])}/{_display(query_scale['full_lcag_denominator'])}"],
+            ["exact mother coverage", f"{_display(control['exact_mother_coverage_numerator'])}/{_display(control['exact_mother_coverage_denominator'])}", f"{_display(query_scale['exact_mother_coverage_numerator'])}/{_display(query_scale['exact_mother_coverage_denominator'])}"],
+            ["full source recall", control["full_source_recall"], query_scale["full_source_recall"]],
+            ["full source precision", control["full_source_precision"], query_scale["full_source_precision"]],
+            ["half-tree source recall", control["half_source_recall"], query_scale["half_source_recall"]],
+            ["half-tree source precision", control["half_source_precision"], query_scale["half_source_precision"]],
+            ["half-tree LCAG", f"{_display(control['half_lcag_numerator'])}/{_display(control['half_lcag_denominator'])}", f"{_display(query_scale['half_lcag_numerator'])}/{_display(query_scale['half_lcag_denominator'])}"],
+            ["perfect half-tree LCAG", f"{_display(control['half_perfect_lcag_numerator'])}/{_display(control['half_perfect_lcag_denominator'])}", f"{_display(query_scale['half_perfect_lcag_numerator'])}/{_display(query_scale['half_perfect_lcag_denominator'])}"],
+            ["all gates passed", control["all_gates_passed"], query_scale["all_gates_passed"]],
+        ])
+        lines += [f"Current best arm: {_literal(recent['current_best_arm'])}. Metric contract:",
+                  f"{_literal(recent['metric_contract_version'])} ({_literal(recent['metric_completeness'])}).",
+                  "The contract rejects dashboard generation if any strict, half-tree, full-scope beam, or half-scope beam metric is absent.", "",
+                  "Current-best beam-search reconstruction", "---------------------------------------", "",
+                  f"Beam search used {_literal(recent['beam_event_count'])} validation events. Every registered model-only ranker is shown; oracle-at-k is diagnostic only.", ""]
+        beam_labels = {
+            "greedy": "greedy",
+            "average_link_probability": "average link probability",
+            "learned_confidence_mean": "learned confidence mean",
+            "learned_confidence_sum": "learned confidence sum",
+            "normalized_joint_log_probability": "normalized joint log probability",
+            "oracle_at_k": "oracle at k (diagnostic)",
+        }
+        lines += _table(["Scope", "Ranking", "source recall", "source precision", "LCAG pair accuracy", "mother coverage", "perfect LCAG"], [
+            [scope, beam_labels[name], *[_metric_point(beam_rankings_by_scope[scope][name][metric]) for metric in (
+                "source_recall", "source_precision", "lcag_pair_accuracy", "mother_pid_coverage", "perfect_lcag")]]
+            for scope in ("full", "half")
+            for name in beam_labels
+        ])
+        lines += [
+                  f"Phase41 preregisters pointer/object thresholds {_literal(recent['decision']['phase41_pointer_threshold'])}/{_literal(recent['decision']['phase41_object_threshold'])} on a fresh cohort; this is not a post-hoc phase40 promotion setting.", "",
+                  "Stage A validation comparison", "-----------------------------", "",
+                  "Values are copied from the terminal receipt. Validation loss and pointer metrics",
+                  "describe the validation view; edge/tree results describe rollout. The receipt",
+                  "does not retain per-metric sufficient statistics or paired event uncertainties.",
+                  "The canonical subtree field is retained under its receipt name.", ""]
+        lines += _table(["Metric", "Relation bias", "q32"], [
+            [name, reconstruction["metrics"]["relbias"][name], reconstruction["metrics"]["q32"][name]]
+            for name in reconstruction["metrics"]["relbias"]])
+        lines += _table(["Cohort", "Relation bias", "q32"], [
+            [name, reconstruction["cohorts"]["relbias"][name], reconstruction["cohorts"]["q32"][name]]
+            for name in ("validation_events", "rollout_events")])
+        lines += ["Unavailable values in this table appear as UNKNOWN. Smaller validation loss is",
+                  "better only under comparable objective weights and target populations; it is not",
+                  "a full-tree reconstruction efficiency. Tree validity does not imply correct topology.", "",
+                  ""]
+    lines += ["Training and software context", "-----------------------------", ""]
     pretraining, audit = manifest["pretraining"], manifest["audit"]
     latest = manifest["verification"]["latest_record"]
     pytest = latest["pytest"]

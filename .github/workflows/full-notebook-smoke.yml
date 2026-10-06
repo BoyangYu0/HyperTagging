@@ -10,19 +10,43 @@ on:
   schedule:
     - cron: "17 3 * * 1"
 
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash --noprofile --norc -e -o pipefail {0}
+
+concurrency:
+  group: notebooks-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CUDA_VISIBLE_DEVICES: ""
+  OMP_NUM_THREADS: "2"
+  MKL_NUM_THREADS: "2"
+
 jobs:
   all-notebooks:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: ${{ inputs.source_sha || github.sha }}
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: "3.11"
-      - run: python -m pip install --upgrade pip
-      - run: python -m pip install -e ".[dev,notebook]"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install CPU notebook dependencies
+        run: |
+          python -m pip install --disable-pip-version-check torch==2.7.1 --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install --disable-pip-version-check -e ".[dev,notebook]"
+      - name: Generated notebook consistency
+        run: python scripts/execute_notebook_smoke_tests.py --check-generated
       - name: Report runner-derived notebook count
         run: python scripts/execute_notebook_smoke_tests.py --list
       - name: Execute every deterministic CPU notebook group

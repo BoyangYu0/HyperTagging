@@ -2,6 +2,7 @@ name: CPU correctness
 
 on:
   push:
+    branches: [master]
   pull_request:
   workflow_dispatch:
     inputs:
@@ -10,9 +11,16 @@ on:
         required: false
         type: string
 
+permissions:
+  contents: read
+
 defaults:
   run:
-    shell: bash
+    shell: bash --noprofile --norc -e -o pipefail {0}
+
+concurrency:
+  group: cpu-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 env:
   CUDA_VISIBLE_DEVICES: ""
@@ -21,59 +29,30 @@ env:
 
 jobs:
   unit:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: ${{ inputs.source_sha || github.sha }}
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: "3.11"
-      - run: python -m pip install --upgrade pip
-      - run: python -m pip install -e ".[dev,notebook]"
-      - name: Unit suite
+          cache: pip
+          cache-dependency-path: |
+            pyproject.toml
+            docs/requirements*.txt
+      - name: Install CPU test dependencies
+        run: |
+          python -m pip install --disable-pip-version-check torch==2.7.1 --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install --disable-pip-version-check -e ".[dev,notebook]" -r docs/requirements-test.txt
+      - name: Unit suite including documentation regressions
         run: python -m pytest -q | tee pytest-summary.txt
-      - name: Audit integrity
-        run: python scripts/validate_audit_integrity.py | tee audit-integrity.txt
-      - name: Generated notebook consistency
-        run: >-
-          python scripts/execute_notebook_smoke_tests.py --check-generated
-          | tee generated-notebook-consistency.txt
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: cpu-pytest-summary
           path: |
             pytest-summary.txt
-            audit-integrity.txt
-            generated-notebook-consistency.txt
-
-  notebook-smoke:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.source_sha || github.sha }}
-          fetch-depth: 0
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - run: python -m pip install --upgrade pip
-      - run: python -m pip install -e ".[dev,notebook]"
-      - name: Core push/PR notebooks selected from index
-        run: >-
-          python scripts/execute_notebook_smoke_tests.py
-          --keep-output /tmp/hypertagging-notebook-smoke
-          --ci-frequency push_and_weekly
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: bounded-notebook-summary
-          path: |
-            /tmp/hypertagging-notebook-smoke/notebook_execution_summary.json
-            /tmp/hypertagging-notebook-smoke/visual_review_index.html
-            /tmp/hypertagging-notebook-smoke/visual_review_index.json
-            /tmp/hypertagging-notebook-smoke/validation_overview.html
-            /tmp/hypertagging-notebook-smoke/validation_overview.md
-            /tmp/hypertagging-notebook-smoke/validation_overview.json

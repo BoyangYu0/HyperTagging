@@ -7,6 +7,46 @@ strict full-decay evaluation measures recovery of specified truth units.
 The :doc:`dashboard <_generated/status/index>` keeps recorded exploratory
 measurements separate from unavailable or not-run physics evaluations.
 
+Tag efficiency and inclusive efficiency
+---------------------------------------
+
+Every new strict evaluation exports ``tag_efficiency``. For N generic B-pair
+collisions there are 2N true-B trials. If N1 events recover one distinct true B
+and N2 recover both, per-B efficiency is (N1 + 2N2) divided by 2N, and event efficiency
+is (N1 + N2) divided by N. Duplicate candidates never increase the success count.
+
+* **Exact tag efficiency:** an accepted B candidate has exactly the retained
+  detector sources and the unordered recursive truth topology and PID,
+  including the B root and leaves. The other B need not be correct.
+* **Inclusive efficiency** (``inclusive_fsp_grouping``): an actual reconstructed
+  composite groups all and only one true B's retained FSP sources. PID and
+  internal topology are ignored, including the group's PID and wrappers above
+  it. Disconnected components cannot be joined after inference to create a
+  success, and a group containing both Bs cannot recover either individually.
+
+Report greedy, model-ranked top-1 and retained beam-pool results separately.
+Each true B counts at most once at each K; beam width does not enlarge the
+2N denominator. Pool recovery is truth-evaluated oracle recall. Recovering two
+Bs in incompatible hypotheses does not establish a coherent reconstructed pair.
+Truth is never used to generate or rank candidates.
+
+Missing target membership remains unavailable, with its nominal trial retained;
+proven success over nominal trials is a lower bound when truth is unavailable.
+PID availability is separate: inclusive grouping may be measurable when exact
+matching is unavailable. Report counts, denominators, unavailable counts and
+covered flags by B channel, with readable retained signatures and stored IDs.
+
+Continuum has no true B pair. Its two nominal attempts per collision measure
+fake-B acceptance, separately from retained-component exact/inclusive recovery
+and source-type coverage. Original q/qbar efficiencies are unavailable without
+parton-to-FSP ancestry. These retained-source proxies are not physical FEI
+matching; comparisons require common truth, inputs, selections and working points.
+Historical studies are not retroactively assigned the newly added metrics.
+
+The complete metric contract is maintained in
+``docs/full_decay_reconstruction_evaluation.md`` and the implementation in
+:py:mod:`hypertagging.evaluation.tag_efficiency`.
+
 Validation losses and representation diagnostics
 --------------------------------------------------------
 

@@ -152,7 +152,6 @@ def staging_repository(tmp_path, monkeypatch):
         "docs/wiki/index.rst": "Wiki\n====\n",
         "docs/wiki/conf.py": "project = 'Fixture'\n",
         "docs/wiki/_static/wiki.css": ".wiki { color: black; }\n",
-        "docs/wiki/.nojekyll": "",
         "docs/index.rst": "Standalone\n==========\n",
         "docs/conf.py": "project = 'Fixture'\n",
         "doc/index-hypertagging.rst": "Package\n=======\n",
@@ -249,19 +248,7 @@ def test_unowned_sphinx_source_is_preserved_but_cannot_join_generated_site(gener
     assert before == after
 
 
-def test_nojekyll_marker_cannot_publish_an_arbitrary_body(staging_repository):
-    root, output, calls = staging_repository
-    marker = root / "docs" / "wiki" / ".nojekyll"
-    marker.write_text("UNRELATED-MARKER-PAYLOAD", encoding="utf-8")
-    with pytest.raises(SystemExit) as failure:
-        build_docs.main(["--output", str(output)])
-    assert failure.value.code == 2
-    assert not output.exists()
-    assert not calls
-    assert marker.read_text() == "UNRELATED-MARKER-PAYLOAD"
-
-
-@pytest.mark.parametrize('options', [[], ['--check-generation'], ['--workflow'], ['--check-generation', '--workflow']])
+@pytest.mark.parametrize('options', [[], ['--check-generation']])
 def test_build_additional_checks_share_one_complete_validator(staging_repository, options):
     root, output, calls = staging_repository
     assert build_docs.main(['--output', str(output), *options]) == 0
@@ -271,7 +258,7 @@ def test_build_additional_checks_share_one_complete_validator(staging_repository
     assert checks[1] == str(root / 'scripts/validate_docs.py')
     assert checks[checks.index('--html') + 1] == str(output / 'html')
     assert checks[checks.index('--generated') + 1] == str(output / 'source/wiki/_generated')
-    for flag in ('--check-generation', '--workflow'):
+    for flag in ('--check-generation',):
         assert (flag in checks) == (flag in options)
 
 
@@ -282,5 +269,5 @@ def test_combined_validation_propagates_either_failure(staging_repository, monke
         calls.append(command)
         return SimpleNamespace(returncode=build_exit if len(calls) == 1 else validation_exit)
     monkeypatch.setattr(build_docs.subprocess, 'run', run)
-    assert build_docs.main(['--output', str(output), '--check-generation', '--workflow']) == (build_exit or validation_exit)
+    assert build_docs.main(['--output', str(output), '--check-generation']) == (build_exit or validation_exit)
     assert len(calls) == expected_calls

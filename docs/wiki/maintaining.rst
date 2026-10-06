@@ -1,5 +1,5 @@
-Building and publishing the wiki
-================================
+Building and maintaining the wiki
+=================================
 
 Authored guides live in ``docs/wiki``. ``docs/index.rst`` is the standalone
 root; ``doc/index-hypertagging.rst`` connects the same tree to basf2 discovery.
@@ -15,7 +15,10 @@ The dashboard reads the fixed ``SOURCE_PATHS`` collection in
 ``docs/_ext/wiki_status.py``. Add a reduced tracked result and explicitly map
 its metric names, cohort counts and observation date. Preserve dated receipts;
 update the source selection and parsing tests when a newer result supersedes
-one. ``docs/audits/current_status.md`` owns mutable scientific status.
+one. Expand only the latest completed study on the dashboard. Earlier studies
+belong in its compact summary; retain historical metric downloads and dated
+reports through :doc:`studies`. ``docs/audits/current_status.md`` owns mutable
+scientific status.
 Do not turn missing metrics into zeroes or treat training completion as
 convergence. Keep teacher-forced, rollout, strict-decay and oracle results
 identified by their actual populations.
@@ -33,7 +36,8 @@ Use a new or empty build directory and the installed documentation environment:
 .. code-block:: bash
 
    python -m pytest -q tests/test_docs_*_cpu.py
-   python scripts/build_docs.py --output docs/_build/science-check --check-generation --workflow
+   python scripts/build_docs.py --output docs/_build/science-check --check-generation
+   python scripts/build_docs.py --builder text --output docs/_build/science-text
    python scripts/build_docs.py --layout basf2 --output docs/_build/science-basf2
    git diff --check
 
@@ -44,16 +48,18 @@ layout checks discovery and relative references; it does not run basf2 itself.
 ``SOURCE_DATE_EPOCH`` optionally supplies a reproducible freshness clock;
 otherwise the checkout commit time is used.
 
-GitHub Pages
-------------
+Continuous integration
+----------------------
 
-``.github/workflows/docs.yml`` validates before artifact upload. Builds have
-read-only repository permissions. Only trusted master runs can upload and enter
-the separate Pages deployment job, which has Pages and ID-token write access.
-Keep that permission boundary and the pre-upload validator intact.
-An administrator enables GitHub Actions as the Pages source and restricts the
-Pages environment to master. A GitLab mirror can run the same local checks,
-but this repository's deployment workflow is GitHub-specific.
+PRs and pushes to master run the CPU correctness suite once, including
+these documentation regressions and audit integrity. Superseded runs are
+cancelled. Full documentation builds run weekly or by manual dispatch in
+``.github/workflows/docs.yml``; notebook execution and source consistency run
+in ``.github/workflows/full-notebook-smoke.yml`` on the same cadence.
+Run relevant local checks when changing documentation or notebooks. The full
+documentation workflow still checks HTML, text and basf2 layouts, privacy,
+links, source coverage and independent generation. It has read-only permissions
+and does not upload or deploy a website.
 
 Metric download indexing
 ------------------------
@@ -76,22 +82,12 @@ verify both actual sizes. The 10 MiB per-file limit, 5,000-entry limit, exact
 metric allowlists and all content/privacy checks remain unchanged. This is a
 documentation storage allowance, not a scientific acceptance or stability change.
 
-Verified branch promotion
--------------------------
+Validation integrity
+--------------------
 
-Finish the implementation commit and its audit-lineage follow-up locally. Run
-audit integrity and generated-notebook consistency checks, then push only the
-development branch. CPU correctness and the complete documentation workflow
-now run for every branch push. An isolated page preview cannot replace the
-full HTML, text, basf2, privacy and regeneration checks. Keep the source checkout
-unchanged during local builds.
-
-After both workflows succeed for that exact branch commit, run
-``python scripts/promote_verified_commit.py`` to inspect eligibility and add
-``--push`` to fast-forward master. The helper verifies the remote branch, exact
-commit, latest workflow runs and clean tracked files; it never force-pushes.
-Any new commit requires new checks. Master runs the checks again before Pages
-deployment. Branch builds have read-only access and cannot publish Pages.
+Run audit integrity and generated-notebook consistency checks when applicable.
+Complete documentation validation covers HTML, text, basf2, privacy and generated
+content. Keep the source checkout unchanged during local builds.
 
 The publication matcher has a fixed aggregate work allowance proportional to
 the fixed site byte allowance. Per-file work and state limits remain enforced.
@@ -117,7 +113,7 @@ Phase67 runtime review
 Phase66 measured 58.53 minutes against the unchanged 60-minute job bound.
 Standalone HTML and independent regeneration remain in the build job; text and
 basf2 builds run on separate read-only matrix runners. All layouts retain full
-privacy, coverage and link checks. Deployment depends on both jobs, including
+privacy, coverage and link checks. Validation requires both jobs, including
 both matrix entries; fail-fast is disabled so failures remain observable.
 No timeout, byte/work bound, historical download or scientific gate is removed.
 
@@ -127,11 +123,10 @@ Phase69 validation runtime review
 The additive-efficiency publication reached the unchanged 60-minute CI limit
 in the final independent validation call. The strict site build, privacy,
 links and both compatibility layouts passed; the equivalent local checks
-also passed. The workflow now requests fresh regeneration and workflow
+also passed. The workflow now requests fresh regeneration
 validation in the builder's existing independent validator process. This
 retains every check while avoiding another full scan of the same immutable
 artifact in a separate call. Sphinx's build-time privacy scan also remains.
-Neither flag disables a default check. Any build or validation failure blocks
-publication, and the uploaded HTML path is bound by the workflow validator.
-Measure the resulting CI runtime before promotion; all limits and compatibility
-jobs remain unchanged.
+Any build or validation failure fails the documentation workflow. These full
+archive checks now run on the scheduled/manual cadence described above; their
+artifact limits and compatibility layouts remain unchanged.

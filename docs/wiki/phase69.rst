@@ -347,7 +347,7 @@ Verification and publication
 ----------------------------
 
 
-Native scientific validation passes. Focused and broad CPU checks, all documentation layouts, audit, privacy, export integrity, preserved historical links, desktop and narrow browser checks, exact branch and master CI, and actual live downloads are recorded in the task final manifest. GitHub Pages remains the publication host. The measured Phase68 capacity repair and v2 decoder are preserved; new growth must fit the existing 16 MiB planning envelope and unchanged hard byte, file, work and runtime limits.
+Native scientific validation passes. Focused and broad CPU checks, all documentation layouts, audit, privacy, export integrity, preserved historical links, desktop and narrow browser checks, exact branch and master CI, and actual live downloads are recorded in the task final manifest. Website deployment was retired after this closeout; build the documentation locally. The measured Phase68 capacity repair and v2 decoder are preserved; new growth must fit the existing 16 MiB planning envelope and unchanged hard byte, file, work and runtime limits.
 
 
 Downloads

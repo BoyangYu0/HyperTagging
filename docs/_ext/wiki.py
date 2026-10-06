@@ -132,8 +132,6 @@ def on_builder_inited(app):
     for asset in (root / "docs/wiki/_static").rglob("*"):
         if asset.name != "wiki.css" or not asset.is_file() or asset.is_symlink():
             raise ValueError("Unexpected documentation static asset")
-    if (root / "docs/wiki/.nojekyll").read_bytes():
-        raise ValueError("Pages marker must be empty")
     content = Path(app.config.wiki_content_path)
     if content.is_absolute() or ".." in content.parts:
         raise ValueError("wiki_content_path must be relative to the Sphinx source root")
