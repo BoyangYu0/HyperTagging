@@ -1107,7 +1107,7 @@ snapshot verifies both pending for scheduler priority, with contract hashes,
 resources and no-requeue authenticated. GPU startup is not yet verified.
 Scheduler acceptance is not scientific success.
 
-Phase70 publication runtime review found sixteen real-repository status
+Phase70 publication runtime review found seventeen real-repository status
 projections repeated across historical download and full-manifest tests. They
 now share one complete, validated session projection and copy all files plus a
 deep copy of the manifest into each test's isolated directory. Every original
@@ -1116,3 +1116,8 @@ independent regeneration, privacy/link/export checks and byte/time/work limits
 are unchanged. Local source generation had reached about thirteen minutes;
 repeating that unchanged payload per historical assertion is avoidable work.
 Exact-revision CI and final complete layout results remain the validation gate.
+
+The earlier remote documentation run completed270 assertions and failed two: a
+stale latest-study heading and an accidental test-only Phase48 count edit. The
+heading now checks Phase70 tagging before history; the count is restored to the
+unchanged historical artifact value8,953,020. No historical metric is changed.

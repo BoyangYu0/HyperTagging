@@ -395,9 +395,9 @@ def test_cpu_ci_tee_limitation_is_derived_from_shell_settings(shell, command, ex
     assert result["without_explicit_pipefail"] == expected
 
 
-def test_current_repository_dashboard_surfaces_recorded_acceptance_values(tmp_path):
+def test_current_repository_dashboard_surfaces_recorded_acceptance_values(tmp_path, copy_complete_documentation_status):
     root = _MODULE.parents[2]
-    manifest = status.generate_status(root, tmp_path / "generated")
+    manifest = copy_complete_documentation_status(tmp_path / "generated")
     assert manifest["audit"]["recommendation"] == "NO_GO"
     from collections import Counter
     import yaml
@@ -411,8 +411,10 @@ def test_current_repository_dashboard_surfaces_recorded_acceptance_values(tmp_pa
     assert manifest["pretraining"]["recorded_step"] == 54064 and manifest["pretraining"]["planned_steps"] == 108128
     assert manifest["pretraining"]["calibration_status"] == "PENDING"
     rendered_status = (tmp_path / "generated" / "index.rst").read_text().replace("\\-", "-")
-    assert "Phase69: latest efficiency evaluation" in rendered_status
-    assert rendered_status.index("Tagging efficiencies") < rendered_status.index("Tree reconstruction")
+    assert "Phase70 efficiency evaluation" in rendered_status
+    assert rendered_status.index("Primary strict greedy tagging") < rendered_status.index("All studies")
+    assert "0/8000" in rendered_status and "1/8000" in rendered_status
+    assert "2,000 distinct processed collisions" in rendered_status
     assert "All studies" in rendered_status
     downloads = (tmp_path / "generated" / "downloads.rst").read_text()
     assert "Phase40r1 strict full-decay comparison" not in rendered_status
@@ -796,7 +798,7 @@ def test_phase48_all_tree_and_beam_publication(tmp_path, copy_complete_documenta
     assert phase['metric_download']['metric_count'] == 15936
     retained = phase['retained_tree_checks']
     assert retained['metric_download']['metric_count'] == 19316
-    assert retained['tree_metric_scalar_rows'] == 9153020
+    assert retained['tree_metric_scalar_rows'] == 8953020
     assert sum(a['beam_candidate_count'] for a in retained['arms'].values()) == 92
     assert manifest['reconstruction']['phase47']['next_study_status'] == 'COMPLETED'
     page = (tmp_path/'phase48-status/index.rst').read_text()
