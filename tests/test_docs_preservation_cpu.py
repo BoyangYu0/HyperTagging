@@ -250,15 +250,22 @@ def test_unowned_sphinx_source_is_preserved_but_cannot_join_generated_site(gener
 
 
 @pytest.mark.parametrize('options', [[], ['--check-generation'], ['--workflow'], ['--check-generation', '--workflow']])
-def test_build_additional_checks_share_one_complete_validator(staging_repository, options):
+@pytest.mark.parametrize('layout', ['standalone', 'basf2'])
+def test_build_additional_checks_share_one_complete_validator(staging_repository, options, layout):
     root, output, calls = staging_repository
-    assert build_docs.main(['--output', str(output), *options]) == 0
+    assert build_docs.main(['--output', str(output), '--layout', layout, *options]) == 0
     assert len(calls) == 2
     sphinx, checks = [call[0] for call in calls]
     assert '-W' in sphinx and '--keep-going' in sphinx
     assert checks[1] == str(root / 'scripts/validate_docs.py')
     assert checks[checks.index('--html') + 1] == str(output / 'html')
-    assert checks[checks.index('--generated') + 1] == str(output / 'source/wiki/_generated')
+    content = 'docs/wiki' if layout == 'basf2' else 'wiki'
+    assert checks[checks.index('--generated') + 1] == str(output / 'source' / content / '_generated')
+    assert 'html_theme_options.globaltoc_maxdepth=' + ('4' if layout == 'basf2' else '0') in sphinx
+    assert (output / 'source' / content / 'index.rst').read_text() == (root / 'docs/wiki/index.rst').read_text()
+    if layout == 'basf2':
+        assert ':maxdepth: 2' in (output / 'source/index.rst').read_text()
+        assert 'doc/index-hypertagging' in (output / 'source/index.rst').read_text()
     for flag in ('--check-generation', '--workflow'):
         assert (flag in checks) == (flag in options)
 

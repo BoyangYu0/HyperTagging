@@ -74,10 +74,11 @@ def main(argv=None):
         shutil.copyfile(root / "doc" / "index-hypertagging.rst", source / "doc" / "index-hypertagging.rst")
         (source / "index.rst").write_text(
             "basf2 package discovery validation\n==================================\n\n"
-            ".. toctree::\n\n   doc/index-hypertagging\n", encoding="utf-8")
+            ".. toctree::\n   :maxdepth: 2\n\n   doc/index-hypertagging\n", encoding="utf-8")
     command = [sys.executable, "-m", "sphinx", "-W", "--keep-going", "-E", "-a",
                "-b", args.builder, "-c", str(root / "docs"),
                "-D", "wiki_content_path=" + content.relative_to(source).as_posix(),
+               "-D", "html_theme_options.globaltoc_maxdepth=" + ("4" if args.layout == "basf2" else "0"),
                "-d", str(output / "doctrees"), str(source), str(output / args.builder)]
     result = subprocess.run(command, cwd=root)
     if result.returncode:

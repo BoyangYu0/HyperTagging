@@ -1121,3 +1121,13 @@ The earlier remote documentation run completed270 assertions and failed two: a
 stale latest-study heading and an accidental test-only Phase48 count edit. The
 heading now checks Phase70 tagging before history; the count is restored to the
 unchanged historical artifact value8,953,020. No historical metric is changed.
+
+The basf2 compatibility build measured272,157,279 bytes against the unchanged
+268,435,456-byte limit. Its HTML contained26,899,245 more bytes than standalone,
+largely duplicated nested navigation. The compatibility wrapper now renders a
+two-level entry table and a four-level sidebar; standalone navigation is
+unchanged. Every source page, API/catalog entry, metric and historical download
+remains generated and independently checked. No publication limit is enlarged.
+The restored Pages marker is accepted by privacy validation only as an empty
+root `.nojekyll`; nonempty and nested variants still fail closed.87 focused
+privacy/staging checks pass. Final full-build measurements remain required.

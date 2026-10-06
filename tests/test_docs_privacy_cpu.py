@@ -216,3 +216,15 @@ def test_capacity_review_reports_matcher_headroom(tmp_path, monkeypatch):
     result = privacy.validate_artifact(tmp_path, tmp_path)
     assert result["privacy"] == "PASS"
     assert result["capacity_review_required"] is True
+
+
+def test_empty_root_pages_marker_is_not_a_raw_download(tmp_path):
+    _write(tmp_path, ".nojekyll", "")
+    assert privacy.validate_artifact(tmp_path)["privacy"] == "PASS"
+
+
+@pytest.mark.parametrize("relative,payload", [(".nojekyll", "RAW_SOURCE_BODY_CANARY"), ("nested/.nojekyll", "")])
+def test_pages_marker_exception_cannot_carry_content_or_move_under_downloads(tmp_path, relative, payload):
+    _write(tmp_path, relative, payload)
+    with pytest.raises(ValueError, match="forbidden-raw-download"):
+        privacy.validate_artifact(tmp_path)
