@@ -19,6 +19,9 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Authenticated 12,000-event Phase70 reservation; public diagnostic labels and restored CI documentation.
+  - bf1b69d0e4553453fd14d4f459929813c7d5496e
+  - 9183a6c00c8b378f4b059f837a22077179cea140
   # Reviewed Phase70 identity-only validation expansion, native metrics/export and restored exact-revision Pages guards; focused tests pass; primary supplemental evaluation pending.
   - d6cdf9eb0ea775e5d87b68eddaee7969dc113058
   - 167485834a25441631be4cd09be50b8c6b96e054
