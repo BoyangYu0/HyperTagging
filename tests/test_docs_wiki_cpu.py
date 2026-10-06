@@ -14,13 +14,13 @@ sys.path.insert(0, str(ROOT / "docs" / "_ext"))
 from wiki_repository import generate_repository, repository_files
 
 
-def test_complete_documentation_manifest_fits_publication_budget(tmp_path):
+def test_complete_documentation_manifest_fits_publication_budget(tmp_path, copy_complete_documentation_status):
     import json
     import wiki
     manifests = {
         'api': wiki.generate_api(ROOT, tmp_path / 'api'),
         'catalog': wiki.generate_catalog(ROOT, tmp_path / 'catalog'),
-        'status': wiki.generate_status(ROOT, tmp_path / 'status'),
+        'status': copy_complete_documentation_status(tmp_path / 'status'),
         'repository': wiki.generate_repository(ROOT, tmp_path / 'repository'),
     }
     encoded = wiki._manifest_text(manifests)

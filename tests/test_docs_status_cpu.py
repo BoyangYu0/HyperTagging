@@ -588,9 +588,9 @@ def test_phase42_incomplete_metrics_fail_closed(missing):
 
 
 
-def test_complete_metric_download_stays_within_publication_limit(tmp_path):
+def test_complete_metric_download_stays_within_publication_limit(tmp_path, copy_complete_documentation_status):
     output = tmp_path / 'complete-status'
-    manifest = status.generate_status(ROOT, output)
+    manifest = copy_complete_documentation_status(output)
     download = output / 'status.json'
     assert download.stat().st_size < 10 * 1024 * 1024
     assert json.loads(download.read_text()) == manifest
@@ -658,12 +658,12 @@ def test_phase44_incomplete_or_misclassified_recovery_cannot_publish(change):
         status._phase41_projection(payload, phase=44, labels=('late_adaptation_control', 'early_adaptation'))
 
 
-def test_phase44_retained_download_is_complete_and_separately_indexed(tmp_path):
+def test_phase44_retained_download_is_complete_and_separately_indexed(tmp_path, copy_complete_documentation_status):
     payload = json.loads((ROOT / status.SOURCE_PATHS['reconstruction_phase44_retained']).read_text())
     projected = status._phase44_retained_projection(payload)
     assert projected['metric_rows'] == payload['metric_rows']
     output = tmp_path / 'retained-status'
-    manifest = status.generate_status(ROOT, output)
+    manifest = copy_complete_documentation_status(output)
     record = manifest['reconstruction']['phase44']['retained_tree_checks']
     binding = record['metric_download']
     data = (output / binding['filename']).read_bytes()
@@ -687,8 +687,8 @@ def test_phase44_retained_incomplete_metrics_cannot_publish(change):
         status._phase44_retained_projection(payload)
 
 
-def test_phase45_full_metric_downloads_are_lossless(tmp_path):
-    manifest = status.generate_status(ROOT, tmp_path / 'status')
+def test_phase45_full_metric_downloads_are_lossless(tmp_path, copy_complete_documentation_status):
+    manifest = copy_complete_documentation_status(tmp_path / 'status')
     record = manifest['reconstruction']['phase45']
     assert record['source_boundary'] == 'PRE_SCIENTIFIC_AUDIT_FIXES'
     for source_key, projected in [('reconstruction_phase45',record),('reconstruction_phase45_retained',record['retained_tree_checks'])]:
@@ -721,8 +721,8 @@ def test_phase45_source_boundary_cannot_be_silently_relabelled():
         status._phase41_projection(raw,phase=45,labels=('encoder_lr005_control','encoder_lr010'))
 
 
-def test_phase46_full_metric_downloads_are_lossless(tmp_path):
-    manifest = status.generate_status(ROOT, tmp_path / 'status')
+def test_phase46_full_metric_downloads_are_lossless(tmp_path, copy_complete_documentation_status):
+    manifest = copy_complete_documentation_status(tmp_path / 'status')
     record = manifest['reconstruction']['phase46']
     assert record['source_boundary'] == 'CORRECTED_SCIENTIFIC_AUDIT_SOURCE'
     for source_key, projected in [('reconstruction_phase46',record),('reconstruction_phase46_retained',record['retained_tree_checks'])]:
@@ -755,8 +755,8 @@ def test_phase46_source_boundary_cannot_be_silently_relabelled():
         status._phase41_projection(raw,phase=46,labels=('late_adaptation_control','frozen_encoder'))
 
 
-def test_phase47_full_metric_downloads_are_lossless(tmp_path):
-    manifest = status.generate_status(ROOT, tmp_path / 'status')
+def test_phase47_full_metric_downloads_are_lossless(tmp_path, copy_complete_documentation_status):
+    manifest = copy_complete_documentation_status(tmp_path / 'status')
     record = manifest['reconstruction']['phase47']
     assert record['source_boundary'] == 'CORRECTED_SCIENTIFIC_AUDIT_SOURCE'
     for source_key, projected in [('reconstruction_phase47',record),('reconstruction_phase47_retained',record['retained_tree_checks']),('reconstruction_phase47_aggregation',record['aggregation_supplement'])]:
@@ -789,8 +789,8 @@ def test_phase47_source_boundary_cannot_be_silently_relabelled():
         status._phase41_projection(raw,phase=47,labels=('late_adaptation_control','frozen_encoder'))
 
 
-def test_phase48_all_tree_and_beam_publication(tmp_path):
-    manifest = status.generate_status(ROOT, tmp_path/'phase48-status')
+def test_phase48_all_tree_and_beam_publication(tmp_path, copy_complete_documentation_status):
+    manifest = copy_complete_documentation_status(tmp_path/'phase48-status')
     phase = manifest['reconstruction']['phase48']
     assert phase['status'] == 'COMPLETED'
     assert phase['metric_download']['metric_count'] == 15936
@@ -806,8 +806,8 @@ def test_phase48_all_tree_and_beam_publication(tmp_path):
     assert 'phase48-retained-metrics.json' in (tmp_path/'phase48-status/downloads.rst').read_text()
 
 
-def test_phase49_full_metric_downloads_are_lossless(tmp_path):
-    manifest = status.generate_status(ROOT, tmp_path / 'status')
+def test_phase49_full_metric_downloads_are_lossless(tmp_path, copy_complete_documentation_status):
+    manifest = copy_complete_documentation_status(tmp_path / 'status')
     record = manifest['reconstruction']['phase49']
     assert record['source_boundary'] == 'CORRECTED_SCIENTIFIC_AUDIT_SOURCE'
     for source_key, projected in [('reconstruction_phase49',record),('reconstruction_phase49_retained',record['retained_tree_checks']),('reconstruction_phase49_aggregation',record['aggregation_supplement'])]:
@@ -840,8 +840,8 @@ def test_phase49_source_boundary_cannot_be_silently_relabelled():
         status._phase41_projection(raw,phase=49,labels=('late_adaptation_control','late_pid_adaptation'))
 
 
-def test_phase50_full_metric_downloads_are_lossless(tmp_path):
-    manifest = status.generate_status(ROOT, tmp_path / 'status')
+def test_phase50_full_metric_downloads_are_lossless(tmp_path, copy_complete_documentation_status):
+    manifest = copy_complete_documentation_status(tmp_path / 'status')
     record = manifest['reconstruction']['phase50']
     assert record['source_boundary'] == 'CORRECTED_SCIENTIFIC_AUDIT_SOURCE'
     for source_key, projected in [('reconstruction_phase50',record),('reconstruction_phase50_retained',record['retained_tree_checks']),('reconstruction_phase50_aggregation',record['aggregation_supplement'])]:
@@ -874,8 +874,8 @@ def test_phase50_source_boundary_cannot_be_silently_relabelled():
         status._phase41_projection(raw,phase=50,labels=('late_adaptation_control','late_pid_adaptation'))
 
 
-def test_phase51_full_metric_downloads_are_lossless(tmp_path):
-    manifest = status.generate_status(ROOT, tmp_path / 'status')
+def test_phase51_full_metric_downloads_are_lossless(tmp_path, copy_complete_documentation_status):
+    manifest = copy_complete_documentation_status(tmp_path / 'status')
     record = manifest['reconstruction']['phase51']
     assert record['source_boundary'] == 'CORRECTED_SCIENTIFIC_AUDIT_SOURCE'
     for source_key, projected in [('reconstruction_phase51',record),('reconstruction_phase51_retained',record['retained_tree_checks']),('reconstruction_phase51_aggregation',record['aggregation_supplement'])]:
@@ -908,8 +908,8 @@ def test_phase51_source_boundary_cannot_be_silently_relabelled():
         status._phase41_projection(raw,phase=51,labels=('late_adaptation_control','late_pid_adaptation'))
 
 
-def test_phase52_full_metric_downloads_are_lossless(tmp_path):
-    manifest = status.generate_status(ROOT, tmp_path / 'status')
+def test_phase52_full_metric_downloads_are_lossless(tmp_path, copy_complete_documentation_status):
+    manifest = copy_complete_documentation_status(tmp_path / 'status')
     record = manifest['reconstruction']['phase52']
     assert record['source_boundary'] == 'CORRECTED_SCIENTIFIC_AUDIT_SOURCE'
     for source_key, projected in [('reconstruction_phase52',record),('reconstruction_phase52_retained',record['retained_tree_checks']),('reconstruction_phase52_aggregation',record['aggregation_supplement'])]:
@@ -942,8 +942,8 @@ def test_phase52_source_boundary_cannot_be_silently_relabelled():
         status._phase41_projection(raw,phase=52,labels=('late_adaptation_control','stronger_recovery'))
 
 
-def test_phase53_full_metric_downloads_are_lossless(tmp_path):
-    manifest = status.generate_status(ROOT, tmp_path / 'status')
+def test_phase53_full_metric_downloads_are_lossless(tmp_path, copy_complete_documentation_status):
+    manifest = copy_complete_documentation_status(tmp_path / 'status')
     record = manifest['reconstruction']['phase53']
     assert record['source_boundary'] == 'CORRECTED_SCIENTIFIC_AUDIT_SOURCE'
     for source_key, projected in [('reconstruction_phase53',record),('reconstruction_phase53_retained',record['retained_tree_checks']),('reconstruction_phase53_aggregation',record['aggregation_supplement'])]:
@@ -986,8 +986,8 @@ def test_status_compact_numbers_preserve_values_and_negative_zero():
     assert type(result['counts'][5]) is float
 
 
-def test_phase54_full_metric_downloads_are_lossless(tmp_path):
-    manifest = status.generate_status(ROOT, tmp_path / 'status')
+def test_phase54_full_metric_downloads_are_lossless(tmp_path, copy_complete_documentation_status):
+    manifest = copy_complete_documentation_status(tmp_path / 'status')
     record = manifest['reconstruction']['phase54']
     assert record['source_boundary'] == 'CORRECTED_SCIENTIFIC_AUDIT_SOURCE'
     for source_key, projected in [('reconstruction_phase54',record),('reconstruction_phase54_retained',record['retained_tree_checks']),('reconstruction_phase54_aggregation',record['aggregation_supplement'])]:
@@ -1021,8 +1021,8 @@ def test_phase54_source_boundary_cannot_be_silently_relabelled():
 
 
 
-def test_phase55_recovered_metrics_and_pretraining_downloads_are_lossless(tmp_path):
-    manifest = status.generate_status(ROOT,tmp_path/'status')
+def test_phase55_recovered_metrics_and_pretraining_downloads_are_lossless(tmp_path, copy_complete_documentation_status):
+    manifest = copy_complete_documentation_status(tmp_path/'status')
     record = manifest['reconstruction']['phase55']
     assert record['original_job_status'] == 'FAILED_POST_TRAINING_EVALUATION'
     assert manifest['reconstruction']['phase54']['next_study_status'] == 'COMPLETED'
@@ -1059,8 +1059,8 @@ def test_phase55_missing_pretraining_metric_cannot_publish():
     with pytest.raises(ValueError):status._phase55_pretraining_projection(raw)
 
 
-def test_phase56_available_metrics_are_lossless_and_missing_control_is_null(tmp_path):
-    manifest=status.generate_status(ROOT,tmp_path/'phase56')
+def test_phase56_available_metrics_are_lossless_and_missing_control_is_null(tmp_path, copy_complete_documentation_status):
+    manifest=copy_complete_documentation_status(tmp_path/'phase56')
     record=manifest['reconstruction']['phase56']
     assert record['status']=='INCOMPLETE_COMPARISON' and record['comparison_available'] is False
     assert record['arms']['late_adaptation_control']['endpoints'] is None
@@ -1081,8 +1081,8 @@ def test_phase56_rejects_false_comparison_or_incomplete_export(change):
     with pytest.raises(ValueError):status._phase56_projection(raw)
 
 
-def test_phase57_lossless_downloads_preserve_diagnostic_classification(tmp_path):
-    manifest=status.generate_status(ROOT,tmp_path/'phase57')
+def test_phase57_lossless_downloads_preserve_diagnostic_classification(tmp_path, copy_complete_documentation_status):
+    manifest=copy_complete_documentation_status(tmp_path/'phase57')
     record=manifest['reconstruction']['phase57']
     assert record['status']=='DIAGNOSTIC_COMPLETE' and record['independent_validation'] is False
     assert record['strict_selection_overlap']==100

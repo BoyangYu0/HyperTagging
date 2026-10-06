@@ -1106,3 +1106,13 @@ Both tasks were accepted and released from frozen source
 snapshot verifies both pending for scheduler priority, with contract hashes,
 resources and no-requeue authenticated. GPU startup is not yet verified.
 Scheduler acceptance is not scientific success.
+
+Phase70 publication runtime review found sixteen real-repository status
+projections repeated across historical download and full-manifest tests. They
+now share one complete, validated session projection and copy all files plus a
+deep copy of the manifest into each test's isolated directory. Every original
+assertion and synthetic mutation test remains. Production generation, fresh
+independent regeneration, privacy/link/export checks and byte/time/work limits
+are unchanged. Local source generation had reached about thirteen minutes;
+repeating that unchanged payload per historical assertion is avoidable work.
+Exact-revision CI and final complete layout results remain the validation gate.
