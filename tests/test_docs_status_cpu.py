@@ -220,7 +220,7 @@ def test_sources_are_hashed_but_never_copied_or_named(evidence, tmp_path):
         assert "path" not in source and "download" not in source
         assert path not in published
         assert (evidence / path).read_text() not in published
-    assert {path.name for path in output.iterdir()} == {"index.rst", "status.json"}
+    assert {path.name for path in output.iterdir()} == {"index.rst", "downloads.rst", "status.json"}
     assert manifest["provenance"]["as_of"] is None
     assert manifest["audit"]["revision_match"] == "unknown"
     assert json.loads((output / "status.json").read_text()) == manifest
@@ -409,14 +409,17 @@ def test_current_repository_dashboard_surfaces_recorded_acceptance_values(tmp_pa
     assert manifest["pretraining"]["recorded_step"] == 54064 and manifest["pretraining"]["planned_steps"] == 108128
     assert manifest["pretraining"]["calibration_status"] == "PENDING"
     rendered_status = (tmp_path / "generated" / "index.rst").read_text().replace("\\-", "-")
-    assert "Phase69: hybrid encoder confirmation" in rendered_status
-    assert "Earlier studies" in rendered_status
+    assert "Phase69: latest efficiency evaluation" in rendered_status
+    assert rendered_status.index("Tagging efficiencies") < rendered_status.index("Tree reconstruction")
+    assert "All studies" in rendered_status
+    downloads = (tmp_path / "generated" / "downloads.rst").read_text()
     assert "Phase40r1 strict full-decay comparison" not in rendered_status
     assert "Phase68: hybrid" not in rendered_status
-    assert "phase68-all-aggregate-metrics.json" in rendered_status
-    assert "phase41-metrics.json" in rendered_status
+    assert "phase68-all-aggregate-metrics.json" in downloads
+    assert "phase68-all-aggregate-metrics.json" not in rendered_status
+    assert "phase41-metrics.json" in downloads
     for download in (tmp_path / "generated").glob("*.json"):
-        assert f"<{download.name}>" in rendered_status
+        assert f"<{download.name}>" in downloads
     assert rendered_status.count("<article") == 1
     assert "Phase48 all retained full and half trees" not in rendered_status
     assert manifest["pretraining"]["production_submission_authorized"] is False
@@ -798,7 +801,7 @@ def test_phase48_all_tree_and_beam_publication(tmp_path):
     assert 'PID weights received no optimizer updates' in page
     assert 'This does not test effective PID adaptation' in page
     assert 'Phase48' in page
-    assert 'phase48-retained-metrics.json' in page
+    assert 'phase48-retained-metrics.json' in (tmp_path/'phase48-status/downloads.rst').read_text()
 
 
 def test_phase49_full_metric_downloads_are_lossless(tmp_path):

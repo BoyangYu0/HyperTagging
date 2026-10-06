@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed efficiency-first Phase69 documentation and compact all-study dashboard; 125 focused tests and strict HTML regeneration passed; all 127 downloads unchanged.
+  - 0b846ae1e9d9d310e70c920f6e5418a6e07c1a89
   - 908061bb73d54d14f67c4c6be9b78bb09d72b4fb  # Reviewed public decoder loading from authored publication inputs.
   - 74704f35a4d1d8dc1abcd9cbdcf0c2db4f4c80c1  # Reviewed decoder move to existing authored-publication boundary.
   # Reviewed authenticated Phase69 supplement:12000 collisions per arm, bounded aggregate exports and reserved-cohort binding; focused checks pass.

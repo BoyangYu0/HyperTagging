@@ -20,6 +20,25 @@ truth PID target may enter reconstruction. Higher-level particles are useful
 only after inference, when the predicted forest is compared with the retained
 truth forest.
 
+## Reading the latest efficiency results
+
+The [Phase69 supplementary evaluation](wiki/phase69_policy.rst) reports the
+current complete greedy evaluation on 12,000 collisions per arm, with 2,000
+in each required category. Its 4,000 B-pair collisions contribute 8,000 nominal
+B trials and 4,000 event trials; continuum fake-B acceptance is separate.
+Exact retained B tagging is 0/8,000 in both arms. Inclusive FSP grouping is
+0/8,000 refined versus 1/8,000 (0.0125%) pre-refinement, in each full/half scope.
+The corresponding inclusive event-any rate is 0/4,000 versus 1/4,000 (0.025%).
+Scopes reuse the same events and do not enlarge the cohort. Sixteen exact-truth
+trials and one inclusive-membership trial remain unavailable in the nominal
+denominators. These are retained-truth lower bounds, not physical FEI efficiencies.
+
+The dashboard presents exact/inclusive efficiencies before tree diagnostics,
+then a summary of all studies. Historical 100-event/20-event Phase69 reports
+and the new 60-event beam diagnostic remain separately labelled. All metric
+downloads are preserved in the evidence catalogue. Consult the tagging contract
+below for matching, candidate-pool accounting and availability semantics.
+
 ## Why the historical full reconstruction is not the evaluator
 
 `src/hypertagging/reconstruction/full_reconstruction.py` preserves the

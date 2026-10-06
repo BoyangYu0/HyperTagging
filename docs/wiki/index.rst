@@ -19,10 +19,10 @@ identifies measurements that remain unavailable.
    training
    reconstruction
    evaluation
-   phase69
-   phase69_policy
-   studies
    _generated/status/index
+   phase69_policy
+   phase69
+   studies
    setup
    architecture
    workflows
