@@ -619,7 +619,7 @@ The collision bootstrap uses 10,000 paired resamples at seed 20261006. Zero-succ
 Complete coverage comprises 14 registered reports, 2480 event-scope records and 262 retained-candidate scope records. The additive evaluator revision is ``a7658a1722c002c92486d4750d5fd0a5ff7f6445``. The original 165,915 aggregate metric records remain byte-preserved; the extension contains 127,974 public numeric/null/bool records, including counts, availability, lineage metadata and uncertainty.
 
 Downloads and lossless decoding
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The :doc:`generated dashboard download section <_generated/status/index>`
 provides the complete Phase69 v3 bundle, the additive integrity manifest and
