@@ -19,6 +19,7 @@ pre { overflow: auto; font-size: .88rem; line-height: 1.45; padding: .8rem; }
 table.docutils { display: block; overflow: auto; border-collapse: collapse; }
 table.docutils td, table.docutils th { padding: .5rem .7rem; vertical-align: top; }
 dl.py > dt { overflow-wrap: anywhere; }
+div.body code.literal, div.body code.literal span.pre { white-space: normal; overflow-wrap: anywhere; }
 .admonition { border-left: 4px solid #167a85; }
 .status-dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 21rem), 1fr)); gap: 1rem; margin: 1.5rem 0; }
 .status-card { border: 1px solid #c1cbd3; border-top: 5px solid #176879; border-radius: .4rem; background: #fff; padding: 1.1rem; overflow-wrap: anywhere; }
