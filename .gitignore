@@ -122,3 +122,6 @@ artifacts/
 *.npy
 *.safetensors
 *.onnx.data
+
+# Private identity-bound next-campaign inputs; public configs contain hashes only.
+/runtime_inputs/reconstruction_phase71_20261006/
