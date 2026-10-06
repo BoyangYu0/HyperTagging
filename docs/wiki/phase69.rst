@@ -446,7 +446,7 @@ All comparisons below list refined then pre-refinement encoder. These are additi
      - 0/16 versus 0/16
      - 0 versus 0
 
-The unchanged 100-collision strict cohort contains 16 B-pair collisions (32 nominal B trials), 66 continuum collisions and 18 other/unknown-category collisions. Acceptance accounting retains 200 nominal slots over all 100 collisions. The two B trials are not independent observations. Repeated views, arms and the nested 20-collision beam subset are not additional independent validation events.
+The unchanged 100-collision strict cohort contains 16 B-pair collisions (32 nominal B trials), 66 continuum collisions and 18 other or unknown-category collisions. Acceptance accounting retains 200 nominal slots over all 100 collisions. The two B trials are not independent observations. Repeated views, arms and the nested 20-collision beam subset are not additional independent validation events.
 
 Channel coverage retains all evaluated channels, including zero successes and unknown truth. The full signed descriptions and per-channel counts are in the complete download.
 
