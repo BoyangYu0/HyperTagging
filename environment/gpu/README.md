@@ -1,25 +1,34 @@
 # Frozen one-GPU environment
 
-This environment is separate from the repository's CPU-only `uv.lock`. The
+This environment is separate from the repository's project `uv.lock` (which also selects CUDA wheels). The
 resolved lock pins the CUDA 12.6 PyTorch build and every transitive Python
 dependency with package hashes for Python 3.11 on Linux x86-64. The initial
 readiness tranche generated the lock; later runtime receipts record an installed
-environment at the path below. Reuse and verify it when present.
+environment. Reuse and verify your existing environment when present.
 
-For a new installation only, create the environment at the path used by the
-Slurm renderer. Do not recreate or resynchronize an active frozen environment
-as part of an unrelated task:
+For a new installation, create an immutable environment on a writable volume
+owned by the executing account. Replace the placeholder below. Do not recreate
+or resynchronize an active frozen environment as part of an unrelated task:
 
 ```bash
-/home/b/Boyang.Yu/.local/bin/uv venv --python 3.11 /project/agkuhr/users/boyang/envs/hypertagging-gpu-cu126-v1
-/home/b/Boyang.Yu/.local/bin/uv pip sync --strict --require-hashes \
-  --python /project/agkuhr/users/boyang/envs/hypertagging-gpu-cu126-v1/bin/python \
+ht_gpu_env=/path/to/writable/volume/envs/hypertagging-gpu-cu126-v1
+uv venv --python 3.11 "$ht_gpu_env"
+uv pip sync --strict --require-hashes \
+  --python "$ht_gpu_env/bin/python" \
   --index-url https://pypi.org/simple \
   --extra-index-url https://download.pytorch.org/whl/cu126 \
   environment/gpu/requirements-cu126.lock
-/project/agkuhr/users/boyang/envs/hypertagging-gpu-cu126-v1/bin/python \
-  scripts/slurm/preflight_gpu_environment.py --lock-only
+"$ht_gpu_env/bin/python" scripts/slurm/preflight_gpu_environment.py --lock-only
+source "$ht_gpu_env/bin/activate"
 ```
+
+The `ht_gpu_env` variable above is a shell convenience, not a renderer setting.
+Review the selected renderer/config's environment path and update it through its
+supported options before rendering a job. `scripts/activate_env.sh gpu` still
+selects the historical owner's fixed environment; use direct activation above
+for another account or host. The project environment and this hash-pinned GPU
+environment have distinct validation contracts. For complete new-account setup,
+see [the remote Codex guide](../../docs/codex_remote_setup.md).
 
 The full preflight is intentionally run only inside the exact one-GPU Slurm
 allocation because it verifies CUDA availability, visible-device count, GPU

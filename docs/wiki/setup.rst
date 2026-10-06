@@ -44,11 +44,11 @@ without relocking:
 
 .. code-block:: bash
 
-   uv sync --frozen --all-extras
+   uv sync --frozen --all-extras --python 3.11
    source scripts/activate_env.sh project
    python scripts/check_uv_lock_direct_dependencies.py
 
-This installs the project's pinned PyTorch build and its scientific dependencies;
+This installs the project's pinned CUDA 12.6 PyTorch build and its scientific dependencies;
 it is substantially larger than the documentation environment. Running CPU
 fixtures does not require a GPU allocation. Do not modify an existing frozen
 environment to fix documentation dependencies.
@@ -68,3 +68,12 @@ contracts; their outputs are not physics-performance measurements.
 Source references: ``pyproject.toml``, ``uv.lock``, ``scripts/activate_env.sh``,
 ``examples/README.md`` and ``tests/test_examples_cpu.py`` remain in the checkout.
 The :doc:`_generated/repository/index` publishes only a compact hash inventory.
+
+Remote Codex handoff
+--------------------
+
+The checkout guide ``docs/codex_remote_setup.md`` covers fresh clones, separate
+Codex/Git/SSH identities, remote CLI and cloud setup, bounded CPU verification,
+and external storage/scheduler prerequisites. Open the Git root containing
+``AGENTS.md``; previous conversations and historical sibling checkouts are not
+required. Use your own credentials and environment paths on a new account.

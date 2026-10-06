@@ -36,6 +36,14 @@ For the current level-autoregressive model, use the CPU-only offline evaluator:
   --output /path/to/full-decay-evaluation.json
 ```
 
+The 100-event example is diagnostic. Complete post-study evaluation requires
+at least 2,000 distinct processed collision events **per category**: `charged`,
+`mixed`, `ccbar`, `uubar`, `ddbar` and `ssbar`, for at least 12,000 per model.
+Use an authenticated, reserved category-stratified cohort shared across arms;
+check actual category counts, not just a global `--max-events` value. Smaller
+beam/auxiliary samples remain explicitly diagnostic. See the minimum category
+coverage policy in `docs/full_decay_reconstruction_evaluation.md`.
+
 Use repeatable `--source-category mixed`/`--source-category ccbar` filters for
 separate B-pair and continuum reports. Validation defaults to the checkpoint's
 ordered rollout UID cohort and learned-confidence policy. Continuum output is

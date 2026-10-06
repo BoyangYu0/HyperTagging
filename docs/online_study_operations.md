@@ -1,7 +1,7 @@
 # Online study monitoring, planning and execution
 
 Design proposal, verified against official OpenAI documentation on 2026-09-28.
-This review does not deploy a service, create a Site or submit new studies.
+This proposal describes study operations; it does not submit new studies.
 
 ## Recommended architecture
 
@@ -9,13 +9,11 @@ Keep scientific execution on the institute host with the authenticated data,
 frozen environments, CVMFS and guarded Slurm/Condor workflows. Add a small
 operations service there (or on an approved gateway) and expose its selected
 capabilities through HTTPS MCP. ChatGPT Work becomes a client of this service.
-A private Site uses the same service for a live dashboard and study controls.
 
 ```mermaid
 flowchart LR
   Work[ChatGPT Work] --> MCP[Authenticated HTTPS MCP gateway]
-  Site[Private study Site] --> API[Operations API]
-  MCP --> API
+  MCP --> API[Operations API]
   API --> Ledger[Study ledger and action audit]
   API --> Worker[Institute execution worker]
   Worker --> Scheduler[Guarded Slurm or Condor jobs]
@@ -24,10 +22,10 @@ flowchart LR
   Export --> Ledger
 ```
 
-The present GitHub Pages dashboard reads committed allowlisted evidence. It
+The present documentation dashboard reads committed allowlisted evidence. It
 does not poll the scheduler, plan experiments or launch jobs (`README.md`,
-`docs/_ext/wiki_status.py`, `.github/workflows/docs.yml`). Preserve it as the
-reviewed publication surface. The proposed service supplies live operational
+`docs/_ext/wiki_status.py`). Preserve it as the
+reviewed evidence surface. The proposed service supplies live operational
 state separately, including timestamp, staleness and failure state.
 
 OpenAI documents remote MCP tools for live data and controlled actions on
@@ -64,7 +62,7 @@ each plan; reject stale submission requests. Old receipts do not authorize a
 new run. Existing user authorization can cover a bounded plan; the service
 should ask only when a plan exceeds that recorded scope.
 
-## Deployment sequence
+## Operations implementation sequence
 
 1. **Build the ledger and read-only service first.** Ingest the existing
    immutable closeout/submission receipts and scheduler observations. Preserve
@@ -90,16 +88,7 @@ should ask only when a plan exceeds that recorded scope.
    Test duplicate calls, scheduler timeouts, cancellation ownership, revoked
    authorization, worker restart and stale plans with a non-GPU fixture job
    before enabling a bounded real campaign.
-5. **Build a private Site.** Ask Sites for an internal study monitor with
-   overview, active jobs, study comparison, metric denominators, data lineage,
-   next-plan review and action history. Use workspace-restricted sharing or
-   explicit authenticated access. Configure the operations API server-side;
-   browser bundles must not contain scheduler or storage credentials. Save a
-   version for review before deploying: Sites deployment URLs are live
-   production deployments. Sites can host the client; it does not supply this
-   repository's institute mounts or scheduler integration automatically.
-   [Sites documentation](https://learn.chatgpt.com/docs/sites)
-6. **Enable event-driven monitoring.** A worker observes job transitions and
+5. **Enable event-driven monitoring.** A worker observes job transitions and
    publishes bounded metric updates. Notify on completion, failure, a broken
    scientific gate or required user action; stay quiet on unchanged pending
    jobs. Review validated terminal evidence before proposing the next study.
@@ -107,16 +96,9 @@ should ask only when a plan exceeds that recorded scope.
 
 For authenticated MCP, implement the documented OAuth 2.1 discovery and
 resource-server validation, checking token signature, issuer, audience, expiry
-and scopes on requests. Keep Site sessions and MCP identity mapped to the same
-server-side permissions; displaying a button is not authorization.
+and scopes on requests. Enforce the authenticated MCP identity
+and server-side permissions for every requested action.
 [Authentication guide](https://developers.openai.com/plugins/build/auth)
-
-Optional WebMCP Site tools can expose the same actions while a user and agent
-view the same page. They depend on browser/session availability; remote MCP
-works independently of an open page and is the recommended primary Work
-integration. Check current account/rollout restrictions before selecting
-WebMCP as a requirement.
-[Site tools documentation](https://learn.chatgpt.com/docs/webmcp)
 
 ## First study-planning prompt
 

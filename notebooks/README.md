@@ -13,6 +13,12 @@ data name/path, checkpoint, seed, and pass/NOT RUN status.
 | `DIAGNOSTIC` | first-level ambiguity and objective-gradient conflict |
 | `EXTERNAL_SCIENTIFIC` | real mDST pilot and trained held-out physics validation |
 
+Notebook execution and generated-notebook consistency run weekly and on manual
+dispatch in `.github/workflows/full-notebook-smoke.yml`. PRs run the CPU regression
+suite. When editing notebooks or generators, check consistency locally with
+`python scripts/execute_notebook_smoke_tests.py --check-generated` and execute the
+changed notebooks with `--only ID` before review.
+
 Run the default deterministic CPU set with:
 
 ```bash

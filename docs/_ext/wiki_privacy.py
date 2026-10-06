@@ -3247,7 +3247,7 @@ def validate_artifact(
             continue
         suffix = path.suffix.lower()
         allowed_binary = suffix in _BINARY_ASSETS and "_static" in rel.parts
-        special_file = path.name in {"objects.inv", ".nojekyll", ".buildinfo"}
+        special_file = path.name in {"objects.inv", ".buildinfo"}
         if suffix not in textual_suffixes and not allowed_binary and not special_file:
             errors.append(location + ":forbidden-raw-download")
             continue

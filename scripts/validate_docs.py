@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate wiki coverage, reproducibility, local HTML and Pages security offline."""
+"""Validate wiki coverage, reproducibility, local HTML and artifact privacy offline."""
 from __future__ import annotations
 
 import argparse
@@ -9,7 +9,6 @@ from html.parser import HTMLParser
 import json
 from pathlib import Path
 import re
-import shlex
 import sys
 import tempfile
 from urllib.parse import unquote, urlsplit
@@ -220,7 +219,7 @@ def validate_html(directory: Path) -> dict:
                 continue
             checked += 1
             if parsed.path.startswith("/"):
-                errors.append("Root-relative URL breaks project Pages")
+                errors.append("Root-relative URL breaks portable documentation")
                 continue
             target = (path.parent / unquote(parsed.path)).resolve() if parsed.path else path
             if target.is_dir():
@@ -257,9 +256,9 @@ def validate_html(directory: Path) -> dict:
     if any(path.is_file() and path.suffix.lower() == ".svg"
            for path in directory.rglob("*")):
         errors.append("Untrusted active SVG")
-    for name in ("objects.inv", "searchindex.js", ".nojekyll"):
+    for name in ("objects.inv", "searchindex.js"):
         if not (directory / name).is_file():
-            errors.append(f"Missing Sphinx/Pages artifact: {name}")
+            errors.append(f"Missing Sphinx artifact: {name}")
     if errors:
         raise ValueError("\n".join(errors[:50]) + f"\nTotal HTML errors: {len(errors)}")
     return {"html_pages": len(parsers), "local_links_checked": checked, "remote_assets": 0}
@@ -560,134 +559,6 @@ def validate_coverage(generated: Path, html: Path | None = None) -> dict:
     return result
 
 
-ACTION_PINS = {
-    "checkout": "3d3c42e5aac5ba805825da76410c181273ba90b1",
-    "setup-python": "5fda3b95a4ea91299a34e894583c3862153e4b97",
-    "configure-pages": "45bfe0192ca1faeb007ade9deae92b16b8254a0d",
-    "upload-pages-artifact": "fc324d3547104276b827a68afc52ff2a11cc49c9",
-    "deploy-pages": "368f82528645a54fb793d4d04e342629a3f51346",
-}
-TRUSTED_MASTER_GATE = ("(github.event_name == 'push' || github.event_name == 'workflow_dispatch') && "
-                       "github.ref == 'refs/heads/master'")
-BASH_PIPEFAIL = "bash --noprofile --norc -e -o pipefail {0}"
-
-
-def validate_workflow() -> dict:
-    """Enforce immutable action pins and privilege boundaries without assertions."""
-    import yaml
-
-    path = ROOT / ".github" / "workflows" / "docs.yml"
-    raw = path.read_text()
-    workflow = yaml.safe_load(raw)
-    _require(isinstance(workflow, dict), "Workflow must be a YAML mapping")
-    triggers = workflow.get("on", workflow.get(True))
-    _require(isinstance(triggers, dict)
-             and set(triggers) == {"push", "pull_request", "workflow_dispatch"},
-             "Docs validation must run on PR, branch push and manual dispatch only")
-    _require(triggers["push"] == {"branches": ["**"]}, "Push validation must cover every branch before promotion")
-    _require(triggers["pull_request"] in (None, {}) and triggers["workflow_dispatch"] in (None, {}),
-             "PR/manual validation must not be silently restricted")
-    _require(workflow.get("permissions") == {}, "Top-level permissions must be empty")
-    _require(workflow.get("defaults", {}).get("run", {}).get("shell") == BASH_PIPEFAIL,
-             "Workflow requires explicit Bash with pipefail")
-    _require(workflow.get("concurrency", {}).get("cancel-in-progress") is False,
-             "Publication concurrency must preserve running validations")
-    _require(set(workflow.get("jobs", {})) == {"build", "compatibility", "deploy"}, "Unexpected workflow jobs")
-    build, deploy = workflow["jobs"]["build"], workflow["jobs"]["deploy"]
-    compatibility = workflow["jobs"]["compatibility"]
-    _require(compatibility.get("permissions") == {"contents": "read"} and "if" not in compatibility, "Compatibility must run read-only on every event")
-    _require(compatibility.get("strategy") == {"fail-fast": False, "max-parallel": 2, "matrix": {"layout": ["text", "basf2"]}}, "Every compatibility layout must run without cancellation")
-    _require(build.get("permissions") == {"contents": "read"}, "Build permissions must be contents:read only")
-    _require(deploy.get("permissions") == {"pages": "write", "id-token": "write"},
-             "Deployment permissions must be pages:write and id-token:write only")
-    _require("if" not in build, "PR documentation validation must not be gated away")
-    _require(deploy.get("needs") == ["build", "compatibility"], "Deployment must depend on successful build")
-    _require(deploy.get("environment", {}).get("name") == "github-pages",
-             "Deployment must use the github-pages environment")
-    _require(deploy.get("concurrency") == {"group": "github-pages", "cancel-in-progress": False},
-             "Deployment must serialize the Pages environment")
-    gate = " ".join(str(deploy.get("if", "")).split())
-    _require(gate == TRUSTED_MASTER_GATE, "Deployment requires trusted push/manual master gate")
-    _require(not re.search(r"\bsecrets\s*(?:\.|\[)", raw, re.I)
-             and "pull_request_target" not in raw and "workflow_run" not in raw,
-             "Docs workflow must not consume secrets or privileged untrusted events")
-    expected_actions = {"actions/" + name + "@" + digest for name, digest in ACTION_PINS.items()}
-    observed_actions = []
-    for job in (build, compatibility, deploy):
-        _require(isinstance(job.get("timeout-minutes"), int) and 0 < job["timeout-minutes"] <= (30 if job is deploy else 60),
-                 "Workflow jobs require bounded timeouts")
-        _require(job.get("runs-on") == "ubuntu-24.04", "Workflow runner must be the reviewed hosted image")
-        _require(not job.get("continue-on-error"), "Workflow jobs must fail closed")
-        _require("uses" not in job, "Reusable jobs are outside the reviewed privilege boundary")
-        if "defaults" in job:
-            _require(job["defaults"].get("run", {}).get("shell") == BASH_PIPEFAIL,
-                     "Job shell overrides must preserve Bash pipefail")
-        _require(isinstance(job.get("steps"), list) and job["steps"], "Workflow job needs reviewed steps")
-        for step in job["steps"]:
-            _require(not step.get("continue-on-error"), "Workflow steps must fail closed")
-            _require(not ("uses" in step and "run" in step), "A step cannot both run code and use an action")
-            if "shell" in step:
-                _require(step["shell"] == BASH_PIPEFAIL, "Step shell overrides must preserve Bash pipefail")
-            if "uses" in step:
-                _require(step["uses"] in expected_actions, "Unexpected or unverified immutable action pin")
-                observed_actions.append(step["uses"])
-    _require(set(observed_actions) == expected_actions and len(observed_actions) == len(expected_actions) + 2,
-             "Reviewed action ownership differs")
-    build_actions = [step["uses"] for step in build["steps"] if "uses" in step]
-    _require(build_actions == ["actions/checkout@" + ACTION_PINS["checkout"],
-                               "actions/setup-python@" + ACTION_PINS["setup-python"],
-                               "actions/upload-pages-artifact@" + ACTION_PINS["upload-pages-artifact"]],
-             "Build action order or ownership differs")
-    _require([step['uses'] for step in compatibility['steps'] if 'uses' in step] == build_actions[:2], 'Compatibility actions must only checkout and set up Python')
-    _require(compatibility['steps'][0].get('with') == {'fetch-depth': 0, 'persist-credentials': False}, 'Compatibility source identity or credential boundary differs')
-    compatibility_commands = [step['run'] for step in compatibility['steps'] if 'run' in step]
-    _require(any('--builder text' in command and '--layout basf2' in command and '*) exit 1' in command for command in compatibility_commands), 'Text and basf2 validation are required and unknown layouts must fail')
-    _require(all('if' not in step for step in compatibility['steps'] if 'run' in step), 'Compatibility checks cannot be skipped')
-    _require(compatibility['steps'][-1].get('env') == {'DOCS_LAYOUT': '${{ matrix.layout }}'}, 'Compatibility matrix binding differs')
-    checkout = build["steps"][0]
-    _require(checkout.get("uses") == build_actions[0]
-             and checkout.get("with") == {"fetch-depth": 0, "persist-credentials": False},
-             "Checkout must not persist credentials or override source identity")
-    upload = build["steps"][-1]
-    _require(upload.get("uses") == build_actions[-1], "Pages upload must be the final build step")
-    _require(" ".join(str(upload.get("if", "")).split()) == TRUSTED_MASTER_GATE,
-             "Artifact upload requires trusted push/manual master gate")
-    _require(upload.get("with") == {
-        "path": "${{ runner.temp }}/hypertagging-docs/html",
-        "retention-days": 1,
-        "include-hidden-files": True,
-    },
-             "Pages upload must contain validated HTML only")
-    commands = [step["run"] for step in build["steps"] if "run" in step]
-    _require(any("python -m pytest" in command and "tests/test_docs_" in command for command in commands),
-             "Documentation regression checks are missing")
-    _require(any("scripts/build_docs.py" in command for command in commands),
-             "Strict documentation build is missing")
-
-    _require(all("if" not in step for step in build["steps"] if "run" in step),
-             "Required validation steps must not be conditionally skipped")
-    # build_docs always invokes the independent validator with HTML, generated
-    # privacy, links and coverage. Add fresh regeneration and workflow checks to
-    # that same call, rather than rescanning the identical artifact in a third
-    # validation process. Exact tokens also bind validation to the uploaded path.
-    required_build = ["python", "scripts/build_docs.py", "--output",
-                      "$RUNNER_TEMP/hypertagging-docs", "--check-generation", "--workflow"]
-    _require(any(shlex.split(command) == required_build for command in commands),
-             "Independent coverage/privacy/workflow validation is missing")
-    _require(len(deploy["steps"]) == 2 and all("run" not in step for step in deploy["steps"]),
-             "Deployment must execute no repository shell code")
-    configure, publish = deploy["steps"]
-    _require(configure.get("uses") == "actions/configure-pages@" + ACTION_PINS["configure-pages"]
-             and configure.get("with") == {"enablement": False},
-             "Pages configuration must not enable repository settings")
-    _require(publish.get("uses") == "actions/deploy-pages@" + ACTION_PINS["deploy-pages"]
-             and publish.get("id") == "deployment" and "with" not in publish,
-             "Deployment must publish the default validated Pages artifact")
-    return {"workflow": ".github/workflows/docs.yml", "permission_boundary": "PASS",
-            "action_pins": len(ACTION_PINS), "deployment_branch": "master",
-            "shell_pipefail": True}
-
-
 def validate_generation(generated: Path) -> dict:
     """Compare every generated byte against a fresh build from the same source."""
     from wiki import generate
@@ -709,11 +580,10 @@ def main(argv=None):
     parser.add_argument("--html", type=Path)
     parser.add_argument("--generated", type=Path)
     parser.add_argument("--check-generation", action="store_true")
-    parser.add_argument("--workflow", action="store_true")
     args = parser.parse_args(argv)
     if args.check_generation and not args.generated:
         parser.error("--check-generation requires --generated")
-    if not (args.artifact or args.html or args.generated or args.workflow):
+    if not (args.artifact or args.html or args.generated):
         parser.error("select at least one check")
     from wiki_privacy import validate_artifact
     result = {}
@@ -731,8 +601,6 @@ def main(argv=None):
         result["coverage"] = validate_coverage(args.generated, html=args.html)
     if args.check_generation:
         result["generation"] = validate_generation(args.generated)
-    if args.workflow:
-        result["workflow"] = validate_workflow()
     print(json.dumps(result, indent=2, sort_keys=True))
     return 0
 

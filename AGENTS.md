@@ -1,5 +1,14 @@
 # HyperTagging agent guidance
 
+## Fresh project or remote handoff
+
+Read `docs/codex_remote_setup.md` when starting on a new device, host, or
+account. Open this Git root, verify the intended branch/SHA, and recreate a
+Python environment from the tracked lock. Use the recipient's own Codex, Git,
+SSH, storage and scheduler access. Previous chats, personal plugins and sibling
+checkouts are not prerequisites. Historical receipts do not authorize new jobs.
+`AGENTS.md` is the canonical agent entry point.
+
 ## Scope and working discipline
 
 - Work in this Git root. Historical sibling repositories are read-only
@@ -122,6 +131,18 @@ to the repository root.
   candidate generation/ranking is complete; label them as oracle metrics and
   keep deployable top-1 and existing greedy metric keys separate. Report search
   limits, pruning, candidate ranks/scores, and numerator/denominator counts.
+- Complete post-study evaluation requires at least 2,000 distinct processed
+  collision events in EACH of `charged`, `mixed`, `ccbar`, `uubar`, `ddbar` and
+  `ssbar` (at least 12,000 per model/arm), on authenticated, reserved validation
+  cohorts disjoint from training and checkpoint selection. Compare arms on the
+  same cohort; candidates, B trials, repeat runs and scopes do not multiply
+  sample counts. Report per-category processed/failure/unavailable counts and
+  fail the coverage requirement on shortages. Smaller smoke/selection/beam
+  samples are diagnostic only; do not present them as complete evaluations.
+  Preserve historical/frozen contracts and version any enlarged reevaluation
+  separately. Follow the category-coverage policy in
+  `docs/full_decay_reconstruction_evaluation.md`; never use sealed test data to
+  fill quotas.
 - Every new reconstruction-study evaluation must retain the shared evaluator's
   `tag_efficiency` report and channel/type coverage, including greedy, model-ranked
   top-1 and retained beam-pool results. Generic B-pair tagging uses two trials per
@@ -183,18 +204,18 @@ training GPU. Keep CPU workers/BLAS threads bounded and large data/checkpoints
 on the configured data/project volume. Report tests actually run, failures,
 external environment limitations, and any unverified scientific claims.
 
-## Git update and CI promotion
+## Documentation and repository maintenance
 
-- Finish implementation commits and their audit-lineage follow-up before pushing.
-  Validate audit integrity and generated-notebook consistency on the final head.
-- Push the development branch first. Wait for both CPU correctness and the full
-  Documentation and Pages workflow to succeed on that exact commit. A page-only
-  preview or local CPU success does not establish complete documentation success.
-- Use `python scripts/promote_verified_commit.py` to check eligibility, then
-  `--push` to fast-forward master. Never push development and master together
-  before remote checks finish. A changed commit requires fresh remote checks.
-- Preserve all privacy, source-coverage, compatibility and deployment gates.
-  Inspect reported publication byte/work capacity as the study archive grows.
-  If a scan reports `capacity_review_required`, plan capacity before adding the
-  next study; never automatically raise limits or remove checks.
-  Keep local source and Git metadata stable throughout full-site validation.
+- Keep metric definitions in the evaluation contract and wiki evaluation guide.
+  Expand only the latest completed study on the dashboard; retain earlier
+  studies in the summary and preserve immutable evidence and metric downloads.
+- Validate documentation and generated-notebook consistency after relevant
+  changes. Keep source and Git metadata stable during full-site validation.
+- Before publishing implementation commits, retain the audit-lineage follow-up:
+  record the reviewed implementation SHA in the audit ledger and rerun audit
+  integrity on the final head. Website retirement does not waive this check.
+- PR CI runs the CPU suite and audit integrity once. Full documentation layouts
+  and notebook execution run weekly or manually; run relevant local checks for
+  changes to those sources. Preserve documentation validation and privacy checks.
+- Documentation is built locally; website deployment has been retired.
+- Preserve scientific basf2/ONNX deployment contracts and historical snapshots.

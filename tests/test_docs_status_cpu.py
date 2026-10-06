@@ -352,11 +352,12 @@ def test_dashboard_has_accessible_performance_cards_and_nonhtml_fallback(evidenc
     parser = Elements()
     parser.feed(document)
     articles = [attrs for tag, attrs in parser.elements if tag == "article"]
-    assert len(articles) == 3
+    assert len(articles) == 1
     assert all("aria-labelledby" in attrs for attrs in articles)
     assert ".. only:: not html" in document
     assert document.index("Reconstruction edge F1") < document.index("Training and software context")
-    assert "DO_NOT_PROMOTE" in document and "+0.008" in document and "+0.010" in document
+    assert "DO_NOT_PROMOTE" in document.replace("\\", "")
+    assert "+0.008" in document.replace("\\", "") and "+0.010" in document.replace("\\", "")
     assert "UNAVAILABLE" in document and "NOT_RUN" in document
     assert manifest["pretraining"]["progress_fraction"] == 0.5
     assert manifest["reconstruction"]["completion"] == "COMPLETED"
@@ -408,12 +409,16 @@ def test_current_repository_dashboard_surfaces_recorded_acceptance_values(tmp_pa
     assert manifest["pretraining"]["recorded_step"] == 54064 and manifest["pretraining"]["planned_steps"] == 108128
     assert manifest["pretraining"]["calibration_status"] == "PENDING"
     rendered_status = (tmp_path / "generated" / "index.rst").read_text().replace("\\-", "-")
-    for required_label in (
-        "half-tree source recall", "half-tree source precision", "half-tree LCAG",
-        "perfect half-tree LCAG", "average link probability", "learned confidence mean",
-        "learned confidence sum", "normalized joint log probability", "oracle at k",
-    ):
-        assert required_label in rendered_status
+    assert "Phase69: hybrid encoder confirmation" in rendered_status
+    assert "Earlier studies" in rendered_status
+    assert "Phase40r1 strict full-decay comparison" not in rendered_status
+    assert "Phase68: hybrid" not in rendered_status
+    assert "phase68-all-aggregate-metrics.json" in rendered_status
+    assert "phase41-metrics.json" in rendered_status
+    for download in (tmp_path / "generated").glob("*.json"):
+        assert f"<{download.name}>" in rendered_status
+    assert rendered_status.count("<article") == 1
+    assert "Phase48 all retained full and half trees" not in rendered_status
     assert manifest["pretraining"]["production_submission_authorized"] is False
     assert manifest["pretraining"]["selected_profile_state"] == "NONE_SELECTED"
     assert manifest["pretraining"]["submission_performed"] is False
@@ -790,8 +795,10 @@ def test_phase48_all_tree_and_beam_publication(tmp_path):
     assert sum(a['beam_candidate_count'] for a in retained['arms'].values()) == 92
     assert manifest['reconstruction']['phase47']['next_study_status'] == 'COMPLETED'
     page = (tmp_path/'phase48-status/index.rst').read_text()
-    assert 'PID adaptation did not execute' in page
-    assert 'not evidence that effective PID adaptation has no benefit' in page
+    assert 'PID weights received no optimizer updates' in page
+    assert 'This does not test effective PID adaptation' in page
+    assert 'Phase48' in page
+    assert 'phase48-retained-metrics.json' in page
 
 
 def test_phase49_full_metric_downloads_are_lossless(tmp_path):
