@@ -33,8 +33,7 @@ Use a new or empty build directory and the installed documentation environment:
 .. code-block:: bash
 
    python -m pytest -q tests/test_docs_*_cpu.py
-   python scripts/build_docs.py --output docs/_build/science-check
-   python scripts/validate_docs.py --html docs/_build/science-check/html --generated docs/_build/science-check/source/wiki/_generated --check-generation --workflow
+   python scripts/build_docs.py --output docs/_build/science-check --check-generation --workflow
    python scripts/build_docs.py --layout basf2 --output docs/_build/science-basf2
    git diff --check
 
@@ -121,3 +120,18 @@ basf2 builds run on separate read-only matrix runners. All layouts retain full
 privacy, coverage and link checks. Deployment depends on both jobs, including
 both matrix entries; fail-fast is disabled so failures remain observable.
 No timeout, byte/work bound, historical download or scientific gate is removed.
+
+Phase69 validation runtime review
+---------------------------------
+
+The additive-efficiency publication reached the unchanged 60-minute CI limit
+in the final independent validation call. The strict site build, privacy,
+links and both compatibility layouts passed; the equivalent local checks
+also passed. The workflow now requests fresh regeneration and workflow
+validation in the builder's existing independent validator process. This
+retains every check while avoiding another full scan of the same immutable
+artifact in a separate call. Sphinx's build-time privacy scan also remains.
+Neither flag disables a default check. Any build or validation failure blocks
+publication, and the uploaded HTML path is bound by the workflow validator.
+Measure the resulting CI runtime before promotion; all limits and compatibility
+jobs remain unchanged.

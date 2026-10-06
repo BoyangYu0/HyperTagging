@@ -259,3 +259,28 @@ def test_nojekyll_marker_cannot_publish_an_arbitrary_body(staging_repository):
     assert not output.exists()
     assert not calls
     assert marker.read_text() == "UNRELATED-MARKER-PAYLOAD"
+
+
+@pytest.mark.parametrize('options', [[], ['--check-generation'], ['--workflow'], ['--check-generation', '--workflow']])
+def test_build_additional_checks_share_one_complete_validator(staging_repository, options):
+    root, output, calls = staging_repository
+    assert build_docs.main(['--output', str(output), *options]) == 0
+    assert len(calls) == 2
+    sphinx, checks = [call[0] for call in calls]
+    assert '-W' in sphinx and '--keep-going' in sphinx
+    assert checks[1] == str(root / 'scripts/validate_docs.py')
+    assert checks[checks.index('--html') + 1] == str(output / 'html')
+    assert checks[checks.index('--generated') + 1] == str(output / 'source/wiki/_generated')
+    for flag in ('--check-generation', '--workflow'):
+        assert (flag in checks) == (flag in options)
+
+
+@pytest.mark.parametrize('build_exit,validation_exit,expected_calls', [(7, 0, 1), (0, 9, 2)])
+def test_combined_validation_propagates_either_failure(staging_repository, monkeypatch, build_exit, validation_exit, expected_calls):
+    _root, output, calls = staging_repository
+    def run(command, **_kwargs):
+        calls.append(command)
+        return SimpleNamespace(returncode=build_exit if len(calls) == 1 else validation_exit)
+    monkeypatch.setattr(build_docs.subprocess, 'run', run)
+    assert build_docs.main(['--output', str(output), '--check-generation', '--workflow']) == (build_exit or validation_exit)
+    assert len(calls) == expected_calls

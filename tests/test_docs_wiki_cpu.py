@@ -150,6 +150,9 @@ def test_security_validators_have_no_assert_statements():
     ("-e -o pipefail", "-e"),
     ("github.ref == 'refs/heads/master'", "github.ref == 'refs/heads/other'"),
     ("3d3c42e5aac5ba805825da76410c181273ba90b1", "v7"),
+    (" --check-generation", ""),
+    (" --workflow", ""),
+    ('--output "$RUNNER_TEMP/hypertagging-docs"', '--output "$RUNNER_TEMP/other-docs"'),
 ])
 def test_mutated_workflow_fails_even_with_python_optimization(tmp_path, before, after):
     target = tmp_path / ".github/workflows/docs.yml"

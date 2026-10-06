@@ -9,6 +9,7 @@ from html.parser import HTMLParser
 import json
 from pathlib import Path
 import re
+import shlex
 import sys
 import tempfile
 from urllib.parse import unquote, urlsplit
@@ -665,9 +666,14 @@ def validate_workflow() -> dict:
 
     _require(all("if" not in step for step in build["steps"] if "run" in step),
              "Required validation steps must not be conditionally skipped")
-    _require(any("scripts/validate_docs.py" in command
-                 and all(flag in command for flag in ("--html", "--generated", "--check-generation", "--workflow"))
-                 for command in commands), "Independent coverage/privacy/workflow validation is missing")
+    # build_docs always invokes the independent validator with HTML, generated
+    # privacy, links and coverage. Add fresh regeneration and workflow checks to
+    # that same call, rather than rescanning the identical artifact in a third
+    # validation process. Exact tokens also bind validation to the uploaded path.
+    required_build = ["python", "scripts/build_docs.py", "--output",
+                      "$RUNNER_TEMP/hypertagging-docs", "--check-generation", "--workflow"]
+    _require(any(shlex.split(command) == required_build for command in commands),
+             "Independent coverage/privacy/workflow validation is missing")
     _require(len(deploy["steps"]) == 2 and all("run" not in step for step in deploy["steps"]),
              "Deployment must execute no repository shell code")
     configure, publish = deploy["steps"]
