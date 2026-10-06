@@ -95,7 +95,10 @@ to the repository root.
   normalizers, target/constraint policies, and rollout PID mode are contracts.
 - Scientific runs use immutable source-role selection manifests plus their
   authenticated dataset index. Fit statistics on train only; preserve fixed
-  validation UID cohorts. Raw event prefixes are diagnostic, and the sealed
+  validation UID cohorts. Include the authenticated private cohorts bound by
+  `configs/reconstruction/supplementary_validation_reservations.json` in future
+  validation exclusion unions; historical free-capacity counts predate them.
+  Raw event prefixes are diagnostic, and the sealed
   test role is not a tuning/normalization source. Validate policy-specific
   query/cardinality capacity before training; overflow must be accounted for.
 - `complete_only`, `reconstructable_partial`, and diagnostic targets describe

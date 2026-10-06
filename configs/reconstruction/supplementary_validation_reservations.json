@@ -1,0 +1,28 @@
+{
+  "version": "supplementary-validation-reservations-v1",
+  "reservations": [
+    {
+      "version": "phase69-policy-reservation-binding-v1",
+      "status": "RESERVED",
+      "role": "validation",
+      "cohort_manifest": {
+        "artifact_relative_path": "phase69_policy_reevaluation_20261006/cohort.json",
+        "sha256": "e0cb20d843527c4a949e3ece71c57ef2e4d56e24d9c841ce546f66339aa91b8f"
+      },
+      "prior_exclusion_count": 61000,
+      "reserved_count": 12000,
+      "remaining_unreserved_count": 27000,
+      "by_category": {
+        "charged": 2000,
+        "mixed": 2000,
+        "ccbar": 2000,
+        "uubar": 2000,
+        "ddbar": 2000,
+        "ssbar": 2000
+      },
+      "requirement": "Future adaptive study cohort builders must include this supplementary reservation in their exclusion union; never select from this cohort for training, normalization or checkpoint selection.",
+      "sealed_test_accessed": false
+    }
+  ],
+  "storage_contract": "Resolve artifact_relative_path under the configured external HyperTagging artifact root; authenticate SHA-256 before consuming UIDs. See docs/repository_storage.md."
+}

@@ -223,7 +223,11 @@ def generate(root, output, summary):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     efficiencies = module.generate(root, output, bundle)
+    policy_spec = importlib.util.spec_from_file_location("wiki_phase69_policy", Path(__file__).with_name("wiki_phase69_policy.py"))
+    policy_module = importlib.util.module_from_spec(policy_spec)
+    policy_spec.loader.exec_module(policy_module)
     return {
+        "policy_reevaluation": policy_module.generate(root, output),
         "efficiencies": efficiencies,
         "status": public["status"],
         "complete_aggregate_bundle": bundle_binding,
@@ -263,4 +267,10 @@ def render(record):
             f":download:`{d['view'].replace('_', ' ')} — {d['metric_count']} values <{d['filename']}>`.",
             "",
         ]
+    if record.get("policy_reevaluation"):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("wiki_phase69_policy", Path(__file__).with_name("wiki_phase69_policy.py"))
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        lines = module.render(record["policy_reevaluation"]) + lines
     return lines

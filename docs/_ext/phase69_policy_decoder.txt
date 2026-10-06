@@ -1,0 +1,35 @@
+# Usage: python phase69-policy-decoder.txt phase69-policy-reevaluation-v1.json decoded.json
+# Decodes a local aggregate download; requires only the Python standard library.
+import hashlib, json, pathlib, sys
+manifest = pathlib.Path(sys.argv[1])
+value = json.loads(manifest.read_text())
+assert value['encoding'] == 'typed-json-dag-parts-v1'
+nodes = []
+for index, part in enumerate(value['parts']):
+    assert part['filename'] == f'phase69-policy-part-{index}.json'
+    data = (manifest.parent / part['filename']).read_bytes()
+    assert len(data) == part['bytes'] and hashlib.sha256(data).hexdigest() == part['sha256']
+    payload = json.loads(data)
+    assert payload['part'] == index and payload['encoding'] == 'typed-json-dag-part-v1'
+    nodes.extend(payload['nodes'])
+assert len(nodes) == value['nodes']
+value['nodes'] = nodes
+decoded = []
+for node in value['nodes']:
+    kind = node[0]
+    def ref(index):
+        assert type(index) is int and 0 <= index < len(decoded)
+        return decoded[index]
+    if kind == 'dict':
+        item = {ref(key): ref(val) for key, val in node[1]}
+    elif kind == 'list':
+        item = [ref(index) for index in node[1]]
+    elif kind == 'null':
+        item = None
+    else:
+        assert kind in ('str', 'bool', 'int', 'float') and type(node[1]).__name__ == kind
+        item = node[1]
+    decoded.append(item)
+data = (json.dumps(decoded[value['root']], sort_keys=True, separators=(',', ':'), allow_nan=False) + '\n').encode()
+assert hashlib.sha256(data).hexdigest() == value['decoded_sha256']
+pathlib.Path(sys.argv[2]).write_bytes(data)

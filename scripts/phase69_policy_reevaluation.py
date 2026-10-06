@@ -115,7 +115,7 @@ def prepare(out, historical_receipts):
                 'training_overlap': 0, 'prior_reservation_overlap': 0}
     atomic_json(out / 'coverage-authentication.json', coverage)
     if selected is None:
-        return
+        raise SystemExit(2)
     flat = [uid for cat in CATEGORIES for uid in selected[cat]]
     atomic_json(out / 'cohort.json', {**manifest(flat), 'by_category': selected,
                 'exclusion_uid_set_sha256': uid_set_sha256(excluded), 'version': VERSION})
@@ -131,7 +131,8 @@ def prepare(out, historical_receipts):
         run = Path(checkpoints['reconstruction-checkpoint']['path']).parent.parent
         native = run.parents[3] / 'slurm/reconstruction-phase69/jobs' / run.name / 'attempt-00/receipt.json'
         from scripts.build_reconstruction_phase69_closeout import verify_receipt
-        verify_receipt(load(native))
+        native_receipt = load(native)
+        verify_receipt(native_receipt)
         pair_path = out / f'{arm}-checkpoint-pair.json'
         cmd = [sys.executable, str(ROOT/'scripts/validate_reconstruction_checkpoint_pair.py')]
         for flag, b in checkpoints.items():
@@ -139,7 +140,17 @@ def prepare(out, historical_receipts):
         cmd += ['--allow-finetuned-encoder', '--output', str(pair_path)]
         subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
         pair = load(pair_path)
-        assert pair['compatible']
+        assert pair['compatible'] and pair['reconstruction_step'] == 4000
+        historical_pair = load(old_report)['checkpoint_pair']
+        for kind in ('pretraining', 'reconstruction'):
+            assert checkpoints[kind+'-checkpoint']['sha256'] == pair[kind+'_sha256'] == historical_pair[kind+'_sha256']
+        source = run.parents[4]
+        contract = load(run/'provenance/submitted-contract.json')
+        canonical_contract = {k:v for k,v in contract.items() if k != 'contract_sha256'}
+        assert hashlib.sha256(json.dumps(canonical_contract,sort_keys=True,separators=(',', ':'),allow_nan=False).encode()).hexdigest() == contract['contract_sha256'] == native_receipt['contract_sha256']
+        assert contract['arm_role'] == arm and contract['sealed_test_role_access'] == 'forbidden'
+        assert subprocess.check_output(['git','rev-parse','HEAD'],cwd=source,text=True).strip() == contract['expected_git_sha']
+        subprocess.run(['git','diff','--exit-code','HEAD','--','src','scripts'],cwd=source,check=True,stdout=subprocess.DEVNULL)
         arms[arm] = {**checkpoints, 'native_receipt': binding(native),
                      'historical_report': binding(old_report), 'checkpoint_pair': binding(pair_path)}
     tasks = []
@@ -169,6 +180,7 @@ def run_task(out, task_id):
     if not os.environ.get('SLURM_JOB_ID'):
         raise RuntimeError('Substantial evaluation requires a CPU Slurm allocation')
     plan = load(out/'plan.json'); task = plan['tasks'][task_id]
+    subprocess.run(['git','diff','--exit-code',plan['source_head'],'--','src','scripts/evaluate_full_decay.py'],cwd=ROOT,check=True,stdout=subprocess.DEVNULL)
     for b in (task['cohort'], plan['selection'], plan['index'], plan['evaluator']):
         assert sha256(Path(b['path'])) == b['sha256']
     dest = out / 'tasks' / f'{task_id:03d}'

@@ -47,6 +47,13 @@ performance for the current level-autoregressive model.
 
 ## Minimum category coverage for study evaluation
 
+The separately versioned Phase69 supplement is described in
+[its review](wiki/phase69_policy.rst). Future cohort builders must authenticate
+and exclude `configs/reconstruction/supplementary_validation_reservations.json`
+in addition to the historical adaptive-study ledger. Its private UID manifest
+stays on project storage; the tracked registry retains hashes and counts.
+
+
 Effective 2026-10-06, a complete reconstruction-study evaluation requires at
 least **2,000 distinct collision events in each source category**, for every
 compared model/arm:
