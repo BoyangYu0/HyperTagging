@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Authored Phase69 links use the guarded generated download section.
+  - bc80111cfbdcc6ef6f478190fa3e91f74f7e2aff
   # Complete immutable-cohort Phase69 additive tagging and lossless public exports.
   - 2d633d220a08bde88c0ec07d17e3be9769b4ba43
   # Merge only reviewed Phase69 heading and audit metadata; tagging code unchanged.
