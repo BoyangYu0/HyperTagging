@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Complete12,000-collision Phase70 evaluation, all exports/decoders and efficiency review;50 focused checks and corrected environment regressions pass.
+  - 1e296d029ece1a755b80c6d31e528f0a9a0da574
   # One objective-only Phase71 pair, independently reserved category cohort, minimal measured cardinality repair; actual loss-gradient and fail-closed admission tests pass.
   - affdef59a7a9a2ad622424ab74a96f49b563818c
   # Exhaustive scalar export, immutable-report continuum uncertainty, complete packaging and restored Pages staging fixtures; focused tests pass.
