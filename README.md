@@ -28,6 +28,7 @@ separately.
 - [Preprocessing contract](docs/preprocessing_design.md)
 - [Full-decay evaluation contract](docs/full_decay_reconstruction_evaluation.md)
 - [basf2 and ONNX deployment](docs/basf2_onnx_full_decay.md)
+- [Phase69 supplementary category-policy evaluation](docs/wiki/phase69_policy.rst)
 - [Phase69 completed confirmation](docs/phase69_closeout_20261005.md)
 - [Earlier studies](docs/wiki/studies.rst)
 - [Online study monitoring and execution proposal](docs/online_study_operations.md)

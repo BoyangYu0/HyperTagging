@@ -19,6 +19,12 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  - 908061bb73d54d14f67c4c6be9b78bb09d72b4fb  # Reviewed public decoder loading from authored publication inputs.
+  - 74704f35a4d1d8dc1abcd9cbdcf0c2db4f4c80c1  # Reviewed decoder move to existing authored-publication boundary.
+  # Reviewed authenticated Phase69 supplement:12000 collisions per arm, bounded aggregate exports and reserved-cohort binding; focused checks pass.
+  - 11ad02a85a8ec248a858349eef26f5d3e401b6a6
+  # Reviewed identity-only stratified reservation and resumable CPU evaluation; focused reservation checks pass.
+  - a18d590b5b7009c7016fa4743d2cbf004e7ba694
   # Reviewed deployment retirement, compact dashboard, category policy and CI deduplication; CPU suite and strict HTML regeneration validated.
   - b8f612b3cd27ada79a2493c397ecca1022201026
   # Measured CI runtime repair retains every publication check in one post-build validator call.

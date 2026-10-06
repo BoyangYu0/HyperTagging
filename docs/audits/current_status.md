@@ -1,5 +1,25 @@
 # Current repository audit status
 
+## Phase69 supplementary category-policy evaluation — 2026-10-06
+
+Both frozen step4000 arms processed the same 12,000 distinct validation collisions
+in full and half/component scope: 2,000 each in charged, mixed, ccbar, uubar,
+ddbar and ssbar, with zero execution failures. The deterministic reservation
+excludes training/normalization and all 61,000 prior reservations through
+Phase70. Historical 100-event and 20-event evidence is unchanged. The new
+60-event full-depth width-two beam is diagnostic, not quota compliant.
+
+Exact retained B tagging is 0/8,000 in both arms/scopes. Inclusive FSP grouping
+is 0/8,000 refined versus 1/8,000 pre-refinement; 16 exact-tag truth trials and
+one membership trial remain unavailable in nominal denominators. Full retained
+LCAG is 3,262/730,991 versus 3,266/730,991; its paired interval spans zero.
+All committed source-conflict and failed daughter-sum closure counts are zero.
+These are retained proxies, not physical FEI efficiencies or a model promotion.
+
+[Review, category availability and complete aggregate downloads](../wiki/phase69_policy.rst).
+Future cohort builders must include the supplementary reservation registry;
+the historical 39,000 free-event count now precedes this 12,000-event reservation.
+
 ## Phase69 additive tagging evaluation — 2026-10-06
 
 Publication runtime follow-up: the first combined-code CI attempt hit the fixed 60-minute limit during its final independent validation call, after strict HTML privacy, links and both compatibility layouts passed. The builder can now request fresh regeneration and workflow checks in its existing independent validator call; every check remains, with no timeout or byte/work limit increase. Default build validation is unchanged. Exact-revision CI and measured runtime remain required before publication.
