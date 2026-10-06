@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Measured basf2 byte overrun repaired through navigation-only depth bounds; strict empty-root Pages marker exception;87 privacy/staging checks pass, all limits retained.
+  - 0a134e04558588488e006e3ebcfebdc2628f12ce
   # Browser420px review overflow499px traced to inline hashes; targeted literal wrapping measures409px with tables still independently scrollable.
   - 7134f7075e8860bcf1721a76d382e4e105d7a26c
   # Earlier remote docs270passed/two assertion failures: restore unchanged Phase48 count and assert latest Phase70 tagging; seventeen complete exports now share isolated fixture.
