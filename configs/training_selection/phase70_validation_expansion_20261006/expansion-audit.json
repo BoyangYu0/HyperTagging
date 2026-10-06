@@ -1,0 +1,56 @@
+{
+  "all_historical_roles_preserved": true,
+  "catalog_note": "Historical source-role catalog is preserved; only selected train/validation payloads are materialized in the flat snapshot. Sealed test is not materialized or opened.",
+  "category_shard_quotas": {
+    "ccbar": 2,
+    "charged": 2,
+    "ddbar": 2,
+    "mixed": 2,
+    "ssbar": 2,
+    "uubar": 2
+  },
+  "fresh_tasks": [
+    828,
+    1688,
+    598,
+    1928,
+    1338,
+    28,
+    398,
+    1188,
+    1598,
+    58,
+    298,
+    1768
+  ],
+  "fresh_validation_events": 60000,
+  "materialized_roles": [
+    "train",
+    "validation"
+  ],
+  "materialized_shards": 46,
+  "new_shard_hashes_verified": {
+    "mdst_00028.parquet": "c980dc62bdaf9f44cedeed0ace995680b00a27bef55cd2354eb668d7cc630437",
+    "mdst_00058.parquet": "24e2703e8f0818f2b7354f863ceb09629f8e20f3d1fbcf15a5ee6ca469caf071",
+    "mdst_00298.parquet": "c39aa73d59a3f102b7ac7ad19e3d545a132971caf912d99753b0571ecc874e8a",
+    "mdst_00398.parquet": "3025e33c3fd1276142365e966ad8997de5af1963455467444ad01dbf75fb1eb8",
+    "mdst_00598.parquet": "8c661d276fddf666ffaa7f6bbd00d38454f22df4cbd047456c2d27b821695740",
+    "mdst_00828.parquet": "b22f0950c88ba9934c71256822d7d1018f0c183dd09799d236716424db81ad8e",
+    "mdst_01188.parquet": "d40cb1a8594eb260f98fc6c147b271b3ac0e39442d4b18ff618822b3451fa982",
+    "mdst_01338.parquet": "b0d6059a7f05443ca6ac1b1a334e23b6ee8bc3e7eca72d92b8617a1622b84763",
+    "mdst_01598.parquet": "c7c9408a9ac7e1c6163bdf97f056aaf50bc67a79cfac89fce95ac70bc9262322",
+    "mdst_01688.parquet": "bae3eda169fa577061df3c5fe8b5e417649241545f32322ff5f00b491634d40f",
+    "mdst_01768.parquet": "efd7d449c401a10892e9bbfd0171ad3587e4cf7483f1bebaa531ce4139278d05",
+    "mdst_01928.parquet": "cbebde2e5f588d90f3681d1ba0e6456544143e9a3c88263ef856ae231855aca7"
+  },
+  "new_sources_disjoint_from_entire_prior_1m_inventory": true,
+  "prior_inventory_sha256": "b78a37d5ebfbcf2924c140603c7e12e5681f5280008de4e0d67dd6b7eb51d06c",
+  "prior_roles_sha256": "4177bdf36da1c66d0695034c631b9709fb0a4dd6a2b136a745201c8f52bbbf28",
+  "sealed_test_accessed": false,
+  "selection_seed": 20261006,
+  "status": "SOURCE_ROLES_BOUND_UID_SCAN_REQUIRED",
+  "train_events": 70000,
+  "training_payloads_identical": true,
+  "validation_events": 160000,
+  "version": "phase70-validation-source-expansion-v1"
+}

@@ -2,7 +2,7 @@ name: CPU correctness
 
 on:
   push:
-    branches: [master]
+    branches: [master, "codex/phase70-review-next-20261006"]
   pull_request:
   workflow_dispatch:
     inputs:
