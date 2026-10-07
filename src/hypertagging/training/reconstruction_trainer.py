@@ -178,6 +178,7 @@ class ReconstructionConfig:
     hyper_projection_init_scale: float | None = None
     tangent_scale_mode: str | None = None
     query_repulsion_weight: float = 0.0
+    pointer_set_overlap_weight: float = 0.0
     object_positive_weight: float = 2.0
     pointer_positive_weight: float = 4.0
     pointer_positive_weights_by_level: tuple[tuple[int, float], ...] = ()
@@ -362,6 +363,8 @@ def train_level_reconstruction(
         raise ValueError("grad_scaler_enabled requires mixed_precision")
     if not config.validation_enabled and config.scientific_mode:
         raise ValueError("scientific reconstruction requires validation")
+    if not math.isfinite(config.pointer_set_overlap_weight) or config.pointer_set_overlap_weight < 0:
+        raise ValueError("pointer_set_overlap_weight must be finite and nonnegative")
     if config.object_positive_weight <= 0 or config.pointer_positive_weight <= 0:
         raise ValueError("decoder positive weights must be finite and positive")
     if not math.isfinite(config.object_positive_weight) or not math.isfinite(
@@ -785,6 +788,7 @@ def train_level_reconstruction(
             p4_closure_tolerance=config.rollout_p4_tolerance,
             object_positive_weight=config.object_positive_weight,
             pointer_positive_weight=config.pointer_positive_weight,
+            pointer_set_overlap_weight=config.pointer_set_overlap_weight,
             pointer_positive_weights_by_level=(
                 config.pointer_positive_weights_by_level
             ),
@@ -1207,6 +1211,7 @@ def train_level_reconstruction(
             p4_closure_tolerance=config.rollout_p4_tolerance,
             object_positive_weight=config.object_positive_weight,
             pointer_positive_weight=config.pointer_positive_weight,
+            pointer_set_overlap_weight=config.pointer_set_overlap_weight,
             pointer_positive_weights_by_level=(
                 config.pointer_positive_weights_by_level
             ),
@@ -1550,7 +1555,8 @@ def _optimization_loss(
                 matching_production=not config.allow_tiny_bruteforce_matching,
                 constraint_policy=constraint_policy,
                 unrepresentable_target_counts=[masked_missing],
-                weights={"query_repulsion": config.query_repulsion_weight},
+                weights={"query_repulsion": config.query_repulsion_weight,
+                         "pointer_set_overlap": config.pointer_set_overlap_weight},
                 object_positive_weight=config.object_positive_weight,
                 pointer_positive_weight=dict(
                     config.pointer_positive_weights_by_level
@@ -1606,7 +1612,8 @@ def _optimization_loss(
                         target_policy=config.target_policy,
                         matching_production=not config.allow_tiny_bruteforce_matching,
                         constraint_policy=constraint_policy,
-                        weights={"query_repulsion": config.query_repulsion_weight},
+                        weights={"query_repulsion": config.query_repulsion_weight,
+                         "pointer_set_overlap": config.pointer_set_overlap_weight},
                         object_positive_weight=config.object_positive_weight,
                         pointer_positive_weight=dict(
                             config.pointer_positive_weights_by_level
@@ -1632,7 +1639,8 @@ def _optimization_loss(
                 target_policy=config.target_policy,
                 matching_production=not config.allow_tiny_bruteforce_matching,
                 constraint_policy=constraint_policy,
-                weights={"query_repulsion": config.query_repulsion_weight},
+                weights={"query_repulsion": config.query_repulsion_weight,
+                         "pointer_set_overlap": config.pointer_set_overlap_weight},
                 object_positive_weight=config.object_positive_weight,
                 pointer_positive_weight=dict(
                     config.pointer_positive_weights_by_level
@@ -2005,6 +2013,7 @@ def validate_reconstruction(
     p4_closure_tolerance: float = 1e-6,
     object_positive_weight: float = 2.0,
     pointer_positive_weight: float = 4.0,
+    pointer_set_overlap_weight: float = 0.0,
     pointer_positive_weights_by_level: tuple[tuple[int, float], ...] = (),
 ) -> dict[str, float | str]:
     model.eval()
@@ -2115,6 +2124,7 @@ def validate_reconstruction(
                 target_policy=target_policy,
                 constraint_policy=constraint_policy,
                 object_positive_weight=object_positive_weight,
+                weights={"pointer_set_overlap": pointer_set_overlap_weight},
                 pointer_positive_weight=dict(pointer_positive_weights_by_level).get(
                     target_level, pointer_positive_weight
                 ),
@@ -2751,6 +2761,10 @@ def _data_order_contract(
         ],
         "recovery_objective_weight": config.recovery_objective_weight,
     }
+    if config.pointer_set_overlap_weight:
+        contract["matched_daughter_set_objective"] = {
+            "version": "soft-jaccard-v1", "weight": config.pointer_set_overlap_weight
+        }
     if config.level_sampling_mode == "balanced_level_replay":
         if data_module.balanced_level_replay_contract is None:
             raise RuntimeError(

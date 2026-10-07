@@ -38,6 +38,7 @@ def run_level_reconstruction_dry_run(
     target_level: int = 1,
     ablation: str = "full_revised",
     resume: str | None = None,
+    pointer_set_overlap_weight: float = 0.0,
 ) -> LevelReconstructionSummary:
     seed_everything(seed)
     device = torch.device(device)
@@ -63,7 +64,8 @@ def run_level_reconstruction_dry_run(
     for _step in range(max_steps):
         optimizer.zero_grad()
         output = model(batch, target_level=target_level)
-        last = level_reconstruction_loss(output.pointer, batch, target_level=target_level)
+        last = level_reconstruction_loss(output.pointer, batch, target_level=target_level,
+                                         weights={"pointer_set_overlap": pointer_set_overlap_weight})
         last.total.backward()
         optimizer.step()
     assert last is not None
@@ -73,6 +75,7 @@ def run_level_reconstruction_dry_run(
             metric_output.pointer,
             batch,
             target_level=target_level,
+            weights={"pointer_set_overlap": pointer_set_overlap_weight},
         )
         metrics = next_level_metrics(
             metric_output.pointer,

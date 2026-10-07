@@ -107,7 +107,7 @@ Fixture results validate software behavior, not physics performance.
 
 ## Continuous integration
 
-PRs, pushes to `master` and the authorized Phase70 review branch run CPU
+PRs, pushes to `master` and the authorized Phase70 and Phase71 review branches run CPU
 correctness, including documentation regressions and audit integrity. New
 commits cancel superseded runs. Cached dependencies use CPU PyTorch wheels.
 
@@ -115,7 +115,7 @@ Full HTML/text/basf2 documentation builds run on branch pushes, pull requests
 and manual dispatch. Notebook execution retains its weekly/manual schedule. When changing documentation or notebooks, run the relevant
 local checks before review; use the full workflows for archive/layout validation.
 Documentation builds retain privacy, link, coverage and regeneration checks.
-For the authorized Phase70 review, exact branch CPU and Documentation and Pages
+For the authorized Phase71 review, exact branch CPU and Documentation and Pages
 validation precede guarded master promotion and GitHub Pages publication.
 
 ## Core workflows

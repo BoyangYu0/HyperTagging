@@ -34,6 +34,8 @@ def evidence(tmp_path, monkeypatch):
     monkeypatch.delenv("SOURCE_DATE_EPOCH", raising=False)
     monkeypatch.setattr(status, "_git", lambda *_args: None)
     documents = {
+        "reconstruction_phase71_review": {"reserved": True},
+        "reconstruction_phase71_policy": {"reserved": True},
         "reconstruction_phase70_review": {"reserved": True},
         "reconstruction_phase70_policy": {"reserved": True},
         "reconstruction_phase68_review": {"reserved": True},

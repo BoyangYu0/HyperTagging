@@ -459,6 +459,7 @@ def _training_config(
         query_repulsion_weight=float(config["query_repulsion_weight"]),
         object_positive_weight=float(config["object_positive_weight"]),
         pointer_positive_weight=float(config["pointer_positive_weight"]),
+        pointer_set_overlap_weight=float(config.get("pointer_set_overlap_weight", 0.0)),
         pointer_positive_weights_by_level=_float_pairs(
             config.get("pointer_positive_weights_by_level", [])
         ),

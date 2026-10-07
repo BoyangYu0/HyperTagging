@@ -106,6 +106,7 @@ def level_reconstruction_loss(
         "source_conflict": 0.1,
         "mother_charge": 1.0,
         "query_repulsion": 0.0,
+        "pointer_set_overlap": 0.0,
         **(weights or {}),
     }
     if target_override is None:
@@ -146,6 +147,7 @@ def level_reconstruction_loss(
     confidence_targets = torch.zeros_like(output.confidence_logits)
     type_losses = []
     pointer_losses = []
+    pointer_set_losses = []
     cardinality_losses = []
     p4_losses = []
     charge_losses = []
@@ -190,6 +192,10 @@ def level_reconstruction_loss(
                 output.pointer_logits[batch_index, query_id, context]
             )
             truth_pointer = target_masks[batch_index][target_id].float()
+            if weights["pointer_set_overlap"]:
+                pointer_set_losses.append(soft_pointer_set_overlap_loss(
+                    output.pointer_logits[batch_index, query_id, context], truth_pointer
+                ))
             hard_pointer = predicted_pointer >= 0.5
             decoded_valid = True
             if constraint_policy is not None:
@@ -341,6 +347,10 @@ def level_reconstruction_loss(
             matched_pointer_targets=matched_pointer_targets,
         ),
     }
+    if weights["pointer_set_overlap"]:
+        components["pointer_set_overlap"] = (
+            torch.stack(pointer_set_losses).mean() if pointer_set_losses else zero
+        )
     total = sum(components[name] * weights[name] for name in components)
     return LevelLossOutput(
         total=total,
@@ -434,3 +444,22 @@ def confidence_calibration_metrics(
                 probability[selected].mean() - target[selected].mean()
             ).abs()
     return {"brier_score": float(brier.cpu()), "expected_calibration_error": float(ece.cpu())}
+
+
+def soft_pointer_set_overlap_loss(logits: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+    """Matched-daughter soft Jaccard surrogate; target-only training supervision.
+
+    Penalize missing and foreign daughters jointly in FP32. The caller supplies
+    only its existing context axis and legal matched target, without forming new
+    inference candidates or changing Hungarian assignments. This is local set
+    overlap, not a differentiable claim of recursive B correctness.
+    """
+    if logits.shape != targets.shape or logits.ndim != 1:
+        raise ValueError("set overlap expects matching one-dimensional daughter vectors")
+    if not logits.numel():
+        return logits.float().sum() * 0.0
+    probability = logits.float().sigmoid()
+    truth = targets.float()
+    intersection = (probability * truth).sum()
+    union = (probability + truth - probability * truth).sum()
+    return 1.0 - intersection / union.clamp_min(1e-8)

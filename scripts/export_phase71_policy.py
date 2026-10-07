@@ -6,17 +6,13 @@ Only bootstrap resample batches, never all replicate-by-event arrays, are held.
 from __future__ import annotations
 import argparse
 from collections import Counter, defaultdict
-import copy
-import gzip
-import importlib.util
-import json
 import math
 from pathlib import Path
 import sys
 
 ROOT = Path.cwd()
 sys.path[:0] = [str(ROOT), str(ROOT/'src')]
-from scripts.phase71_policy_evaluation import ARMS, CATEGORIES, VERSION, binding, load, sha256, atomic_json
+from scripts.phase71_policy_evaluation import ARMS, CATEGORIES, VERSION, load, sha256, atomic_json
 from hypertagging.evaluation.tag_efficiency import summarize_tag_efficiency_events, validate_tag_efficiency_report
 from hypertagging.evaluation.retained_tree_checks import validate_retained_tree_report
 
@@ -110,7 +106,7 @@ def paired_intervals(left,right,categories,repeats=10000,batch=16):
         for j,arm in enumerate(ARMS):
             n,d=totals[j][i];v=float(n/d) if d else None;points.append(v)
             record[arm]={'numerator':float(n),'denominator':float(d),'value':v,**ci(estimates[:,i,j])}
-        record['disabled_minus_enabled']={'value':points[1]-points[0] if None not in points else None,**ci(estimates[:,i,1]-estimates[:,i,0])}
+        record['weight100_minus_weight050']={'value':points[1]-points[0] if None not in points else None,**ci(estimates[:,i,1]-estimates[:,i,0])}
         result[name]=record
     return {'unit':'collision','stratified_by_source_category':True,'seed':20261007,'resamples':repeats,
             'resample_batch':batch,'numpy_version':np.__version__,'random_streams':'SeedSequence seed20261007 spawn6 category generators','metrics':result,
@@ -130,6 +126,7 @@ def aggregate(out):
     public['coverage']['views']={}
     public['coverage']['count_semantics']='Processed includes unavailable truth and unsuccessful reconstruction. Failed counts attempted collisions without completed evaluator output; invalid_rollout is a separate processed-event diagnostic. truth_unavailable refers to primary tree scope; retained and exact/inclusive availability are separate.'
     points={}; scientific_source=None
+    final_views={arm:{scope:[] for scope in ('full','half')} for arm in ARMS}
     for arm in ARMS:
         tags=defaultdict(list);summaries=[];retained=[];category_summaries=defaultdict(list)
         guards={scope:Counter() for scope in ('full','half')}
@@ -199,6 +196,7 @@ def aggregate(out):
                 uid=event['event_uid'];cat=event['source_category'];assert expected[uid]==cat
                 points[arm][uid]=event_ratios(event)
                 for scope,record in event['scopes'].items():
+                    final_views[arm][scope].append({'event_uid':uid,'source_category':cat,'attempted':True,'processed':True,'truth_unavailable':not record['metrics']['available']})
                     count=counts[cat][scope];count['unique_attempted']+=1;count['processed']+=1
                     diag=record['inference'];g=guards[scope];g['processed']+=1
                     for key in ('committed_forest_source_conflict_count','source_conflicting_mother_count','source_conflicting_detector_resource_count'):
@@ -255,6 +253,9 @@ def aggregate(out):
             b=public['coverage']['views'][ARMS[1]][cat][scope]
             for key in ('requested','unique_attempted','processed','failed','truth_unavailable','retained_tree_truth_unavailable','exact_tag_truth_unavailable_events','inclusive_membership_unavailable_events'):
                 assert a[key]==b[key], 'Compared arms have different truth/coverage populations'
+    from scripts.validate_phase71_final_coverage import validate_final_coverage
+    final_coverage=validate_final_coverage(cohort,final_views)
+    atomic_json(out/'final-coverage-validation.json',final_coverage)
     public['evaluator_revision']=scientific_source
     public['checkpoint_hashes']={arm:{key:plan['arms'][arm][key]['sha256'] for key in ('pretraining-checkpoint','reconstruction-checkpoint')} for arm in ARMS}
     public['data_hashes']={key:plan[key]['sha256'] for key in ('selection','index','cohort','coverage')}

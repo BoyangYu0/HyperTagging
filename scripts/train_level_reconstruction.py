@@ -202,6 +202,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--rollout-object-threshold", type=float, default=0.5)
     parser.add_argument("--rollout-pointer-threshold", type=float, default=0.5)
     parser.add_argument("--query-repulsion-weight", type=float, default=0.0)
+    parser.add_argument("--pointer-set-overlap-weight", type=float, default=0.0)
     parser.add_argument("--allow-local-tiny-gpu-test", action="store_true")
     return resolve_argparse_namespace(parser, argv)
 
@@ -329,6 +330,7 @@ def main(argv: list[str] | None = None) -> int:
                 rollout_object_threshold=args.rollout_object_threshold,
                 rollout_pointer_threshold=args.rollout_pointer_threshold,
                 query_repulsion_weight=args.query_repulsion_weight,
+                pointer_set_overlap_weight=args.pointer_set_overlap_weight,
                 log_every=args.log_every,
             )
         )
@@ -366,6 +368,7 @@ def main(argv: list[str] | None = None) -> int:
             seed=args.seed,
             ablation=args.ablation,
             resume=args.resume,
+            pointer_set_overlap_weight=args.pointer_set_overlap_weight,
         )
         print(summary)
     return 0

@@ -394,3 +394,16 @@ to zero, so predicted events are not counted a second time.
 Validation reports per-level object, pointer, type, and cardinality metrics
 with numerator/denominator counts, plus source-aligned rollout, confidence,
 p4-closure, and validity metrics over the configured event samples.
+
+## Optional matched-daughter set objective
+
+`pointer_set_overlap_weight` defaults to zero, preserving the historical loss
+and data-order identity. A positive value adds FP32 soft Jaccard loss on the
+existing Hungarian-matched daughter vectors: one minus soft intersection over
+union. It penalizes omitted and foreign daughters jointly and is averaged with
+the existing event-level/context reductions. It does not alter assignments,
+target eligibility, inference, ranking, persistent composites or source guards.
+The enabled objective and coefficient are checkpointed and resume-bound. Native
+training and teacher validation report the unweighted component separately;
+weighted totals from different objective definitions are not comparable quality.
+This local set surrogate does not establish recursive or physical B efficiency.

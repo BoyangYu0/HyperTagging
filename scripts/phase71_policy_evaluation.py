@@ -6,7 +6,6 @@ output directory. This command never submits jobs or changes training contracts.
 from __future__ import annotations
 
 import argparse
-from collections import Counter
 import hashlib
 import json
 import os

@@ -1,0 +1,22 @@
+# Usage: python phase71-native-decoder.txt phase71-native-aggregates.json phase71-native-integrity.json metrics.jsonl
+# Standard-library-only decoder; each output row restores view, arm, metric and value.
+import hashlib, json, pathlib, sys
+source, integrity, output = map(pathlib.Path, sys.argv[1:])
+data = source.read_bytes()
+binding = json.loads(integrity.read_text())
+assert len(data) == binding['bytes'] and hashlib.sha256(data).hexdigest() == binding['sha256']
+value = json.loads(data)
+assert value['version'] == 'phase71-native-aggregate-bundle-v1'
+assert value['metric_name_encoding'] == 'dot_joined_segment_indices'
+assert value['columns'] == ['view_index', 'arm_index', 'metric_index', 'value']
+assert len(value['records']) == binding['scalar_records']
+names = ['.'.join(value['metric_name_segments'][i] for i in segments) for segments in value['metric_names']]
+seen = set()
+with output.open('x') as stream:
+    for view, arm, metric, scalar in value['records']:
+        identity = (view, arm, metric)
+        assert identity not in seen
+        seen.add(identity)
+        stream.write(json.dumps({'view': value['views'][view], 'arm': value['arms'][arm],
+                                 'metric': names[metric], 'value': scalar}, separators=(',', ':'), allow_nan=False) + '\n')
+assert len(seen) == binding['scalar_records']
