@@ -19,6 +19,11 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase71 authenticated primary evaluation, complete lossless exports and bounded Phase72 objective admission.
+  - 9b0d97f663bd382e7a048c90e2670147217dcd97
+  - 57eb7a1b0e8e8f5e0a35e9f7b472662a9022d590
+  - fab8a8a5df559cbff16913a67b11b699479d67f4
+  - b1725b9aee32582e10c8a18fafd33e9f0b80d7a2
   # Measured basf2 byte overrun repaired through navigation-only depth bounds; strict empty-root Pages marker exception;87 privacy/staging checks pass, all limits retained.
   - 0a134e04558588488e006e3ebcfebdc2628f12ce
   # Browser420px review overflow499px traced to inline hashes; targeted literal wrapping measures409px with tables still independently scrollable.
