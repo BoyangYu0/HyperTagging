@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Accepted bounded Phase72 scheduling, exact frozen admission evidence and private runtime exclusion.
+  - c54dd0246d77251adaef774ab52108658d973d9b
   # Phase71 authenticated primary evaluation, complete lossless exports and bounded Phase72 objective admission.
   - 9b0d97f663bd382e7a048c90e2670147217dcd97
   - 57eb7a1b0e8e8f5e0a35e9f7b472662a9022d590
