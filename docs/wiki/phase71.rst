@@ -900,4 +900,3 @@ Complete aggregate downloads and integrity
 The complete policy/scientific aggregate retains 1,756,039 numeric records; the native download retains 173,335 aggregate scalar records. Private scalar censuses retain 13,236,906 native values, 59,686 saved-checkpoint metadata values and 12,536,947 additive values, plus every policy report. These are exported records, not independent observations.
 
 The lossless compact formats retain numeric counts, channel/type labels and null availability. Public archives omit collision identifiers, native machine paths, scheduler records, logs and weights. Private evidence retains full reports, logs, scalar censuses, native failures, hash inventories and reproducible receipts. Historical downloads and their immutable bytes remain preserved.
-
