@@ -166,10 +166,11 @@ def main():
         states=', '.join(j['arm']+': '+j['state']+' ('+j['reason']+')' for j in scheduling['jobs'])
         lines += [f"At the {local} admission snapshot, both Phase72 jobs are accepted: {states}. Frozen source ``{scheduling['jobs'][0]['source_sha']}`` passes {admission['passed_tests']} CPU admission tests and both native preflights. Startup and full training completion are not yet verified; scheduling is not scientific validation. Immutable private receipts bind both jobs, resources, configurations, checkpoint and fresh cohorts.",'']
     section(lines,'Complete aggregate downloads and integrity')
-    lines += [':download:`Complete policy and scientific bundle <_generated/status/phase71-policy-reevaluation-v1.json>`; :download:`integrity <_generated/status/phase71-policy-integrity.json>`; :download:`standalone decoder <_generated/status/phase71-policy-decoder.txt>`.','',
-      ':download:`All native aggregate scalars <_generated/status/phase71-native-aggregates.json>`; :download:`native integrity <_generated/status/phase71-native-integrity.json>`; :download:`native decoder <_generated/status/phase71-native-decoder.txt>`.','']
+    lines += [':doc:`Download every Phase71 file from the complete catalogue <_generated/status/downloads>`. The generated dashboard also links each file directly.','',
+      'Policy manifest: ``phase71-policy-reevaluation-v1.json``. Integrity: ``phase71-policy-integrity.json``. Standard-library decoder: ``phase71-policy-decoder.txt``. Download the manifest and every part into one directory before decoding.','',
+      'Native scalars: ``phase71-native-aggregates.json``. Integrity: ``phase71-native-integrity.json``. Decoder: ``phase71-native-decoder.txt``.','']
     binding=json.loads(Path('artifacts/codex/phase71_policy_reevaluation_20261007/binding.json').read_text())
-    for part in binding['parts']:lines += [f":download:`{part['filename']} <_generated/status/{part['filename']}>`.",'']
+    for part in binding['parts']:lines += ['Policy part: ``'+part['filename']+'``.','']
     lines += ['The complete policy/scientific aggregate retains 1,756,039 numeric records; the native download retains 173,335 aggregate scalar records. Private scalar censuses retain 13,236,906 native values, 59,686 saved-checkpoint metadata values and 12,536,947 additive values, plus every policy report. These are exported records, not independent observations.','', 'The lossless compact formats retain numeric counts, channel/type labels and null availability. Public archives omit collision identifiers, native machine paths, scheduler records, logs and weights. Private evidence retains full reports, logs, scalar censuses, native failures, hash inventories and reproducible receipts. Historical downloads and their immutable bytes remain preserved.','']
     a.output.write_text('\n'.join(lines).rstrip()+'\n')
 if __name__=='__main__':main()

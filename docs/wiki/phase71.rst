@@ -889,15 +889,17 @@ At the 2026-10-07 09:38 CEST admission snapshot, both Phase72 jobs are accepted:
 Complete aggregate downloads and integrity
 ------------------------------------------
 
-:download:`Complete policy and scientific bundle <_generated/status/phase71-policy-reevaluation-v1.json>`; :download:`integrity <_generated/status/phase71-policy-integrity.json>`; :download:`standalone decoder <_generated/status/phase71-policy-decoder.txt>`.
+:doc:`Download every Phase71 file from the complete catalogue <_generated/status/downloads>`. The generated dashboard also links each file directly.
 
-:download:`All native aggregate scalars <_generated/status/phase71-native-aggregates.json>`; :download:`native integrity <_generated/status/phase71-native-integrity.json>`; :download:`native decoder <_generated/status/phase71-native-decoder.txt>`.
+Policy manifest: ``phase71-policy-reevaluation-v1.json``. Integrity: ``phase71-policy-integrity.json``. Standard-library decoder: ``phase71-policy-decoder.txt``. Download the manifest and every part into one directory before decoding.
 
-:download:`phase71-policy-part-0.json <_generated/status/phase71-policy-part-0.json>`.
+Native scalars: ``phase71-native-aggregates.json``. Integrity: ``phase71-native-integrity.json``. Decoder: ``phase71-native-decoder.txt``.
 
-:download:`phase71-policy-part-1.json <_generated/status/phase71-policy-part-1.json>`.
+Policy part: ``phase71-policy-part-0.json``.
 
-:download:`phase71-policy-part-2.json <_generated/status/phase71-policy-part-2.json>`.
+Policy part: ``phase71-policy-part-1.json``.
+
+Policy part: ``phase71-policy-part-2.json``.
 
 The complete policy/scientific aggregate retains 1,756,039 numeric records; the native download retains 173,335 aggregate scalar records. Private scalar censuses retain 13,236,906 native values, 59,686 saved-checkpoint metadata values and 12,536,947 additive values, plus every policy report. These are exported records, not independent observations.
 
