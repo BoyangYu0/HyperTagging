@@ -206,7 +206,7 @@ def test_status_is_deterministic_and_preserves_record_scope(evidence, tmp_path, 
     assert manifest["pretraining"]["selected_profile_state"] == "NONE_SELECTED"
     assert manifest["pretraining"]["submission_performed"] is False
     assert manifest["pretraining"]["pretraining_success_gate_passed"] is False
-    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 91
+    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 93
     assert manifest["provenance"]["external_filesystem_or_network_artifacts_opened"] is False
     assert source_info(manifest, "issue_ledger")["freshness"]["status"] == "stale"
     assert source_info(manifest, "current_status")["freshness"]["status"] == "unknown"
@@ -413,9 +413,9 @@ def test_current_repository_dashboard_surfaces_recorded_acceptance_values(tmp_pa
     assert manifest["pretraining"]["recorded_step"] == 54064 and manifest["pretraining"]["planned_steps"] == 108128
     assert manifest["pretraining"]["calibration_status"] == "PENDING"
     rendered_status = (tmp_path / "generated" / "index.rst").read_text().replace("\\-", "-")
-    assert "Phase70 efficiency evaluation" in rendered_status
+    assert "Phase71 efficiency evaluation" in rendered_status
     assert rendered_status.index("Primary strict greedy tagging") < rendered_status.index("All studies")
-    assert "0/8000" in rendered_status and "1/8000" in rendered_status
+    assert rendered_status.count("0/8000") >= 4
     assert "2,000 distinct processed collisions" in rendered_status
     assert "All studies" in rendered_status
     downloads = (tmp_path / "generated" / "downloads.rst").read_text()

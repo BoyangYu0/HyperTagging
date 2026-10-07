@@ -28,11 +28,13 @@ def main():
     diagnostic=json.loads((a.artifacts/'native/public-additional-diagnostics-v3.json').read_text())
     for arm in ARMS:
         for scopes in value['coverage']['views'][arm].values():assert all(r['processed']==2000 and r['failed']==0 for r in scopes.values())
+    decision=json.loads((a.artifacts/'phase72-decision.json').read_text())
     title='Phase71 auxiliary teacher objective and efficiency review'
     lines=[title,'='*len(title),'',
-      'The same original reserved cohort supplies **12,000 processed collisions per arm**, **2,000 in each required category**, in full and half scope. Checkpoint selection uses a separate1,000 collisions. All failures and unavailable truth retain their original denominators; no difficult event is replaced. The70,000-event training set and fitted normalization are unchanged.','',
-      'The contrast is auxiliary teacher objective weight0.5 versus1.0, with matched mixed contexts, enabled decoder bias, source-exclusive inference and bounded updates. These retained-source metrics are not physical FEI or original quark reconstruction efficiencies.','',
+      'The same original reserved cohort supplies **12,000 processed collisions per arm**, **2,000 in each required category**, in full and half scope. Checkpoint selection uses a separate 1,000 collisions. All failures and unavailable truth retain their original denominators; no difficult event is replaced. The 70,000-event training set and fitted normalization are unchanged.','',
+      'The contrast is auxiliary teacher objective weight 0.5 versus 1.0, with matched mixed contexts, enabled decoder bias, source-exclusive inference and bounded updates. These retained-source metrics are not physical FEI or original quark reconstruction efficiencies.','',
       'See the :doc:`dashboard <_generated/status/index>` and :doc:`complete download catalogue <_generated/status/downloads>`. Historical studies and all native diagnostic gates remain preserved.','']
+    lines += [decision['public_result'],'']
     section(lines,'Primary tagging and coherent pairs')
     rows=[]
     for scope in ('full','half'):
@@ -44,7 +46,7 @@ def main():
             for endpoint in ('per_b_correct','event_any_correct','event_both_correct'):
                 rows.append([f'{scope} {kind} {endpoint}',*[ratio(s['top1']['b_reconstruction'][endpoint]) for s in summaries]])
             rows.append([f'{scope} {kind} coherent pair',*[ratio(s['pool_at_k']['1']['b_reconstruction']['coherent_event_both_correct']) for s in summaries]])
-    table(lines,'Strict greedy; nominal denominators include unavailable truth',['Endpoint','Teacher weight0.5','Teacher weight1.0'],rows)
+    table(lines,'Strict greedy; nominal denominators include unavailable truth',['Endpoint','Teacher weight 0.5','Teacher weight 1.0'],rows)
     rows=[]
     for arm in ARMS:
         for kind in ('exact','inclusive'):
@@ -64,7 +66,7 @@ def main():
                     if label=='inclusive':t=t['inclusive_fsp_grouping']
                     cells.append(ratio(t['continuum_type_coverage'][cat][field]))
                 rows.append([f'{scope} {cat} {label}',*cells])
-    table(lines,'Explicit retained components; fake slots use two nominal slots per collision',['Population and endpoint','Teacher weight0.5','Teacher weight1.0'],rows)
+    table(lines,'Explicit retained components; fake slots use two nominal slots per collision',['Population and endpoint','Teacher weight 0.5','Teacher weight 1.0'],rows)
     lines += ['Component recovery is not q/qbar recovery: reduced data lack parton-to-FSP ancestry. Background acceptance and reconstruction correctness use different denominators. Unavailable component truth is retained in the complete aggregate tables. All accepted B candidates are inspected for tag recovery; slot-based fake-B accounting remains distinct from the total accepted-candidate count.','']
     section(lines,'Retained topology and paired uncertainty')
     rows=[]
@@ -74,7 +76,7 @@ def main():
         for metric in ('perfectLCAG','source_precision','source_recall'):
             r=value['uncertainty']['metrics'][f'{scope}/nontrivial_retained/{metric}']
             rows.append([scope+' nontrivial '+metric,*[ratio(r[arm]) for arm in ARMS]])
-    table(lines,'All retained versus nontrivial populations',['Endpoint','Teacher weight0.5','Teacher weight1.0'],rows)
+    table(lines,'All retained versus nontrivial populations',['Endpoint','Teacher weight 0.5','Teacher weight 1.0'],rows)
     rows=[]
     for arm in ARMS:
         for scope in ('full','half'):
@@ -93,11 +95,13 @@ def main():
     section(lines,'Coverage, unavailable truth and immutable lineage')
     rows=[]
     for cat in ('charged','mixed','ccbar','uubar','ddbar','ssbar'):
-        r=value['coverage']['views'][ARMS[0]][cat]['full']
-        rows.append([cat,*[r[k] for k in ('requested','unique_attempted','processed','failed','truth_unavailable','exact_tag_truth_unavailable_events','inclusive_membership_unavailable_events')]])
-    table(lines,'Identical authenticated populations in both arms and scopes',['Category','Requested','Attempted','Processed','Failed','Tree unavailable','Exact-tag unavailable events','Membership unavailable events'],rows)
-    lines += ['All85,000 prior reservations and the separate1,000 selection events are excluded from this original12,000-event primary cohort. The supplementary registry authenticates the combined13,000-event reservation. Input hashes cover70,000 training and160,000 validation identities, with no sealed-test payload access. Original training payloads and train-only normalization authenticate against the Phase70 lineage. Expanded independent validation is not training growth.','',
-      'The original selection-only checkpoints are step3,000 for weight0.5 and step4,000 for weight1.0. No primary result is used to select another checkpoint. Shared cardinality limits17 globally,12 at level1 and17 at level2 admit the four previously exposed targets in both arms. Their recorded repair prevents causal Phase70-to-Phase71 attribution.','',
+        for scope in ('full','half'):
+            r=value['coverage']['views'][ARMS[0]][cat][scope]
+            rows.append([cat+' '+scope,*[r[k] for k in ('requested','unique_attempted','processed','failed','truth_unavailable','exact_tag_truth_unavailable_events','inclusive_membership_unavailable_events')]])
+    table(lines,'Identical authenticated populations in both arms and scopes',['Category and scope','Requested','Attempted','Processed','Failed','Tree unavailable','Exact-tag unavailable events','Membership unavailable events'],rows)
+    lines += ['The primary full-root tree metric is unavailable for continuum collisions because it does not invent a B-pair root. Explicit retained-component metrics remain separately measurable. Half-scope direct-target compatibility and exact/inclusive tag availability have their own unavailable counts; none of these events is removed.','', 'All 85,000 prior reservations and the separate 1,000 selection events are excluded from this original 12,000-event primary cohort. The supplementary registry authenticates the combined 13,000-event reservation. Input hashes cover 70,000 training and 160,000 validation identities, with no sealed-test payload access. Original training payloads and train-only normalization authenticate against the Phase70 lineage. Expanded independent validation is not training growth.','',
+      'The original selection-only checkpoints are step 3,000 for weight 0.5 and step 4,000 for weight 1.0. No primary result is used to select another checkpoint. Shared cardinality limits 17 globally, 12 at level 1 and 17 at level 2 admit the four previously exposed targets in both arms. Their recorded repair prevents causal Phase70-to-Phase71 attribution.','',
+      'The immutable native cohort also retains descriptive pre-repair index metadata and an inherited selection path. Actual native job contracts and the primary evaluator bind the repaired index and expanded selection independently by hash. The discrepancy is recorded, not silently edited; original memberships and training payloads are preserved. Phase72 writes current descriptive bindings.','',
       'Native source: ``1545d8ee80f26bc291498ae8718cb6e4a984f0bb``. Primary evaluator: ``'+value['evaluator_revision']+'``. Cohort digest: ``'+value['cohort_sha256']+'``. Every input, report, checkpoint and chunk is hash-bound. Full and half scopes, repeated reports and candidates do not multiply collision coverage.','']
     section(lines,'Native diagnostic tracks, geometry and execution')
     rows=[]
@@ -115,8 +119,9 @@ def main():
         totals=diagnostic['arms'][arm]['context_and_encoder_execution']['context_totals']
         rows.append([arm,*[totals[k] for k in ('sampled_teacher_count','sampled_predicted_count','truth_target_count','representable_target_count','unrepresentable_target_count','model_forward_count')]])
     table(lines,'Actual training exposure; matched updates are not equal FLOPs',['Arm','Teacher slots','Predicted slots','Target exposures','Representable','Unrepresentable','Model forwards'],rows)
-    lines += ['Both arms execute4,376 updates and280,064 replay slots, seed20261007, with zero additional pretraining. All26 saved checkpoints retain exhaustive scalar exports, finite-state and frozen-PID lineage checks. Missing strict evaluations of unregistered tracks remain unavailable. All registered auxiliary full/half reports and every returned candidate are preserved.','',
-      'Geometry diagnostics use128 fixed training and32 previously used development collisions across four curriculum views and initial/selected/final encoders. They are diagnostic, not independent primary coverage or a census of generated states. Their exact sample counts, per-level variance, radial derivatives, saturation and gradient/transfer diagnostics remain in the complete bundle. Persistent p4 is an exact daughter sum; closure is not generator momentum resolution.','']
+    lines += ['Both arms execute 4,376 updates and 280,064 replay slots, seed 20261007, with zero additional pretraining. All 26 saved checkpoints retain exhaustive scalar exports, finite-state and frozen-PID lineage checks. Missing strict evaluations of unregistered tracks remain unavailable. All registered auxiliary full/half reports and every returned candidate are preserved.','',
+      'Independent current-CPU replays preserve all original scientific counts and prediction fingerprints. The original native repeat gates pass exactly. Against the archived runtime, 9,446 continuous kinematic or score values differ, with maximum absolute difference 1.36e-5; these bounded differences and original values are preserved separately. No bitwise archived tensor equality is claimed.','',
+      'Geometry diagnostics use 128 fixed training and 32 previously used development collisions across four curriculum views and initial/selected/final encoders. They are diagnostic, not independent primary coverage or a census of generated states. Their exact sample counts, per-level variance, radial derivatives, saturation and gradient/transfer diagnostics remain in the complete bundle. Persistent p4 is an exact daughter sum; closure is not generator momentum resolution.','']
     table(lines,'Geometry input samples: actual category counts',['Population','Collisions','Category counts'],[[k,sum(v.values()),str(v)] for k,v in diagnostic['geometry_category_counts'].items()])
     section(lines,'Diagnostic full-depth beam and candidate accounting')
     rows=[]
@@ -124,8 +129,19 @@ def main():
         beam=value['arms'][arm]['beam_diagnostic']
         for scope in ('full','half'):
             rows.append([arm,scope,beam['coverage']['distinct_collisions'],str(beam['coverage']['processed_by_category']),beam['candidate_accounting'][scope]['returned_candidates']])
-    table(lines,'Width-two beam:60 collisions,10/category; not policy-complete',['Arm','Scope','Collisions','Category counts','Returned candidates'],rows)
-    lines += ['Greedy, model-ranked top1 and retained pool at each K remain separate. Pool recovery deduplicates each true B and inspects every accepted candidate; incompatible successes are not a coherent pair. The complete download includes all beam/oracle, rank/score, candidate and uncertainty records, plus native20-event proposal-beam diagnostics. Neither small subset inherits primary coverage.','']
+    table(lines,'Width-two beam: 60 collisions, 10/category; not policy-complete',['Arm','Scope','Collisions','Category counts','Returned candidates'],rows)
+    rows=[]
+    for arm in ARMS:
+        for scope in ('full','half'):
+            for kind in ('exact','inclusive'):
+                summaries=value['arms'][arm]['beam_diagnostic']['tag_efficiency']['summaries']
+                for mode,key,pool in [('greedy','greedy','1'),('model top1','full_depth_beam','1'),('retained pool@2','full_depth_beam','2')]:
+                    t=summaries[scope+'/'+key]
+                    if kind=='inclusive':t=t['inclusive_fsp_grouping']
+                    b=t['summary']['pool_at_k'][pool]['b_reconstruction']
+                    rows.append([arm,scope+' '+kind,mode,*[ratio(b[k]) for k in ('per_b_correct','event_any_correct','event_both_correct','coherent_event_both_correct')]])
+    table(lines,'Beam subset efficiencies:40 nominal B trials,20 B-pair collisions',['Arm','Scope and definition','Selection','Per B','Any B','Both B pooled','Coherent pair'],rows)
+    lines += ['Greedy, model-ranked top1 and retained pool at each K remain separate. Pool recovery deduplicates each true B and inspects every accepted candidate; incompatible successes are not a coherent pair. The complete download includes all beam/oracle, rank/score, candidate and uncertainty records, plus native 20-event proposal-beam diagnostics. Neither small subset inherits primary coverage.','']
     section(lines,'Synthesis of all studies')
     history=Path('docs/wiki/phase70.rst').read_text()
     history=history[history.index('.. list-table:: Study families and negative evidence'):history.index('Training growth and pretraining recommendation')]
@@ -134,17 +150,17 @@ def main():
     lines += ['Phase71 adds a category-sized auxiliary teacher objective contrast to that evidence. Its two arms can be compared within their shared cohort; historical cohorts, seeds, source domains, repaired capacities and evaluator versions must not be pooled as causal effects. Negative replications, failed controls and unavailable outcomes remain evidence.','']
     section(lines,'Decision, uncertainty and one bounded successor')
     decision=json.loads((a.artifacts/'phase72-decision.json').read_text())
-    lines += [decision['public_result'], '', decision['recommendation'], '', decision['rationale'], '',
+    lines += [decision['recommendation'], '', decision['rationale'], '',
       'The paired intervals resample whole collisions within source category and condition on two fitted models. They do not estimate training-seed variation or provide multiplicity-adjusted discovery. Zero-width empirical bootstrap intervals do not show zero population efficiency: the downloads also report collision-level exact-binomial sparse-success bounds. Missing truth means proven-success lower bounds. Equal-category pooled results are not physical mixture estimates.','',
-      'Phase72 tests the **presence of matched-daughter soft-Jaccard supervision**, coefficient0 versus1, alongside unchanged focal pointer supervision. The surrogate penalizes foreign and omitted daughters jointly on existing legal, matched target sets. It does not alter truth-free inference, matching assignments, source exclusivity or target eligibility. It is local daughter membership, not an end-to-end exact B objective.','',
-      'Both arms use70,000 training events, the same reconditioned encoder and frozen PID, mixed context0.5, auxiliary teacher weight0.5, enabled bias, late adaptation after2,188 updates and4,376 total updates/280,064 slots; seed20261008. No extra pretraining is purchased. Resources are bounded to one H100 NVL,8 CPUs,64GiB and36hours per arm, with no requeue.','',
-      'Primary endpoints are exact/inclusive per-B and any/both/coherent-pair efficiencies with channel coverage, continuum recovery, fake-B acceptance, source precision and recursive structural guards. The useful-effect target is at least4 additional successes per8,000 nominal B trials with positive paired lower bounds and no background/precision/structure deterioration; this is not a power guarantee. Native diagnostic gates remain unchanged.','',
-      'A fresh12,000-event cohort,2,000/category, and separate1,000 selection events exclude the98,000 prior reservations. Reservation alone is not future processed coverage. Admission, frozen-source hashes and accepted scheduling are recorded separately. There is no automatic successor, sealed-test access or scientific model promotion.','']
+      'Phase72 tests the **presence of matched-daughter soft-Jaccard supervision**, coefficient 0 versus 1, alongside unchanged focal pointer supervision. The surrogate penalizes foreign and omitted daughters jointly on existing legal, matched target sets. It does not alter truth-free inference, matching assignments, source exclusivity or target eligibility. It is local daughter membership, not an end-to-end exact B objective.','',
+      'Both arms use 70,000 training events, the same reconditioned encoder and frozen PID, mixed context 0.5, auxiliary teacher weight 0.5, enabled bias, late adaptation after 2,188 updates and 4,376 total updates/280,064 slots; seed 20261008. No extra pretraining is purchased. Resources are bounded to one H100 NVL, 8 CPUs, 64 GiB and 36 hours per arm, with no requeue.','',
+      'Primary endpoints are exact/inclusive per-B and any/both/coherent-pair efficiencies with channel coverage, continuum recovery, fake-B acceptance, source precision and recursive structural guards. The useful-effect target is at least 4 additional successes per 8,000 nominal B trials with positive paired lower bounds and no background/precision/structure deterioration; this is not a power guarantee. Native diagnostic gates remain unchanged.','',
+      'A fresh 12,000-event cohort, 2,000/category, and separate 1,000 selection events exclude the 98,000 prior reservations. Reservation alone is not future processed coverage. Admission, frozen-source hashes and accepted scheduling are recorded separately. There is no automatic successor, sealed-test access or scientific model promotion.','']
     section(lines,'Complete aggregate downloads and integrity')
     lines += [':download:`Complete policy and scientific bundle <_generated/status/phase71-policy-reevaluation-v1.json>`; :download:`integrity <_generated/status/phase71-policy-integrity.json>`; :download:`standalone decoder <_generated/status/phase71-policy-decoder.txt>`.','',
       ':download:`All native aggregate scalars <_generated/status/phase71-native-aggregates.json>`; :download:`native integrity <_generated/status/phase71-native-integrity.json>`; :download:`native decoder <_generated/status/phase71-native-decoder.txt>`.','']
     binding=json.loads(Path('artifacts/codex/phase71_policy_reevaluation_20261007/binding.json').read_text())
     for part in binding['parts']:lines += [f":download:`{part['filename']} <_generated/status/{part['filename']}>`.",'']
-    lines += ['The lossless compact formats retain numeric counts, channel/type labels and null availability. Public archives omit collision identifiers, native machine paths, scheduler records, logs and weights. Private evidence retains full reports, logs, scalar censuses, native failures, hash inventories and reproducible receipts. Historical downloads and their immutable bytes remain preserved.','']
+    lines += ['The complete policy/scientific aggregate retains 1,756,039 numeric records; the native download retains 173,335 aggregate scalar records. Private scalar censuses retain 13,236,906 native values, 59,686 saved-checkpoint metadata values and 12,536,947 additive values, plus every policy report. These are exported records, not independent observations.','', 'The lossless compact formats retain numeric counts, channel/type labels and null availability. Public archives omit collision identifiers, native machine paths, scheduler records, logs and weights. Private evidence retains full reports, logs, scalar censuses, native failures, hash inventories and reproducible receipts. Historical downloads and their immutable bytes remain preserved.','']
     a.output.write_text('\n'.join(lines)+'\n')
 if __name__=='__main__':main()

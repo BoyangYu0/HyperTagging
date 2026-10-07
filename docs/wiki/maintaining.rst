@@ -129,5 +129,7 @@ validation in the builder's existing independent validator process. This
 retains every check while avoiding another full scan of the same immutable
 artifact in a separate call. Sphinx's build-time privacy scan also remains.
 Any build or validation failure fails the documentation workflow. These full
-archive checks now run on the scheduled/manual cadence described above; their
-artifact limits and compatibility layouts remain unchanged.
+archive checks run on branch pushes, pull requests and manual dispatch; their
+artifact limits and compatibility layouts remain unchanged. The authorized
+Phase71 review requires exact branch CPU and all documentation layouts to pass
+before guarded master promotion, followed by live page and download checks.

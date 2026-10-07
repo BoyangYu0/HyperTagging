@@ -1,5 +1,45 @@
 # Current repository audit status
 
+## Phase71 complete category-policy review — 2026-10-07
+
+The original reserved primary cohort processes exactly 2,000 distinct collisions
+in each required category, 12,000 per arm in full and half scope, with no execution
+failures or replacements. Selection remains separate. Both native jobs, all 14
+registered reports and 26 checkpoints authenticate; native gates are preserved.
+The 100-event native and 60-event full-depth beam cohorts remain diagnostic.
+
+Exact and inclusive B tagging are 0/8,000 in both arms/scopes; all any-B, both-B
+and coherent-pair successes are zero. Thirteen unavailable exact-truth trials
+remain nominal; B membership is available for all trials. Increasing auxiliary
+teacher weight from 0.5 to 1.0 reduces nontrivial exact components 308/18,536 to
+148/18,536 and nontrivial recall 32,124/112,959 to 31,260/112,959. Full retained
+LCAG falls 3,147/726,498 to 2,939/726,498. Fake-B continuum events fall slightly
+293/8,000 to 281/8,000; the paired 95% difference interval is [-0.006875,0.004].
+No joint efficiency winner is established. All source-conflict and failed p4
+closure counters are zero. Sparse per-category collision bounds accompany the
+zero-success bootstrap; zero observed efficiency is not zero population efficiency.
+
+[Complete Phase71 review, all-study synthesis and downloads](../wiki/phase71.rst).
+Exports retain 13,236,906 native scalar records, 59,686 saved-checkpoint metadata
+records, 12,536,947 additive records, 173,335 public native aggregate records and
+1,756,039 complete public scientific numeric records. Native failures, all reports,
+candidates and immutable lineage remain preserved. The native cohort's stale
+descriptive pre-repair index metadata is recorded; actual contracts and evaluation
+authenticate the current repaired index and expanded selection independently.
+
+End auxiliary-weight tuning. Hold 70,000 training events for one Phase72
+matched-daughter soft-Jaccard objective off/on contrast with fixed auxiliary
+weight 0.5, shared encoder/PID and inference, no extra pretraining, seed 20261008,
+and 4,376 updates per arm. This tests task-objective alignment, not superiority of
+pretraining over data scaling. A fresh 12,000 primary plus 1,000 selection cohort
+excludes the prior 98,000 reservations and leaves 49,000 untouched validation
+identities. Reservation is not future processed coverage. No automatic successor,
+sealed-test access or scientific model promotion is authorized.
+
+Publication requires exact branch CPU/docs checks, guarded master promotion and
+live verification. Scheduler and publication receipts are recorded separately;
+local builds and reservation alone do not establish those outcomes.
+
 ## Phase70 complete category-policy review — 2026-10-06
 
 Both original training jobs and all14 native views/26 checkpoints authenticate.

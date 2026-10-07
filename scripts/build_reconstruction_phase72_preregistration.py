@@ -61,13 +61,15 @@ def build():
     assert len(set(primary+selected))==13000 and not set(primary+selected)&used
     PRIVATE.mkdir(parents=True)
     write(PRIVATE/'universe.json',{'event_uids':sorted(universe),'event_uids_sha256':uid_set_sha256(universe)})
-    write(PRIVATE/'history.json',{'event_uids':sorted(used),'event_uids_sha256':uid_set_sha256(used),'registry_binding':binding(registry_path)})
+    write(PRIVATE/'reservation-registry-before.json',load(registry_path))
+    write(PRIVATE/'history.json',{'event_uids':sorted(used),'event_uids_sha256':uid_set_sha256(used),'registry_binding':binding(PRIVATE/'reservation-registry-before.json'),'original_registry_sha256':sha(registry_path)})
     assert sha(ROOT/p['policy_evaluation_plan']['path'])==p['policy_evaluation_plan']['sha256']
     plan=copy.deepcopy(load(ROOT/p['policy_evaluation_plan']['path']))
     plan.update(version='phase72-primary-policy-plan-v1',event_uids=primary,by_category=groups,exclusion_uid_set_sha256=uid_set_sha256(used),seed=20261008,available_before_reservation={c:len(x) for c,x in pools.items()})
     write(PRIVATE/'policy-plan.json',plan)
     c=copy.deepcopy(old);c.pop('remaining_untouched_after_phase71',None)
     c.update(manifest_version='hypertagging-reconstruction-phase72-cohort-v1',study_id='phase72-matched-daughter-set-objective-20261007',created_at=datetime.now(timezone.utc).isoformat(),seed=20261008,selection_original_seed=20261008,strict_selection_seed=20261008,remaining_untouched_after_phase72=49000,historical_used_event_uid_count=98000,checkpoint_selection_event_uids=selected,checkpoint_selection_event_uids_sha256=uid_sequence_sha256(selected),evaluation_event_uids=diagnostic,event_uids=diagnostic,evaluation_event_uids_sha256=uid_sequence_sha256(diagnostic),event_uids_sha256=uid_sequence_sha256(diagnostic),validation_exclusion_event_uid_count=159000,validation_exclusion_event_uids_sha256=uid_set_sha256(universe-set(selected)),overlap_audit={'strict_vs_history':0,'selection_vs_history':0,'strict_vs_selection':0},policy_evaluation_plan=binding(PRIVATE/'policy-plan.json'))
+    c.update(dataset_index=p['data_binding']['dataset_index'],dataset_index_sha256=p['data_binding']['dataset_index_sha256'],selection_manifest=p['data_binding']['selection_manifest'],selection_manifest_sha256=p['data_binding']['selection_manifest_sha256'])
     c['source_bindings']={'validation_universe':binding(PRIVATE/'universe.json'),'previous_validation_universe':binding(PRIVATE/'history.json')};write(PRIVATE/'cohort.json',c)
     for name,source in [('parent-closeout.json',REVIEW/'native/closeout.json'),('geometry.json',REVIEW/'native/geometry.json'),('review-decision.json',REVIEW/'phase72-decision.json'),('parent-policy-aggregate.json',aggregate_path)]:write(PRIVATE/name,load(source))
     p['geometry_admission'].update(binding(PRIVATE/'geometry.json'));p['parent_phase71']=binding(prior)

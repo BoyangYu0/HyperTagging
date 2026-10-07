@@ -45,6 +45,7 @@ SOURCE_FILES = (
     "configs/training_selection/phase70_validation_expansion_20261006/expansion-audit.json",
     "artifacts/codex/reconstruction_phase69_closeout_20261005.json",
     "runtime_inputs/reconstruction_phase72_20261007/history.json",
+    "runtime_inputs/reconstruction_phase72_20261007/reservation-registry-before.json",
     "runtime_inputs/reconstruction_phase72_20261007/universe.json",
     "runtime_inputs/reconstruction_phase72_20261007/policy-plan.json",
     "runtime_inputs/reconstruction_phase72_20261007/parent-closeout.json",
