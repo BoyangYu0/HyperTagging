@@ -1,5 +1,7 @@
 """Render the complete Phase71 review from authenticated aggregate evidence."""
 import argparse
+from datetime import datetime
+from zoneinfo import ZoneInfo
 import json
 from pathlib import Path
 
@@ -156,6 +158,13 @@ def main():
       'Both arms use 70,000 training events, the same reconditioned encoder and frozen PID, mixed context 0.5, auxiliary teacher weight 0.5, enabled bias, late adaptation after 2,188 updates and 4,376 total updates/280,064 slots; seed 20261008. No extra pretraining is purchased. Resources are bounded to one H100 NVL, 8 CPUs, 64 GiB and 36 hours per arm, with no requeue.','',
       'Primary endpoints are exact/inclusive per-B and any/both/coherent-pair efficiencies with channel coverage, continuum recovery, fake-B acceptance, source precision and recursive structural guards. The useful-effect target is at least 4 additional successes per 8,000 nominal B trials with positive paired lower bounds and no background/precision/structure deterioration; this is not a power guarantee. Native diagnostic gates remain unchanged.','',
       'A fresh 12,000-event cohort, 2,000/category, and separate 1,000 selection events exclude the 98,000 prior reservations. Reservation alone is not future processed coverage. Admission, frozen-source hashes and accepted scheduling are recorded separately. There is no automatic successor, sealed-test access or scientific model promotion.','']
+    snapshot=a.artifacts/'phase72/scheduling-snapshot.json'
+    if snapshot.exists():
+        scheduling=json.loads(snapshot.read_text())
+        local=datetime.fromisoformat(scheduling['observed_utc']).astimezone(ZoneInfo('Europe/Berlin')).strftime('%Y-%m-%d %H:%M %Z')
+        admission=json.loads((a.artifacts/'phase72/native-preflight.json').read_text())
+        states=', '.join(j['arm']+': '+j['state']+' ('+j['reason']+')' for j in scheduling['jobs'])
+        lines += [f"At the {local} admission snapshot, both Phase72 jobs are accepted: {states}. Frozen source ``{scheduling['jobs'][0]['source_sha']}`` passes {admission['passed_tests']} CPU admission tests and both native preflights. Startup and full training completion are not yet verified; scheduling is not scientific validation. Immutable private receipts bind both jobs, resources, configurations, checkpoint and fresh cohorts.",'']
     section(lines,'Complete aggregate downloads and integrity')
     lines += [':download:`Complete policy and scientific bundle <_generated/status/phase71-policy-reevaluation-v1.json>`; :download:`integrity <_generated/status/phase71-policy-integrity.json>`; :download:`standalone decoder <_generated/status/phase71-policy-decoder.txt>`.','',
       ':download:`All native aggregate scalars <_generated/status/phase71-native-aggregates.json>`; :download:`native integrity <_generated/status/phase71-native-integrity.json>`; :download:`native decoder <_generated/status/phase71-native-decoder.txt>`.','']

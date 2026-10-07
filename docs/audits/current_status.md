@@ -36,6 +36,8 @@ excludes the prior 98,000 reservations and leaves 49,000 untouched validation
 identities. Reservation is not future processed coverage. No automatic successor,
 sealed-test access or scientific model promotion is authorized.
 
+Phase72 accepted both jobs from frozen source 38124a9e05ca63cd5ac5469e0687952eec2b14dc after 63 CPU tests and both native preflights. The 2026-10-07 09:38 CEST snapshot is pending for resources/priority; startup and training completion are not yet verified.
+
 Publication requires exact branch CPU/docs checks, guarded master promotion and
 live verification. Scheduler and publication receipts are recorded separately;
 local builds and reservation alone do not establish those outcomes.

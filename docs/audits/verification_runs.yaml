@@ -1088,3 +1088,24 @@ supplemental_runs:
       Metrics, evaluator source, checkpoints, cohorts and Phase70 jobs are
       unchanged. Broad CPU and final exact-source publication proofs remain
       required and are recorded in the task final manifest.
+  - source_sha: 38124a9e05ca63cd5ac5469e0687952eec2b14dc
+    metadata_head: recorded_by_followup_audit
+    worktree_state: clean_frozen_training_source
+    date: '2026-10-07T09:34:00+02:00'
+    commands:
+      - "python -m pytest -q tests/test_phase71_policy_publication_cpu.py tests/test_docs_preservation_cpu.py tests/test_reconstruction_phase72_campaign_cpu.py tests/test_phase72_objective_execution_cpu.py tests/test_pointer_set_overlap_cpu.py tests/test_resume_data_order_contract_cpu.py tests/test_real_training_pipeline_cpu.py"
+      - Native admission for both frozen Phase72 contracts
+    pytest:
+      result: PASS
+      passed: 63
+      skipped: 0
+      warnings: 6
+      duration_seconds: 24.63
+    notebooks:
+      generated_consistency: {result: NOT_RUN, count: 0}
+      default_fixture: {result: NOT_RUN, count: 0}
+    real_data_inputs: authenticated_fixed_validation_only
+    checkpoint: immutable_shared_encoder_transfer
+    ci_run: separate_exact_publication_revision_required
+    human_visual_review_status: NOT_REVIEWED
+    evidence_limitations: Frozen objective and admission CPU checks only. Phase71 scientific results are separately authenticated; Phase72 is accepted pending training, not a scientific success. Broad review working-tree tests recorded2319 passes,34 skips and three publication metadata failures; final exact-revision CI is required.

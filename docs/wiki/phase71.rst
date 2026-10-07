@@ -884,6 +884,8 @@ Primary endpoints are exact/inclusive per-B and any/both/coherent-pair efficienc
 
 A fresh 12,000-event cohort, 2,000/category, and separate 1,000 selection events exclude the 98,000 prior reservations. Reservation alone is not future processed coverage. Admission, frozen-source hashes and accepted scheduling are recorded separately. There is no automatic successor, sealed-test access or scientific model promotion.
 
+At the 2026-10-07 09:38 CEST admission snapshot, both Phase72 jobs are accepted: set_overlap_off: PENDING (Resources), set_overlap_on: PENDING (Priority). Frozen source ``38124a9e05ca63cd5ac5469e0687952eec2b14dc`` passes 63 CPU admission tests and both native preflights. Startup and full training completion are not yet verified; scheduling is not scientific validation. Immutable private receipts bind both jobs, resources, configurations, checkpoint and fresh cohorts.
+
 Complete aggregate downloads and integrity
 ------------------------------------------
 
