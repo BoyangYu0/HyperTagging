@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Authored-page privacy gate requires download roles only in generated, validated catalogue; preserve every download.
+  - 32dc942e6fd06c277db8b15c53517264725074f4
   # Accepted bounded Phase72 scheduling, exact frozen admission evidence and private runtime exclusion.
   - c54dd0246d77251adaef774ab52108658d973d9b
   # Phase71 authenticated primary evaluation, complete lossless exports and bounded Phase72 objective admission.
