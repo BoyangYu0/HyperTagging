@@ -176,6 +176,8 @@ SOURCE_PATHS["reconstruction_phase71_policy"] = "artifacts/codex/phase71_policy_
 SOURCE_PATHS["reconstruction_phase72_policy"] = "artifacts/codex/phase72_policy_reevaluation_20261008/binding.json"
 SOURCE_PATHS["reconstruction_phase70_review"] = "artifacts/codex/phase70_native_20261006/binding.json"
 SOURCE_PATHS["reconstruction_phase70_policy"] = "artifacts/codex/phase70_policy_reevaluation_20261006/binding.json"
+SOURCE_PATHS["reconstruction_phase74_review"] = "artifacts/codex/phase74_review_20261009/binding.json"
+SOURCE_PATHS["reconstruction_phase75_review"] = "artifacts/codex/phase75_review_20261009/binding.json"
 SOURCE_IDS = {key: f"source-{index:02d}" for index, key in enumerate(SOURCE_PATHS, 1)}
 FRESHNESS_DAYS = 30
 _MAX_SOURCE_BYTES = 5_000_000
@@ -3283,9 +3285,8 @@ def generate_status(repo_root: Path, output_dir: Path) -> dict[str, Any]:
         manifest["reconstruction"]["phase71"] = _phase71.generate(root, output)
     if payloads.get("reconstruction_phase70_policy") and not payloads["reconstruction_phase70_policy"].get("reserved"):
         manifest['reconstruction']['phase70'] = _phase70.generate(root, output)
-    phase74 = _phase74.generate(root, output)
-    if phase74 is not None:
-        manifest["reconstruction"]["phase74"] = phase74
+    if payloads.get("reconstruction_phase74_review") and not payloads["reconstruction_phase74_review"].get("reserved"):
+        manifest["reconstruction"]["phase74"] = _phase74.generate(root, output)
     manifest = _compact_exact_numbers(manifest)
     _write(output / "status.json", (json.dumps(manifest, separators=(",", ":"), sort_keys=True, allow_nan=False) + "\n").encode())
     _write(output / "index.rst", _render(manifest).encode())

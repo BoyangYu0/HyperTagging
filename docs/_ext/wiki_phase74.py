@@ -89,7 +89,25 @@ pathlib.Path("phase74-decoded.json").write_bytes(b)
     return {
         **{k: v for k, v in value.items() if k != "arms"},
         "arms": {
-            a: {k: v for k, v in r.items() if k != "histories"}
+            a: {
+                **{
+                    k: v
+                    for k, v in r.items()
+                    if k not in ("histories", "roles", "positive_cases")
+                },
+                "roles": {
+                    role: {
+                        k: v
+                        for k, v in value.items()
+                        if k not in ("by_retained_channel", "by_truth_fsp_size")
+                    }
+                    for role, value in r["roles"].items()
+                },
+                "positive_cases": [
+                    case for case in r["positive_cases"] if case["role"] == "heldout"
+                ],
+                "complete_channel_size_and_case_records": "phase74-review.json",
+            }
             for a, r in value["arms"].items()
         },
         "metric_download": {
@@ -112,7 +130,7 @@ def render(value):
     arms = ("128-existing", "128-assembly", "256-existing", "256-assembly")
     lines = [
         "Phase74 completed development factorial",
-        "----------------------------------------",
+        "-------------------------------------------",
         "",
         "All arms pass tiny raw memorization, but no reliable held-out winner is established.",
         "One retained source-set recovery is not a physical B-tree tag; background acceptance rises.",
@@ -155,7 +173,7 @@ def render(value):
     )
     lines += [
         "Relation and latent-depth diagnostics",
-        "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+        "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
         "",
         "Generated-state supports differ because the states are model-generated.",
         "Latent exact source-set retention is not legal physical hierarchy reachability.",
@@ -185,7 +203,7 @@ def render(value):
     )
     lines += [
         "Compute and uncertainty",
-        "~~~~~~~~~~~~~~~~~~~~~~~",
+        "~~~~~~~~~~~~~~~~~~~~~~~~~~~",
         "",
         "Each arm presents 28,000 fitting events over 1,536 unique training-subset events;",
         "the original 70,000 corpus is unchanged. Equal updates are not equal FLOPs.",

@@ -1,5 +1,5 @@
 Phase74 development factorial review
-===================================
+========================================
 
 Four matched-history development arms completed: contextual widths 128 and 256,
 each with existing or assembly-targeted pretraining. Hyperbolic width 32, depth

@@ -42,6 +42,12 @@ def test_review_payload_preserves_counts_histories_and_privacy(tmp_path):
         == 14000
     )
     assert b"event_uid" not in data and b"/project/" not in data
+    assert decoded["arms"]["128-existing"]["roles"]["heldout"]["by_retained_channel"]
+    assert "by_retained_channel" not in v["arms"]["128-existing"]["roles"]["heldout"]
+    assert (
+        v["arms"]["128-existing"]["complete_channel_size_and_case_records"]
+        == "phase74-review.json"
+    )
     binding = json.loads((ROOT / m.SOURCE / "binding.json").read_text())
     assert hashlib.sha256(data).hexdigest() == binding["decoded_sha256"]
     assert "Physical exact-tree" in "\n".join(m.render(v))
@@ -58,3 +64,17 @@ def test_review_rejects_hash_change(tmp_path):
     out.mkdir()
     with pytest.raises(ValueError, match="hash mismatch"):
         m.generate(tmp_path, out)
+
+
+def test_authored_and_generated_review_heading_underlines(tmp_path):
+    m = module()
+    out = tmp_path / "out"
+    out.mkdir()
+    record = m.generate(ROOT, out)
+    for lines in (
+        m.render(record),
+        (ROOT / "docs/wiki/phase74.rst").read_text().splitlines(),
+    ):
+        for i, line in enumerate(lines):
+            if i and line and set(line) <= set("=-~"):
+                assert len(line) >= len(lines[i - 1]), lines[i - 1]
