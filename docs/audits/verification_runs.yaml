@@ -1223,3 +1223,30 @@ supplemental_runs:
       saving480495 bytes without deleting metrics or historical downloads.
       Nine focused regression tests pass; new exact-commit full docs required.
       Two successor jobs are running; no outcome or promotion claim.
+
+  - source_sha: ca5d03242ef8168a3da00ac66c154976c237a8cb
+    metadata_head: recorded_by_followup_audit
+    worktree_state: committed_terminal_review
+    date: '2026-10-09'
+    commands:
+      - python -m pytest -q tests/test_phase75_closeout_cpu.py tests/test_phase74_review_cpu.py tests/test_phase75_publication_cpu.py
+      - guarded terminal audit job17090051 with checkpoint, source, cohort and reconstructed sampling-order verification
+      - python scripts/validate_next_reconstruction_study.py --plan configs/reconstruction/phase75_gradient_development_plan.json
+    pytest: {result: PASS, passed: 9, skipped: 0, duration_seconds: 11.58}
+    notebooks:
+      generated_consistency: {result: PASS, count: 18}
+      execution: NOT_REPEATED_NO_NOTEBOOK_BEHAVIOR_CHANGE
+    real_data_inputs: Phase74_and_Phase75_completed_development_cohorts_authenticated
+    checkpoint: both_final_Phase75_arms_finite_PID_fixed_encoder_adapted_exact_joint_control_replay
+    ci_run: PENDING_EXACT_PUBLICATION_HEAD_PRECEDING_56AF0096_CPU_AND_FULL_DOCS_PASS
+    human_visual_review_status: NOT_REVIEWED
+    evidence_limitations: >-
+      Both jobs17089561/17089562 completed exit0. Tiny raw32/32 each, main-train0/1024
+      and fresh heldout0/400 each. Background47/400 versus40/400, paired interval
+      includes no difference. Gradient projection operates locally but does not
+      rescue membership. No primary, hierarchy, wider model or further successor.
+      Reconstructed sampling hashes prove1535 distinct main events from1536 eligible;
+      original frozen receipts are unchanged. Data-design inherited descriptors are
+      clarified separately from the correct frozen training contract. Nine tests pass.
+      Preceding source56af0096 passed2410 CPU tests and all documentation layouts;
+      final exact-head checks and live publication remain required. No publication claim yet.
