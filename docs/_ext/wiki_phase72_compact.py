@@ -12,7 +12,7 @@ from pathlib import Path
 import zlib
 
 MAX_BYTES = 10 * 1024 * 1024
-ENCODING = 'bounded-gzip-base64-json-v1'
+ENCODING = 'bounded-gzip-base32-json-v1'
 
 
 def canonical(value):
@@ -25,7 +25,7 @@ def decode(envelope, limit=MAX_BYTES):
     size=envelope['decoded_bytes']
     if type(size) is not int or not 0<=size<=limit or not isinstance(envelope['data'],str) or len(envelope['data'])>MAX_BYTES:
         raise ValueError('Compact byte limit')
-    compressed=base64.b64decode(envelope['data'],validate=True)
+    compressed=base64.b32decode(envelope['data'],casefold=False)
     decoder=zlib.decompressobj(31)
     data=decoder.decompress(compressed,size+1)
     if len(data)!=size or not decoder.eof or decoder.unconsumed_tail or decoder.unused_data:
@@ -44,7 +44,7 @@ def encode(data, compressed, limit=MAX_BYTES):
     if privacy._contains_private_fields(value) or privacy.redact(data.decode())!=data.decode():
         raise ValueError('Private decoded aggregate')
     envelope={'encoding':ENCODING,'decoded_bytes':len(data),'decoded_sha256':hashlib.sha256(data).hexdigest(),
-              'data':base64.b64encode(compressed).decode('ascii')}
+              'data':base64.b32encode(compressed).decode('ascii')}
     if decode(envelope,limit)!=data:
         raise ValueError('Compact roundtrip mismatch')
     result=canonical(envelope)
