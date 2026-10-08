@@ -101,6 +101,7 @@ def generate(root,output):
     if binding['version']!='phase72-policy-dag-binding-v1' or not 1<=len(binding['parts'])<=MAX_PARTS:
         raise ValueError('Unknown or oversized policy binding')
     codec=sibling('wiki_phase69_efficiencies')
+    compact=sibling('wiki_phase72_compact')
     nodes=[];contents=[]
     for i,part in enumerate(binding['parts']):
         if part['source']!=f'aggregates-{i}.json.gz' or part['filename']!=f'phase72-policy-part-{i}.json':
@@ -114,7 +115,7 @@ def generate(root,output):
         payload=json.loads(data)
         if payload['encoding']!='typed-json-dag-part-v1' or payload['part']!=i:
             raise ValueError('Policy part order mismatch')
-        nodes.extend(payload['nodes']);contents.append((part['filename'],data))
+        nodes.extend(payload['nodes']);contents.append((part['filename'],compact.encode(data,path.read_bytes(),MAX_PART_BYTES)))
     if len(nodes)!=binding['nodes']:raise ValueError('Policy DAG node count mismatch')
     if decoded_size(nodes,binding['root'])!=binding['decoded_bytes']:raise ValueError('Policy decoded byte count mismatch')
     encoded={'encoding':'typed-json-dag-v1','root':binding['root'],'nodes':nodes}
@@ -127,9 +128,11 @@ def generate(root,output):
     if privacy._contains_private_fields(value) or privacy.redact(decoded)!=decoded:
         raise ValueError('Private policy aggregate fields')
     decoder=(Path(__file__).parents[1]/'wiki/phase72_policy_decoder.txt').read_bytes()
-    main={'version':'phase72-policy-aggregate-download-v1','encoding':'typed-json-dag-parts-v1',
-          'root':binding['root'],'nodes':binding['nodes'],'decoded_sha256':binding['decoded_sha256'],
-          'parts':[{k:v for k,v in part.items() if k!='source'} for part in binding['parts']]}
+    main={'version':'phase72-policy-aggregate-download-v2','encoding':'typed-json-dag-parts-compact-json-v1',
+          'root':binding['root'],'nodes':binding['nodes'],'decoded_sha256':binding['decoded_sha256'],'decoded_bytes':binding['decoded_bytes'],
+          'parts':[{'filename':name,'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest(),
+                    'decoded_bytes':part['bytes'],'decoded_sha256':part['sha256']}
+                   for (name,data),part in zip(contents,binding['parts'])]}
     main_data=canonical(main)
     manifest={'version':'phase72-policy-integrity-v1','decoded_sha256':binding['decoded_sha256'],
               'files':[{'filename':BUNDLE,'sha256':hashlib.sha256(main_data).hexdigest(),'bytes':len(main_data)},
@@ -152,10 +155,11 @@ def generate(root,output):
     identities={(v,a,m) for v,a,m,x in native['records']}
     if len(identities)!=len(native['records']):raise ValueError('Duplicate native metric')
     if privacy._contains_private_fields(native) or privacy.redact(native_data.decode())!=native_data.decode():raise ValueError('Private native aggregate')
-    (output/'phase72-native-aggregates.json').write_bytes(native_data)
+    native_download=compact.encode(native_data,(native_source/'native.json.gz').read_bytes())
+    (output/'phase72-native-aggregates.json').write_bytes(native_download)
     native_decoder=(Path(__file__).parents[1]/'wiki/phase72_native_decoder.txt').read_bytes()
     (output/'phase72-native-decoder.txt').write_bytes(native_decoder)
-    (output/'phase72-native-integrity.json').write_bytes(canonical({**native_binding,'decoder':{'filename':'phase72-native-decoder.txt','sha256':hashlib.sha256(native_decoder).hexdigest(),'bytes':len(native_decoder)}}))
+    (output/'phase72-native-integrity.json').write_bytes(canonical({**native_binding,'download':{'filename':'phase72-native-aggregates.json','bytes':len(native_download),'sha256':hashlib.sha256(native_download).hexdigest()},'decoder':{'filename':'phase72-native-decoder.txt','sha256':hashlib.sha256(native_decoder).hexdigest(),'bytes':len(native_decoder)}}))
     scalar_files=[]
     for folder in ('phase72_histories_20261008','phase72_checkpoint_scalars_20261008'):
         scalar_source=root/'artifacts/codex'/folder
@@ -176,8 +180,11 @@ def generate(root,output):
             if value_scalar['scalar_count']!=item['scalar_records'] or value_scalar['decoded_scalar_sha256']!=item['decoded_scalar_sha256']:
                 raise ValueError('Scalar cardinality mismatch')
             if privacy._contains_private_fields(value_scalar) or privacy.redact(data.decode())!=data.decode():raise ValueError('Private scalar fields')
-            (output/item['filename']).write_bytes(data)
-            scalar_files.append({k:v for k,v in item.items() if k!='source'})
+            encoded=compact.encode(data,path.read_bytes())
+            (output/item['filename']).write_bytes(encoded)
+            scalar_files.append({**{k:v for k,v in item.items() if k!='source'},
+                'bytes':len(encoded),'sha256':hashlib.sha256(encoded).hexdigest(),
+                'decoded_bytes':len(data),'decoded_file_sha256':item['sha256']})
     scalar_decoder=(Path(__file__).parents[1]/'wiki/phase72_scalar_decoder.txt').read_bytes()
     (output/'phase72-scalar-decoder.txt').write_bytes(scalar_decoder)
     (output/'phase72-scalar-integrity.json').write_bytes(canonical({'version':'phase72-all-scalar-integrity-v1','files':scalar_files,'decoder_sha256':hashlib.sha256(scalar_decoder).hexdigest()}))

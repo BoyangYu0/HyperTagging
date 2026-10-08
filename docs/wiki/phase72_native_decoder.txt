@@ -1,9 +1,25 @@
 # Usage: python phase72-native-decoder.txt phase72-native-aggregates.json phase72-native-integrity.json metrics.jsonl
 # Standard-library-only decoder; each output row restores view, arm, metric and value.
-import hashlib, json, pathlib, sys
+import base64, hashlib, json, zlib
+
+def read_compact(data, limit=10*1024*1024):
+    if len(data)>10*1024*1024:raise ValueError('Input byte limit')
+    value=json.loads(data)
+    if set(value)!={'encoding','decoded_bytes','decoded_sha256','data'} or value['encoding']!='bounded-gzip-base64-json-v1':raise ValueError('Unknown compact envelope')
+    size=value['decoded_bytes']
+    if type(size) is not int or not 0<=size<=limit or not isinstance(value['data'],str) or len(value['data'])>10*1024*1024:raise ValueError('Compact byte limit')
+    compressed=base64.b64decode(value['data'],validate=True)
+    decoder=zlib.decompressobj(31);decoded=decoder.decompress(compressed,size+1)
+    if len(decoded)!=size or not decoder.eof or decoder.unconsumed_tail or decoder.unused_data:raise ValueError('Compact expansion or stream mismatch')
+    if hashlib.sha256(decoded).hexdigest()!=value['decoded_sha256']:raise ValueError('Compact decoded digest mismatch')
+    return decoded
+
+import pathlib, sys
 source, integrity, output = map(pathlib.Path, sys.argv[1:])
-data = source.read_bytes()
+download = source.read_bytes()
 binding = json.loads(integrity.read_text())
+assert len(download)==binding['download']['bytes'] and hashlib.sha256(download).hexdigest()==binding['download']['sha256']
+data=read_compact(download)
 assert len(data) == binding['bytes'] and hashlib.sha256(data).hexdigest() == binding['sha256']
 value = json.loads(data)
 assert value['version'] == 'phase72-native-aggregate-bundle-v1'

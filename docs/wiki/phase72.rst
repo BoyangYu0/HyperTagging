@@ -1002,6 +1002,8 @@ Complete metric downloads and integrity
 
 :doc:`Download all latest and historical metric files <_generated/status/downloads>`. Policy manifests, all parts, standard-library decoders and integrity/cardinality records are preserved together. The policy bundle includes all full/half primary aggregates, channel/type coverage, exact/inclusive tagging, beam top1/pool/coherent accounting, paired uncertainty and native diagnostics.
 
+New payload files use bounded gzip/base64 JSON envelopes of authenticated public aggregates. The supplied standalone decoders verify compressed and decoded hashes, expansion limits and cardinalities. This lossless transport preserves every historical download and retains the fixed site/file/privacy limits.
+
 Every per-step training and checkpoint metadata scalar is also downloadable in the four ``phase72-set-overlap-*-scalars.json`` files, with ``phase72-scalar-integrity.json`` and the bounded ``phase72-scalar-decoder.txt``. Native aggregate records: ``phase72-native-aggregates.json``; integrity and decoder: ``phase72-native-integrity.json`` and ``phase72-native-decoder.txt``. Policy entrypoint: ``phase72-policy-reevaluation-v1.json``; integrity and decoder: ``phase72-policy-integrity.json`` and ``phase72-policy-decoder.txt``. Download every referenced part before decoding.
 
 The complete public scientific bundle contains 1,761,151 numeric records; the native bundle contains 184,348 aggregate scalar records. Full private censuses preserve 12,788,071 native scalars and 59,528 checkpoint metadata scalars, plus every primary report, candidate, per-step training scalar and repeat. Counts measure exported records, not independent observations.

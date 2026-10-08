@@ -1,19 +1,53 @@
 # Usage: python phase72-policy-decoder.txt phase72-policy-reevaluation-v1.json decoded.json
 # Decodes a local aggregate download; requires only the Python standard library.
-import hashlib, json, pathlib, sys
+import base64, hashlib, json, zlib
+
+def read_compact(data, limit=10*1024*1024):
+    if len(data)>10*1024*1024:raise ValueError('Input byte limit')
+    value=json.loads(data)
+    if set(value)!={'encoding','decoded_bytes','decoded_sha256','data'} or value['encoding']!='bounded-gzip-base64-json-v1':raise ValueError('Unknown compact envelope')
+    size=value['decoded_bytes']
+    if type(size) is not int or not 0<=size<=limit or not isinstance(value['data'],str) or len(value['data'])>10*1024*1024:raise ValueError('Compact byte limit')
+    compressed=base64.b64decode(value['data'],validate=True)
+    decoder=zlib.decompressobj(31);decoded=decoder.decompress(compressed,size+1)
+    if len(decoded)!=size or not decoder.eof or decoder.unconsumed_tail or decoder.unused_data:raise ValueError('Compact expansion or stream mismatch')
+    if hashlib.sha256(decoded).hexdigest()!=value['decoded_sha256']:raise ValueError('Compact decoded digest mismatch')
+    return decoded
+
+import pathlib, sys
 manifest = pathlib.Path(sys.argv[1])
 value = json.loads(manifest.read_text())
-assert value['encoding'] == 'typed-json-dag-parts-v1'
+assert value['encoding'] == 'typed-json-dag-parts-compact-json-v1'
+assert 1<=len(value['parts'])<=4 and type(value['nodes']) is int and 0<value['nodes']<=200000
+assert type(value['decoded_bytes']) is int and 0<value['decoded_bytes']<=128*1024*1024
 nodes = []
 for index, part in enumerate(value['parts']):
     assert part['filename'] == f'phase72-policy-part-{index}.json'
     data = (manifest.parent / part['filename']).read_bytes()
     assert len(data) == part['bytes'] and hashlib.sha256(data).hexdigest() == part['sha256']
+    data=read_compact(data,4*1024*1024)
+    assert len(data)==part['decoded_bytes'] and hashlib.sha256(data).hexdigest()==part['decoded_sha256']
     payload = json.loads(data)
     assert payload['part'] == index and payload['encoding'] == 'typed-json-dag-part-v1'
     nodes.extend(payload['nodes'])
 assert len(nodes) == value['nodes']
 value['nodes'] = nodes
+# Bound shared-DAG expansion before materializing any aggregate.
+sizes=[]
+for node in nodes:
+    def size_ref(i):
+        assert type(i) is int and 0<=i<len(sizes)
+        return sizes[i]
+    if node[0]=='dict':size=2+max(0,len(node[1])-1)+sum(size_ref(k)+1+size_ref(v) for k,v in node[1])
+    elif node[0]=='list':size=2+max(0,len(node[1])-1)+sum(size_ref(i) for i in node[1])
+    elif node[0]=='null':size=4
+    else:
+        assert node[0] in ('str','bool','int','float') and type(node[1]).__name__==node[0]
+        size=len(json.dumps(node[1],separators=(',', ':'),allow_nan=False).encode())
+    assert size+1<=128*1024*1024
+    sizes.append(size)
+assert type(value['root']) is int and 0<=value['root']<len(sizes)
+assert sizes[value['root']]+1==value['decoded_bytes']
 decoded = []
 for node in value['nodes']:
     kind = node[0]
@@ -32,4 +66,5 @@ for node in value['nodes']:
     decoded.append(item)
 data = (json.dumps(decoded[value['root']], sort_keys=True, separators=(',', ':'), allow_nan=False) + '\n').encode()
 assert hashlib.sha256(data).hexdigest() == value['decoded_sha256']
-pathlib.Path(sys.argv[2]).write_bytes(data)
+assert len(data)==value['decoded_bytes']
+with pathlib.Path(sys.argv[2]).open('xb') as stream:stream.write(data)

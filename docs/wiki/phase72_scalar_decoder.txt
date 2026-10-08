@@ -1,6 +1,18 @@
 """Decode a Phase72 scalar RLE file: python phase72_scalar_decoder.txt input.json output.json"""
-import hashlib
-import json
+import base64, hashlib, json, zlib
+
+def read_compact(data, limit=10*1024*1024):
+    if len(data)>10*1024*1024:raise ValueError('Input byte limit')
+    value=json.loads(data)
+    if set(value)!={'encoding','decoded_bytes','decoded_sha256','data'} or value['encoding']!='bounded-gzip-base64-json-v1':raise ValueError('Unknown compact envelope')
+    size=value['decoded_bytes']
+    if type(size) is not int or not 0<=size<=limit or not isinstance(value['data'],str) or len(value['data'])>10*1024*1024:raise ValueError('Compact byte limit')
+    compressed=base64.b64decode(value['data'],validate=True)
+    decoder=zlib.decompressobj(31);decoded=decoder.decompress(compressed,size+1)
+    if len(decoded)!=size or not decoder.eof or decoder.unconsumed_tail or decoder.unused_data:raise ValueError('Compact expansion or stream mismatch')
+    if hashlib.sha256(decoded).hexdigest()!=value['decoded_sha256']:raise ValueError('Compact decoded digest mismatch')
+    return decoded
+
 from pathlib import Path
 import sys
 
@@ -37,5 +49,5 @@ def decode(value):
 if __name__=='__main__':
     source=Path(sys.argv[1]);destination=Path(sys.argv[2])
     if source.stat().st_size>10*1024*1024:raise ValueError('Input byte limit')
-    data=canonical(decode(json.loads(source.read_bytes())))
+    data=canonical(decode(json.loads(read_compact(source.read_bytes()))))
     with destination.open('xb') as stream:stream.write(data)
