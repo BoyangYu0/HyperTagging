@@ -19,6 +19,17 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Complete Phase72 immutable primary evidence, independent positive-group replay, lossless exports and accepted bounded development.
+  - 3a5cf12dd062c8b25cb1d09d5b28fe24d298801b
+  # Measure accepted source intersections and fail closed rather than emit an assumed validity count.
+  - 1eba6c7643d8c2674fb068575aea22dce1df9dd8
+  # Complete atomic development checkpoints and terminal exit receipts; focused19tests pass.
+  - a7620d3bc58383e65d01c6cc38ae06d29ad473d1
+  # Lossless Phase72 training/checkpoint scalar exports and real-event development gradient admission.
+  - a6dabd492dd047943e851d53689b4d303613a435
+  # Phase72 review integrates authenticated structural policyv2 and bounded development runtime.
+  - 7f6b28bd62c28656fd2f6600492cbfbb2225d23b
+  - 4363d08d0d6b175ab44f3c1735682ee794f0b6f5
   # Authored-page privacy gate requires download roles only in generated, validated catalogue; preserve every download.
   - 32dc942e6fd06c277db8b15c53517264725074f4
   # Accepted bounded Phase72 scheduling, exact frozen admission evidence and private runtime exclusion.
