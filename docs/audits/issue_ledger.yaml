@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Complete stage/hash availability export and single latest-study navigation; targeted privacy/dashboard/navigation regressions pass.
+  - 77d3d99ae135dce07712b3ef01d6b89fe8bfb34d
   # Phase74 authenticated terminal/public aggregate review and one Phase75 gradient-projection contrast;61 focused tests pass.
   - f8ba27a32a180f8956aa4836ef35dc774d7fe898
   # Fresh Phase74 development cohort and four-arm implementation;54 focused tests and real gradients, no primary scale-up.
