@@ -2,7 +2,7 @@
   "version": "phase73-membership-development-plan-v1",
   "stage": "development",
   "family": "direct_membership_joint_learning",
-  "status": "PREREGISTERED_PENDING_PHASE72_REVIEW_AND_RUNTIME_ADMISSION",
+  "status": "PREREGISTERED_DEVELOPMENT_NOT_A_SCHEDULER_RECEIPT",
   "hypothesis": "At fixed existing encoder history, allowing encoder gradients under direct unordered membership supervision improves held-out membership relative to the same frozen encoder with the same 128-wide head.",
   "changed_factor": "encoder frozen versus adapted under the same direct unordered membership objective",
   "control": "Same Phase71 reference checkpoint in both arms, frozen PID parameters, a 128-wide head in both arms, identical initialization, train identities and optimizer presentations. No capacity or pretraining effect is claimed.",

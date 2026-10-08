@@ -87,6 +87,7 @@ def prepare(artifacts, diagnosis, output):
         'normalizer':'inherited_train_fitted_unchanged','selection':'384_original_train_and60_reused_development_no_fresh_reservation',
         'gradient_preflight':binding(preflight_path),'phase72_aggregate':binding(artifacts/'primary-v1/aggregate.json')}
     output.mkdir(parents=True)
+    (output/'runs').mkdir()
     write(output/'contract.json',contract)
     write(output/'admission.json',{'status':'PASS','plan_validation':result,'contract_sha256':sha(output/'contract.json'),
         'source_sha':head,'train_count':len(train),'development_count':len(dev),'phase72_overlap':0,'sealed_test_access':False,

@@ -111,6 +111,15 @@ def run(plan_path, out, arm):
     compute = {"model_event_forwards": 0, "model_gradient_event_forwards": 0,
                "event_node_pairs": 0, "encoder_parameters": sum(p.numel() for p in context.model.encoder.parameters())}
 
+    def save_checkpoint(value, destination):
+        temporary = destination.with_suffix(destination.suffix + ".partial")
+        if destination.exists(): raise FileExistsError(destination)
+        with temporary.open("xb") as stream:
+            torch.save(value, stream)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.rename(temporary, destination)
+
     def dynamic_features(row):
         compute["model_event_forwards"] += 1
         compute["model_gradient_event_forwards"] += int(torch.is_grad_enabled() and arm == "adapted")
@@ -160,7 +169,7 @@ def run(plan_path, out, arm):
         raise ValueError("Training selection incomplete")
     train.sort(key=lambda row: row["uid"])
     dev = [encode(event) for event in context.events]
-    torch.save({"train": train, "development": dev}, out / "features.pt")
+    save_checkpoint({"train": train, "development": dev}, out / "features.pt")
 
     def batch(rows):
         width = max(len(row["targets"]) for row in rows)
@@ -268,8 +277,18 @@ def run(plan_path, out, arm):
                 print(name, history[-1], flush=True)
         log.close()
         model.eval()
-        torch.save({"state_dict": model.state_dict(), "input_dim": rows[0]["features"].shape[-1],
-                    "hidden_dim": 128, "encoder_state_dict": context.model.encoder.state_dict(), "contract_sha256": sha(out / "contract.json")}, out / f"{name}.pt")
+        save_checkpoint({"state_dict": model.state_dict(), "input_dim": rows[0]["features"].shape[-1],
+                    "hidden_dim": 128, "encoder_state_dict": context.model.encoder.state_dict(),
+                    "model_state_dict": context.model.state_dict(), "optimizer_state_dict": optimizer.state_dict(),
+                    "scheduler_state_dict": None, "scaler_state_dict": None, "step": 1000,
+                    "torch_rng_state": torch.get_rng_state(), "sampling_rng_state": rng.getstate(),
+                    "source_checkpoint_sha256": plan["inputs"]["reconstruction-checkpoint"]["sha256"],
+                    "normalizer_state": context.checkpoint["normalizer_state"],
+                    "architecture_and_pid_contract": context.checkpoint["config"],
+                    "fit_settings": plan["settings"], "fitting_event_uids": [r["uid"] for r in rows],
+                    "development_event_uids": plan["development_uids"], "source_sha": plan["source_sha"],
+                    "encoder_adaptation_executed": dynamic and arm == "adapted", "resume_authorized": False,
+                    "contract_sha256": sha(out / "contract.json")}, out / f"{name}.pt")
         return {"history": history, "train": evaluate(model, rows, dynamic), "development": evaluate(model, dev, dynamic)}
 
     tiny = []
@@ -292,7 +311,7 @@ def run(plan_path, out, arm):
           "limitations": ["small_training_sample", "frozen_vs_adapted_encoder", "one_seed", "development_cohort_reused",
                           "different_flat_group_target_not_exact_tree", "no_heldout_model_superiority_claim"]})
     write(out / "receipt.json", {"status": "COMPLETED", "job_id": os.environ["SLURM_JOB_ID"],
-          "summary_sha256": sha(out / "summary.json"), "features_sha256": sha(out / "features.pt")})
+          "summary_sha256": sha(out / "summary.json"), "features_sha256": sha(out / "features.pt"), "checkpoints": {name: sha(out / name) for name in ("tiny_memorization.pt", "pilot_384.pt")}, "source_sha": plan["source_sha"], "runtime_contract_sha256": sha(plan_path)})
 
 
 if __name__ == "__main__":
