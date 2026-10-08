@@ -957,42 +957,42 @@ All paired intervals resample whole collisions within category, keeping both B t
      - Collisions
      - One-sided95% upper
    * - set_overlap_off
-     - full/greedy/charged/exact
+     - full greedy charged exact
      - 0.0
      - 2000.0
      - 0.0014967448951882837
    * - set_overlap_off
-     - full/greedy/charged/inclusive
+     - full greedy charged inclusive
      - 1.0
      - 2000.0
      - 0.002369713367656843
    * - set_overlap_off
-     - full/greedy/mixed/exact
+     - full greedy mixed exact
      - 0.0
      - 2000.0
      - 0.0014967448951882837
    * - set_overlap_off
-     - full/greedy/mixed/inclusive
+     - full greedy mixed inclusive
      - 1.0
      - 2000.0
      - 0.002369713367656843
    * - set_overlap_on
-     - full/greedy/charged/exact
+     - full greedy charged exact
      - 0.0
      - 2000.0
      - 0.0014967448951882837
    * - set_overlap_on
-     - full/greedy/charged/inclusive
+     - full greedy charged inclusive
      - 1.0
      - 2000.0
      - 0.002369713367656843
    * - set_overlap_on
-     - full/greedy/mixed/exact
+     - full greedy mixed exact
      - 0.0
      - 2000.0
      - 0.0014967448951882837
    * - set_overlap_on
-     - full/greedy/mixed/inclusive
+     - full greedy mixed inclusive
      - 0.0
      - 2000.0
      - 0.0014967448951882837

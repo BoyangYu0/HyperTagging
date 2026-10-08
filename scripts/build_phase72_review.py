@@ -184,7 +184,7 @@ def main():
     for arm in ARMS:
         for key,b in value['arms'][arm]['sparse_event_uncertainty']['bounds'].items():
             if key.startswith('full/'):
-                rows.append([arm,key,b['successes'],b['collision_trials'],b['one_sided_95_upper']])
+                rows.append([arm,key.replace('/',' '),b['successes'],b['collision_trials'],b['one_sided_95_upper']])
     table(lines,'Sparse bounds for collision event-any proven success',['Arm','Population','Successes','Collisions','One-sided95% upper'],rows)
     section(lines,'Complete metric downloads and integrity')
     lines += [':doc:`Download all latest and historical metric files <_generated/status/downloads>`. Policy manifests, all parts, standard-library decoders and integrity/cardinality records are preserved together. The policy bundle includes all full/half primary aggregates, channel/type coverage, exact/inclusive tagging, beam top1/pool/coherent accounting, paired uncertainty and native diagnostics.', '',
