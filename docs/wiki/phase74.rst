@@ -57,6 +57,13 @@ winner: one recovered source set accompanies increased continuum acceptance.
 Collision-paired factorial effects, interaction, discordant counts and exact
 sparse event bounds condition on these four fitted models; one seed does not
 measure training-run variability. Correlated B trials are resampled together.
+The width effect on accepted membership is 0.00125 with paired interval
+[0, 0.00375]; the objective effect has the same estimate and interval. Their
+interaction is 0.0025 [0, 0.0075]. These sparse bootstrap intervals do not establish
+positive population effects. Continuum acceptance has a width effect of 0.08625
+[0.06125, 0.11375], objective effect 0.01625 [-0.0025, 0.035], and interaction
+0.0675 [0.0275, 0.1075]. These are differences in fractions on equal-category
+samples, not physical-mixture rates or seed-to-seed intervals.
 
 What the models actually learned
 --------------------------------
@@ -112,6 +119,8 @@ was 0.021. This local association is not causal proof. One preregistered two-arm
 Phase75 development study tests ordinary joint gradients against removal of only
 the relation-gradient component opposing the membership gradient. Decoder gradients,
 scalar losses, initialization, data order and finite schedules remain matched.
+Projection acts on ordinary gradients before Adam preconditioning and clipping;
+it does not guarantee that every optimizer step lowers membership loss.
 Both arms use the fixed Phase74 128-existing pretraining checkpoint and identical
 fresh heads, not a downstream model selected for the lone held-out success.
 
@@ -122,7 +131,9 @@ is now adaptive exploratory evidence and is not reused as independent confirmati
 Fixed final checkpoints and threshold 0.5 remain unchanged. Each arm has 1,000 tiny
 and 1,500 downstream updates of batch eight, no additional pretraining, at most
 two CPUs, 32 GiB and eight hours. There is no automatic requeue or further successor.
-Its final scheduling/result status is recorded below after guarded admission.
+Both jobs passed guarded admission and were accepted and started on 9 October
+2026. Results are pending in this publication snapshot; no further successor is
+authorized. The final overnight report retains scheduler and startup receipts.
 
 Primary scale-up remains closed. Require count-backed held-out membership gain,
 background and validity controls as well as tiny raw memorization. A primary study

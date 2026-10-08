@@ -22,8 +22,8 @@ truth forest.
 
 ## Reading the latest efficiency results
 
-The [Phase69 supplementary evaluation](wiki/phase69_policy.rst) reports the
-current complete greedy evaluation on 12,000 collisions per arm, with 2,000
+The historical [Phase69 supplementary evaluation](wiki/phase69_policy.rst) reports a
+complete greedy evaluation on 12,000 collisions per arm, with 2,000
 in each required category. Its 4,000 B-pair collisions contribute 8,000 nominal
 B trials and 4,000 event trials; continuum fake-B acceptance is separate.
 Exact retained B tagging is 0/8,000 in both arms. Inclusive FSP grouping is
@@ -38,6 +38,27 @@ then a summary of all studies. Historical 100-event/20-event Phase69 reports
 and the new 60-event beam diagnostic remain separately labelled. All metric
 downloads are preserved in the evidence catalogue. Consult the tagging contract
 below for matching, candidate-pool accounting and availability semantics.
+
+## Development-only flat membership diagnostics
+
+The latest complete primary review is [Phase72](wiki/phase72.rst). The later
+[Phase74 factorial](wiki/phase74.rst) is a600-collision development assessment,
+not a replacement for category-sized primary coverage. Raw membership matches
+two unordered predicted FSP-index groups against the retained B target sets;
+accepted membership additionally applies fixed presence, recursive detector-source
+exclusivity, cardinality and charge guards. Report both with nominal per-B trials,
+collision-any/both counts and per-category/channel/size coverage. Continuum flat
+acceptance is a separate event denominator, not retained-parton reconstruction.
+
+Within-B relation accuracy is conditional on identifiable source-set targets:
+exact direct-parent union, incomplete siblings and other same-B relations.
+Generated-state denominators can differ between arms. Counts of excluded/ambiguous
+relation pairs were not retained by the Phase74 runtime and are unavailable;
+do not invent zero unavailable pairs. Latent deep source-set proposal/retention
+uses retained targets with generation height at least two, joined only after
+model generation. It is not verified legal physical deep-proposal survival.
+Physical exact-tree tagging, beam-pool efficiency and physical p4 closure remain
+unavailable for this interface. Tiny memorization alone cannot pass a primary gate.
 
 ## Why the historical full reconstruction is not the evaluator
 

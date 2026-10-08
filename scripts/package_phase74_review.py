@@ -42,7 +42,23 @@ def package(review, parent, destination):
                 "distinct_bbbar_collisions": 200,
             }
     for arm, record in value["arms"].items():
+        record["stage_summaries"] = {
+            key: summaries[arm][key]
+            for key in ("pretraining", "tiny_history", "downstream")
+        }
+        terminal = json.loads(
+            (parent / "campaign-v1/runs" / arm / "terminal.json").read_text()
+        )
+        record["checkpoint_hashes"] = {
+            Path(item["path"]).name.removesuffix("-final.pt"): item["sha256"]
+            for item in terminal["checkpoints"]
+        }
         for role, r in record["roles"].items():
+            r["relation_ignored_pairs"] = {
+                "count": None,
+                "status": "UNAVAILABLE_NOT_RETAINED_BY_PHASE74_RUNTIME",
+                "scope": "relation accuracy conditions on identifiable within-B pairs",
+            }
             n = sum(
                 x["processed"]
                 for k, x in r["by_category"].items()

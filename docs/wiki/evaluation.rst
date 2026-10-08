@@ -309,3 +309,15 @@ report PDG accuracy and momentum MAE alongside their training losses;
 or transfer agreement. Their exact loss variants are listed in :doc:`training`.
 Historical ``scripts/evaluate_reconstruction.py`` consumes the GraFEI path and
 does not replace the strict evaluator.
+
+Flat-membership development availability
+----------------------------------------
+
+:doc:`Phase74 <phase74>` evaluates raw and constraint-accepted retained source
+memberships on600 development collisions, not policy-sized primary reconstruction.
+The flat interface has no physical tree, exact-tree top1, physical beam pool or
+p4 closure; those quantities are unavailable. Latent source-set merge survival
+is a separate diagnostic. Relation accuracy is conditional on identifiable
+within-B pairs; the number of ignored ambiguous pairs was not logged and remains
+unavailable. Per-B denominators, collision-any/both counts and continuum acceptance
+remain separate. See the full evaluation contract for these definitions.

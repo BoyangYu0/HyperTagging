@@ -21,7 +21,6 @@ identifies measurements that remain unavailable.
    evaluation
    _generated/status/index
    phase74
-   phase72
    studies
    setup
    architecture

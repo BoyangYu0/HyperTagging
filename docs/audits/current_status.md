@@ -20,7 +20,9 @@ same fixed128-existing pretraining checkpoint, fresh common256 head, original
 1536 training subset,1000 tiny/1500 main updates,batch8. A further600 fresh
 non-primary development identities are fully isolated and registered. Fixed final
 checkpoint/threshold0.5; at most2CPU/32GiB/8h per arm,no GPU,requeue or successor.
-Scheduling and final outcomes are recorded in the new overnight review receipts.
+Jobs17089561(joint) and17089562(projection) were accepted RUNNING from frozen
+source64a2031eae4b9a87c7d6bd485d554cba32c586ac. Outcomes remain pending; all
+scheduling/terminal receipts belong to the new overnight review directory.
 Data growth versus better pretraining remains unidentified; do not expand either
 uncontrolled. The original failed60-event admission and all historical runs remain
 immutable. See [Phase74 review](../wiki/phase74.rst).
