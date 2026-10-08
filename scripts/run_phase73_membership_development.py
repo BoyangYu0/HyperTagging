@@ -212,6 +212,16 @@ def run(plan_path, out, arm):
                         totals["accepted_groups"] += 1
                         candidates.append(set(chosen))
                         used.update(local_used)
+                accepted_sources = set()
+                for candidate in candidates:
+                    candidate_sources = set()
+                    for position in candidate:
+                        sources = set(row["sources"][position].nonzero().flatten().tolist())
+                        totals["accepted_source_conflicts"] += len(sources & (accepted_sources | candidate_sources))
+                        candidate_sources.update(sources)
+                    accepted_sources.update(candidate_sources)
+                if totals["accepted_source_conflicts"]:
+                    raise ValueError("Accepted membership source conflict")
                 totals["events"] += 1
                 if row["category"] not in ("charged", "mixed"):
                     totals["continuum_events"] += 1
@@ -235,7 +245,7 @@ def run(plan_path, out, arm):
                     totals["best_group_predicted_sources"] += len(best)
                 event_rows.append({"uid": row["uid"], "category": row["category"], "counts": dict(totals-before)})
         return {**dict(totals), "event_rows": event_rows, "mean_best_group_iou": iou_sum / max(totals["membership_iou_trials"], 1),
-                "accepted_source_conflicts": 0, "definition": "flat_exclusive_FSP_groups_no_internal_hierarchy_no_FEI_equivalence"}
+                "accepted_source_conflicts": totals["accepted_source_conflicts"], "definition": "flat_exclusive_FSP_groups_no_internal_hierarchy_no_FEI_equivalence"}
 
     def fit(rows, batch_size, name):
         torch.manual_seed(20261008)
