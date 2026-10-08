@@ -29,6 +29,7 @@ separately.
 - [Full-decay evaluation contract](docs/full_decay_reconstruction_evaluation.md)
 - [Assembly diagnosis and next-study policy](docs/assembly_diagnosis_20261007.md)
 - [basf2 and ONNX deployment](docs/basf2_onnx_full_decay.md)
+- [Phase72 complete set-overlap and tagging review](docs/wiki/phase72.rst)
 - [Phase71 complete reconstruction and tagging review](docs/wiki/phase71.rst)
 - [Phase70 complete category-policy review](docs/wiki/phase70.rst)
 - [Phase69 supplementary category-policy evaluation](docs/wiki/phase69_policy.rst)
@@ -110,7 +111,7 @@ Fixture results validate software behavior, not physics performance.
 
 ## Continuous integration
 
-PRs, pushes to `master` and the authorized Phase70 and Phase71 review branches run CPU
+PRs, pushes to `master` and the authorized Phase70, Phase71 and Phase72 review branches run CPU
 correctness, including documentation regressions and audit integrity. New
 commits cancel superseded runs. Cached dependencies use CPU PyTorch wheels.
 
@@ -118,7 +119,7 @@ Full HTML/text/basf2 documentation builds run on branch pushes, pull requests
 and manual dispatch. Notebook execution retains its weekly/manual schedule. When changing documentation or notebooks, run the relevant
 local checks before review; use the full workflows for archive/layout validation.
 Documentation builds retain privacy, link, coverage and regeneration checks.
-For the authorized Phase71 review, exact branch CPU and Documentation and Pages
+For the authorized Phase72 review, exact branch CPU and Documentation and Pages
 validation precede guarded master promotion and GitHub Pages publication.
 
 ## Core workflows

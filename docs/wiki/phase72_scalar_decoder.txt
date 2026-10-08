@@ -1,0 +1,41 @@
+"""Decode a Phase72 scalar RLE file: python phase72_scalar_decoder.txt input.json output.json"""
+import hashlib
+import json
+from pathlib import Path
+import sys
+
+
+def canonical(value):
+    return (json.dumps(value,sort_keys=True,separators=(',', ':'),allow_nan=False)+'\n').encode()
+
+
+def decode(value):
+    if value.get('version')!='phase72-training-scalar-rle-v1':raise ValueError('Unknown format')
+    total=value['scalar_count']
+    if type(total) is not int or not 0<=total<=1_000_000:raise ValueError('Scalar count limit')
+    rows=[];names=set()
+    for column in value['columns']:
+        name=column['metric']
+        if not isinstance(name,str) or name in names:raise ValueError('Duplicate or invalid metric')
+        names.add(name);indices=[];values=[]
+        for start,count in column['index_runs']:
+            if type(start) is not int or type(count) is not int or start<0 or count<=0 or start+count>1_000_000:raise ValueError('Index run bounds')
+            if indices and start<=indices[-1]:raise ValueError('Unordered index run')
+            if len(indices)+count>total:raise ValueError('Expansion limit')
+            indices.extend(range(start,start+count))
+        for count,item in column['value_runs']:
+            if type(count) is not int or count<=0 or len(values)+count>len(indices):raise ValueError('Value run bounds')
+            if item is not None and type(item) not in (bool,int,float):raise ValueError('Non-scalar value')
+            values.extend([item]*count)
+        if len(indices)!=len(values) or len(rows)+len(values)>total:raise ValueError('Cardinality mismatch')
+        rows.extend({'record':i,'metric':name,'value':v} for i,v in zip(indices,values))
+    rows.sort(key=lambda row:(row['record'],row['metric']))
+    if len(rows)!=total or hashlib.sha256(canonical(rows)).hexdigest()!=value['decoded_scalar_sha256']:raise ValueError('Decoded count/hash mismatch')
+    return rows
+
+
+if __name__=='__main__':
+    source=Path(sys.argv[1]);destination=Path(sys.argv[2])
+    if source.stat().st_size>10*1024*1024:raise ValueError('Input byte limit')
+    data=canonical(decode(json.loads(source.read_bytes())))
+    with destination.open('xb') as stream:stream.write(data)

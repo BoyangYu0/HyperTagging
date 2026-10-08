@@ -131,5 +131,5 @@ artifact in a separate call. Sphinx's build-time privacy scan also remains.
 Any build or validation failure fails the documentation workflow. These full
 archive checks run on branch pushes, pull requests and manual dispatch; their
 artifact limits and compatibility layouts remain unchanged. The authorized
-Phase71 review requires exact branch CPU and all documentation layouts to pass
+Phase72 review requires exact branch CPU and all documentation layouts to pass
 before guarded master promotion, followed by live page and download checks.

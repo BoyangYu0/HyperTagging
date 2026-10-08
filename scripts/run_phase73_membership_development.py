@@ -59,6 +59,8 @@ def run(plan_path, out, arm):
     evidence = json.loads(checked(plan["evidence"]).read_text())
     if validate(scientific, policy, evidence)["status"] != "PASS":
         raise ValueError("Scientific planning gate failed")
+    checked(plan["gradient_preflight"])
+    checked(plan["phase72_aggregate"])
     for item in plan["data_shards"]:
         checked(item)
     for item in plan["exclusion_bindings"]:
@@ -106,12 +108,12 @@ def run(plan_path, out, arm):
         parameter.requires_grad_(False)
     initial_encoder = {k: v.detach().clone() for k, v in context.model.encoder.state_dict().items()}
     initial_pid = {k: v.detach().clone() for k, v in context.model.leaf_pid_head.state_dict().items()}
-    compute = {"encoder_event_forwards": 0, "encoder_gradient_event_forwards": 0,
+    compute = {"model_event_forwards": 0, "model_gradient_event_forwards": 0,
                "event_node_pairs": 0, "encoder_parameters": sum(p.numel() for p in context.model.encoder.parameters())}
 
     def dynamic_features(row):
-        compute["encoder_event_forwards"] += 1
-        compute["encoder_gradient_event_forwards"] += int(torch.is_grad_enabled() and arm == "adapted")
+        compute["model_event_forwards"] += 1
+        compute["model_gradient_event_forwards"] += int(torch.is_grad_enabled() and arm == "adapted")
         compute["event_node_pairs"] += len(row["targets"]) ** 2
         return context.model(row["model_input"], target_level=1,
             pid_kinematics_mode_override="soft_expectation", pid_temperature_override=.5).node_embeddings[0]
@@ -124,6 +126,8 @@ def run(plan_path, out, arm):
         with torch.inference_mode():
             output = context.model(_truth_free_model_view(model_input), target_level=1,
                                    pid_kinematics_mode_override="soft_expectation", pid_temperature_override=.5)
+        compute["model_event_forwards"] += 1
+        compute["event_node_pairs"] += output.node_embeddings.shape[1] ** 2
         # Clone outside inference_mode so cached features can feed a trained head.
         features = output.node_embeddings[0].clone()
         view = _tree_view(truth, 0, truth=True)
@@ -277,7 +281,7 @@ def run(plan_path, out, arm):
     assert bool(changed) == (arm == "adapted")
     assert all(torch.equal(v, initial_pid[k]) for k, v in context.model.leaf_pid_head.state_dict().items())
     import resource
-    compute.update(elapsed_seconds=time.monotonic()-started, cpu_seconds=time.process_time(),
+    compute.update(encoder_passes=2*compute["model_event_forwards"], elapsed_seconds=time.monotonic()-started, cpu_seconds=time.process_time(),
                    peak_rss_kib=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
                    head_parameters=sum(p.numel() for p in DirectMembershipHead(128,128).parameters()),
                    flops="unavailable; event forwards and node-pair counts are workload proxies, not FLOPs")

@@ -156,6 +156,31 @@ def generate(root,output):
     native_decoder=(Path(__file__).parents[1]/'wiki/phase72_native_decoder.txt').read_bytes()
     (output/'phase72-native-decoder.txt').write_bytes(native_decoder)
     (output/'phase72-native-integrity.json').write_bytes(canonical({**native_binding,'decoder':{'filename':'phase72-native-decoder.txt','sha256':hashlib.sha256(native_decoder).hexdigest(),'bytes':len(native_decoder)}}))
+    scalar_files=[]
+    for folder in ('phase72_histories_20261008','phase72_checkpoint_scalars_20261008'):
+        scalar_source=root/'artifacts/codex'/folder
+        scalar_binding=json.loads((scalar_source/'binding.json').read_text())
+        if scalar_binding['version']!='phase72-training-scalar-binding-v1' or len(scalar_binding['files'])!=2:
+            raise ValueError('Invalid scalar binding')
+        for item in scalar_binding['files']:
+            if item['source'] not in ('set_overlap_off.json.gz','set_overlap_on.json.gz'):
+                raise ValueError('Invalid scalar source')
+            allowed_names={f'phase72-set-overlap-{arm}-{kind}-scalars.json' for arm in ('off','on') for kind in ('training','checkpoint')}
+            if item['filename'] not in allowed_names:raise ValueError('Invalid scalar destination')
+            path=scalar_source/item['source']
+            if path.is_symlink():raise ValueError('Unsafe scalar source')
+            with gzip.open(path,'rb') as stream:data=stream.read(10*1024*1024+1)
+            if len(data)>10*1024*1024 or len(data)!=item['bytes'] or hashlib.sha256(data).hexdigest()!=item['sha256']:
+                raise ValueError('Scalar binding or capacity mismatch')
+            value_scalar=json.loads(data)
+            if value_scalar['scalar_count']!=item['scalar_records'] or value_scalar['decoded_scalar_sha256']!=item['decoded_scalar_sha256']:
+                raise ValueError('Scalar cardinality mismatch')
+            if privacy._contains_private_fields(value_scalar) or privacy.redact(data.decode())!=data.decode():raise ValueError('Private scalar fields')
+            (output/item['filename']).write_bytes(data)
+            scalar_files.append({k:v for k,v in item.items() if k!='source'})
+    scalar_decoder=(Path(__file__).parents[1]/'wiki/phase72_scalar_decoder.txt').read_bytes()
+    (output/'phase72-scalar-decoder.txt').write_bytes(scalar_decoder)
+    (output/'phase72-scalar-integrity.json').write_bytes(canonical({'version':'phase72-all-scalar-integrity-v1','files':scalar_files,'decoder_sha256':hashlib.sha256(scalar_decoder).hexdigest()}))
     # Only compact review fields enter the dashboard status file; channels stay in the lossless download.
     return {'version':value['version'],'status':value['status'],'coverage':value['coverage'],
             'evaluator_revision':value['evaluator_revision'],'downloads':manifest['files'],
@@ -180,6 +205,7 @@ def render(record):
                 lines += [f'   * - {scope} {kind} {key}',f'     - {vals[0]}',f'     - {vals[1]}']
     lines += ['', 'The 60-collision width-two beam (10 per category) is diagnostic only. All native 100-event reports and 20-event proposal-beam evidence remain diagnostic and retain their original gates. Full and half views do not multiply sample size. See :doc:`../../phase72` for continuum, channel, uncertainty and study decisions.','',
               f':download:`Complete supplemental aggregates <{BUNDLE}>`; :download:`integrity <{INTEGRITY}>`; :download:`standalone decoder <{DECODER}>`.','',
+              ':download:`All native training/checkpoint scalars and decoder <phase72-scalar-integrity.json>`; :download:`scalar decoder <phase72-scalar-decoder.txt>`. Full file links are in the download catalogue.', '',
               ':download:`Complete native aggregate scalar records <phase72-native-aggregates.json>`; :download:`native integrity <phase72-native-integrity.json>`; :download:`native scalar decoder <phase72-native-decoder.txt>`.','']
     for part in record['downloads']:
         if part['filename'].startswith('phase72-policy-part-'):

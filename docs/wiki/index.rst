@@ -20,7 +20,7 @@ identifies measurements that remain unavailable.
    reconstruction
    evaluation
    _generated/status/index
-   phase71
+   phase72
    studies
    setup
    architecture

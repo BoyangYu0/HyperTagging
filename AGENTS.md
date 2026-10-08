@@ -243,7 +243,7 @@ external environment limitations, and any unverified scientific claims.
 - PR CI runs the CPU suite and audit integrity once. Full documentation layouts
   and notebook execution run weekly or manually; run relevant local checks for
   changes to those sources. Preserve documentation validation and privacy checks.
-- For the explicitly authorized Phase71 publication, push the development branch
+- For the explicitly authorized Phase72 publication, push the development branch
   first and require CPU and full Documentation and Pages success on the exact
   commit. Use `scripts/promote_verified_commit.py`, then `--push`, for guarded
   fast-forward publication. Verify actual live pages and downloads.

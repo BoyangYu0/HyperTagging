@@ -19,6 +19,12 @@ def prepare(artifacts, diagnosis, output):
     import pyarrow.parquet as pq
     import torch
     if output.exists(): raise FileExistsError(output)
+    preflight_path=artifacts/'development-gradient-preflight.json'
+    preflight=json.loads(preflight_path.read_text())
+    assert preflight['status']=='PASS' and preflight['initial_predictions_identical']
+    assert preflight['arms']['frozen']['encoder_gradient_tensors']==0
+    assert preflight['arms']['adapted']['encoder_gradient_tensors']>0
+    assert all(r['pid_unchanged'] and r['finite_parameters'] for r in preflight['arms'].values())
     policy_path = ROOT/'configs/reconstruction/next_study_policy.json'
     scientific_path = ROOT/'configs/reconstruction/phase73_membership_development_plan.json'
     policy = json.loads(policy_path.read_text())
@@ -79,7 +85,7 @@ def prepare(artifacts, diagnosis, output):
         'output_root':str(output/'runs'),'resources':{'cpus':2,'memory_gib':32,'hours':24,'gpus':0,'max_jobs':2,'requeue':False},
         'settings':{'seed':20261008,'head_width':128,'tiny_updates':1000,'tiny_batch_size':24,'pilot_updates':1000,'pilot_batch_size':16,'head_lr':.001,'encoder_lr':.00005,'checkpoint':'fixed_final','presence_threshold':.5},
         'normalizer':'inherited_train_fitted_unchanged','selection':'384_original_train_and60_reused_development_no_fresh_reservation',
-        'phase72_aggregate':binding(artifacts/'primary-v1/aggregate.json')}
+        'gradient_preflight':binding(preflight_path),'phase72_aggregate':binding(artifacts/'primary-v1/aggregate.json')}
     output.mkdir(parents=True)
     write(output/'contract.json',contract)
     write(output/'admission.json',{'status':'PASS','plan_validation':result,'contract_sha256':sha(output/'contract.json'),

@@ -21,7 +21,7 @@ def main():
     assert c['resources']=={'cpus':2,'memory_gib':32,'hours':24,'gpus':0,'max_jobs':2,'requeue':False}
     assert subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()==c['source_sha']
     for name,digest in c['source_hashes'].items(): assert sha(ROOT/name)==digest
-    for binding in [*c['inputs'].values(),c['scientific_plan'],c['policy'],c['evidence'],c['phase72_aggregate']]: checked(binding)
+    for binding in [*c['inputs'].values(),c['scientific_plan'],c['policy'],c['evidence'],c['phase72_aggregate'],c['gradient_preflight']]: checked(binding)
     queue=json.loads(subprocess.check_output(['squeue','--json','--user',__import__('getpass').getuser()],text=True))
     assert not any('phase73-membership-' in j['name'] for j in queue['jobs']), 'Existing campaign allocation'
     assert not (base/'submission-lock.json').exists(), 'Campaign already submitted or attempted'
