@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Measured new payload19.8MB exceeds prior site headroom; bounded authenticated textual envelopes reduce to5.25MB with all decoded hashes/counts preserved,13 focused tests pass.
+  - 388255c2585ba998fc7b4b4ad6c4f4bbbdb63232
   # Update exact evidence-input fixture93to94 for Phase72; focused deterministic test passes.
   - 40b13042d8cd4d2f739d6f95bda44826a6b539d0
   # Complete Phase72 immutable primary evidence, independent positive-group replay, lossless exports and accepted bounded development.
