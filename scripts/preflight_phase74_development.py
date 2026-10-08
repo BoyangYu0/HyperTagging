@@ -231,9 +231,9 @@ def preflight(output, destination):
                 8000 * benchmark["pretraining_max_event_seconds"]
                 + 22160 * benchmark["downstream_max_event_seconds"]
             )
-            if benchmark["conservative_compute_seconds"] > 6 * 3600:
+            if benchmark["conservative_compute_seconds"] > 8 * 3600:
                 raise RuntimeError(
-                    "Measured CPU bound exceeds requested6hours: " + str(benchmark)
+                    "Measured CPU bound exceeds requested8hours: " + str(benchmark)
                 )
             if not all(torch.isfinite(p).all() for p in params):
                 raise FloatingPointError("Nonfinite state")

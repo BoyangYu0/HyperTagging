@@ -58,7 +58,7 @@ parent/sibling discrimination is categorical, not indiscriminate repulsion.
 
 The shared1536-event training subset (256/category) is not full70000 training.
 Pretraining/tiny/main schedules are1000/1000/1500 updates of batch8, with an isolated
-24-event tiny branch. Four bounded CPU jobs,2CPU/32GiB/6h each,are intended after
+24-event tiny branch. Four bounded CPU jobs,2CPU/32GiB/8h each,are intended after
 final tests/source/runtime admission; no GPU,requeue,automatic successor or primary
 scale-up. Real-data smoke gradients pass both widths/objectives. Exact physical
 B hierarchy and beam-pool metrics remain unavailable; latent source-set proposal

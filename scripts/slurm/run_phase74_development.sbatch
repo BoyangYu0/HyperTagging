@@ -6,7 +6,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=32G
-#SBATCH --time=06:00:00
+#SBATCH --time=08:00:00
 #SBATCH --no-requeue
 set -euo pipefail
 [[ $# == 2 ]] || exit 64

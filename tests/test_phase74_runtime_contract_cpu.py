@@ -20,7 +20,7 @@ def contract():
         "resources": {
             "cpus": 2,
             "memory_gib": 32,
-            "hours": 6,
+            "hours": 8,
             "gpus": 0,
             "max_jobs": 4,
             "requeue": False,

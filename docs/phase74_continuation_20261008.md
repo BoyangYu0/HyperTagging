@@ -69,7 +69,7 @@ The extra detector/generated-state views are presented in both pretraining arms;
 only assembly adds their gradients. Updates/presentations are therefore controlled,
 but FLOPs are not equal. Record parameters, view/encoder-pass counts, node-pair
 workload proxies, wall/CPU time, peak memory and losses. No FLOP measurement is
-claimed. CPU allocations are bounded to four jobs,2CPU/32GiB/6h each,no GPU and
+claimed. CPU allocations are bounded to four jobs,2CPU/32GiB/8h each,no GPU and
 no requeue. Real-data gradient and worst-size timing admission precedes submission.
 
 Count raw and accepted tiny/held-out memberships,unknown targets,within-B relation
@@ -95,3 +95,8 @@ and guarded runtime bind source,data,normalization,initializations and resources
 Submission requires all four arms,authenticated cohort isolation,real gradients,
 immutable hashes and an atomic duplicate-submission lock. Original Phase73 and
 failed Phase74 evidence remain unchanged.
+
+The preserved final preflight v2 failed the initial six-hour resource estimate:
+width256 exceeded21600 seconds in the conservative worst-event forecast. The
+allocation was increased to eight hours before submission, with unchanged
+scientific budgets and gates; a new complete preflight is required.
