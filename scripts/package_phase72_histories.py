@@ -14,7 +14,7 @@ def pack(rows):
     result=[]
     for name,items in sorted(columns.items()):
         indices=[];values=[]
-        for record,value in items:
+        for record,value in sorted(items,key=lambda item:item[0]):
             if indices and record==sum(indices[-1]):indices[-1][1]+=1
             else:indices.append([record,1])
             if values and type(values[-1][1]) is type(value) and values[-1][1]==value:values[-1][0]+=1

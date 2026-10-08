@@ -68,6 +68,7 @@ def main():
                     cells.append(ratio(t['by_source_category'][category]['top1']['b_reconstruction']['per_b_correct']))
                 rows.append([category+' '+scope+' '+kind,*cells])
     table(lines,'Per-category nominal B tagging',['Population','Set overlap off','Set overlap on'],rows)
+    lines += ['All three positive inclusive memberships reproduce exactly in separate tree-retaining replays. Inspection identifies actual depth-one composites containing two retained FSPs, predicted as D0 or anti-D0, rather than exact B trees. Source sets match the corresponding retained B memberships; no partition or disconnected union is invented. The charged success is shared between arms; only the off arm adds a mixed-category success. These very small retained groups reinforce the limitation of treating inclusive success as physical B-tagging efficiency.', '']
     section(lines,'Continuum recovery and fake-B background')
     rows=[]
     for scope in ('full','half'):

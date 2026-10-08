@@ -1,5 +1,50 @@
 # Current repository audit status
 
+## Phase72 complete category-policy review — 2026-10-08
+
+Both native jobs completed with exit0; all14 registered reports and26 checkpoints
+authenticate, including native repeats and frozen PID transfer. Both original
+scientific gate sets still fail. The original reserved primary cohort processed
+2,000 distinct collisions per required category,12,000 per arm in full and half
+scope, with zero execution failures or replacements. All98000 prior reservations,
+70000 training identities and1000 checkpoint-selection collisions remain excluded.
+
+Set-overlap off/on gives0/8000 exact tags and2/8000 versus1/8000 inclusive retained
+memberships, with no both-B or coherent pair. Seventeen unavailable exact-truth
+trials remain nominal; B membership is available for all8000. All three positive
+cases reproduce exactly and are actual two-FSP depth-one D0/anti-D0 composites,
+not exact B trees. The paired inclusive difference interval is[-0.000375,0].
+Nontrivial exact components rise260/18409 to342/18409; continuum fake-B events
+fall243/8000 to160/8000, with paired difference interval[-0.014625,-0.006].
+Shallow/background improvement is not demonstrated B-efficiency improvement.
+Sparse collision-level binomial bounds accompany the bootstrap; zero exact
+successes do not establish zero population efficiency. No physical FEI claim.
+
+[Complete Phase72 review, all-study synthesis and downloads](../wiki/phase72.rst).
+The complete public bundle preserves1761151 scientific numeric records,184348
+native aggregate scalars,719832 training-history scalars and59528 checkpoint
+metadata scalars. Full private censuses, candidates, failures and hash/cardinality
+manifests remain external; old studies and downloads remain unchanged.
+
+The authenticated uncommitted structural policyv2 snapshot is integrated. End
+local set-overlap coefficient tuning absent new mechanism-specific assembly
+support. Training growth versus better pretraining is not identified; prioritize
+assembly-aligned membership supervision and representation diagnostics over
+uncontrolled growth or simply longer unchanged pretraining.
+
+One authorized Phase73 development campaign is accepted and running from frozen
+source1eba6c76: the same historical encoder frozen versus adapted, common128-wide
+heads,384 original training/60 reused development collisions, fixed1000-update
+tiny and main budgets. Both jobs have2CPU/32GiB/24h,no GPU,no requeue. Runtime
+admission and real-event encoder-gradient checks pass; startup receipts verify
+both arms. No fresh primary reservation or scientific promotion. At least95%
+tiny raw membership plus count-backed held-out membership gain with background
+and validity evidence remains required before primary scale-up or hierarchy.
+There is no automatic second campaign. Scheduling does not establish efficacy.
+
+Publication follows exact branch CPU/docs checks, guarded master promotion and
+actual live-page/download verification, with immutable receipts outside Git.
+
 ## Structural assembly diagnosis and successor policy — 2026-10-07
 
 Five CPU search conditions completed on the same 60-event Phase71 diagnostic
@@ -65,7 +110,7 @@ excludes the prior 98,000 reservations and leaves 49,000 untouched validation
 identities. Reservation is not future processed coverage. No automatic successor,
 sealed-test access or scientific model promotion is authorized.
 
-Phase72 accepted both jobs from frozen source 38124a9e05ca63cd5ac5469e0687952eec2b14dc after 63 CPU tests and both native preflights. The 2026-10-07 09:38 CEST snapshot is pending for resources/priority; startup and training completion are not yet verified.
+Historical Phase71 handoff: Phase72 was accepted from frozen source38124a9e05ca63cd5ac5469e0687952eec2b14dc after63 CPU tests and native preflights. Its pending scheduling snapshot is superseded by the complete Phase72 review above.
 
 Publication requires exact branch CPU/docs checks, guarded master promotion and
 live verification. Scheduler and publication receipts are recorded separately;

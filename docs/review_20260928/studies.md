@@ -178,3 +178,8 @@ superiority. Fresh validation reservations leave39000 events unreserved.
 Additive CPU evaluation covers both arms, all 14 registered reports and all 131 retained beam candidates in full/B-half scope. Original counts, categories and gates are preserved; current frozen-source/additive predictions and metrics agree exactly. Small archived kinematic and beam-score roundoff is recorded separately. The strict cohort has 16 B-pair collisions and 32 nominal B trials. Exact retained B tagging and inclusive FSP grouping have zero successes in every registered view and pool. These retained proxies are not physical FEI efficiencies. Sparse zero-success bootstrap intervals do not prove zero population efficiency. Prioritize independent validation precision separately from training-size growth; the already accepted Phase70 decoder study and frozen source remain unchanged. No extra training or reservation was made.
 
 [Full counts, channel tables, uncertainty and complete bundle](../wiki/phase69.rst).
+
+
+## Phase72 set-overlap review, 2026-10-08
+
+The [complete Phase72 review](../wiki/phase72.rst) authenticates 12,000 distinct processed collisions per arm, 2,000 per required category. Exact tags are0/8000 in both arms; inclusive membership2/8000 off versus1/8000 on consists only of two-FSP depth-one groups. Set-overlap improves shallow exact components and lowers fake-B background, without a B-efficiency winner. Structural policyv2 directs one frozen/adapted direct-membership development pair; no primary reservation, sealed test or model promotion. All historical downloads remain preserved.

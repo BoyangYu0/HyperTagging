@@ -10,7 +10,8 @@ def test_rle_roundtrip_with_sparse_null_and_typed_values():
     rows=[{'record':i,'metric':'loss','value':v} for i,v in enumerate([0,0,True,1,None,0.0])]
     rows += [{'record':i,'metric':'validation','value':None} for i in (2,5)]
     expected=sorted(rows,key=lambda r:(r['record'],r['metric']))
-    packed=pack(rows)
+    # Native checkpoint traversal is not the public alphabetical track order.
+    packed=pack(list(reversed(rows)))
     assert canonical(unpack(packed))==canonical(expected)
     value={'version':'phase72-training-scalar-rle-v1','scalar_count':len(rows),'columns':packed,'decoded_scalar_sha256':hashlib.sha256(canonical(expected)).hexdigest()}
     assert canonical(DECODER['decode'](value))==canonical(expected)
