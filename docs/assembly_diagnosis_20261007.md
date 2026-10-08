@@ -261,3 +261,21 @@ and one failure: the existing repromotion preflight test encountered
 its entire module using local temporary storage passed (15 passed, two skipped),
 without changing that implementation. The original failed run remains recorded;
 the HTML publication build was not run.
+
+## Terminal follow-up and Phase74 feasibility — 2026-10-08
+
+Phase73 completed: frozen and adapted arms each recovered32/32 raw tiny
+memberships, but0/40 raw and accepted held-out memberships. Their main-train
+raw counts were2/256 and30/256. The held-out gate failed; the sparse main-training
+fit does not prove irrecoverably missing encoder information or data scarcity.
+The capacity/pretraining factorial remains a falsifiable development proposal.
+
+The new request excludes all historical primary and checkpoint-selection cohorts.
+Authenticated inspection found that all60 designated membership-development
+events are Phase71 primary identities. Recent beam alternatives are also primary
+subsets, while the32 geometry-development identities are Phase63 selection
+events. No eligible replacement was found among these designated candidates.
+Phase74 training is blocked before runtime implementation and submission; passing
+the scientific-plan validator does not override cohort admission. Historical
+receipts and Phase73's explicit exploratory-reuse interpretation remain unchanged.
+See the [feasibility review](phase74_feasibility_20261008.md).

@@ -19,5 +19,7 @@
   "sealed_test_access": false,
   "automatic_submission": false,
   "related_representation_plan": "configs/reconstruction/capacity_pretraining_development_plan.json",
-  "scope_note": "This existing frozen-versus-adapted contrast remains a separate bounded diagnostic; the related factorial plan tests capacity and pretraining. Neither plan schedules the other automatically."
+  "scope_note": "This existing frozen-versus-adapted contrast remains a separate bounded diagnostic; the related factorial plan tests capacity and pretraining. Neither plan schedules the other automatically.",
+  "completed_diagnostic": "Phase73 terminal: tiny raw 32/32 both; heldout raw/accepted 0/40 both; no primary eligibility. Frozen/adapted-only repetition is not the recommended next study.",
+  "latest_feasibility_review": "configs/reconstruction/phase74_development_feasibility.json"
 }

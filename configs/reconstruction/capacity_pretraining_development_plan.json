@@ -55,5 +55,8 @@
     "correct_deep_proposal_survival",
     "inclusive_and_exact_B_top1_and_pool",
     "continuum_acceptance_and_source_validity"
-  ]
+  ],
+  "latest_feasibility_review": "configs/reconstruction/phase74_development_feasibility.json",
+  "phase73_terminal_interpretation": "Both jobs completed: tiny raw 32/32 each; heldout raw and accepted 0/40 each. Main-train raw 2/256 frozen and 30/256 adapted. No heldout gate passed; sparse main training fit does not establish irrecoverable encoder information loss or data scarcity.",
+  "runtime_admission_status": "BLOCKED_DESIGNATED_DEVELOPMENT_COHORT_OVERLAPS_PRIOR_PRIMARY"
 }

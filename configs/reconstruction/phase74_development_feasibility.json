@@ -1,0 +1,48 @@
+{
+  "version": "phase74-development-feasibility-v1",
+  "status": "BLOCKED_BEFORE_RUNTIME_IMPLEMENTATION",
+  "stage": "development",
+  "preferred_study": "capacity_pretraining_alignment",
+  "required_arms": [
+    "128-existing",
+    "128-assembly",
+    "256-existing",
+    "256-assembly"
+  ],
+  "phase73_terminal": {
+    "tiny_raw": [
+      32,
+      32
+    ],
+    "tiny_trials": 32,
+    "heldout_raw": [
+      0,
+      0
+    ],
+    "heldout_accepted": [
+      0,
+      0
+    ],
+    "heldout_trials": 40,
+    "main_train_raw": [
+      2,
+      30
+    ],
+    "main_train_trials": 256,
+    "heldout_gain_gate": "FAIL"
+  },
+  "candidate_development_count": 60,
+  "prior_primary_overlap": 60,
+  "eligible_designated_count": 0,
+  "exclusion_registry": "configs/reconstruction/supplementary_validation_reservations.json",
+  "conflicting_reservation_sha256": "d45b340d2cfc3e53ed180058233a29f3c1af3b41336358d6252a874ab0fc8be8",
+  "candidate_sha256": "71b1fcc6fe2c75180945d6dac9d9b34017992b1f5da4054df81ba3a53ef302c6",
+  "alternative_cohorts": "Recent Phase70/71/72 beam diagnostics are primary subsets; all 32 geometry-development identities are Phase63 checkpoint-selection identities. None passes the requested exclusions.",
+  "scientific_plan_validation_is_runtime_admission": false,
+  "training_jobs_submitted": 0,
+  "runtime_gradients_tested": false,
+  "sealed_test_access": false,
+  "new_primary_reservations": 0,
+  "automatic_successor": false,
+  "next_required_input": "A designated development cohort authenticated as disjoint from all historical primary and checkpoint-selection cohorts, or explicit authorization to designate a fresh non-primary development cohort from remaining validation identities. No cohort is silently substituted."
+}

@@ -32,15 +32,27 @@ support. Training growth versus better pretraining is not identified; prioritize
 assembly-aligned membership supervision and representation diagnostics over
 uncontrolled growth or simply longer unchanged pretraining.
 
-One authorized Phase73 development campaign is accepted and running from frozen
-source1eba6c76: the same historical encoder frozen versus adapted, common128-wide
-heads,384 original training/60 reused development collisions, fixed1000-update
-tiny and main budgets. Both jobs have2CPU/32GiB/24h,no GPU,no requeue. Runtime
-admission and real-event encoder-gradient checks pass; startup receipts verify
-both arms. No fresh primary reservation or scientific promotion. At least95%
-tiny raw membership plus count-backed held-out membership gain with background
-and validity evidence remains required before primary scale-up or hierarchy.
-There is no automatic second campaign. Scheduling does not establish efficacy.
+Phase73 is TERMINAL: both jobs completed from frozen source1eba6c76. Both
+memorized32/32 tiny raw memberships (28/32 accepted), but both remain0/40 raw
+and accepted held-out memberships. Main-train raw membership was2/256 frozen
+and30/256 adapted. Tiny memorization passed; held-out improvement failed.
+Sparse main-training fit does not identify irrecoverable encoder information
+loss or prove data scarcity. No primary scale-up or hierarchy is eligible.
+
+The explicitly requested Phase74 representation factorial remains the preferred
+next experiment:128/256 context crossed with existing/assembly pretraining,
+fixed hyperbolic width32 and depth/geometry, matched fresh histories within a
+shared train corpus and a common sufficient decoder interface. Its admission
+is blocked: all60 designated development identities belong to Phase71 primary.
+Recent alternative beam cohorts are also primary subsets; the32-event geometry
+cohort belongs to Phase63 checkpoint selection. Under the new explicit exclusion
+of all primary and checkpoint-selection identities, none is eligible. This does
+not retroactively change Phase73's exploratory-reuse contract or its results.
+
+The cohort checker fails closed on the authenticated overlap. Planning validation
+still passes, but no Phase74 runtime, gradients, training or scientific results
+are claimed. No fresh primary reservation, sealed test or automatic successor.
+See the [Phase74 feasibility review](../phase74_feasibility_20261008.md).
 
 Publication follows exact branch CPU/docs checks, guarded master promotion and
 actual live-page/download verification, with immutable receipts outside Git.
