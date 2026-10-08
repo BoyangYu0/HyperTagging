@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Update exact evidence-input fixture93to94 for Phase72; focused deterministic test passes.
+  - 40b13042d8cd4d2f739d6f95bda44826a6b539d0
   # Complete Phase72 immutable primary evidence, independent positive-group replay, lossless exports and accepted bounded development.
   - 3a5cf12dd062c8b25cb1d09d5b28fe24d298801b
   # Measure accepted source intersections and fail closed rather than emit an assumed validity count.
