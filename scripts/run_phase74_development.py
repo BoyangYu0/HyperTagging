@@ -242,6 +242,7 @@ def fit(
     compute,
     cache_binding,
     source_sha,
+    gradient_rule="joint",
 ):
     import torch
     from hypertagging.training.capacity_development import (
@@ -253,6 +254,14 @@ def fit(
     )
     from hypertagging.models.assembly_development import assembly_relation_loss
 
+    if gradient_rule not in (
+        "joint",
+        "joint_diagnostic",
+        "project_conflicting_relation",
+    ):
+        raise ValueError("Unknown gradient rule")
+    if stage == "pretraining" and gradient_rule != "joint":
+        raise ValueError("Projection is downstream only")
     updates = settings[stage + "_updates"]
     model.eval()
     decoder.train()
@@ -332,7 +341,42 @@ def fit(
                     relation_support[i] += n
                 if not torch.isfinite(loss):
                     raise FloatingPointError("Nonfinite loss")
+                correction = None
+                if stage != "pretraining" and gradient_rule != "joint":
+                    from hypertagging.training.membership_gradient import (
+                        encoder_correction,
+                    )
+
+                    encoder_parameters = tuple(model.encoder.parameters())
+                    correction, diagnostic = encoder_correction(
+                        member, relation, encoder_parameters
+                    )
+                    compute["gradient_probe_events"] += 1
+                    compute["negative_gradient_dot_events"] += diagnostic["conflict"]
+                    compute["gradient_dot_before_sum"] += diagnostic["dot_before"]
+                    compute["gradient_dot_after_sum"] += (
+                        diagnostic["dot_after"]
+                        if gradient_rule == "project_conflicting_relation"
+                        else diagnostic["dot_before"]
+                    )
+                    if diagnostic["dot_after"] < -1e-5 * max(
+                        1, abs(diagnostic["dot_before"])
+                    ):
+                        raise RuntimeError(
+                            "Projected relation gradient remains conflicting"
+                        )
                 (loss / settings["batch_size"]).backward()
+                if (
+                    correction is not None
+                    and gradient_rule == "project_conflicting_relation"
+                ):
+                    for parameter, delta in zip(encoder_parameters, correction):
+                        if delta is not None:
+                            if parameter.grad is None:
+                                parameter.grad = delta / settings["batch_size"]
+                            else:
+                                parameter.grad.add_(delta / settings["batch_size"])
+
                 summed += float(loss.detach())
                 compute["detector_node_pairs"] += len(row["targets"]) ** 2
                 compute["encoder_passes"] += 4 if stage == "pretraining" else 2
@@ -386,6 +430,7 @@ def fit(
             "normalizer": model.runtime_feature_normalizer,
             "architecture": {"context_width": model.encoder.d_model, **ARCHITECTURE},
             "feature_normalization_pid_and_cohort_contract": cache_binding,
+            "gradient_rule": gradient_rule,
             "resume_authorized": False,
             "pid_weights_frozen_downstream": stage != "pretraining",
         },

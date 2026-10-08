@@ -1,0 +1,45 @@
+{
+  "version": "phase75-membership-gradient-projection-v1",
+  "stage": "development",
+  "family": "direct_membership_joint_learning",
+  "hypothesis": "Opposing within-B relation encoder gradients can impede global membership learning. Project only the opposing component off the membership gradient; test causal downstream effect, not a proven remedy.",
+  "changed_factor": "Per-event encoder gradient composition only: joint member+relation versus member+relation with conflicting relation component projected orthogonal to member. Decoder gradients and scalar objectives unchanged.",
+  "control": "128-existing Phase74 fixed pretraining-final encoder checkpoint for both arms; fresh shared256 decoder; no selected Phase74 downstream winner.",
+  "target_contract": "Unordered optional flat B source membership with unassigned and generated-partition relation supervision, truth only in post-generation supervision; no physical hierarchy metrics.",
+  "diagnostic_evidence": {
+    "path": "docs/assembly_diagnosis_20261007/evidence.json",
+    "sha256": "c1fa1b5f8d60909e679efaa06fd96831e7dc262dd1b1e15addf9741c33fd8c63"
+  },
+  "mechanism_evidence": {
+    "report_binding": {
+      "path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/phase74_training_20261008/overnight-review-v1/phase74-review-public.json",
+      "sha256": "57f00a18d0dddeead5ff8da4cde95e5b442989ade0e4e4f0291aafaa8c70eb9c"
+    },
+    "measured_effect": "128-existing:17/32 training events negative encoder gradient dot; mean cosine0.021. This is local diagnostic association, not causal proof. All arms32/32 tiny raw but0/0/0/1 main train exact out of1024; no reliable heldout winner."
+  },
+  "data_and_compute_control": "Same1536 original train subset; same Phase74 baseline pretraining checkpoint and head seed202610081; matched original order and updates:1000 tiny independent branch and1500 main,batch8. Fixed corpus70000. Two CPU-only jobs2CPU/32GiB/8h maximum, no requeue, no pretraining or width changes. Projection adds backward compute; measure actual time/memory/gradient conflict rates and presentations.",
+  "stop_rule": "Fail on nonfinite loss/gradient/params, source/hash/cohort mismatch, missing membership gradients, projection orthogonality failure, resource overflow or duplicate submission. At most2 jobs, no requeue/successor.",
+  "success_rule": "Fixed final heldout raw/accepted membership improvement with collision-paired counts/intervals, background control and zero source conflict; tiny raw>=95% prerequisite. Sparse gains remain exploratory, no primary eligibility from one success; projection must reduce measured negative gradient dot locally.",
+  "validation_selection": "Designate fresh600 nonprimary development events100/category by same deterministic UID seed202610081 after excluding all Phase74 identities and historical primary/supplementary/selection/development plus originaltrain. Fixed final checkpoints and0.5 threshold; no adaptive checkpoint selection. Phase74 is exploratory evidence only.",
+  "sealed_test_access": false,
+  "automatic_submission": false,
+  "arms": [
+    "joint",
+    "project_conflicting_relation"
+  ],
+  "context_width": 128,
+  "hyper_dim": 32,
+  "pretraining_updates": 0,
+  "downstream_updates": 1500,
+  "tiny_updates": 1000,
+  "batch_size": 8,
+  "seed": 202610081,
+  "resources": {
+    "cpus": 2,
+    "memory_gib": 32,
+    "hours": 8,
+    "gpus": 0,
+    "max_jobs": 2,
+    "requeue": false
+  }
+}

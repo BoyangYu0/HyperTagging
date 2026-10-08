@@ -1,5 +1,30 @@
 # Current repository audit status
 
+## Phase74 completed development and bounded Phase75 — 2026-10-09
+
+All four Phase74 jobs completed exit0. Terminal checkpoint/output hashes, fixed
+final steps and identical within-width initialization/data order authenticate.
+Tiny raw membership is32/32 in every arm, accepted27/32 because five retained
+source sets violate the unchanged charge guard. Main-train raw is0,0,0,1/1024;
+heldout raw and accepted0,0,0,1/400. Continuum acceptance31,24,52,72/400.
+The sole heldout recovery is a three-FSP charge-minus-one retained source set,
+truth height2; it is not a physical B tree. No reliable capacity/pretraining
+winner or primary scale-up gate is established.600 development collisions are
+not a complete primary evaluation. Exact hierarchy/beam/closure remain unavailable.
+
+One preregistered development successor tests a measured gradient-conflict
+hypothesis: joint membership/relation encoder gradients versus projecting out
+only the opposing relation component.17/32 original-train baseline events have
+negative dot products; mean cosine0.021 is not causal proof. Both arms use the
+same fixed128-existing pretraining checkpoint, fresh common256 head, original
+1536 training subset,1000 tiny/1500 main updates,batch8. A further600 fresh
+non-primary development identities are fully isolated and registered. Fixed final
+checkpoint/threshold0.5; at most2CPU/32GiB/8h per arm,no GPU,requeue or successor.
+Scheduling and final outcomes are recorded in the new overnight review receipts.
+Data growth versus better pretraining remains unidentified; do not expand either
+uncontrolled. The original failed60-event admission and all historical runs remain
+immutable. See [Phase74 review](../wiki/phase74.rst).
+
 ## Phase72 complete category-policy review — 2026-10-08
 
 Both native jobs completed with exit0; all14 registered reports and26 checkpoints
@@ -66,8 +91,7 @@ requeue,automatic successor or primary scale-up. Policy/full-cohort/runtime admi
 and real gradients pass. The broad CPU suite passed2400 tests with34 skips; both
 tiny CLI smokes and18 generated notebooks pass. A wrapper-only temporary cleanup
 failure is preserved and separately resolved. Preflight v2 preserved the failed
-six-hour estimate; v3 passes the measured eight-hour bound. Training completion
-and scientific outcomes are pending. Exact physical
+six-hour estimate; v3 passes the measured eight-hour bound. This scheduling snapshot is historical; terminal outcomes are reviewed above. Exact physical
 B hierarchy and beam-pool metrics remain unavailable; latent source-set proposal
 survival is explicitly diagnostic. At least95% tiny raw membership and count-backed
 held-out gains with background/validity remain prerequisites for any primary study.

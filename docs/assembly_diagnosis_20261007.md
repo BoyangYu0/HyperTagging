@@ -279,3 +279,15 @@ Phase74 training is blocked before runtime implementation and submission; passin
 the scientific-plan validator does not override cohort admission. Historical
 receipts and Phase73's explicit exploratory-reuse interpretation remain unchanged.
 See the [feasibility review](phase74_feasibility_20261008.md).
+
+## Follow-up through Phase74 — 2026-10-09
+
+Phase73 terminal tiny raw32/32 did not generalize (both0/40 heldout). Phase74
+matched fresh capacity/pretraining histories and the common downstream interface:
+all tiny raw32/32, main train0,0,0,1/1024 and heldout0,0,0,1/400, with continuum
+acceptance31,24,52,72/400. The lone positive is a three-FSP retained membership,
+not a B tree. No primary gate or width/objective winner is established. A measured
+training-only gradient conflict motivates one controlled development projection
+contrast, not an arbitrary loss-weight grid. See the Phase74 wiki review and
+phase75_gradient_development_plan.json. The authenticated historical evidence
+JSON and policy hash remain unchanged.

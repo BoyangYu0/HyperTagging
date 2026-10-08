@@ -58,5 +58,7 @@
   ],
   "latest_feasibility_review": "configs/reconstruction/phase74_capacity_development_plan.json",
   "phase73_terminal_interpretation": "Both jobs completed: tiny raw 32/32 each; heldout raw and accepted 0/40 each. Main-train raw 2/256 frozen and 30/256 adapted. No heldout gate passed; sparse main training fit does not establish irrecoverable encoder information loss or data scarcity.",
-  "runtime_admission_status": "FRESH_DEVELOPMENT_DESIGNATION_AUTHENTICATED_IMPLEMENTATION_UNDER_FINAL_ADMISSION"
+  "runtime_admission_status": "TERMINAL_FOUR_ARMS_NO_PRIMARY_WINNER",
+  "phase74_terminal_review": "docs/wiki/phase74.rst",
+  "next_controlled_development": "configs/reconstruction/phase75_gradient_development_plan.json"
 }

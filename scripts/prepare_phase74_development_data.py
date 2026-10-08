@@ -181,7 +181,9 @@ def prepare(artifacts, output):
     dev = [u for cat in design["categories"] for u in groups[cat]]
     train = [u for cat in design["categories"] for u in training[cat]]
     candidate = {
-        "version": "phase74-fresh-development-designation-v1",
+        "version": design.get(
+            "designation_version", "phase74-fresh-development-designation-v1"
+        ),
         "stage": "development",
         "role": "validation",
         "sealed_test_role_access": "forbidden",
