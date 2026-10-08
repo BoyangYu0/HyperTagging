@@ -1,5 +1,36 @@
 # Current repository audit status
 
+## Phase75 sole successor completed — 2026-10-09
+
+Both jobs 17089561 (joint) and 17089562 (projection) completed exit 0 in 4738
+and 4775 scheduler seconds. Full terminal hash/checkpoint/cohort/order verification
+passes. The joint control exactly reproduces all Phase74 training records and
+both final model/decoder states. Frozen training source remains
+64a2031eae4b9a87c7d6bd485d554cba32c586ac; no frozen run was modified.
+
+Both arms have tiny raw 32/32 and accepted 27/32, main-train raw/accepted 0/1024,
+and fresh held-out raw/accepted 0/400. Continuum accepted events are 47/400 versus
+40/400; paired difference -0.0175 with interval [-0.0375, 0.0025]. All six categories
+process 100 collisions each without failures or unavailable memberships; accepted
+source conflicts are zero. Exact physical hierarchy/beam/closure remain unavailable.
+Projection removes local opposition as implemented but does not improve exact
+membership. Tiny gate passes; held-out improvement fails. No primary scale-up,
+model promotion, coefficient grid or further successor follows this overnight pass.
+
+The fresh 600-event cohort and original 1536-event training pool remain fixed.
+Actual with-replacement main sampling presents 1535 distinct pool events, with
+20000 total tiny/main presentations per arm. The common inherited pretraining
+history has 1000 updates; no new pretraining occurs. A preserved metadata-scope
+clarification distinguishes inherited Phase74 descriptors in the data-design
+receipt from the correct, separately frozen Phase75 training contract. No identities,
+thresholds or runtime settings changed. All source, data, admission, failure,
+correction and terminal evidence is versioned under overnight-review-v1.
+
+Data growth versus better pretraining remains unidentified. Prioritize analysis
+of proposal/refinement and within-branch membership errors in the main training
+pool before proposing another controlled study. Reuse of inspected development
+events is exploratory. See the [completed Phase75 review](../wiki/phase75.rst).
+
 ## Phase74 completed development and bounded Phase75 — 2026-10-09
 
 All four Phase74 jobs completed exit0. Terminal checkpoint/output hashes, fixed
@@ -21,7 +52,7 @@ same fixed128-existing pretraining checkpoint, fresh common256 head, original
 non-primary development identities are fully isolated and registered. Fixed final
 checkpoint/threshold0.5; at most2CPU/32GiB/8h per arm,no GPU,requeue or successor.
 Jobs17089561(joint) and17089562(projection) were accepted RUNNING from frozen
-source64a2031eae4b9a87c7d6bd485d554cba32c586ac. Outcomes remain pending; all
+source64a2031eae4b9a87c7d6bd485d554cba32c586ac. This startup snapshot is historical; completed outcomes are reviewed above. All
 scheduling/terminal receipts belong to the new overnight review directory.
 Data growth versus better pretraining remains unidentified; do not expand either
 uncontrolled. The original failed60-event admission and all historical runs remain

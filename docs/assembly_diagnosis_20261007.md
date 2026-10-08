@@ -291,3 +291,16 @@ training-only gradient conflict motivates one controlled development projection
 contrast, not an arbitrary loss-weight grid. See the Phase74 wiki review and
 phase75_gradient_development_plan.json. The authenticated historical evidence
 JSON and policy hash remain unchanged.
+
+## Phase75 terminal development follow-up — 2026-10-09
+
+The sole gradient-projection successor completed. Both arms have 32/32 tiny raw
+memberships but 0/1024 main-train and 0/400 fresh held-out exact memberships.
+Continuum acceptance is 47/400 versus 40/400; paired interval includes no difference.
+Local gradient correction passes its implementation guard but does not rescue
+exact grouping. Preserve the original diagnostic evidence file and hash. Do not
+start another coefficient grid, primary cohort or wider model. Data growth versus
+better pretraining remains unidentified; analyze proposal/refinement and within-
+branch membership failures at fixed controls before a separately admitted study.
+The [Phase75 review](wiki/phase75.rst) reports counts, uncertainty and unavailable
+physical hierarchy metrics. No further successor is scheduled.

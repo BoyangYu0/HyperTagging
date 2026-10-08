@@ -4,6 +4,8 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 import argparse
 import json
+import hashlib
+import random
 from pathlib import Path
 import sys
 
@@ -44,6 +46,12 @@ def paired_effects(left, right):
             "paired_collision_stratified_bootstrap95": np.quantile(
                 delta, [0.025, 0.975]
             ).tolist(),
+            "paired_collisions": len(selected),
+            "discordant_collision_counts": {
+                "projection_greater": int((x[1] > x[0]).sum()),
+                "control_greater": int((x[0] > x[1]).sum()),
+                "equal": int((x[0] == x[1]).sum()),
+            },
             "event_any_exact_binomial95": [],
         }
         for row in x:
@@ -58,6 +66,25 @@ def paired_effects(left, right):
                 }
             )
     return effects
+
+
+def sampling_accounting(rows, presentations, seed):
+    rng = random.Random(seed)
+    selected = [rows[rng.randrange(len(rows))] for _ in range(presentations)]
+    counts = Counter(row["uid"] for row in selected)
+    return {
+        "eligible_unique_events": len(rows),
+        "actual_distinct_presented": len(counts),
+        "not_presented": len(rows) - len(counts),
+        "presentations": presentations,
+        "sampled_with_replacement": True,
+        "minimum_presentations_among_seen": min(counts.values()),
+        "maximum_presentations_among_seen": max(counts.values()),
+        "presentations_by_category": dict(Counter(r["category"] for r in selected)),
+        "data_order_sha256": hashlib.sha256(
+            "".join(row["uid"] + "\n" for row in selected).encode()
+        ).hexdigest(),
+    }
 
 
 def review(root):
@@ -104,9 +131,37 @@ def review(root):
             assert sha(item["path"]) == item["sha256"]
         r = json.loads((base / arm / "summary.json").read_text())
         assert r["contract_sha256"] == sha(root / "successor-campaign-v1/contract.json")
+        assert r["compute"]["event_presentations"] == 20000
+        assert r["compute"]["encoder_passes"] == 40000
+        assert r["compute"]["evaluation_event_views"] == 2160
+        tiny_uids = {e["uid"] for e in r["tiny"]["events"]}
+        evaluation_rows = (
+            cache["train"]
+            + cache["development"]
+            + [row for row in cache["train"] if row["uid"] in tiny_uids]
+        )
         public = {
             "compute": r["compute"],
+            "evidence_hashes": {
+                "summary_sha256": terminal["summary"]["sha256"],
+                "checkpoint_sha256_by_stage": {
+                    Path(b["path"]).stem.removesuffix("-final"): b["sha256"]
+                    for b in terminal["checkpoints"]
+                },
+            },
+            "compute_accounting": {
+                "native_encoder_passes_scope": "fit_only",
+                "fit_encoder_passes": 40000,
+                "evaluation_encoder_passes": 4320,
+                "total_encoder_passes": 44320,
+                "evaluation_detector_node_pair_proxy": sum(
+                    len(row["targets"]) ** 2 for row in evaluation_rows
+                ),
+                "flops": None,
+                "flops_status": "NOT_MEASURED; node-pair counts and passes are proxies, extra gradient probes add backward work",
+            },
             "histories": r["histories"],
+            "sampling_accounting": {},
             "roles": {},
             "curves": {},
             "unavailable": r["heldout"]["unavailable"],
@@ -114,6 +169,16 @@ def review(root):
         for stage, count in [("tiny", 1000), ("downstream", 1500)]:
             hist = r["histories"][stage]
             assert hist["updates"] == count and hist["presentations"] == 8 * count
+            stage_rows = (
+                [cachemap[e["uid"]] for e in r["tiny"]["events"]]
+                if stage == "tiny"
+                else cache["train"]
+            )
+            accounting = sampling_accounting(
+                stage_rows, 8 * count, c["settings"]["seed"]
+            )
+            assert accounting["data_order_sha256"] == hist["data_order_sha256"]
+            public["sampling_accounting"][stage] = accounting
             orders[stage].add(hist["data_order_sha256"])
             steps = [
                 json.loads(line)

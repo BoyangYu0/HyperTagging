@@ -92,7 +92,10 @@ Actual compute and finite selection
 
 Each arm uses 1,000 pretraining updates, an independent 1,000-update tiny branch,
 and 1,500 main downstream updates, batch eight: 28,000 fit presentations. Tiny
-training cannot alter the main model. Final checkpoints and presence threshold
+training cannot alter the main model. With-replacement sampling actually presents
+1,526 distinct pool events during pretraining and 1,535 during main training;
+the tiny branch presents all 24 of its events. Reconstructed orders match saved
+hashes in all four arms. Pool size is distinct from events actually seen. Final checkpoints and presence threshold
 0.5 were fixed in advance. Original train-fitted normalization is unchanged.
 Encoder parameters are 1,322,658 and 5,176,610; the common decoder has 1,385,991.
 Wall times in arm order are 5,207.36, 5,700.68, 6,883.21 and 7,601.44 seconds.
@@ -131,9 +134,11 @@ is now adaptive exploratory evidence and is not reused as independent confirmati
 Fixed final checkpoints and threshold 0.5 remain unchanged. Each arm has 1,000 tiny
 and 1,500 downstream updates of batch eight, no additional pretraining, at most
 two CPUs, 32 GiB and eight hours. There is no automatic requeue or further successor.
-Both jobs passed guarded admission and were accepted and started on 9 October
-2026. Results are pending in this publication snapshot; no further successor is
-authorized. The final overnight report retains scheduler and startup receipts.
+Both jobs completed on 9 October 2026. Both pass tiny raw membership but remain
+zero of 400 held-out memberships; continuum acceptance is 47 versus 40 of 400
+on the fresh cohort, with a paired interval including no difference. See the
+:doc:`completed Phase75 review <phase75>`. No further successor is scheduled.
+The final overnight report retains admission, scheduler and terminal receipts.
 
 Primary scale-up remains closed. Require count-backed held-out membership gain,
 background and validity controls as well as tiny raw memorization. A primary study
@@ -144,7 +149,7 @@ sealed-test access or production hierarchy is part of this pass.
 Evidence and downloads
 ----------------------
 
-The :doc:`dashboard <_generated/status/index>` expands this latest completed study;
+The :doc:`dashboard <_generated/status/index>` expands the latest completed study;
 :doc:`earlier studies <studies>` and every historical download remain intact.
 The :doc:`download catalogue <_generated/status/downloads>` includes the lossless
 Phase74 aggregate/history envelope, standard-library decoder and integrity record.

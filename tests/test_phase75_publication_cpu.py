@@ -82,3 +82,25 @@ def test_successor_delivery_rejects_primary_claim(tmp_path):
     m, out, _ = payload(tmp_path, True)
     with pytest.raises(ValueError, match="scope"):
         m.generate(tmp_path, out)
+
+
+def test_completed_successor_render_keeps_counts_limits_and_valid_headings(tmp_path):
+    m = module()
+    m.sibling("wiki_phase74").generate(ROOT, tmp_path)
+    record = m.generate(ROOT, tmp_path)
+    assert record["control_replay_training_history"] == {
+        "tiny": True,
+        "downstream": True,
+    }
+    for arm in record["arms"].values():
+        assert (
+            arm["sampling_accounting"]["downstream"]["actual_distinct_presented"]
+            == 1535
+        )
+        assert arm["compute_accounting"]["total_encoder_passes"] == 44320
+    lines = m.render(record)
+    assert "Physical tree/pool/deep-survival" in "\n".join(lines)
+    for contents in (lines, (ROOT / "docs/wiki/phase75.rst").read_text().splitlines()):
+        for i, line in enumerate(contents):
+            if i and line and set(line) <= set("=-~"):
+                assert len(line) >= len(contents[i - 1]), contents[i - 1]

@@ -21,5 +21,7 @@
   "related_representation_plan": "configs/reconstruction/capacity_pretraining_development_plan.json",
   "scope_note": "Phase73 terminal frozen/adapted diagnostic is preserved. The explicitly authorized Phase74 continuation uses fresh non-primary development designation and the preferred four-arm capacity/pretraining study; it does not repeat only frozen versus adapted.",
   "completed_diagnostic": "Phase73 terminal: tiny raw 32/32 both; heldout raw/accepted 0/40 both; no primary eligibility. Frozen/adapted-only repetition is not the recommended next study.",
-  "latest_feasibility_review": "configs/reconstruction/phase74_capacity_development_plan.json"
+  "latest_feasibility_review": "configs/reconstruction/phase74_capacity_development_plan.json",
+  "latest_completed_development_review": "docs/wiki/phase75.rst",
+  "phase75_terminal_interpretation": "Joint versus opposing-relation-gradient projection: tiny raw32/32 both, main-train raw/accepted0/1024 both, fresh heldout0/400 both; continuum47/400 versus40/400 with paired interval including no difference. No membership benefit, primary scale-up or automatic successor."
 }

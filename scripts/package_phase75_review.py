@@ -23,6 +23,9 @@ def package(root, destination):
         "depth": 4,
         "common_head_width": 256,
         "encoder_initialization_sha256": contract["initial_checkpoint"]["sha256"],
+        "shared_inherited_pretraining_updates": 1000,
+        "shared_inherited_pretraining_presentations": 8000,
+        "new_pretraining_updates": 0,
         "settings": contract["settings"],
         "resources_per_arm": contract["resources"],
         "original_corpus_events": 70000,
@@ -31,6 +34,24 @@ def package(root, destination):
         "primary_reservations": 0,
         "no_checkpoint_selection": True,
     }
+    admission = json.loads((root / "data-admission.json").read_text())
+    value["data_inventory_before_designation"] = admission["inventory"]
+    value["lineage"] = {
+        "contract_sha256": hashlib.sha256(
+            (root / "successor-campaign-v1/contract.json").read_bytes()
+        ).hexdigest(),
+        "cache_sha256": contract["cache"]["sha256"],
+        "development_manifest_sha256": admission["development"]["sha256"],
+        "training_manifest_sha256": admission["training"]["sha256"],
+    }
+    value["designation_scope_note"] = (
+        "The immutable data-design receipt inherited Phase74 training descriptors. "
+        "Those fields did not configure Phase75; the frozen training contract specifies "
+        "two 128-wide arms, one shared pretraining checkpoint and zero new pretraining. "
+        "The authenticated validation universe has 160000 events including 20000 taupair; "
+        "the six registered categories have 140000, with 42571 available before this designation. "
+        "No taupair event is selected. No training or cohort contract was changed."
+    )
     value["coverage"] = {
         "heldout_by_category": dict.fromkeys(
             ("charged", "mixed", "ccbar", "uubar", "ddbar", "ssbar"), 100

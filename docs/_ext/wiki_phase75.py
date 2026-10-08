@@ -135,7 +135,7 @@ def render(value):
         h = r["roles"]["heldout"]["counts"]
         rows.append(
             [
-                a,
+                {"joint": "Joint", "project_conflicting_relation": "Projection"}[a],
                 f"{t['raw_exact_memberships']} of 32",
                 f"{t['accepted_exact_memberships']} of 32",
                 f"{tr['raw_exact_memberships']} of 1024",
@@ -156,6 +156,63 @@ def render(value):
         ],
         rows,
     )
+    lines += [
+        "Relation, latent-depth and compute diagnostics",
+        "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+        "",
+    ]
+    rows = []
+    for a, r in value["arms"].items():
+        h = r["roles"]["heldout"]["counts"]
+        rows.append(
+            [
+                {"joint": "Joint", "project_conflicting_relation": "Projection"}[a],
+                f"{h['detector_relation_correct']} of {h['detector_relation_trials']}",
+                f"{h['generated_state_relation_correct']} of {h['generated_state_relation_trials']}",
+                f"{h['latent_deep_source_sets_proposed']} of {h['latent_deep_source_sets_trials']}",
+                f"{h['latent_deep_source_sets_retained']} of {h['latent_deep_source_sets_trials']}",
+            ]
+        )
+    lines += table(
+        [
+            "Arm",
+            "Detector relations",
+            "Generated relations",
+            "Latent proposed",
+            "Latent retained",
+        ],
+        rows,
+    )
+    lines += [
+        "Generated-state supports differ across models. Latent source-set merges are diagnostic,",
+        "not verified legal physical hierarchy proposals. Ignored ambiguous-pair counts were not retained.",
+        "",
+    ]
+    lines += table(
+        [
+            "Arm",
+            "Encoder parameters",
+            "Fit/evaluation wall seconds",
+            "Peak RSS KiB",
+            "Opposing gradient events",
+        ],
+        [
+            [
+                {"joint": "Joint", "project_conflicting_relation": "Projection"}[a],
+                r["compute"]["encoder_parameters"],
+                round(r["compute"]["wall_seconds"], 2),
+                r["compute"]["peak_rss_kib"],
+                f"{r['compute']['negative_gradient_dot_events']} of {r['compute']['gradient_probe_events']}",
+            ]
+            for a, r in value["arms"].items()
+        ],
+    )
+    lines += [
+        "Both arms have 20,000 fit presentations and 44,320 encoder passes including evaluation.",
+        "The native encoder counter covers fitting only; the download separately derives evaluation accounting.",
+        "Both probe gradient conflicts; projection adds correction work. Equal updates are not measured equal FLOPs.",
+        "",
+    ]
     lines += ["Paired effects and limitations", "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", ""]
     lines += table(
         ["Endpoint", "Projection minus control", "Paired collision interval"],

@@ -5,6 +5,7 @@ from collections import Counter
 import gzip
 import hashlib
 import json
+import sys
 from pathlib import Path
 from scipy.stats import beta
 
@@ -16,6 +17,9 @@ def canonical(value):
 
 
 def package(review, parent, destination):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from scripts.review_phase75_terminal import sampling_accounting
+
     value = json.loads(review.read_text())
     arms = list(value["arms"])
     summaries = {
@@ -42,6 +46,17 @@ def package(review, parent, destination):
                 "distinct_bbbar_collisions": 200,
             }
     for arm, record in value["arms"].items():
+        record["sampling_accounting"] = {}
+        for stage, count in (
+            ("pretraining", 8000),
+            ("tiny", 8000),
+            ("downstream", 12000),
+        ):
+            rows = summaries[arm]["tiny" if stage == "tiny" else "train"]["events"]
+            sampled = sampling_accounting(rows, count, 202610081)
+            original = summaries[arm]["tiny_history" if stage == "tiny" else stage]
+            assert sampled["data_order_sha256"] == original["data_order_sha256"]
+            record["sampling_accounting"][stage] = sampled
         record["stage_summaries"] = {
             key: summaries[arm][key]
             for key in ("pretraining", "tiny_history", "downstream")
