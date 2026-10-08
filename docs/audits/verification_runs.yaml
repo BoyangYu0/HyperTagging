@@ -1151,3 +1151,33 @@ supplemental_runs:
       submission. Eight-hour CPU allocation is retested in v3. Broad CPU suite and
       final admission receipts belong to continuation-v1. No scientific success,
       primary evaluation, physical hierarchy quality or promotion is established.
+
+  - source_sha: 45e27c9a8b1cb29af51cb805e886a03e7914f366
+    metadata_head: recorded_by_followup_audit
+    worktree_state: immutable_detached_training_source
+    date: '2026-10-08T21:35:00+02:00'
+    commands:
+      - python -m pytest -q
+      - python scripts/train_hyperbolic_pretrain.py --dry-run --tiny --device cpu --max-steps 2 --batch-size 2
+      - python scripts/train_level_reconstruction.py --dry-run --tiny --device cpu --max-steps 2 --batch-size 2
+      - python scripts/execute_notebook_smoke_tests.py --check-generated
+      - python scripts/validate_audit_integrity.py
+      - python scripts/generate_audit_views.py --check
+      - guarded four-arm real-data preflight and actual Slurm submission
+    pytest: {result: PASS, passed: 2400, skipped: 34, warnings: 202, duration_seconds: 553.47}
+    notebooks:
+      generated_consistency: {result: PASS, count: 18}
+    real_data_inputs: original_train1536_and_fresh_nonprimary_development600_full_isolation_PASS
+    checkpoint: immutable_fresh128_and256_initializations_same_within_width
+    ci_run: NOT_PUSHED
+    human_visual_review_status: NOT_APPLICABLE_NO_SITE_PUBLICATION
+    evidence_limitations: >-
+      Broad suite began on implementation0427b935; the sole subsequent runtime change
+      increases the resource cap from six to eight hours after measured failure,
+      with54 focused tests rerun and final-source real-data preflight v3 passing.
+      Suite job17089037 exited1 only in cleanup after every check passed; isolated
+      own-fixture cleanup17089064 completed. Submission PATH failure occurred
+      before lock or scheduler calls and is preserved; corrected host PATH accepted
+      jobs17089065/17089066/17089067/17089068. All four first optimizer steps and
+      source/config/data/init bindings verified. Full training/scientific success
+      pending. No primary evaluation, hierarchy quality, successor or promotion.

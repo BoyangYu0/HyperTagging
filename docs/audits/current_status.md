@@ -58,9 +58,16 @@ parent/sibling discrimination is categorical, not indiscriminate repulsion.
 
 The shared1536-event training subset (256/category) is not full70000 training.
 Pretraining/tiny/main schedules are1000/1000/1500 updates of batch8, with an isolated
-24-event tiny branch. Four bounded CPU jobs,2CPU/32GiB/8h each,are intended after
-final tests/source/runtime admission; no GPU,requeue,automatic successor or primary
-scale-up. Real-data smoke gradients pass both widths/objectives. Exact physical
+24-event tiny branch. Four bounded CPU jobs,2CPU/32GiB/8h each,were accepted and
+started on2026-10-08:128-existing17089065,128-assembly17089066,256-existing17089067,
+256-assembly17089068. Frozen runtime source is45e27c9a8b1cb29af51cb805e886a03e7914f366.
+All four startup bindings and first optimizer steps were verified. There is no GPU,
+requeue,automatic successor or primary scale-up. Policy/full-cohort/runtime admission
+and real gradients pass. The broad CPU suite passed2400 tests with34 skips; both
+tiny CLI smokes and18 generated notebooks pass. A wrapper-only temporary cleanup
+failure is preserved and separately resolved. Preflight v2 preserved the failed
+six-hour estimate; v3 passes the measured eight-hour bound. Training completion
+and scientific outcomes are pending. Exact physical
 B hierarchy and beam-pool metrics remain unavailable; latent source-set proposal
 survival is explicitly diagnostic. At least95% tiny raw membership and count-backed
 held-out gains with background/validity remain prerequisites for any primary study.
