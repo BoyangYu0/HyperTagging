@@ -36,6 +36,7 @@ def evidence(tmp_path, monkeypatch):
     documents = {
         "reconstruction_phase71_review": {"reserved": True},
         "reconstruction_phase71_policy": {"reserved": True},
+        "reconstruction_phase72_policy": {"reserved": True},
         "reconstruction_phase70_review": {"reserved": True},
         "reconstruction_phase70_policy": {"reserved": True},
         "reconstruction_phase68_review": {"reserved": True},
@@ -413,7 +414,7 @@ def test_current_repository_dashboard_surfaces_recorded_acceptance_values(tmp_pa
     assert manifest["pretraining"]["recorded_step"] == 54064 and manifest["pretraining"]["planned_steps"] == 108128
     assert manifest["pretraining"]["calibration_status"] == "PENDING"
     rendered_status = (tmp_path / "generated" / "index.rst").read_text().replace("\\-", "-")
-    assert "Phase71 efficiency evaluation" in rendered_status
+    assert "Phase72 efficiency evaluation" in rendered_status
     assert rendered_status.index("Primary strict greedy tagging") < rendered_status.index("All studies")
     assert rendered_status.count("0/8000") >= 4
     assert "2,000 distinct processed collisions" in rendered_status

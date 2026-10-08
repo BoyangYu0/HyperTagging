@@ -1,0 +1,27 @@
+{
+  "version": "phase73-membership-development-plan-v1",
+  "stage": "development",
+  "family": "direct_membership_joint_learning",
+  "status": "PREREGISTERED_PENDING_PHASE72_REVIEW_AND_RUNTIME_ADMISSION",
+  "hypothesis": "At fixed existing encoder history, allowing encoder gradients under direct unordered membership supervision improves held-out membership relative to the same frozen encoder with the same 128-wide head.",
+  "changed_factor": "encoder frozen versus adapted under the same direct unordered membership objective",
+  "control": "Same Phase71 reference checkpoint in both arms, frozen PID parameters, a 128-wide head in both arms, identical initialization, train identities and optimizer presentations. No capacity or pretraining effect is claimed.",
+  "target_contract": "two optional unordered source groups plus unassigned; membership-only target separate from exact retained hierarchy; report raw and constraint-accepted groups and target charge/source compatibility",
+  "diagnostic_evidence": {
+    "path": "docs/assembly_diagnosis_20261007/evidence.json",
+    "sha256": "c1fa1b5f8d60909e679efaa06fd96831e7dc262dd1b1e15addf9741c33fd8c63"
+  },
+  "data_and_compute_control": "384 original pilot training identities (64/category), 60 already-used development collisions (10/category), no Phase72 primary or selection use. Tiny head assay:24 training events,1000 updates,batch24. Main fit:1000 updates,batch16,seed20261008,head AdamW lr0.001; adapted encoder lr0.00005, frozen control no encoder gradients. Fixed final checkpoint and presence0.5; no early stopping or tuning. Two CPU-only tasks,2CPU/32GiB/24h each,no requeue. Report encoder forwards,node-pair workload,CPU/wall time,peak RSS,parameters; FLOPs unavailable and equal compute is not claimed.",
+  "stop_rule": "Stop on nonfinite loss/gradients/parameters, absent adapted encoder gradient, PID parameter changes, source/cohort mismatch, or resource limit. Review both fixed final results even if negative. No fresh primary reservation, hierarchy, automatic follow-on, pretraining-duration or coefficient sweep.",
+  "success_rule": "Before proposing primary or hierarchy require >=95% raw tiny membership plus positive collision-paired held-out accepted and raw exact-membership gain, with nominal and unavailable counts, no point increase in continuum accepted events, zero accepted source conflicts and explicit charge rejection accounting. Sparse40-B-trial development and one seed are exploratory and cannot establish population or physical FEI superiority.",
+  "validation_selection": "Use already designated development identities, not the sealed test or Phase72 fresh primary/selection reservations. Preregister checkpoint selection and acceptance threshold on development; any later primary assessment needs a separately authenticated fresh cohort.",
+  "followup_if_negative": "Test detector-pair within-B relation discrimination or explicit first-error correction after locating a measured failure; do not infer that all direct membership architectures are ineffective.",
+  "sealed_test_access": false,
+  "automatic_submission": false,
+  "related_representation_plan": "configs/reconstruction/capacity_pretraining_development_plan.json",
+  "scope_note": "This existing frozen-versus-adapted contrast remains a separate bounded diagnostic; the related factorial plan tests capacity and pretraining. Neither plan schedules the other automatically.",
+  "study": "Phase73",
+  "rationale": "Separates encoder adaptation from the failed frozen-head pilot while removing its64-wide head bottleneck in both arms. The preferred128/256 by existing/assembly-targeted pretraining factorial remains a separate unexecuted plan requiring comparable histories and a shared decoder interface; this campaign does not estimate that factorial.",
+  "training_data_growth": "Hold the authenticated70000-event corpus; this384-event development experiment is not a training-size comparison.",
+  "pretraining": "No new pretraining; assembly-aligned representation learning is prioritized over simply extending unchanged pretraining or untested data growth."
+}

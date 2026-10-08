@@ -106,7 +106,7 @@ def paired_intervals(left,right,categories,repeats=10000,batch=16):
         for j,arm in enumerate(ARMS):
             n,d=totals[j][i];v=float(n/d) if d else None;points.append(v)
             record[arm]={'numerator':float(n),'denominator':float(d),'value':v,**ci(estimates[:,i,j])}
-        record['weight100_minus_weight050']={'value':points[1]-points[0] if None not in points else None,**ci(estimates[:,i,1]-estimates[:,i,0])}
+        record['overlap_on_minus_off']={'value':points[1]-points[0] if None not in points else None,**ci(estimates[:,i,1]-estimates[:,i,0])}
         result[name]=record
     return {'unit':'collision','stratified_by_source_category':True,'seed':20261007,'resamples':repeats,
             'resample_batch':batch,'numpy_version':np.__version__,'random_streams':'SeedSequence seed20261007 spawn6 category generators','metrics':result,
