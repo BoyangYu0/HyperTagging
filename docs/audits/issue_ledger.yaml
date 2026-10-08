@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Measured480495-byte duplicate dashboard reduction, preserved full downloads, RST heading repairs and tested fixed-endpoint successor closeout.
+  - d95b2ba3414da2a5853ec423a2567d5cd0330551
   # Complete stage/hash availability export and single latest-study navigation; targeted privacy/dashboard/navigation regressions pass.
   - 77d3d99ae135dce07712b3ef01d6b89fe8bfb34d
   # Phase74 authenticated terminal/public aggregate review and one Phase75 gradient-projection contrast;61 focused tests pass.

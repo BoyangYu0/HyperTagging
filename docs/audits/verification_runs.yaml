@@ -1201,3 +1201,25 @@ supplemental_runs:
       motivates one controlled projection study, not proof of generalization benefit.
       Full CPU/docs publication checks and actual successor receipts are external
       under overnight-review-v1. Original failures and all frozen sources remain intact.
+
+  - source_sha: d95b2ba3414da2a5853ec423a2567d5cd0330551
+    metadata_head: recorded_by_followup_audit
+    worktree_state: committed_publication_correction
+    date: '2026-10-09'
+    commands:
+      - python -m pytest -q tests/test_phase74_review_cpu.py tests/test_phase75_publication_cpu.py tests/test_phase75_closeout_cpu.py
+      - focused source-provenance and navigation regressions
+      - exact-commit CPU correctness workflow37853059973 for preceding e8802b59
+    pytest: {result: PASS, passed: 9, skipped: 0}
+    real_data_inputs: authenticated_Phase74_terminal_records_Phase75_still_running
+    checkpoint: unchanged_frozen_training_source64a2031e
+    ci_run: https://github.com/BoyangYu0/HyperTagging/actions/runs/37853059973
+    human_visual_review_status: PENDING_LIVE_PUBLICATION
+    evidence_limitations: >-
+      Preceding exact-commit CPU CI passed2405 tests,36 skipped. Local full docs
+      source64a2031e failed two short RST title underlines; preserved and repaired.
+      Publication was near the unchanged256MiB limit; duplicate dashboard channel
+      and size records moved to the already complete authenticated download,
+      saving480495 bytes without deleting metrics or historical downloads.
+      Nine focused regression tests pass; new exact-commit full docs required.
+      Two successor jobs are running; no outcome or promotion claim.
