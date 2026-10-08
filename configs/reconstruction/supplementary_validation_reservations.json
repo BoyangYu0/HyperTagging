@@ -92,6 +92,30 @@
       "selection_count": 1000,
       "requirement": "Exclude every event_uid from future training, fitting, selection and adaptive reservations. Original primary cohort is shared across arms/scopes. Reservation is not processed coverage. No automatic successor.",
       "sealed_test_accessed": false
+    },
+    {
+      "version": "phase74-development-designation-v1",
+      "status": "DESIGNATED_DEVELOPMENT",
+      "stage": "development",
+      "role": "validation",
+      "cohort_manifest": {
+        "artifact_relative_path": "phase74_training_20261008/continuation-v1/development-cohort.json",
+        "sha256": "f6f8ff3503eb95b675cf91a88508d644f0a1af6b06a07b3712c64bc130606aa0"
+      },
+      "reserved_count": 600,
+      "primary_count": 0,
+      "selection_count": 0,
+      "by_category": {
+        "ccbar": 100,
+        "charged": 100,
+        "ddbar": 100,
+        "mixed": 100,
+        "ssbar": 100,
+        "uubar": 100
+      },
+      "requirement": "Exclude all600 fresh development assessment identities from future training, checkpoint selection, adaptive fitting and primary reservations. Fixed-final Phase74 assessment only; not policy-sized primary coverage.",
+      "authorization": "Explicit continuation user instruction permits fresh non-primary development designation",
+      "sealed_test_accessed": false
     }
   ],
   "storage_contract": "Resolve artifact_relative_path under the configured external HyperTagging artifact root; authenticate SHA-256 before consuming UIDs. See docs/repository_storage.md."

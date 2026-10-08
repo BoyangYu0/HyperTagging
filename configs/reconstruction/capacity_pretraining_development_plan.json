@@ -14,7 +14,7 @@
   "data_and_compute_control": "Match authenticated training identities, presentations and downstream schedules. Objective arms share initialization within each width; establish comparable histories across widths rather than fresh-256 versus historical-128. Keep depth and hyperbolic geometry fixed. Keep downstream head width common and sufficient for both encoders, or explicitly document an information-preserving interface; do not silently reuse the 64-wide pilot bottleneck. Report parameters, compute, memory and convergence; equal updates are not equal FLOPs.",
   "stop_rule": "No automatic jobs, 512-wide model or additional pretraining-duration campaign. Do not scale on training loss or tiny memorization alone. Review the four-arm development contrast before any primary reservation or larger capacity study.",
   "success_rule": "Report width and objective contrasts separately plus their interaction. Require count-backed heldout membership gain with background/validity accounting; inspect deep proposal and B-pool recovery. Membership-only gains do not establish hierarchy success. Preserve the tiny raw-membership gate before primary scale-up.",
-  "validation_selection": "Use already designated development identities, not the sealed test or Phase72 fresh primary/selection reservations. Preregister checkpoint selection and acceptance threshold on development; any later primary assessment needs a separately authenticated fresh cohort.",
+  "validation_selection": "Continuation user authorization explicitly permits fresh NON-PRIMARY development designation from remaining validation. Phase74 designates600 authenticated heldout identities (100/category), excluding all train, historical primary, supplementary, development and checkpoint-selection identities. Fixed final checkpoint and0.5 threshold; no adaptive tuning or primary reservation.",
   "followup_if_negative": "Locate representation versus head/optimization or decoder-use failure using train/heldout relation and membership probes; do not conclude that all capacity scaling or pretraining is ineffective.",
   "sealed_test_access": false,
   "automatic_submission": false,
@@ -56,7 +56,7 @@
     "inclusive_and_exact_B_top1_and_pool",
     "continuum_acceptance_and_source_validity"
   ],
-  "latest_feasibility_review": "configs/reconstruction/phase74_development_feasibility.json",
+  "latest_feasibility_review": "configs/reconstruction/phase74_capacity_development_plan.json",
   "phase73_terminal_interpretation": "Both jobs completed: tiny raw 32/32 each; heldout raw and accepted 0/40 each. Main-train raw 2/256 frozen and 30/256 adapted. No heldout gate passed; sparse main training fit does not establish irrecoverable encoder information loss or data scarcity.",
-  "runtime_admission_status": "BLOCKED_DESIGNATED_DEVELOPMENT_COHORT_OVERLAPS_PRIOR_PRIMARY"
+  "runtime_admission_status": "FRESH_DEVELOPMENT_DESIGNATION_AUTHENTICATED_IMPLEMENTATION_UNDER_FINAL_ADMISSION"
 }

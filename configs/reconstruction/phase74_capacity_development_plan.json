@@ -1,0 +1,112 @@
+{
+  "version": "phase74-capacity-pretraining-development-v1",
+  "stage": "development",
+  "family": "capacity_pretraining_alignment",
+  "status": "PREREGISTERED_ONE_FOUR_ARM_CAMPAIGN_FINAL_RUNTIME_ADMISSION_REQUIRED",
+  "hypothesis": "Greater contextual capacity and assembly-targeted pretraining may improve global membership and deep assembly; neither benefit is established by the frozen-head pilot.",
+  "changed_factor": "2x2 factorial: contextual width 128 versus 256 and existing versus assembly-targeted pretraining objectives; hyperbolic width fixed at 32",
+  "control": "128-wide existing-objective arm with a comparable pretraining history; identical downstream interface, adaptation schedule and inference policy across all four arms",
+  "target_contract": "Existing arm uses native pretraining topology/geometry/channel/PID/corruption objectives and their existing teacher/corruption training curriculum. Assembly adds a physically projected detector-only path, unordered optional two-group membership with unassigned, and within-B categorical discrimination of exact direct-parent source unions, incomplete sibling unions, and same-B other relations. Two rounds of up to four model-ranked source-disjoint merges form genuine latent partial-membership states and are supervised after generation. These are not teacher/corrupted states or physical mothers. Predicted soft memberships and generated-partition pooled representations explicitly condition the common decoder. No truth fields enter its model interface, candidate generation or ranking.",
+  "diagnostic_evidence": {
+    "path": "docs/assembly_diagnosis_20261007/evidence.json",
+    "sha256": "c1fa1b5f8d60909e679efaa06fd96831e7dc262dd1b1e15addf9741c33fd8c63"
+  },
+  "data_and_compute_control": "Original authenticated70000-event training corpus unchanged; shared1536-event subset256/category across six categories, not full70000 training. Fresh seed202610081 at both widths; same initial checkpoint within each width.1000 pretraining updates,batch8 (8000 presentations), native progressive phases200/250/300/250, existing objective vs existing+global membership+within-B categorical relation loss (unit added weights). Both arms receive same detector/generated-partition auxiliary views; only assembly adds their gradients. Independent24-event tiny branch1000 updates,batch8 (8000 presentations) cannot modify main model. Main downstream1500 updates,batch8 (12000 presentations); all encoders adapt, PID-head weights frozen downstream. Reset common1385991-parameter256-wide decoder identically after pretraining, lossless128-to256 padding. Fixed final checkpoints and threshold0.5. Four CPU allocations,2CPU/32GiB/6h each,zero GPU,no requeue; no matched-FLOP claim.",
+  "stop_rule": "Stop on source/data/init/hash mismatch, wrong arms/history/control, nonfinite loss/gradient/parameters, missing encoder adaptation, source conflict, capacity overflow, duplicate submission, or six-hour resource limit. No silent truncation, restart/requeue, automatic successor, primary reservation,512width or additional coefficient grid.",
+  "success_rule": "Require >=95% tiny RAW exact membership plus count-backed heldout raw/accepted membership improvement and controlled continuum acceptance/source validity before any primary scale-up. Report width effect,objective effect and interaction on matched collision identities,with paired collision bootstrap and sparse zero-success event bounds. One seed and flat-group development cannot establish physical hierarchy quality or select/promote a production model.",
+  "validation_selection": "Continuation user authorization explicitly permits fresh NON-PRIMARY development designation from remaining validation. Phase74 designates600 authenticated heldout identities (100/category), excluding all train, historical primary, supplementary, development and checkpoint-selection identities. Fixed final checkpoint and0.5 threshold; no adaptive tuning or primary reservation.",
+  "followup_if_negative": "Locate representation versus head/optimization or decoder-use failure using train/heldout relation and membership probes; do not conclude that all capacity scaling or pretraining is ineffective.",
+  "sealed_test_access": false,
+  "automatic_submission": false,
+  "arms": [
+    {
+      "context_width": 128,
+      "hyperbolic_dimension": 32,
+      "pretraining_objective": "existing"
+    },
+    {
+      "context_width": 128,
+      "hyperbolic_dimension": 32,
+      "pretraining_objective": "assembly_targeted"
+    },
+    {
+      "context_width": 256,
+      "hyperbolic_dimension": 32,
+      "pretraining_objective": "existing"
+    },
+    {
+      "context_width": 256,
+      "hyperbolic_dimension": 32,
+      "pretraining_objective": "assembly_targeted"
+    }
+  ],
+  "representation_controls": {
+    "matched_training_identities_and_presentations": true,
+    "comparable_pretraining_histories": true,
+    "fixed_depth_and_hyperbolic_geometry": true,
+    "matched_downstream_training_and_search": true,
+    "head_bottleneck_control": true,
+    "measured_compute_and_memory": true,
+    "truth_only_in_supervision": true
+  },
+  "evaluation_endpoints": [
+    "heldout_raw_and_accepted_membership",
+    "within_B_relation_discrimination",
+    "correct_deep_proposal_survival",
+    "inclusive_and_exact_B_top1_and_pool",
+    "continuum_acceptance_and_source_validity"
+  ],
+  "phase73_terminal_interpretation": "Both jobs completed: tiny raw 32/32 each; heldout raw and accepted 0/40 each. Main-train raw 2/256 frozen and 30/256 adapted. No heldout gate passed; sparse main training fit does not establish irrecoverable encoder information loss or data scarcity.",
+  "runtime_admission_status": "FRESH_DEVELOPMENT_DESIGNATION_AUTHENTICATED_IMPLEMENTATION_UNDER_FINAL_ADMISSION",
+  "study": "Phase74",
+  "submission_authorization": "Explicit original training request and continuation instruction authorizing fresh non-primary development designation; exactly one four-arm campaign.",
+  "scientific_implementation": {
+    "baseline": "src/hypertagging/training/capacity_development.py:baseline_loss",
+    "assembly_decoder": "src/hypertagging/models/assembly_development.py",
+    "runner": "scripts/run_phase74_development.py",
+    "aggregate": "scripts/summarize_phase74_development.py",
+    "initialization_history": "fresh_both_widths_shared_initialization_within_width",
+    "common_head_width": 256,
+    "pretrained_auxiliary_heads_transferred": false,
+    "depth": 4,
+    "hyperbolic_dimension": 32,
+    "curvature": 1.0,
+    "radius_target_mode": "generation_height_radius",
+    "max_tangent_norm": 4.0,
+    "tangent_variance_target": 0.05,
+    "ffn_width_rule": "4*context_width",
+    "dropout": 0.0,
+    "pretraining_lr": 0.0003,
+    "downstream_encoder_lr": 5e-05,
+    "head_lr": 0.001,
+    "optimizer": "AdamW",
+    "weight_decay": 0.0001,
+    "gradient_clip": 5.0
+  },
+  "endpoint_availability": {
+    "tiny_raw_and_accepted_membership": "counted on24 original-train events,32B trials",
+    "heldout_raw_and_accepted_membership": "600 fresh development events,400 nominalB trials plus400 continuum collisions",
+    "within_B_relation_discrimination": "class-specific detector-only and generated-partition counts, ambiguity/out-of-scope accounting",
+    "correct_deep_proposal_survival": "diagnostic available for known retained source-set unions height>=2 in latent proposal/retained partitions; physical proposal survival unavailable",
+    "inclusive_and_exact_B_top1_and_pool": "inclusive source-membership top1 partition counted; physical exactB top1/pool and inclusive beam-pool unavailable because no physical hierarchy or competing beam hypotheses are decoded",
+    "continuum_acceptance_and_source_validity": "flat candidate acceptance proxy; detector-source conflicts and charge/cardinality rejections counted",
+    "physical_closure": "unavailable: no persistent physical mother is constructed"
+  },
+  "fresh_development_designation": {
+    "registry": "configs/reconstruction/supplementary_validation_reservations.json",
+    "registry_version": "phase74-development-designation-v1",
+    "count": 600,
+    "per_category": 100,
+    "stage": "development",
+    "primary_count": 0,
+    "adaptive_selection": false,
+    "seed": 202610081
+  },
+  "limitations": [
+    "1536-event bounded training subset, not70000-event full training",
+    "one seed",
+    "no physical hierarchy decoder or physical FEI efficiency claim",
+    "existing baseline teacher curriculum is separate from truth-free generated assembly path",
+    "matched event presentation budgets do not match compute; auxiliary gradient paths differ"
+  ]
+}
