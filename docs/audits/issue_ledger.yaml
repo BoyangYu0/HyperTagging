@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase74 cohort exclusion gate and terminal evidence;86 focused tests and real-data identity audit pass, scientific admission fails60/60 prior-primary overlap.
+  - 0ad636a85b74fa9e38790a560a303c4f28964425
   # Text renderer split a slash metric label into an apparent absolute path; use spaced display labels, preserving all machine metric keys and counts.
   - e9948e8af2a37754f9ebed8419528a68bd1460d6
   # Strict scanner rejects base64 slash sequences; base32 textual transport keeps decoded/privacy/budget checks,14 focused tests and full payload privacy pass.
