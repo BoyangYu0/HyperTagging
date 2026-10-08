@@ -1131,3 +1131,23 @@ supplemental_runs:
       model-gradient check, resource budget or scheduler training acceptance.
       The four-arm implementation remains blocked before submission. No new
       primary reservation, test access, scientific promotion or automatic successor.
+
+  - source_sha: 6e8ad67846c8e26fd7c81ce6dd985fe04aba0c08
+    metadata_head: recorded_by_followup_audit
+    worktree_state: committed_implementation
+    date: '2026-10-08'
+    commands:
+      - python -m pytest -q tests/test_capacity_development_cpu.py tests/test_phase74_runtime_contract_cpu.py tests/test_development_cohort_isolation_cpu.py tests/test_next_study_policy_cpu.py
+      - python scripts/validate_next_reconstruction_study.py --plan configs/reconstruction/phase74_capacity_development_plan.json
+    pytest: {result: PASS, passed: 54, skipped: 0}
+    real_data_inputs: authenticated1536_train_subset_and600_fresh_development_designation
+    checkpoint: fresh_initial_states_both_widths_no_historical_model_transfer
+    ci_run: NOT_PUSHED
+    human_visual_review_status: NOT_APPLICABLE_NO_SITE_PUBLICATION
+    evidence_limitations: >-
+      Original60-event overlap admission remains failed and immutable. User-authorized
+      fresh600-event designation passes full transitive exclusion admission. Real
+      gradient smoke v1 passed four arms; v2 preserved resource-bound failure before
+      submission. Eight-hour CPU allocation is retested in v3. Broad CPU suite and
+      final admission receipts belong to continuation-v1. No scientific success,
+      primary evaluation, physical hierarchy quality or promotion is established.
