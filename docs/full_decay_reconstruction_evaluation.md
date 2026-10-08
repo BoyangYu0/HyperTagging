@@ -738,6 +738,24 @@ files may still be replaced atomically.
 
 ### Study ranking diagnostic compatibility
 
+New successor studies follow the measured-mechanism gates in
+[`assembly_diagnosis_20261007.md`](assembly_diagnosis_20261007.md) and
+`configs/reconstruction/next_study_policy.json`. Optional detached full-depth
+search traces record reconstructed states and candidates before/after local
+caps and forest pruning. Truth joins occur only after inference completes.
+Report target eligibility and threshold support by generation, exact daughter
+sets with/without correct type, generated/local-retained proposals, and final
+membership pool/top-1 results. Count each target once per event/level across
+visited states, not once per model call. Existing exact/inclusive tagging and
+unavailable counts remain authoritative.
+
+A clean-root union can establish that no-split assembly is already impossible,
+but surviving coverage does not prove that cardinality, charge, type and source
+constraints admit a solution. Static target-policy compatibility, this optimistic
+coverage bound and measured proposal support are three different quantities.
+Do not call a flat direct-membership pilot an exact hierarchy reconstruction or
+combine its pre-cut masks with accepted-candidate efficiency.
+
 `--beam-search` retains the full-depth state search and its versioned top-1 and
 oracle report. The campaign interface `--beam-width N` (N > 1, without
 `--beam-search`) runs the separate proposal-set ranking diagnostic, limited by

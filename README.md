@@ -27,6 +27,7 @@ separately.
 - [Training and evaluation guide](docs/training.md)
 - [Preprocessing contract](docs/preprocessing_design.md)
 - [Full-decay evaluation contract](docs/full_decay_reconstruction_evaluation.md)
+- [Assembly diagnosis and next-study policy](docs/assembly_diagnosis_20261007.md)
 - [basf2 and ONNX deployment](docs/basf2_onnx_full_decay.md)
 - [Phase71 complete reconstruction and tagging review](docs/wiki/phase71.rst)
 - [Phase70 complete category-policy review](docs/wiki/phase70.rst)

@@ -1,5 +1,28 @@
 # Model ablations and deferred designs
 
+## Structural membership development priority
+
+The [2026-10-07 assembly diagnosis](assembly_diagnosis_20261007.md) executes a
+frozen-encoder direct-membership feasibility pilot. The experimental
+`models/direct_membership.py` head is consumed by
+`scripts/probe_direct_membership.py`; it is not a production architecture preset.
+It fits a tiny training subset but has no observed development exact-membership
+gain. The next bounded development contrast should test encoder adaptation under
+global membership supervision against the same frozen-head control. A full
+hierarchy, reversible assembly and candidate-specific reranker remain conditional
+future designs, not implemented production capabilities or selected winners.
+
+The companion `configs/reconstruction/capacity_pretraining_development_plan.json`
+specifies a 128/256 contextual-width by existing/assembly-targeted pretraining
+comparison, with hyperbolic width 32 and fixed depth. It is a scientific plan,
+not an executable training preset. Global unordered membership, relation-specific
+within-B discrimination and detector/generated-state supervision are the target
+objectives; existing hierarchy losses already provide some related supervision.
+Joint decoder use, comparable pretraining histories, head bottleneck controls and
+measured compute are required. Wider hyperbolic embeddings or 512-wide context
+follow only reviewed downstream gains. The frozen-head pilot cannot establish
+that the current encoder has adequate capacity or has discarded information.
+
 ## Current architecture boundary
 
 The production model is not mixture-of-experts. Heterogeneous adapters feed a

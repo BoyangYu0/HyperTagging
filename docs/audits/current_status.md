@@ -1,5 +1,34 @@
 # Current repository audit status
 
+## Structural assembly diagnosis and successor policy — 2026-10-07
+
+Five CPU search conditions completed on the same 60-event Phase71 diagnostic
+cohort (40 B trials), with exact reproduction of the reference greedy and beam
+tag reports. Width eight preserves more potential memberships than width two,
+but every tested pool has 0/40 exact/inclusive B successes. Broader proposals and
+lower thresholds improve shallow proposal support without meaningful later-level
+assembly. No correct complete B membership was generated in the visited states.
+
+A frozen-encoder direct-membership pilot memorizes 32/32 raw tiny-training
+memberships (28/32 pass candidate guards), but both its tiny and 384-event fits
+remain 0/40 on reused development events. This establishes basic learnability
+only. The next-study policy prioritizes joint membership/representation learning
+in development and requires held-out gains before primary scale-up or hierarchy.
+It blocks treating reranking, more candidates, lower loss or memorization alone
+as a demonstrated solution. Existing Phase72 jobs and historical contracts are
+preserved; no new GPU study or validation reservation was made.
+
+[Diagnosis, evidence and successor gates](../assembly_diagnosis_20261007.md).
+This diagnostic does not add independent primary coverage or select a model.
+
+The user-requested policy extension adds a planned 2x2 representation comparison:
+128/256 contextual width crossed with existing/assembly-targeted pretraining,
+holding hyperbolic width at 32 and depth fixed. It requires comparable pretraining
+histories, control of the pilot's 64-wide head bottleneck, explicit decoder use
+and held-out membership/deep-proposal/B-pool/background endpoints. Capacity and
+within-B discrimination remain hypotheses. This extends development planning;
+no new training, reservation or model promotion has occurred.
+
 ## Phase71 complete category-policy review — 2026-10-07
 
 The original reserved primary cohort processes exactly 2,000 distinct collisions

@@ -30,6 +30,14 @@ Each true B counts at most once at each K; beam width does not enlarge the
 Bs in incompatible hypotheses does not establish a coherent reconstructed pair.
 Truth is never used to generate or rank candidates.
 
+For new studies, candidate-survival diagnostics must distinguish target
+eligibility, threshold support, generated proposals, local pruning, forest
+survival and final top-1/pool membership. Traces are truth-free; truth joins occur
+after search. Surviving clean-root coverage is an optimistic bound, not proof of
+legal reachability. The measured structural-study policy is recorded in
+``docs/assembly_diagnosis_20261007.md`` and
+``configs/reconstruction/next_study_policy.json`` in the repository.
+
 Missing target membership remains unavailable, with its nominal trial retained;
 proven success over nominal trials is a lower bound when truth is unavailable.
 PID availability is separate: inclusive grouping may be measurable when exact

@@ -1,0 +1,107 @@
+{
+  "version": "structural-reconstruction-study-policy-v2",
+  "effective_date": "2026-10-07",
+  "evidence": {
+    "path": "docs/assembly_diagnosis_20261007/evidence.json",
+    "sha256": "c1fa1b5f8d60909e679efaa06fd96831e7dc262dd1b1e15addf9741c33fd8c63"
+  },
+  "default_next_family": "direct_membership_joint_learning",
+  "allowed_development_families": [
+    "direct_membership_joint_learning",
+    "within_branch_relation_discrimination",
+    "first_error_correction",
+    "capacity_pretraining_alignment"
+  ],
+  "conditional_families": {
+    "candidate_reranking": "final_B_pool_only_requires_nonzero_correct_pool_and_top1_gap_on_matched_development_events",
+    "local_proposal_scoring": "requires_generated_correct_local_proposals_lost_before_retention_and_a_deep_recovery_endpoint",
+    "search_budget_scaling": "requires_measured_correct_group_or_deep_proposal_survival_gain",
+    "local_loss_weight_sweep": "requires_new_mechanism_specific_evidence_not_proxy_loss_improvement",
+    "training_data_scaling": "requires_explicit_data_and_optimizer_presentation_control"
+  },
+  "required_plan_fields": [
+    "hypothesis",
+    "changed_factor",
+    "control",
+    "target_contract",
+    "diagnostic_evidence",
+    "data_and_compute_control",
+    "stop_rule",
+    "success_rule",
+    "validation_selection"
+  ],
+  "development_gates": {
+    "tiny_training_membership_exact_fraction_min": 0.95,
+    "raw_and_constraint_accepted_membership_required": true,
+    "heldout_membership_gain_required_before_primary_scaleup": true,
+    "heldout_background_comparison_required": true,
+    "heldout_trial_and_event_denominators_required": true,
+    "frozen_head_pilot_is_not_a_selected_model": true
+  },
+  "primary_gates": {
+    "minimum_distinct_events_per_category_per_arm": 2000,
+    "categories": [
+      "charged",
+      "mixed",
+      "ccbar",
+      "uubar",
+      "ddbar",
+      "ssbar"
+    ],
+    "fresh_reserved_cohort_required": true,
+    "separate_checkpoint_selection_required": true,
+    "training_and_normalization_disjointness_required": true,
+    "source_conflicts_allowed": 0,
+    "daughter_sum_p4_closure_required": true,
+    "exact_and_inclusive_tag_reports_required": true,
+    "channel_and_type_coverage_required": true,
+    "greedy_top1_pool_separate": true
+  },
+  "preserve_existing_studies": [
+    "Phase72"
+  ],
+  "historical_contracts_mutable": false,
+  "sealed_test_access": false,
+  "automatic_successor_submission": false,
+  "validator": "scripts/validate_next_reconstruction_study.py",
+  "validation_is_submission_authorization": false,
+  "preferred_representation_study": "capacity_pretraining_alignment",
+  "representation_study_policy": {
+    "initial_context_widths": [
+      128,
+      256
+    ],
+    "fixed_hyperbolic_dimension": 32,
+    "pretraining_objectives": [
+      "existing",
+      "assembly_targeted"
+    ],
+    "required_controls": [
+      "matched_training_identities_and_presentations",
+      "comparable_pretraining_histories",
+      "fixed_depth_and_hyperbolic_geometry",
+      "matched_downstream_training_and_search",
+      "head_bottleneck_control",
+      "measured_compute_and_memory",
+      "truth_only_in_supervision"
+    ],
+    "assembly_targets": [
+      "unordered_global_membership_with_unassigned",
+      "relation_specific_within_B_parent_and_sibling_discrimination",
+      "detector_only_and_model_generated_partial_states"
+    ],
+    "decoder_use": "explicitly consume predicted memberships or group representations with joint encoder adaptation; same downstream interface in all arms",
+    "required_endpoints": [
+      "heldout_raw_and_accepted_membership",
+      "within_B_relation_discrimination",
+      "correct_deep_proposal_survival",
+      "inclusive_and_exact_B_top1_and_pool",
+      "continuum_acceptance_and_source_validity"
+    ],
+    "scaling_rule": "512-dimensional context or a separate hyperbolic-width study requires a reviewed heldout downstream gain from the initial contrast; longer unchanged pretraining alone is not the default",
+    "interpretation": "Tiny memorization does not establish adequate capacity; the 64-dimensional pilot head and frozen encoder cannot isolate encoder information loss. Existing relation losses already supervise hierarchy; within-B parent discrimination is a hypothesis, not a proven missing capability.",
+    "initialization_rule": "Do not compare the historically pretrained 128-wide encoder against a freshly initialized 256-wide encoder as a width effect. Preregister comparable histories at both widths; objective arms share initial states within each width.",
+    "geometry_rule": "Hold curvature and tangent-radius contract fixed initially; a later hyperbolic-width contrast must use dimension-aware scale controls.",
+    "planning_only": true
+  }
+}

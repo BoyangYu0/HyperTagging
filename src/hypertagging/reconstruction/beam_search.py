@@ -14,6 +14,8 @@ from itertools import count
 
 import torch
 
+from hypertagging.reconstruction.search_trace import decode_record, proposal_record, state_record
+
 from hypertagging.data.heterogeneous import TRUTH_SUPERVISION_SOURCE_TO_ID
 from hypertagging.reconstruction.bounded_search import (
     bounded_conflict_free_sets,
@@ -323,7 +325,7 @@ def _daughter_combinations(
     return complete, expanded, bool(heap), source_rejections
 
 
-def _decode_candidates(output, state, config, search, diagnostics, *, max_mothers: int):
+def _decode_candidates(output, state, config, search, diagnostics, *, max_mothers: int, trace=None):
     policy = _resolved_rollout_constraint_policy(config)
     sources = _source_sets(state)
     allowed, _ = policy.type_constraints(output.target_level, device=state["p4"].device)
@@ -332,6 +334,7 @@ def _decode_candidates(output, state, config, search, diagnostics, *, max_mother
         & policy.pointer_validity_mask(state, output.target_level)[0]
         & (state["parent_ids"][0] < 0)
     )
+    record = decode_record(output, state, eligible) if trace is not None else None
     committed = [
         p
         for p in (state["node_mask"][0] & (state["parent_ids"][0] < 0))
@@ -517,6 +520,8 @@ def _decode_candidates(output, state, config, search, diagnostics, *, max_mother
         if expansion_limit_hit:
             diagnostics["query_expansion_limit_hits"] += 1
         # Deterministic ordering does not depend on GPU topk tie behavior.
+        if record is not None:
+            record["generated"].extend(proposal_record(c) for c in per_query)
         per_query, duplicate, pruned = stable_bounded_unique(
             per_query,
             key=lambda c: _proposal_key(c.proposal),
@@ -529,6 +534,8 @@ def _decode_candidates(output, state, config, search, diagnostics, *, max_mother
         )
         diagnostics["candidates_deduplicated"] += duplicate
         diagnostics["candidates_pruned_per_query"] += pruned
+        if record is not None:
+            record["query_retained"].extend(proposal_record(c) for c in per_query)
         candidates.extend(per_query)
     omitted = [_log_probability(1 - float(p)) for p in object_probabilities]
     candidates.sort(
@@ -543,6 +550,9 @@ def _decode_candidates(output, state, config, search, diagnostics, *, max_mother
         0, len(candidates) - search.max_proposals_per_level
     )
     candidates = candidates[: search.max_proposals_per_level]
+    if record is not None:
+        record["level_retained"] = [proposal_record(c) for c in candidates]
+        trace.append(record)
     diagnostics["max_proposals_retained"] = max(
         diagnostics["max_proposals_retained"], len(candidates)
     )
@@ -723,6 +733,7 @@ def full_depth_beam_rollout(
     *,
     config: RolloutConfig | None = None,
     beam_config: BeamSearchConfig | None = None,
+    trace: list[dict] | None = None,
 ) -> BeamSearchResult:
     """Search all configured levels from an already truth-scrubbed FSP batch.
 
@@ -733,6 +744,8 @@ def full_depth_beam_rollout(
     """
     config = config or RolloutConfig()
     search = beam_config or BeamSearchConfig()
+    if trace is not None and search.beam_width == 1:
+        raise ValueError("candidate-survival tracing requires beam_width > 1")
     _validate_inputs(full_batch, config, search)
     if isinstance(model, torch.nn.Module) and model.training:
         raise ValueError("beam requires a separate model in eval mode")
@@ -944,6 +957,7 @@ def full_depth_beam_rollout(
                 search,
                 diagnostics,
                 max_mothers=remaining_nodes,
+                trace=trace,
             )
             for stage_score, chosen in proposal_sets:
                 accepted = tuple(
@@ -996,6 +1010,9 @@ def full_depth_beam_rollout(
                     n_decisions,
                 )
                 diagnostics["states_expanded"] += 1
+                if trace is not None:
+                    trace.append({"stage": "expanded", "level": level,
+                                  "state": state_record(next_state), "score": float(item.score)})
                 next_nodes = int(next_state["node_mask"].sum())
                 diagnostics["max_nodes_observed"] = max(
                     diagnostics["max_nodes_observed"], next_nodes
@@ -1023,6 +1040,9 @@ def full_depth_beam_rollout(
         diagnostics["states_pruned"] += pruned + finished_pruned
         diagnostics["max_live_states"] = max(diagnostics["max_live_states"], len(beam))
         diagnostics["levels_processed"] = level
+        if trace is not None:
+            trace.append({"stage": "retained_level", "level": level,
+                          "states": [state_record(h.batch) for h in beam + finished]})
         diagnostics["per_level"].append(
             {
                 "level": level,
@@ -1052,6 +1072,9 @@ def full_depth_beam_rollout(
     diagnostics["width_one_greedy_compatibility"] = False
     diagnostics["width_one_source_safe_greedy"] = False
     diagnostics["source_alias_masks_applied"] = 0
+    if trace is not None:
+        trace.append({"stage": "final", "level": int(diagnostics["levels_processed"]),
+                      "states": [state_record(h.batch) for h in retained]})
     return BeamSearchResult(tuple(retained), diagnostics)
 
 

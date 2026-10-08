@@ -89,6 +89,24 @@ to the repository root.
 
 ## Training, configuration, and checkpoints
 
+- Before preregistering a new reconstruction successor, read
+  `docs/assembly_diagnosis_20261007.md` and apply
+  `configs/reconstruction/next_study_policy.json` with
+  `scripts/validate_next_reconstruction_study.py`. Prioritize measured structural
+  membership/assembly failures. Final-B-pool reranking requires a correct-pool
+  gap; training-loss gains or tiny-set memorization alone do not justify primary
+  scale-up. Preserve existing Phase72 and historical contracts. Planning checks
+  do not replace authenticated cohort/resource admission or authorize a chain.
+
+- For representation studies, use the policy's capacity/pretraining contrast:
+  contextual width 128 versus 256 crossed with existing versus assembly-targeted
+  objectives, initially fixing hyperbolic width at 32 and encoder depth. Read
+  `configs/reconstruction/capacity_pretraining_development_plan.json`. Control
+  pretraining history and downstream head bottlenecks; report actual compute.
+  Truth remains supervision only, including within-B relation targets and
+  generated-state training. Require held-out downstream evidence before 512-wide
+  or separate hyperbolic-width scaling; tiny memorization is not capacity proof.
+
 - YAML precedence is defaults < YAML < explicitly supplied CLI flags. Reject
   unknown settings and invalid capacities rather than silently ignoring them.
   Architecture presets/overrides, PID vocabulary, feature specifications,
@@ -134,6 +152,11 @@ to the repository root.
   candidate generation/ranking is complete; label them as oracle metrics and
   keep deployable top-1 and existing greedy metric keys separate. Report search
   limits, pruning, candidate ranks/scores, and numerator/denominator counts.
+  Optional candidate-survival traces contain detached reconstructed state only;
+  join truth after search completes. Track eligibility, threshold support,
+  generated/local-retained proposals and forest/final-pool survival by level.
+  Clean-root membership coverage is only an optimistic necessary condition;
+  never report it as verified legal decoder reachability.
 - Complete post-study evaluation requires at least 2,000 distinct processed
   collision events in EACH of `charged`, `mixed`, `ccbar`, `uubar`, `ddbar` and
   `ssbar` (at least 12,000 per model/arm), on authenticated, reserved validation

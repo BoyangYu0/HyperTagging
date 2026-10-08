@@ -1,0 +1,23 @@
+{
+  "version": "structural-membership-development-plan-v1",
+  "stage": "development",
+  "family": "direct_membership_joint_learning",
+  "status": "SCIENTIFIC_PLAN_NOT_A_SCHEDULER_CONTRACT",
+  "hypothesis": "Global source-membership supervision with encoder adaptation can improve held-out grouping where a frozen encoder head memorizes tiny data but fails to generalize.",
+  "changed_factor": "encoder frozen versus adapted under the same direct unordered membership objective",
+  "control": "same direct-membership architecture, frozen Phase71 reference encoder and PID, identical initialization and training presentations",
+  "target_contract": "two optional unordered source groups plus unassigned; membership-only target separate from exact retained hierarchy; report raw and constraint-accepted groups and target charge/source compatibility",
+  "diagnostic_evidence": {
+    "path": "docs/assembly_diagnosis_20261007/evidence.json",
+    "sha256": "c1fa1b5f8d60909e679efaa06fd96831e7dc262dd1b1e15addf9741c33fd8c63"
+  },
+  "data_and_compute_control": "Use identical authenticated training identities, train-fitted normalization, minibatch order, head initialization and optimizer presentation budget. No new pretraining. Record encoder adaptation FLOPs separately; do not claim equal FLOPs. Freeze a bounded development admission contract before execution.",
+  "stop_rule": "Do not reserve another primary 12000-event cohort or train the hierarchy until exact development membership improves with controlled continuum acceptance. Stop on invalid states, source conflicts, nonfinite gradients or missing cohort identities. No successor coefficient grid.",
+  "success_rule": "Retain >=95% raw tiny-training membership exactness; demonstrate a count-backed held-out exact membership gain over the matched frozen-head control with background and source-validity accounting before proposing primary scale-up. A lower loss or train-only gain is insufficient.",
+  "validation_selection": "Use already designated development identities, not the sealed test or Phase72 fresh primary/selection reservations. Preregister checkpoint selection and acceptance threshold on development; any later primary assessment needs a separately authenticated fresh cohort.",
+  "followup_if_negative": "Test detector-pair within-B relation discrimination or explicit first-error correction after locating a measured failure; do not infer that all direct membership architectures are ineffective.",
+  "sealed_test_access": false,
+  "automatic_submission": false,
+  "related_representation_plan": "configs/reconstruction/capacity_pretraining_development_plan.json",
+  "scope_note": "This existing frozen-versus-adapted contrast remains a separate bounded diagnostic; the related factorial plan tests capacity and pretraining. Neither plan schedules the other automatically."
+}

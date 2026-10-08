@@ -586,6 +586,7 @@ def reconstruct_beam_from_fsps(
     config: HierarchicalInferenceConfig | None = None,
     beam_config: BeamSearchConfig | None = None,
     scope: InferenceScope | None = None,
+    trace: list[dict] | None = None,
 ) -> HierarchicalBeamInferenceResult:
     """Run bounded full-depth CPU search after the strict FSP projection.
 
@@ -609,6 +610,7 @@ def reconstruct_beam_from_fsps(
             projection.batch,
             config=config.resolved_rollout_config(),
             beam_config=beam_config,
+            trace=trace,
         )
     candidates = []
     for hypothesis in search.candidates:
