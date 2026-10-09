@@ -66,7 +66,7 @@ def prepare(root, parent):
     ca = json.loads((old / "cache-admission.json").read_text())
     data = read(ca["data_admission"])
     if (
-        data["status"] != "PASS"
+        data["status"] != "PASS_FULL_IDENTITY_ADMISSION_NOT_MODEL_ADMISSION"
         or ca["status"] != "PASS"
         or data["original_corpus_count"] != 70000
         or ca["capacity_dropped_events"]
