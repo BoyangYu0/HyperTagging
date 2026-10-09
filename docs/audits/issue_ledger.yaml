@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase82 bounded frozen-feature nonlinear/null probe;22 focused role-isolation, symmetry, gradient, binding-control and previous pair regressions pass; no scientific model updates or validation.
+  - 18e218337897c7abe78d5318b06072c6dcb598ed
   # Native boolean source-mask correction before scientific training;203 focused core/pair tests and10 final pair-contract tests pass; failed smoke17120580 retained.
   - b66cf11a7a7712f16e5e7ca655adb0999b91d97e
   # Preserve exact authenticated cache order while matching unordered cohort identities; nine focused tests pass. Pair/model implementation passed broad2430+41 CPU tests unchanged.
