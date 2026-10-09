@@ -126,6 +126,11 @@ def load_cache(parent):
     if set(c) != {"train", "runtime_normalizer"}:
         raise ValueError("Nontraining cache")
     authenticate_training_rows(c["train"], read(a["training"]))
+    from scripts.phase84_train_isolation import authenticate_train_isolation
+
+    a["current_isolation"] = authenticate_train_isolation(
+        [r["uid"] for r in c["train"]], ROOT
+    )
     return c, a
 
 
@@ -234,6 +239,7 @@ def smoke(root, parent, pretrain):
             "job_id": os.environ["SLURM_JOB_ID"],
             "cache": a["cache"],
             "training_admission": binding(parent / "train-admission.json"),
+            "isolation": a["current_isolation"],
             "initial_checkpoint": cp,
             "selection": binding(out / "selection-private.json"),
             "timings": timings,
@@ -271,6 +277,7 @@ def run(path):
         raise ValueError("Selection changed")
     out = Path(c["output"])
     out.mkdir(exist_ok=False)
+    write(out / "isolation.json", a["current_isolation"])
     model, decoder, cp = initial(Path(c["pretrain"]), cache)
     write(
         out / "startup.json",
