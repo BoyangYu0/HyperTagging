@@ -243,6 +243,7 @@ def fit(
     cache_binding,
     source_sha,
     gradient_rule="joint",
+    pair_supervision=False,
 ):
     import torch
     from hypertagging.training.capacity_development import (
@@ -262,6 +263,10 @@ def fit(
         raise ValueError("Unknown gradient rule")
     if stage == "pretraining" and gradient_rule != "joint":
         raise ValueError("Projection is downstream only")
+    if not isinstance(pair_supervision, bool) or (
+        pair_supervision and (stage == "pretraining" or gradient_rule != "joint")
+    ):
+        raise ValueError("Pair supervision requires downstream joint adaptation")
     updates = settings[stage + "_updates"]
     model.eval()
     decoder.train()
@@ -333,6 +338,19 @@ def fit(
                         result["states"], row["supervision"]
                     )
                     loss = member + relation
+                    if pair_supervision:
+                        from hypertagging.training.pair_membership import (
+                            proposal_refinement_pair_loss,
+                        )
+
+                        pair, pair_support = proposal_refinement_pair_loss(
+                            result, row["targets"], row["sources"]
+                        )
+                        loss = loss + pair
+                        components["pair_membership"] += float(pair.detach())
+                        compute.update(
+                            {"pair_" + k: v for k, v in pair_support.items()}
+                        )
                     components.update(
                         membership=float(member.detach()),
                         within_b_relation=float(relation.detach()),
@@ -431,6 +449,7 @@ def fit(
             "architecture": {"context_width": model.encoder.d_model, **ARCHITECTURE},
             "feature_normalization_pid_and_cohort_contract": cache_binding,
             "gradient_rule": gradient_rule,
+            "pair_supervision": pair_supervision,
             "resume_authorized": False,
             "pid_weights_frozen_downstream": stage != "pretraining",
         },

@@ -1,5 +1,27 @@
 # Current repository audit status
 
+## Sequential training-only improvement — 2026-10-09
+
+User-directed sequential work continues privately; Phase78 publication is deferred.
+Phase79 job17120412 completes exact-risk probe optimization: assessment pair AUC
+0.5494 versus native0.5452, paired difference interval includes zero. Function
+tolerance converged; strict gradient1e-7 criterion was not met. No scientific gain.
+Phase80 job17120440 completes12 independent native/half-step counterfactuals. Both
+step sizes worsen training audit risk and B assignment in all12 cases,0/64 exact;
+half merely reduces damage. No learning-rate study is supported.
+
+Phase81 preregisters a matched native versus explicit permutation-invariant
+same-B/cross-B/background pair-supervision contrast on unchanged proposal and
+refinement logits. It tests a supervision hypothesis, not a demonstrated defect
+or proven mechanism. Geometry, widths, data, initialization, inference and native
+losses remain controlled. Source-disjoint known-label pairs only; no global B
+labels, truth-conditioned proposals or broad relative repulsion. Fixed20,000
+new presentations per arm include8,000 tiny and12,000 main. This is initially
+a training-only screen; no new validation designation/evaluation unless fixed
+tiny/main exact/background gates pass. No primary or automatic worker successor.
+Scientific benefit, admission and execution remain unverified until private
+receipts record them. Existing historical results remain immutable.
+
 ## Phase78 bounded partition diagnosis — 2026-10-09
 
 Training-only replay and two finite diagnostic probe fits are complete. Corrected
