@@ -459,10 +459,10 @@ def main(parent, previous, output):
         for r in records:
             value, scores = score_record(r, probes)
             values.append(value)
-            for name, (s, l) in scores.items():
+            for name, (s, labels) in scores.items():
                 key = r["partition"] + "/" + name
                 pooled[key][0].extend(s)
-                pooled[key][1].extend(l)
+                pooled[key][1].extend(labels)
         write(
             output / f"{role}-event-metrics-private.json",
             [{"uid": r["uid"], **v} for r, v in zip(records, values)],
