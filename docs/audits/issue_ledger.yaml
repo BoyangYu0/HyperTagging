@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Bounded compressed inventory input preserves exact public bytes; complete generated-artifact privacy and archive bounds pass without policy changes.
+  - 418c221575cd7b8c7b7cfa8176c37019d84beddf
   # Lossless capacity correction: unchanged64source hashes/cardinality and historical downloads; bounded inner XZ and authenticated Phase78 reuse; compact navigation retains all content/search/routes.129 focused tests pass.
   - 1636d0d36a67abeb424cbfa0f9e91bb2c61f3eaf
   # Accumulated Phase78–83 historical publication:64 authenticated sources,1699729 numeric scalars and5000 updates retained;11 transport and25 historical/diagnostic checks pass. No scientific jobs or fresh validation.

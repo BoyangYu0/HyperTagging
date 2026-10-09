@@ -1318,3 +1318,25 @@ supplemental_runs:
       241passes,onefailure and37setup errors from exhausted temporary storage;
       only own fixtures were preserved on the project volume. Superseded own
       builds are stopped,not passes. Final CPU/full docs/live gates remain required.
+
+  - source_sha: 418c221575cd7b8c7b7cfa8176c37019d84beddf
+    metadata_head: recorded_by_followup_audit
+    worktree_state: committed_inventory_source_privacy_correction
+    date: '2026-10-09'
+    commands:
+      - python -m pytest -q tests/test_previous_studies_publication_cpu.py
+      - complete generated-artifact privacy against actual repository sources
+    pytest: {result: PASS_AFTER_CORRECTING_TEST_SCAN_MODE, distinct_passed: 35, skipped: 0}
+    real_data_inputs: unchanged64_authenticated_training_role_metric_sources
+    checkpoint: none_opened_or_modified_by_publication
+    ci_run: FINAL_EXACT_HEAD_PENDING_PRECEDING_DOCS_RAW_SOURCE_BODY_FAILURE_RETAINED
+    human_visual_review_status: PENDING_LIVE_PUBLICATION
+    evidence_limitations: >-
+      Full candidate1c12acb4 documentation correctly rejected the verbatim tracked
+      inventory source. Immutable bounded gzip storage now preserves all41723
+      public inventory bytes and original hash; raw-source-body rule is unchanged.
+      First local run passed34cases but the added privacy case used untrusted
+      mode and hit an existing Phase78 matcher budget. Production generated
+      projection mode then passed that case plus3archive-bound cases in43.92s.
+      Superseded own22ce4598build and docs tests were stopped before edits and
+      are not passes. Exact final CPU/full docs/capacity/live gates remain required.
