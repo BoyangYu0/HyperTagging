@@ -1,5 +1,5 @@
 {
-  "version": "phase84-reviewed-exposure-v1",
+  "version": "phase84-reviewed-exposure-v2-before-fitting",
   "stage": "development",
   "family": "direct_membership_joint_learning",
   "sealed_test_access": false,
@@ -70,7 +70,7 @@
     "uncertainty": "Whole-collision paired resampling for matching identities; source trials/pairs correlated. Same-seed training-role exploratory, no independent confirmation."
   },
   "stop_rule": "Nonfinite fails closed. Runtime guard7.25h or processRSS26GiB stops without candidate eligibility, no requeue/extension. Earlyplateau only>=95%raw at375/1500/3000 with identical rawcounts and consecutive membershipriskrelativechange<=.001; zero at1500notfutility. Otherwise6000fixed.384onlyif96learns and1536fails definedgate. Root reviews terminal; worker never submits successor.",
-  "success_rule": "Learnability signal requires >=4distinct Bcollisions gaining rawANDaccepted exact relative1500, net positive rawANDaccepted counts, continuum acceptance increase<=5percentagepoints on samepool, sourceconflicts0. Isolatedsuccess is leadonly. Replicate once with preregistered independent trainingseed before anyfreshdevelopment. >=95%tinyraw and heldoutcount-backedgain/backgroundrequired beforeprimary; noprimaryhere.",
+  "success_rule": "Separate flags: ABSOLUTE_TRAINABLE requires eligible fixed6000 checkpoint, >=4 distinct Bcollisions with raw exact recovery that also survives constraints, continuum acceptance at6000 <=1500+0.05 on samepool, sourceconflicts0. EXPOSURE_GAIN additionally requires >=4distinct Bcollisions gaining rawANDaccepted exact vs1500 and netpositive rawANDaccepted counts. Absolute earlylearning is not exposurebenefit.384bridge only if96 ABSOLUTE_TRAINABLE and1536not; full1536gate not replaced by common96. Margin is diagnostic stability, not productionacceptability. Isolated<4success leadonly; replicate once with fresh trainingseed beforefreshdevelopment. No primary.",
   "validation_selection": "Training-only curves and fixed6000candidate. Noheldout tuning/reservations in exposure. Existing frozen tinyraw32/32 history not evidence of maintrainability. Futurefreshdev only after replicated promising candidate and separate immutable preregistration/fullisolation.",
   "accepted_sequence_limits": {
     "information_diagnostic": "Independent step2 after exposure even if learningfails; fourmatchedfinite probes inputkind\u00d7true/shuffled, <=1h2CPU16GiB, no scientificencoderupdates, no newpretraining. Separateplan before fitting.",
@@ -81,5 +81,7 @@
     "finite_overall_max_presentations": 384000,
     "no_publication": "Parentseparateagent owns historicalpages; thisworktreeneverpushes/publishes."
   },
-  "preregistered_utc": "2026-10-09T17:53:32.017092+00:00"
+  "preregistered_utc": "2026-10-09T17:53:32.017092+00:00",
+  "amendment_utc": "2026-10-09T17:59:08.377532+00:00",
+  "amendment_reason": "Independent preregistration review before any scientific job: distinguish early trainability from incremental exposure effect. Architecture/objective/settings/resource/budgets unchanged."
 }
