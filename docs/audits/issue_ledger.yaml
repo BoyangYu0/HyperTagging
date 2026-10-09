@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Native hierarchy TRAIN-only applicability diagnostics;67 focused role/source/trace/gradient/budget tests pass. No real audit fitting or intervention admitted; Phase84 frozen exposure unchanged.
+  - fcd0e7a6d53399ebae6f54d9c681eadaac6264b8
   # User-directed native hierarchy level-loss/PID applicability addendum; planning PASS only, active Phase84 source unchanged.
   - 3e429b13686139048ba01500b828dd522bd88b2a
   # Information diagnostic extraction/scoring timing separates scalable work from fixed authentication cost;33 runner regressions pass; no fitting changes.
