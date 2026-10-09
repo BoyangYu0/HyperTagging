@@ -1,0 +1,85 @@
+{
+  "version": "phase84-reviewed-exposure-v1",
+  "stage": "development",
+  "family": "direct_membership_joint_learning",
+  "sealed_test_access": false,
+  "automatic_successor_submission": false,
+  "hypothesis": "Main training has only12000/1536=7.8125 nominal presentations/event versus tiny8000/24=333.3. Different cohorts and optimizers confound this; finite long-horizon fitting may distinguish trainability from exposure limitation, not assume undertraining. Twelve one-step tests do not reject long-horizon convergence.",
+  "changed_factor": "Training-pool size96 versus1536 nested identities and within-trajectory exposure375/1500/3000/6000 updates. Other scientific controls fixed.384bridge conditional only if96 learns and1536does not. Each pool resets the identical initializer; no warm start across pools.",
+  "control": "Native objective membership+within-B relation, same original pretrained encoder/fresh decoder, Adam settings, sampling seed, threshold.5 and model-generated partial states. Both trajectories independently fixed6000 main updates; samecommon96 paired comparisons plus1536remainder. Historic1500control is a reproducibility check, not sole comparator.",
+  "target_contract": "Two unordered optional retained-B source sets plus unassigned. Detector-only inference, truth supervision/evaluation only; all physical/source/charge/unknown invariants unchanged. Source sharing excluded only where prior metrics require, event denominators retained. Physical tree/beam/p4 metrics unavailable.",
+  "diagnostic_evidence": {
+    "path": "docs/assembly_diagnosis_20261007/evidence.json",
+    "sha256": "c1fa1b5f8d60909e679efaa06fd96831e7dc262dd1b1e15addf9741c33fd8c63"
+  },
+  "mechanism_evidence": {
+    "report_binding": {
+      "path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/phase78_partition_20261009/sequential-improvement-v1/final-report.md",
+      "sha256": "32771dc053eae964ed9bb4ea57d3dd5b21dcf8108d686054bc979fbb178f13e8"
+    },
+    "measured_effect": "Tiny32/32raw while main0/1024; one-step and pair objective negative, main convergence not established."
+  },
+  "data_and_compute_control": {
+    "corpus": 70000,
+    "eligible_train_pool": 1536,
+    "nested_sizes": [
+      96,
+      384,
+      1536
+    ],
+    "categories": {
+      "charged": 256,
+      "mixed": 256,
+      "ccbar": 256,
+      "uubar": 256,
+      "ddbar": 256,
+      "ssbar": 256
+    },
+    "selection": "SHA256(phase84-nested-20261009:+UID) within category;16/64/256first hashes, preserve original cache order; no outcome/easy filters",
+    "main_updates_max": 6000,
+    "batch_size": 8,
+    "milestones": [
+      375,
+      1500,
+      3000,
+      6000
+    ],
+    "core_scientific_jobs": 2,
+    "conditional_bridge_jobs": 1,
+    "conditional_replication_jobs": 1,
+    "total_exposure_max_updates": 24000,
+    "total_exposure_max_presentations": 192000,
+    "initial_history": "Same frozen128-existing Phase74pretraining8000presentations; fresh decoder. Main independent of historical tiny optimizer, no new tiny fit.",
+    "architecture": "context128/hyperbolic32/head256/depth4; fixed geometry/PID/train normalizer",
+    "settings": {
+      "encoder_lr": 5e-05,
+      "head_lr": 0.001,
+      "weight_decay": 0.0001,
+      "gradient_clip": 5,
+      "seed": 202610081
+    },
+    "resources_per_job": {
+      "cpus": 2,
+      "memory_gib": 32,
+      "hours": 8,
+      "gpus": 0,
+      "requeue": false
+    },
+    "concurrency": "One exposure trajectory at a time; maximum2scientific jobs only for later matched contrasts",
+    "comparisons": "375/96 vs6000/1536 nominal31.25exposures/event confounds updates/compute.1500/6000withinpool isolatesbudget. Sameupdatecrosspoolchanges per-event exposure and cohort composition. Report actual category/UID exposure distribution, common96/remainder, FSP/source/B-size and unknown strata.",
+    "uncertainty": "Whole-collision paired resampling for matching identities; source trials/pairs correlated. Same-seed training-role exploratory, no independent confirmation."
+  },
+  "stop_rule": "Nonfinite fails closed. Runtime guard7.25h or processRSS26GiB stops without candidate eligibility, no requeue/extension. Earlyplateau only>=95%raw at375/1500/3000 with identical rawcounts and consecutive membershipriskrelativechange<=.001; zero at1500notfutility. Otherwise6000fixed.384onlyif96learns and1536fails definedgate. Root reviews terminal; worker never submits successor.",
+  "success_rule": "Learnability signal requires >=4distinct Bcollisions gaining rawANDaccepted exact relative1500, net positive rawANDaccepted counts, continuum acceptance increase<=5percentagepoints on samepool, sourceconflicts0. Isolatedsuccess is leadonly. Replicate once with preregistered independent trainingseed before anyfreshdevelopment. >=95%tinyraw and heldoutcount-backedgain/backgroundrequired beforeprimary; noprimaryhere.",
+  "validation_selection": "Training-only curves and fixed6000candidate. Noheldout tuning/reservations in exposure. Existing frozen tinyraw32/32 history not evidence of maintrainability. Futurefreshdev only after replicated promising candidate and separate immutable preregistration/fullisolation.",
+  "accepted_sequence_limits": {
+    "information_diagnostic": "Independent step2 after exposure even if learningfails; fourmatchedfinite probes inputkind\u00d7true/shuffled, <=1h2CPU16GiB, no scientificencoderupdates, no newpretraining. Separateplan before fitting.",
+    "structural_contrast": "Only groupingbottleneckplusdiagnostic support; max2arms6000updates each, separateprereg/admission; one pair-conditioned node update, fixedwidth/pretraining.",
+    "diversity": "Onlydemonstratedtrainability; max2pooltrajectories6000updates with1500milestones,1536/6144eligibleexistingcorpus, separateprereg/admission. No new collection.",
+    "finite_overall_max_scientific_jobs": 8,
+    "finite_overall_max_updates": 48000,
+    "finite_overall_max_presentations": 384000,
+    "no_publication": "Parentseparateagent owns historicalpages; thisworktreeneverpushes/publishes."
+  },
+  "preregistered_utc": "2026-10-09T17:53:32.017092+00:00"
+}
