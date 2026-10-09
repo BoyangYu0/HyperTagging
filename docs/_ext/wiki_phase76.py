@@ -83,7 +83,11 @@ def generate(root, output):
     decoder = (output / "phase74-decoder.txt").read_text().replace("phase74", "phase76")
     (output / "phase76-decoder.txt").write_text(decoder)
     return {
-        **{k: v for k, v in value.items() if k not in ("arms", "diagnostics")},
+        **{
+            k: v
+            for k, v in value.items()
+            if k not in ("arms", "diagnostics", "diagnostic_population_breakdown")
+        },
         "arms": {
             a: {
                 **{k: v for k, v in r.items() if k not in ("curves", "roles")},
@@ -130,13 +134,14 @@ def render(value):
     ]
     lines += [
         "Source-backed failure diagnosis",
-        "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+        "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
         "",
         "Before training, detached model traces showed proposal-stage omissions dominating the joint control:",
         "6000 missing target-source assignments of 9437 in training; 4172 were assigned unassigned.",
         "Refinement reduced extra sources from 3364 to 2961 but increased missing sources to 6232.",
         "Of 4096 generated merges in training B collisions, 3559 contained unassigned sources and 319 were clean within-B.",
-        "These are exploratory associations. Refinement also improved some metrics; the ablation tests causality.",
+        "The 3559 include 1890 mixed B/unassigned and 1669 background-only merges; only the former mix background into B context.",
+        "Final groups mix background into context for 1711 of 9437 B-source nodes. These are exploratory associations, not causal proof.",
         "Both arms retain differentiable predicted-membership context and the same generation procedure, bounds and relation objective.",
         "Off zeros the whole generated partial-context block, including singleton context. No truth conditions inference.",
         "Complete stage/category/size/missing/extra diagnostics and uncertainty are retained in the download.",
@@ -234,6 +239,29 @@ def render(value):
         "Both arms have 20,000 fit presentations and 44,320 encoder passes including evaluation.",
         "The native encoder counter covers fitting only; the download separately derives evaluation accounting.",
         "No gradient projection is used. Equal updates and pair budgets are not measured equal FLOPs.",
+        "",
+    ]
+    lines += ["Paired source-level errors", "~~~~~~~~~~~~~~~~~~~~~~~~~~", ""]
+    rows = []
+    for role, stages in value.get("paired_source_errors", {}).items():
+        for stage, metrics in stages.items():
+            for metric in ("source_recall", "source_precision"):
+                r = metrics[metric]
+                rows.append(
+                    [
+                        role,
+                        stage,
+                        metric,
+                        str(r.get("rates", "UNAVAILABLE")),
+                        str(r["paired_collision_stratified_bootstrap95"]),
+                    ]
+                )
+    lines += table(
+        ["Role", "Stage", "Metric", "Context on, off", "Off minus on interval"], rows
+    )
+    lines += [
+        "These ratios aggregate source counts before division. Intervals resample whole collisions within categories.",
+        "Training intervals are descriptive; one seed and repeated fitting do not measure seed variability.",
         "",
     ]
     lines += ["Paired effects and limitations", "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", ""]

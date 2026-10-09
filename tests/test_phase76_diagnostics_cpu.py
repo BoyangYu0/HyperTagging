@@ -73,3 +73,30 @@ def test_trial_identity_survives_opposite_slot_permutations():
     _, bt, _ = stage_errors(b, [1, 1, 2])
     assert [(t["target_id"], t["size"]) for t in at] == [(1, 2), (2, 1)]
     assert at == bt
+
+
+def test_background_only_merges_are_not_called_B_contamination():
+    from scripts.diagnose_phase76_membership import joined_trace
+
+    targets = torch.tensor([1, 1, 2, 2, 0, 0, 0, 0])
+    stage = {
+        "probabilities": torch.nn.functional.one_hot(targets, 3).float().tolist(),
+        "presence": [1.0, 1.0],
+    }
+    trace = {
+        "stages": {"proposal": stage, "refinement": stage},
+        "states": [
+            {"groups": [[i] for i in range(8)], "pairs": [], "logits": []},
+            {"groups": [[0, 4], [1, 5], [2, 3], [6, 7]], "pairs": [], "logits": []},
+        ],
+    }
+    row = {
+        "targets": targets,
+        "supervision": {"b_groups": [{0, 1}, {2, 3}], "node_sets": [], "parents": []},
+    }
+    _, m = joined_trace(trace, row)
+    assert m["merged_groups"] == 4 and m["contains_unassigned_merges"] == 3
+    assert m["mixed_B_and_unassigned_merges"] == 2 and m["pure_unassigned_merges"] == 1
+    assert (
+        m["B_source_nodes"] == 4 and m["final_B_nodes_in_mixed_unassigned_context"] == 2
+    )

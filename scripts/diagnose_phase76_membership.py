@@ -144,7 +144,11 @@ def joined_trace(trace, row):
             clean = any(g <= b for b in sides)
             merge["clean_within_B_merges"] += int(clean)
             merge["cross_B_merges"] += int(sum(bool(g & b) for b in sides) > 1)
-            merge["contains_unassigned_merges"] += int(any(targets[i] == 0 for i in g))
+            has_unassigned = any(targets[i] == 0 for i in g)
+            has_b = any(targets[i] > 0 for i in g)
+            merge["contains_unassigned_merges"] += int(has_unassigned)
+            merge["mixed_B_and_unassigned_merges"] += int(has_unassigned and has_b)
+            merge["pure_unassigned_merges"] += int(all(targets[i] == 0 for i in g))
             eligible = (
                 len({assignment[i] for i in g}) == 1 and assignment[next(iter(g))] > 0
             )
@@ -153,6 +157,15 @@ def joined_trace(trace, row):
             merge["same_predicted_B_cross_B_merges"] += int(
                 eligible and sum(bool(g & b) for b in sides) > 1
             )
+    merge["B_source_nodes"] = sum(k > 0 for k in targets)
+    for group in trace["states"][-1]["groups"]:
+        b_nodes = sum(targets[i] > 0 for i in group)
+        merge["final_B_nodes_in_mixed_unassigned_context"] += b_nodes * int(
+            any(targets[i] == 0 for i in group)
+        )
+        merge["final_B_nodes_in_cross_B_context"] += b_nodes * int(
+            len({targets[i] for i in group if targets[i] > 0}) > 1
+        )
     return stages, dict(merge)
 
 
@@ -235,6 +248,13 @@ def main(parent, out, replay=None):
                 category_merges = defaultdict(Counter)
                 event_records = []
                 trace_path = (replay or out) / f"{arm}-{role}-detached-traces.jsonl.gz"
+                if replay:
+                    original = json.loads(
+                        (replay / "diagnostic-summary.json").read_text()
+                    )
+                    assert (
+                        binding(trace_path) == original["arms"][arm][role]["trace"]
+                    ), "Detached trace changed"
                 with (
                     gzip.open(trace_path, "rt" if replay else "xt") as log,
                     torch.inference_mode(),

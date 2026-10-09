@@ -53,7 +53,7 @@ def package(root, destination):
     value["controls"]["arm_settings"] = contract["arm_settings"]
     value["diagnostics"] = {}
     for label, folder in (
-        ("exploratory_phase75", "diagnostic-v2"),
+        ("exploratory_phase75", "diagnostic-v3"),
         ("fixed_phase76", "endpoint-diagnostic-v1"),
     ):
         diagnostic = json.loads((root / folder / "diagnostic-summary.json").read_text())
@@ -78,7 +78,9 @@ def package(root, destination):
                 "generated": diagnostic["generated_relation_ignored_pairs"],
                 "status": "MEASURED_AFTER_GENERATION",
             }
-    findings = json.loads((root / "diagnostic-findings.json").read_text())["findings"]
+    findings = json.loads((root / "diagnostic-findings-v2.json").read_text())[
+        "findings"
+    ]
     value["diagnostic_population_breakdown"] = {
         arm: {
             role: {

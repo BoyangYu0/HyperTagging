@@ -38,7 +38,12 @@ generation, not rejection of an otherwise correct pool.
 
 In the joint control's 512 training B collisions, 3559 of 4096 generated merges
 contain unassigned sources, 334 cross B memberships and 319 are clean within-B.
-These categories can overlap. Relation supervision labels only identifiable
+These categories can overlap. A finer rejoin of the same preserved traces
+separates 1890 mixed B/unassigned merges from 1669 background-only merges;
+background-only merging is not called B contamination. The final partial context
+mixes unassigned sources into groups covering 1711 of 9437 B-source nodes. This
+additive exploratory analysis does not change the registered contrast or use
+fresh development outcomes. Relation supervision labels only identifiable
 within-B pairs, while generation ranks all source-disjoint pairs. This mismatch
 and contamination motivate a causal refinement test, not a demonstrated benefit.
 Using the proposal's B label as a merge filter would retain only 92 of the 319
