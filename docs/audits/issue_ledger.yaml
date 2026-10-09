@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Independent pre-fit Phase84 plan clarification: absolute trainability vs exposure gain; executable code unchanged, policy PASS.
+  - cb09f923f284a0c2128fff22c08192f1a7a3ff36
   # Phase84 preregistered exposure checkpoint hook and detector/embedding probe utilities;28 focused regressions pass. Independent guard/accounting review applied before real fitting.
   - 1f6d639b2f2d53de806e07487b65f2c3b465daf6
   - 7cf6ffd2d5fc0489a408eedb81168b7a7a736f64
