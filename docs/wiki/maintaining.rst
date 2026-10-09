@@ -173,3 +173,13 @@ precede guarded promotion. Source and Git metadata stay frozen during builds.
 Live verification checks every new download and historical integrity, then
 reviews desktop and narrow layouts. This historical publication authorization
 does not change the preference to keep future incremental research private.
+
+Capacity is preserved by reusing exact authenticated Phase78 subtrees in the
+new records. The new parts alone use bounded XZ compression inside the existing
+gzip/base32 envelope, with a 5 MB decoded-fragment cap and 64 MiB decoder memory
+cap. The complete decoder verifies both layers and all original source hashes
+and cardinalities. All existing downloads and decoders remain byte-identical.
+The sidebar now links to the complete guide, study, download, API and catalogue
+indexes and retains search. Top breadcrumbs and previous/next links remain;
+the duplicate bottom navigation bar is omitted. No page, metric or search entry
+is removed. Full artifact checks measure the resulting capacity.

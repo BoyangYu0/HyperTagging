@@ -198,9 +198,15 @@ def on_build_finished(app, exception):
     )
 
 
+def navigation_context(app, pagename, templatename, context, doctree):
+    """Keep compact navigation relative to the selected documentation layout."""
+    context["wiki_content_path"] = app.config.wiki_content_path
+
+
 def setup(app):
     app.add_config_value("wiki_content_path", "", "env")
     app.connect("builder-inited", on_builder_inited)
+    app.connect("html-page-context", navigation_context)
     app.connect("env-updated", suppress_source_pages)
     app.connect("html-collect-pages", suppress_source_pages, priority=100)
     app.connect("build-finished", on_build_finished)

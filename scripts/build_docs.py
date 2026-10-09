@@ -50,6 +50,10 @@ def main(argv=None):
                      root / "docs/conf.py", wiki_source / "conf.py", root / "docs/_ext"):
             if any(parent.is_symlink() for parent in (path, *path.parents)):
                 raise ValueError("documentation entry/configuration must not be a symlink")
+        templates = root / "docs" / "_templates"
+        for path in (templates, *templates.rglob("*")):
+            if path.is_symlink():
+                raise ValueError("documentation template must not be a symlink")
         for path in (wiki_source / "_static").rglob("*"):
             if path.relative_to(wiki_source / "_static").as_posix() != "wiki.css" or not path.is_file():
                 raise ValueError("unexpected documentation static asset; only wiki.css is allowed")

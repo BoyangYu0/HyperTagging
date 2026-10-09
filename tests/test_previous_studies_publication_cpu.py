@@ -1,5 +1,8 @@
 """Complete historical publication transport and fail-closed evidence binding."""
+import base64
 import gzip
+import lzma
+import zlib
 import hashlib
 import importlib.util
 import json
@@ -16,13 +19,27 @@ M = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(M)
 
 
-def test_lossless_full_inventory_and_decoder(tmp_path):
+@pytest.fixture(scope="module")
+def external_public(tmp_path_factory):
+    output = tmp_path_factory.mktemp("phase78-external")
+    M.sibling("wiki_phase74").generate(ROOT, output)
+    M.sibling("wiki_phase78").generate(ROOT, output)
+    return {name: (output / name).read_bytes() for name in (
+        "phase78-review.json", *(f"phase78-events-{i}.json" for i in range(3)))}
+
+
+def seed_external(output, external_public):
+    for name, data in external_public.items(): (output / name).write_bytes(data)
+
+
+def test_lossless_full_inventory_and_decoder(tmp_path, external_public):
+    seed_external(tmp_path, external_public)
     result = M.generate(ROOT, tmp_path)
     binding = json.loads((ROOT / M.SOURCE / "binding.json").read_text())
     assert result["primary_eligible"] is False
     assert result["public_summary"]["phase83"]["qualifying_steps"] == 0
     assert len(result["metric_downloads"]) == len(binding["parts"])
-    assert {p.name for p in tmp_path.iterdir()} == M.FILES
+    assert {p.name for p in tmp_path.iterdir()} == M.FILES | set(external_public)
     for part in binding["parts"]:
         encoded = tmp_path / part["file"].removesuffix(".gz")
         actual = M.sibling("wiki_phase72_compact").decode(json.loads(encoded.read_text()), M.LIMIT)
@@ -35,13 +52,15 @@ def test_lossless_full_inventory_and_decoder(tmp_path):
                 assert len(line) >= len(lines[i - 1])
 
 
-@pytest.mark.parametrize("mutation", ["scope", "endpoint", "registry", "compressed", "inventory", "decoded", "source_coverage", "private_payload"])
-def test_evidence_mutation_rejected(tmp_path, mutation):
+@pytest.mark.parametrize("mutation", ["scope", "endpoint", "registry", "compressed", "inventory", "decoded", "source_coverage", "private_payload", "external_hash", "external_count"])
+def test_evidence_mutation_rejected(tmp_path, mutation, external_public):
     source = tmp_path / M.SOURCE
     source.parent.mkdir(parents=True)
     shutil.copytree(ROOT / M.SOURCE, source)
     binding = json.loads((source / "binding.json").read_text())
-    if mutation == "scope": binding["fresh_validation_events"] = 1
+    if mutation == "external_hash": binding["external_sources"][0]["envelope_sha256"] = "0" * 64
+    elif mutation == "external_count": binding["external_sources"].pop()
+    elif mutation == "scope": binding["fresh_validation_events"] = 1
     elif mutation == "endpoint": binding["public_summary"]["phase83"]["qualifying_steps"] = 1
     elif mutation == "registry": binding["parts"][0]["file"] = "../unsafe.json.gz"
     elif mutation == "compressed":
@@ -50,9 +69,13 @@ def test_evidence_mutation_rejected(tmp_path, mutation):
     elif mutation == "private_payload":
         part = binding["parts"][0]
         p = source / part["file"]
-        value = json.loads(gzip.decompress(p.read_bytes()))
+        wrapper = json.loads(gzip.decompress(p.read_bytes()))
+        value = json.loads(M.decode_fragments(wrapper))
         value["fragments"][0]["value"] = {"hostname": "compute999.internal"}
-        data = M.canonical(value); packed = gzip.compress(data, mtime=0); p.write_bytes(packed)
+        original = M.canonical(value)
+        wrapper = inner_wrapper(original)
+        part.update(fragment_decoded_bytes=len(original), fragment_decoded_sha256=hashlib.sha256(original).hexdigest())
+        data = M.canonical(wrapper); packed = gzip.compress(data, mtime=0); p.write_bytes(packed)
         part.update(compressed_sha256=hashlib.sha256(packed).hexdigest(), decoded_sha256=hashlib.sha256(data).hexdigest(), decoded_bytes=len(data))
     elif mutation == "decoded": binding["parts"][0]["decoded_bytes"] += 1
     elif mutation == "inventory": (source / "inventory.json").write_text("{}")
@@ -63,6 +86,7 @@ def test_evidence_mutation_rejected(tmp_path, mutation):
         binding["inventory"]["sha256"] = hashlib.sha256(data).hexdigest()
     (source / "binding.json").write_text(json.dumps(binding))
     output = tmp_path / "output"; output.mkdir()
+    seed_external(output, external_public)
     with pytest.raises(ValueError): M.generate(tmp_path, output)
 
 
@@ -81,3 +105,71 @@ def test_shared_references_reject_cycles_and_invalid_indices():
         with pytest.raises(ValueError):
             M.expand_sources({"shared-subtree-definitions": definitions, "metric": {"$ref": 0}}, inventory)
     assert M.expand_sources({"shared-subtree-definitions": [{"v": [1, 2]}], "metric": {"$ref": 0}}, inventory) == {"metric": {"v": [1, 2]}}
+
+
+@pytest.mark.parametrize("mutation", ["hash", "path", "source", "index"])
+def test_external_subtree_reference_rejects_mutations(mutation):
+    data = {"metric": [1, 2]}
+    reference = {"file": "phase78-review.json", "path": ["metric"], "sha256": M.digest(M.canonical([1, 2]))}
+    reference_index = 0
+    if mutation == "hash": reference["sha256"] = "0" * 64
+    elif mutation == "path": reference["path"] = ["missing"]
+    elif mutation == "source": reference["file"] = "unregistered.json"
+    elif mutation == "index": reference_index = 2
+    roots = {"shared-subtree-definitions": [], "external-subtree-definitions": [reference], "metric": {"$external": reference_index}}
+    inventory = {"deduplication": {"format": "exact-shared-subtrees-v1", "reference_key": "$ref", "definitions_source": "shared-subtree-definitions", "definitions": 0}}
+    inventory["external_reference_count"] = 1
+    with pytest.raises(ValueError): M.expand_sources(roots, inventory, {"phase78-review.json": data})
+
+
+def test_external_download_bytes_remain_unchanged(tmp_path, external_public):
+    seed_external(tmp_path, external_public)
+    M.generate(ROOT, tmp_path)
+    for name, data in external_public.items(): assert (tmp_path / name).read_bytes() == data
+
+
+@pytest.mark.parametrize("mutation", ["bytes", "decoded_hash", "decoded_bytes"])
+def test_external_envelopes_are_authenticated(tmp_path, external_public, mutation):
+    seed_external(tmp_path, external_public)
+    binding = json.loads((ROOT / M.SOURCE / "binding.json").read_text())
+    records = binding["external_sources"]
+    if mutation == "bytes":
+        p = tmp_path / records[0]["filename"]
+        p.write_bytes(p.read_bytes() + b"changed")
+    elif mutation == "decoded_hash": records[0]["decoded_sha256"] = "0" * 64
+    else: records[0]["decoded_bytes"] += 1
+    with pytest.raises(ValueError): M.load_external_sources(tmp_path, records)
+
+
+def inner_wrapper(data, packed=None):
+    if packed is None: packed = lzma.compress(data, format=lzma.FORMAT_XZ, preset=6, check=lzma.CHECK_CRC64)
+    return {"encoding": "bounded-xz-base32-fragments-v1", "decoded_bytes": len(data), "decoded_sha256": hashlib.sha256(data).hexdigest(), "data": base64.b32encode(packed).decode()}
+
+
+@pytest.mark.parametrize("mutation", ["bomb", "trailing", "concatenated", "size", "hash", "memory", "corruption", "checksum", "limit"])
+def test_inner_xz_bounds_and_integrity(mutation):
+    data = b"{}"
+    packed = lzma.compress(data, format=lzma.FORMAT_XZ, preset=6, check=lzma.CHECK_CRC64)
+    value = inner_wrapper(data, packed)
+    if mutation == "bomb": value = inner_wrapper(data, lzma.compress(b" " * 100000, format=lzma.FORMAT_XZ, check=lzma.CHECK_CRC64))
+    elif mutation == "trailing": value = inner_wrapper(data, packed + b"trailing")
+    elif mutation == "concatenated": value = inner_wrapper(data, packed + packed)
+    elif mutation == "size": value["decoded_bytes"] += 1
+    elif mutation == "hash": value["decoded_sha256"] = "0" * 64
+    elif mutation == "memory":
+        # Change the tiny stream's LZMA2 dictionary request to64MiB, exceeding
+        # the64MiB decoder allowance once required state is included.
+        altered = bytearray(packed)
+        assert altered[12:16] == bytes([2, 0, 33, 1])
+        altered[16] = 28
+        altered[20:24] = zlib.crc32(altered[12:20]).to_bytes(4, "little")
+        value = inner_wrapper(data, bytes(altered))
+    elif mutation == "corruption": value = inner_wrapper(data, packed[:30] + bytes([packed[30] ^ 255]) + packed[31:])
+    elif mutation == "checksum": value = inner_wrapper(data, lzma.compress(data, format=lzma.FORMAT_XZ, check=lzma.CHECK_NONE))
+    elif mutation == "limit": value["decoded_bytes"] = 5000001
+    with pytest.raises(ValueError): M.decode_fragments(value)
+
+
+def test_inner_xz_exact_roundtrip():
+    data = M.canonical({"values": [0, -1, 0.123456789, None, False], "empty": []})
+    assert M.decode_fragments(inner_wrapper(data)) == data

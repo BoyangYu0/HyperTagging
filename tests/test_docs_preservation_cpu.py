@@ -279,3 +279,21 @@ def test_combined_validation_propagates_either_failure(staging_repository, monke
     monkeypatch.setattr(build_docs.subprocess, 'run', run)
     assert build_docs.main(['--output', str(output), '--check-generation']) == (build_exit or validation_exit)
     assert len(calls) == expected_calls
+
+
+@pytest.mark.parametrize("nested", [False, True])
+def test_navigation_template_alias_rejected_before_build(staging_repository, tmp_path, nested):
+    root, output, calls = staging_repository
+    target = tmp_path / "external-templates"
+    target.mkdir()
+    (target / "layout.html").write_text("UNRELATED TEMPLATE")
+    templates = root / "docs/_templates"
+    if nested:
+        templates.mkdir()
+        (templates / "layout.html").symlink_to(target / "layout.html")
+    else:
+        templates.symlink_to(target, target_is_directory=True)
+    with pytest.raises(SystemExit):
+        build_docs.main(["--output", str(output)])
+    assert not output.exists() and not calls
+    assert (target / "layout.html").read_text() == "UNRELATED TEMPLATE"
