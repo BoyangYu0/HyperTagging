@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Independent Phase84 detector/context diagnostic:44 focused role/binding/permutation/metric/checkpoint tests pass; no real diagnostic fitting yet, exposure first.
+  - ea16d266dcce39f784f369776be39cec33417698
   # Phase84 full inherited/current reservation isolation and paired collision exposure gates;20 focused regressions pass before scientific fitting.
   - 43592575146f624690d4f76a205da240dfa8db56
   # Independent pre-fit Phase84 plan clarification: absolute trainability vs exposure gain; executable code unchanged, policy PASS.
