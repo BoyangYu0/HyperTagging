@@ -1250,3 +1250,25 @@ supplemental_runs:
       clarified separately from the correct frozen training contract. Nine tests pass.
       Preceding source56af0096 passed2410 CPU tests and all documentation layouts;
       final exact-head checks and live publication remain required. No publication claim yet.
+
+  - source_sha: be6fbdbfea89e28d635c35eb5f161edce1cb0bc5
+    metadata_head: recorded_by_followup_audit
+    worktree_state: committed_lossless_delivery_repair
+    date: '2026-10-09'
+    commands:
+      - python -m pytest -q tests/test_historical_row_delivery_cpu.py
+      - exact reconstruction and net-byte measurement of historical status manifest
+    pytest: {result: PASS, passed: 3, skipped: 0, duration_seconds: 4.86}
+    notebooks:
+      generated_consistency: {result: PASS_UNCHANGED_NOTEBOOKS, count: 18}
+    real_data_inputs: unchanged_completed_Phase74_Phase75_and_original_historical_aggregate_rows
+    checkpoint: no_training_or_checkpoint_change
+    ci_run: PRECEDING_164AF469_CPU_PASS_DOCS_BASF2_RESOURCE_LIMIT_FAILURE_PRESERVED
+    human_visual_review_status: NOT_REVIEWED
+    evidence_limitations: >-
+      The candidate164af469 passed2412 CPU tests and text docs but basf2 exceeded
+      the unchanged site-size bound at searchindex.js. No limit is raised. All
+      48145 Phase42–44 rows move from bulky inline arrays to explicit bounded
+      lossless downloads. Exact whole-manifest reconstruction and three negative/
+      preservation tests pass; net savings6199777 bytes including new files.
+      Fresh exact-head full CPU/docs and live publication checks remain required.
