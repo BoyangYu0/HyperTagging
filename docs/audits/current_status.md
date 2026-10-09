@@ -1,5 +1,22 @@
 # Current repository audit status
 
+## Authorized accumulated previous-studies publication — 2026-10-09
+
+The user explicitly authorizes publication of accumulated evidence through Phase83,
+superseding the historical deferral recorded below for this release only. This
+work is frozen to the completed previous-studies lineage; later research remains
+outside its scope. Future incremental research remains private. Phase81 retains
+both main raw/accepted0/1024 and increased pair-supervision contamination;
+Phase83 retains0/12 improvement gates. No fresh validation, primary evaluation,
+model promotion or generalization success is claimed. The complete review is
+[Previous studies through Phase83](../wiki/previous_studies.rst).
+
+The original Phase78 publication candidate is an ancestor of this release and
+its metrics and corrections are retained. Publication status is established by
+exact-commit CI and the private live-verification receipt, not by this source
+statement. Historical broad2430+41pass34skip and final28focused passes remain
+distinct in scope and source. No scientific job is launched by publication.
+
 ## Sequential improvement concluded at the evidence gate — 2026-10-09
 
 Phase83 corrected diagnostic17120933 completes exit0 in3m08s. Exact native

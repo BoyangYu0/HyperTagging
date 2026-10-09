@@ -154,3 +154,22 @@ rows from the current authenticated historical projections; a changed source or
 archive fails closed. Decoder roundtrip and negative hash/value tests verify
 preservation. Consumers that need the former arrays can reconstruct them exactly
 from these pointers. This is a delivery change, not a new scientific evaluation.
+
+Accumulated previous-studies publication through Phase83
+--------------------------------------------------------
+
+The authorized historical release retains the original Phase78 candidate and
+adds the completed Phase79–83 training-role evidence. Only Phase83 is expanded
+on the dashboard; earlier decisions, authored pages and downloads remain.
+Complete supported metric records use bounded lossless transport with exact
+source reconstruction, decoded hashes and cardinality checks. Repeated records
+may share transport references; no scientific scalar is rounded or discarded.
+The decoder reconstructs the complete privacy-safe sources and verifies each
+against the inventory. Private identities and operational locations stay outside
+the artifact. The existing file, site and matcher limits remain unchanged.
+
+Exact source CPU and full standalone, text and basf2 documentation validation
+precede guarded promotion. Source and Git metadata stay frozen during builds.
+Live verification checks every new download and historical integrity, then
+reviews desktop and narrow layouts. This historical publication authorization
+does not change the preference to keep future incremental research private.
