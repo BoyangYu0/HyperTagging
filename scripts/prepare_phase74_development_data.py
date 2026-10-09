@@ -48,7 +48,8 @@ def ranked(values, role, seed):
     )
 
 
-def prepare(artifacts, output):
+def prepare(artifacts, output, prior_discovery_root=None):
+    prior_discovery_root = prior_discovery_root or output.parent
     if (
         not os.environ.get("SLURM_JOB_ID")
         or int(os.environ.get("SLURM_CPUS_PER_TASK", 0)) != 2
@@ -114,7 +115,9 @@ def prepare(artifacts, output):
         exclusions.append(binding(path))
     excluded.update(parent["development_uids"])
     exclusions.append(parent["inputs"]["cohort"])
-    candidates = json.loads((output.parent / "candidate-discovery.json").read_text())
+    candidates = json.loads(
+        (prior_discovery_root / "candidate-discovery.json").read_text()
+    )
     for candidate in candidates:
         document = read(candidate["candidate"])
         excluded.update(document[candidate.get("field", "event_uids")])
@@ -253,7 +256,7 @@ def prepare(artifacts, output):
             "fresh_primary_reserved": 0,
             "sealed_test_access": False,
             "previous_failed_admission_superseded_not_validated": binding(
-                output.parent / "cohort-isolation-failure.json"
+                prior_discovery_root / "cohort-isolation-failure.json"
             ),
         },
     )
@@ -274,5 +277,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--artifacts", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--prior-discovery-root", type=Path)
     args = parser.parse_args()
-    prepare(args.artifacts.resolve(), args.output.resolve())
+    prepare(args.artifacts.resolve(), args.output.resolve(), args.prior_discovery_root)

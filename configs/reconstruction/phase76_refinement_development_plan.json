@@ -1,0 +1,45 @@
+{
+  "version": "phase76-partial-context-development-v1",
+  "stage": "development",
+  "family": "direct_membership_joint_learning",
+  "hypothesis": "Generated partial groups often mix B-member and unassigned sources. Their pooled context may suppress membership recall during refinement. Ablate only that context to test its causal contribution; benefits and harms are both plausible.",
+  "changed_factor": "Only generated latent partial-context input to refinement: retained versus zeroed. Differentiable predicted-membership group context, detector features, generated states, relation supervision, objectives and budgets remain shared.",
+  "control": "Fixed128-existing Phase74 pretraining-final encoder; fresh common256 decoder with identical seed/parameters. No selected downstream winner. Both arms joint gradients; no gradient projection.",
+  "target_contract": "Unordered optional flat B source membership with unassigned and generated-partition relation supervision, truth only in post-generation supervision; no physical hierarchy metrics.",
+  "diagnostic_evidence": {
+    "path": "docs/assembly_diagnosis_20261007/evidence.json",
+    "sha256": "c1fa1b5f8d60909e679efaa06fd96831e7dc262dd1b1e15addf9741c33fd8c63"
+  },
+  "mechanism_evidence": {
+    "report_binding": {
+      "path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/phase76_membership_20261009/diagnostic-v2/diagnostic-summary.json",
+      "sha256": "9c13ebdad2175719d9c4334a24ae4be3f1305e81fde19b9042d3e28fce24a093"
+    },
+    "measured_effect": "Joint train B events:3559/4096 generated merges contain unassigned sources;319/4096 clean within B. Proposal misses6000/9437 target-node assignments,4172 to unassigned; refinement misses6232,4480 to unassigned, while reducing extras3364 to2961. Inspected development refinement slightly improves mean best IoU despite more missing sources. Association does not establish latent-context harm; controlled ablation tests this."
+  },
+  "data_and_compute_control": "Original70000 corpus unchanged; same1536 training subset and train-fitted normalizers. Same fixed Phase74 encoder checkpoint; decoder seed202610081,128context/32hyper/depth4; common256head. Independent24event tiny1000updates and main1500updates, batch8, same sampled order, no new pretraining. TwoCPU-only jobs2CPU32GiB8h each, no requeue. Equal parameters and generated pairs; measure presentations/unique identities/time/memory/node-pair proxies, not FLOPs.",
+  "stop_rule": "Stop on nonfinite loss/gradient/parameters, absent encoder or predicted-group gradients, source/hash/cohort/settings mismatch, resource overflow or duplicate submission. At most2 scientific jobs, no requeue/second successor.",
+  "success_rule": "Fixed final fresh-development raw and accepted membership count-backed improvement, collision-paired uncertainty excluding zero for improvement, continuum acceptance upper paired95% difference bound <=0 and zero source conflicts; tiny raw>=95% prerequisite. Sparse single successes are not a reliable benefit. Also report missing/extra sources and relation metrics regardless result; no primary in this pass.",
+  "validation_selection": "Fresh600 nonprimary development identities100/category ranked SHA256(phase74-heldout:202610081:uid), excluding all train/normalization/selection/primary/supplemental/development registries including Phase74/75. No target/outcome/easy filtering. Fixed final checkpoint and threshold0.5. Phase74/75 inspected evidence is exploratory, not confirmation.",
+  "sealed_test_access": false,
+  "automatic_submission": false,
+  "arms": [
+    "partial_context_on",
+    "partial_context_off"
+  ],
+  "context_width": 128,
+  "hyper_dim": 32,
+  "pretraining_updates": 0,
+  "downstream_updates": 1500,
+  "tiny_updates": 1000,
+  "batch_size": 8,
+  "seed": 202610081,
+  "resources": {
+    "cpus": 2,
+    "memory_gib": 32,
+    "hours": 8,
+    "gpus": 0,
+    "max_jobs": 2,
+    "requeue": false
+  }
+}

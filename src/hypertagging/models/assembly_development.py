@@ -17,8 +17,11 @@ from hypertagging.models.direct_membership import DirectMembershipHead
 class AssemblyMembershipDecoder(nn.Module):
     width = 256
 
-    def __init__(self):
+    def __init__(self, *, partial_state_conditioning=True):
         super().__init__()
+        if type(partial_state_conditioning) is not bool:
+            raise ValueError("partial_state_conditioning must be boolean")
+        self.partial_state_conditioning = partial_state_conditioning
         self.proposal = DirectMembershipHead(256, 256)
         self.relations = nn.Sequential(
             nn.Linear(770, 256), nn.GELU(), nn.Linear(256, 3)
@@ -100,6 +103,8 @@ class AssemblyMembershipDecoder(nn.Module):
         for group in states[-1]["groups"]:
             positions = list(group)
             partial_context[positions] = h[positions].mean(0)
+        if not self.partial_state_conditioning:
+            partial_context = torch.zeros_like(partial_context)
         if not group_conditioning:
             predicted_context = torch.zeros_like(predicted_context)
             partial_context = torch.zeros_like(partial_context)

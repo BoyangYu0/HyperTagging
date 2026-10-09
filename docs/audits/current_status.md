@@ -1,5 +1,40 @@
 # Current repository audit status
 
+## Phase76 authorized refinement study — 2026-10-09
+
+A new explicit user instruction authorizes one bounded follow-up after the closed
+Phase75 pass. Read-only terminal-checkpoint replay reproduces raw memberships on
+1536 train, 600 previously inspected development and 24 tiny events in each
+Phase75 arm. Unordered matching and unassigned masking pass regression checks.
+Proposal-stage omissions dominate: joint train misses 6000 of 9437 target-source
+assignments, including 4172 assigned unassigned. Refinement reduces extra sources
+from 3364 to 2961 but increases missing sources to 6232. Inspected development
+mean best IoU slightly improves; this is not evidence that all refinement harms.
+
+In 512 training B collisions, 3559 of 4096 generated merges include unassigned
+sources, while 319 are clean within-B. Relation supervision labels only identifiable
+within-B pairs, whereas generated scoring considers all source-disjoint pairs.
+These measured associations motivate one controlled partial-context ablation:
+retain versus zero the generated-partition context in the refinement head. The
+soft predicted-membership context remains active in both arms, as do identical
+relation objectives, generated states, joint adaptation and bounded inference.
+The ablation also removes singleton context; it tests the whole partial-context
+block, not only contaminated merges. No causal benefit is assumed.
+
+The preregistered Phase76 plan fixes the original 70000 corpus, shared 1536-event
+training pool, Phase74 128-existing pretraining-final initialization, fresh identical
+256-wide heads, 1000 independent tiny and 1500 main updates at batch eight. Fresh
+600-event non-primary development designation excludes Phase74, Phase75 and all
+historical reservations. Fixed final checkpoint and threshold 0.5; two CPU-only
+jobs at most, each 2 CPUs, 32 GiB and eight hours, no requeue or second successor.
+Full cohort and cache admission pass with zero dropped/unavailable targets; the maximum
+FSP count is 73. Real-data gradients reach encoder, proposal and refinement in
+both arms; only the disabled partial-context input has zero block gradient.
+The worst-event smoke fits within the eight-hour bound. Submission remains pending. No primary evaluation or model promotion
+is authorized. Existing results and the invalid original 60-event cohort remain
+immutable. Diagnostic v2 corrects per-target transition pairing across output-slot
+permutations by rejoining the original detached traces; per-stage v1 counts agree.
+
 ## Phase75 sole successor completed — 2026-10-09
 
 Both jobs 17089561 (joint) and 17089562 (projection) completed exit 0 in 4738

@@ -141,6 +141,31 @@
       "authorization": "Explicit continuation user instruction permits fresh non-primary development designation",
       "sealed_test_accessed": false,
       "purpose": "Fresh nonprimary heldout development for one controlled encoder-gradient projection study; no adaptive checkpoint selection"
+    },
+    {
+      "version": "phase76-development-designation-v1",
+      "status": "DESIGNATED_DEVELOPMENT",
+      "stage": "development",
+      "role": "validation",
+      "cohort_manifest": {
+        "artifact_relative_path": "phase76_membership_20261009/development-cohort.json",
+        "sha256": "de1425f76d5f7dee9d99978003f4b1fe20951df7ce947c8f03f8ee3ce2b88fe5"
+      },
+      "reserved_count": 600,
+      "primary_count": 0,
+      "selection_count": 0,
+      "by_category": {
+        "ccbar": 100,
+        "charged": 100,
+        "ddbar": 100,
+        "mixed": 100,
+        "ssbar": 100,
+        "uubar": 100
+      },
+      "requirement": "Exclude all600 fresh development assessment identities from future training, checkpoint selection, adaptive fitting and primary reservations. Fixed-final Phase76 assessment only; not policy-sized primary coverage.",
+      "authorization": "Explicit Phase76 user instruction authorizes fresh non-primary development designation",
+      "sealed_test_accessed": false,
+      "purpose": "Fresh nonprimary heldout development for controlled partial-context refinement ablation, no adaptive checkpoint selection"
     }
   ],
   "storage_contract": "Resolve artifact_relative_path under the configured external HyperTagging artifact root; authenticate SHA-256 before consuming UIDs. See docs/repository_storage.md."
