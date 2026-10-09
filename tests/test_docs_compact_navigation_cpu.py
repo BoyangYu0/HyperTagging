@@ -34,3 +34,9 @@ def test_layout_retains_top_breadcrumbs_previous_next_and_body_once():
     for target in ("index.html", "parent.html", "previous.html", "next.html"):
         assert f'href="{target}"' in rendered
     assert 'aria-label="Page navigation"' in rendered
+    # Classic styles target div.related; semantic nav loses link contrast.
+    assert '<div class="related" role="navigation"' in rendered
+    assert '<nav class="related"' not in rendered
+    # Float controls precede inline breadcrumbs so narrow wrapping increases
+    # the colored bar height instead of leaving white links below its background.
+    assert rendered.index('rel="next"') < rendered.index('rel="prev"') < rendered.index('href="index.html"')
