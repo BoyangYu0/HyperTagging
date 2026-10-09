@@ -17,11 +17,17 @@ def pair_membership_loss(logits, targets, sources):
         raise ValueError("Expected [nodes, unassigned+B1+B2] logits")
     if targets.ndim != 1 or len(targets) != len(logits) or len(sources) != len(logits):
         raise ValueError("Pair source/target axis mismatch")
-    if not ((targets >= -1) & (targets <= 2)).all():
+    if targets.dtype != torch.long or not ((targets >= -1) & (targets <= 2)).all():
         raise ValueError("Unknown target encoding")
-    if any(not s for s in sources):
+    if (
+        not isinstance(sources, torch.Tensor)
+        or sources.ndim != 2
+        or sources.dtype != torch.bool
+    ):
+        raise ValueError("Expected native boolean detector-source masks")
+    if not sources.any(dim=1).all():
         raise ValueError("Missing detector-source support")
-    source_sets = [set(s) for s in sources]
+    source_sets = [set(torch.where(s)[0].tolist()) for s in sources.detach().cpu()]
     pairs, labels = [], []
     support = {
         "same_b": 0,

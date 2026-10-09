@@ -14,7 +14,7 @@ def fixture():
             requires_grad=True,
         ),
         torch.tensor([1, 1, 2, 0]),
-        [[0], [1], [2], [3]],
+        torch.eye(4, dtype=torch.bool),
     )
 
 
@@ -49,7 +49,7 @@ def test_slot_target_and_node_permutations_are_invariant():
     for xx, yy, ss in [
         (x[:, [0, 2, 1]], y, s),
         (x, torch.where(y == 0, y, 3 - y), s),
-        (x.flip(0), y.flip(0), s[::-1]),
+        (x.flip(0), y.flip(0), s.flip(0)),
     ]:
         value, _ = pair_membership_loss(xx, yy, ss)
         torch.testing.assert_close(value, base)
@@ -99,8 +99,9 @@ def test_bad_contracts_fail():
     for xx, yy, ss in [
         (x[:, :2], y, s),
         (x, y[:-1], s),
+        (x, y.float(), s),
         (x, torch.tensor([1, 2, 3, 0]), s),
-        (x, y, [[], [1], [2], [3]]),
+        (x, y, torch.zeros(4, 4, dtype=torch.bool)),
     ]:
         with pytest.raises(ValueError):
             pair_membership_loss(xx, yy, ss)
@@ -204,3 +205,17 @@ def test_training_manifest_membership_does_not_reorder_historical_cache():
     ):
         with pytest.raises(ValueError):
             authenticate_training_rows(bad, manifest)
+
+
+def test_native_source_masks_ignore_column_naming_and_count_aliases():
+    x, y, s = fixture()
+    value, counts = pair_membership_loss(x, y, s)
+    other, other_counts = pair_membership_loss(x, y, s[:, [2, 0, 3, 1]])
+    torch.testing.assert_close(value, other)
+    assert counts == other_counts
+    s[1] = s[0]
+    _, counts = pair_membership_loss(x, y, s)
+    assert counts["shared_source_pairs"] == 1 and counts["same_b"] == 0
+    for bad in (s.float(), s[:, 0], [[0], [1], [2], [3]]):
+        with pytest.raises(ValueError):
+            pair_membership_loss(x, y, bad)

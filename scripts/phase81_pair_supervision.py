@@ -151,7 +151,7 @@ def smoke(root, parent):
     cache = torch.load(
         admission["cache"]["path"], map_location="cpu", weights_only=False
     )
-    out = root / "smoke-v1"
+    out = root / "smoke-v2"
     out.mkdir(exist_ok=False)
     worst = max(cache["train"], key=lambda r: len(r["targets"]))
     results = {}
@@ -244,7 +244,7 @@ def freeze(root, parent):
         ["git", "status", "--porcelain"], cwd=ROOT, text=True
     ).strip():
         raise ValueError("Source must be clean")
-    sm = json.loads((root / "smoke-v1/admission.json").read_text())
+    sm = json.loads((root / "smoke-v2/admission.json").read_text())
     data = json.loads((root / "train-admission.json").read_text())
     if sm["status"] != "PASS" or sm["source_hashes"] != source_hashes():
         raise ValueError("Stale smoke")
@@ -286,7 +286,7 @@ def freeze(root, parent):
         "initial_checkpoint": sm["initial_checkpoint"],
         "output_root": str(campaign / "runs"),
         "bindings": [
-            binding(root / "smoke-v1/admission.json"),
+            binding(root / "smoke-v2/admission.json"),
             binding(root / "train-admission.json"),
             binding(root / "preregistered-plan.json"),
             binding(source / PLAN),
