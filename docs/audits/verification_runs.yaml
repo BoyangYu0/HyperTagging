@@ -1294,3 +1294,27 @@ supplemental_runs:
       claimed successful. Full exact-head CPU/docs/privacy/layout/capacity/live checks
       remain required. Historical broad2430plus41pass34skip and final28focusedpass
       retain original source scopes. No physics or generalization success is claimed.
+
+  - source_sha: 1636d0d36a67abeb424cbfa0f9e91bb2c61f3eaf
+    metadata_head: recorded_by_followup_audit
+    worktree_state: committed_lossless_capacity_correction
+    date: '2026-10-09'
+    commands:
+      - python -m pytest -q tests/test_previous_studies_publication_cpu.py tests/test_docs_compact_navigation_cpu.py tests/test_docs_privacy_cpu.py tests/test_docs_preservation_cpu.py tests/test_docs_compatibility_cpu.py
+      - full standalone decoder and immutable historical envelope comparison
+    pytest: {result: PASS, passed: 129, skipped: 0, duration_seconds: 130.68}
+    real_data_inputs: unchanged64_authenticated_previous_study_metric_sources
+    checkpoint: none_opened_or_modified_by_publication
+    ci_run: PRECEDING_1C12ACB4_CPU_2491_PASS_36_SKIP_FINAL_EXACT_HEAD_PENDING
+    human_visual_review_status: PENDING_LIVE_PUBLICATION
+    evidence_limitations: >-
+      The original Phase78 basf2 artifact267369057bytes leaves1066399bytes under
+      the unchanged256MiB bound. New delivery reduces to3173881bytes via exact
+      Phase78 references and bounded innerXZ under unchanged outergzip/base32.
+      All64source canonical hashes,1699729numeric scalars and5000update records
+      remain unchanged; old download bytes and decoders remain intact. Compact
+      navigation retains indexes,search,breadcrumbs,previous/next and all pages.
+      Actual final build capacity remains required. Prior local docs suite had
+      241passes,onefailure and37setup errors from exhausted temporary storage;
+      only own fixtures were preserved on the project volume. Superseded own
+      builds are stopped,not passes. Final CPU/full docs/live gates remain required.
