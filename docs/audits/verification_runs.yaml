@@ -1340,3 +1340,24 @@ supplemental_runs:
       projection mode then passed that case plus3archive-bound cases in43.92s.
       Superseded own22ce4598build and docs tests were stopped before edits and
       are not passes. Exact final CPU/full docs/capacity/live gates remain required.
+
+  - source_sha: 99a72f5b0fc532687170d9cab8a663dbaac77627
+    metadata_head: recorded_by_followup_audit
+    worktree_state: committed_browser_verified_navigation_correction
+    date: '2026-10-09'
+    commands:
+      - python -m pytest -q tests/test_docs_compact_navigation_cpu.py
+      - desktop and narrow browser navigation and table-scroll inspection
+    pytest: {result: PASS, passed: 4, skipped: 0}
+    real_data_inputs: unchanged_historical_metric_sources
+    checkpoint: none_opened_or_modified_by_publication
+    ci_run: PRECEDING_188E27FE_CPU_2521_PASS_36_SKIP_FINAL_EXACT_HEAD_PENDING
+    human_visual_review_status: LOCAL_DESKTOP_AND_NARROW_NAVIGATION_CORRECTION_VERIFIED
+    evidence_limitations: >-
+      Browser preview caught unstyled compact navigation because the classic
+      theme targets div.related. Restoring that element with navigation role and
+      placing floated controls before breadcrumbs preserves contrast and wrapping.
+      Tables retain all columns via horizontal scroll. No scientific content,
+      archive bytes or privacy/size limits change. Previous local documentation
+      suite285passed; own superseded build stopped before editing,not a pass.
+      Exact final full CI and live release verification remain required.
