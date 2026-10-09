@@ -1,5 +1,18 @@
 # Current repository audit status
 
+## User-directed level-conditioned hierarchy addendum — 2026-10-09
+
+The new hypothesis is recorded in
+`configs/reconstruction/level_conditioned_hierarchy_study_addendum_20261009.json`.
+Planning validation passes; no weighting/prior intervention is runtime-admitted.
+The active Phase84 96-event exposure job17121121 remains unchanged. A native
+hierarchical training-only applicability audit follows the exposure/information
+sequence: existing whole-objective level weights and soft empirical type prior
+are the baseline, not absent features. Generation height is not particle mass.
+Only measured component-allocation or conditional mother-PID evidence can admit
+one separately frozen contrast. Flat optional-B heads cannot test this mechanism.
+No new validation, primary work, publication or resource expansion is implied.
+
 ## Phase84 reviewed exposure/information sequence — 2026-10-09
 
 New user authorization resumes research with independent agent review: matched
