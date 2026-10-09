@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # User-directed native hierarchy level-loss/PID applicability addendum; planning PASS only, active Phase84 source unchanged.
+  - 3e429b13686139048ba01500b828dd522bd88b2a
   # Information diagnostic extraction/scoring timing separates scalable work from fixed authentication cost;33 runner regressions pass; no fitting changes.
   - 2119513da0559161e165d3f7505c8bf76ed0a31e
   # Independent Phase84 detector/context diagnostic:44 focused role/binding/permutation/metric/checkpoint tests pass; no real diagnostic fitting yet, exposure first.
