@@ -37,6 +37,7 @@ def evidence(tmp_path, monkeypatch):
         "reconstruction_phase74_review": {"reserved": True},
         "reconstruction_phase75_review": {"reserved": True},
         "reconstruction_phase76_review": {"reserved": True},
+        "reconstruction_phase77_review": {"reserved": True},
         "reconstruction_phase42_44_archive": {"reserved": True},
         "reconstruction_phase71_review": {"reserved": True},
         "reconstruction_phase71_policy": {"reserved": True},
@@ -211,7 +212,7 @@ def test_status_is_deterministic_and_preserves_record_scope(evidence, tmp_path, 
     assert manifest["pretraining"]["selected_profile_state"] == "NONE_SELECTED"
     assert manifest["pretraining"]["submission_performed"] is False
     assert manifest["pretraining"]["pretraining_success_gate_passed"] is False
-    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 98
+    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 99
     assert manifest["provenance"]["external_filesystem_or_network_artifacts_opened"] is False
     assert source_info(manifest, "issue_ledger")["freshness"]["status"] == "stale"
     assert source_info(manifest, "current_status")["freshness"]["status"] == "unknown"
@@ -418,9 +419,9 @@ def test_current_repository_dashboard_surfaces_recorded_acceptance_values(tmp_pa
     assert manifest["pretraining"]["recorded_step"] == 54064 and manifest["pretraining"]["planned_steps"] == 108128
     assert manifest["pretraining"]["calibration_status"] == "PENDING"
     rendered_status = (tmp_path / "generated" / "index.rst").read_text().replace("\\-", "-")
-    assert "Phase76 completed membership refinement study" in rendered_status
-    assert rendered_status.index("Phase76 completed membership refinement study") < rendered_status.index("All studies")
-    assert "fresh 600-event development cohort" in rendered_status
+    assert "Phase77 completed training-only proposal diagnosis" in rendered_status
+    assert rendered_status.index("Phase77 completed training-only proposal diagnosis") < rendered_status.index("All studies")
+    assert "No new training or validation evaluation was selected" in rendered_status
     assert "NO MEMBERSHIP GAIN" in rendered_status
     assert "Phase74 completed development factorial" not in rendered_status
     assert "Phase75 completed gradient-routing development" not in rendered_status

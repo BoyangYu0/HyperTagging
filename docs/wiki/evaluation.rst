@@ -339,3 +339,14 @@ sets, excluding singleton roots, and keeps unavailable mappings separate. It
 compares each component against individual predicted flat groups without joining
 disconnected groups. This newly measured diagnostic is distinct from fake-B
 acceptance and does not supply physical component trees or quark ancestry.
+
+Training-only proposal audit
+-----------------------------
+
+:doc:`Phase77 <phase77>` separates foreground omissions from conditional B-slot
+confusion using detached logits and supervision joined afterwards. Aggregate-B
+probability decisions and truth-assisted oracle corrections are diagnostics,
+not deployed thresholds or physical reachability. Keep source, collision and
+correlated-B supports separate. Native total-loss and diagnostic hard-error
+permutations optimize different criteria. Training-only paired intervals do not
+provide fresh confirmation, and zero-success bootstrap bounds are not equality.

@@ -2,14 +2,31 @@
 
 ## Phase77 training-only proposal diagnosis — 2026-10-09
 
-A new user authorization permits one evidence-backed bounded follow-up. Begin
-with the fixed Phase76 context-on final model and all1536 training-pool events,
-plus the independent24-event tiny fit. No fresh development identities are
-reserved before a controlled hypothesis is supported. Audit native loss matching,
-unknown support, logits/margins, foreground versus B-slot discrimination, loss
-contributions and a deterministic96-event training-only gradient subset. Oracle
-and aggregate-foreground decisions are labelled diagnostics, not inference changes.
-No training or validation evaluation is submitted at this source freeze.
+The authorized training-only diagnostic is complete. Frozen source ff27cc46
+reproduces all1536 main and24 tiny-fit views exactly; the tiny views reuse
+training-pool identities. Diagnostic job17092883 completed exit0 with2CPU/16GiB,
+171 scheduler seconds, noGPU or fitting. No fresh development identities were
+evaluated or reserved. All96 deterministic training gradient probes execute.
+
+Proposal errors are4172 true-B sources unassigned and1828 assigned other-B,
+among9437 target assignments. The prespecified aggregate-B decision recovers
+709 foreground sources but adds882 background assignments and yields0/1024
+exact memberships. Perfect oracle foreground still yields0 exact sets; oracle
+B-slot correction yields37/1024, both truth-assisted diagnostics only. Native
+matching, masks and gradient paths pass checks; no implementation defect is
+established. True-B CE and squared logit-gradient contributions exceed background,
+so class counts alone do not justify reweighting. Main-pool convergence remains
+unproven. Tiny raw32/32 versus accepted27/32 retains the five charge failures.
+
+No narrowly supported training intervention is selected. No new scientific
+training, primary reservation, model promotion or automatic successor is submitted.
+Keep corpus, widths and guards fixed; establish a specific mechanism for weak
+within-event B-slot partition learning before another training. Complete category,
+size, logits, losses, gradient supports, paired training-only intervals, prior
+curves/native endpoints and hashes are published through the Phase77 lossless
+binding. Physical trees/pools/closure remain unavailable. Publication requires
+exact-head CPU and full Documentation/Pages checks and guarded promotion; the
+private final report records actual live verification, not an inferred status.
 
 Phase76 publication is now verified at fa75153e through PR12, exact-commit CPU,
 full documentation and actual Pages checks, live download hashes and browser

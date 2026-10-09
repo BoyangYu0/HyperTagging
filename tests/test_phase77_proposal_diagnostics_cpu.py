@@ -79,3 +79,27 @@ def test_auc_ties_and_unavailable_support():
     assert auc([0.2, 0.1], [0, 1])["auc"] == 0
     assert auc([0.5, 0.5], [0, 1])["auc"] == 0.5
     assert auc([0.5], [0])["auc"] is None
+
+
+def test_collision_paired_diagnostic_keeps_zero_and_background_tradeoff():
+    from scripts.review_phase77_proposals import paired_decision
+
+    counts = dict(
+        B_nodes=10,
+        background_nodes=10,
+        B_to_unassigned=6,
+        aggregate_B_to_unassigned=3,
+        background_to_B=1,
+        aggregate_background_to_B=4,
+        native_raw_exact=0,
+        aggregate_half_raw_exact=0,
+        available_B_targets=2,
+    )
+    rows = [dict(category="charged", stages={"proposal": {"counts": counts}})]
+    effects = paired_decision(rows, "proposal", 20)["effects"]
+    assert effects["raw_exact_membership"][
+        "paired_collision_stratified_bootstrap95"
+    ] == [0, 0]
+    assert effects["foreground_recall"]["aggregate_minus_native"] > 0
+    assert effects["background_false_assignment_rate"]["aggregate_minus_native"] > 0
+    assert effects["foreground_precision"]["aggregate_minus_native"] < 0

@@ -829,3 +829,16 @@ group unions. This diagnostic does not make physical tagging, parton ancestry,
 exact-tree, physical beam or p4 closure available. Preserve fake-B acceptance
 separately. Phase76 uses fixed final development endpoints and fresh600 identities;
 no primary reservation or complete12000-event evaluation is implied.
+
+### Phase77 training-only proposal audit
+
+Keep native three-class argmax, aggregate-foreground diagnostic decisions and
+truth-assisted oracle foreground/slot corrections separate. The latter are
+post-generation diagnostic ceilings, never inference or legal-reachability
+claims. Report conditional slot accuracy, foreground errors and background
+assignments with their distinct supports. Native total-loss permutation and
+hard-error diagnostic permutation optimize different criteria; preserve both.
+Loss/gradient contributions use valid-node and event normalization, with unknown
+support retained. Training-only collision-stratified intervals are exploratory,
+not independent confirmation; zero-success bootstrap bounds do not prove equality.
+No fresh evaluation or scientific training is implied by a diagnostic replay.
