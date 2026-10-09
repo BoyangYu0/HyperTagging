@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase76 source-backed membership diagnostics, isolated600 cohort and two-arm partial-context admission;63 focused CPU tests and real gradients pass.
+  - cd20e0dfbf4c620a6b04f6d4459ea5e0d585cda3
   # Lossless preservation of48145 historical rows saves6199777 bytes after site-limit failure; three hash/value/decoder regressions pass.
   - be6fbdbfea89e28d635c35eb5f161edce1cb0bc5
   # Phase75 terminal two-arm negative result, exact control replay, sampling audit and lossless complete publication; nine feature tests pass.
