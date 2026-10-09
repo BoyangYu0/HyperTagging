@@ -19,7 +19,7 @@ import torch  # noqa:E402
 from scripts.prepare_phase74_development_data import binding, write  # noqa:E402
 from scripts.phase76_development import guarded  # noqa:E402
 from scripts.run_phase74_development import verify_bindings  # noqa:E402
-from scripts.diagnose_phase80_optimizer_steps import audit, summarize_delta  # noqa:E402
+from scripts.diagnose_phase80_optimizer_steps import audit, summarize_delta, interpolate  # noqa:E402
 from scripts.diagnose_phase78_partition import conditional_counts  # noqa:E402
 from hypertagging.training.capacity_development import (  # noqa: E402
     fresh_model,
@@ -223,6 +223,8 @@ def main(phase81, phase80, output):
             for i, p in enumerate(parameters)
             if "exp_avg_sq" in opt.state[p]
         }
+        # Match Phase80 FP32 delta reconstruction in both conditions.
+        interpolate(parameters, initial, native_delta, 1.0)
         if index == 0:
             p = output / "native-replay-model-only.jsonl.gz"
             native = audit(model, decoder, rows, p)
@@ -257,6 +259,7 @@ def main(phase81, phase80, output):
                 v, ck["model_state_dict"][key]
             ):
                 raise ValueError("Frozen PID/model state changed")
+        interpolate(parameters, initial, current_delta, 1.0)
         p = output / f"batch-{index:02d}-current-model-only.jsonl.gz"
         current = add_conditional(audit(model, decoder, rows, p), p, rows)
         write(output / f"batch-{index:02d}-current.json", current)

@@ -110,3 +110,21 @@ def test_diagnostic_scope_and_resource_rejections():
         bad[key] = value
         with pytest.raises(ValueError):
             validate_contract(bad)
+
+
+def test_native_replay_uses_same_fp32_delta_reconstruction_in_both_conditions():
+    from scripts.diagnose_phase80_optimizer_steps import interpolate
+
+    initial = torch.tensor([1.0], dtype=torch.float32)
+    updated = torch.tensor([1e-8], dtype=torch.float32)
+    delta = updated - initial
+    p = torch.nn.Parameter(updated.clone())
+    interpolate([p], [initial], [delta], 1.0)
+    assert torch.equal(p, initial + delta)
+    assert not torch.equal(p, updated)
+    import inspect
+    from scripts.diagnose_phase83_optimizer_history import main
+
+    source = inspect.getsource(main)
+    assert "interpolate(parameters, initial, native_delta, 1.0)" in source
+    assert "interpolate(parameters, initial, current_delta, 1.0)" in source
