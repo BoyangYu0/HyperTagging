@@ -1,5 +1,33 @@
 # Current repository audit status
 
+## Sequential improvement concluded at the evidence gate — 2026-10-09
+
+Phase83 corrected diagnostic17120933 completes exit0 in3m08s. Exact native
+baseline/update replay and matched second moments pass. Removing first-moment
+history yields0/12 qualifying structural steps (required9/12); three lower-risk
+steps all increase proposal background assignments. All conditions remain raw
+and accepted0/64 on the96-event training-only audit. Original17120921 replay
+failure and its symmetric FP32 reconstruction correction remain preserved.
+
+The sequential pass completed finite probe-optimization, optimizer-step,
+pair-supervision, nonlinear-readability and optimizer-history investigations.
+Phase81 scientific control/intervention17120627/17120628 both complete, with
+raw/accepted main0/1024; pair supervision increases background and slot swaps.
+No tested mechanism establishes a background-controlled structural gain that
+justifies fresh development evaluation or another training campaign. This is an
+evidence-gate stop, not a phase-boundary permission stop. Keep corpus,widths,
+geometry and constraints fixed; no fresh validation,primary reservation or
+model promotion. Tiny memorization and probe fitting do not establish adequate
+representations, main convergence, irrecoverable information loss or data scarcity.
+
+Final combined diagnostic/pair CPU regressions:28pass; prior broad2430+41pass
+and34skips remain scoped to their recorded source. Private per-event/category/
+source-size/channel metrics, raw/accepted/background errors, uncertainty,
+resource accounting and immutable source/contract bindings are retained in the
+sequential-improvement-v1 ledger and Phase79–83 artifacts. Public pages remain
+deferred under the user's significant-change preference; historical Phase78
+publication branch/PR is preserved, not promoted. No worker or successor remains.
+
 ## Phase82 terminal; bounded optimizer-history mechanism check — 2026-10-09
 
 Phase82 job17120875 completes exit0 in44seconds. The fixed nonlinear probe
