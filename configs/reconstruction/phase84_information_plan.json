@@ -1,0 +1,46 @@
+{
+  "version": "phase84-detector-versus-context-information-v1",
+  "stage": "development",
+  "family": "within_branch_relation_discrimination",
+  "sealed_test_access": false,
+  "automatic_successor_submission": false,
+  "hypothesis": "A fixed finite pair classifier may expose differences in learnable same-B/cross-B/background information between authenticated detector inputs and learned contextual embeddings; prior frozenabsdiff/product probes did not test detector information. This is diagnostic readout, not proof of irreversible information loss or a deployable grouping intervention.",
+  "changed_factor": "Input representation detector128 versus learnedcontext128; identical384->64GELU->3pairprobe. Each representation has a within-event shuffledknown-node target control. No encoderupdates/newpretraining.",
+  "control": "Same24835parameter head initializationseed8409, AdamWlr.001wd.0001clip5,2048updatesbatch256 perhead, identical true-arm event/class/pairdraws. Same event meancontext+absdifference+product inputs. Rawdetector and learnedembedding have different upstream processing and masks; equality ofheadcapacitydoesnotremove contextual/PIDadvantage.",
+  "target_contract": "Known source-disjoint unordered within-event pairs classified sameB/crossB/background; no globallyfixed Blabels. Unknown andsourcealiaspairs excluded/count-backed; continuum events retained. Truth onlylabels/evaluation afterdetachedscores saved. Pairclassificationisnotmembership/physicaltree/beam/p4success.",
+  "diagnostic_evidence": {
+    "path": "docs/assembly_diagnosis_20261007/evidence.json",
+    "sha256": "c1fa1b5f8d60909e679efaa06fd96831e7dc262dd1b1e15addf9741c33fd8c63"
+  },
+  "data_and_compute_control": {
+    "source_role": "train only",
+    "eligible_events": 1536,
+    "probe_fit_per_category": 192,
+    "probe_assessment_per_category": 64,
+    "partition": "FrozenPhase78 SHA256 phase78-probe:+UID split reused;event-disjointprobefit/assessmentwithintrain",
+    "representation_checkpoint_rule": "Fixed Phase84full1536step6000 if terminalandeligible; otherwise immutable historicalPhase76nativefinal. Neverchoosebyprobeorheldoutscores. Encoder was trained on these TRAINassessmentidentities; they are not encoder-heldout.",
+    "detector_feature_contract": "41measurements+41availability+3kind+2mode+41reconstructedPIDonehot=128; strictprojected detectorallowlist. Constantn_daughters0omittedandchecked. No truthPID/geometry/features.",
+    "normalization": "Eachbranchmaskedpercoordinate statistics onprobefittingevents only; flagsunchanged,unknown/absent identity transform; existingmodeltrainnormalizerunchanged.",
+    "probe_inputs": "Symmetricabsdiff128,product128,full-eventmean128. Learnedbranchhas upstream learnedfull-event/PIDprocessing; rawbranchhasactual detectorflags/categoricalinputs.",
+    "updates_per_head": 2048,
+    "pair_presentations_per_head": 524288,
+    "heads": 4,
+    "total_pair_presentations": 2097152,
+    "seed": 8409,
+    "resources": {
+      "cpus": 2,
+      "memory_gib": 16,
+      "hours": 1,
+      "gpus": 0,
+      "requeue": false
+    },
+    "admission": "Guarded18TRAINeventsmoke2updates/head+realnonzerogradients; analyticfullsourcepairfeaturememory bound and conservativewallforecast plusruntimeguards. Record uniqueevents/pairs, scorepresentations,encoder2passes/event,Nsquaredproxy,time/RSS.",
+    "scientific_encoder_decoder_updates": 0,
+    "corpus": 70000,
+    "widths": "context128/hyperbolic32/head256/depth4 unchanged"
+  },
+  "stop_rule": "Exactly2048updates/head,fixedfinal,no refit/sweep. Failonbinding/nonfinite/realgradient/memory/runtime mismatch; fullpairmemoryadmissionbeforefits;1hSlurmcapno requeue/extension. Executeafterexposurecore terminal; workerneverlaunchessuccessor.",
+  "success_rule": "Report pairedcategory-stratifiedwholeeventbootstrap2000. Strongerdetectorreadability only ifdetector-minus-embedding anddetector-minus-detectornull lower95%bounds>0 forconditionalsame/crossAUC andbalanced3classrecall, withoutmorebackgroundfalseBpairassignments. Otherwiseinconclusive/negative; proxypositive alone not physicalefficiency, pretrainingfactorial orprimaryauthorization. Allsupportedmetrics/unknownfailcountsretained.",
+  "validation_selection": "No validation/test identities accessed. Samefixedtrainprobeassessment exploredpreviously; notindependentconfirmation. Zero/sparsebootstraplimits explicit. No checkpointselection usingassessment; no primary/modelpromotion.",
+  "preregistered_utc": "2026-10-09T18:06:05.738035+00:00"
+}

@@ -10,6 +10,8 @@ capacity does NOT equalize those upstream information-processing advantages.
 from __future__ import annotations
 
 import hashlib
+import time
+import resource
 import torch
 from torch.nn import functional as F
 from hypertagging.preprocessing.schema_v2 import NODE_KIND_TO_ID
@@ -220,6 +222,7 @@ def fit_probe(events, *, seed, updates, batch_size, lr=0.001):
     opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=0.0001)
     generator = torch.Generator().manual_seed(seed)
     order, used, sampled, curve = hashlib.sha256(), set(), set(), []
+    start = time.monotonic()
     for step in range(updates):
         pairs = []
         for _ in range(batch_size):
@@ -239,6 +242,15 @@ def fit_probe(events, *, seed, updates, batch_size, lr=0.001):
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 5.0, error_if_nonfinite=True)
         opt.step()
+        if not all(torch.isfinite(p).all() for p in model.parameters()):
+            raise ValueError("Nonfinite diagnostic parameters")
+        if step == 31 and (time.monotonic() - start) / 32 * updates * 3 > 600:
+            raise ValueError("Probe runtime forecast exceeds per-head600s guard")
+        if (
+            step % 128 == 0
+            and resource.getrusage(resource.RUSAGE_SELF).ru_maxrss > 12 * 1024**2
+        ):
+            raise ValueError("Probe memory guard")
         if step == 0 or (step + 1) % 128 == 0 or step + 1 == updates:
             curve.append({"update": step + 1, "minibatch_loss": float(loss.detach())})
     return model.eval(), {
