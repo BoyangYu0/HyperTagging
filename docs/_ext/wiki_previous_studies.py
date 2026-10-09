@@ -213,12 +213,20 @@ def generate(root, output):
     names = part_names(binding)
     codec = sibling("wiki_phase72_compact")
     privacy = sibling("wiki_privacy")
-    if binding["inventory"]["file"] != "inventory.json":
+    if binding["inventory"]["file"] != "inventory.json.gz":
         raise ValueError("Unsafe previous-studies inventory name")
-    inventory_path = source / "inventory.json"
+    inventory_path = source / "inventory.json.gz"
     if inventory_path.is_symlink() or inventory_path.stat().st_size > LIMIT:
         raise ValueError("Unsafe previous-studies inventory")
-    inventory_bytes = inventory_path.read_bytes()
+    inventory_packed = inventory_path.read_bytes()
+    if digest(inventory_packed) != binding["inventory"]["compressed_sha256"]:
+        raise ValueError("Previous-studies inventory compressed hash mismatch")
+    inventory_decoder = zlib.decompressobj(31)
+    inventory_bytes = inventory_decoder.decompress(inventory_packed, LIMIT + 1)
+    if (len(inventory_bytes) > LIMIT or not inventory_decoder.eof
+            or inventory_decoder.unused_data or inventory_decoder.unconsumed_tail
+            or len(inventory_bytes) != binding["inventory"]["decoded_bytes"]):
+        raise ValueError("Previous-studies inventory expansion or stream mismatch")
     if digest(inventory_bytes) != binding["inventory"]["sha256"]:
         raise ValueError("Previous-studies inventory hash mismatch")
     inventory = privacy._strict_json(inventory_bytes.decode())

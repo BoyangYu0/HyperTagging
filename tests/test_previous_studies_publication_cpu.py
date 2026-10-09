@@ -14,6 +14,7 @@ import sys
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "docs/_ext"))
 SPEC = importlib.util.spec_from_file_location("previous_studies", ROOT / "docs/_ext/wiki_previous_studies.py")
 M = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(M)
@@ -37,6 +38,9 @@ def test_lossless_full_inventory_and_decoder(tmp_path, external_public):
     result = M.generate(ROOT, tmp_path)
     binding = json.loads((ROOT / M.SOURCE / "binding.json").read_text())
     assert result["primary_eligible"] is False
+    inventory_source = ROOT / M.SOURCE / "inventory.json.gz"
+    assert not (ROOT / M.SOURCE / "inventory.json").exists()
+    assert (tmp_path / "previous-studies-inventory.json").read_bytes() == gzip.decompress(inventory_source.read_bytes())
     assert result["public_summary"]["phase83"]["qualifying_steps"] == 0
     assert len(result["metric_downloads"]) == len(binding["parts"])
     assert {p.name for p in tmp_path.iterdir()} == M.FILES | set(external_public)
@@ -78,12 +82,12 @@ def test_evidence_mutation_rejected(tmp_path, mutation, external_public):
         data = M.canonical(wrapper); packed = gzip.compress(data, mtime=0); p.write_bytes(packed)
         part.update(compressed_sha256=hashlib.sha256(packed).hexdigest(), decoded_sha256=hashlib.sha256(data).hexdigest(), decoded_bytes=len(data))
     elif mutation == "decoded": binding["parts"][0]["decoded_bytes"] += 1
-    elif mutation == "inventory": (source / "inventory.json").write_text("{}")
+    elif mutation == "inventory": (source / "inventory.json.gz").write_bytes(b"broken")
     elif mutation == "source_coverage":
-        p = source / "inventory.json"
-        value = json.loads(p.read_text()); value["metric_sources"].pop()
-        data = M.canonical(value); p.write_bytes(data)
-        binding["inventory"]["sha256"] = hashlib.sha256(data).hexdigest()
+        p = source / "inventory.json.gz"
+        value = json.loads(gzip.decompress(p.read_bytes())); value["metric_sources"].pop()
+        data = M.canonical(value); packed = gzip.compress(data, mtime=0); p.write_bytes(packed)
+        binding["inventory"].update(sha256=hashlib.sha256(data).hexdigest(), compressed_sha256=hashlib.sha256(packed).hexdigest(), decoded_bytes=len(data))
     (source / "binding.json").write_text(json.dumps(binding))
     output = tmp_path / "output"; output.mkdir()
     seed_external(output, external_public)
@@ -173,3 +177,29 @@ def test_inner_xz_bounds_and_integrity(mutation):
 def test_inner_xz_exact_roundtrip():
     data = M.canonical({"values": [0, -1, 0.123456789, None, False], "empty": []})
     assert M.decode_fragments(inner_wrapper(data)) == data
+
+
+def test_complete_artifact_privacy_against_repository_sources(tmp_path, external_public):
+    seed_external(tmp_path, external_public)
+    M.generate(ROOT, tmp_path)
+    # Match the production generated-directory validator; raw-source-body
+    # hashes remain mandatory in this mode.
+    report = M.sibling("wiki_privacy").validate_artifact(tmp_path, root=ROOT, generated_projection=True)
+    assert report["privacy"] == "PASS"
+    assert report["raw_source_hash_rules"] > 0
+
+
+@pytest.mark.parametrize("mutation", ["trailing", "decoded_size", "decoded_hash"])
+def test_inventory_archive_bounds(tmp_path, external_public, mutation):
+    source = tmp_path / M.SOURCE; source.parent.mkdir(parents=True)
+    shutil.copytree(ROOT / M.SOURCE, source)
+    binding = json.loads((source / "binding.json").read_text())
+    if mutation == "trailing":
+        archive = source / "inventory.json.gz"
+        packed = archive.read_bytes() + b"trailing"; archive.write_bytes(packed)
+        binding["inventory"]["compressed_sha256"] = hashlib.sha256(packed).hexdigest()
+    elif mutation == "decoded_size": binding["inventory"]["decoded_bytes"] += 1
+    else: binding["inventory"]["sha256"] = "0" * 64
+    (source / "binding.json").write_bytes(M.canonical(binding))
+    output = tmp_path / "output"; output.mkdir(); seed_external(output, external_public)
+    with pytest.raises(ValueError): M.generate(tmp_path, output)
