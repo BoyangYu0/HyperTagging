@@ -5,6 +5,7 @@ import argparse
 from collections import Counter
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import random
@@ -136,7 +137,8 @@ def strata(rows):
             "fsp_count": len(r["targets"]),
             "b_sizes": [int((r["targets"] == i).sum()) for i in (1, 2)],
             "unknown": int((r["targets"] < 0).sum()),
-            "source_support": int(r["sources"].any(-1).sum()),
+            "nodes_with_source_support": int(r["sources"].any(-1).sum()),
+            "distinct_detector_sources": int(r["sources"].any(0).sum()),
         }
         for r in rows
     ]
@@ -220,7 +222,8 @@ def smoke(root, parent, pretrain):
             "gradient_checks": gradient_receipt,
         }
         if (
-            forecast > 7.5 * 3600
+            not math.isfinite(forecast)
+            or forecast > 7.0 * 3600
             or resource.getrusage(resource.RUSAGE_SELF).ru_maxrss > 24 * 1024**2
         ):
             raise ValueError("Resource admission failed")
@@ -323,6 +326,8 @@ def run(path):
         }
         save(out / f"step-{step}.pt", state)
         result = audit(model, decoder, rows, out / f"step-{step}-model-only.jsonl.gz")
+        if not all(math.isfinite(v) for v in result["mean_risk"].values()):
+            raise FloatingPointError("Nonfinite audit risk")
         write(out / f"step-{step}-evaluation.json", result)
         sample = exposure(rows, step, c["settings"]["seed"])
         assert sample["sequence_sha256"] == kw["sequence_sha256"]
@@ -338,12 +343,19 @@ def run(path):
             }
         )
         compute["evaluation_event_views"] += len(rows)
+        compute["evaluation_encoder_passes"] += 2 * len(rows)
         compute["evaluation_node_squared_proxy"] += sum(
             len(r["targets"]) ** 2 for r in rows
         )
         torch.set_rng_state(rngstate)
         model.train(mode[0])
         decoder.train(mode[1])
+        if (
+            time.monotonic() - start > 7.25 * 3600
+            or resource.getrusage(resource.RUSAGE_SELF).ru_maxrss > 26 * 1024**2
+        ):
+            reason = "runtime_or_memory_guard"
+            return True
         if step < 6000 and plateau(curves):
             reason = "saturated95percent_plateau"
             return True
@@ -367,6 +379,8 @@ def run(path):
         {
             "status": "COMPLETED",
             "stop_reason": reason,
+            "candidate_eligible_for_preregistered_replication": reason == "fixed6000"
+            and history["updates"] == 6000,
             "source_sha": c["source_sha"],
             "history": history,
             "pool_size": len(rows),
