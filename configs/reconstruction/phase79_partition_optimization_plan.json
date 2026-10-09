@@ -1,0 +1,13 @@
+{
+ "version":"phase79-convex-probe-optimization-v1",
+ "stage":"training_only_diagnostic",
+ "reason":"Phase78's finite Adam probe ends with noisy minibatch loss above log2 and has no full-risk stationarity check. Its weak assessment AUC cannot distinguish weak accessible signal from probe optimization underfit.",
+ "hypothesis":"Optimize exactly the same event-uniform,class-balanced convex logistic pair risk to distinguish the prior probe optimizer limitation from limitations of this fixed feature family.",
+ "changed_factor":"Deterministic full-risk L-BFGS-B optimizer replaces stochastic Adam, diagnostic only; same257-parameter feature model, cached normalization, pair labels, shuffled null, immutable train-role partitions and existing detector-only traces.",
+ "population":"No new model inference or validation. Existing1536 train identities;384 eligible B fitting events and128 B assessment events. Assessment is already inspected exploratory training-role reuse, never independent confirmation.",
+ "budget":{"fits":2,"max_iterations_per_fit":200,"max_function_evaluations_per_fit":300,"max_line_search_steps":20,"gradient_tolerance":1e-7,"relative_function_tolerance":1e-12,"initialization":"zero weights and bias as Phase78","checkpoint":"fixed terminal solver iterate; record termination and gradient, no assessment selection"},
+ "measurements":["exact weighted fit risk and gradient infinity norm before/after","solver termination,iterations,function evaluations","native,Adam,L-BFGS-B and shuffled-null same-B/cross-B pair AUC,event and pooled supports","per-category/source-size/background score controls","paired whole-collision training-role intervals"],
+ "decision":"Any optimizer benefit is probe-only, not exact membership or physics. If convergence succeeds and accessible signal substantially exceeds native assignment with null/background controls, formulate one deployable controlled intervention and admit it separately. If signal remains weak, do not invent a loss/threshold/data/width sweep. If not converged, report numerical limits rather than information absence.",
+ "resources":{"jobs":1,"cpus":2,"memory_gib":16,"hours":1,"gpus":0,"requeue":false},
+ "invariants":"No scientific encoder/decoder update, corpus/width/geometry/normalization/acceptance unchanged, truth only supervised probe fitting and after-trace evaluation. No new cohorts, sealed test,primary reservation or page publication."
+}
