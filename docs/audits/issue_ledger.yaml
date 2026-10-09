@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Correct stale no-fitting dashboard assertion and RST underline; original broad2417pass/one-failure receipt preserved, scientific outputs unchanged.
+  - 4bea8c3b6f7eb38ef4de3b4a417b487dd80df860
   # Phase78 exact replay, bounded pair probe/null and no scientific successor; eleven feature tests and193 focused core tests pass; lossless full per-event delivery retained.
   - eeccb1ea0b8c6b7568669c750f06e1e4df79067b
   # Phase78 shared-source support guard corrected with explicit exclusion counts; eleven focused tests pass, failed attempt retained.
