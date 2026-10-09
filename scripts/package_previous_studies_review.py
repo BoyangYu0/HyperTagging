@@ -59,7 +59,7 @@ def sanitize(value, privacy, exclusions, location=()):
                 exclusions['redacted_dictionary_key'] += 1
                 # Unique stable ordinal keeps all values even for private keys.
                 newkey = f'private_key_ordinal_{len(result)}'
-                while newkey in value or newkey in result:newkey+='_' 
+                while newkey in value or newkey in result:newkey+='_'
             result[newkey] = sanitize(item,privacy,exclusions,location+(key,))
         return result
     if isinstance(value,list):
