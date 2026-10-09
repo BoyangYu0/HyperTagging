@@ -1,6 +1,6 @@
 # Current repository audit status
 
-## Phase76 authorized refinement study — 2026-10-09
+## Phase76 completed refinement study — 2026-10-09
 
 A new explicit user instruction authorizes one bounded follow-up after the closed
 Phase75 pass. Read-only terminal-checkpoint replay reproduces raw memberships on
@@ -30,8 +30,20 @@ jobs at most, each 2 CPUs, 32 GiB and eight hours, no requeue or second successo
 Full cohort and cache admission pass with zero dropped/unavailable targets; the maximum
 FSP count is 73. Real-data gradients reach encoder, proposal and refinement in
 both arms; only the disabled partial-context input has zero block gradient.
-The worst-event smoke fits within the eight-hour bound. Both scientific jobs are RUNNING: 17091583 (context on) and 17091584 (off),
-from frozen source 0c01f38e. Terminal outcomes remain pending. No primary evaluation or model promotion
+The worst-event smoke fits within the eight-hour bound. Both jobs completed exit0: 17091583 (context on) in3094 seconds and17091584
+(off) in3030 seconds, from frozen source0c01f38e. Terminal hash, checkpoint,
+cohort and order checks pass; the control exactly reproduces earlier histories
+and both final model/decoder states. Both arms have tiny raw32/32 and accepted
+27/32, main-train0/1024 and held-out0/400 raw/accepted. Continuum52/400 versus
+46/400 has paired difference-0.015 with interval[-0.04,0.0075]. Tiny raw passes;
+held-out improvement and background-control gates fail. All categories process
+100 collisions with zero execution failures and zero accepted source conflicts.
+Full diagnostic closeout and immutable trace rejoining pass. Disabling context
+reduces held-out proposal source recall1167/3634 to964/3634; refined recall
+1081/3634 versus1107/3634 has uncertainty including no difference. Complete
+counts,5000 update records, convergence summaries and paired uncertainties are
+packaged losslessly.317 focused documentation, notebook, audit and feature tests
+pass. Exact-commit publication checks and live verification remain pending. No primary evaluation or model promotion
 is authorized. Existing results and the invalid original 60-event cohort remain
 immutable. Diagnostic v2 corrects per-target transition pairing across output-slot
 permutations by rejoining the original detached traces; per-stage v1 counts agree.

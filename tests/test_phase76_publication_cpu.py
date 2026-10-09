@@ -93,3 +93,78 @@ def test_delivery_rejects_hash_changes(tmp_path):
     p.write_bytes(p.read_bytes() + b"changed")
     with pytest.raises(ValueError, match="hash"):
         m.generate(tmp_path, out)
+
+
+def test_delivery_rejects_missing_category_even_with_total_600(tmp_path):
+    m, out, _ = payload(tmp_path)
+    p = tmp_path / m.SOURCE / "phase76-review.json.gz"
+    value = json.loads(gzip.decompress(p.read_bytes()))
+    del value["arms"]["partial_context_on"]["roles"]["heldout"]["by_category"][
+        "charged"
+    ]
+    data = json.dumps(value).encode()
+    packed = gzip.compress(data, mtime=0)
+    p.write_bytes(packed)
+    binding_path = p.parent / "binding.json"
+    b = json.loads(binding_path.read_text())
+    b.update(
+        compressed_sha256=hashlib.sha256(packed).hexdigest(),
+        decoded_sha256=hashlib.sha256(data).hexdigest(),
+        decoded_bytes=len(data),
+    )
+    binding_path.write_text(json.dumps(b))
+    with pytest.raises(ValueError, match="coverage"):
+        m.generate(tmp_path, out)
+
+
+def test_completed_phase76_counts_and_all_download_metrics(tmp_path):
+    m = module()
+    m.sibling("wiki_phase74").generate(ROOT, tmp_path)
+    r = m.generate(ROOT, tmp_path)
+    assert r["control_replay_model_states"] == {"tiny": True, "downstream": True}
+    assert r["preregistered_endpoint"]["passed"] is False
+    assert "diagnostics" not in r
+    decoded = json.loads(
+        m.sibling("wiki_phase72_compact").decode(
+            json.loads((tmp_path / "phase76-review.json").read_text()), 5_000_000
+        )
+    )
+    assert set(decoded["diagnostics"]) == {"exploratory_phase75", "fixed_phase76"}
+    for arm, v in decoded["arms"].items():
+        assert (
+            len(v["curves"]["tiny"]) == 1000 and len(v["curves"]["downstream"]) == 1500
+        )
+        assert (
+            v["roles"]["heldout"]["counts"]["known_accepted_failed_membership_trials"]
+            == 400
+        )
+        assert (
+            v["roles"]["heldout"]["relation_ignored_pairs"]["status"]
+            == "MEASURED_AFTER_GENERATION"
+        )
+        assert (
+            v["roles"]["heldout"]["relation_availability_by_category"]["ccbar"][
+                "detector_relation"
+            ]["status"]
+            == "UNAVAILABLE_NO_WITHIN_B_SUPPORT"
+        )
+        assert v["convergence_diagnostics"]["downstream"]["convergence_proven"] is False
+    assert (
+        decoded["arms"]["partial_context_on"]["roles"]["heldout"]["counts"][
+            "continuum_accepted_events"
+        ]
+        == 52
+    )
+    assert (
+        decoded["arms"]["partial_context_off"]["roles"]["heldout"]["counts"][
+            "continuum_accepted_events"
+        ]
+        == 46
+    )
+    for lines in (
+        m.render(r),
+        (ROOT / "docs/wiki/phase76.rst").read_text().splitlines(),
+    ):
+        for i, line in enumerate(lines):
+            if i and line and set(line) <= set("=-~"):
+                assert len(line) >= len(lines[i - 1]), lines[i - 1]

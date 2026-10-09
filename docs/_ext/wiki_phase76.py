@@ -57,7 +57,9 @@ def generate(root, output):
         }:
             raise ValueError("Incomplete successor update records")
         if (
-            any(
+            set(r["roles"]["heldout"]["by_category"])
+            != {"charged", "mixed", "ccbar", "uubar", "ddbar", "ssbar"}
+            or any(
                 x["processed"] != 100
                 for x in r["roles"]["heldout"]["by_category"].values()
             )
@@ -249,11 +251,18 @@ def render(value):
                 r = metrics[metric]
                 rows.append(
                     [
-                        role,
-                        stage,
-                        metric,
-                        str(r.get("rates", "UNAVAILABLE")),
-                        str(r["paired_collision_stratified_bootstrap95"]),
+                        role.capitalize(),
+                        stage.capitalize(),
+                        metric.replace("_", " "),
+                        ", ".join(f"{x:.4f}" for x in r["rates"])
+                        if "rates" in r
+                        else "UNAVAILABLE",
+                        " to ".join(
+                            f"{x:+.4f}"
+                            for x in r["paired_collision_stratified_bootstrap95"]
+                        )
+                        if r["paired_collision_stratified_bootstrap95"] is not None
+                        else "UNAVAILABLE",
                     ]
                 )
     lines += table(
@@ -261,7 +270,7 @@ def render(value):
     )
     lines += [
         "These ratios aggregate source counts before division. Intervals resample whole collisions within categories.",
-        "Training intervals are descriptive; one seed and repeated fitting do not measure seed variability.",
+        "Source-level intervals are descriptive, not multiplicity-adjusted; one seed does not measure seed variability.",
         "",
     ]
     lines += ["Paired effects and limitations", "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", ""]

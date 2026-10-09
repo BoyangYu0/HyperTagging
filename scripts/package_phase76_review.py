@@ -54,7 +54,7 @@ def package(root, destination):
     value["diagnostics"] = {}
     for label, folder in (
         ("exploratory_phase75", "diagnostic-v3"),
-        ("fixed_phase76", "endpoint-diagnostic-v1"),
+        ("fixed_phase76", "endpoint-diagnostic-v2"),
     ):
         diagnostic = json.loads((root / folder / "diagnostic-summary.json").read_text())
         clean = {"scope": label, "arms": {}}
@@ -98,7 +98,7 @@ def package(root, destination):
             json.loads(
                 (
                     root
-                    / "endpoint-diagnostic-v1"
+                    / "endpoint-diagnostic-v2"
                     / f"{arm}-{role}-joined-private.json"
                 ).read_text()
             )
@@ -107,6 +107,63 @@ def package(root, destination):
         value["paired_source_errors"][role] = paired_source_errors(*rows)
     value["diagnostic_interpretation"] = (
         "Proposal omissions dominate; partial-context contamination is association, not causal proof. Off removes the entire partial-context block, including singletons. Predicted-membership context remains active. Old development diagnostics are exploratory only."
+    )
+    import statistics
+
+    for arm, record in value["arms"].items():
+        record["convergence_diagnostics"] = {}
+        for stage, steps in record["curves"].items():
+            losses = [step["loss"] for step in steps]
+            record["convergence_diagnostics"][stage] = {
+                "window_updates": 100,
+                "previous_100_mean_loss": statistics.mean(losses[-200:-100]),
+                "last_100_mean_loss": statistics.mean(losses[-100:]),
+                "last_100_loss_std": statistics.pstdev(losses[-100:]),
+                "final_loss": losses[-1],
+                "convergence_proven": False,
+                "checkpoint_selection": "fixed_final_not_loss_selected",
+            }
+        record["unavailable"]["continuum_parton_reconstruction"] = {
+            "numerator": None,
+            "denominator": None,
+            "reason": "Retained components are not quark ancestry; no parton reconstruction",
+        }
+        for role, metrics in record["roles"].items():
+            for counts in [metrics["counts"], *metrics["by_category"].values()]:
+                n = counts.get("nominal_b_trials", 0)
+                unavailable = counts.get("unavailable_membership_trials", 0)
+                counts["known_raw_failed_membership_trials"] = (
+                    n - unavailable - counts.get("raw_exact_memberships", 0)
+                )
+                counts["known_accepted_failed_membership_trials"] = (
+                    n - unavailable - counts.get("accepted_exact_memberships", 0)
+                )
+            metrics["failure_semantics"] = (
+                "failed in category rows means execution failure; known_raw/accepted_failed_membership_trials count scientific membership failures"
+            )
+            metrics["stored_channel_unavailable_trials"] = sum(
+                row["trials"]
+                for key, row in metrics["by_retained_channel"].items()
+                if key.endswith(":retained-channel-0")
+            )
+            metrics["relation_availability_by_category"] = {
+                category: {
+                    prefix: {
+                        "numerator": counts.get(prefix + "_correct", 0),
+                        "denominator": counts.get(prefix + "_trials", 0),
+                        "status": "MEASURED"
+                        if counts.get(prefix + "_trials", 0)
+                        else "UNAVAILABLE_NO_WITHIN_B_SUPPORT",
+                    }
+                    for prefix in ("detector_relation", "generated_state_relation")
+                }
+                for category, counts in metrics["by_category"].items()
+            }
+    value["metric_scope"] = (
+        "Flat retained-source membership. Source precision/recall use B-bearing collisions; continuum acceptance is separate. No physical hierarchy or FEI equivalence. All failures and unavailable supports retained."
+    )
+    value["cache_metadata_scope"] = (
+        "Cache-admission historical_parameters_transferred:false describes cache construction only. Training explicitly inherits the shared authenticated Phase74 pretraining-final checkpoint."
     )
     value["coverage"] = {
         "heldout_by_category": dict.fromkeys(

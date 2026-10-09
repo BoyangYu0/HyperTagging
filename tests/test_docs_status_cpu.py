@@ -418,11 +418,18 @@ def test_current_repository_dashboard_surfaces_recorded_acceptance_values(tmp_pa
     assert manifest["pretraining"]["recorded_step"] == 54064 and manifest["pretraining"]["planned_steps"] == 108128
     assert manifest["pretraining"]["calibration_status"] == "PENDING"
     rendered_status = (tmp_path / "generated" / "index.rst").read_text().replace("\\-", "-")
-    assert "Phase75 completed gradient-routing development" in rendered_status
-    assert rendered_status.index("Phase75 completed gradient-routing development") < rendered_status.index("All studies")
+    assert "Phase76 completed membership refinement study" in rendered_status
+    assert rendered_status.index("Phase76 completed membership refinement study") < rendered_status.index("All studies")
     assert "fresh 600-event development cohort" in rendered_status
     assert "NO MEMBERSHIP GAIN" in rendered_status
     assert "Phase74 completed development factorial" not in rendered_status
+    assert "Phase75 completed gradient-routing development" not in rendered_status
+    assert "DEVELOPMENT ENDPOINT NOT MET" in rendered_status
+    for arm in ("partial_context_on", "partial_context_off"):
+        record = manifest["reconstruction"]["phase76"]["arms"][arm]
+        assert record["roles"]["heldout"]["counts"]["accepted_exact_memberships"] == 0
+        assert record["roles"]["tiny"]["counts"]["raw_exact_memberships"] == 32
+        assert record["sampling_accounting"]["downstream"]["actual_distinct_presented"] == 1535
     for arm in ("joint", "project_conflicting_relation"):
         assert manifest["reconstruction"]["phase75"]["arms"][arm]["roles"]["heldout"]["counts"]["accepted_exact_memberships"] == 0
         assert manifest["reconstruction"]["phase75"]["arms"][arm]["roles"]["tiny"]["counts"]["raw_exact_memberships"] == 32
@@ -432,6 +439,7 @@ def test_current_repository_dashboard_surfaces_recorded_acceptance_values(tmp_pa
     downloads = (tmp_path / "generated" / "downloads.rst").read_text()
     assert "Phase40r1 strict full-decay comparison" not in rendered_status
     assert "Phase68: hybrid" not in rendered_status
+    assert "phase76-review.json" in downloads
     assert "phase75-review.json" in downloads and "phase74-review.json" in downloads
     assert "phase68-all-aggregate-metrics.json" in downloads
     assert "phase68-all-aggregate-metrics.json" not in rendered_status
