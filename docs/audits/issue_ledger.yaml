@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase80 native versus half-step counterfactual diagnostic, no changed deployed model; fifteen focused gradient/permutation/source/step tests pass.
+  - fe7a0ba60ebc793e07961f1e7b5e334807adb280
   # User-directed sequential/publication preference and Phase79 bounded convex probe risk; seven gradient/permutation/split/source tests pass, no scientific model or validation changes.
   - 5779716aee6a3799a3972ae58eeac71d939eee7e
   - b8987b3ad8a54680314cb4e2623f23012a888cb0
