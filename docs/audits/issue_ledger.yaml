@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase81 bounded pair supervision; twelve focused probability, permutation, support, gradient and negative-contract tests pass. Runtime admission remains separate.
+  - d8c5a3f5dd1f855ff21eed5e8bbc83752389a7b7
   # Phase80 native versus half-step counterfactual diagnostic, no changed deployed model; fifteen focused gradient/permutation/source/step tests pass.
   - fe7a0ba60ebc793e07961f1e7b5e334807adb280
   # User-directed sequential/publication preference and Phase79 bounded convex probe risk; seven gradient/permutation/split/source tests pass, no scientific model or validation changes.
