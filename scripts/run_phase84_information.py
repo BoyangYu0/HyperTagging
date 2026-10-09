@@ -295,6 +295,7 @@ def main(contract_path, smoke=False):
     model.load_state_dict(ck["model_state_dict"], strict=True)
     model.eval()
     del ck
+    extraction_start = time.monotonic()
     detached = []
     with torch.inference_mode():
         for row in rows:
@@ -317,6 +318,7 @@ def main(contract_path, smoke=False):
                     "source_support": support,
                 }
             )
+    extraction_seconds = time.monotonic() - extraction_start
     save(output / "model-only-inputs.pt", detached)
     input_receipt = binding(output / "model-only-inputs.pt")
     del model
@@ -401,6 +403,7 @@ def main(contract_path, smoke=False):
         del fitting, initial
         gc.collect()
         # Score model-visible inputs only; serialize all scores before outcome joins.
+        score_start = time.monotonic()
         scores = []
         for r in records:
             x = pair_inputs(
@@ -417,6 +420,7 @@ def main(contract_path, smoke=False):
         path = output / (arm + "-model-only-scores.pt")
         save(path, scores)
         score_files[arm] = binding(path)
+        report["score_wall_seconds"] = time.monotonic() - score_start
         del scores, fitted
         print("finished", arm, report, flush=True)
     if len({v["initial_sha256"] for v in fits.values()}) != 1:
@@ -512,6 +516,8 @@ def main(contract_path, smoke=False):
             "wall_seconds": time.monotonic() - start,
             "cpu_seconds": time.process_time() - cpu,
             "peak_rss_kib": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
+            "extraction_wall_seconds": extraction_seconds,
+            "full_possible_pair_upper_bound": full_pair_upper,
             "detector_runtime_calls": len(records),
             "encoder_forwards": 2 * len(records),
             "encoder_node_square_proxy": 2
