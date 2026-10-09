@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase77 training-only proposal diagnostic, native loss/permutation/unknown-label checks; 11 focused tests pass. Real-data replay remains pending.
+  - 75dd586632ddc03122650aeac0c127b864f43411
   # Completed Phase76 two-arm negative endpoint, exact control replay and full lossless metrics;317 documentation/notebook/audit/feature tests and five final delivery tests pass.
   - 7caeebb93c7f2f34c54c647de7d65ebb82f3d824
   # Additive immutable-trace rejoin separates mixed B/background from background-only groups; six diagnostic tests pass and original stage totals/traces agree.
