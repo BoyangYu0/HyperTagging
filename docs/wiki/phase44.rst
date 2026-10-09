@@ -391,3 +391,11 @@ CPU tests passed (34 skipped) and both two-step training smoke checks passed.
 The dashboard records the submission snapshot. These software checks do not
 establish scientific benefit; the training results and unchanged gates remain
 pending.
+
+Delivery note — 9 October 2026
+--------------------------------
+
+The complete metric rows now use a dedicated lossless download in the
+:doc:`catalogue <_generated/status/downloads>`. The status file records its
+row count and hashes under ``metric_rows_download``. Every original value is
+preserved; see :doc:`maintaining` for the decoder and delivery contract.

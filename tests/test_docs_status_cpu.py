@@ -36,6 +36,7 @@ def evidence(tmp_path, monkeypatch):
     documents = {
         "reconstruction_phase74_review": {"reserved": True},
         "reconstruction_phase75_review": {"reserved": True},
+        "reconstruction_phase42_44_archive": {"reserved": True},
         "reconstruction_phase71_review": {"reserved": True},
         "reconstruction_phase71_policy": {"reserved": True},
         "reconstruction_phase72_policy": {"reserved": True},
@@ -209,7 +210,7 @@ def test_status_is_deterministic_and_preserves_record_scope(evidence, tmp_path, 
     assert manifest["pretraining"]["selected_profile_state"] == "NONE_SELECTED"
     assert manifest["pretraining"]["submission_performed"] is False
     assert manifest["pretraining"]["pretraining_success_gate_passed"] is False
-    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 96
+    assert manifest["provenance"]["tracked_repository_artifact_inputs_opened"] == 97
     assert manifest["provenance"]["external_filesystem_or_network_artifacts_opened"] is False
     assert source_info(manifest, "issue_ledger")["freshness"]["status"] == "stale"
     assert source_info(manifest, "current_status")["freshness"]["status"] == "unknown"
@@ -616,13 +617,21 @@ def test_complete_metric_download_stays_within_publication_limit(tmp_path, copy_
     original = json.loads((ROOT/status.SOURCE_PATHS['reconstruction_phase41']).read_text())
     assert json.loads(metric_bytes)['metric_rows'] == original['metric_rows']
     assert manifest['reconstruction']['phase41']['metric_rows'] == [r for r in original['metric_rows'] if r['view'] == 'training_best']
-    assert len(manifest['reconstruction']['phase42']['metric_rows']) == 16306
-    assert len(manifest['reconstruction']['phase43']['metric_rows']) == 16405
+    for phase, expected_count in (("phase42", 16306), ("phase43", 16405), ("phase44", 15434)):
+        receipt = manifest["reconstruction"][phase]["metric_rows_download"]
+        packed = (output / receipt["filename"]).read_bytes()
+        assert hashlib.sha256(packed).hexdigest() == receipt["sha256"]
+        codec = status._phase74.sibling("wiki_phase72_compact")
+        data = codec.decode(json.loads(packed), 5_000_000)
+        assert hashlib.sha256(data).hexdigest() == receipt["decoded_sha256"]
+        rows = json.loads(data)
+        assert len(rows) == receipt["rows"] == expected_count
+        original = json.loads((ROOT / status.SOURCE_PATHS["reconstruction_" + phase]).read_text())
+        assert rows == original["metric_rows"]
     assert manifest['reconstruction']['phase41']['next_study_status'] == 'COMPLETED'
     assert manifest['reconstruction']['phase42']['next_study_status'] == 'COMPLETED'
     assert manifest['reconstruction']['phase43']['next_study_status'] == 'FAILED_JOBS_DIAGNOSTICALLY_RECOVERED'
     assert manifest['reconstruction']['phase44']['status'] == 'RECOVERED_DIAGNOSTIC'
-    assert manifest['reconstruction']['phase44']['metric_rows'] == json.loads((ROOT / status.SOURCE_PATHS['reconstruction_phase44']).read_text())['metric_rows']
 
 
 def test_phase43_metrics_are_complete_and_keep_counts():

@@ -133,3 +133,24 @@ archive checks run on branch pushes, pull requests and manual dispatch; their
 artifact limits and compatibility layouts remain unchanged. The authorized
 Phase72 review requires exact branch CPU and all documentation layouts to pass
 before guarded master promotion, followed by live page and download checks.
+
+Phase75 lossless historical-row delivery
+-----------------------------------------
+
+The completed Phase75 publication exceeded the unchanged site-size bound in the
+basf2 layout. Phase42, Phase43 and Phase44 still embedded 6.75 MB of metric rows
+inside the general status file. Those exact rows now have dedicated bounded
+gzip/base32 JSON downloads, using the existing standard-library decoder format.
+All 16306, 16405 and 15434 rows remain available. Whole-manifest reconstruction
+is exact and net delivery savings are 6199777 bytes, including the new files.
+No metric, historical report,
+existing download, privacy check or byte limit is removed or raised.
+
+The status file retains every study summary and replaces the three bulky arrays
+with explicit ``metric_rows_download`` pointers, row counts and encoded/decoded
+hashes. The download catalogue supplies the three envelopes, integrity record
+and standalone decoder. Build-time comparison requires byte-identical canonical
+rows from the current authenticated historical projections; a changed source or
+archive fails closed. Decoder roundtrip and negative hash/value tests verify
+preservation. Consumers that need the former arrays can reconstruct them exactly
+from these pointers. This is a delivery change, not a new scientific evaluation.

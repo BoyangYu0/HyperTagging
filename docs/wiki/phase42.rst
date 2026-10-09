@@ -138,3 +138,11 @@ encoder updates by design; equal total steps do not imply identical FLOPs or
 wall time. Earlier adaptation may help or may damage useful pretrained features.
 A benefit requires an improved primary and every unchanged hierarchy gate;
 single-seed results still need later replication.
+
+Delivery note — 9 October 2026
+--------------------------------
+
+The complete metric rows now use a dedicated lossless download in the
+:doc:`catalogue <_generated/status/downloads>`. The status file records its
+row count and hashes under ``metric_rows_download``. Every original value is
+preserved; see :doc:`maintaining` for the decoder and delivery contract.

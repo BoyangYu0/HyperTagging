@@ -31,6 +31,17 @@ of proposal/refinement and within-branch membership errors in the main training
 pool before proposing another controlled study. Reuse of inspected development
 events is exploratory. See the [completed Phase75 review](../wiki/phase75.rst).
 
+### Publication delivery correction
+
+The first completed-successor publication candidate hit the unchanged site-size
+bound in the basf2 layout, after CPU and text checks passed. The failed receipt
+is preserved. All 48145 Phase42–44 metric rows now use dedicated bounded lossless
+downloads with hashes and a decoder; status.json keeps explicit download pointers.
+Whole-manifest reconstruction is exact. Net delivery savings are 6199777 bytes,
+including the new files. Three preservation/negative-case tests pass. No metrics,
+historical reports, existing downloads or privacy/resource limits are removed or
+relaxed. Exact-head full validation remains mandatory before guarded publication.
+
 ## Phase74 completed development and bounded Phase75 — 2026-10-09
 
 All four Phase74 jobs completed exit0. Terminal checkpoint/output hashes, fixed

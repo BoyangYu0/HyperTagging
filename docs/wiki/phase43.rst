@@ -162,3 +162,11 @@ Every acceptance gate is unchanged. A favorable direction alone is insufficient:
 an improvement claim requires a better primary and all strict gates. No automatic
 promotion or sealed-test access is authorized. Two guarded one-GPU jobs receive
 36-hour limits and no requeue; the dashboard records submission status.
+
+Delivery note — 9 October 2026
+--------------------------------
+
+The complete metric rows now use a dedicated lossless download in the
+:doc:`catalogue <_generated/status/downloads>`. The status file records its
+row count and hashes under ``metric_rows_download``. Every original value is
+preserved; see :doc:`maintaining` for the decoder and delivery contract.
