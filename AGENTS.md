@@ -9,6 +9,21 @@ SSH, storage and scheduler access. Previous chats, personal plugins and sibling
 checkouts are not prerequisites. Historical receipts do not authorize new jobs.
 `AGENTS.md` is the canonical agent entry point.
 
+## User-directed sequential improvement preference (2026-10-09)
+
+The user explicitly requests: "continue new steps one by one, focus on the
+improvement, only update the git page when there are big changes". For this
+ongoing reconstruction work, proceed sequentially from evaluated evidence to
+one justified diagnostic or controlled study at a time. Prior one-pass stop
+boundaries do not require renewed permission after each step. Preserve all
+scientific policy, cohort, privacy and resource admission gates; this is not
+permission for sweeps, concurrent successor studies or primary scale-up.
+Keep a private progress ledger and immutable receipts. Publish pages only for
+a meaningful supported scientific result, material correctness/implementation
+change, or accumulated evidence that substantially changes the recommendation.
+Incremental negative diagnoses and phase numbering alone do not qualify. Existing
+publication safeguards still apply whenever publication is warranted.
+
 ## Scope and working discipline
 
 - Work in this Git root. Historical sibling repositories are read-only
