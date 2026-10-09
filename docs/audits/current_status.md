@@ -1,5 +1,22 @@
 # Current repository audit status
 
+## Phase82 terminal; bounded optimizer-history mechanism check — 2026-10-09
+
+Phase82 job17120875 completes exit0 in44seconds. The fixed nonlinear probe
+reaches training-role assessment AUC0.5349 versusnative0.5452 andoptimized
+linear0.5494; its readability gate fails. Fitting risk improves without stronger
+assessment information; nonconvex convergence is not established. No probe
+refit, scientific model intervention, validation use or publication follows.
+
+Phase83 addresses one remaining concrete optimizer-state question fromPhase80:
+compare stored first-moment Adam updates against current-gradient-only updates
+on the identical12training batches/96audit identities, preserving second moments,
+learning rates, clipping and weights. Native outcomes require exact reference
+replay. This is a finite binary mechanism check, not a coefficient grid. A new
+model study requires consistent actual B-assignment/conditional gains with
+background control, not lower loss or merely less harmful steps. No fresh
+validation or chained scientific training is authorized by the diagnostic worker.
+
 ## Phase81 negative endpoint; Phase82 bounded readability diagnostic — 2026-10-09
 
 Phase81 native17120627 andpair17120628 complete exit0, review17120813 completes.

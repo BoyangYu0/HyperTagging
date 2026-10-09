@@ -1,0 +1,49 @@
+{
+  "version": "phase83-first-moment-history-diagnostic-v1",
+  "stage": "development",
+  "family": "first_error_correction",
+  "sealed_test_access": false,
+  "automatic_successor_submission": false,
+  "hypothesis": "Stored Adam first-moment history may explain why all12 native one-step updates inPhase80 harmed non-minibatch audit risk/B assignments. Removing that history, with identical clipped current gradients and second moments, may produce structural correction. This is an optimizer-state mechanism diagnostic, not an arbitrary beta or learning-rate sweep.",
+  "changed_factor": "For the same checkpoint/gradient, beta1=0 uses current gradient rather than stored first-moment EMA. Keep beta2=.999, second-moment state, step counter, epsilon, LR, weight decay, clipping and current gradients identical. Native beta1=.9 is frozen reference.",
+  "control": "Reuse all12 immutable Phase80 native outcomes after exact baseline and first-native-step trace replay plus all12 gradient/delta-norm checks. Compute both native/current-only deltas from identical gradients; reset model and optimizer each batch. No chained training.",
+  "target_contract": "Original unordered optional-B membership plus within-B relation objective. Same128/32/256 architecture, fixed geometry/PID/normalization,detector-only/model-generated states and original1536train pool. Truth only supervised gradients/evaluation, no inference changes.",
+  "diagnostic_evidence": {
+    "path": "docs/assembly_diagnosis_20261007/evidence.json",
+    "sha256": "c1fa1b5f8d60909e679efaa06fd96831e7dc262dd1b1e15addf9741c33fd8c63"
+  },
+  "mechanism_evidence": {
+    "report_binding": {
+      "path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/phase80_optimizer_diagnostic_20261009/terminal-review.json",
+      "sha256": "7a51d2e52ffdb1d421919551f69126ad98d7da66b8e4aa34357975bca2e1888b"
+    },
+    "measured_effect": "All12 native and half-delta updates worsened training audit risk/B assignment; half only reduced damage. Phase81pair supervision andPhase82nonlinear readability also failed endpoints; no direct next model intervention established."
+  },
+  "data_and_compute_control": {
+    "training_pool": 1536,
+    "audit": "Same96 training identities16/category fromPhase80; exclude each optimizer minibatch in paired assessment",
+    "optimizer_batches": "Same12batch8 draws from saved sampling RNG;94distinct optimizer identities",
+    "optimizer_steps": 24,
+    "gradient_event_presentations": 96,
+    "new_audit_event_views": 1344,
+    "no_chained_training": true,
+    "learning_rates": {
+      "encoder": 5e-05,
+      "head": 0.001
+    },
+    "clip": 5,
+    "resources": {
+      "cpus": 2,
+      "memory_gib": 16,
+      "hours": 1,
+      "gpus": 0,
+      "requeue": false
+    },
+    "scientific_campaign_jobs": 0,
+    "compute": "Report parameter delta norms/directions, exact second-moment equality, presentations,time,RSS and node-squared proxies; no FLOPs equivalence."
+  },
+  "stop_rule": "One binary removal-of-history diagnostic, fixed12batches andaudit, no coefficient grid or refit. Fail closed on reference/source/gradient/resource/finite mismatch. No automatic follow-up from worker.",
+  "success_rule": "Mechanism support requires >=9/12 current-only steps improving both membership and total non-minibatch audit risk, increasing correct B assignments in proposal AND refinement without increased background assignments, and nondecreasing conditional-optimal slot correctness in both stages with at least one strict conditional gain. No raw exact loss or increased accepted continuum. Merely smaller damage/lower loss does not support a scientific training intervention. Shared checkpoint/audit states are correlated; this is exploratory only.",
+  "validation_selection": "Training-only fixedPhase80audit; no new validation/test identities, no threshold/checkpoint selection. Any later model study requires a separate evidence-backed preregistration and admission.",
+  "preregistered_utc": "2026-10-09T17:23:11.844537+00:00"
+}
