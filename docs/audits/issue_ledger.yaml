@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase78 shared-source support guard corrected with explicit exclusion counts; eleven focused tests pass, failed attempt retained.
+  - 09a13c26eba8f8394572d13b68c27cfc94c01f80
   # Phase78 finite training-role pair probe and exact trace capture; ten focused tests pass, diagnostic execution pending.
   - 315aef58cd307f761fa6d7c0820b46daa353f710
   - 0d06e0d278a044c77f01e83d36922235b8fec0d5
