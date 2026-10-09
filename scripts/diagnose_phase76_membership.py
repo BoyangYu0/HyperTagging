@@ -121,6 +121,17 @@ def joined_trace(trace, row):
     sides = [set(g) for g in row["supervision"]["b_groups"]]
     stages = {k: stage_errors(v, targets) for k, v in trace["stages"].items()}
     merge = Counter()
+    from hypertagging.models.assembly_development import relation_targets
+
+    for state_index, state in enumerate(trace["states"]):
+        labels = relation_targets(
+            tuple(frozenset(g) for g in state["groups"]),
+            state["pairs"],
+            row["supervision"],
+        )
+        prefix = "detector" if state_index == 0 else "generated"
+        merge[prefix + "_relation_total_pairs"] += len(labels)
+        merge[prefix + "_relation_ignored_pairs"] += sum(label < 0 for label in labels)
     proposal = trace["stages"]["proposal"]["probabilities"]
     assignment = [max(range(3), key=lambda k: p[k]) for p in proposal]
     for prev, nxt in zip(trace["states"], trace["states"][1:]):
@@ -167,7 +178,9 @@ def main(parent, out, replay=None):
     cache = torch.load(c["cache"]["path"], weights_only=False, map_location="cpu")
     result = {
         "version": "phase76-prestudy-diagnostic-v2",
-        "scope": "train_and_previously_inspected_phase75_development_exploratory_only",
+        "scope": "fixed_preregistered_phase76_endpoint"
+        if c["version"].startswith("phase76")
+        else "train_and_previously_inspected_phase75_development_exploratory_only",
         "input_contract": binding(parent / "successor-campaign-v1/contract.json"),
         "arms": {},
     }
@@ -206,7 +219,11 @@ def main(parent, out, replay=None):
                 if fit == "tiny"
                 else {
                     "train": cache["train"],
-                    "inspected_development": cache["development"],
+                    (
+                        "heldout"
+                        if c["version"].startswith("phase76")
+                        else "inspected_development"
+                    ): cache["development"],
                 }
             )
             for role, rows in roles.items():
@@ -215,6 +232,7 @@ def main(parent, out, replay=None):
                 sizes = defaultdict(lambda: defaultdict(Counter))
                 transitions = Counter()
                 merges = Counter()
+                category_merges = defaultdict(Counter)
                 event_records = []
                 trace_path = (replay or out) / f"{arm}-{role}-detached-traces.jsonl.gz"
                 with (
@@ -235,6 +253,7 @@ def main(parent, out, replay=None):
                             )
                         stages, merge = joined_trace(trace, row)
                         merges.update(merge)
+                        category_merges[row["category"]].update(merge)
                         for stage, (counts, trials, groups) in stages.items():
                             total[stage].update(counts)
                             cats[row["category"]][stage].update(counts)
@@ -301,6 +320,7 @@ def main(parent, out, replay=None):
                     "by_size": dict(sizes),
                     "transitions": dict(transitions),
                     "merges": dict(merges),
+                    "by_category_merges": dict(category_merges),
                     "checkpoint": cb,
                     "trace": binding(trace_path),
                 }

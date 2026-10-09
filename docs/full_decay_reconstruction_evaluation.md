@@ -816,3 +816,16 @@ prefixes use normalized joint probability order. The supplemental checks always
 use the direct retained topology, even in a contracted-diagnostic report.
 Truth is consulted only after candidate generation; it never changes inference,
 pruning, stopping, or model-ranked selections.
+
+### Phase76 flat proposal/refinement diagnostic extension
+
+Model-generated proposal/refinement traces are detached before truth joins. A
+single event-level B-slot permutation minimizes known-node errors; unassigned
+remains class zero. Missing/extra counts are aggregated before division. Per-target
+best IoU is optimistic and is not a physical hierarchy or independent trial.
+Explicit retained continuum composite roots may be compared post hoc to individual
+flat predicted source sets, with unknown mappings unavailable and no disconnected
+group unions. This diagnostic does not make physical tagging, parton ancestry,
+exact-tree, physical beam or p4 closure available. Preserve fake-B acceptance
+separately. Phase76 uses fixed final development endpoints and fresh600 identities;
+no primary reservation or complete12000-event evaluation is implied.

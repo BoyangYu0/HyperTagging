@@ -68,6 +68,87 @@ def paired_effects(left, right):
     return effects
 
 
+def paired_source_errors(left, right):
+    """Collision-stratified uncertainty for aggregate source recall/precision."""
+    import numpy as np
+
+    if [(r["uid"], r["category"]) for r in left] != [
+        (r["uid"], r["category"]) for r in right
+    ]:
+        raise ValueError("Paired diagnostic identity differs")
+    selected = [
+        i for i, row in enumerate(left) if row["category"] in ("charged", "mixed")
+    ]
+    cats = np.array([left[i]["category"] for i in selected])
+    strata = [np.where(cats == cat)[0] for cat in sorted(set(cats))]
+    rng = np.random.default_rng(20261009)
+    output = {}
+    for stage in ("proposal", "refinement"):
+        counts = [
+            [rows[i]["stages"][stage]["counts"] for i in selected]
+            for rows in (left, right)
+        ]
+
+        def values(key):
+            return np.array([[c.get(key, 0) for c in arm] for arm in counts])
+
+        intersection, missing, extra = (
+            values("intersection"),
+            values("missing"),
+            values("extra"),
+        )
+        metrics = {
+            "source_recall": (intersection, intersection + missing),
+            "source_precision": (intersection, intersection + extra),
+            "missing_to_unassigned_fraction": (
+                values("missing_to_unassigned"),
+                intersection + missing,
+            ),
+            "missing_to_other_B_fraction": (
+                values("missing_to_other_B"),
+                intersection + missing,
+            ),
+        }
+        output[stage] = {}
+        for name, (numerator, denominator) in metrics.items():
+            sums = denominator.sum(1)
+            record = {
+                "numerators": numerator.sum(1).tolist(),
+                "denominators": sums.tolist(),
+                "paired_collisions": len(selected),
+            }
+            if not selected or bool((sums == 0).any()):
+                record.update(
+                    difference=None,
+                    paired_collision_stratified_bootstrap95=None,
+                    status="UNAVAILABLE_ZERO_SUPPORT",
+                )
+            else:
+                delta = []
+                for _ in range(2000):
+                    idx = np.concatenate(
+                        [rng.choice(st, len(st), replace=True) for st in strata]
+                    )
+                    den = denominator[:, idx].sum(1)
+                    if bool((den == 0).any()):
+                        continue
+                    ratio = numerator[:, idx].sum(1) / den
+                    delta.append(float(ratio[1] - ratio[0]))
+                ratio = numerator.sum(1) / sums
+                record.update(
+                    rates=ratio.tolist(),
+                    difference=float(ratio[1] - ratio[0]),
+                    paired_collision_stratified_bootstrap95=np.quantile(
+                        delta, [0.025, 0.975]
+                    ).tolist()
+                    if delta
+                    else None,
+                    status="DESCRIPTIVE_PAIRED_ONE_SEED",
+                )
+            output[stage][name] = record
+    return output
+
+
 def sampling_accounting(rows, presentations, seed):
     rng = random.Random(seed)
     selected = [rows[rng.randrange(len(rows))] for _ in range(presentations)]
@@ -85,6 +166,37 @@ def sampling_accounting(rows, presentations, seed):
             "".join(row["uid"] + "\n" for row in selected).encode()
         ).hexdigest(),
     }
+
+
+def continuum_membership(row, event):
+    """Post-hoc flat-group overlap with explicit retained roots, never physical tagging."""
+    from hypertagging.evaluation.full_decay_metrics import (
+        _tree_view,
+        _root_positions,
+        _component_structurally_valid,
+    )
+
+    view = _tree_view(row["full"], 0, truth=True)
+    roots = [node for node in _root_positions(view) if view.children(node)]
+    cc = Counter(
+        events=1,
+        events_without_explicit_component=int(not roots),
+        component_trials=0,
+        unavailable=0,
+        raw_exact=0,
+        accepted_exact=0,
+    )
+    for node in roots:
+        target = row["supervision"]["node_sets"][node]
+        available = bool(target) and _component_structurally_valid(view, node)
+        cc["component_trials"] += 1
+        cc["unavailable"] += int(not available)
+        if available:
+            cc["raw_exact"] += int(set(target) in [set(g) for g in event["raw_groups"]])
+            cc["accepted_exact"] += int(
+                set(target) in [set(g) for g in event["accepted_groups"]]
+            )
+    return cc
 
 
 def review(root):
@@ -230,14 +342,32 @@ def review(root):
             assert dict(total) == r[role]["counts"]
             channels, sizes = defaultdict(Counter), defaultdict(Counter)
             positives = []
+            compatibility = Counter()
+            continuum_components = defaultdict(Counter)
             for event in r[role]["events"]:
                 row = cachemap[event["uid"]]
                 if row["category"] not in ("charged", "mixed"):
+                    continuum_components[row["category"]].update(
+                        continuum_membership(row, event)
+                    )
                     continue
                 for slot in (1, 2):
                     target = set((row["targets"] == slot).nonzero().flatten().tolist())
                     raw = int(target in [set(g) for g in event["raw_groups"]])
                     accepted = int(target in [set(g) for g in event["accepted_groups"]])
+                    compatibility["target_trials"] += 1
+                    compatibility["cardinality_incompatible"] += int(len(target) < 2)
+                    charge = float(row["charge"][list(target)].sum())
+                    compatibility["charge_incompatible"] += int(
+                        min(abs(charge - q) for q in (-1, 0, 1)) > 1e-5
+                    )
+                    compatibility["raw_generation_failure"] += int(not raw)
+                    compatibility["raw_exact_retention_rejection"] += int(
+                        raw and not accepted
+                    )
+                    compatibility["accepted_after_source_filter"] += int(
+                        accepted and not raw
+                    )
                     channel = str(
                         int(
                             row["full"][
@@ -271,10 +401,85 @@ def review(root):
                             }
                         )
             public["roles"][role] = {
+                "target_compatibility_and_first_errors": dict(compatibility),
+                "continuum_component_membership": {
+                    "by_source_type": dict(continuum_components),
+                    "scope": "explicit_top_level_retained_composites_source_membership_only_not_physical_tree_or_parton_ancestry",
+                    "beam_pool": {
+                        "numerator": None,
+                        "denominator": None,
+                        "reason": "No competing beam hypotheses",
+                    },
+                },
                 "by_retained_channel": dict(channels),
                 "by_truth_fsp_size": dict(sizes),
                 "positive_cases": positives,
                 "counts": dict(total),
+                "tag_efficiency": {
+                    "physical_B_top1": {
+                        "numerator": None,
+                        "denominator": None,
+                        "reason": "Flat optional memberships have no physical hierarchy; shared physical-tree evaluator not applicable",
+                    },
+                    "inclusive_flat_membership_top1": {
+                        "raw_numerator": total["raw_exact_memberships"],
+                        "accepted_numerator": total["accepted_exact_memberships"],
+                        "denominator": total["nominal_b_trials"],
+                        "unavailable": total["unavailable_membership_trials"],
+                    },
+                    "event_any_raw": {
+                        "numerator": sum(
+                            cats.get(k, Counter())["event_any_raw"]
+                            for k in ("charged", "mixed")
+                        ),
+                        "denominator": sum(
+                            cats.get(k, Counter())["processed"]
+                            for k in ("charged", "mixed")
+                        ),
+                    },
+                    "event_any_accepted": {
+                        "numerator": sum(
+                            cats.get(k, Counter())["event_any_accepted"]
+                            for k in ("charged", "mixed")
+                        ),
+                        "denominator": sum(
+                            cats.get(k, Counter())["processed"]
+                            for k in ("charged", "mixed")
+                        ),
+                    },
+                    "event_both_raw": {
+                        "numerator": sum(
+                            cats.get(k, Counter())["event_both_raw"]
+                            for k in ("charged", "mixed")
+                        ),
+                        "denominator": sum(
+                            cats.get(k, Counter())["processed"]
+                            for k in ("charged", "mixed")
+                        ),
+                    },
+                    "event_both_accepted": {
+                        "numerator": sum(
+                            cats.get(k, Counter())["event_both_accepted"]
+                            for k in ("charged", "mixed")
+                        ),
+                        "denominator": sum(
+                            cats.get(k, Counter())["processed"]
+                            for k in ("charged", "mixed")
+                        ),
+                    },
+                    "continuum_fake_B_slots": {
+                        "numerator": sum(
+                            cats.get(k, Counter())["accepted_groups"]
+                            for k in ("ccbar", "uubar", "ddbar", "ssbar")
+                        ),
+                        "denominator": 2 * total["continuum_events"],
+                    },
+                    "continuum_fake_B_events": {
+                        "numerator": total["continuum_accepted_events"],
+                        "denominator": total["continuum_events"],
+                    },
+                    "physical_FEI_comparison_ready": False,
+                },
                 "by_category": dict(cats),
                 "relation_ignored_pairs": {"count": None, "status": "NOT_RETAINED"},
             }

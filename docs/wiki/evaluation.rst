@@ -321,3 +321,21 @@ is a separate diagnostic. Relation accuracy is conditional on identifiable
 within-B pairs; the number of ignored ambiguous pairs was not logged and remains
 unavailable. Per-B denominators, collision-any/both counts and continuum acceptance
 remain separate. See the full evaluation contract for these definitions.
+
+Phase76 proposal/refinement diagnostics
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Detached model-generated partitions are joined to truth only after generation.
+Per-target missing and extra detector sources use a single event-level optimal
+B-slot permutation, with unassigned fixed. The best-overlap diagnostic may choose
+the better predicted group for each target; it is an optimistic overlap summary,
+not exact reconstruction or a globally matched physical hierarchy. Raw exact
+source membership and constraint-accepted membership retain separate numerators.
+First-error counts distinguish absent raw targets from rejection of raw-exact
+targets. Presence, cardinality, charge and source constraints remain unchanged.
+
+Post-hoc continuum membership uses explicit top-level retained composite source
+sets, excluding singleton roots, and keeps unavailable mappings separate. It
+compares each component against individual predicted flat groups without joining
+disconnected groups. This newly measured diagnostic is distinct from fake-B
+acceptance and does not supply physical component trees or quark ancestry.

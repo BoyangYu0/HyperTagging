@@ -30,7 +30,8 @@ jobs at most, each 2 CPUs, 32 GiB and eight hours, no requeue or second successo
 Full cohort and cache admission pass with zero dropped/unavailable targets; the maximum
 FSP count is 73. Real-data gradients reach encoder, proposal and refinement in
 both arms; only the disabled partial-context input has zero block gradient.
-The worst-event smoke fits within the eight-hour bound. Submission remains pending. No primary evaluation or model promotion
+The worst-event smoke fits within the eight-hour bound. Both scientific jobs are RUNNING: 17091583 (context on) and 17091584 (off),
+from frozen source 0c01f38e. Terminal outcomes remain pending. No primary evaluation or model promotion
 is authorized. Existing results and the invalid original 60-event cohort remain
 immutable. Diagnostic v2 corrects per-target transition pairing across output-slot
 permutations by rejoining the original detached traces; per-stage v1 counts agree.
