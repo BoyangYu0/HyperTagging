@@ -1,0 +1,72 @@
+{
+  "stage": "development",
+  "family": "first_error_correction",
+  "sealed_test_access": false,
+  "automatic_successor_submission": false,
+  "diagnostic_evidence": {
+    "path": "docs/assembly_diagnosis_20261007/evidence.json",
+    "sha256": "c1fa1b5f8d60909e679efaa06fd96831e7dc262dd1b1e15addf9741c33fd8c63"
+  },
+  "version": "phase84-native-hierarchy-applicability-v2-before-execution",
+  "status": "DIAGNOSTIC_ONLY_NOT_RUNTIME_ADMITTED",
+  "hypothesis": "Determine whether native hierarchical errors expose component-specific generation-height supervision deficiency or conditional mother-PID errors on correct daughters. Existing level weights and empirical soft prior are controls, not missing features.",
+  "changed_factor": "No model/optimizer change. Compare paired forced teacher versus detached model-generated training contexts at fixed native checkpoint. These are audit counterfactual contexts, not a replay of historical sampling decisions.",
+  "control": "Immutable Phase72 set_overlap_off step4376, checkpoint-bound architecture/features/PID/normalizers/constraints/globalweights/typeprior. Native loss implementation and matched Hungarian supervision; no gradient updates.",
+  "target_contract": "Reconstruction level is generation height, 1+max(daughter generation heights), not mass, FEI stage, depth from a true B root, or source-set cardinality. Preserve complete/partial/unavailable populations and valid shallow heavy-particle decays. Truth is supervision/after-the-fact evaluation only.",
+  "data_and_compute_control": {
+    "corpus": 70000,
+    "role": "train",
+    "panel_events": 96,
+    "per_category": 16,
+    "panel_rule": "Exactly preregistered Phase84 common96 UID-hash subset; no outcome/height/completeness filters. Reload native trees from authenticated TRAIN shards only, never use flat cached rows as hierarchy inputs.",
+    "panel_binding": {
+      "path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/phase84_exposure_information_20261009/review-integrated-v1/runtime-recheck-v2/admission-v1/selection-private.json",
+      "sha256": "99beac4c8a468e2755e40deb21ed7e9932bae5daef6bacee9b31f2c9559800ee"
+    },
+    "checkpoint_inventory_binding": {
+      "path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/phase84_exposure_information_20261009/level-addendum-integrated-v2/native-hierarchy-inventory.json",
+      "sha256": "35dab9db46e9b9de42cc14dfb14f32d3be4fa059b80565d8eb78ec10fe0fb349"
+    },
+    "levels": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "views": "Per collision, eligible native balanced-level views repeated only to attach selected_target_levels; report correlated views and actual collision denominators. Missing/partial/subcardinality support separately inventoried. Paired forced teacher/generated schedules do not estimate historical context proportions.",
+    "gradients": "Observe original normalized native objective without altering returns. Differentiable type/pointer/object components plus total; report norms/dot-products with total over native trainable blocks and correct scalar weights, auxiliary teacher/leaf PID separate. Norms are not additive fractions. Historical optimized exposure only if source logs support it; otherwise unavailable.",
+    "smoke_events": 2,
+    "smoke_rule": "First charged and first ccbar UID from frozen panel, chosen by category before model outputs; one fixed smoke, no parameter fitting.",
+    "resources": {
+      "cpus": 2,
+      "memory_gib": 32,
+      "hours": 4,
+      "gpus": 0,
+      "requeue": false
+    },
+    "runtime_guard_hours": 3,
+    "admission_forecast_max_hours": 3,
+    "parameter_updates": 0,
+    "max_full_diagnostics": 1,
+    "scientific_training_jobs_admitted": 0,
+    "gradient_events": 24,
+    "gradient_panel_rule": "4/category from common96 ranked SHA256(phase84-native-gradient:+UID), fixed before any native outcomes; all96 retain forward/loss/representability/first-error counts. Gradient norms require repeated backward passes, so the smaller explicit subset bounds compute. Other72 gradient cells unavailable-by-design, neverzeros."
+  },
+  "stop_rule": "Fail closed on contract/source/role/nonfinite/baseline-replay/gradient-attribution mismatch or resource forecast>=3h; full diagnostic stops at3h/26GiB with incomplete denominators, no extension/requeue. No fresh validation or automatic successor. Retain unsupported/rare cells as unavailable. If legal generated groups are absent, do not select a PID-prior intervention.",
+  "success_rule": "Mechanistic applicability only: identify supported allocation deficiency for one component or PID/calibration errors conditional on genuinely generated correct daughter groups, with rare/shallow/background controls. Low gradient norm alone does not prove underweighting; absent generated groups do not prove PID failure. No model benefit claimed from this audit. Any contrast requires separately frozen numerical schedule and genuine admission under existing total scientific/resource caps.",
+  "validation_selection": "No validation/test payloads or new reservations. Training panel already explored by other diagnostics; not independent physics confirmation. Fixed native checkpoint before outcomes; no checkpoint/threshold selection.",
+  "evaluation_endpoints": [
+    "Raw and accepted exact daughter and retained-source membership by height, PID family and source-set size.",
+    "Conditional mother-PID confusion/calibration; rare-channel and shallow-heavy decay coverage.",
+    "Correct generated deep proposals and survival, greedy/top1/pool separately where actually supported.",
+    "Exact and inclusive B efficiencies and channel/type coverage on an actual hierarchical reconstruction.",
+    "Continuum acceptance, background contamination, spurious large mothers, source conflicts and daughter-sum closure.",
+    "Exposure, counts/unavailable/failures and actual CPU/wall/RSS/parameter/workload accounting."
+  ],
+  "publication": "No publication inthisworktree; separatepublisher<=Phase83.",
+  "preregistered_utc": "2026-10-09T19:09:02.907461+00:00",
+  "amendment_utc": "2026-10-09T19:11:04.732485+00:00",
+  "amendment_reason": "Before any native model execution: bound expensive component-gradient attribution to24 fixed TRAIN identities while retaining96 forward/structural/loss audits. No outcomes inspected or scientific training changes."
+}

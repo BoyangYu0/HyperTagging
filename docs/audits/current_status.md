@@ -13,6 +13,18 @@ Only measured component-allocation or conditional mother-PID evidence can admit
 one separately frozen contrast. Flat optional-B heads cannot test this mechanism.
 No new validation, primary work, publication or resource expansion is implied.
 
+Standalone native TRAIN loader, detached greedy trace join, and loss/gradient
+observer are implemented with67 focused CPU regressions passing. The observer
+preserves the original native scalar and gradients; whole-objective weight
+normalization, auxiliary teacher and leaf PID contributions remain distinct.
+The diagnostic plan freezes96 unfiltered category-balanced TRAIN identities and
+24 hash-selected parameter-gradient identities, with2CPU/32GiB/4h ceiling and
+3h runtime guard. Real-data admission and execution are pending after the active
+exposure/information sequence. Core native model/loss/trainer files remain
+byte-identical to the Phase72 control source. Its existing balanced-height replay
+already allocates about46677 planned slots/height; raw rarity alone does not
+establish a level-weighting deficiency. No new weighting or PID prior is chosen.
+
 ## Phase84 reviewed exposure/information sequence — 2026-10-09
 
 New user authorization resumes research with independent agent review: matched
