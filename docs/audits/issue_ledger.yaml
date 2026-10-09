@@ -19,6 +19,10 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Accumulated Phase78–83 historical publication:64 authenticated sources,1699729 numeric scalars and5000 updates retained;11 transport and25 historical/diagnostic checks pass. No scientific jobs or fresh validation.
+  - 4d3d04ad524e930b24113c6332a4488a4652e8fd
+  # Whitespace-only followup; transport/source values unchanged.
+  - 32f90f705f7ded1c01ca076b7ab930d871f6489a
   # Phase83 exact native replay preserves historical FP32 delta reconstruction in both conditions; six focused tests pass. Failed17120921 retained.
   - c39e442c7513dea5f1a11ab2cd4b538eb58365c1
   # Phase83 current-gradient versus first-moment history diagnostic;10 focused optimizer-state, structural-gate, scope and prior diagnostic regressions pass; no validation/new model campaign.

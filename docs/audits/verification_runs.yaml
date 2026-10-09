@@ -1272,3 +1272,25 @@ supplemental_runs:
       lossless downloads. Exact whole-manifest reconstruction and three negative/
       preservation tests pass; net savings6199777 bytes including new files.
       Fresh exact-head full CPU/docs and live publication checks remain required.
+
+  - source_sha: 32f90f705f7ded1c01ca076b7ab930d871f6489a
+    metadata_head: recorded_by_followup_audit
+    worktree_state: committed_accumulated_previous_studies_publication
+    date: '2026-10-09'
+    commands:
+      - python -m pytest -q tests/test_previous_studies_publication_cpu.py
+      - focused Phase78 and historical delivery regressions
+      - focused publication privacy and source staging regressions
+    pytest: {result: PASS, passed: 123, skipped: 0}
+    real_data_inputs: immutable_completed_Phase78_to_Phase83_metrics_only_no_new_evaluation
+    checkpoint: no_checkpoint_loaded_or_changed_by_publication
+    ci_run: PENDING_EXACT_PUBLICATION_HEAD
+    human_visual_review_status: PENDING_LIVE_PUBLICATION
+    evidence_limitations: >-
+      Separate local groups11transport,25diagnostic_and_historical,87privacy_and_staging
+      pass; two integration corrections also pass. Complete documentation check
+      initially exposed duplicate toctree ownership and stale expected source count;
+      own preliminary build and suite were stopped before source edits and are not
+      claimed successful. Full exact-head CPU/docs/privacy/layout/capacity/live checks
+      remain required. Historical broad2430plus41pass34skip and final28focusedpass
+      retain original source scopes. No physics or generalization success is claimed.
