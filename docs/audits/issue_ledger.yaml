@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Preserve exact authenticated cache order while matching unordered cohort identities; nine focused tests pass. Pair/model implementation passed broad2430+41 CPU tests unchanged.
+  - 3b6b6bdc101d2c9d866815fba975179566fcf858
   # Phase81 wrapper-only correction to exact native full-identity status; failed preflight retained, no training occurred.
   - 21676a1c7fbea6ce7f0d1db9de161580538f17d2
   # Phase81 bounded pair supervision; twelve focused probability, permutation, support, gradient and negative-contract tests pass. Runtime admission remains separate.
