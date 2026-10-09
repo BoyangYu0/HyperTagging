@@ -1,0 +1,49 @@
+{
+  "version": "phase82-nonlinear-pair-readability-v1",
+  "stage": "development",
+  "family": "within_branch_relation_discrimination",
+  "sealed_test_access": false,
+  "hypothesis": "A fixed small nonlinear symmetric pair probe may reveal conditional same-B/cross-B information in the frozen native encoder that the near-stationary linear probe and native assignment fail to use. This is a readability diagnostic, not an encoder intervention or deployable reconstruction claim.",
+  "changed_factor": "Finite nonlinear probe (256\u219264 GELU\u21921) versus matched within-event shuffled-B-label null; compare descriptively with already optimized linear and native scores on identical event-disjoint train-role assessment identities. No search over architectures, learning rates or checkpoints.",
+  "control": "Same frozen features, original train-role split and feature normalizer, same initialized nonlinear head and event/class sample order. Null permutes B labels within each fitting event preserving B/background/unknown support and class sizes. Existing Phase79 optimized linear probe and native conditional assignment are fixed references.",
+  "target_contract": "Symmetric same-B versus cross-B classification of known source-disjoint pairs within each event; no globally fixed B identity. Truth used only fitting supervision/evaluation. Score all detector-source-disjoint pairs before joining truth; background-containing scores are diagnostic support controls, not a trained foreground detector. No probe output enters deployed assignment.",
+  "diagnostic_evidence": {
+    "path": "docs/assembly_diagnosis_20261007/evidence.json",
+    "sha256": "c1fa1b5f8d60909e679efaa06fd96831e7dc262dd1b1e15addf9741c33fd8c63"
+  },
+  "mechanism_evidence": {
+    "report_binding": {
+      "path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/phase81_pair_supervision_20261009/terminal-review.json",
+      "sha256": "426e8acb087efc51c05af4b630e14d5801d4f9582a516bbe929069cae4169c34"
+    },
+    "measured_effect": "Phase81 explicit factorized pair likelihood changes foreground tradeoff but not conditional partition (main raw/accepted0/1024;refinement pairAUC declines). Phase79 near-stationary linear probe does not reliably beat native. Nonlinear readability remains unresolved."
+  },
+  "data_and_compute_control": {
+    "model": "Fixed authenticated native encoder/checkpoints; no encoder forwards or updates. Reuse Phase78 detector-only frozen traces after Phase81 exact native tensor replay.",
+    "training_role_identities": 1536,
+    "partition": "Same SHA256 phase78-probe UID ranking:192fit/64assessment per each6categories;384eligibleBfit/128Bassessment; no validation/test.",
+    "features": "Original256 symmetric abs-difference/product features of128context; same fixed fit-only mean/std as original true-label probe. No widths/geometry/normalization changes to scientific model.",
+    "probe_fits": 2,
+    "parameters_per_probe": 16513,
+    "updates_per_probe": 2048,
+    "batch_size": 256,
+    "pair_presentations_per_probe": 524288,
+    "optimizer": "AdamW lr0.001 weight_decay0.0001; gradient norm clip5; seed8209, no schedule",
+    "initialization": "Same Torch seed and exact initial state for true/null heads",
+    "risk_measurements": "Exact event/class-balanced fitting risk at0 and every256updates, final gradient; fixed final checkpoint, no assessment-based selection. Nonconvex convergence not assumed.",
+    "resources": {
+      "cpus": 2,
+      "memory_gib": 16,
+      "hours": 1,
+      "gpus": 0,
+      "requeue": false
+    },
+    "scientific_training_jobs": 0,
+    "compute_disclosure": "Probe fitting is training, not zero optimization; report actual pair/unique-event presentations,parameters,time,RSS and full-risk passes. Do not claim equal FLOPs versus prior linear probe."
+  },
+  "stop_rule": "One fixed true/null diagnostic only. Fail closed on binding/role/gradient/nonfinite/resource errors. No refit or hyperparameter tuning after assessment. Stop unsupported scientific successors if no new mechanism is demonstrated; do not consume fresh validation for a failed probe.",
+  "success_rule": "Evidence of unused readability requires event-stratified paired95%interval above0 versus BOTH native and near-stationary linear reference on the fixed train-role assessment partition, plus true>null control. Background outputs must be disclosed; even a pass is only exploratory mechanism evidence, not membership efficiency or primary eligibility.",
+  "validation_selection": "No validation designation/access/model evaluation. Fixed train-role assessment excludes probe fitting events, but those identities are within the scientific-model training role; not independent physics confirmation. No checkpoint/threshold selection on assessment.",
+  "automatic_successor_submission": false,
+  "preregistered_utc": "2026-10-09T17:09:42.047941+00:00"
+}

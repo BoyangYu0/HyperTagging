@@ -1,5 +1,27 @@
 # Current repository audit status
 
+## Phase81 negative endpoint; Phase82 bounded readability diagnostic — 2026-10-09
+
+Phase81 native17120627 andpair17120628 complete exit0, review17120813 completes.
+Both tiny raw32/32 accepted27/32; both main raw/accepted0/1024. Native final
+checkpoints exactly replay historical control tensors and sampling order. Pair
+supervision increases proposal B correctness3437→4304/9437 but also swaps
+1828→2411 and background assignments2981→5362/52590. Accepted continuum
+96→78/1024 does not establish better efficiency: source-set recovery remains
+zero, conditional pair AUC does not improve and refinement AUC worsens. The
+preregistered training screen fails; no fresh validation is used. Complete
+private counts, uncertainty, curves, hashes and failed-admission corrections
+remain externally bound. No public page release is warranted for this negative
+contrast under the user's significant-change preference.
+
+The next finite diagnostic tests unresolved nonlinear readability in frozen
+training-role representations: one64-hidden-unit symmetric pair probe and a
+matched within-event shuffled-label null,2048updates×256pairs each. Fit and
+assessment events use the prior disjoint Phase78 training-role split; this is
+probe fitting, not zero optimization or independent physics confirmation.
+Scientific encoder/decoder updates and fresh validation use remain zero.
+No additional scientific intervention is selected before these fixed endpoints.
+
 ## Sequential training-only improvement — 2026-10-09
 
 User-directed sequential work continues privately; Phase78 publication is deferred.
