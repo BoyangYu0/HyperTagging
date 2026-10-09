@@ -19,6 +19,9 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # User-directed sequential/publication preference and Phase79 bounded convex probe risk; seven gradient/permutation/split/source tests pass, no scientific model or validation changes.
+  - 5779716aee6a3799a3972ae58eeac71d939eee7e
+  - b8987b3ad8a54680314cb4e2623f23012a888cb0
   # Correct stale no-fitting dashboard assertion and RST underline; original broad2417pass/one-failure receipt preserved, scientific outputs unchanged.
   - 4bea8c3b6f7eb38ef4de3b4a417b487dd80df860
   # Phase78 exact replay, bounded pair probe/null and no scientific successor; eleven feature tests and193 focused core tests pass; lossless full per-event delivery retained.
