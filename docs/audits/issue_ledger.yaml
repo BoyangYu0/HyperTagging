@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase83 exact native replay preserves historical FP32 delta reconstruction in both conditions; six focused tests pass. Failed17120921 retained.
+  - c39e442c7513dea5f1a11ab2cd4b538eb58365c1
   # Phase83 current-gradient versus first-moment history diagnostic;10 focused optimizer-state, structural-gate, scope and prior diagnostic regressions pass; no validation/new model campaign.
   - 15e52d363ab12b581319e71392c726f6927a164c
   # Phase82 bounded frozen-feature nonlinear/null probe;22 focused role-isolation, symmetry, gradient, binding-control and previous pair regressions pass; no scientific model updates or validation.

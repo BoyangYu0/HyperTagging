@@ -8,6 +8,11 @@ linear0.5494; its readability gate fails. Fitting risk improves without stronger
 assessment information; nonconvex convergence is not established. No probe
 refit, scientific model intervention, validation use or publication follows.
 
+Phase83 first attempt17120921 fails its exact replay guard before the intervention.
+The guard exposed differing FP32 delta reconstruction between diagnostic versions,
+not a scientific endpoint. Both conditions now use the historical reconstruction;
+the exact guard is retained. Six focused regressions pass; original traces remain.
+
 Phase83 addresses one remaining concrete optimizer-state question fromPhase80:
 compare stored first-moment Adam updates against current-gradient-only updates
 on the identical12training batches/96audit identities, preserving second moments,
