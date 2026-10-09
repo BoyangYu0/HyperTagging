@@ -10,8 +10,11 @@ Same pretrained/fresh-decoder state, main optimizer/loss/normalizer/geometry;
 no warmstart across pools. Finite plan records later conditional steps.
 Detector-versus-embedding information diagnosis remains independently accepted;
 no newpretraining, primary/model promotion or fresh validation is selected.
-28focused tests pass; real-data resource/gradient/source admission and broadCPU
-checks precede scientific submission. Parent separate worktree owns historical
+28initial focused tests and20isolation/gate regressions pass. Current full
+validation exclusion union112800 has0overlap with1536training identities; all
+historical/current manifest hashes authenticate. Runtime rechecks this union.
+Real-data resource/gradient/source admission and broadCPU checks precede
+scientific submission. Parent separate worktree owns historical
 publication; this branch does not publish or modify publisher work.
 
 ## Sequential improvement concluded at the evidence gate — 2026-10-09
