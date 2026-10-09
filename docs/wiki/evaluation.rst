@@ -350,3 +350,16 @@ not deployed thresholds or physical reachability. Keep source, collision and
 correlated-B supports separate. Native total-loss and diagnostic hard-error
 permutations optimize different criteria. Training-only paired intervals do not
 provide fresh confirmation, and zero-success bootstrap bounds are not equality.
+
+Phase78 pair diagnostic scope
+----------------------------
+
+Same-B versus cross-B pair discrimination is conditioned on two known B constituents
+within one collision and disjoint detector sources. Unknown/shared-source support
+is counted separately. Event-mean AUC and pooled-pair AUC have different weights.
+Probe fitting and assessment are event-disjoint training-role subsets; both were
+seen by the frozen scientific model, so this is not fresh confirmation. The
+majority-size comparator and conditional-optimal permutation are truth-assisted
+diagnostics, not deployable exact membership. Background pair score frequencies
+are not accepted fake-B events. Full per-event metrics and finite fitting curves
+remain lossless; physical hierarchy endpoints stay unavailable.

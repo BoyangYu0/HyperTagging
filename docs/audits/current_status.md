@@ -1,5 +1,31 @@
 # Current repository audit status
 
+## Phase78 bounded partition diagnosis — 2026-10-09
+
+Training-only replay and two finite diagnostic probe fits are complete. Corrected
+job17110289 completed exit0 after159 seconds; failed source-support preflight
+17109723 remains failed. All1536 main identities and24 tiny views reproduce
+native logits exactly.466 main and5 tiny shared-source pairs are counted and
+excluded from pair diagnostics, with every event/native denominator retained.
+
+On128 event-disjoint probe-assessment B collisions from the training role,
+native pair AUC0.5452 exceeds the fixed symmetric feature probe0.5333; shuffled
+control0.5005. Conditional-optimal source accuracy6075/9437 is only modestly
+above majority-size5713/9437. This probe reveals no stronger unused pair signal;
+nonconvergence and nonlinear information remain unresolved, not proven absent.
+Tiny separation is perfect, so an invariant slot-symmetry lock is not demonstrated.
+No new scientific training intervention or validation reservation is selected.
+Keep corpus, widths and guards fixed; do not deploy the probe, add speculative
+repulsion/pair weights, expand data/pretraining or promote these controls.
+
+All supported per-event/category/size/background/query/probe/native metrics are
+retained losslessly. Two512-update257-parameter probes are disclosed as fitting;
+scientific model updates are zero. Physical trees/pools/closure remain unavailable.
+Exact-head publication checks and live verification are recorded in the private
+final report; this source statement alone does not assert successful publication.
+Phase77 publication is verified at42288b49 through PR13; prior receipts remain
+immutable. No campaign is launched from a completion callback.
+
 ## Phase77 training-only proposal diagnosis — 2026-10-09
 
 The authorized training-only diagnostic is complete. Frozen source ff27cc46

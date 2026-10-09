@@ -12,6 +12,7 @@ Dated reports and complete downloads are retained as evidence:
 .. toctree::
    :maxdepth: 1
 
+   phase77
    phase76
    phase75
    phase74
