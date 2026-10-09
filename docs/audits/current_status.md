@@ -1,5 +1,20 @@
 # Current repository audit status
 
+## Phase77 training-only proposal diagnosis — 2026-10-09
+
+A new user authorization permits one evidence-backed bounded follow-up. Begin
+with the fixed Phase76 context-on final model and all1536 training-pool events,
+plus the independent24-event tiny fit. No fresh development identities are
+reserved before a controlled hypothesis is supported. Audit native loss matching,
+unknown support, logits/margins, foreground versus B-slot discrimination, loss
+contributions and a deterministic96-event training-only gradient subset. Oracle
+and aggregate-foreground decisions are labelled diagnostics, not inference changes.
+No training or validation evaluation is submitted at this source freeze.
+
+Phase76 publication is now verified at fa75153e through PR12, exact-commit CPU,
+full documentation and actual Pages checks, live download hashes and browser
+views. Its scientific endpoint remains negative. All prior evidence is immutable.
+
 ## Phase76 completed refinement study — 2026-10-09
 
 A new explicit user instruction authorizes one bounded follow-up after the closed

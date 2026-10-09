@@ -1,0 +1,15 @@
+{
+  "version": "phase77-training-only-diagnostic-v1",
+  "stage": "training_only_diagnostic",
+  "base_source": "fa75153e42421f5ed374887befff0e0aa6d83dec",
+  "prior_campaign": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/phase76_membership_20261009/successor-campaign-v1/contract.json",
+  "model": "partial_context_on fixed final main and independent tiny; off is not selected as a winner",
+  "populations": "All1536 authenticated original training-pool events, plus24 existing independent tiny fit events; zero validation inference or outcome reads",
+  "gradient_subset": "16 events/category ranked SHA256(phase77-gradient:uid),96 total, chosen without outcomes",
+  "diagnostics": ["raw logits and probability margins", "hard-error and native total-loss permutation matching separately", "B-to-unassigned, other-B, background-to-B and unknown supports", "binary B probability versus two-slot discrimination", "CE/overlap/presence loss and logit gradients by support/category/size", "proposal and refinement gradient paths on fixed training subset", "event versus node support weighting", "existing update/loss history and actual presentations", "posthoc oracle foreground/slot ceilings, not inference or a threshold search"],
+  "counterfactual": "One prespecified diagnostic decision: compare aggregate B probability>0.5 then argmax B slot against native three-way argmax. Pure training-only decision diagnostic, no production use or heldout selection. Also label truth-assisted oracle foreground and oracle within-B-slot ceilings explicitly.",
+  "resources": {"cpus":2,"memory_gib":16,"hours":1,"gpus":0,"requeue":false},
+  "fresh_development_reserved":0,
+  "scientific_training_authorized_conditionally": "Only after evidence supports one registered intervention; otherwise stop with diagnosis/publication",
+  "automatic_successor":false
+}
