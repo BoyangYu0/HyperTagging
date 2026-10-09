@@ -19,6 +19,9 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase84 preregistered exposure checkpoint hook and detector/embedding probe utilities;28 focused regressions pass. Independent guard/accounting review applied before real fitting.
+  - 1f6d639b2f2d53de806e07487b65f2c3b465daf6
+  - 7cf6ffd2d5fc0489a408eedb81168b7a7a736f64
   # Phase83 exact native replay preserves historical FP32 delta reconstruction in both conditions; six focused tests pass. Failed17120921 retained.
   - c39e442c7513dea5f1a11ab2cd4b538eb58365c1
   # Phase83 current-gradient versus first-moment history diagnostic;10 focused optimizer-state, structural-gate, scope and prior diagnostic regressions pass; no validation/new model campaign.

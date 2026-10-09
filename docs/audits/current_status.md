@@ -1,5 +1,19 @@
 # Current repository audit status
 
+## Phase84 reviewed exposure/information sequence — 2026-10-09
+
+New user authorization resumes research with independent agent review: matched
+96/full1536 training-role exposure trajectories, fixed6000update endpoints,
+1500diagnostics and375nominal-exposure reference;384bridge only if96learns while
+1536fails. This tests long-horizon learnability without assuming undertraining.
+Same pretrained/fresh-decoder state, main optimizer/loss/normalizer/geometry;
+no warmstart across pools. Finite plan records later conditional steps.
+Detector-versus-embedding information diagnosis remains independently accepted;
+no newpretraining, primary/model promotion or fresh validation is selected.
+28focused tests pass; real-data resource/gradient/source admission and broadCPU
+checks precede scientific submission. Parent separate worktree owns historical
+publication; this branch does not publish or modify publisher work.
+
 ## Sequential improvement concluded at the evidence gate — 2026-10-09
 
 Phase83 corrected diagnostic17120933 completes exit0 in3m08s. Exact native
