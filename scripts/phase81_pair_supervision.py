@@ -5,6 +5,7 @@ import argparse
 from collections import Counter
 import copy
 import getpass
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -58,6 +59,35 @@ def validate(c):
         raise ValueError("Scientific contrast/authority changed")
 
 
+def authenticate_training_rows(rows, training):
+    uids = [r["uid"] for r in rows]
+    if (
+        len(uids) != 1536
+        or len(set(uids)) != 1536
+        or set(uids) != set(training["event_uids"])
+    ):
+        raise ValueError("Cache/cohort identity mismatch")
+    if Counter(r["category"] for r in rows) != {
+        k: 256 for k in ("charged", "mixed", "ccbar", "uubar", "ddbar", "ssbar")
+    }:
+        raise ValueError("Category coverage changed")
+    # Cohort manifests describe membership, not loader order. Preserve the
+    # authenticated historical cache order verbatim; never sort/reorder it.
+    return hashlib.sha256("\n".join(uids).encode()).hexdigest()
+
+
+def initial_state_digest(model, decoder):
+    digest = hashlib.sha256()
+    for scope, module in (("model", model), ("decoder", decoder)):
+        for name, tensor in sorted(module.state_dict().items()):
+            value = tensor.detach().cpu().contiguous()
+            digest.update(
+                (scope + name + str(value.dtype) + str(tuple(value.shape))).encode()
+            )
+            digest.update(value.numpy().tobytes())
+    return digest.hexdigest()
+
+
 def prepare(root, parent):
     guarded()
     import torch
@@ -88,14 +118,7 @@ def prepare(root, parent):
     verify_bindings({"source_hashes": {}, "bindings": bindings}, ROOT)
     cached = torch.load(ca["cache"]["path"], map_location="cpu", weights_only=False)
     rows = cached["train"]
-    if [r["uid"] for r in rows] != training["event_uids"] or len(
-        set(r["uid"] for r in rows)
-    ) != 1536:
-        raise ValueError("Cache/cohort/order mismatch")
-    if Counter(r["category"] for r in rows) != {
-        k: 256 for k in ("charged", "mixed", "ccbar", "uubar", "ddbar", "ssbar")
-    }:
-        raise ValueError("Category coverage changed")
+    order_binding = authenticate_training_rows(rows, training)
     # Historical serialized cache is read only to extract train data; development
     # rows are never iterated, scored, selected, or copied into the new cache.
     cache = {"train": rows, "runtime_normalizer": cached["runtime_normalizer"]}
@@ -108,6 +131,7 @@ def prepare(root, parent):
             "bindings": bindings,
             "training": data["training"],
             "training_count": 1536,
+            "row_order_sha256": order_binding,
             "heldout_count": 0,
             "max_fsp": max(len(r["targets"]) for r in rows),
             "normalization": ca["normalization"],
@@ -360,6 +384,7 @@ def run(path, arm):
             "contract": binding(path),
             "arm": arm,
             "initial_checkpoint": cp,
+            "actual_initial_state_sha256": initial_state_digest(model, decoder),
         },
     )
     tiny = [

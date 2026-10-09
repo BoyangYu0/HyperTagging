@@ -185,3 +185,22 @@ def test_control_does_not_call_pair_objective_and_same_init_replays(
             gradient_rule="project_conflicting_relation",
             pair_supervision=True,
         )
+
+
+def test_training_manifest_membership_does_not_reorder_historical_cache():
+    from scripts.phase81_pair_supervision import authenticate_training_rows
+
+    cats = ("charged", "mixed", "ccbar", "uubar", "ddbar", "ssbar")
+    rows = [{"uid": str(i), "category": cats[i // 256]} for i in range(1536)]
+    original = [dict(r) for r in rows]
+    manifest = {"event_uids": [r["uid"] for r in reversed(rows)]}
+    digest = authenticate_training_rows(rows, manifest)
+    assert rows == original
+    assert digest != authenticate_training_rows(list(reversed(rows)), manifest)
+    for bad in (
+        rows[:-1],
+        rows[:-1] + [rows[0]],
+        [{**r, "category": "charged"} for r in rows],
+    ):
+        with pytest.raises(ValueError):
+            authenticate_training_rows(bad, manifest)
