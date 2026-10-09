@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase78 exact replay, bounded pair probe/null and no scientific successor; eleven feature tests and193 focused core tests pass; lossless full per-event delivery retained.
+  - eeccb1ea0b8c6b7568669c750f06e1e4df79067b
   # Phase78 shared-source support guard corrected with explicit exclusion counts; eleven focused tests pass, failed attempt retained.
   - 09a13c26eba8f8394572d13b68c27cfc94c01f80
   # Phase78 finite training-role pair probe and exact trace capture; ten focused tests pass, diagnostic execution pending.
