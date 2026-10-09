@@ -58,6 +58,7 @@ def test_complete_diagnostic_delivery(tmp_path):
     for lines in (
         M.render(projected),
         (ROOT / "docs/wiki/phase78.rst").read_text().splitlines(),
+        (ROOT / "docs/wiki/evaluation.rst").read_text().splitlines(),
     ):
         for i, line in enumerate(lines):
             if i and line and set(line) <= set("=-~"):

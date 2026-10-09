@@ -422,7 +422,8 @@ def test_current_repository_dashboard_surfaces_recorded_acceptance_values(tmp_pa
     rendered_status = (tmp_path / "generated" / "index.rst").read_text().replace("\\-", "-")
     assert "Phase78 completed training-only partition diagnosis" in rendered_status
     assert rendered_status.index("Phase78 completed training-only partition diagnosis") < rendered_status.index("All studies")
-    assert "No new training or validation evaluation was selected" in rendered_status
+    assert "No new scientific model training or validation evaluation was selected" in rendered_status
+    assert "Two finite diagnostic probes were fitted" in rendered_status
     assert "NO MEMBERSHIP GAIN" in rendered_status
     assert "Phase74 completed development factorial" not in rendered_status
     assert "Phase75 completed gradient-routing development" not in rendered_status

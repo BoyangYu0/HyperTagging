@@ -352,7 +352,7 @@ permutations optimize different criteria. Training-only paired intervals do not
 provide fresh confirmation, and zero-success bootstrap bounds are not equality.
 
 Phase78 pair diagnostic scope
-----------------------------
+------------------------------
 
 Same-B versus cross-B pair discrimination is conditioned on two known B constituents
 within one collision and disjoint detector sources. Unknown/shared-source support
