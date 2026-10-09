@@ -1,0 +1,14 @@
+{
+ "version":"phase78-partition-diagnostic-v1",
+ "stage":"training_only_diagnostic",
+ "registered_before_execution":true,
+ "hypothesis":"Frozen contextual features may distinguish within-event same-B pairs from cross-B pairs better than native conditional slot assignments; alternatively both are weak. No global B identity is learned.",
+ "population":"All authenticated1536 Phase76 training identities and24 historical tiny views; development cache removed without iteration. No validation or test use.",
+ "partition":"For each category sort SHA256(phase78-probe:UID); first192 fit, remaining64 probe-assessment. Both partitions were used to fit the frozen scientific model, so assessment is event-disjoint only for new probe fitting, not independent generalization.",
+ "measurements":["native logits replay","proposal/refinement conditional pair same-B probability","encoder and per-head node cosine pair similarity","query cosine/norm/slot margins","native versus conditional-optimal unordered matching and ambiguity","per-event/category/source-size supports and background pair scores"],
+ "probe":{"features":"symmetric abs(left-right) and left*right on128 contextual encoder features; train-fit feature mean/std","model":"linear logistic257 parameters","fit":"512 Adam updates,lr0.01,batch256; event-uniform among eligible fit B events and same/cross pair balanced; seed7809; fixed final checkpoint","null":"identical budget on per-event permuted constituent B labels preserving B/background support and B counts; frozen permutation seed7810; assess against real labels","threshold":0.5,"selection":"no early stopping,tuning,sweep,validation selection"},
+ "decision_rule":"Probe AUC/conditional assignment are diagnostic, never exact membership. A narrow intervention requires measured mechanism beyond tiny/probe-only success and a deployable target/inference contract; otherwise no scientific jobs. No automatic second diagnostic or campaign.",
+ "resources":{"diagnostic_jobs_max":1,"cpus":2,"memory_gib":16,"hours":1,"gpus":0,"requeue":false},
+ "uncertainty":"Report event-mean and pooled pair AUC separately; category-stratified event bootstrap2000 seed7811 for paired probe-minus-native event AUC, descriptive within-training uncertainty. No iid pair confidence or physical tagging claim.",
+ "scope_limits":"Fixed70000 corpus,128/32/256 widths,unchanged checkpoints/normalization/constraints; physical tree,beam pool,p4 endpoints unavailable for flat memberships. Probe is new supervised fitting and not production training."
+}
