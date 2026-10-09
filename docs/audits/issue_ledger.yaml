@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Additive immutable-trace rejoin separates mixed B/background from background-only groups; six diagnostic tests pass and original stage totals/traces agree.
+  - 02042074295fee3e013ae0f64094115f3eb6e47b
   # Phase76 post-generation source-error, continuum membership and paired uncertainty review;31 closeout/audit and5 paired-source tests pass; publication pending terminal evidence.
   - 97e72060cca982c1216f250fdd85d6a08cf8a195
   # Phase76 source-backed membership diagnostics, isolated600 cohort and two-arm partial-context admission;63 focused CPU tests and real gradients pass.
