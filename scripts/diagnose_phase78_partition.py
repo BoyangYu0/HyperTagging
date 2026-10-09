@@ -43,6 +43,12 @@ def split_rows(rows):
     return roles
 
 
+def source_pairs(sources):
+    ij = torch.triu_indices(len(sources), len(sources), offset=1)
+    shared = (sources[ij[0]] & sources[ij[1]]).any(-1)
+    return ij[:, ~shared], int(shared.sum())
+
+
 def pair_features(h, ij):
     a, b = h[ij[0]], h[ij[1]]
     return torch.cat(((a - b).abs(), a * b), -1)
@@ -188,6 +194,7 @@ def score_record(r, probes):
         "nodes": len(target),
         "unknown_nodes": int((target < 0).sum()),
         "pairs": len(labels),
+        "excluded_shared_source_pairs": r["excluded_shared_source_pairs"],
         "unknown_pairs": int(unknown.sum()),
         "B_pair_support": int(both.sum()),
         "background_pair_support": int(bg.sum()),
@@ -260,6 +267,9 @@ def aggregate(records):
             "B_pair_support": sum(r["B_pair_support"] for r in rr),
             "background_pair_support": sum(r["background_pair_support"] for r in rr),
             "unknown_pairs": sum(r["unknown_pairs"] for r in rr),
+            "excluded_shared_source_pairs": sum(
+                r["excluded_shared_source_pairs"] for r in rr
+            ),
             "scores": {},
             "stages": {},
         }
@@ -420,13 +430,16 @@ def main(parent, previous, output):
                         ),
                     )
                 assert delta == 0
-                ij = torch.triu_indices(len(h), len(h), offset=1)
-                conflicts = (row["sources"][ij[0]] & row["sources"][ij[1]]).any(-1)
-                if bool(conflicts.any()):
-                    raise ValueError("Shared-source pair support requires separate accounting")
+                ij, excluded_pairs = source_pairs(row["sources"])
                 # Detached truth-free state serialized before target join.
                 records.append(
-                    {"uid": row["uid"], "encoder": h.detach(), "ij": ij, **captured}
+                    {
+                        "uid": row["uid"],
+                        "encoder": h.detach(),
+                        "ij": ij,
+                        "excluded_shared_source_pairs": excluded_pairs,
+                        **captured,
+                    }
                 )
                 node_proxy += len(h) ** 2
             assert not ref.readline()

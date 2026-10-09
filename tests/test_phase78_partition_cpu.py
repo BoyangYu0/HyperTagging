@@ -56,3 +56,12 @@ def test_partition_is_identity_only_disjoint_and_rejects_duplicates():
     rows[-1] = rows[0]
     with pytest.raises(ValueError):
         split_rows(rows)
+
+
+def test_shared_detector_sources_excluded_without_dropping_nodes():
+    from scripts.diagnose_phase78_partition import source_pairs
+
+    sources = torch.tensor([[1, 0], [1, 0], [0, 1]], dtype=torch.bool)
+    ij, count = source_pairs(sources)
+    assert count == 1 and ij.tolist() == [[0, 1], [2, 2]]
+    assert sources.shape[0] == 3
