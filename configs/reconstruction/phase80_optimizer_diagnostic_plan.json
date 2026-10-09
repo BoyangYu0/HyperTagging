@@ -1,0 +1,13 @@
+{
+ "version":"phase80-native-step-stability-v1",
+ "stage":"training_only_diagnostic",
+ "hypothesis":"The actual native AdamW step may overshoot its training objective or worsen structural assignment on other training events. A single prespecified half-step comparison tests this, rather than transferring the convex-probe optimizer result to the scientific model.",
+ "initialization":"Exact frozen Phase76 context-on downstream-final model, decoder and optimizer state. Every counterfactual resets to this same state; historical run is never resumed or changed.",
+ "audit_population":"96 existing training events,16/category ranked SHA256(phase77-gradient:UID), matching the prior deterministic gradient cohort. No validation/test. Record overlap with optimizer minibatches.",
+ "updates":"12 independent native one-step minibatches of8 events drawn sequentially from the saved sampling RNG state; no chained fitting. For each native parameter delta, compare the full delta with exactly0.5 delta from the same initial state. This is one prespecified step-scale contrast, not a grid.",
+ "measurements":["native total/member/relation full96-event audit risk","proposal/refinement correct,unassigned,other-B and background assignments","raw exact memberships,event counts and fixed acceptance","optimizer step norm,gradient norm and source/checkpoint integrity","paired collision changes on non-minibatch audit events,category/size and background controls"],
+ "decision":"A learning-rate intervention requires consistent actual-model overshoot and structural/background evidence across prespecified minibatches; loss-only or tiny-only improvements do not select a study. Otherwise reject that mechanism and record the specific remaining evidence limit. No heldout cohort consumed for this diagnostic.",
+ "budget":{"independent_optimizer_steps":12,"step_scales":[1.0,0.5],"batch_size":8,"audit_events":96,"audit_evaluations":25,"optimizer_event_presentations":96,"evaluation_event_views":2400,"checkpoint_selection":"all prespecified endpoints,none selected by validation"},
+ "resources":{"jobs":1,"cpus":2,"memory_gib":16,"hours":1,"gpus":0,"requeue":false},
+ "constraints":"Corpus,widths,geometry,normalization,PID,source/charge constraints unchanged; native objective/gradient clipping/Adam state. All generated outputs detector-only and detached before label joins. No production-model claim or automatic page update."
+}
