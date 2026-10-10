@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Fixed6000 evaluation-only restore/projection/normalizer/gates plus isolated600 designation;44 focused CPU tests pass, no fresh outcome assessment before runtime admission.
+  - cf5b5653cfbe2bbff68037057ab8834c2db7f560
   # Evaluation-only fresh600 plan and authenticated metadata designation;26 focused tests pass, no fresh identities read before immutable preregistration.
   - 675b02d4bf6179c03fc916f35f8a2dd377339029
   # Conditional TRAIN pair-message connection only;35 focused model/fit/history/source tests pass. Replication remains frozen/running, no successor runtime admission or fresh validation.

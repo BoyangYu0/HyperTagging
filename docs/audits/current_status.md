@@ -1,5 +1,22 @@
 # Current repository audit status
 
+## Fresh development identity admission complete — 2026-10-10
+
+Metadata-only job17123202 completed25s with2 CPUs/16GiB;230000 metadata rows
+and46 authenticated shards reproduce70000 TRAIN plus160000 validation identities.
+The full exclusion union contains182800 identities, including112800 historical
+validation reservations. Fixed-seed600,100/category, have zero overlap; no target
+labels or model outputs selected them. All7 prior registry records remain
+semantically unchanged; one non-primary development reservation was appended.
+The failed historical60 remains excluded and invalid.
+
+Implementationcf5b5653cfbe2bbff68037057ab8834c2db7f560 adds strict fixed-final paired inference, canonical
+projection/TRAIN replay, exact checkpoint/normalizer/source contracts, disabled
+gradients, paired event uncertainty, category/background/source gates and bounded
+resource checks. Forty-four focused tests pass. Complete source validation and a
+TRAIN-only final-checkpoint smoke precede fresh outcomes. No fitting, thresholds,
+primary scope or publication changes are introduced.
+
 ## Pair connection TRAIN result and fresh assessment plan — 2026-10-10
 
 Both matched jobs17122909/17122910 completed6000 updates and48000 presentations.
