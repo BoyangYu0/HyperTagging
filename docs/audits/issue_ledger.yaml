@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Withdraw overlapping private cache to preserve the separate publisher's final implementation;75 focused checks pass. Prototype commits/receipts remain immutable.
+  - 779a62149f73a004250cb4c802c010d0e63c28ef
   # Bounded validation-local pure-pattern cache;58 privacy regressions pass, identical single-artifact findings/work counts, unchanged source matching and limits.
   - dd77820bc08a0ff96b018be8d4330b471260c510
   # Public aggregate projection retains every selected metric and source digest;5 scope tests and tracked-source privacy pass.
