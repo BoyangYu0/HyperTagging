@@ -154,3 +154,51 @@ rows from the current authenticated historical projections; a changed source or
 archive fails closed. Decoder roundtrip and negative hash/value tests verify
 preservation. Consumers that need the former arrays can reconstruct them exactly
 from these pointers. This is a delivery change, not a new scientific evaluation.
+
+Accumulated previous-studies publication through Phase83
+--------------------------------------------------------
+
+The authorized historical release retains the original Phase78 candidate and
+adds the completed Phase79–83 training-role evidence. Only Phase83 is expanded
+on the dashboard; earlier decisions, authored pages and downloads remain.
+Complete supported metric records use bounded lossless transport with exact
+source reconstruction, decoded hashes and cardinality checks. Repeated records
+may share transport references; no scientific scalar is rounded or discarded.
+The decoder reconstructs the complete privacy-safe sources and verifies each
+against the inventory. Private identities and operational locations stay outside
+the artifact. The existing file, site and matcher limits remain unchanged.
+
+Exact source CPU and full standalone, text and basf2 documentation validation
+precede guarded promotion. Source and Git metadata stay frozen during builds.
+Live verification checks every new download and historical integrity, then
+reviews desktop and narrow layouts. This historical publication authorization
+does not change the preference to keep future incremental research private.
+
+Capacity is preserved by reusing exact authenticated Phase78 subtrees in the
+new records. The new parts alone use bounded XZ compression inside the existing
+gzip/base32 envelope, with a 5 MB decoded-fragment cap and 64 MiB decoder memory
+cap. The complete decoder verifies both layers and all original source hashes
+and cardinalities. All existing downloads and decoders remain byte-identical.
+The sidebar now links to the complete guide, study, download, API and catalogue
+indexes and retains search. Top breadcrumbs and previous/next links remain;
+the duplicate bottom navigation bar is omitted. No page, metric or search entry
+is removed. Full artifact checks measure the resulting capacity.
+
+Phase84–85 retrospective and inventory delivery
+-----------------------------------------------
+
+The completed Phase84–85 source cutoff is fixed independently of later private
+research. Only Phase85 is expanded; all earlier scientific pages and downloads
+remain. The new complete metric sources use the same bounded lossless fragment,
+subtree-deduplication and decoder design as the preceding retrospective.
+Scientific PID token fields are delivered as explicitly recorded PID code fields
+to avoid ambiguity with credential-field privacy rules; their values are retained.
+
+The previous basf2 build left less than2MiB under the unchanged256MiB bound.
+Current API inventory delivery now uses the existing bounded gzip/base32 envelope
+and a standalone decoder, preserving all canonical values and the decoded hash.
+The internal inventory remains available for complete coverage validation.
+Catalogue and repository metadata use compact JSON whitespace. These mutable
+coverage inventories change with source additions; historical scientific metric
+files and decoders are not rewritten. No byte, work, decoder-memory or time
+bound is raised. Complete builds still check links, privacy and regeneration.

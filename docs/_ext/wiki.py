@@ -11,6 +11,7 @@ from wiki_api import generate_api
 from wiki_catalog import generate_catalog
 from wiki_repository import generate_repository
 from wiki_status import generate_status
+from wiki_inventory_delivery import write_inventory_delivery
 from wiki_privacy import _canonical_body, sensitive_literals, validate_artifact, violations
 
 
@@ -101,6 +102,15 @@ def generate(root: Path, output: Path) -> dict:
             "status": generate_status(root, stage / "status"),
             "repository": generate_repository(root, stage / "repository"),
         }
+        # Large mutable API coverage uses lossless delivery; the complete raw
+        # inventory remains in the generated tree for independent validation.
+        api_index = stage / "api" / "index.rst"
+        if (stage / "api" / "inventory.json").stat().st_size > 1_000_000:
+            write_inventory_delivery(stage / "api", manifests["api"])
+            api_index.write_text(api_index.read_text().replace(
+                ":download:`Download the coverage and provenance inventory <inventory.json>`.",
+                ":download:`Complete lossless API inventory <inventory-download.json>` and "
+                ":download:`bounded decoder <inventory-decoder.txt>`."))
         (stage / "manifest.json").write_text(_manifest_text(manifests), encoding="utf-8")
         validate_artifact(stage, root, generated_projection=True)
         payloads = {p.relative_to(stage).as_posix(): p.read_bytes() for p in stage.rglob("*") if p.is_file()}
@@ -198,9 +208,15 @@ def on_build_finished(app, exception):
     )
 
 
+def navigation_context(app, pagename, templatename, context, doctree):
+    """Keep compact navigation relative to the selected documentation layout."""
+    context["wiki_content_path"] = app.config.wiki_content_path
+
+
 def setup(app):
     app.add_config_value("wiki_content_path", "", "env")
     app.connect("builder-inited", on_builder_inited)
+    app.connect("html-page-context", navigation_context)
     app.connect("env-updated", suppress_source_pages)
     app.connect("html-collect-pages", suppress_source_pages, priority=100)
     app.connect("build-finished", on_build_finished)

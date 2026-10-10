@@ -431,5 +431,5 @@ def generate_catalog(repo_root: Path, output_dir: Path) -> dict:
         lines.extend(f"   {entry['docname']}" for entry in entries if entry["kind"] == kind)
         lines.append("")
     _write(output_dir / "index.rst", "\n".join(lines).rstrip() + "\n")
-    _write(output_dir / "manifest.json", json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+    _write(output_dir / "manifest.json", json.dumps(manifest, separators=(",", ":"), sort_keys=True) + "\n")
     return manifest

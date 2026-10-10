@@ -3199,13 +3199,32 @@ def validate_artifact(
     raw_body_file_budget = [_MAX_MATCH_OPERATIONS]
     pattern_file_budget = [_MAX_MATCH_OPERATIONS]
 
+    @lru_cache(maxsize=4096)
+    def scalar_rules(value, field_assignments, html_markup, semantic_projection):
+        # Cache only pure rule results, within this one validation invocation.
+        # Literal/source matching still visits every occurrence and charges all
+        # existing operation budgets. Return immutable results because inspect
+        # adds occurrence-specific literal failures below.
+        return tuple(violations(
+            value, field_assignments=field_assignments, html_markup=html_markup,
+            semantic_projection=semantic_projection,
+        ))
+
     def inspect(value, *, location, trusted_vendor=False,
                 field_assignments=True, html_markup=False,
                 literal_scan=True, semantic_projection=False):
-        rules = [] if trusted_vendor else violations(
-            value, field_assignments=field_assignments, html_markup=html_markup,
-            semantic_projection=semantic_projection,
-        )
+        if trusted_vendor:
+            rules = []
+        elif len(value) <= 256:
+            rules = list(scalar_rules(
+                value, field_assignments, html_markup, semantic_projection,
+            ))
+        else:
+            # Never retain large publication fragments in the bounded cache.
+            rules = violations(
+                value, field_assignments=field_assignments, html_markup=html_markup,
+                semantic_projection=semantic_projection,
+            )
         if not trusted_vendor and literal_scan and literal_matcher is not None:
             if any(
                 _literal_automaton_contains(

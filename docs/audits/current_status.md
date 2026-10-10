@@ -38,6 +38,27 @@ The new finite authorization is separate from the concluded exposure campaign.
 No new scientific training or outcome claim is made; runtime admission remains
 required. Historical height-indexed455-target diagnostics remain unchanged.
 Research artifacts and subsequent decisions stay private; no publication here.
+## Authorized Phase84–85 retrospective publication — 2026-10-10
+
+The explicitly authorized release integrates frozen scientific cutoff395abdd2
+with the published Phase83 lineage. Six scientific fits completed, but fresh
+raw and accepted B membership remains0/400 in both pair-connection arms.
+Continuum48/400 versus58/400 has paired95%CI[-0.0025,0.055]; the registered
+gate fails without establishing aggregate harm. The600-collision cohort is
+DEVELOPMENT ONLY. No generalization winner, model promotion or new scientific
+work follows. See the [complete retrospective](../wiki/phase84_85.rst).
+Exact publication CI and live receipts establish deployment, not this statement.
+Later research remains private and outside the frozen release.
+
+The initial retrospective commit passed exact branch CPU and documentation CI
+and was fast-forwarded to master, but the master documentation job reached its
+unchanged time limit before Pages upload. Publication is not established by the
+merge. A measured runtime correction memoizes only pure scalar rule results:
+at most 4,096 values of at most 256 characters, scoped to one validation call.
+Every literal/source match and existing operation charge remains active for
+every occurrence. Large fragments are not cached. Cached and uncached decisions,
+failure diagnostics, work counts, mode keys and cache bounds have 62 passing
+focused tests. Full exact-commit validation and live deployment remain required.
 
 ## Exposure/information sequence terminal review — 2026-10-10
 
@@ -295,6 +316,23 @@ historical/current manifest hashes authenticate. Runtime rechecks this union.
 Real-data resource/gradient/source admission and broadCPU checks precede
 scientific submission. Parent separate worktree owns historical
 publication; this branch does not publish or modify publisher work.
+
+## Authorized accumulated previous-studies publication — 2026-10-09
+
+The user explicitly authorizes publication of accumulated evidence through Phase83,
+superseding the historical deferral recorded below for this release only. This
+work is frozen to the completed previous-studies lineage; later research remains
+outside its scope. Future incremental research remains private. Phase81 retains
+both main raw/accepted0/1024 and increased pair-supervision contamination;
+Phase83 retains0/12 improvement gates. No fresh validation, primary evaluation,
+model promotion or generalization success is claimed. The complete review is
+[Previous studies through Phase83](../wiki/previous_studies.rst).
+
+The original Phase78 publication candidate is an ancestor of this release and
+its metrics and corrections are retained. Publication status is established by
+exact-commit CI and the private live-verification receipt, not by this source
+statement. Historical broad2430+41pass34skip and final28focused passes remain
+distinct in scope and source. No scientific job is launched by publication.
 
 ## Sequential improvement concluded at the evidence gate — 2026-10-09
 

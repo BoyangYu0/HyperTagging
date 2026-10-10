@@ -173,5 +173,5 @@ def generate_repository(root: Path, output: Path) -> dict:
         lines.extend([f"   * - ``{kind}``", f"     - {count}"])
     lines.append("")
     _write(output / "index.rst", "\n".join(lines))
-    _write(output / "manifest.json", json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+    _write(output / "manifest.json", json.dumps(manifest, separators=(",", ":"), sort_keys=True) + "\n")
     return manifest

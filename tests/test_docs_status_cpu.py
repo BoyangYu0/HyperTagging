@@ -38,6 +38,8 @@ def evidence(tmp_path, monkeypatch):
         "reconstruction_phase74_review": {"reserved": True},
         "reconstruction_phase75_review": {"reserved": True},
         "reconstruction_phase76_review": {"reserved": True},
+        "reconstruction_phase83_review": {"reserved": True},
+        "reconstruction_phase85_review": {"reserved": True},
         "reconstruction_phase78_review": {"reserved": True},
         "reconstruction_phase77_review": {"reserved": True},
         "reconstruction_phase42_44_archive": {"reserved": True},
@@ -427,6 +429,9 @@ def test_current_repository_dashboard_surfaces_recorded_acceptance_values(tmp_pa
     assert "Phase78 completed training-only partition diagnosis" not in rendered_status
     assert "Phase78 training-only partition diagnosis" in rendered_status
     assert "phase86-cleanup-summary.json" in rendered_status
+    assert "Phase85 pair-connection development" in rendered_status
+    assert "Phase85 completed pair-connection development" not in rendered_status
+    assert "Training-role evidence" in rendered_status
     assert "NO MEMBERSHIP GAIN" in rendered_status
     assert "Phase74 completed development factorial" not in rendered_status
     assert "Phase75 completed gradient-routing development" not in rendered_status

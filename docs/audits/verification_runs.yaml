@@ -1272,3 +1272,92 @@ supplemental_runs:
       lossless downloads. Exact whole-manifest reconstruction and three negative/
       preservation tests pass; net savings6199777 bytes including new files.
       Fresh exact-head full CPU/docs and live publication checks remain required.
+
+  - source_sha: 32f90f705f7ded1c01ca076b7ab930d871f6489a
+    metadata_head: recorded_by_followup_audit
+    worktree_state: committed_accumulated_previous_studies_publication
+    date: '2026-10-09'
+    commands:
+      - python -m pytest -q tests/test_previous_studies_publication_cpu.py
+      - focused Phase78 and historical delivery regressions
+      - focused publication privacy and source staging regressions
+    pytest: {result: PASS, passed: 123, skipped: 0}
+    real_data_inputs: immutable_completed_Phase78_to_Phase83_metrics_only_no_new_evaluation
+    checkpoint: no_checkpoint_loaded_or_changed_by_publication
+    ci_run: PENDING_EXACT_PUBLICATION_HEAD
+    human_visual_review_status: PENDING_LIVE_PUBLICATION
+    evidence_limitations: >-
+      Separate local groups11transport,25diagnostic_and_historical,87privacy_and_staging
+      pass; two integration corrections also pass. Complete documentation check
+      initially exposed duplicate toctree ownership and stale expected source count;
+      own preliminary build and suite were stopped before source edits and are not
+      claimed successful. Full exact-head CPU/docs/privacy/layout/capacity/live checks
+      remain required. Historical broad2430plus41pass34skip and final28focusedpass
+      retain original source scopes. No physics or generalization success is claimed.
+
+  - source_sha: 1636d0d36a67abeb424cbfa0f9e91bb2c61f3eaf
+    metadata_head: recorded_by_followup_audit
+    worktree_state: committed_lossless_capacity_correction
+    date: '2026-10-09'
+    commands:
+      - python -m pytest -q tests/test_previous_studies_publication_cpu.py tests/test_docs_compact_navigation_cpu.py tests/test_docs_privacy_cpu.py tests/test_docs_preservation_cpu.py tests/test_docs_compatibility_cpu.py
+      - full standalone decoder and immutable historical envelope comparison
+    pytest: {result: PASS, passed: 129, skipped: 0, duration_seconds: 130.68}
+    real_data_inputs: unchanged64_authenticated_previous_study_metric_sources
+    checkpoint: none_opened_or_modified_by_publication
+    ci_run: PRECEDING_1C12ACB4_CPU_2491_PASS_36_SKIP_FINAL_EXACT_HEAD_PENDING
+    human_visual_review_status: PENDING_LIVE_PUBLICATION
+    evidence_limitations: >-
+      The original Phase78 basf2 artifact267369057bytes leaves1066399bytes under
+      the unchanged256MiB bound. New delivery reduces to3173881bytes via exact
+      Phase78 references and bounded innerXZ under unchanged outergzip/base32.
+      All64source canonical hashes,1699729numeric scalars and5000update records
+      remain unchanged; old download bytes and decoders remain intact. Compact
+      navigation retains indexes,search,breadcrumbs,previous/next and all pages.
+      Actual final build capacity remains required. Prior local docs suite had
+      241passes,onefailure and37setup errors from exhausted temporary storage;
+      only own fixtures were preserved on the project volume. Superseded own
+      builds are stopped,not passes. Final CPU/full docs/live gates remain required.
+
+  - source_sha: 418c221575cd7b8c7b7cfa8176c37019d84beddf
+    metadata_head: recorded_by_followup_audit
+    worktree_state: committed_inventory_source_privacy_correction
+    date: '2026-10-09'
+    commands:
+      - python -m pytest -q tests/test_previous_studies_publication_cpu.py
+      - complete generated-artifact privacy against actual repository sources
+    pytest: {result: PASS_AFTER_CORRECTING_TEST_SCAN_MODE, distinct_passed: 35, skipped: 0}
+    real_data_inputs: unchanged64_authenticated_training_role_metric_sources
+    checkpoint: none_opened_or_modified_by_publication
+    ci_run: FINAL_EXACT_HEAD_PENDING_PRECEDING_DOCS_RAW_SOURCE_BODY_FAILURE_RETAINED
+    human_visual_review_status: PENDING_LIVE_PUBLICATION
+    evidence_limitations: >-
+      Full candidate1c12acb4 documentation correctly rejected the verbatim tracked
+      inventory source. Immutable bounded gzip storage now preserves all41723
+      public inventory bytes and original hash; raw-source-body rule is unchanged.
+      First local run passed34cases but the added privacy case used untrusted
+      mode and hit an existing Phase78 matcher budget. Production generated
+      projection mode then passed that case plus3archive-bound cases in43.92s.
+      Superseded own22ce4598build and docs tests were stopped before edits and
+      are not passes. Exact final CPU/full docs/capacity/live gates remain required.
+
+  - source_sha: 99a72f5b0fc532687170d9cab8a663dbaac77627
+    metadata_head: recorded_by_followup_audit
+    worktree_state: committed_browser_verified_navigation_correction
+    date: '2026-10-09'
+    commands:
+      - python -m pytest -q tests/test_docs_compact_navigation_cpu.py
+      - desktop and narrow browser navigation and table-scroll inspection
+    pytest: {result: PASS, passed: 4, skipped: 0}
+    real_data_inputs: unchanged_historical_metric_sources
+    checkpoint: none_opened_or_modified_by_publication
+    ci_run: PRECEDING_188E27FE_CPU_2521_PASS_36_SKIP_FINAL_EXACT_HEAD_PENDING
+    human_visual_review_status: LOCAL_DESKTOP_AND_NARROW_NAVIGATION_CORRECTION_VERIFIED
+    evidence_limitations: >-
+      Browser preview caught unstyled compact navigation because the classic
+      theme targets div.related. Restoring that element with navigation role and
+      placing floated controls before breadcrumbs preserves contrast and wrapping.
+      Tables retain all columns via horizontal scroll. No scientific content,
+      archive bytes or privacy/size limits change. Previous local documentation
+      suite285passed; own superseded build stopped before editing,not a pass.
+      Exact final full CI and live release verification remain required.

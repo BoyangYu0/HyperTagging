@@ -1,0 +1,3 @@
+{% extends "!layout.html" %}
+{% block relbar1 %}<div class="related" role="navigation" aria-label="Page navigation"><ul>{% if next %}<li class="right"><a href="{{ next.link|e }}" rel="next">Next</a></li>{% endif %}{% if prev %}<li class="right"><a href="{{ prev.link|e }}" rel="prev">Previous</a></li>{% endif %}<li><a href="{{ pathto(master_doc) }}">HyperTagging</a></li>{% for parent in parents %}<li> / <a href="{{ parent.link|e }}">{{ parent.title }}</a></li>{% endfor %}</ul></div>{% endblock %}
+{% block relbar2 %}{% endblock %}
