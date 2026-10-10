@@ -154,3 +154,16 @@ rows from the current authenticated historical projections; a changed source or
 archive fails closed. Decoder roundtrip and negative hash/value tests verify
 preservation. Consumers that need the former arrays can reconstruct them exactly
 from these pointers. This is a delivery change, not a new scientific evaluation.
+
+Bounded scalar-pattern reuse
+----------------------------
+
+Publication validation caches pure pattern results for repeated short scalar
+values within one validation call. The cache holds at most 8,192 entries and
+only inputs of at most 512 characters; longer values take the unchanged direct
+path. Assignment, HTML-markup and semantic-projection modes are part of each
+cache key, and callers receive separate mutable result lists. The cache is
+released after each validation. Literal/source matching, parser channels,
+per-occurrence matcher work accounting, failure locations and all byte, work
+and runtime ceilings remain unchanged. Exact-source full CI and live checks
+remain required for publication.

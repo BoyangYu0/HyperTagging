@@ -228,3 +228,49 @@ def test_pages_marker_exception_cannot_carry_content_or_move_under_downloads(tmp
     _write(tmp_path, relative, payload)
     with pytest.raises(ValueError, match="forbidden-raw-download"):
         privacy.validate_artifact(tmp_path)
+
+
+@pytest.mark.parametrize('payload', [
+    {'values': ['public-value', 42] * 128},
+    {'values': ['job_id=982731'] * 8},
+    {'values': ['/home/PRIVATE_USER/private.json'] * 8},
+    {'values': ['public-value', 'private-sentinel'] * 8},
+])
+def test_short_pattern_cache_preserves_findings_and_work_counts(tmp_path, monkeypatch, payload):
+    _write(tmp_path, 'first.json', json.dumps(payload))
+    _write(tmp_path, 'second.json', json.dumps(payload))
+    monkeypatch.setattr(privacy, 'sensitive_literals', lambda root: {'private-sentinel'})
+    monkeypatch.setattr(privacy, '_source_bodies', lambda root: (set(), []))
+
+    def outcome():
+        try:
+            return ('pass', privacy.validate_artifact(tmp_path, tmp_path))
+        except ValueError as error:
+            return ('fail', str(error))
+
+    cached = outcome()
+    # Existing module caches are already decorated. Disable only the new
+    # validation-local cache to compare the same complete scanning pipeline.
+    monkeypatch.setattr(privacy, 'lru_cache', lambda **kwargs: lambda function: function)
+    assert outcome() == cached
+
+
+def test_pattern_cache_is_local_and_bypasses_long_values(tmp_path, monkeypatch):
+    short = 'public-value'
+    long = 'v' * 513
+    _write(tmp_path, 'values.json', json.dumps({'values': [short, short, long, long]}))
+    original = privacy.violations
+    calls = []
+
+    def record(value, **kwargs):
+        if value in (short, long):
+            calls.append(value)
+        return original(value, **kwargs)
+
+    monkeypatch.setattr(privacy, 'violations', record)
+    privacy.validate_artifact(tmp_path)
+    assert calls.count(short) == 1
+    assert calls.count(long) == 2
+    privacy.validate_artifact(tmp_path)
+    assert calls.count(short) == 2
+    assert calls.count(long) == 4
