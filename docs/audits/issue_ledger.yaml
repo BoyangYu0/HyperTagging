@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed documentation fixture update for102 sources and API inventory contract;322 full documentation/archive CPU regressions pass.
+  - 07bd2d157ca66c77ad8fde61f3b4116e2bf7e2e6
   # Reviewed heading-length correction and opaque packager privacy errors; scientific data and transport unchanged.
   - 26de425bcd425948729f16c658cdecee4210c27b
   # Reviewed Phase84–85 publication implementation: bounded lossless evidence, preserved historical scientific downloads, complete development limits; exact-source validation retained separately.
