@@ -50,6 +50,8 @@ def restore(record: dict, payload: bytes, output: Path) -> None:
         with tempfile.NamedTemporaryFile(dir=destination.parent, delete=False) as stream:
             temporary = Path(stream.name)
             stream.write(checked(payload, record))
+            if "mode" in record:
+                os.fchmod(stream.fileno(), int(record["mode"]) & 0o777)
             stream.flush()
             os.fsync(stream.fileno())
         os.link(temporary, destination)
@@ -61,13 +63,17 @@ def restore(record: dict, payload: bytes, output: Path) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("verify", "restore"))
+    parser.add_argument("--manifest", type=Path, default=ROOT / "configs/repository_artifacts.json",
+                        help="Explicit versioned manifest (default: repository artifacts)")
+    parser.add_argument("--packed-root", type=Path, default=ROOT,
+                        help="Root for relative packed_path entries; never inferred from original host paths")
     parser.add_argument("--data-root", type=Path, default=os.environ.get("HYPERTAGGING_DATA_ROOT"))
     parser.add_argument("--output-dir", type=Path)
     parser.add_argument("--path", action="append", help="Exact manifest path; repeat to select outputs")
     args = parser.parse_args()
     if args.action == "restore" and args.output_dir is None:
         parser.error("restore requires an explicit --output-dir")
-    manifest = json.loads((ROOT / "configs/repository_artifacts.json").read_text())
+    manifest = json.loads(args.manifest.read_text())
     entries = manifest["entries"]
     if args.path:
         unknown = set(args.path) - {entry["path"] for entry in entries}
@@ -77,13 +83,18 @@ def main() -> int:
     elif args.data_root is None:
         entries = [entry for entry in entries if "packed_path" in entry]
     # Validate the entire requested set before writing any destination.
-    payloads = [(entry, read_payload(entry, ROOT, args.data_root)) for entry in entries]
+    verified_bytes = 0
+    for entry in entries:
+        verified_bytes += len(read_payload(entry, args.packed_root, args.data_root))
     if args.action == "restore":
-        for entry, payload in payloads:
-            restore(entry, payload, args.output_dir)
-    print(json.dumps({"action": args.action, "verified_files": len(payloads),
-                      "verified_bytes": sum(len(payload) for _, payload in payloads),
-                      "source": "external_archive" if args.data_root else "portable_registries"}))
+        for entry in entries:
+            # Recheck at use time; retain at most one expanded file in memory.
+            restore(entry, read_payload(entry, args.packed_root, args.data_root), args.output_dir)
+    print(json.dumps({"action": args.action, "verified_files": len(entries),
+                      "verified_bytes": verified_bytes,
+                      "source": ("external_archive" if args.data_root else
+                                 "portable_registries" if args.manifest == ROOT / "configs/repository_artifacts.json"
+                                 else "packed_artifacts")}))
     return 0
 
 

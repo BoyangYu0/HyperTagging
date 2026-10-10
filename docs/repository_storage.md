@@ -70,3 +70,39 @@ payloads belong on the data volume. Keep source, small immutable metadata and
 the bounded publication data needed by offline CI in Git. A future migration
 of raw study receipts needs a portable authenticated artifact store and changes
 to all receipt consumers; symlinks to a private host would break fresh clones.
+
+## Private host cleanup archives
+
+The restore CLI also accepts `--manifest` and `--packed-root` for a separately
+owned cleanup archive. Entries retain relative `path` and `packed_path`, original
+byte counts and SHA-256 hashes, compressed byte counts and hashes, and optional
+permission `mode`. Absolute original host paths may be retained as private
+metadata, but are never interpreted as restore destinations. Keep private
+manifests and logs outside Git and the website publication inputs.
+
+```bash
+python scripts/manage_repository_artifacts.py verify \
+  --manifest /data/cleanup/archive-manifest.json --packed-root /data/cleanup
+python scripts/manage_repository_artifacts.py restore \
+  --manifest /data/cleanup/archive-manifest.json --packed-root /data/cleanup \
+  --output-dir /data/cleanup/restored
+```
+
+Unset `HYPERTAGGING_DATA_ROOT` for packed-only private archives; an explicitly
+configured data root continues to require the external-original contract.
+Verification checks every selected entry before restoration begins and rechecks
+each payload at use time. Memory use is bounded by one expanded artifact rather
+than the sum of all artifacts. Identical existing destinations are accepted;
+different bytes and escaping paths are rejected. Optional permission restoration
+keeps only ordinary permission bits, never setuid/setgid bits.
+
+For host migrations, record active consumers, ownership and scheduler state;
+exclude live trees and append-only logs. Copy to a unique data-volume destination,
+flush and verify complete hashes and sizes before replacing an untracked legacy
+path with a compatibility symlink. Preserve a per-file transaction ledger and
+rollback instructions. Never put a private absolute symlink into tracked source.
+Regenerable inactive caches may be removed only after recording their recovery
+route. Lossless log archives and searchable summaries supplement immutable raw
+evidence; missing metrics and infrastructure failures are not scientific zeros.
+Filesystem free space does not establish an account quota. Keep transfers bounded
+and temporary files on the task-owned data volume.
