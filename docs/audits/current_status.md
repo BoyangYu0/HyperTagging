@@ -2,6 +2,12 @@
 
 ## Private structural diagnostic preparation — 2026-10-10
 
+Follow-up implementation1851d31aa109b59323d2f40a65ff69f4dc3015fd preserves terminal commitment timing,
+never-formed dependencies, failed target denominators, and explicit truncated
+legality status.218 focused tests pass. Partial-target and full shared decay
+metrics are retained separately; no inference factor or scientific outcome changed.
+
+
 Reviewed implementationcd0fa4d26c45e267415da57bf1849331cbd33987 adds opt-in detached post-PID
 decoder traces and an all-round TRAIN first-failure audit.210 focused CPU
 regressions pass, including unchanged baseline predictions and truth separation.

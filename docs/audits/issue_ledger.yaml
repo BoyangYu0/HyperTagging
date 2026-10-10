@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed all-round diagnostic timing/dependencies, separate partial population and shared full metrics;218 focused tests pass before new outcomes.
+  - 1851d31aa109b59323d2f40a65ff69f4dc3015fd
   # Private TRAIN first-failure observer and finite diagnostic runner;210 focused CPU tests pass, no scientific fitting or publication.
   - cd0fa4d26c45e267415da57bf1849331cbd33987
   # Fresh evaluator metadata correction after TRAIN-only preinference failure17123248;45 focused tests pass, unchanged compactTRAINcache/models/cohort/endpoints.
