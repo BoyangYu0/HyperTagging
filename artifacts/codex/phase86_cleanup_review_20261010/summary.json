@@ -1,0 +1,156 @@
+{
+  "cleanup": {
+    "accounting": {
+      "cache_allocated_bytes_removed": 207429120,
+      "cache_files": 17199,
+      "cache_logical_bytes": 427071580,
+      "compatibility_symlink_allocated_bytes": 26112,
+      "compatibility_symlink_bytes": 609,
+      "generated_archive_allocated_bytes": 11504128,
+      "generated_archive_bytes": 11463416,
+      "generated_documentation_allocated_bytes_removed": 20207104,
+      "generated_documentation_files": 1787,
+      "generated_documentation_logical_bytes": 106693339,
+      "home_allocated_bytes_reclaimed_net": 254145536,
+      "home_logical_bytes_reclaimed_net": 941618410,
+      "indexed_bytes": 81869202,
+      "indexed_files": 1225,
+      "logs_archived": 230,
+      "logs_archived_bytes": 90548249,
+      "moved_destination_allocated_bytes": 60280320,
+      "moved_files": 3,
+      "moved_logical_bytes": 407854100,
+      "moved_original_allocated_bytes": 26535424,
+      "new_primary_data_allocated_bytes": 392335360,
+      "new_primary_data_logical_bytes": 581504460,
+      "packed_allocated_bytes": 320550912,
+      "packed_bytes": 162186944,
+      "unique_packed_files": 17128
+    },
+    "git_history_rewritten": false,
+    "implementation_sha": "d0ee00a58d3949fce4667d06fe60f54a39cf51f0",
+    "quota_reduction_measured": false,
+    "raw_logs_retained": true,
+    "reviewed_sha": "66748211ae60cb905d27fdd4710bcb9891615c1e"
+  },
+  "cr001": {
+    "continuation": "Forecast-based execution veto subsequently removed by user; separately owned research continues outside this release.",
+    "efficiency_gains": null,
+    "executable_scratch_succeeded": true,
+    "executed_tests_passed": 30,
+    "final_suite_passed": 1,
+    "final_suite_unexecuted": 2797,
+    "historical_forecast_stop": true,
+    "new_training_results": null,
+    "recursive96_executed_at_cutoff": false,
+    "status": "UNFINISHED_INFRASTRUCTURE"
+  },
+  "cutoff": "2026-10-10; CR001 stage000007 only",
+  "phase86": {
+    "accepted_correct_mother_type": 35,
+    "accepted_immediate_daughter_source_groups": 36,
+    "branches": {
+      "generation": {
+        "fit_denominator": 278,
+        "necessary_height_deep_assessment": 3,
+        "necessary_height_deep_fit": 4,
+        "source_only_deep_assessment": 18,
+        "source_only_deep_fit": 12,
+        "source_only_fit": 123
+      },
+      "repair": {
+        "fit_denominator": 254,
+        "necessary_height_deep_assessment": 4,
+        "necessary_height_deep_fit": 4,
+        "source_only_deep_assessment": 17,
+        "source_only_deep_fit": 12,
+        "source_only_fit": 80
+      }
+    },
+    "charge_upper_bounds": {
+      "all_eligible": 455,
+      "ambiguous_treated_feasible": 9,
+      "any_allowed_mother_type": 431,
+      "assessment": 165,
+      "assessment_denominator": 177,
+      "correct_type_incompatible": 100,
+      "fit": 266,
+      "fit_denominator": 278
+    },
+    "complete_evaluation": false,
+    "decision": "Source-set gates pass, but necessary intrinsic-height support is insufficient. No structural or weighting contrast admitted; no new development or performance gain.",
+    "deep_fit_support_intention": 5,
+    "eligible_mothers": 455,
+    "events": 96,
+    "events_per_category": {
+      "ccbar": 16,
+      "charged": 16,
+      "ddbar": 16,
+      "mixed": 16,
+      "ssbar": 16,
+      "uubar": 16
+    },
+    "executed_source_sha": "6b0688f0f493ab57cbca8209a33d4d2435503530",
+    "first_failure_counts": {
+      "accepted_source_group_correct_mother_type": 35,
+      "available_group_constraint": 18,
+      "cardinality_support": 27,
+      "correct_proposal_retention": 5,
+      "generated_group_wrong_mother_type": 1,
+      "mother_charge": 17,
+      "pointer_ranking_source_selection": 147,
+      "pointer_threshold_support": 22,
+      "root_never_formed_unavailable": 29,
+      "wrong_irreversible_merge": 154
+    },
+    "forest_root_disjoint_events": 68,
+    "fresh_development_events": 0,
+    "input_alias_events": 28,
+    "input_sources": 3879,
+    "input_sources_covered": 3879,
+    "outside_policy_mothers": 210,
+    "p4_closed_mothers": 336,
+    "p4_max_residual": 0,
+    "p4_mothers": 336,
+    "policy_valid_correct_type_source_groups": 254,
+    "population": "previously inspected TRAIN diagnostic",
+    "raw_correct_mother_type": 40,
+    "raw_immediate_daughter_source_groups": 41,
+    "recursive_topology_pid_reachability_verified": false,
+    "scientific_contrasts": 0,
+    "source_set_gates_passed": true,
+    "source_sha": "e285aa4c6bc1e05a2118ee5b5b6dcf7136e2d74f",
+    "status": "COMPLETED_NO_CONTRAST_ADMITTED",
+    "tagging": {
+      "b_channel_bins": 64,
+      "b_collision_events": 32,
+      "b_trials": 64,
+      "beam_contrast": null,
+      "both_b_event_correct": 0,
+      "continuum_accepted_events": 0,
+      "continuum_events": 64,
+      "continuum_slots": 128,
+      "efficiency_scope": "retained reduced-PID proxy; not FEI physical efficiency",
+      "exact_b_correct": 0,
+      "inclusive_b_correct": 0,
+      "unavailable_b_trials": 0
+    },
+    "training_updates": 0,
+    "valid_committed_events": 96
+  },
+  "schema": "phase86-cleanup-public-summary-v1",
+  "source_bindings": {
+    "cleanup": {
+      "final-manifest_json_sha256": "907125708c9230415d0f5b350506a5ddda2e74ee8e00e2f2aee0a921e6e4c6a8",
+      "final-report_md_sha256": "6b78589f5e6e1a36c50417403d876f720f40df76d699381d7c8fcdb93d8b56e0"
+    },
+    "cr001": {
+      "final-manifest_json_sha256": "c12eef38813ba8906294ed2489b9db8906982351e621eec13c22f7185cb061c4",
+      "final-report_md_sha256": "82e25b7d1734134e0c7cf2462e157147f9c5865289b37f8a49fb33c80c37adde"
+    },
+    "phase86": {
+      "final-manifest_json_sha256": "7578a2071a03ec8f961cb3aa565859ad8235468d2b5ddb7660bbfc07d783fc95",
+      "final-report_md_sha256": "b74eecd1b296ee3623a20b60a845b115d2e3678ca640f9cb4b876d90a9726828"
+    }
+  }
+}

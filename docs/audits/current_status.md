@@ -1,5 +1,22 @@
 # Current repository audit status
 
+## Authorized cleanup and Phase86 retrospective — 2026-10-10
+
+This release integrates portable cleanup recovery with the completed Phase86
+TRAIN diagnostic and preserves the separately published Phase84–85 lineage.
+Phase86 retained 455 eligible mothers; source-set gates passed, but insufficient
+intrinsic-height deep support justified no contrast or fresh development.
+Source-set support does not verify exact recursive topology/PID. No performance
+improvement or new scientific execution is claimed by this publication.
+
+Cleanup reduced selected home logical bytes by 941618410 and filesystem-reported
+allocated bytes by 254145536, with lossless preservation and raw logs retained.
+No Git-history or measured quota reduction is claimed. CR001 is explicitly
+unfinished infrastructure at frozen stage000007: 30 executed tests passed, 2797
+exhaustive tests unexecuted, and recursive96 not run at that cutoff. The user
+subsequently removed the forecast-based execution veto; independently owned
+continuing research and later outcomes are outside this release.
+
 ## Private structural diagnostic preparation — 2026-10-10
 
 Reviewed implementation 19aa6c4714835af01cd8e7e34b3da21ee9d3e928 explicitly labels daughter source-set

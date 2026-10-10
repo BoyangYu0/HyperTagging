@@ -106,3 +106,16 @@ route. Lossless log archives and searchable summaries supplement immutable raw
 evidence; missing metrics and infrastructure failures are not scientific zeros.
 Filesystem free space does not establish an account quota. Keep transfers bounded
 and temporary files on the task-owned data volume.
+
+## Completed 2026-10-10 host cleanup
+
+Lossless preservation preceded removal of 17,199 inactive cache files and 1,787
+regenerable documentation files. Three generated files totaling 407,854,100 bytes
+(about 408 MB) moved to external storage. Another 230 logs were packed and 1,225
+existing logs indexed; raw evidence and legacy log originals remain retained.
+The selected home reduction was 941,618,410 logical bytes and 254,145,536
+filesystem-reported allocated bytes. These measurements do not establish quota
+reduction or Git-history shrinkage. Private archive and verification payloads
+remain on the data volume, outside Git and website inputs. No scientific model
+behavior changed. The public retrospective retains only sanitized aggregate
+accounting and source hashes.
