@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Native TRAIN diagnostic now requires canonical selection train_split_only scope;71 focused tests pass, failed smoke17122662 preserved before model execution.
+  - 27ff7b23a603d7c62b9acbfbc9bfff72775681b9
   # Correct information-probe detector kind/mode validation;70 focused tests pass, original failed smoke preserved; no scientific model change.
   - e3bec1c0c6f4789f4814eb759a8649cc545a0e66
   # Native hierarchy TRAIN-only applicability diagnostics;67 focused role/source/trace/gradient/budget tests pass. No real audit fitting or intervention admitted; Phase84 frozen exposure unchanged.
