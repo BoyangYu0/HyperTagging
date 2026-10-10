@@ -26,8 +26,12 @@ def test_narrative_text_wrap_preserves_privacy(tmp_path):
     source.mkdir()
     (source / "conf.py").write_text("project='fixture'\nmaster_doc='index'\n")
     (source / "index.rst").write_bytes((ROOT / "docs/wiki/phase84_85.rst").read_bytes())
+    for target in ("studies", "previous_studies", "_generated/status/downloads"):
+        page = source / (target + ".rst")
+        page.parent.mkdir(parents=True, exist_ok=True)
+        page.write_text(":orphan:\n\nFixture\n=======\n")
     output = tmp_path / "text"
-    subprocess.run([sys.executable, "-m", "sphinx", "-b", "text", str(source),
+    subprocess.run([sys.executable, "-m", "sphinx", "-W", "-b", "text", str(source),
                     str(output)], check=True, capture_output=True, text=True)
     privacy = M.sibling("wiki_privacy")
     assert not privacy.violations((output / "index.txt").read_text())

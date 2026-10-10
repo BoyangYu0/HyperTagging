@@ -1,5 +1,5 @@
 Phase84–85: exposure, information and pair connection
-====================================================
+======================================================
 
 The completed sequence finds finite-budget TRAIN learnability but **no fresh
 exact-membership improvement**. The pair connection improves TRAIN recovery;
@@ -138,7 +138,7 @@ does not replicate the connection intervention. Whole-event bootstrap intervals
 condition on these checkpoints and omit training-seed/initialization uncertainty.
 
 Fresh development: failed gate
------------------------------
+-------------------------------
 
 The two existing fixed6000 checkpoints were assessed without training,
 threshold tuning or checkpoint selection. Metadata-only selection excluded
@@ -147,7 +147,7 @@ selected collisions were distinct and disjoint. The historical invalid60
 remain excluded. Gates were frozen before identity inventory and payload
 inspection. The inspected fresh cohort must not be tuned on or called unseen.
 
-**600 collisions are not800 collisions:**100/category comprise200 charged/mixed
+**600 collisions are not 800 collisions:** 100/category comprise 200 charged/mixed
 B collisions, yielding400 correlated B trials, plus400 continuum collisions.
 Each charged/mixed category has0/200 raw and accepted source sets in both arms;
 any/both event recovery is0/200 B collisions. All400 membership targets are
@@ -218,7 +218,7 @@ not FEI-equivalent physical efficiency. Physical full-tree, exact-B beam/pool
 and closure metrics remain unavailable for flat heads, not measured zeroes.
 
 Actual resources and corrections
--------------------------------
+---------------------------------
 
 Six fits total36,000updates and288,000presentations. All40 scheduler jobs are
 terminal:37completed and3preserved prefit/preinference failures. All six
