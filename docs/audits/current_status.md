@@ -2,6 +2,12 @@
 
 ## Private structural diagnostic preparation — 2026-10-10
 
+Reviewed implementation 19aa6c4714835af01cd8e7e34b3da21ee9d3e928 explicitly labels daughter source-set
+and group-policy validity as insufficient to verify recursive daughter topology/PID
+or native deep reachability. A regression covers distinct daughter structures
+with equal source sets;17 focused tests pass. Frozen diagnostic outcomes and
+inference behavior remain unchanged; private decisions remain in their receipts.
+
 Follow-up implementation1851d31aa109b59323d2f40a65ff69f4dc3015fd preserves terminal commitment timing,
 never-formed dependencies, failed target denominators, and explicit truncated
 legality status.218 focused tests pass. Partial-target and full shared decay
