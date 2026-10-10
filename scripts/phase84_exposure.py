@@ -26,6 +26,87 @@ from scripts.run_phase74_development import fit, save, verify_bindings  # noqa:E
 
 CATEGORIES = ("charged", "mixed", "ccbar", "uubar", "ddbar", "ssbar")
 MILESTONES = (375, 1500, 3000, 6000)
+REPLICATION_SOURCE = "1b4fe6b3a54c45981d87af5f464b69a9c63bb430"
+REPLICATION_INITIAL_DIGEST = (
+    "3e8b9ee3bd144d1d836dcb1372dcfe1b012d867af456e1fd4df643c869db0c01"
+)
+REPLICATION_REFERENCE_HASHES = {
+    "reference_contract": "a31ade1e9ccdf827901376ac2cda6d6f12b79d882ead04156c8fb60bfd7034bd",
+    "reference_startup": "3f43edd66f6f62f25ab051390d796fd7115467b2f6ea23f896dfe998b11c37b5",
+    "reference_terminal_review": "10396dad02625441645f417b584c12b47712486975f74252b44e36a90d57163e",
+}
+
+
+def validate_replication(c):
+    """One explicit training-order replication of immutable original384 evidence."""
+    r = c["replication"]
+    controls = dict(
+        kind="training_order",
+        reference_pool=384,
+        reference_sampler_seed=202610081,
+        new_sampler_seed=202610082,
+        reference_source_sha=REPLICATION_SOURCE,
+        expected_initial_digest=REPLICATION_INITIAL_DIGEST,
+    )
+    if not isinstance(r, dict) or set(r) != set(controls) | set(
+        REPLICATION_REFERENCE_HASHES
+    ):
+        raise ValueError("Replication contract fields changed")
+    if any(r[k] != v for k, v in controls.items()) or c["pool_size"] != 384:
+        raise ValueError("Replication controls changed")
+    documents = {}
+    for name, digest in REPLICATION_REFERENCE_HASHES.items():
+        item = r[name]
+        if (
+            not isinstance(item, dict)
+            or set(item) != {"path", "sha256"}
+            or item.get("sha256") != digest
+            or item not in c.get("bindings", [])
+            or binding(Path(item["path"])) != item
+        ):
+            raise ValueError("Unbound or changed replication reference: " + name)
+        documents[name] = read(item)
+    original = documents["reference_contract"]
+    startup = documents["reference_startup"]
+    review = documents["reference_terminal_review"]
+    if (
+        original.get("replication") is not None
+        or original.get("source_sha") != REPLICATION_SOURCE
+        or original.get("pool_size") != 384
+        or original.get("settings") != {**settings(), "downstream_updates": 6000}
+        or any(c.get(k) != original.get(k) for k in ("parent", "pretrain"))
+        or startup.get("contract") != r["reference_contract"]
+        or startup.get("source_sha") != REPLICATION_SOURCE
+        or startup.get("pool") != 384
+        or startup.get("initial_digest") != REPLICATION_INITIAL_DIGEST
+        or review.get("status") != "PASS"
+        or review.get("source_sha") != REPLICATION_SOURCE
+        or review.get("pool") != 384
+        or review.get("review_scheduler") != "COMPLETED|0:0"
+        or any(
+            review.get("gate", {}).get(k) is not True
+            for k in ("absolute_trainable", "exposure_gain", "fixed6000_eligible")
+        )
+    ):
+        raise ValueError("Replication reference history/gates changed")
+    return startup
+
+
+def validate_replication_initial(c, digest, checkpoint, uid_order_digest):
+    """Checked before fit creates its fresh optimizer; never resume original weights."""
+    startup = validate_replication(c)
+    if (
+        digest != REPLICATION_INITIAL_DIGEST
+        or checkpoint != startup["initial_checkpoint"]
+        or uid_order_digest != startup["uid_order_sha256"]
+    ):
+        raise ValueError("Replication initialization/checkpoint/pool order changed")
+    return {
+        **c["replication"],
+        "initial_digest_verified": digest,
+        "fresh_optimizer": True,
+        "rng_scope": "Only Python training-row sampler seed changes; initializer and Torch/generated-state RNG rules unchanged.",
+    }
 
 
 def nested(rows, size):
@@ -99,9 +180,17 @@ def validate(c):
         or c["milestones"] != list(MILESTONES)
     ):
         raise ValueError("Study shape changed")
-    if c["settings"] != {**settings(), "downstream_updates": 6000} or c[
-        "resources"
-    ] != {"cpus": 2, "memory_gib": 32, "hours": 8, "gpus": 0, "requeue": False}:
+    expected_settings = {**settings(), "downstream_updates": 6000}
+    if "replication" in c:
+        validate_replication(c)
+        expected_settings["seed"] = 202610082
+    if c["settings"] != expected_settings or c["resources"] != {
+        "cpus": 2,
+        "memory_gib": 32,
+        "hours": 8,
+        "gpus": 0,
+        "requeue": False,
+    }:
         raise ValueError("Settings/resources changed")
     if c["heldout_events"] or c["automatic_successor"] or c["sealed_test_access"]:
         raise ValueError("Data/authority changed")
@@ -279,6 +368,22 @@ def run(path):
     out.mkdir(exist_ok=False)
     write(out / "isolation.json", a["current_isolation"])
     model, decoder, cp = initial(Path(c["pretrain"]), cache)
+    replication_metadata = {}
+    if "replication" in c:
+        replication_metadata["replication"] = validate_replication_initial(
+            c,
+            initial_state_digest(model, decoder),
+            cp,
+            hashlib.sha256("\n".join(r["uid"] for r in rows).encode()).hexdigest(),
+        )
+        replication_metadata["replication"].update(
+            initial_torch_rng_sha256=hashlib.sha256(
+                torch.get_rng_state().numpy().tobytes()
+            ).hexdigest(),
+            initial_sampler_rng_sha256=hashlib.sha256(
+                repr(random.Random(c["settings"]["seed"]).getstate()).encode()
+            ).hexdigest(),
+        )
     write(
         out / "startup.json",
         {
@@ -291,6 +396,7 @@ def run(path):
             "uid_order_sha256": hashlib.sha256(
                 "\n".join(r["uid"] for r in rows).encode()
             ).hexdigest(),
+            **replication_metadata,
         },
     )
     start = time.monotonic()
@@ -385,6 +491,7 @@ def run(path):
         out / "summary.json",
         {
             "status": "COMPLETED",
+            **replication_metadata,
             "stop_reason": reason,
             "candidate_eligible_for_preregistered_replication": reason == "fixed6000"
             and history["updates"] == 6000,

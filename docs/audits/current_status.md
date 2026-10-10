@@ -1,5 +1,23 @@
 # Current repository audit status
 
+## Reserved Phase84 training-order replication prepared — 2026-10-10
+
+The original finite exposure plan reserved one replication. Its384-event lead
+passes both registered TRAIN gates across53 collisions; the information probe
+does not support an architecture or diversity escalation. The follow-up plan
+changes only the training-row sampler seed202610081 to202610082, preserving
+the384 identities, exact pretrained/decoder initializer, fresh optimizer,
+objective, geometry, normalization, threshold and6000 updates/48000 presentations.
+This is training-order robustness, not independent initialization or pretraining.
+The implementation authenticates the original successful contracts and initial
+parameter/UID digests before fitting. Forty-three focused exposure, replay,
+isolation and replication tests pass; a mistaken test filename in the first
+invocation is preserved separately. Planning passes, but broad checks and new
+real-data admission remain required. Execution follows terminal review of the
+native hierarchy applicability audit. No fresh development is designated and no
+best-seed selection, data growth, primary work or publication is authorized by
+this diagnostic replication itself.
+
 ## Phase84 information terminal and native admission correction — 2026-10-10
 
 Information diagnostic17122661 completed all four fixed2048-update probes.

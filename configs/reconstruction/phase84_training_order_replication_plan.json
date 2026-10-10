@@ -1,0 +1,77 @@
+{
+  "stage": "development",
+  "family": "direct_membership_joint_learning",
+  "sealed_test_access": false,
+  "automatic_successor_submission": false,
+  "diagnostic_evidence": {
+    "path": "docs/assembly_diagnosis_20261007/evidence.json",
+    "sha256": "c1fa1b5f8d60909e679efaa06fd96831e7dc262dd1b1e15addf9741c33fd8c63"
+  },
+  "version": "phase84-384-training-order-replication-v1-before-fitting",
+  "hypothesis": "The substantial fixed-budget384 TRAIN-pool learning result may persist under a second event-sampling order. This tests training-order robustness, not new initialization, independent pretraining, held-out improvement or full1536 convergence.",
+  "changed_factor": "Only the training sampler seed changes202610081 to202610082. Same384 identities, frozen pretrained encoder/fresh decoder initializer, optimizer/loss/geometry/normalization/threshold and6000-update budget.",
+  "control": "Original384 trajectory17121936, fixed6000 endpoint and original1500-to6000 learning curve. New run starts from the identical original initializer with a fresh optimizer, never resumes the successful final checkpoint. No architecture or loss intervention.",
+  "target_contract": "Two unordered optional retained-B source sets plus unassigned. Detector-only inference, truth supervision/evaluation only; all physical/source/charge/unknown invariants unchanged. Source sharing excluded only where prior metrics require, event denominators retained. Physical tree/beam/p4 metrics unavailable.",
+  "mechanism_evidence": {
+    "reference_terminal_review": {
+      "path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/phase84_exposure_information_20261009/review-integrated-v1/exposure/384/terminal-review.json",
+      "sha256": "10396dad02625441645f417b584c12b47712486975f74252b44e36a90d57163e"
+    },
+    "independent_review": {
+      "path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/phase84_exposure_information_20261009/level-addendum-integrated-v2/384-terminal-interpretation-review.json",
+      "sha256": "55d93eed82fcfe23e6b9a54c0d8cd70015262cf6c519f38124797361a0334ce9"
+    },
+    "measured_effect": "Original384 fixedfinal78/256raw71/256accepted;53distinctjointcollisions;continuum0/256 versus21/256 at1500;sourceconflicts0. Full1536 has1/1024 and fails its trainability gate."
+  },
+  "data_and_compute_control": {
+    "corpus": 70000,
+    "eligible_train_pool": 1536,
+    "selected_training_identities": 384,
+    "category_counts": {
+      "charged": 64,
+      "mixed": 64,
+      "ccbar": 64,
+      "uubar": 64,
+      "ddbar": 64,
+      "ssbar": 64
+    },
+    "selection": "Exact original384 nested SHA-selected identities and storedcacheorder, no outcome filters",
+    "reference_sampler_seed": 202610081,
+    "sampler_seed": 202610082,
+    "initial_digest": "3e8b9ee3bd144d1d836dcb1372dcfe1b012d867af456e1fd4df643c869db0c01",
+    "initialization": "SamePhase74existingpretrainedencoder and deterministic freshdecoder asoriginal; optimizer freshlyconstructed. This is NOT independentinitialization/pretraining replication.",
+    "other_randomness": "Keep model initialization/dropout and generated-state seed rules exactlynative; generated states may diverge as optimization changes. Record initialtorch/RNG and orderbindings.",
+    "architecture": "context128/hyperbolic32/head256/depth4 fixed",
+    "settings": {
+      "encoder_lr": 5e-05,
+      "head_lr": 0.001,
+      "weight_decay": 0.0001,
+      "gradient_clip": 5,
+      "seed": 202610082
+    },
+    "main_updates": 6000,
+    "batch_size": 8,
+    "presentations": 48000,
+    "milestones": [
+      375,
+      1500,
+      3000,
+      6000
+    ],
+    "scientific_jobs": 1,
+    "resources_per_job": {
+      "cpus": 2,
+      "memory_gib": 32,
+      "hours": 8,
+      "gpus": 0,
+      "requeue": false
+    },
+    "finite_sequence_accounting": "Fourth and final reserved exposure job;18000prior updates144000presentations plus6000/48000=24000/192000 exposuremaximum. No automatic extension.",
+    "runtime_admission": "New immutable source/contract/order, focused and broadCPUchecks, authenticatedcache/fullreservationexclusionunion, discarded realgradient/native4update runtime smoke and measured perarm resourceforecast required.",
+    "execution_order": "Only after current native applicability diagnostic is terminal and its evidence reviewed; no overlapping scientific studies."
+  },
+  "stop_rule": "Nonfinite fails closed. Runtime guard7.25h or processRSS26GiB stops without candidate eligibility, no requeue/extension. Earlyplateau only>=95%raw at375/1500/3000 with identical rawcounts and consecutive membershipriskrelativechange<=.001; zero at1500notfutility. Otherwise6000fixed.Exactly one replication; no thirdseed, budget extension or automatic freshdevelopment.",
+  "success_rule": "Inherit ABSOLUTE_TRAINABLE: eligible fixed6000,>=4distinctBcollisions with same nonempty target raw exact andconstraintaccepted, finalcontinuum<=own1500+0.05,sourceconflicts0. Separately EXPOSURE_GAIN:>=4collisions gainingboth andnetpositive raw/accepted vsown1500. Compare originalandreplicate counts/strata withoutrequiringbestseed orclaimingequivalence. Positive result supports order-robust trainability only, notgeneralization.",
+  "validation_selection": "TRAINonly. No validation/test/reservation in this replication. If bothorders pass, separatelypreregister anyfresh600development comparison of originalsame-seed384vs1536 fixed6000 checkpoints; replicationcheckpoint may be fixedrobustnessendpoint,never selectbestseed. No primary/diversity/modelpromotion automatic.",
+  "preregistered_utc": "2026-10-10T00:33:34.520240+00:00"
+}
