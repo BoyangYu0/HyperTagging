@@ -12,6 +12,16 @@ work follows. See the [complete retrospective](../wiki/phase84_85.rst).
 Exact publication CI and live receipts establish deployment, not this statement.
 Later research remains private and outside the frozen release.
 
+The initial retrospective commit passed exact branch CPU and documentation CI
+and was fast-forwarded to master, but the master documentation job reached its
+unchanged time limit before Pages upload. Publication is not established by the
+merge. A measured runtime correction memoizes only pure scalar rule results:
+at most 4,096 values of at most 256 characters, scoped to one validation call.
+Every literal/source match and existing operation charge remains active for
+every occurrence. Large fragments are not cached. Cached and uncached decisions,
+failure diagnostics, work counts, mode keys and cache bounds have 62 passing
+focused tests. Full exact-commit validation and live deployment remain required.
+
 ## Exposure/information sequence terminal review — 2026-10-10
 
 All six scientific trainings are terminal exit0: exposure96/1536/384 and its
