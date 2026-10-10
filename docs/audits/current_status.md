@@ -1,5 +1,19 @@
 # Current repository audit status
 
+## Fresh evaluator metadata admission correction — 2026-10-10
+
+Full CPU17123218 passed2738 tests with34 skips, both dry runs and audit/cleanup
+checks. Subsequent TRAIN-only admission17123248 failed before model inference:
+the new evaluator expected feature-contract metadata in the intentionally compact
+TRAIN cache, which contains only train rows and the runtime normalizer.
+Implementation85afb4061e7de4c021accd823d131ba8e8d629e2 reads those metadata from the already authenticated
+normalization checkpoint, verifies that checkpoint against TRAIN cache provenance,
+and reconstructs/compares the canonical runtime statistics without fitting.
+Forty-five focused tests pass, including the actual two-key cache schema and
+negative provenance/normalizer checks. The failed source/receipt remains intact;
+new source freeze and runtime admission precede fresh predictions. No scientific
+model, cached TRAIN rows, cohort, threshold or endpoint changes.
+
 ## Fresh development identity admission complete — 2026-10-10
 
 Metadata-only job17123202 completed25s with2 CPUs/16GiB;230000 metadata rows

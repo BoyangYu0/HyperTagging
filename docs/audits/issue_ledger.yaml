@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Fresh evaluator metadata correction after TRAIN-only preinference failure17123248;45 focused tests pass, unchanged compactTRAINcache/models/cohort/endpoints.
+  - 85afb4061e7de4c021accd823d131ba8e8d629e2
   # Fixed6000 evaluation-only restore/projection/normalizer/gates plus isolated600 designation;44 focused CPU tests pass, no fresh outcome assessment before runtime admission.
   - cf5b5653cfbe2bbff68037057ab8834c2db7f560
   # Evaluation-only fresh600 plan and authenticated metadata designation;26 focused tests pass, no fresh identities read before immutable preregistration.
