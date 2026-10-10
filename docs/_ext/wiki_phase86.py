@@ -19,6 +19,8 @@ def generate(root, output):
     value = json.loads(raw)
     phase = value['phase86']
     if (value['schema'] != 'phase86-cleanup-public-summary-v1'
+            or phase['source_sha'] != binding['source_sha']
+            or phase['source_set_gates_passed'] is not True
             or phase['status'] != 'COMPLETED_NO_CONTRAST_ADMITTED'
             or phase['events'] != 96 or phase['eligible_mothers'] != 455
             or sum(phase['first_failure_counts'].values()) != 455

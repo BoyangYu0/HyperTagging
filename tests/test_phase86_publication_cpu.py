@@ -37,7 +37,7 @@ def test_frozen_scope_and_lossless_selected_aggregates(tmp_path):
                 assert len(line) >= len(lines[i - 1])
 
 
-@pytest.mark.parametrize('mutation', ['bytes', 'scope', 'recursive_claim', 'denominator'])
+@pytest.mark.parametrize('mutation', ['bytes', 'scope', 'recursive_claim', 'denominator', 'source_identity', 'source_gate'])
 def test_reject_corruption_or_false_scope(tmp_path, mutation):
     source = tmp_path / M.SOURCE
     source.parent.mkdir(parents=True)
@@ -47,8 +47,13 @@ def test_reject_corruption_or_false_scope(tmp_path, mutation):
         p.write_bytes(p.read_bytes() + b' ')
     else:
         value = json.loads(p.read_text())
-        key = {'scope': 'training_updates', 'recursive_claim': 'recursive_topology_pid_reachability_verified', 'denominator': 'eligible_mothers'}[mutation]
-        value['phase86'][key] = 1
+        if mutation == 'source_identity':
+            value['phase86']['source_sha'] = '0' * 40
+        elif mutation == 'source_gate':
+            value['phase86']['source_set_gates_passed'] = False
+        else:
+            key = {'scope': 'training_updates', 'recursive_claim': 'recursive_topology_pid_reachability_verified', 'denominator': 'eligible_mothers'}[mutation]
+            value['phase86'][key] = 1
         raw = json.dumps(value).encode()
         p.write_bytes(raw)
         b = json.loads((source / 'binding.json').read_text())
