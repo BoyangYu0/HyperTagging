@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Conditional TRAIN pair-message connection only;35 focused model/fit/history/source tests pass. Replication remains frozen/running, no successor runtime admission or fresh validation.
+  - 52201a5677b20410ee88f35d0ce0d35f2bd94df5
   # Native observational first-error/success counter collision corrected;38 focused tests pass; historical70 preserved, target-row correction35, no model behavior change.
   - 253a284fa6fe2a7d104e505a3d670de1479bb1f1
   # Reserved384 training-order replication only;43 focused exposure/isolation/contract regressions pass, source freeze and real admission still required.
