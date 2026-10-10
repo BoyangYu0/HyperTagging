@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Authorized retrospective branch receives exact push CPU checks;17 promotion/workflow regressions pass.
+  - 7aa491b113e7b87bff0b7245d29baffb2bb15c1e
   # Latest-study assertion follows the authorized Phase86 retrospective; historical summaries retained.
   - ae0af14bf9bc82284d71d8e682b3dfbc8659b76f
   # Reviewed bounded Phase86/cleanup summary; diagnostic scope and privacy checks pass, no scientific behavior change.
