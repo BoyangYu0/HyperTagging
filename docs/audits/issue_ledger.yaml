@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed heading-length correction and opaque packager privacy errors; scientific data and transport unchanged.
+  - 26de425bcd425948729f16c658cdecee4210c27b
   # Reviewed Phase84–85 publication implementation: bounded lossless evidence, preserved historical scientific downloads, complete development limits; exact-source validation retained separately.
   - 330d53efdf4894607e5cee15c0660f4f1c6f64e2
   # Frozen Phase84–85 merge preserves both parents and exact scientific implementation;95 focused pair/exposure/fresh CPU checks pass.
