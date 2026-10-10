@@ -1,11 +1,32 @@
 # Current repository audit status
 
+## Phase84 exposure endpoints and information admission correction — 2026-10-10
+
+Jobs17121121/17121473/17121936 completed their fixed6000 updates and48000
+presentations each on96/1536/384 nested TRAIN pools. Raw/accepted memberships
+are64/64 and52/64;1/1024 and1/1024;78/256 and71/256, respectively.
+Continuum acceptance is0/64,15/1024,0/256; source conflicts arezero.
+Terminal hashes/order/init checks pass; full-pool1500 model/decoder/Adam/RNG
+exactly replay the historical control. Only96 and384 pass the registered
+training-panel gates. These single-seed results do not establish held-out
+improvement, full-pool convergence, a diversity benefit or primary readiness.
+
+Information smoke17122625 failed before fitting: its adapter incorrectly
+rejected valid ECL/KLM leaf-kinematics modes. Authenticated TRAIN metadata
+audit17122630 identifies those modes. The correction retains128 coordinates:
+cluster modes follow detector kind, while two flags encode raw/fixed track
+modes. Invalid kind/mode combinations and target-only modes remain rejected.
+Failed source/output remain immutable; corrected source needs focused checks
+and new guarded real admission. No production model behavior is changed.
+Native hierarchy applicability remains pending; no loss/PID prior is selected.
+No fresh validation or publication is performed in this research branch.
+
 ## User-directed level-conditioned hierarchy addendum — 2026-10-09
 
 The new hypothesis is recorded in
 `configs/reconstruction/level_conditioned_hierarchy_study_addendum_20261009.json`.
 Planning validation passes; no weighting/prior intervention is runtime-admitted.
-The active Phase84 96-event exposure job17121121 remains unchanged. A native
+The three Phase84 exposure trajectories have completed unchanged. A native
 hierarchical training-only applicability audit follows the exposure/information
 sequence: existing whole-objective level weights and soft empirical type prior
 are the baseline, not absent features. Generation height is not particle mass.

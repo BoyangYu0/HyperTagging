@@ -2,6 +2,8 @@
 
 import pytest
 import torch
+from hypertagging.preprocessing.schema_v2 import NODE_KIND_TO_ID
+from hypertagging.preprocessing.schema_v4 import LEAF_MODE_TO_ID
 from scripts.phase84_information_probe import (
     BLOCKS,
     KINDS,
@@ -22,7 +24,9 @@ def detector():
     d = {
         "node_mask": torch.ones(1, 3, dtype=torch.bool),
         "node_kind_ids": torch.tensor([KINDS]),
-        "leaf_kinematics_mode_ids": torch.tensor([[MODES[0], MODES[1], MODES[1]]]),
+        "leaf_kinematics_mode_ids": torch.tensor(
+            [[MODES[0], LEAF_MODE_TO_ID["ecl_cluster"], LEAF_MODE_TO_ID["klm_cluster"]]]
+        ),
         "pid_labels": torch.tensor([[0, 2, 3]]),
     }
     for block, width in BLOCKS:
@@ -51,6 +55,53 @@ def test_lossless_detector_allowlist_masks_and_flags():
     for block, _ in BLOCKS:
         d[block + "_features"][~d[block + "_availability"]] = float("nan")
     assert torch.equal(detector_nodes(d)[0], x)
+
+
+@pytest.mark.parametrize("track_mode", MODES)
+def test_native_cluster_modes_lossless_categorical_roundtrip(track_mode):
+    d = detector()
+    d["leaf_kinematics_mode_ids"][0, 0] = track_mode
+    d["pid_labels"][0, 0] = 0 if track_mode == MODES[0] else 2
+    x, observed, continuous = detector_nodes(d)
+    assert x.shape == observed.shape == (3, 128)
+    assert int(continuous.sum()) == 41
+    kinds = torch.tensor(KINDS)[x[:, 82:85].argmax(-1)]
+    track_flags = x[:, 85:87]
+    assert not track_flags[1:].any()
+    modes = torch.where(
+        kinds == KINDS[0],
+        torch.tensor(MODES)[track_flags.argmax(-1)],
+        torch.where(
+            kinds == KINDS[1],
+            LEAF_MODE_TO_ID["ecl_cluster"],
+            LEAF_MODE_TO_ID["klm_cluster"],
+        ),
+    )
+    assert torch.equal(kinds, d["node_kind_ids"][0])
+    assert torch.equal(modes, d["leaf_kinematics_mode_ids"][0])
+    assert torch.equal(x[:, 87:].argmax(-1), d["pid_labels"][0])
+    assert sum(p.numel() for p in new_probe(8409).parameters()) == 24835
+
+
+@pytest.mark.parametrize("node", range(3))
+@pytest.mark.parametrize("mode", list(LEAF_MODE_TO_ID.values()))
+def test_exact_native_mode_kind_pairs(node, mode):
+    d = detector()
+    d["leaf_kinematics_mode_ids"][0, node] = mode
+    allowed = (MODES, (LEAF_MODE_TO_ID["ecl_cluster"],), (LEAF_MODE_TO_ID["klm_cluster"],))
+    if mode in allowed[node]:
+        detector_nodes(d)
+    else:
+        with pytest.raises(ValueError, match="kind/kinematics mode pairing"):
+            detector_nodes(d)
+
+
+@pytest.mark.parametrize("kind", ["unknown", "other", "composite"])
+def test_non_detector_kinds_rejected(kind):
+    d = detector()
+    d["node_kind_ids"][0, 0] = NODE_KIND_TO_ID[kind]
+    with pytest.raises(ValueError, match="Unsupported reconstructed category"):
+        detector_nodes(d)
 
 
 @pytest.mark.parametrize(

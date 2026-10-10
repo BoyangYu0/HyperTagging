@@ -29,6 +29,11 @@ MODES = tuple(
     LEAF_MODE_TO_ID[k]
     for k in ("raw_track_predicted_pid", "fixed_hypothesis_candidate")
 )
+MODE_BY_KIND = {
+    KINDS[0]: MODES,
+    KINDS[1]: (LEAF_MODE_TO_ID["ecl_cluster"],),
+    KINDS[2]: (LEAF_MODE_TO_ID["klm_cluster"],),
+}
 BLOCKS = (
     ("common", len(V3_COMMON_FEATURE_NAMES)),
     ("track", len(V3_TRACK_FEATURE_NAMES)),
@@ -61,12 +66,17 @@ def detector_nodes(detector):
         d[k][0, mask[0]]
         for k in ("node_kind_ids", "leaf_kinematics_mode_ids", "pid_labels")
     ]
-    for v, allowed in ((kind, KINDS), (mode, MODES), (pid, range(len(PDG_TOKENS)))):
+    for v, allowed in ((kind, KINDS), (pid, range(len(PDG_TOKENS)))):
         if (
             v.dtype != torch.long
             or not torch.isin(v, torch.tensor(list(allowed))).all()
         ):
             raise ValueError("Unsupported reconstructed category")
+    if mode.dtype != torch.long or any(
+        not torch.isin(mode[kind == k], torch.tensor(allowed)).all()
+        for k, allowed in MODE_BY_KIND.items()
+    ):
+        raise ValueError("Unsupported detector kind/kinematics mode pairing")
     if ((mode == MODES[0]) & (pid != 0)).any():
         raise ValueError("Raw track PID must be unknown before inference")
     values, observed = [], []
@@ -91,7 +101,12 @@ def detector_nodes(detector):
     flags = torch.cat(
         (
             (kind[:, None] == torch.tensor(KINDS)).float(),
-            (mode[:, None] == torch.tensor(MODES)).float(),
+            # Cluster mode is uniquely recoverable from kind. Only tracks need
+            # two additional mode flags; preserve the lossless 128-wide input.
+            (
+                (kind == KINDS[0])[:, None]
+                & (mode[:, None] == torch.tensor(MODES))
+            ).float(),
             F.one_hot(pid, len(PDG_TOKENS)).float(),
         ),
         -1,

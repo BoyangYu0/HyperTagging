@@ -1,5 +1,5 @@
 {
-  "version": "phase84-detector-versus-context-information-v1",
+  "version": "phase84-detector-versus-context-information-v2-before-probe-fitting",
   "stage": "development",
   "family": "within_branch_relation_discrimination",
   "sealed_test_access": false,
@@ -19,7 +19,7 @@
     "probe_assessment_per_category": 64,
     "partition": "FrozenPhase78 SHA256 phase78-probe:+UID split reused;event-disjointprobefit/assessmentwithintrain",
     "representation_checkpoint_rule": "Fixed Phase84full1536step6000 if terminalandeligible; otherwise immutable historicalPhase76nativefinal. Neverchoosebyprobeorheldoutscores. Encoder was trained on these TRAINassessmentidentities; they are not encoder-heldout.",
-    "detector_feature_contract": "41measurements+41availability+3kind+2mode+41reconstructedPIDonehot=128; strictprojected detectorallowlist. Constantn_daughters0omittedandchecked. No truthPID/geometry/features.",
+    "detector_feature_contract": "41measurements+41availability+3kind+2track-mode flags+41reconstructedPIDonehot=128. Track mode is raw or fixed; ECL/KLM modes are uniquely determined by kind and have zero track-mode flags. Reject mismatched kind/mode, legacy, composite and truth-topology modes. Strict detector allowlist; constant n_daughters0 omitted and checked; no truth inputs.",
     "normalization": "Eachbranchmaskedpercoordinate statistics onprobefittingevents only; flagsunchanged,unknown/absent identity transform; existingmodeltrainnormalizerunchanged.",
     "probe_inputs": "Symmetricabsdiff128,product128,full-eventmean128. Learnedbranchhas upstream learnedfull-event/PIDprocessing; rawbranchhasactual detectorflags/categoricalinputs.",
     "updates_per_head": 2048,
@@ -42,5 +42,7 @@
   "stop_rule": "Exactly2048updates/head,fixedfinal,no refit/sweep. Failonbinding/nonfinite/realgradient/memory/runtime mismatch; fullpairmemoryadmissionbeforefits;1hSlurmcapno requeue/extension. Executeafterexposurecore terminal; workerneverlaunchessuccessor.",
   "success_rule": "Report pairedcategory-stratifiedwholeeventbootstrap2000. Strongerdetectorreadability only ifdetector-minus-embedding anddetector-minus-detectornull lower95%bounds>0 forconditionalsame/crossAUC andbalanced3classrecall, withoutmorebackgroundfalseBpairassignments. Otherwiseinconclusive/negative; proxypositive alone not physicalefficiency, pretrainingfactorial orprimaryauthorization. Allsupportedmetrics/unknownfailcountsretained.",
   "validation_selection": "No validation/test identities accessed. Samefixedtrainprobeassessment exploredpreviously; notindependentconfirmation. Zero/sparsebootstraplimits explicit. No checkpointselection usingassessment; no primary/modelpromotion.",
-  "preregistered_utc": "2026-10-09T18:06:05.738035+00:00"
+  "preregistered_utc": "2026-10-09T18:06:05.738035+00:00",
+  "amendment_utc": "2026-10-10T00:02:03.750457+00:00",
+  "amendment_reason": "Guarded smoke17122625 stopped before probe fitting because adapter incorrectly rejected valid ECL/KLM mode IDs. TRAIN-only metadata audit17122630 identified the omission. Correct categorical validation/encoding without changing 128 input width, probe capacity, updates, roles, normalization, checkpoint, endpoints or numerical hyperparameters. Preserve failed source/receipt."
 }
