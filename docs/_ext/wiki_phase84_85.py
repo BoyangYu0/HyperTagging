@@ -454,7 +454,7 @@ for i, record in enumerate(inventory["metric_sources"]):
 
 
 def render(value):
-    lines = ["Phase85 completed pair-connection development", "--------------------------------------------", "",
+    lines = ["Phase85 completed pair-connection development", "---------------------------------------------", "",
              "The learned pair connection improves TRAIN raw membership from 102/256 to 182/256 and accepted from 89/256 to 160/256. Both arms include the same pair objective and extra parameters; only feeding the learned message into refinement differs.", "",
              "Fresh development: both arms recover 0/400 raw and accepted B source sets. Continuum acceptance is 48/400 versus 58/400; paired difference +2.5 percentage points, 95% interval [-0.25, +5.5]. The registered improvement/background gate fails; aggregate harm is not established. The separate ccbar stratum is +12 points [3, 21].", "",
              "DEVELOPMENT ONLY: 600 distinct collisions, 100/category, comprising 200 B collisions (400 correlated B trials) and 400 continuum collisions. Complete evaluation requires 2,000/category, 12,000/arm. No generalization winner or promotion.", "",

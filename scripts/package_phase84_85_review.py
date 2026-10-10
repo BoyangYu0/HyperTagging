@@ -210,9 +210,6 @@ def main():
         raw=path.read_bytes();original=[json.loads(line) for line in raw.splitlines() if line.strip()] if path.suffix=='.jsonl' else json.loads(raw);excluded=Counter();value=sanitize(original,privacy,excluded)
         data=canonical(value)
         if privacy._contains_private_fields(value) or privacy.redact(data.decode()) != data.decode():
-            import difflib
-            print('Privacy failure source',logical,flush=True)
-            for line in list(difflib.unified_diff(data.decode().split(','),privacy.redact(data.decode()).split(',')))[:20]:print(line[:200],flush=True)
             raise ValueError('Source projection privacy failure')
         if str(path) not in authenticated or digest(raw)!=authenticated[str(path)]:
             raise ValueError('Metric evidence missing or changed from frozen final manifest: '+logical)
