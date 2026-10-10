@@ -88,6 +88,8 @@ class RolloutConfig:
     rollout_pid_kinematics_mode: str = "soft_decision_hard_construction"
     rollout_pid_temperature: float = 0.5
     profile_phases: bool = False
+    # Observational, detached native-reference diagnostics; never a decoder input.
+    capture_decode_trace: bool = False
     # Stored target levels can contain gaps after checkpoint-policy-ineligible
     # unary mothers are suppressed.  Production/training callers retain the
     # historical stop-on-first-empty behavior by default; strict offline
@@ -119,6 +121,7 @@ class RolloutStep:
     used_teacher_forcing: bool
     appended_node_ids: tuple[int, ...]
     appended_mother_p4_pid_kinematics_mode: str = "input"
+    decode_trace: dict | None = None
 
 
 @dataclass(frozen=True)
@@ -916,6 +919,8 @@ def evaluation_reference_rollout(
     """Bounded batch-size-one correctness reference for complete free rollout."""
 
     config = config or RolloutConfig()
+    if config.capture_decode_trace and mode != "predicted":
+        raise ValueError("Detached decode tracing requires predicted-only rollout")
     if max_nodes is not None and (
         isinstance(max_nodes, bool) or not isinstance(max_nodes, int) or max_nodes < 1
     ):
@@ -981,7 +986,43 @@ def evaluation_reference_rollout(
                 mode=construction_pid_mode,
                 temperature=config.rollout_pid_temperature,
             )
+        decode_trace = None
+        if config.capture_decode_trace:
+            # Snapshot the exact post-PID construction state consumed by hard
+            # decoding. Cached previous-round p4 can differ from this state.
+            # Explicit allowlist excludes all supervision and external identities.
+            keys = (
+                "node_mask", "node_ids", "level_ids", "pid_labels", "parent_ids",
+                "node_kind_ids", "recursive_leaf_source_mask", "source_conflict_matrix",
+                "daughter_adjacency", "p4", "charge", "leaf_kinematics_mode_ids",
+            )
+            # Match hard_decode_proposals ordering: context/root/source-alias
+            # filters precede selection; pointer policy is checked afterward.
+            if "parent_ids" in state:
+                parentless = state["parent_ids"][0] < 0
+            elif "daughter_adjacency" in state:
+                parentless = ~state["daughter_adjacency"][0].bool().any(dim=0)
+            elif bool((state["level_ids"][0][output.context_mask[0]] == 0).all()):
+                parentless = torch.ones_like(output.context_mask[0])
+            else:
+                raise ValueError("decode trace requires reconstructed topology")
+            decode_context = output.context_mask[0] & parentless
+            if policy.reject_recursive_source_conflicts:
+                decode_context = _exclude_committed_source_aliases(
+                    state, decode_context[None])[0]
+            decode_trace = {
+                "hard_decode_context_mask": decode_context[None].detach().cpu().clone(),
+                "state": {key: state[key].detach().cpu().clone()
+                          for key in keys if key in state},
+                "context_mask": output.context_mask.detach().cpu().clone(),
+                "pointer_validity_mask": policy.pointer_validity_mask(
+                    state, target_level).detach().cpu().clone(),
+                "forest_pointer_validity_mask": policy.forest_pointer_validity_mask(
+                    state, target_level).detach().cpu().clone(),
+            }
         predicted = hard_decode_proposals(output, state, config)
+        if decode_trace is not None:
+            decode_trace["raw_proposals"] = tuple(predicted)
         if not config.allow_competing:
             predicted = _resolve_with_config(predicted, state, config)
 
@@ -1006,6 +1047,7 @@ def evaluation_reference_rollout(
                     use_truth,
                     (),
                     construction_pid_mode,
+                    decode_trace,
                 )
             )
             empty_level_count += 1
@@ -1031,6 +1073,7 @@ def evaluation_reference_rollout(
                         use_truth,
                         (),
                         construction_pid_mode,
+                        decode_trace,
                     )
                 )
                 cached_states.append((target_level, state))
@@ -1077,6 +1120,7 @@ def evaluation_reference_rollout(
                 use_truth,
                 tuple(appended),
                 construction_pid_mode,
+                decode_trace,
             )
         )
         fingerprint = _state_fingerprint(state)

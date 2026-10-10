@@ -97,6 +97,19 @@ def serialize_native_rollout(rollout, config=None):
                 "construction_pid_mode": step.appended_mother_p4_pid_kinematics_mode,
             }
         )
+        if step.decode_trace is not None:
+            record = step.decode_trace
+            steps[-1]["decode_trace"] = {
+                "version": "post-pid-native-decode-v1",
+                "state_semantics": "Exact post-PID state consumed by hard decoding; no truth joins.",
+                "state": {key: json_safe(value[0])
+                          for key, value in record["state"].items()},
+                "context_mask": json_safe(record["context_mask"][0]),
+                "hard_decode_context_mask": json_safe(record["hard_decode_context_mask"][0]),
+                "pointer_validity_mask": json_safe(record["pointer_validity_mask"][0]),
+                "forest_pointer_validity_mask": json_safe(record["forest_pointer_validity_mask"][0]),
+                "raw_proposals": [json_safe(asdict(p)) for p in record["raw_proposals"]],
+            }
     trace = {
         "version": "native-greedy-detector-only-trace-v1",
         "mode": "predicted",
