@@ -195,7 +195,12 @@ def evaluate_native_trace(
             raise ValueError("Trace source-axis mismatch")
     steps = {step["height"]: step for step in trace["steps"]}
     final_sources = source_rows(trace["final_state"])
-    counts, cells, rows = Counter(), defaultdict(Counter), []
+    counts, first_error_counts, cells, rows = (
+        Counter(),
+        Counter(),
+        defaultdict(Counter),
+        [],
+    )
     labels = truth.get("pid_target_labels", truth["pid_labels"])[0]
     for node in torch.where(truth["node_mask"][0] & (truth["level_ids"][0] > 0))[
         0
@@ -328,7 +333,7 @@ def evaluate_native_trace(
                 reason = "exact_group_not_generated_object_pointer_type_or_constraint_unresolved"
             out["first_error"] = reason
         out["policy_eligible"] = eligible
-        counts[out["first_error"]] += 1
+        first_error_counts[out["first_error"]] += 1
         for key in (
             "generated_exact_daughters",
             "generated_exact_daughters_and_pid",
@@ -346,6 +351,7 @@ def evaluate_native_trace(
         rows.append(out)
     return {
         "counts": dict(counts),
+        "first_error_counts": dict(first_error_counts),
         "cells": {k: dict(v) for k, v in cells.items()},
         "targets": rows,
         "source_columns_kept": torch.where(columns)[0].tolist(),

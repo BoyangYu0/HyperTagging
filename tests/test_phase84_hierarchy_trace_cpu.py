@@ -126,7 +126,55 @@ def test_actual_generated_daughters_conditional_signed_pid_and_generation_height
         and row["conditional_pid"]["multiclass_brier"] == 0
     )
     assert report["counts"]["conditional_pid_trials"] == 1
+    assert report["counts"]["all_retained_mothers"] == 1
+    assert report["counts"]["accepted_exact_daughters_and_pid"] == 1
+    assert report["first_error_counts"] == {"accepted_exact_daughters_and_pid": 1}
+    assert sum(report["first_error_counts"].values()) == len(report["targets"])
+    assert (
+        sum(
+            cell.get("accepted_exact_daughters_and_pid", 0)
+            for cell in report["cells"].values()
+        )
+        == report["counts"]["accepted_exact_daughters_and_pid"]
+    )
     assert row["legal_unvisited_group_reachability"] == "unavailable_not_checked"
+
+
+@pytest.mark.parametrize(
+    "failure",
+    ["wrong_pid", "retention_rejected", "no_proposal", "unavailable_sources"],
+)
+def test_first_error_accounting_does_not_add_boolean_successes(failure):
+    truth, projection, trace = join_fixture()
+    step = trace["steps"][0]
+    step["accepted"] = []
+    if failure == "wrong_pid":
+        step["proposals"][0]["mother_type"] = PDG_TOKENS.index(521)
+    elif failure == "no_proposal":
+        step["proposals"] = []
+    elif failure == "unavailable_sources":
+        truth["recursive_leaf_source_mask"][0, 2, 1] = True
+    report = evaluate(truth, projection, trace)
+    reason = report["targets"][0]["first_error"]
+    assert reason != "accepted_exact_daughters_and_pid"
+    assert report["first_error_counts"] == {reason: 1}
+    assert reason not in report["counts"]
+    assert report["counts"]["accepted_exact_daughters_and_pid"] == 0
+    for key in (
+        "generated_exact_daughters",
+        "generated_exact_daughters_and_pid",
+        "accepted_exact_daughters",
+        "accepted_exact_daughters_and_pid",
+        "eligible_daughter_source_coverage",
+    ):
+        assert report["counts"][key] == sum(
+            int(row.get(key, False)) for row in report["targets"]
+        )
+    assert (
+        sum(report["first_error_counts"].values())
+        == report["counts"]["all_retained_mothers"]
+    )
+    assert sum(cell[reason] for cell in report["cells"].values()) == 1
 
 
 def test_wrong_generated_pid_is_separate_from_retention_and_absent_group():

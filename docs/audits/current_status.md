@@ -1,5 +1,35 @@
 # Current repository audit status
 
+## Native hierarchy applicability completed — 2026-10-10
+
+Job17122683 completed96 authenticated TRAIN events,16/category, with no parameter
+updates. Of455 eligible targets, teacher matches span heights1–6, while generated
+contexts represent251 and omit204; only41 exact daughter proposals occur,40
+with correct PID. There is one exact proposal atheight2 and none atheight3–6.
+The first-error join records203 missing daughter groups and210 ungenerated exact
+groups whose object/pointer/type/constraint causes remain unresolved. Retained
+exact-tree and inclusive B membership are0/64; continuum acceptance is0/64.
+Closure is336/336 and committed source conflicts arezero. Root detector-resource
+aliases persist in28/96 events and must not be confused with committed conflicts.
+These TRAIN-only sensitivities do not establish a component-weight deficiency or
+support a new level/PID prior. The conditional hierarchy branch stops here.
+The independently supported reserved384 training-order replication remains next.
+Complete counts and corrected aggregates are bound privately; no publication or
+fresh validation has occurred.
+
+## Phase84 native diagnostic aggregation correction — 2026-10-10
+
+The completed native diagnostic contains a reporting collision: the first-error
+label `accepted_exact_daughters_and_pid` was added to the same counter as the
+boolean success indicator. The reported aggregate70 therefore double-counted
+the35 successful target rows. Historical outputs remain immutable; corrections
+must be issued separately from their source-backed target rows. The diagnostic
+now reports first-error categories in `first_error_counts`, separately from
+boolean `counts`; per-target rows and stratified cells retain their meanings.
+Regressions check single-count successes and failed/unavailable target accounting.
+This repairs observational aggregation only, without changing model inference,
+training, source/charge constraints, or previously frozen scientific jobs.
+
 ## Reserved Phase84 training-order replication prepared — 2026-10-10
 
 The original finite exposure plan reserved one replication. Its384-event lead
