@@ -244,7 +244,15 @@ def fit(
     source_sha,
     gradient_rule="joint",
     pair_supervision=False,
+    semantic_pair_supervision=False,
+    step_callback=None,
 ):
+    """Fit one trajectory; an optional callback observes completed optimizer steps.
+
+    The callback must return a bool (True stops). It owns restoration of any
+    model modes or RNG states changed while evaluating or taking snapshots.
+    No optimizer or sampling RNG is recreated between callback invocations.
+    """
     import torch
     from hypertagging.training.capacity_development import (
         baseline_loss,
@@ -267,6 +275,20 @@ def fit(
         pair_supervision and (stage == "pretraining" or gradient_rule != "joint")
     ):
         raise ValueError("Pair supervision requires downstream joint adaptation")
+    if not isinstance(semantic_pair_supervision, bool) or (
+        semantic_pair_supervision
+        and (stage != "downstream" or gradient_rule != "joint" or pair_supervision)
+    ):
+        raise ValueError(
+            "Semantic pair supervision requires downstream joint adaptation without pair supervision"
+        )
+    semantic_metadata = (
+        {"semantic_pair_supervision": True, "semantic_pair_coefficient": 1.0}
+        if semantic_pair_supervision
+        else {}
+    )
+    if step_callback is not None and not callable(step_callback):
+        raise TypeError("step_callback must be callable or None")
     updates = settings[stage + "_updates"]
     model.eval()
     decoder.train()
@@ -292,6 +314,7 @@ def fit(
     sequence = hashlib.sha256()
     relation_support = [0, 0, 0]
     last_loss = None
+    completed_updates = 0
     started = time.monotonic()
     with (output / (stage + "-metrics.jsonl")).open("x") as log:
         for step in range(updates):
@@ -351,6 +374,25 @@ def fit(
                         compute.update(
                             {"pair_" + k: v for k, v in pair_support.items()}
                         )
+                    if semantic_pair_supervision:
+                        from hypertagging.models.pair_conditioned_membership import (
+                            semantic_pair_loss,
+                        )
+
+                        semantic, semantic_support = semantic_pair_loss(
+                            result["edge_logits"], result["edge_pairs"], row["targets"]
+                        )
+                        loss = loss + semantic
+                        components["semantic_pair"] += float(semantic.detach())
+                        compute.update(
+                            {
+                                "semantic_pair_" + k: v
+                                for k, v in semantic_support.items()
+                            }
+                        )
+                        compute["semantic_pair_edge_scores"] += result[
+                            "edge_logits"
+                        ].shape[0]
                     components.update(
                         membership=float(member.detach()),
                         within_b_relation=float(relation.detach()),
@@ -429,6 +471,28 @@ def fit(
             if step % 25 == 0 or step + 1 == updates:
                 log.flush()
                 print(stage, step + 1, last_loss, flush=True)
+            completed_updates = step + 1
+            if step_callback is not None:
+                log.flush()
+                stop = step_callback(
+                    model=model,
+                    decoder=decoder,
+                    optimizer=optimizer,
+                    rng=rng,
+                    step=completed_updates,
+                    sequence_sha256=sequence.hexdigest(),
+                    compute=compute,
+                    last_loss=last_loss,
+                )
+                if not isinstance(stop, bool):
+                    raise TypeError("step_callback must return bool")
+                if stop:
+                    break
+    callback_metadata = (
+        {"stopped_early": completed_updates < updates, "requested_updates": updates}
+        if step_callback is not None
+        else {}
+    )
     save(
         output / (stage + "-final.pt"),
         {
@@ -439,7 +503,9 @@ def fit(
             "scaler_state_dict": None,
             "torch_rng_state": torch.get_rng_state(),
             "sampling_rng_state": rng.getstate(),
-            "step": updates,
+            "step": completed_updates,
+            **callback_metadata,
+            **semantic_metadata,
             "source_sha": source_sha,
             "data_cache": cache_binding,
             "settings": settings,
@@ -455,8 +521,10 @@ def fit(
         },
     )
     return {
-        "updates": updates,
-        "presentations": updates * settings["batch_size"],
+        "updates": completed_updates,
+        "presentations": completed_updates * settings["batch_size"],
+        **callback_metadata,
+        **semantic_metadata,
         "data_order_sha256": sequence.hexdigest(),
         "relation_support_by_class": relation_support,
         "final_loss": last_loss,

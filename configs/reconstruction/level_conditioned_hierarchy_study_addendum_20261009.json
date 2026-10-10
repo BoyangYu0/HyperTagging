@@ -1,0 +1,131 @@
+{
+  "version": "level-conditioned-hierarchy-addendum-v1",
+  "status": "DIAGNOSTIC_FIRST_CONDITIONAL_STUDY_NOT_ADMITTED_FOR_TRAINING",
+  "stage": "development",
+  "family": "first_error_correction",
+  "sealed_test_access": false,
+  "automatic_successor_submission": false,
+  "user_request": "Investigate level-dependent loss weights and a softer FEI-like level/PID preference, and add it properly to the study where applicable.",
+  "hypothesis": "If representable higher-generation targets receive insufficient effective supervision, component-specific level weighting may improve their correct assembly. If mother-PID errors persist on correct daughter groups, a train-fitted soft level/PID prior may help. Neither premise nor downstream benefit is established.",
+  "changed_factor": "Diagnostic phase: no production model change. Any admitted ablation changes exactly one selected loss component's level schedule OR the form of the soft level/PID prior, in separate frozen contracts; never both in one contrast.",
+  "control": "Matched native hierarchical decoder using its actual checkpoint-bound loss/constraint contracts, including current global level weights and soft empirical PID prior. Flat optional-B membership heads are not a valid testbed for this hypothesis.",
+  "target_contract": "Reconstruction level is generation height, 1+max(daughter generation heights), not mass, FEI stage, depth from a true B root, or source-set cardinality. Preserve complete/partial/unavailable populations and valid shallow heavy-particle decays. Truth is supervision/after-the-fact evaluation only.",
+  "diagnostic_evidence": {
+    "path": "docs/assembly_diagnosis_20261007/evidence.json",
+    "sha256": "c1fa1b5f8d60909e679efaa06fd96831e7dc262dd1b1e15addf9741c33fd8c63"
+  },
+  "existing_mechanisms": {
+    "hierarchical_phase72_level_loss_weights": [
+      [
+        1,
+        1
+      ],
+      [
+        2,
+        1
+      ],
+      [
+        3,
+        1.25
+      ],
+      [
+        4,
+        1.5
+      ],
+      [
+        5,
+        2
+      ],
+      [
+        6,
+        3
+      ]
+    ],
+    "weight_scope": "Whole reconstruction plus recovery objective, with normalized weighted aggregation; not a new mother-PID-specific schedule.",
+    "mother_pid_loss": "Matched mother-type cross entropy is present; leaf PID supervision is separate.",
+    "soft_prior": "Train-observed allowed types by generation height; current default applies -2 logits to unobserved but statically legal types, without hard banning them.",
+    "coupling": "Mother type bias is applied before expected type embeddings condition daughter pointers, so prior changes may affect grouping as well as PID.",
+    "history": "Phase36 combined weighting/recovery/threshold changes and does not isolate this effect; Phase41 level-1 pointer-positive reduction traded precision for lower recall. Do not repeat either as if this were untested."
+  },
+  "diagnostic_design": {
+    "roles": "Authenticated training identities only for hypothesis selection; no new validation consumption during this audit.",
+    "audit_cells": [
+      "generation height",
+      "mother PID family and signed token",
+      "daughter/source-set size",
+      "complete versus reconstructable-partial target policy",
+      "teacher context versus detached detector-only/model-generated context"
+    ],
+    "measurements": [
+      "Available, representable, optimized and unavailable target counts per cell.",
+      "Unweighted, existing-weighted and per-component loss/gradient contributions, with actual sampling and exposure.",
+      "First error: absent legal daughter group, wrong daughter grouping, mother-PID error conditional on an available correct group, object/retention rejection.",
+      "Correct generated local/deep proposal production and survival; no inference from oracle reachability alone.",
+      "PID confusion/calibration, rare-type support, shallow-heavy and deep-light cases, continuum fake large mothers."
+    ],
+    "no_leakage": "Capture generated states before truth joins; no truth PID, B-side, ancestry, future composites or truth subtree size supplied to inference.",
+    "applicability_gate": "Only propose weighting if structurally important represented targets show measured supervision/gradient-allocation deficiency. Only propose prior changes if conditional PID errors and calibration evidence support it. Missing legal daughter groups alone do not justify a stronger PID preference.",
+    "resources": "Use existing guarded bounded CPU diagnostics; scientific jobs remain sequential with the active exposure sequence. Do not alter/cancel running Phase84 contracts or snapshots."
+  },
+  "conditional_ablations": [
+    {
+      "id": "component_specific_level_weighting",
+      "trigger": "New training-only evidence identifies one undertrained structural loss component and supported generation levels.",
+      "factor": "One bounded mean-normalized generation-height schedule on matched mother-type CE OR daughter structural loss, chosen once from the diagnostic mechanism.",
+      "fixed": "Global level weights, other component weights, object/no-object loss, matching costs, pointer-positive weights, calibration/physics/source/charge penalties, empirical type prior, sampling, corpus, architecture, initialization, updates, thresholds and search.",
+      "preregistration": "Freeze exact supported levels, numerical weights, normalization, resource forecast and success thresholds in a separate plan before training. No coefficient sweep or held-out selection."
+    },
+    {
+      "id": "smoothed_level_pid_prior",
+      "trigger": "Independent conditional mother-PID confusion/rare-channel calibration evidence after the applicability audit.",
+      "factor": "A train-fitted smoothed clipped conditional PID prior compared with the existing observed/unobserved soft prior.",
+      "fixed": "Loss weights, model/data/init/updates, ontology and physical/source constraints, decode/search thresholds.",
+      "restrictions": "Positive support for every statically legal PID, marginal-frequency and rare-type controls, no mass-monotonic rule or hard FEI species list. Coefficient/form/table provenance must be frozen before evaluation. Verify inference/training/export consistency and baseline replay.",
+      "coupling_note": "Type-prior changes also propagate into type-conditioned daughter pointers; report both paths, do not call this a PID-only outcome."
+    }
+  ],
+  "data_and_compute_control": {
+    "original_corpus_events": 70000,
+    "widths": "Keep existing widths/depth/geometry initially; use actual hierarchical checkpoint interfaces.",
+    "selection": "Matched authenticated train identities/order/normalization/init and finite update budgets; independent tiny copies and checkpoints distinguished.",
+    "scientific_jobs": "At most two matched scientific arms concurrently, after current study sequencing and separate source/cohort/gradient/resource admission.",
+    "resources_per_arm": {
+      "cpus": 2,
+      "memory_gib": 32,
+      "hours": 8,
+      "gpus": 0,
+      "requeue": false
+    },
+    "validation": "Fresh development only for a preregistered promising fixed candidate; preserve all historical exclusions and sealed-test boundary."
+  },
+  "stop_rule": "Stop this branch if diagnostic support is absent, correct daughter groups are structurally unavailable, nonfinite/source/provenance/resource checks fail, or a fixed contrast fails its structural/background endpoint. Preserve the rest of the authorized research sequence; no unmotivated extra weighting variants.",
+  "success_rule": "Diagnostic success identifies a measurable supported mechanism, not model benefit. Model success requires reproducible raw and constraint-accepted exact daughter/membership improvement and correct deep proposal survival, without increased background or spurious large mothers, shallow/rare-channel regressions, source conflicts or closure violations. Mother-PID accuracy alone or more large-resonance predictions is insufficient. Apply existing tiny/held-out gates before any primary work.",
+  "validation_selection": {
+    "hypothesis_choice": "Training-only.",
+    "checkpoints": "Fixed before any new held-out evaluation; diagnostic curves are not checkpoint selection.",
+    "development": "Paired immutable reserved fresh non-primary events and full exclusions; report whole-event uncertainty and all trial/event/category denominators.",
+    "primary": "Not authorized by this addendum; complete evaluation still requires >=2000 distinct processed collisions in each of six categories per arm (>=12000), plus all current gates."
+  },
+  "evaluation_endpoints": [
+    "Raw and accepted exact daughter and retained-source membership by height, PID family and source-set size.",
+    "Conditional mother-PID confusion/calibration; rare-channel and shallow-heavy decay coverage.",
+    "Correct generated deep proposals and survival, greedy/top1/pool separately where actually supported.",
+    "Exact and inclusive B efficiencies and channel/type coverage on an actual hierarchical reconstruction.",
+    "Continuum acceptance, background contamination, spurious large mothers, source conflicts and daughter-sum closure.",
+    "Exposure, counts/unavailable/failures and actual CPU/wall/RSS/parameter/workload accounting."
+  ],
+  "workflow": {
+    "sequence": "Append as a conditional native-hierarchy branch after current exposure/information diagnosis, preserving ongoing jobs; do not retrofit flat-head objectives.",
+    "publication": "No new per-step public page. The concurrent retrospective publisher remains scoped to previous studies through Phase83.",
+    "planning_validation": "A planning pass is not runtime admission, evidence that a loss sweep is allowed, or proof of scientific benefit. Conditional executable plans must bind new mechanism evidence.",
+    "source_references": [
+      "src/hypertagging/training/reconstruction_trainer.py",
+      "src/hypertagging/losses/level_reconstruction.py",
+      "src/hypertagging/reconstruction/constraints.py",
+      "src/hypertagging/models/mother_pointer.py",
+      "src/hypertagging/preprocessing/levelize_tree.py",
+      "configs/reconstruction/ht_reconstruction_phase72_20261007.json"
+    ],
+    "external_reference": "https://software.belle2.org/latest-light/sphinx/analysis/doc/FullEventInterpretation.html"
+  }
+}

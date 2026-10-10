@@ -19,6 +19,38 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Fresh evaluator metadata correction after TRAIN-only preinference failure17123248;45 focused tests pass, unchanged compactTRAINcache/models/cohort/endpoints.
+  - 85afb4061e7de4c021accd823d131ba8e8d629e2
+  # Fixed6000 evaluation-only restore/projection/normalizer/gates plus isolated600 designation;44 focused CPU tests pass, no fresh outcome assessment before runtime admission.
+  - cf5b5653cfbe2bbff68037057ab8834c2db7f560
+  # Evaluation-only fresh600 plan and authenticated metadata designation;26 focused tests pass, no fresh identities read before immutable preregistration.
+  - 675b02d4bf6179c03fc916f35f8a2dd377339029
+  # Conditional TRAIN pair-message connection only;35 focused model/fit/history/source tests pass. Replication remains frozen/running, no successor runtime admission or fresh validation.
+  - 52201a5677b20410ee88f35d0ce0d35f2bd94df5
+  # Native observational first-error/success counter collision corrected;38 focused tests pass; historical70 preserved, target-row correction35, no model behavior change.
+  - 253a284fa6fe2a7d104e505a3d670de1479bb1f1
+  # Reserved384 training-order replication only;43 focused exposure/isolation/contract regressions pass, source freeze and real admission still required.
+  - d5c1b0fbb6ef6a532eac967aeec797eaf34a2b0d
+  # Native TRAIN diagnostic now requires canonical selection train_split_only scope;71 focused tests pass, failed smoke17122662 preserved before model execution.
+  - 27ff7b23a603d7c62b9acbfbc9bfff72775681b9
+  # Correct information-probe detector kind/mode validation;70 focused tests pass, original failed smoke preserved; no scientific model change.
+  - e3bec1c0c6f4789f4814eb759a8649cc545a0e66
+  # Native hierarchy TRAIN-only applicability diagnostics;67 focused role/source/trace/gradient/budget tests pass. No real audit fitting or intervention admitted; Phase84 frozen exposure unchanged.
+  - fcd0e7a6d53399ebae6f54d9c681eadaac6264b8
+  # User-directed native hierarchy level-loss/PID applicability addendum; planning PASS only, active Phase84 source unchanged.
+  - 3e429b13686139048ba01500b828dd522bd88b2a
+  # Information diagnostic extraction/scoring timing separates scalable work from fixed authentication cost;33 runner regressions pass; no fitting changes.
+  - 2119513da0559161e165d3f7505c8bf76ed0a31e
+  # Independent Phase84 detector/context diagnostic:44 focused role/binding/permutation/metric/checkpoint tests pass; no real diagnostic fitting yet, exposure first.
+  - ea16d266dcce39f784f369776be39cec33417698
+  # Phase84 full inherited/current reservation isolation and paired collision exposure gates;20 focused regressions pass before scientific fitting.
+  - 43592575146f624690d4f76a205da240dfa8db56
+  # Independent pre-fit Phase84 plan clarification: absolute trainability vs exposure gain; executable code unchanged, policy PASS.
+  - cb09f923f284a0c2128fff22c08192f1a7a3ff36
+  # Phase84 preregistered exposure checkpoint hook and detector/embedding probe utilities;28 focused regressions pass. Independent guard/accounting review applied before real fitting.
+  - 1f6d639b2f2d53de806e07487b65f2c3b465daf6
+  - 7cf6ffd2d5fc0489a408eedb81168b7a7a736f64
+
   # Browser-verified theme navigation element/order restores contrast and narrow wrapping; four focused navigation regressions pass.
   - 99a72f5b0fc532687170d9cab8a663dbaac77627
   # Bounded compressed inventory input preserves exact public bytes; complete generated-artifact privacy and archive bounds pass without policy changes.

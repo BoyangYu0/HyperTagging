@@ -1,5 +1,262 @@
 # Current repository audit status
 
+## Exposure/information sequence terminal review — 2026-10-10
+
+All six scientific trainings are terminal exit0: exposure96/1536/384 and its
+sampling-seed replication17121121/17121473/17121936/17122694, followed by matched
+pair-message connection off/on17122909/17122910. Each used6000 updates and48000
+presentations within2 CPUs/32GiB/8h, noGPU/requeue. Small-pool learnability and
+TRAIN384 connection gains do not establish full1536 convergence or generalization.
+
+Fresh fixed-checkpoint evaluation17123307 completed600 authenticated development
+collisions,100/category, with zero fitting. Both arms recover0/400 raw and accepted
+B source sets; continuum acceptance is48 versus58/400. Paired overall difference
+is0.025 with95% interval[-0.0025,0.055]; ccbar is20 versus32/100, difference0.12
+with interval[0.03,0.21]. The frozen exact and background gates fail. Source validity
+and coverage pass. Independent terminal review17123322 confirms joins, counts,
+paired uncertainty and gates; complete channel/source-size/category evidence and
+truth-free traces remain private. Empirical all-zero intervals do not establish
+population equivalence, and one fitted pair does not assess training-seed variance.
+
+Corrected evaluator source213401916a6aa6569b1aafaed4e8bed67d497bb3 passed2739 CPU tests with34 skips, both
+training dry runs, audit checks and fixture cleanup in17123265. TRAIN-only runtime
+admission17123261 passed canonical projection, normalization and deterministic
+checkpoint checks before fresh predictions. Its failed predecessor17123248 remains
+preserved. No scientific source/checkpoint or endpoint changed during evaluation.
+
+Information probes give mixed detector/embedding evidence, not support for a new
+pretraining campaign. The native hierarchy audit does not identify a specific
+head-weight/PID-prior contrast; existing level weights and soft type prior remain.
+The conditional diversity study was declined before fresh outcomes because the
+full1536 trainability prerequisite failed. This accepted sequence is concluded:
+no primary reservation, model promotion, additional study or publication here.
+Earlier running-state entries below are dated provenance, superseded by this
+terminal review. Research evidence is under phase84_exposure_information_20261009/
+level-addendum-integrated-v2; the separate publisher owns historical studies.
+
+## Fresh evaluator metadata admission correction — 2026-10-10
+
+Full CPU17123218 passed2738 tests with34 skips, both dry runs and audit/cleanup
+checks. Subsequent TRAIN-only admission17123248 failed before model inference:
+the new evaluator expected feature-contract metadata in the intentionally compact
+TRAIN cache, which contains only train rows and the runtime normalizer.
+Implementation85afb4061e7de4c021accd823d131ba8e8d629e2 reads those metadata from the already authenticated
+normalization checkpoint, verifies that checkpoint against TRAIN cache provenance,
+and reconstructs/compares the canonical runtime statistics without fitting.
+Forty-five focused tests pass, including the actual two-key cache schema and
+negative provenance/normalizer checks. The failed source/receipt remains intact;
+new source freeze and runtime admission precede fresh predictions. No scientific
+model, cached TRAIN rows, cohort, threshold or endpoint changes.
+
+## Fresh development identity admission complete — 2026-10-10
+
+Metadata-only job17123202 completed25s with2 CPUs/16GiB;230000 metadata rows
+and46 authenticated shards reproduce70000 TRAIN plus160000 validation identities.
+The full exclusion union contains182800 identities, including112800 historical
+validation reservations. Fixed-seed600,100/category, have zero overlap; no target
+labels or model outputs selected them. All7 prior registry records remain
+semantically unchanged; one non-primary development reservation was appended.
+The failed historical60 remains excluded and invalid.
+
+Implementationcf5b5653cfbe2bbff68037057ab8834c2db7f560 adds strict fixed-final paired inference, canonical
+projection/TRAIN replay, exact checkpoint/normalizer/source contracts, disabled
+gradients, paired event uncertainty, category/background/source gates and bounded
+resource checks. Forty-four focused tests pass. Complete source validation and a
+TRAIN-only final-checkpoint smoke precede fresh outcomes. No fitting, thresholds,
+primary scope or publication changes are introduced.
+
+## Pair connection TRAIN result and fresh assessment plan — 2026-10-10
+
+Both matched jobs17122909/17122910 completed6000 updates and48000 presentations.
+Raw membership is102 versus182/256, accepted89 versus160/256, with65 collisions
+gaining the same target in both endpoints. Whole-event paired bounds are positive;
+continuum acceptance is0/256 in both, with no accepted source conflicts. These
+are TRAIN-only results, not generalization or physical B reconstruction. A
+versioned auxiliary source-error correction replaces a legacy schema mismatch;
+exact/background gates and original results are preserved. Refinement correct
+assignments are2073 versus2170/2224, omissions78 versus37, swaps73 versus17.
+
+An evaluation-only fresh600 assessment is preregistered before identity inventory
+or payload inspection:100/category, fixed final6000 checkpoints, fixed thresholds,
+full authenticated historical/current exclusion union and metadata-only seeded
+selection. Implementation675b02d4bf6179c03fc916f35f8a2dd377339029 adds guarded registry designation and
+revalidation, including explicit exclusion of the invalid historical60 cohort.
+Twenty-six focused regressions pass. No fitting, primary reservation, promotion
+or publication is planned. Source freeze and real identity/runtime admission
+remain required; earlier dated running-state entries are retained as provenance.
+
+## Pair-message connection study running — 2026-10-10
+
+The reserved384 sampling-stream replication17122694 completed6000 updates and
+48000 presentations:80 raw/69 accepted exact source sets of256 B trials, with
+zero accepted continuum events of256 and zero committed source conflicts.
+Original384 results were78 raw/71 accepted; paired differences includezero.
+Both registered TRAIN gates pass across multiple collisions. The changed sampler
+seed changes order and per-identity frequencies, not a fixed-multiset permutation.
+No independent generalization or physical reconstruction claim follows.
+
+The matched TRAIN-only refinement study17122909/17122910 is now running from
+immutable source8b9be2b: identical independent same-B/cross-B/background supervision
+and parameters in both arms, with one message-to-refinement connection off/on.
+The native proposal, detached merge selection, membership objective and physical
+guards remain unchanged. Additional message output starts atzero, preserving
+initial predictions; membership-to-edge gradients are therefore checked after
+discarded fixture updates, separately from auxiliary gradients.
+
+The modest above-shuffle embedding pair signal supports this falsifiable
+connection hypothesis; failure of the combined detector-superiority gate does
+not independently veto it. That failure still supplies no pretraining or
+information-loss claim. Both exposure terminal reviews pass, as do2705 CPU tests
+with34 skips, both dry runs and audit checks. Real-data admission17122905 passed
+four discarded updates per arm, source/cohort/init checks, membership-only versus
+auxiliary gradients and unchanged runtime/memory limits. Each scientific arm is
+fixed to6000 updates/48000 presentations on the same384 TRAIN identities, with
+2 CPUs/32GiB/8h, noGPU/requeue. Only the fixed6000 paired exact/background/source
+endpoint may select a candidate. No fresh development, primary work or publication
+has begun. Earlier preparation entries below are dated provenance, not current
+job status.
+
+## Native hierarchy applicability completed — 2026-10-10
+
+Job17122683 completed96 authenticated TRAIN events,16/category, with no parameter
+updates. Of455 eligible targets, teacher matches span heights1–6, while generated
+contexts represent251 and omit204; only41 exact daughter proposals occur,40
+with correct PID. There is one exact proposal atheight2 and none atheight3–6.
+The first-error join records203 missing daughter groups and210 ungenerated exact
+groups whose object/pointer/type/constraint causes remain unresolved. Retained
+exact-tree and inclusive B membership are0/64; continuum acceptance is0/64.
+Closure is336/336 and committed source conflicts arezero. Root detector-resource
+aliases persist in28/96 events and must not be confused with committed conflicts.
+These TRAIN-only sensitivities do not establish a component-weight deficiency or
+support a particular new level/PID prior. Type priors influence pointer inputs,
+so missing groups do not rule out indirect type/weight effects; their mechanism
+remains unresolved. The conditional hierarchy branch stops here.
+The independently supported reserved384 training-order replication remains next.
+Complete counts and corrected aggregates are bound privately; no publication or
+fresh validation has occurred.
+
+## Phase84 native diagnostic aggregation correction — 2026-10-10
+
+The completed native diagnostic contains a reporting collision: the first-error
+label `accepted_exact_daughters_and_pid` was added to the same counter as the
+boolean success indicator. The reported aggregate70 therefore double-counted
+the35 successful target rows. Historical outputs remain immutable; corrections
+must be issued separately from their source-backed target rows. The diagnostic
+now reports first-error categories in `first_error_counts`, separately from
+boolean `counts`; per-target rows and stratified cells retain their meanings.
+Regressions check single-count successes and failed/unavailable target accounting.
+This repairs observational aggregation only, without changing model inference,
+training, source/charge constraints, or previously frozen scientific jobs.
+
+## Reserved Phase84 training-order replication prepared — 2026-10-10
+
+The original finite exposure plan reserved one replication. Its384-event lead
+passes both registered TRAIN gates across53 collisions; the information probe
+does not establish detector superiority or justify diversity expansion. The follow-up plan
+changes only the training-row sampler seed202610081 to202610082, preserving
+the384 identities, exact pretrained/decoder initializer, fresh optimizer,
+objective, geometry, normalization, threshold and6000 updates/48000 presentations.
+Sampling with replacement changes draw order and per-identity exposure counts;
+this is sampling-seed robustness, not a pure permutation of a fixed multiset,
+independent initialization or pretraining.
+The implementation authenticates the original successful contracts and initial
+parameter/UID digests before fitting. Forty-three focused exposure, replay,
+isolation and replication tests pass; a mistaken test filename in the first
+invocation is preserved separately. Planning passes, but broad checks and new
+real-data admission remain required. Execution follows terminal review of the
+native hierarchy applicability audit. No fresh development is designated and no
+best-seed selection, data growth, primary work or publication is authorized by
+this diagnostic replication itself.
+
+## Phase84 information terminal and native admission correction — 2026-10-10
+
+Information diagnostic17122661 completed all four fixed2048-update probes.
+On384 event-disjoint TRAIN assessment identities, detector versus embedding
+conditional same/cross-B AUC is0.5563 versus0.5309, but balanced three-class
+recall is0.4922 versus0.5494. Both exceed their shuffled controls. The registered
+combined detector-superiority gate fails. Detector background pair errors are
+lower when pooled, but higher in every continuum category; pair confusion is
+not event fake-B acceptance. This does not demonstrate information loss,
+reconstruction improvement, or support automatic pretraining/data expansion.
+No validation identities or scientific encoder updates were used.
+
+Corrected information smoke17122654 passed. Its two-update timing extrapolation
+was rejected; one preregistered64-update/head discarded timing fixture17122660
+passed the unchanged3300s/12GiB admission limits using the slowest inclusive
+head time for all four fits. Original failures and resource receipts remain.
+Source61d62916 broad checks passed2639 tests with34 skips, both tiny CPU dry
+runs, audit integrity/views and fixture cleanup.
+
+Native hierarchy smoke17122662 stopped before model execution because the new
+diagnostic loader incorrectly expected selection normalization scope `train`.
+The canonical authenticated selection contract uses `train_split_only`.
+The loader now requires that exact value, with negative scope regressions;
+checkpoint statistics, native losses, physics constraints and all historical
+receipts remain unchanged. New source freeze and runtime admission are required.
+
+## Phase84 exposure endpoints and information admission correction — 2026-10-10
+
+Jobs17121121/17121473/17121936 completed their fixed6000 updates and48000
+presentations each on96/1536/384 nested TRAIN pools. Raw/accepted memberships
+are64/64 and52/64;1/1024 and1/1024;78/256 and71/256, respectively.
+Continuum acceptance is0/64,15/1024,0/256; source conflicts arezero.
+Terminal hashes/order/init checks pass; full-pool1500 model/decoder/Adam/RNG
+exactly replay the historical control. Only96 and384 pass the registered
+training-panel gates. These single-seed results do not establish held-out
+improvement, full-pool convergence, a diversity benefit or primary readiness.
+
+Information smoke17122625 failed before fitting: its adapter incorrectly
+rejected valid ECL/KLM leaf-kinematics modes. Authenticated TRAIN metadata
+audit17122630 identifies those modes. The correction retains128 coordinates:
+cluster modes follow detector kind, while two flags encode raw/fixed track
+modes. Invalid kind/mode combinations and target-only modes remain rejected.
+Failed source/output remain immutable; corrected source needs focused checks
+and new guarded real admission. No production model behavior is changed.
+Native hierarchy applicability remains pending; no loss/PID prior is selected.
+No fresh validation or publication is performed in this research branch.
+
+## User-directed level-conditioned hierarchy addendum — 2026-10-09
+
+The new hypothesis is recorded in
+`configs/reconstruction/level_conditioned_hierarchy_study_addendum_20261009.json`.
+Planning validation passes; no weighting/prior intervention is runtime-admitted.
+The three Phase84 exposure trajectories have completed unchanged. A native
+hierarchical training-only applicability audit follows the exposure/information
+sequence: existing whole-objective level weights and soft empirical type prior
+are the baseline, not absent features. Generation height is not particle mass.
+Only measured component-allocation or conditional mother-PID evidence can admit
+one separately frozen contrast. Flat optional-B heads cannot test this mechanism.
+No new validation, primary work, publication or resource expansion is implied.
+
+Standalone native TRAIN loader, detached greedy trace join, and loss/gradient
+observer are implemented with67 focused CPU regressions passing. The observer
+preserves the original native scalar and gradients; whole-objective weight
+normalization, auxiliary teacher and leaf PID contributions remain distinct.
+The diagnostic plan freezes96 unfiltered category-balanced TRAIN identities and
+24 hash-selected parameter-gradient identities, with2CPU/32GiB/4h ceiling and
+3h runtime guard. Real-data admission and execution are pending after the active
+exposure/information sequence. Core native model/loss/trainer files remain
+byte-identical to the Phase72 control source. Its existing balanced-height replay
+already allocates about46677 planned slots/height; raw rarity alone does not
+establish a level-weighting deficiency. No new weighting or PID prior is chosen.
+
+## Phase84 reviewed exposure/information sequence — 2026-10-09
+
+New user authorization resumes research with independent agent review: matched
+96/full1536 training-role exposure trajectories, fixed6000update endpoints,
+1500diagnostics and375nominal-exposure reference;384bridge only if96learns while
+1536fails. This tests long-horizon learnability without assuming undertraining.
+Same pretrained/fresh-decoder state, main optimizer/loss/normalizer/geometry;
+no warmstart across pools. Finite plan records later conditional steps.
+Detector-versus-embedding information diagnosis remains independently accepted;
+no newpretraining, primary/model promotion or fresh validation is selected.
+28initial focused tests and20isolation/gate regressions pass. Current full
+validation exclusion union112800 has0overlap with1536training identities; all
+historical/current manifest hashes authenticate. Runtime rechecks this union.
+Real-data resource/gradient/source admission and broadCPU checks precede
+scientific submission. Parent separate worktree owns historical
+publication; this branch does not publish or modify publisher work.
+
 ## Authorized accumulated previous-studies publication — 2026-10-09
 
 The user explicitly authorizes publication of accumulated evidence through Phase83,
