@@ -421,10 +421,12 @@ def test_current_repository_dashboard_surfaces_recorded_acceptance_values(tmp_pa
     assert manifest["pretraining"]["recorded_step"] == 54064 and manifest["pretraining"]["planned_steps"] == 108128
     assert manifest["pretraining"]["calibration_status"] == "PENDING"
     rendered_status = (tmp_path / "generated" / "index.rst").read_text().replace("\\-", "-")
-    assert "Phase78 completed training-only partition diagnosis" in rendered_status
-    assert rendered_status.index("Phase78 completed training-only partition diagnosis") < rendered_status.index("All studies")
-    assert "No new scientific model training or validation evaluation was selected" in rendered_status
-    assert "Two finite diagnostic probes were fitted" in rendered_status
+    assert "Phase86: structural support does not admit a contrast" in rendered_status
+    assert rendered_status.index("Phase86: structural support does not admit a contrast") < rendered_status.index("All studies")
+    assert "Height compatibility is necessary, not sufficient" in rendered_status
+    assert "Phase78 completed training-only partition diagnosis" not in rendered_status
+    assert "Phase78 training-only partition diagnosis" in rendered_status
+    assert "phase86-cleanup-summary.json" in rendered_status
     assert "NO MEMBERSHIP GAIN" in rendered_status
     assert "Phase74 completed development factorial" not in rendered_status
     assert "Phase75 completed gradient-routing development" not in rendered_status
