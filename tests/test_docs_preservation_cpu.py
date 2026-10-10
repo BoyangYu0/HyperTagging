@@ -30,6 +30,8 @@ def generated(tmp_path, monkeypatch):
     def generate(_root, destination):
         destination.mkdir(parents=True)
         (destination / "index.rst").write_text("Generated page\n", encoding="utf-8")
+        if destination.name == "api":
+            (destination / "inventory.json").write_text(json.dumps({"source": "fixture"}))
         return {"source": "fixture"}
 
     for name in ("generate_api", "generate_catalog", "generate_repository", "generate_status"):
