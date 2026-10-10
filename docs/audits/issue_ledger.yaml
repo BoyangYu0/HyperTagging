@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Phase86 publication requires bound source identity and unchanged passing source-set gate;7 integrity/scope regressions pass.
+  - cb5421070fa48811e10beb7e980977c54b5dc82f
   # Withdraw overlapping private cache to preserve the separate publisher's final implementation;75 focused checks pass. Prototype commits/receipts remain immutable.
   - 779a62149f73a004250cb4c802c010d0e63c28ef
   # Bounded validation-local pure-pattern cache;58 privacy regressions pass, identical single-artifact findings/work counts, unchanged source matching and limits.
