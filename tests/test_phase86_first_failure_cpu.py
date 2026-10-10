@@ -117,3 +117,241 @@ def test_one_root_split_is_only_an_oracle_opportunity():
     assert loss is not None and rounds[0]["single_root_split_oracle"]
     assert rounds[0]["accepted_correct_type"] == 0
     assert s["parent_ids"] == [2, 2, -1]
+
+
+def joined_fixture():
+    """Four disjoint retained trees: legal, charge-incompatible, unary, partial."""
+    from copy import deepcopy
+    from types import SimpleNamespace
+    import torch
+
+    pid, policy, step, config = fixture()
+    groups = [[0, 1], [2, 3], [4], [5, 6]]
+    leaves = 7
+    count = leaves + len(groups)
+    state = step['decode_trace']['state']
+    state.update(
+        node_mask=[True] * leaves,
+        node_ids=list(range(leaves)),
+        level_ids=[0] * leaves,
+        pid_labels=[0] * leaves,
+        parent_ids=[-1] * leaves,
+        node_kind_ids=[policy.valid_leaf_node_kinds[0]] * leaves,
+        recursive_leaf_source_mask=torch.eye(leaves, dtype=torch.bool).tolist(),
+        source_conflict_matrix=torch.zeros(leaves, leaves, dtype=torch.bool).tolist(),
+        p4=[[0., 0., 0., 1.]] * leaves,
+        charge=[0.] * leaves,
+        daughter_adjacency=torch.zeros(leaves, leaves, dtype=torch.bool).tolist(),
+    )
+    for key in ('context_mask', 'hard_decode_context_mask', 'pointer_validity_mask', 'forest_pointer_validity_mask'):
+        step['decode_trace'][key] = [True] * leaves
+    step['probabilities']['object'] = [0.1]
+    step['probabilities']['pointer'] = [[0.8] * leaves]
+    step.update(state_before=deepcopy(state), eligible_positions=list(range(leaves)), proposals=[], appended_node_ids=[])
+    sources = torch.zeros(1, count, leaves, dtype=torch.bool)
+    sources[0, :leaves] = torch.eye(leaves, dtype=torch.bool)
+    adjacency = torch.zeros(1, count, count, dtype=torch.bool)
+    for i, daughters in enumerate(groups):
+        sources[0, leaves + i, daughters] = True
+        adjacency[0, leaves + i, daughters] = True
+    labels = torch.tensor([[0] * leaves + [pid, PDG_TOKENS.index(521), pid, pid]])
+    truth = dict(
+        node_mask=torch.ones(1, count, dtype=torch.bool),
+        level_ids=torch.tensor([[0] * leaves + [1] * len(groups)]),
+        pid_labels=labels.clone(), pid_target_labels=labels,
+        daughter_adjacency=adjacency, recursive_leaf_source_mask=sources,
+        valid_reconstruction_target=torch.tensor([[False] * leaves + [True] * len(groups)]),
+        recursive_reconstructable_complete=torch.tensor([[True] * (count - 1) + [False]]),
+    )
+    projection = SimpleNamespace(
+        audit=SimpleNamespace(original_fsp_positions=(tuple(range(leaves)),)),
+        batch={'recursive_leaf_source_mask': sources[:, :leaves]},
+    )
+    trace = dict(config=config, steps=[step], final_state=deepcopy(state),
+                 truth_used_for_generation=False, mode='predicted')
+    return truth, projection, trace
+
+
+def test_incompatible_eligible_targets_stay_in_primary_denominator():
+    from scripts.phase86_first_failure import evaluate_first_failure
+
+    truth, projection, trace = joined_fixture()
+    result = evaluate_first_failure(truth, projection, trace,
+                                    target_policy='complete_only', minimum_daughters=2)
+    # The same accounting used for the historical 455 must retain every eligible
+    # target, including target-population incompatibilities, without renormalizing.
+    assert result['policy_eligible_targets'] == 3
+    assert sum(result['first_failure_counts'].values()) == 3
+    assert len(result['targets']) == 4
+    assert [row['first_failure'] for row in result['targets']] == [
+        'object_rejection', 'available_group_constraint_incompatible',
+        'target_cardinality_incompatible', 'outside_policy',
+    ]
+    assert sum(row.get('legal_group_any_round', False) for row in result['targets']) == 1
+
+
+def test_posthoc_target_mutation_changes_labels_but_cannot_mutate_trace():
+    from copy import deepcopy
+    from scripts.phase86_first_failure import evaluate_first_failure
+
+    truth, projection, trace = joined_fixture()
+    before = deepcopy(trace)
+    baseline = evaluate_first_failure(truth, projection, trace,
+                                      target_policy='complete_only', minimum_daughters=2)
+    changed = {key: value.clone() for key, value in truth.items()}
+    changed['pid_target_labels'][0, 7] = PDG_TOKENS.index(521)
+    altered = evaluate_first_failure(changed, projection, trace,
+                                     target_policy='complete_only', minimum_daughters=2)
+    assert baseline['targets'][0]['first_failure'] != altered['targets'][0]['first_failure']
+    assert trace == before
+    assert baseline['policy_eligible_targets'] == altered['policy_eligible_targets'] == 3
+
+
+def test_terminal_wrong_commitment_records_creation_round_without_later_step():
+    from copy import deepcopy
+
+    pid, policy, step, config = fixture()
+    step['appended_node_ids'] = [2]
+    final = deepcopy(step['decode_trace']['state'])
+    final.update(node_mask=[True] * 3, node_ids=[0, 1, 2],
+                 parent_ids=[2, 2, -1],
+                 recursive_leaf_source_mask=[[True, False], [False, True], [True, True]])
+    # Wrong type: a terminal merge consumes the required daughter roots but did
+    # not produce the target; its creation round must survive the posthoc join.
+    wrong = dict(query_id=0, mother_type=PDG_TOKENS.index(511), daughter_positions=[0, 1])
+    step['accepted'] = [wrong]
+    step['decode_trace']['raw_proposals'] = [wrong]
+    _, loss = lifecycle_target([frozenset([0]), frozenset([1])], pid,
+                               dict(config=config, steps=[step], final_state=final), policy)
+    assert loss['observation_phase'] == 'terminal'
+    assert loss['consuming_commitments'] == [dict(node_id=2, commitment_round=1)]
+    assert loss['had_prior_legal_group']
+
+
+def test_successful_terminal_assembly_is_not_a_delay_repair_opportunity():
+    from copy import deepcopy
+    from scripts.phase86_first_failure import evaluate_first_failure
+
+    truth, projection, trace = joined_fixture()
+    step = trace['steps'][0]
+    pid = int(truth['pid_target_labels'][0, 7])
+    proposal = dict(query_id=0, mother_type=pid, daughter_positions=[0, 1],
+                    object_score=0.9, confidence=0.9)
+    step['probabilities']['object'] = [0.9]
+    step['accepted'] = [proposal]
+    step['proposals'] = [proposal]
+    step['decode_trace']['raw_proposals'] = [proposal]
+    step['appended_node_ids'] = [7]
+    final = deepcopy(trace['final_state'])
+    final['node_mask'].append(True)
+    final['node_ids'].append(7)
+    final['parent_ids'][:2] = [7, 7]
+    final['parent_ids'].append(-1)
+    final['recursive_leaf_source_mask'].append([True, True] + [False] * 5)
+    trace['final_state'] = final
+    result = evaluate_first_failure(truth, projection, trace,
+                                    target_policy='complete_only', minimum_daughters=2)
+    row = result['targets'][0]
+    assert row['first_failure'] == 'accepted_correct_all_rounds'
+    assert row['delay_oracle_opportunity'] is False
+    assert row['single_split_oracle_opportunity'] is False
+
+
+def test_dependency_join_counts_terminally_formed_child_as_formed():
+    from copy import deepcopy
+    import torch
+    from scripts.phase86_first_failure import evaluate_first_failure
+
+    truth, projection, trace = joined_fixture()
+    pid = int(truth['pid_target_labels'][0, 7])
+    count = truth['node_mask'].shape[1]
+    adjacency = torch.zeros(1, count + 1, count + 1, dtype=torch.bool)
+    adjacency[:, :count, :count] = truth['daughter_adjacency']
+    adjacency[0, count, [7, 8]] = True
+    truth['daughter_adjacency'] = adjacency
+    truth['recursive_leaf_source_mask'] = torch.cat([
+        truth['recursive_leaf_source_mask'],
+        truth['recursive_leaf_source_mask'][:, [7]] | truth['recursive_leaf_source_mask'][:, [8]],
+    ], dim=1)
+    for key, value in [('node_mask', True), ('level_ids', 2), ('pid_labels', pid),
+                       ('pid_target_labels', pid), ('valid_reconstruction_target', True),
+                       ('recursive_reconstructable_complete', True)]:
+        truth[key] = torch.cat([truth[key], truth[key].new_tensor([[value]])], dim=1)
+    step = trace['steps'][0]
+    proposal = dict(query_id=0, mother_type=pid, daughter_positions=[0, 1],
+                    object_score=0.9, confidence=0.9)
+    step.update(accepted=[proposal], proposals=[proposal], appended_node_ids=[7])
+    step['decode_trace']['raw_proposals'] = [proposal]
+    final = deepcopy(trace['final_state'])
+    final['node_mask'].append(True)
+    final['node_ids'].append(7)
+    final['parent_ids'][:2] = [7, 7]
+    final['parent_ids'].append(-1)
+    final['recursive_leaf_source_mask'].append([True, True] + [False] * 5)
+    trace['final_state'] = final
+    result = evaluate_first_failure(truth, projection, trace,
+                                    target_policy='complete_only', minimum_daughters=2)
+    parent = next(row for row in result['targets'] if row['node_position'] == count)
+    missing = parent['first_failure_dependency_trace']['never_formed_dependencies']
+    assert [row['node_position'] for row in missing] == [8]
+    assert result['policy_eligible_targets'] == 4
+
+
+def test_head_cardinality_capacity_is_not_legal_proposal_reachability():
+    pid, policy, step, config = fixture()
+    state = step['decode_trace']['state']
+    state.update(node_mask=[True] * 3, node_ids=[0, 1, 2], level_ids=[0] * 3,
+                 pid_labels=[0] * 3, parent_ids=[-1] * 3,
+                 node_kind_ids=[policy.valid_leaf_node_kinds[0]] * 3,
+                 recursive_leaf_source_mask=[[True, False, False], [False, True, False], [False, False, True]],
+                 source_conflict_matrix=[[False] * 3 for _ in range(3)],
+                 p4=[[0., 0., 0., 1.]] * 3, charge=[0.] * 3,
+                 daughter_adjacency=[[False] * 3 for _ in range(3)])
+    for key in ('context_mask', 'hard_decode_context_mask', 'pointer_validity_mask', 'forest_pointer_validity_mask'):
+        step['decode_trace'][key] = [True] * 3
+    step['probabilities']['pointer'] = [[0.8] * 3]
+    # The cardinality head supports only 0,1,2. Complete source coverage and
+    # charge/ontology compatibility cannot make a three-daughter proposal legal.
+    rows, _ = lifecycle_target([frozenset([i]) for i in range(3)], pid,
+                               dict(config=config, steps=[step]), policy)
+    assert rows[0]['exact_roots_present']
+    assert not rows[0]['legal_correct_type_group']
+    assert not rows[0]['single_root_split_oracle']
+
+
+def test_existing_root_excluded_by_policy_is_not_called_never_formed():
+    pid, policy, step, config = fixture()
+    step['decode_trace']['context_mask'][0] = False
+    step['decode_trace']['forest_pointer_validity_mask'][0] = False
+    step['decode_trace']['hard_decode_context_mask'][0] = False
+    rows, _ = lifecycle_target([frozenset([0]), frozenset([1])], pid,
+                               dict(config=config, steps=[step]), policy)
+    assert rows[0]['raw_exact_roots_present']
+    assert not rows[0]['exact_roots_present']
+    assert rows[0]['never_formed_daughter_sets'] == []
+    assert rows[0]['root_policy_unavailable_sets'] == [[0]]
+
+
+def test_bounded_alias_enumeration_preserves_unknown_negative():
+    pid, policy, step, config = fixture()
+    count = 34
+    state = step['decode_trace']['state']
+    state.update(node_mask=[True] * count, node_ids=list(range(count)), level_ids=[0] * count,
+                 pid_labels=[0] * count, parent_ids=[-1] * count,
+                 node_kind_ids=[policy.valid_leaf_node_kinds[0]] * count,
+                 recursive_leaf_source_mask=[[True, False]] * 17 + [[False, True]] * 17,
+                 source_conflict_matrix=[[False] * count for _ in range(count)],
+                 p4=[[0., 0., 0., 1.]] * count,
+                 charge=([1.] * 16 + [0.]) * 2,
+                 daughter_adjacency=[[False] * count for _ in range(count)])
+    for key in ('context_mask', 'hard_decode_context_mask', 'pointer_validity_mask', 'forest_pointer_validity_mask'):
+        step['decode_trace'][key] = [True] * count
+    step['probabilities']['pointer'] = [[0.8] * count]
+    rows, _ = lifecycle_target([frozenset([0]), frozenset([1])], pid,
+                               dict(config=config, steps=[step]), policy)
+    assert rows[0]['alias_combinations'] == 289
+    assert rows[0]['alias_combinations_truncated']
+    assert not rows[0]['legal_correct_type_group']
+    # The only neutral pair lies after the finite cap. The audit must expose
+    # uncertainty rather than assert all source-equivalent choices incompatible.
+    assert rows[0]['legality_status'] == 'UNRESOLVED_ALIAS_TRUNCATION'

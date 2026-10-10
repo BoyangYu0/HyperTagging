@@ -158,6 +158,13 @@ def run(path):
     from hypertagging.evaluation.full_decay_runner import (
         inference_diagnostics,
         summarize_inference_diagnostics,
+        serialize_reconstructed_tree,
+    )
+
+    from hypertagging.evaluation.full_decay_metrics import (
+        evaluate_full_decay,
+        evaluate_half_decays,
+        evaluate_retained_decays,
     )
 
     torch.set_num_threads(1)
@@ -266,7 +273,17 @@ def run(path):
             minimum_daughters=context.constraint_policy.minimum_daughters,
         )
         write(folder / "first-failure.json", first_failure)
+        partial_failure = evaluate_first_failure(
+            truth,
+            projection,
+            trace,
+            target_policy="reconstructable_partial",
+            minimum_daughters=context.constraint_policy.minimum_daughters,
+        )
+        write(folder / "partial-target-first-failure.json", partial_failure)
         eligible = sum(bool(t["policy_eligible"]) for t in joined["targets"])
+        if first_failure["policy_eligible_targets"] != eligible:
+            raise ValueError("First-failure join dropped eligible targets")
         eligible_total += eligible
         strict = reconstruct_full_tree_from_fsps(
             context.model,
@@ -281,6 +298,36 @@ def run(path):
             source_category=event.source_category,
             event=event,
         )
+        # Same strict greedy prediction, full shared posthoc metrics; no new inference.
+        metric_options = dict(
+            target_policy=cfg.target_policy,
+            minimum_daughters=context.constraint_policy.minimum_daughters,
+        )
+        write(
+            folder / "greedy-full-decay.json",
+            evaluate_full_decay(
+                strict.rollout.batch, truth, **metric_options
+            ).as_dict(),
+        )
+        write(
+            folder / "greedy-half-components.json",
+            evaluate_half_decays(
+                strict.rollout.batch,
+                truth,
+                source_category=event.source_category,
+                **metric_options,
+            ).as_dict(),
+        )
+        write(
+            folder / "greedy-retained-forest.json",
+            evaluate_retained_decays(
+                strict.rollout.batch,
+                truth,
+                source_category=event.source_category,
+                **metric_options,
+            ).as_dict(),
+        )
+        write(folder / "greedy-tree.json", serialize_reconstructed_tree(strict))
         validity = inference_diagnostics(strict)
         tags.append(tag)
         validity_rows.append(validity)
@@ -295,6 +342,8 @@ def run(path):
             native_nodes=int(truth["node_mask"].sum()),
             legacy_first_error_counts=joined["first_error_counts"],
             first_failure_counts=first_failure["first_failure_counts"],
+            partial_eligible_mothers=partial_failure["policy_eligible_targets"],
+            partial_first_failure_counts=partial_failure["first_failure_counts"],
             trace_disabled_parity=parity,
             historical_trace_parity=historical,
             generation_wall_seconds=time.monotonic() - event_start,
@@ -302,6 +351,7 @@ def run(path):
             trace=binding(folder / "model-only-trace.json"),
             evaluation=binding(folder / "trace-evaluation.json"),
             first_failure=binding(folder / "first-failure.json"),
+            partial_first_failure=binding(folder / "partial-target-first-failure.json"),
         )
         rows.append(row)
         write(folder / "event.json", row)
@@ -315,7 +365,16 @@ def run(path):
             ),
             flush=True,
         )
-        del truth, projection, rollout, trace, strict, joined, first_failure
+        del (
+            truth,
+            projection,
+            rollout,
+            trace,
+            strict,
+            joined,
+            first_failure,
+            partial_failure,
+        )
         gc.collect()
     for hook in hooks:
         hook.remove()
@@ -331,9 +390,11 @@ def run(path):
         for value in sorted({r[dimension] for r in rows}):
             selected = [r for r in rows if r[dimension] == value]
             causes = Counter()
+            partial_causes = Counter()
             inventory_counts = Counter()
             for row in selected:
                 causes.update(row["first_failure_counts"])
+                partial_causes.update(row["partial_first_failure_counts"])
                 for target in row["target_inventory"]:
                     key = "|".join(
                         f"{k}={target[k]}"
@@ -350,6 +411,10 @@ def run(path):
                 processed=len(selected),
                 eligible_mothers=sum(r["eligible_mothers"] for r in selected),
                 first_failure_counts=dict(causes),
+                partial_eligible_mothers=sum(
+                    r["partial_eligible_mothers"] for r in selected
+                ),
+                partial_first_failure_counts=dict(partial_causes),
                 target_inventory=dict(inventory_counts),
             )
     summary = dict(
@@ -360,6 +425,8 @@ def run(path):
         events=rows,
         processed=len(rows),
         eligible_mothers=eligible_total,
+        partial_eligible_mothers=sum(r["partial_eligible_mothers"] for r in rows),
+        partial_target_policy="reconstructable_partial",
         per_category=dict(Counter(r["category"] for r in rows)),
         per_partition=dict(Counter(r["partition"] for r in rows)),
         grouped_diagnostics=grouped,

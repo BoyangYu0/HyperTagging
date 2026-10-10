@@ -154,8 +154,14 @@ def lifecycle_target(support, pid, trace, policy):
     signature = tuple(sorted(tuple(sorted(s)) for s in support))
     config = trace["config"]
     rounds = []
+    commitment_round = {
+        node: step["height"]
+        for step in trace["steps"]
+        for node in step.get("appended_node_ids", [])
+    }
     first_loss = None
     previously_legal = False
+    accepted_correct_previously = False
     for step in trace["steps"]:
         d = step.get("decode_trace")
         if d is None:
@@ -174,6 +180,13 @@ def lifecycle_target(support, pid, trace, policy):
         ]
         options = [[p for p in eligible if sources[p] == s] for s in support]
         all_present = all(options)
+        raw_options = [[p for p in roots if sources[p] == source] for source in support]
+        raw_all_present = all(raw_options)
+        capacity_ok = not (
+            config["use_cardinality"]
+            and policy.daughter_cardinality_policy == "predicted"
+            and len(support) >= len(step["probabilities"]["cardinality"][0])
+        )
         clean_cover = all(
             set().union(*(sources[p] for p in roots if sources[p] <= s)) == s
             for s in support
@@ -185,11 +198,29 @@ def lifecycle_target(support, pid, trace, policy):
             for p in roots
             if any(sources[p] & s and not sources[p] <= s for s in support)
         ]
-        if first_loss is None and not clean_cover and contaminants:
+        if accepted_correct_previously:
+            # This target was already recovered. Its own parent (and later
+            # ancestors) consuming its daughter roots is successful assembly.
+            contaminants = []
+        if (
+            first_loss is None
+            and not accepted_correct_previously
+            and not clean_cover
+            and contaminants
+        ):
             first_loss = dict(
                 round=step["height"],
+                observation_round=step["height"],
+                observation_phase="before_decode",
                 node_ids=[state["node_ids"][p] for p in contaminants],
                 had_prior_legal_group=previously_legal,
+                consuming_commitments=[
+                    dict(
+                        node_id=state["node_ids"][p],
+                        commitment_round=commitment_round.get(state["node_ids"][p]),
+                    )
+                    for p in contaminants
+                ],
             )
         combinations = []
         total = 1
@@ -197,10 +228,12 @@ def lifecycle_target(support, pid, trace, policy):
             total *= len(opt)
         for positions in islice(product(*options), MAX_ALIAS_COMBINATIONS):
             failures = legal_group(state, positions, pid, policy, step["height"])
+            if not capacity_ok:
+                failures.append("cardinality_capacity")
             allowed, _ = policy.type_constraints(
                 step["height"], device=torch.device("cpu")
             )
-            any_type = any(
+            any_type = capacity_ok and any(
                 not legal_group(state, positions, t, policy, step["height"])
                 for t in torch.where(allowed)[0].tolist()
             )
@@ -225,8 +258,9 @@ def lifecycle_target(support, pid, trace, policy):
         # No ancestor exists to invalidate at this edit depth. This tests only
         # daughter group construction legality; no embeddings/scores are reused.
         repair = []
+        repair_truncated = False
         adjacency = state.get("daughter_adjacency", [])
-        if not all_present:
+        if not all_present and capacity_ok and not accepted_correct_previously:
             for parent in contaminants:
                 if not adjacency:
                     break
@@ -241,6 +275,10 @@ def lifecycle_target(support, pid, trace, policy):
                 modified["node_mask"][parent] = False
                 for child in children:
                     modified["parent_ids"][child] = -1
+                repair_total = 1
+                for option in opts:
+                    repair_total *= len(option)
+                repair_truncated |= repair_total > MAX_ALIAS_COMBINATIONS
                 for positions in islice(product(*opts), MAX_ALIAS_COMBINATIONS):
                     if not legal_group(
                         modified, positions, pid, policy, step["height"]
@@ -264,20 +302,75 @@ def lifecycle_target(support, pid, trace, policy):
             dict(
                 round=step["height"],
                 exact_roots_present=all_present,
+                raw_exact_roots_present=raw_all_present,
+                root_policy_unavailable_sets=[
+                    sorted(source)
+                    for source, raw, available in zip(support, raw_options, options)
+                    if raw and not available
+                ],
+                cardinality_capacity_compatible=capacity_ok,
                 clean_source_cover_necessary_only=clean_cover,
                 never_formed_daughter_sets=never,
                 consuming_root_ids=[state["node_ids"][p] for p in contaminants],
                 alias_combinations=total,
                 alias_combinations_truncated=total > MAX_ALIAS_COMBINATIONS,
                 legal_correct_type_group=legal,
+                legality_status="LEGAL_WITNESS"
+                if legal
+                else (
+                    "UNRESOLVED_ALIAS_TRUNCATION"
+                    if total > MAX_ALIAS_COMBINATIONS
+                    else "NO_LEGAL_GROUP"
+                ),
                 combinations=combinations,
                 generated_exact_group=len(exact),
                 generated_correct_type=sum(p["mother_type"] == pid for p in exact),
                 accepted_exact_group=len(accepted),
                 accepted_correct_type=sum(p["mother_type"] == pid for p in accepted),
                 single_root_split_oracle=repair,
+                split_search_truncated=repair_truncated,
             )
         )
+        accepted_correct_previously |= any(p["mother_type"] == pid for p in accepted)
+    # A final commitment has no later predecode snapshot. Inspect its detached
+    # terminal state too; the observation time is distinct from creation time.
+    if (
+        first_loss is None
+        and not accepted_correct_previously
+        and trace.get("final_state") is not None
+    ):
+        state = trace["final_state"]
+        sources = source_rows(state)
+        roots = [
+            p
+            for p, active in enumerate(state["node_mask"])
+            if active and state["parent_ids"][p] < 0
+        ]
+        clean_cover = all(
+            set().union(*(sources[p] for p in roots if sources[p] <= s)) == s
+            for s in support
+        )
+        contaminants = [
+            p
+            for p in roots
+            if any(sources[p] & s and not sources[p] <= s for s in support)
+        ]
+        if not clean_cover and contaminants:
+            observed_round = trace["steps"][-1]["height"] if trace["steps"] else None
+            first_loss = dict(
+                round=observed_round,
+                observation_round=observed_round,
+                observation_phase="terminal",
+                node_ids=[state["node_ids"][p] for p in contaminants],
+                had_prior_legal_group=previously_legal,
+                consuming_commitments=[
+                    dict(
+                        node_id=state["node_ids"][p],
+                        commitment_round=commitment_round.get(state["node_ids"][p]),
+                    )
+                    for p in contaminants
+                ],
+            )
     return rounds, first_loss
 
 
@@ -315,6 +408,7 @@ def evaluate_first_failure(
         )[0].tolist()
         support = [frozenset(torch.where(compact[p])[0].tolist()) for p in daughters]
         row["daughter_source_sets"] = [sorted(s) for s in support]
+        row["daughter_node_positions"] = daughters
         missing = (
             bool(original[[n, *daughters]][:, ~columns].any())
             or not support
@@ -348,10 +442,14 @@ def evaluate_first_failure(
                 reason = "correct_proposal_retention_loss"
             elif any(r["generated_exact_group"] for r in rounds):
                 reason = "generated_group_wrong_mother_type"
+            elif not legal and any(r["alias_combinations_truncated"] for r in rounds):
+                reason = "unresolved_legality_alias_truncation"
             elif present and not legal:
                 reason = "available_group_constraint_incompatible"
             elif first_loss and not legal:
                 reason = "wrong_irreversible_merge_before_legal_group"
+            elif not present and any(r["raw_exact_roots_present"] for r in rounds):
+                reason = "required_roots_present_but_policy_ineligible"
             elif not present:
                 reason = "required_root_never_formed_or_unavailable"
             elif queries:
@@ -360,6 +458,7 @@ def evaluate_first_failure(
                     "mother_ontology_incompatible",
                     "mother_charge_incompatible",
                     "physical_kinematics_incompatible",
+                    "pointer_policy_incompatible",
                     "cardinality_support",
                     "pointer_threshold_support",
                     "pointer_ranking_or_source_selection",
@@ -410,15 +509,68 @@ def evaluate_first_failure(
                 }
             ),
             legal_group_any_round=any(r["legal_correct_type_group"] for r in rounds),
-            single_split_oracle_opportunity=any(
-                r["single_root_split_oracle"] for r in rounds
+            single_split_oracle_opportunity=(
+                not any(r["accepted_correct_type"] for r in rounds)
+                and any(r["single_root_split_oracle"] for r in rounds)
+            ),
+            split_opportunity_status=(
+                "ALREADY_ACCEPTED"
+                if any(r["accepted_correct_type"] for r in rounds)
+                else "WITNESS"
+                if any(r["single_root_split_oracle"] for r in rounds)
+                else "UNRESOLVED_TRUNCATION"
+                if any(r["split_search_truncated"] for r in rounds)
+                else "NO_WITNESS_IN_DECLARED_EDIT_SCOPE"
+            ),
+            legality_status=(
+                "LEGAL_WITNESS"
+                if any(r["legal_correct_type_group"] for r in rounds)
+                else "UNRESOLVED_ALIAS_TRUNCATION"
+                if any(r["alias_combinations_truncated"] for r in rounds)
+                else "NO_LEGAL_GROUP"
             ),
             delay_oracle_opportunity=bool(
-                first_loss and first_loss["had_prior_legal_group"]
+                first_loss
+                and first_loss["had_prior_legal_group"]
+                and not any(r["accepted_correct_type"] for r in rounds)
             ),
         )
         counts[reason] += 1
         rows.append(row)
+    by_node = {r["node_position"]: r for r in rows}
+
+    def dependency(node, seen):
+        if node in seen:
+            raise ValueError("Cycle in truth-only diagnostic dependency join")
+        row = by_node.get(node)
+        if row is None:
+            return dict(
+                node_position=node,
+                status="detector_leaf_or_unavailable_retained_target",
+            )
+        children = []
+        for child in row.get("daughter_node_positions", []):
+            target_sources = frozenset(torch.where(compact[child])[0].tolist())
+            formed = any(
+                target_sources in source_rows(step["decode_trace"]["state"])
+                for step in trace["steps"]
+            )
+            if not formed and trace.get("final_state") is not None:
+                formed = target_sources in source_rows(trace["final_state"])
+            if not formed:
+                children.append(dependency(child, seen | {node}))
+        return dict(
+            node_position=node,
+            first_failure=row["first_failure"],
+            first_clean_cover_loss=row.get("first_clean_cover_loss"),
+            never_formed_dependencies=children,
+        )
+
+    for row in rows:
+        if row["policy_eligible"]:
+            row["first_failure_dependency_trace"] = dependency(
+                row["node_position"], set()
+            )
     return dict(
         version="phase86-first-failure-v1",
         policy_eligible_targets=sum(counts.values()),
