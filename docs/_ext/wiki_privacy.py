@@ -3199,33 +3199,13 @@ def validate_artifact(
     raw_body_file_budget = [_MAX_MATCH_OPERATIONS]
     pattern_file_budget = [_MAX_MATCH_OPERATIONS]
 
-    @lru_cache(maxsize=8192)
-    def short_pattern_rules(value, field_assignments, html_markup, semantic_projection):
-        # These rules depend only on the text and these three mode flags.
-        # Keep this cache local to one validation and bounded in entry count
-        # and input length. Literal/source matching and its work accounting
-        # still run for every occurrence, including repeated scalar values.
-        return tuple(violations(
-            value, field_assignments=field_assignments, html_markup=html_markup,
-            semantic_projection=semantic_projection,
-        ))
-
     def inspect(value, *, location, trusted_vendor=False,
                 field_assignments=True, html_markup=False,
                 literal_scan=True, semantic_projection=False):
-        if trusted_vendor:
-            rules = []
-        elif len(value) <= 512:
-            # Each call gets its own list: later literal findings must never
-            # mutate the cached pure-pattern result or another file's result.
-            rules = list(short_pattern_rules(
-                value, field_assignments, html_markup, semantic_projection,
-            ))
-        else:
-            rules = violations(
-                value, field_assignments=field_assignments, html_markup=html_markup,
-                semantic_projection=semantic_projection,
-            )
+        rules = [] if trusted_vendor else violations(
+            value, field_assignments=field_assignments, html_markup=html_markup,
+            semantic_projection=semantic_projection,
+        )
         if not trusted_vendor and literal_scan and literal_matcher is not None:
             if any(
                 _literal_automaton_contains(
