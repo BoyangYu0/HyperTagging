@@ -1,10 +1,17 @@
 # Current repository audit status
 
-## Conditional pair-message connection preparation — 2026-10-10
+## Pair-message connection study running — 2026-10-10
 
-The reserved384 sampling-seed replication is still running at its immutable
-source. A conditional two-arm TRAIN-only refinement study is prepared, not
-runtime admitted: identical independent same-B/cross-B/background supervision
+The reserved384 sampling-stream replication17122694 completed6000 updates and
+48000 presentations:80 raw/69 accepted exact source sets of256 B trials, with
+zero accepted continuum events of256 and zero committed source conflicts.
+Original384 results were78 raw/71 accepted; paired differences includezero.
+Both registered TRAIN gates pass across multiple collisions. The changed sampler
+seed changes order and per-identity frequencies, not a fixed-multiset permutation.
+No independent generalization or physical reconstruction claim follows.
+
+The matched TRAIN-only refinement study17122909/17122910 is now running from
+immutable source8b9be2b: identical independent same-B/cross-B/background supervision
 and parameters in both arms, with one message-to-refinement connection off/on.
 The native proposal, detached merge selection, membership objective and physical
 guards remain unchanged. Additional message output starts atzero, preserving
@@ -14,9 +21,15 @@ discarded fixture updates, separately from auxiliary gradients.
 The modest above-shuffle embedding pair signal supports this falsifiable
 connection hypothesis; failure of the combined detector-superiority gate does
 not independently veto it. That failure still supplies no pretraining or
-information-loss claim. Execution requires the original and replication384
-terminal gates, immutable source/plan, broad checks and new real-data admission.
-No successor fitting, fresh development, primary work or publication has begun.
+information-loss claim. Both exposure terminal reviews pass, as do2705 CPU tests
+with34 skips, both dry runs and audit checks. Real-data admission17122905 passed
+four discarded updates per arm, source/cohort/init checks, membership-only versus
+auxiliary gradients and unchanged runtime/memory limits. Each scientific arm is
+fixed to6000 updates/48000 presentations on the same384 TRAIN identities, with
+2 CPUs/32GiB/8h, noGPU/requeue. Only the fixed6000 paired exact/background/source
+endpoint may select a candidate. No fresh development, primary work or publication
+has begun. Earlier preparation entries below are dated provenance, not current
+job status.
 
 ## Native hierarchy applicability completed — 2026-10-10
 
