@@ -2,6 +2,8 @@
 
 Hypothetical exact daughter groups test opportunity only. They are never supplied
 back to inference, ranked as predictions, or counted as measured recovery.
+Daughter identity here means detector-source-set equality only. Group-policy
+validity does not verify recursive daughter topology/PID or native deep reachability.
 """
 
 from __future__ import annotations
@@ -23,7 +25,11 @@ MAX_ALIAS_COMBINATIONS = 256
 
 
 def legal_group(state, positions, pid, policy, round_id, *, require_roots=True):
-    """Posthoc exact policy checks on an existing reconstructed state."""
+    """Check group policy on reconstructed nodes, not daughter truth correctness.
+
+    Matching caller-supplied daughter source sets does not establish that their
+    internal topology or PID is correct, or that a deep target is reachable.
+    """
     reasons = []
     if len(positions) < policy.minimum_daughters:
         reasons.append("cardinality_below_minimum")
@@ -151,6 +157,12 @@ def query_support(step, desired, policy, config):
 
 
 def lifecycle_target(support, pid, trace, policy):
+    """Track source-set groups and checked policy across observed rounds only.
+
+    ``legal_correct_type_group`` means a source-matching group of existing roots
+    passes the checked policy for the target mother PID. It does not certify
+    recursive daughter topology/PID or native deep decoder reachability.
+    """
     signature = tuple(sorted(tuple(sorted(s)) for s in support))
     config = trace["config"]
     rounds = []
@@ -573,11 +585,23 @@ def evaluate_first_failure(
             )
     return dict(
         version="phase86-first-failure-v1",
+        measurement_scope={
+            "daughter_identity": "exact_detector_source_set_equality_only",
+            "legal_correct_type_group": (
+                "Existing source-matching daughter roots pass checked group policy "
+                "for the target mother PID; recursive daughter topology/PID and "
+                "native deep decoder reachability are not verified."
+            ),
+            "recursive_daughter_topology_verified": False,
+            "recursive_daughter_pid_verified": False,
+            "native_deep_reachability_verified": False,
+        },
         policy_eligible_targets=sum(counts.values()),
         first_failure_counts=dict(counts),
         targets=rows,
         limitations=[
             "All TRAIN and posthoc; fit/assessment split does not remove prior inspection.",
+            "Source-set/policy group validity is not exact recursive daughter topology/PID correctness or verified native deep reachability.",
             "First failure precedence is descriptive, not evidence of a causal benefit from changing one factor.",
             "Complete_only denotes retained recursive target policy, not physical resonance completeness.",
             "Clean cover is necessary only. Hypothetical exact-group checks and split/delay opportunities are oracle bounds, never deployable gains.",

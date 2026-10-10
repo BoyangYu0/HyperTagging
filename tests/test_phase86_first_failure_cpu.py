@@ -355,3 +355,68 @@ def test_bounded_alias_enumeration_preserves_unknown_negative():
     # The only neutral pair lies after the finite cap. The audit must expose
     # uncertainty rather than assert all source-equivalent choices incompatible.
     assert rows[0]['legality_status'] == 'UNRESOLVED_ALIAS_TRUNCATION'
+
+
+def test_group_policy_validity_does_not_certify_daughter_tree_or_pid():
+    """Distinct valid daughter trees with equal sources share group-policy status."""
+    from copy import deepcopy
+
+    pid, policy, template, config = fixture()
+    outcomes = []
+    # Both root representations cover sources0,1,2, but one has an additional
+    # internal mother and a different root PID. This audit deliberately does
+    # not verify either daughter tree against truth.
+    for nested in (False, True):
+        step = deepcopy(template)
+        children = [[], [], [], [], [0, 1] if nested else [0, 1, 2]]
+        if nested:
+            children.append([4, 2])
+        count = len(children)
+        parents = [-1] * count
+        memberships = [{i} for i in range(4)]
+        levels = [0] * 4
+        for node in range(4, count):
+            memberships.append(set().union(*(memberships[c] for c in children[node])))
+            levels.append(1 + max(levels[c] for c in children[node]))
+            for child in children[node]:
+                parents[child] = node
+        state = dict(
+            node_mask=[True] * count, node_ids=list(range(count)), level_ids=levels,
+            pid_labels=[0] * 4 + [PDG_TOKENS.index(511) if nested else pid] * (count - 4),
+            parent_ids=parents,
+            node_kind_ids=[policy.valid_leaf_node_kinds[0]] * 4 + [policy.valid_composite_node_kinds[0]] * (count - 4),
+            recursive_leaf_source_mask=[[i in group for i in range(4)] for group in memberships],
+            source_conflict_matrix=[[bool(a & b) and i != j for j, b in enumerate(memberships)] for i, a in enumerate(memberships)],
+            p4=[[0., 0., 0., float(len(group))] for group in memberships], charge=[0.] * count,
+            daughter_adjacency=[[i in group for i in range(count)] for group in children],
+        )
+        step['height'] = 3
+        step['decode_trace']['state'] = state
+        step['decode_trace']['context_mask'] = [True] * count
+        for key in ('hard_decode_context_mask', 'pointer_validity_mask', 'forest_pointer_validity_mask'):
+            step['decode_trace'][key] = [parent < 0 for parent in parents]
+        step['probabilities']['pointer'] = [[0.8] * count]
+        rows, _ = lifecycle_target([frozenset([0, 1, 2]), frozenset([3])], pid,
+                                   dict(config=config, steps=[step]), policy)
+        assert rows[0]['exact_roots_present']
+        outcomes.append(rows[0]['legal_correct_type_group'])
+    assert outcomes == [True, True]
+
+
+def test_explicit_measurement_scope_preserves_eligible_failure_counts():
+    from scripts.phase86_first_failure import evaluate_first_failure
+
+    truth, projection, trace = joined_fixture()
+    result = evaluate_first_failure(truth, projection, trace,
+                                    target_policy='complete_only', minimum_daughters=2)
+    scope = result['measurement_scope']
+    assert scope['daughter_identity'] == 'exact_detector_source_set_equality_only'
+    assert scope['recursive_daughter_topology_verified'] is False
+    assert scope['recursive_daughter_pid_verified'] is False
+    assert scope['native_deep_reachability_verified'] is False
+    assert result['policy_eligible_targets'] == 3
+    assert result['first_failure_counts'] == {
+        'object_rejection': 1,
+        'available_group_constraint_incompatible': 1,
+        'target_cardinality_incompatible': 1,
+    }
