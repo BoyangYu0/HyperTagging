@@ -126,6 +126,12 @@ def observed_graph(state, leaf_key_by_node_id, *, unavailable_pid_nodes=()):
     ]
     if any(sum(q in ds for ds in children) > 1 for q in range(len(ids))):
         raise GraphInvalid("multiple_parents")
+    for child in range(len(ids)):
+        parents = [p for p, ds in enumerate(children) if child in ds]
+        if state["parent_ids"][child] != (parents[0] if parents else -1):
+            raise GraphInvalid("parent_adjacency_inconsistent")
+        if not state["node_mask"][child] and (parents or children[child]):
+            raise GraphInvalid("inactive_graph_reference")
     composite = [h > 0 for h in state["level_ids"]]
     keys = [
         None if composite[p] else leaf_key_by_node_id.get(node)
@@ -197,13 +203,20 @@ def audit_event(truth, projection, trace, historical, policy, architecture=None)
     ]
     heights = truth["level_ids"][0, :n].tolist()
     labels = truth.get("pid_target_labels", truth["pid_labels"])[0, :n].tolist()
-    # All original detector leaf identities use the evaluator's same fallback.
-    leaf_keys = []
+    from hypertagging.evaluation.full_decay_metrics import canonical_fsp_membership
+
+    canonical_memberships, canonical_keys = canonical_fsp_membership(truth)
+    leaf_keys = [None] * n
     for p in range(n):
-        vals = [
-            int(truth[k][0, p]) for k in ("reco_ids", "source_node_ids", "node_ids")
-        ]
-        leaf_keys.append(next((x for x in vals if x >= 0), None))
+        if heights[p] == 0:
+            indices = canonical_memberships[p].nonzero().flatten().tolist()
+            if len(indices) != 1:
+                raise GraphInvalid("canonical_leaf_membership_invalid")
+            leaf_keys[p] = canonical_keys[indices[0]]
+        if sum(p in children for children in ds) > 1:
+            raise GraphInvalid("target_multiple_parents")
+    if [leaf_keys[p] for p in kept] != keys:
+        raise GraphInvalid("target_projection_evaluator_key_mismatch")
     target = RecursiveGraph(ds, [h > 0 for h in heights], leaf_keys, labels)
     target_sources = [
         frozenset(row.nonzero().flatten().tolist()) for row in source[:, columns]
