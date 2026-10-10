@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # User standing workflow instruction only; no implementation/scientific changes.
+  - 3674af7d6ff1133a52da0500bc41bf12446f2a79
   # Isolated bounded recursive target audit; production source unchanged, fixture validation only.
   - 11a9703be02820935b69d0fad8b77b10486aa573
   # Reviewed source-set diagnostic scope metadata and recursive-topology counterexample;17 focused tests pass, no inference changes.
