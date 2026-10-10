@@ -1,0 +1,99 @@
+{
+  "version": "phase85-conditional-pair-connection-v1-before-fitting",
+  "stage": "development",
+  "family": "direct_membership_joint_learning",
+  "sealed_test_access": false,
+  "automatic_successor_submission": false,
+  "conditional_status": "Prepared while immutable384 sampling-seed replication runs. No successor fitting until both original and replication terminal gates PASS and independent runtime admission.",
+  "hypothesis": "Learned same-B/cross-B/background edge messages may improve refinement grouping beyond identical semantic supervision without the message connection. Embedding probe has modest above-shuffle train-role pair signal; this is a falsifiable architecture hypothesis, not proof of sufficient information or superiority over exposure.",
+  "changed_factor": "Single fixed connection switch: add one learned pair message after native condition network immediately before refinement membership head. No proposal/merge/search alteration. Both arms have identical edge/message parameters and identical semantic auxiliary objective; only connection off versus on differs.",
+  "control": "connection_off retains current decoder forward behavior with the SAME added independent semantic edge supervision as connection_on. Historical native objective differs from both; historical comparison is descriptive, not the randomized connection effect. Same native and added initialization, fresh optimizers, sampler seed/order,384pool,6000updates,final checkpoint,threshold .5.",
+  "arms": [
+    "connection_off",
+    "connection_on"
+  ],
+  "target_contract": "Two unordered optional retained-B source sets and unassigned; same native CE+overlap+presence and within-B relation objective. Independent symmetric semantic edges label same-B/cross-B/background only after detector-only generation. Unknown endpoints unavailable; empty-source/overlapping-source pairs excluded and counted. No truth in inference; physical/source/charge/cardinality guards unchanged. Flat membership is not physical B reconstruction.",
+  "diagnostic_evidence": {
+    "path": "docs/assembly_diagnosis_20261007/evidence.json",
+    "sha256": "c1fa1b5f8d60909e679efaa06fd96831e7dc262dd1b1e15addf9741c33fd8c63"
+  },
+  "mechanism_evidence": {
+    "report_binding": {
+      "path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/phase84_exposure_information_20261009/level-addendum-integrated-v2/pair_node_update_conditional_design_review.json",
+      "sha256": "e8e4b7b650b5db6735827ad67cee99f45d5f4e553b9db0223dd28a4a5d0f0a24"
+    },
+    "design_review": {
+      "path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/phase84_exposure_information_20261009/level-addendum-integrated-v2/pair_node_connection_conditional_memo-v1.json",
+      "sha256": "bad9c40f7659c3b360d685c7c042554613810a3f16492903b1765d85dd606a09"
+    },
+    "information_review": {
+      "path": "/project/agkuhr/users/boyang/data/HyperTagging_artifacts/phase84_exposure_information_20261009/level-addendum-integrated-v2/information-terminal-interpretation-review.json",
+      "sha256": "1639326d01b3e4c273f06b4a25bf14ee5c6208c47eb45d5d7adf55d1d287d530"
+    },
+    "measured_effect": "Embedding pair AUC .53095 versus shuffled .49345; whole-event paired difference CI [.02318,.05335] withinTRAIN. Existing assembly relation labels omit cross-B/background and hard merge choice detaches. Original384 learned78raw/71accepted of256,1536only1/1024. Exposure and sample composition remain competing explanations. Replication gate pending; no detector-superiority/pretraining claim."
+  },
+  "data_and_compute_control": {
+    "corpus": 70000,
+    "eligible_main_pool": 1536,
+    "used_pool": 384,
+    "categories": {
+      "charged": 64,
+      "mixed": 64,
+      "ccbar": 64,
+      "uubar": 64,
+      "ddbar": 64,
+      "ssbar": 64
+    },
+    "selection": "Exactly existing SHA256-nested384, stable authenticated cache order; no outcome filtering. Same full historical exclusion union including74/75/76 supplemental reservations. No new identities.",
+    "architecture": {
+      "context": 128,
+      "hyperbolic": 32,
+      "head": 256,
+      "depth": 4,
+      "geometry": "unchanged",
+      "normalization": "unchanged original train-fitted"
+    },
+    "edge_model": "symmetric absdiff/product/eventmean of128context ->384input ->64GELU ->3logits; source-supported disjoint within-event unordered pairs only",
+    "message": "For each node and semantic class, probability-weighted neighbor mean of padded256context normalized by probability sum clamp1e-6; three256means concatenated ->768to256GELUto256. Final projection exactly zero initially; absent eligible neighbors message must be exactly zero. Single residual addition before refinement.",
+    "initialization": "OriginalPhase74 128-existing pretrained encoder/fresh native decoder unchanged, additions seed20261010085 under fork_rng, no fitted probe transfer. Identical tensors and initial predictions in botharms; membership gradient into edges is initially blocked by zero projection, separately test after discarded updates. Auxiliary edge gradients exist botharms from start.",
+    "objective": "native membership + native within-B relation +1.0*semantic CE, identical botharms. Semantic mean over available classes inside event, then native event/batch averaging. No weight sweep or additional loss changes.",
+    "optimizer": "same AdamW encoder5e-5/head1e-3/weightdecay1e-4/clip5; sampler202610081; native pretraining unchanged",
+    "updates_per_arm": 6000,
+    "batch_size": 8,
+    "presentations_per_arm": 48000,
+    "milestones": [
+      1500,
+      6000
+    ],
+    "maximum_scientific_jobs": 2,
+    "total_updates": 12000,
+    "total_presentations": 96000,
+    "resources_per_job": {
+      "cpus": 2,
+      "memory_gib": 32,
+      "hours": 8,
+      "gpus": 0,
+      "requeue": false
+    },
+    "admission": "Only after exposure terminal review: same frozen source,4discardedupdates/arm on8distinctTRAINrows including full1536worst cardinality, separate membership-only and auxiliary-only gradients after updates, source/cohort/capacity/determinism, conservative2x measured forecast+1200seconds <7h andRSS<24GiB; no caps extended.",
+    "compute": "Report total/active parameters,actual sampledUID/category frequencies,updates,presentations,encodercalls,semantic edge counts,node-square proxy,wall/CPU/RSS separately. Equal updates/parameter counts do not imply equal FLOPs or active gradients."
+  },
+  "stop_rule": "Fail closed on nonfinite/source/cohort/history mismatch. Internal7.25h/26GiB guard; fixed6000 only candidate, no early loss/zero-exact futility, no requeue or extension. If either arm fails technical completion, no scientific winner. If exact/background gate fails, stop structural branch, no second design or grid.",
+  "success_rule": "TRAIN-only candidate requires both fixed6000 technically eligible; connection_on rawANDaccepted net counts positive versusoff, >=4distinct collisions gaining the SAME nonempty target in rawANDaccepted intersection; category-stratified whole-event paired2000bootstrap95%lower bounds for bothraw/accepted efficiency difference >0. Continuum event acceptance upper95%paired difference <=.05 overall AND each of4continuum categories, and B-event background-to-B fraction upper95%paired difference<=.05; source conflicts0. Retain all denominators/unknowns. This is a stricter exploratory candidate gate, not deployment acceptability; no loss/pairAUC-only winner.",
+  "validation_selection": "TRAIN-only choice/curves, final6000 fixedbeforefitting. No new development consumed/reserved here, no historicaldevelopment assessment. A promising candidate may motivate separate immutable preregistered fresh600 evaluation under full exclusions; not automatic. No primary/model promotion in this sequence; >=95%tinyRAW and count-backed heldout/background evidence remain unmet requirements for any later primary review.",
+  "evaluation_endpoints": [
+    "raw_and_accepted_membership",
+    "per_event_and_correlated_B_trials",
+    "category_channel_source_size",
+    "proposal_and_refinement_omissions_swaps_extras_background",
+    "paired_whole_event_uncertainty",
+    "continuum_acceptance",
+    "source_validity",
+    "native_within_B_relations",
+    "latent_deep_source_set_diagnostic",
+    "semantic_edge_class_support_and_accuracy",
+    "unknown_and_failure_denominators"
+  ],
+  "unavailable": "Physical trees/exactB physical top1/beam/p4 closure unavailable for flathead, never reported as zero. No new tiny fit; prior tiny32/32 belongs to historical architecture and does not satisfy new-candidate tiny gate.",
+  "preregistered_conditional_utc": "2026-10-10T02:13:32.452871+00:00"
+}

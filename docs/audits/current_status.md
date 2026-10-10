@@ -1,5 +1,23 @@
 # Current repository audit status
 
+## Conditional pair-message connection preparation — 2026-10-10
+
+The reserved384 sampling-seed replication is still running at its immutable
+source. A conditional two-arm TRAIN-only refinement study is prepared, not
+runtime admitted: identical independent same-B/cross-B/background supervision
+and parameters in both arms, with one message-to-refinement connection off/on.
+The native proposal, detached merge selection, membership objective and physical
+guards remain unchanged. Additional message output starts atzero, preserving
+initial predictions; membership-to-edge gradients are therefore checked after
+discarded fixture updates, separately from auxiliary gradients.
+
+The modest above-shuffle embedding pair signal supports this falsifiable
+connection hypothesis; failure of the combined detector-superiority gate does
+not independently veto it. That failure still supplies no pretraining or
+information-loss claim. Execution requires the original and replication384
+terminal gates, immutable source/plan, broad checks and new real-data admission.
+No successor fitting, fresh development, primary work or publication has begun.
+
 ## Native hierarchy applicability completed — 2026-10-10
 
 Job17122683 completed96 authenticated TRAIN events,16/category, with no parameter
@@ -12,7 +30,9 @@ exact-tree and inclusive B membership are0/64; continuum acceptance is0/64.
 Closure is336/336 and committed source conflicts arezero. Root detector-resource
 aliases persist in28/96 events and must not be confused with committed conflicts.
 These TRAIN-only sensitivities do not establish a component-weight deficiency or
-support a new level/PID prior. The conditional hierarchy branch stops here.
+support a particular new level/PID prior. Type priors influence pointer inputs,
+so missing groups do not rule out indirect type/weight effects; their mechanism
+remains unresolved. The conditional hierarchy branch stops here.
 The independently supported reserved384 training-order replication remains next.
 Complete counts and corrected aggregates are bound privately; no publication or
 fresh validation has occurred.
@@ -34,11 +54,13 @@ training, source/charge constraints, or previously frozen scientific jobs.
 
 The original finite exposure plan reserved one replication. Its384-event lead
 passes both registered TRAIN gates across53 collisions; the information probe
-does not support an architecture or diversity escalation. The follow-up plan
+does not establish detector superiority or justify diversity expansion. The follow-up plan
 changes only the training-row sampler seed202610081 to202610082, preserving
 the384 identities, exact pretrained/decoder initializer, fresh optimizer,
 objective, geometry, normalization, threshold and6000 updates/48000 presentations.
-This is training-order robustness, not independent initialization or pretraining.
+Sampling with replacement changes draw order and per-identity exposure counts;
+this is sampling-seed robustness, not a pure permutation of a fixed multiset,
+independent initialization or pretraining.
 The implementation authenticates the original successful contracts and initial
 parameter/UID digests before fitting. Forty-three focused exposure, replay,
 isolation and replication tests pass; a mistaken test filename in the first

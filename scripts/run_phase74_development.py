@@ -244,6 +244,7 @@ def fit(
     source_sha,
     gradient_rule="joint",
     pair_supervision=False,
+    semantic_pair_supervision=False,
     step_callback=None,
 ):
     """Fit one trajectory; an optional callback observes completed optimizer steps.
@@ -274,6 +275,18 @@ def fit(
         pair_supervision and (stage == "pretraining" or gradient_rule != "joint")
     ):
         raise ValueError("Pair supervision requires downstream joint adaptation")
+    if not isinstance(semantic_pair_supervision, bool) or (
+        semantic_pair_supervision
+        and (stage != "downstream" or gradient_rule != "joint" or pair_supervision)
+    ):
+        raise ValueError(
+            "Semantic pair supervision requires downstream joint adaptation without pair supervision"
+        )
+    semantic_metadata = (
+        {"semantic_pair_supervision": True, "semantic_pair_coefficient": 1.0}
+        if semantic_pair_supervision
+        else {}
+    )
     if step_callback is not None and not callable(step_callback):
         raise TypeError("step_callback must be callable or None")
     updates = settings[stage + "_updates"]
@@ -361,6 +374,25 @@ def fit(
                         compute.update(
                             {"pair_" + k: v for k, v in pair_support.items()}
                         )
+                    if semantic_pair_supervision:
+                        from hypertagging.models.pair_conditioned_membership import (
+                            semantic_pair_loss,
+                        )
+
+                        semantic, semantic_support = semantic_pair_loss(
+                            result["edge_logits"], result["edge_pairs"], row["targets"]
+                        )
+                        loss = loss + semantic
+                        components["semantic_pair"] += float(semantic.detach())
+                        compute.update(
+                            {
+                                "semantic_pair_" + k: v
+                                for k, v in semantic_support.items()
+                            }
+                        )
+                        compute["semantic_pair_edge_scores"] += result[
+                            "edge_logits"
+                        ].shape[0]
                     components.update(
                         membership=float(member.detach()),
                         within_b_relation=float(relation.detach()),
@@ -473,6 +505,7 @@ def fit(
             "sampling_rng_state": rng.getstate(),
             "step": completed_updates,
             **callback_metadata,
+            **semantic_metadata,
             "source_sha": source_sha,
             "data_cache": cache_binding,
             "settings": settings,
@@ -491,6 +524,7 @@ def fit(
         "updates": completed_updates,
         "presentations": completed_updates * settings["batch_size"],
         **callback_metadata,
+        **semantic_metadata,
         "data_order_sha256": sequence.hexdigest(),
         "relation_support_by_class": relation_support,
         "final_loss": last_loss,
