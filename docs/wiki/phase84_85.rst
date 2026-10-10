@@ -62,7 +62,7 @@ Repeated presentations are not new collision events.
 On the common96 subset, final raw/accepted counts are64/52 for96-only,
 19/15 within original384,25/18 within replicated384 and0/0 within1536.
 The replication changes draw order **and per-identity exposure frequencies**;
-it is neither an independent architecture/initialization-seed replication nor
+it is neither an independent architecture or initialization-seed replication nor
 a fixed-multiset shuffle. Cohort difficulty, source-size composition and actual
 compute prevent a pure causal attribution to per-event exposure. Equal updates
 and presentations do not imply equal FLOPs. The full1536 fit fails the relevant
@@ -325,6 +325,10 @@ The original exposure execution mapped1,013files; the retrospective full-tree
 comparison covered2,030tracked files and does not expand execution-time coverage.
 Six early private draft-helper versions lack exact archived copies; this drafting
 lineage gap is separate from authenticated executed sources and final reviewers.
+Publication review additionally recovered 72 historical file/hash bindings from
+frozen Git and identified four unrecovered pre-execution working-draft hashes.
+Those four draft references are distinct from the six helper versions above;
+all eight executed or correction source snapshots match their frozen Git bytes.
 Historical source/evidence hashes remain unchanged. Mutable-checkout paths are
 resolved against frozen Git bytes with explicit provenance rather than silently
 rebinding them to later research. No new training, evaluation, cohort reservation,

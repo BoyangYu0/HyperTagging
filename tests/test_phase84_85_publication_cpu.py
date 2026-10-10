@@ -20,6 +20,19 @@ M = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(M)
 
 
+def test_narrative_text_wrap_preserves_privacy(tmp_path):
+    """Sphinx must not wrap a prose slash into an absolute-path-shaped token."""
+    source = tmp_path / "source"
+    source.mkdir()
+    (source / "conf.py").write_text("project='fixture'\nmaster_doc='index'\n")
+    (source / "index.rst").write_bytes((ROOT / "docs/wiki/phase84_85.rst").read_bytes())
+    output = tmp_path / "text"
+    subprocess.run([sys.executable, "-m", "sphinx", "-b", "text", str(source),
+                    str(output)], check=True, capture_output=True, text=True)
+    privacy = M.sibling("wiki_privacy")
+    assert not privacy.violations((output / "index.txt").read_text())
+
+
 @pytest.fixture(scope="module")
 def external_public(tmp_path_factory):
     output = tmp_path_factory.mktemp("phase78-external")
