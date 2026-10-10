@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed bounded Phase86/cleanup summary; diagnostic scope and privacy checks pass, no scientific behavior change.
+  - c9835f4fbbe54d9afcdd928b962f803258e58e17
   # Private cleanup manifest/packed-root restore, ordinary permissions and bounded aggregate memory; storage4, audit15 and docs279 tests pass. No scientific behavior or publication change.
   - d0ee00a58d3949fce4667d06fe60f54a39cf51f0
   # Reviewed evaluator-key and parent consistency guards;8 recursive fixtures pass.
