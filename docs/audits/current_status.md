@@ -1,5 +1,25 @@
 # Current repository audit status
 
+## Pair connection TRAIN result and fresh assessment plan — 2026-10-10
+
+Both matched jobs17122909/17122910 completed6000 updates and48000 presentations.
+Raw membership is102 versus182/256, accepted89 versus160/256, with65 collisions
+gaining the same target in both endpoints. Whole-event paired bounds are positive;
+continuum acceptance is0/256 in both, with no accepted source conflicts. These
+are TRAIN-only results, not generalization or physical B reconstruction. A
+versioned auxiliary source-error correction replaces a legacy schema mismatch;
+exact/background gates and original results are preserved. Refinement correct
+assignments are2073 versus2170/2224, omissions78 versus37, swaps73 versus17.
+
+An evaluation-only fresh600 assessment is preregistered before identity inventory
+or payload inspection:100/category, fixed final6000 checkpoints, fixed thresholds,
+full authenticated historical/current exclusion union and metadata-only seeded
+selection. Implementation675b02d4bf6179c03fc916f35f8a2dd377339029 adds guarded registry designation and
+revalidation, including explicit exclusion of the invalid historical60 cohort.
+Twenty-six focused regressions pass. No fitting, primary reservation, promotion
+or publication is planned. Source freeze and real identity/runtime admission
+remain required; earlier dated running-state entries are retained as provenance.
+
 ## Pair-message connection study running — 2026-10-10
 
 The reserved384 sampling-stream replication17122694 completed6000 updates and
