@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reserved384 training-order replication only;43 focused exposure/isolation/contract regressions pass, source freeze and real admission still required.
+  - d5c1b0fbb6ef6a532eac967aeec797eaf34a2b0d
   # Native TRAIN diagnostic now requires canonical selection train_split_only scope;71 focused tests pass, failed smoke17122662 preserved before model execution.
   - 27ff7b23a603d7c62b9acbfbc9bfff72775681b9
   # Correct information-probe detector kind/mode validation;70 focused tests pass, original failed smoke preserved; no scientific model change.
