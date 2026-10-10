@@ -7,8 +7,8 @@ retain their original populations and definitions; differences across cohorts
 are not controlled comparisons. Newly added tagging metrics remain unavailable
 for studies that did not record them.
 
-The :doc:`accumulated review through Phase83 <previous_studies>` links the latest
-completed historical sequence. Dated reports and complete downloads remain:
+The :doc:`Phase84–85 retrospective <phase84_85>` follows the
+:doc:`accumulated review through Phase83 <previous_studies>`. Dated reports and complete downloads remain:
 
 .. toctree::
    :maxdepth: 1

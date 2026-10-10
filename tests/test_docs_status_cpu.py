@@ -38,6 +38,7 @@ def evidence(tmp_path, monkeypatch):
         "reconstruction_phase75_review": {"reserved": True},
         "reconstruction_phase76_review": {"reserved": True},
         "reconstruction_phase83_review": {"reserved": True},
+        "reconstruction_phase85_review": {"reserved": True},
         "reconstruction_phase78_review": {"reserved": True},
         "reconstruction_phase77_review": {"reserved": True},
         "reconstruction_phase42_44_archive": {"reserved": True},
@@ -421,8 +422,8 @@ def test_current_repository_dashboard_surfaces_recorded_acceptance_values(tmp_pa
     assert manifest["pretraining"]["recorded_step"] == 54064 and manifest["pretraining"]["planned_steps"] == 108128
     assert manifest["pretraining"]["calibration_status"] == "PENDING"
     rendered_status = (tmp_path / "generated" / "index.rst").read_text().replace("\\-", "-")
-    assert "Phase83 completed optimizer-history diagnostic" in rendered_status
-    assert rendered_status.index("Phase83 completed optimizer-history diagnostic") < rendered_status.index("All studies")
+    assert "Phase85 completed pair-connection development" in rendered_status
+    assert rendered_status.index("Phase85 completed pair-connection development") < rendered_status.index("All studies")
     assert "Training-role evidence" in rendered_status
     assert "Phase78 training-only partition diagnosis" in rendered_status
     assert "Phase78 completed training-only partition diagnosis" not in rendered_status

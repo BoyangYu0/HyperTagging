@@ -183,3 +183,22 @@ The sidebar now links to the complete guide, study, download, API and catalogue
 indexes and retains search. Top breadcrumbs and previous/next links remain;
 the duplicate bottom navigation bar is omitted. No page, metric or search entry
 is removed. Full artifact checks measure the resulting capacity.
+
+Phase84–85 retrospective and inventory delivery
+-----------------------------------------------
+
+The completed Phase84–85 source cutoff is fixed independently of later private
+research. Only Phase85 is expanded; all earlier scientific pages and downloads
+remain. The new complete metric sources use the same bounded lossless fragment,
+subtree-deduplication and decoder design as the preceding retrospective.
+Scientific PID token fields are delivered as explicitly recorded PID code fields
+to avoid ambiguity with credential-field privacy rules; their values are retained.
+
+The previous basf2 build left less than2MiB under the unchanged256MiB bound.
+Current API inventory delivery now uses the existing bounded gzip/base32 envelope
+and a standalone decoder, preserving all canonical values and the decoded hash.
+The internal inventory remains available for complete coverage validation.
+Catalogue and repository metadata use compact JSON whitespace. These mutable
+coverage inventories change with source additions; historical scientific metric
+files and decoders are not rewritten. No byte, work, decoder-memory or time
+bound is raised. Complete builds still check links, privacy and regeneration.

@@ -1,5 +1,17 @@
 # Current repository audit status
 
+## Authorized Phase84–85 retrospective publication — 2026-10-10
+
+The explicitly authorized release integrates frozen scientific cutoff395abdd2
+with the published Phase83 lineage. Six scientific fits completed, but fresh
+raw and accepted B membership remains0/400 in both pair-connection arms.
+Continuum48/400 versus58/400 has paired95%CI[-0.0025,0.055]; the registered
+gate fails without establishing aggregate harm. The600-collision cohort is
+DEVELOPMENT ONLY. No generalization winner, model promotion or new scientific
+work follows. See the [complete retrospective](../wiki/phase84_85.rst).
+Exact publication CI and live receipts establish deployment, not this statement.
+Later research remains private and outside the frozen release.
+
 ## Exposure/information sequence terminal review — 2026-10-10
 
 All six scientific trainings are terminal exit0: exposure96/1536/384 and its

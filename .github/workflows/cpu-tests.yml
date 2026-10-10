@@ -2,7 +2,7 @@ name: CPU correctness
 
 on:
   push:
-    branches: [master, "codex/phase70-review-next-20261006", "codex/phase71-review-next-20261007", "codex/phase72-review-next-20261008", "codex/phase74-development-20261008", "codex/phase76-membership-20261009", "codex/phase77-proposal-20261009", "codex/phase78-partition-20261009", "codex/previous-studies-publication-20261009"]
+    branches: [master, "codex/phase70-review-next-20261006", "codex/phase71-review-next-20261007", "codex/phase72-review-next-20261008", "codex/phase74-development-20261008", "codex/phase76-membership-20261009", "codex/phase77-proposal-20261009", "codex/phase78-partition-20261009", "codex/previous-studies-publication-20261009", "codex/phase84-85-publication-20261010"]
   pull_request:
   workflow_dispatch:
     inputs:

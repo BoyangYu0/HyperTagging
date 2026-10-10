@@ -29,6 +29,7 @@ separately.
 - [Full-decay evaluation contract](docs/full_decay_reconstruction_evaluation.md)
 - [Assembly diagnosis and next-study policy](docs/assembly_diagnosis_20261007.md)
 - [basf2 and ONNX deployment](docs/basf2_onnx_full_decay.md)
+- [Phase84–85 exposure, information and pair connection](docs/wiki/phase84_85.rst)
 - [Previous studies through Phase83](docs/wiki/previous_studies.rst)
 - [Phase75 gradient-routing development review](docs/wiki/phase75.rst)
 - [Phase74 development factorial review](docs/wiki/phase74.rst)
