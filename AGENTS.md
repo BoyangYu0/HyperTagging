@@ -24,6 +24,40 @@ change, or accumulated evidence that substantially changes the recommendation.
 Incremental negative diagnoses and phase numbering alone do not qualify. Existing
 publication safeguards still apply whenever publication is warranted.
 
+## Continuing design/execution workflow (2026-10-10)
+
+The user requests: "continuously use high to design and medium to execute next
+studies, keep track of the experiments, update the git page only after
+significant findings". Use GPT-6-astra with high reasoning for scientific design
+and post-study review, and medium reasoning for implementation, admitted runs,
+evaluation and publication execution. Keep the standard/default service tier.
+
+Continue one reviewed study at a time across phase boundaries. The earlier
+parent-imposed two-contrast sequence limit is historical, not a limit on this
+new continuing authorization. Each individual study still needs a finite,
+preregistered protocol, authenticated cohort/source/resource admission and
+explicit stop/success rules. A negative study returns to high-reasoning review;
+it does not authorize an unreviewed successor or a blind sweep. Preserve the
+scientific policy and all frozen historical gates. Do not lower a threshold,
+change an endpoint, or repeatedly select samples to manufacture admission.
+
+Maintain an append-only experiment ledger with hypothesis, evidence, source,
+cohort and compute contracts, model/effort, jobs, metrics, failures, decision and
+next action. The controller and each worker must record actual process exits.
+Do not start another scientific study while the preceding one's jobs remain
+active. Continue with a justified diagnostic when training is unsupported;
+pause and notify the user for a genuine external blocker or no defensible next
+experiment, instead of repeating the same calls or inventing a result.
+
+Publish only after high-reasoning review identifies a supported substantial
+finding: a credible fresh-data performance improvement, a material correctness
+fix, or accumulated evidence that materially changes the recommendation.
+Phase numbering, a small negative diagnosis, lower training loss or an isolated
+proxy gain is insufficient. Keep per-study evidence private until that gate is
+met, and retain all existing publication/CI/privacy/live-verification checks.
+The separately authorized retrospective Phase84–85 publication may finish in
+its owned checkout; do not interfere with it or include later research there.
+
 ## Scope and working discipline
 
 - Work in this Git root. Historical sibling repositories are read-only
