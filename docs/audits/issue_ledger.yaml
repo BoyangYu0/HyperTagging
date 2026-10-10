@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Correct information-probe detector kind/mode validation;70 focused tests pass, original failed smoke preserved; no scientific model change.
+  - e3bec1c0c6f4789f4814eb759a8649cc545a0e66
   # Native hierarchy TRAIN-only applicability diagnostics;67 focused role/source/trace/gradient/budget tests pass. No real audit fitting or intervention admitted; Phase84 frozen exposure unchanged.
   - fcd0e7a6d53399ebae6f54d9c681eadaac6264b8
   # User-directed native hierarchy level-loss/PID applicability addendum; planning PASS only, active Phase84 source unchanged.
