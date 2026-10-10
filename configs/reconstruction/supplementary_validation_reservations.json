@@ -1,61 +1,54 @@
 {
-  "version": "supplementary-validation-reservations-v1",
   "reservations": [
     {
-      "version": "phase69-policy-reservation-binding-v1",
-      "status": "RESERVED",
-      "role": "validation",
+      "by_category": {
+        "ccbar": 2000,
+        "charged": 2000,
+        "ddbar": 2000,
+        "mixed": 2000,
+        "ssbar": 2000,
+        "uubar": 2000
+      },
       "cohort_manifest": {
         "artifact_relative_path": "phase69_policy_reevaluation_20261006/cohort.json",
         "sha256": "e0cb20d843527c4a949e3ece71c57ef2e4d56e24d9c841ce546f66339aa91b8f"
       },
       "prior_exclusion_count": 61000,
-      "reserved_count": 12000,
       "remaining_unreserved_count": 27000,
-      "by_category": {
-        "charged": 2000,
-        "mixed": 2000,
-        "ccbar": 2000,
-        "uubar": 2000,
-        "ddbar": 2000,
-        "ssbar": 2000
-      },
       "requirement": "Future adaptive study cohort builders must include this supplementary reservation in their exclusion union; never select from this cohort for training, normalization or checkpoint selection.",
-      "sealed_test_accessed": false
+      "reserved_count": 12000,
+      "role": "validation",
+      "sealed_test_accessed": false,
+      "status": "RESERVED",
+      "version": "phase69-policy-reservation-binding-v1"
     },
     {
-      "version": "phase70-policy-reservation-binding-v1",
-      "status": "RESERVED",
-      "role": "validation",
+      "by_category": {
+        "ccbar": 2000,
+        "charged": 2000,
+        "ddbar": 2000,
+        "mixed": 2000,
+        "ssbar": 2000,
+        "uubar": 2000
+      },
       "cohort_manifest": {
         "artifact_relative_path": "phase70_review_20261006/supplemental-v1/cohort.json",
         "sha256": "aab762084fde8e2b8b22a3f3f4932224d0e8d9a5bae8ebb05580f7696a1aa35c"
       },
       "prior_exclusion_count": 73000,
-      "reserved_count": 12000,
       "remaining_unreserved_count": 75000,
-      "by_category": {
-        "ccbar": 2000,
-        "charged": 2000,
-        "ddbar": 2000,
-        "mixed": 2000,
-        "ssbar": 2000,
-        "uubar": 2000
-      },
       "requirement": "Exclude this immutable supplemental cohort from all future training, fitting, selection and adaptive reservations. Repeated arms/scopes use the same identities.",
-      "sealed_test_accessed": false
+      "reserved_count": 12000,
+      "role": "validation",
+      "sealed_test_accessed": false,
+      "status": "RESERVED",
+      "version": "phase70-policy-reservation-binding-v1"
     },
     {
-      "version": "phase71-objective-reservation-binding-v1",
-      "status": "RESERVED",
-      "role": "validation",
       "cohort_manifest": {
         "artifact_relative_path": "phase70_review_20261006/phase71/reservation.json",
         "sha256": "d45b340d2cfc3e53ed180058233a29f3c1af3b41336358d6252a874ab0fc8be8"
       },
-      "prior_exclusion_count": 85000,
-      "reserved_count": 13000,
-      "remaining_unreserved_count": 62000,
       "primary_by_category": {
         "ccbar": 2000,
         "charged": 2000,
@@ -65,46 +58,66 @@
         "uubar": 2000
       },
       "primary_count": 12000,
-      "selection_count": 1000,
+      "prior_exclusion_count": 85000,
+      "remaining_unreserved_count": 62000,
       "requirement": "Exclude every event_uid from future training, fitting, selection and adaptive reservations. The separate 12000-event primary cohort is shared across arms/scopes; reservation is not processed coverage.",
-      "sealed_test_accessed": false
+      "reserved_count": 13000,
+      "role": "validation",
+      "sealed_test_accessed": false,
+      "selection_count": 1000,
+      "status": "RESERVED",
+      "version": "phase71-objective-reservation-binding-v1"
     },
     {
-      "version": "phase72-matched-daughter-objective-reservation-binding-v1",
-      "status": "RESERVED",
-      "role": "validation",
       "cohort_manifest": {
         "artifact_relative_path": "phase71_review_20261007/phase72/reservation.json",
         "sha256": "14a6dc3bbe67b4912629c3486004bfd2b1c5411cdb04906e13a406257ce0755d"
       },
-      "prior_exclusion_count": 98000,
-      "reserved_count": 13000,
-      "remaining_unreserved_count": 49000,
       "primary_by_category": {
-        "charged": 2000,
-        "mixed": 2000,
         "ccbar": 2000,
-        "uubar": 2000,
+        "charged": 2000,
         "ddbar": 2000,
-        "ssbar": 2000
+        "mixed": 2000,
+        "ssbar": 2000,
+        "uubar": 2000
       },
       "primary_count": 12000,
-      "selection_count": 1000,
+      "prior_exclusion_count": 98000,
+      "remaining_unreserved_count": 49000,
       "requirement": "Exclude every event_uid from future training, fitting, selection and adaptive reservations. Original primary cohort is shared across arms/scopes. Reservation is not processed coverage. No automatic successor.",
-      "sealed_test_accessed": false
+      "reserved_count": 13000,
+      "role": "validation",
+      "sealed_test_accessed": false,
+      "selection_count": 1000,
+      "status": "RESERVED",
+      "version": "phase72-matched-daughter-objective-reservation-binding-v1"
     },
     {
-      "version": "phase74-development-designation-v1",
-      "status": "DESIGNATED_DEVELOPMENT",
-      "stage": "development",
-      "role": "validation",
+      "authorization": "Explicit continuation user instruction permits fresh non-primary development designation",
+      "by_category": {
+        "ccbar": 100,
+        "charged": 100,
+        "ddbar": 100,
+        "mixed": 100,
+        "ssbar": 100,
+        "uubar": 100
+      },
       "cohort_manifest": {
         "artifact_relative_path": "phase74_training_20261008/continuation-v1/development-cohort.json",
         "sha256": "f6f8ff3503eb95b675cf91a88508d644f0a1af6b06a07b3712c64bc130606aa0"
       },
-      "reserved_count": 600,
       "primary_count": 0,
+      "requirement": "Exclude all600 fresh development assessment identities from future training, checkpoint selection, adaptive fitting and primary reservations. Fixed-final Phase74 assessment only; not policy-sized primary coverage.",
+      "reserved_count": 600,
+      "role": "validation",
+      "sealed_test_accessed": false,
       "selection_count": 0,
+      "stage": "development",
+      "status": "DESIGNATED_DEVELOPMENT",
+      "version": "phase74-development-designation-v1"
+    },
+    {
+      "authorization": "Explicit continuation user instruction permits fresh non-primary development designation",
       "by_category": {
         "ccbar": 100,
         "charged": 100,
@@ -113,22 +126,23 @@
         "ssbar": 100,
         "uubar": 100
       },
-      "requirement": "Exclude all600 fresh development assessment identities from future training, checkpoint selection, adaptive fitting and primary reservations. Fixed-final Phase74 assessment only; not policy-sized primary coverage.",
-      "authorization": "Explicit continuation user instruction permits fresh non-primary development designation",
-      "sealed_test_accessed": false
-    },
-    {
-      "version": "phase75-development-designation-v1",
-      "status": "DESIGNATED_DEVELOPMENT",
-      "stage": "development",
-      "role": "validation",
       "cohort_manifest": {
         "artifact_relative_path": "phase74_training_20261008/overnight-review-v1/development-cohort.json",
         "sha256": "f3680347fdc2b9d546671be9391f004c8af7094ae84fb29ff1a9e160e6784d6c"
       },
-      "reserved_count": 600,
       "primary_count": 0,
+      "purpose": "Fresh nonprimary heldout development for one controlled encoder-gradient projection study; no adaptive checkpoint selection",
+      "requirement": "Exclude all600 fresh development assessment identities from future training, checkpoint selection, adaptive fitting and primary reservations. Fixed-final Phase75 assessment only; not policy-sized primary coverage.",
+      "reserved_count": 600,
+      "role": "validation",
+      "sealed_test_accessed": false,
       "selection_count": 0,
+      "stage": "development",
+      "status": "DESIGNATED_DEVELOPMENT",
+      "version": "phase75-development-designation-v1"
+    },
+    {
+      "authorization": "Explicit Phase76 user instruction authorizes fresh non-primary development designation",
       "by_category": {
         "ccbar": 100,
         "charged": 100,
@@ -137,23 +151,22 @@
         "ssbar": 100,
         "uubar": 100
       },
-      "requirement": "Exclude all600 fresh development assessment identities from future training, checkpoint selection, adaptive fitting and primary reservations. Fixed-final Phase75 assessment only; not policy-sized primary coverage.",
-      "authorization": "Explicit continuation user instruction permits fresh non-primary development designation",
-      "sealed_test_accessed": false,
-      "purpose": "Fresh nonprimary heldout development for one controlled encoder-gradient projection study; no adaptive checkpoint selection"
-    },
-    {
-      "version": "phase76-development-designation-v1",
-      "status": "DESIGNATED_DEVELOPMENT",
-      "stage": "development",
-      "role": "validation",
       "cohort_manifest": {
         "artifact_relative_path": "phase76_membership_20261009/development-cohort.json",
         "sha256": "de1425f76d5f7dee9d99978003f4b1fe20951df7ce947c8f03f8ee3ce2b88fe5"
       },
-      "reserved_count": 600,
       "primary_count": 0,
+      "purpose": "Fresh nonprimary heldout development for controlled partial-context refinement ablation, no adaptive checkpoint selection",
+      "requirement": "Exclude all600 fresh development assessment identities from future training, checkpoint selection, adaptive fitting and primary reservations. Fixed-final Phase76 assessment only; not policy-sized primary coverage.",
+      "reserved_count": 600,
+      "role": "validation",
+      "sealed_test_accessed": false,
       "selection_count": 0,
+      "stage": "development",
+      "status": "DESIGNATED_DEVELOPMENT",
+      "version": "phase76-development-designation-v1"
+    },
+    {
       "by_category": {
         "ccbar": 100,
         "charged": 100,
@@ -162,11 +175,21 @@
         "ssbar": 100,
         "uubar": 100
       },
-      "requirement": "Exclude all600 fresh development assessment identities from future training, checkpoint selection, adaptive fitting and primary reservations. Fixed-final Phase76 assessment only; not policy-sized primary coverage.",
-      "authorization": "Explicit Phase76 user instruction authorizes fresh non-primary development designation",
+      "cohort_manifest": {
+        "artifact_relative_path": "phase84_exposure_information_20261009/level-addendum-integrated-v2/fresh-development-v1/designation-v1/development-cohort.json",
+        "sha256": "2fe908f1f724393dad5c706694a07bdb636a77e411a9bf077204a5174bc8ad75"
+      },
+      "primary_count": 0,
+      "requirement": "Exclude all identities from future fitting, normalization, selection, development and primary reservations; fixed-final paired development assessment only.",
+      "reserved_count": 600,
+      "role": "validation",
       "sealed_test_accessed": false,
-      "purpose": "Fresh nonprimary heldout development for controlled partial-context refinement ablation, no adaptive checkpoint selection"
+      "selection_count": 0,
+      "stage": "development",
+      "status": "DESIGNATED_DEVELOPMENT",
+      "version": "phase85-pair-connection-development-designation-v1"
     }
   ],
-  "storage_contract": "Resolve artifact_relative_path under the configured external HyperTagging artifact root; authenticate SHA-256 before consuming UIDs. See docs/repository_storage.md."
+  "storage_contract": "Resolve artifact_relative_path under the configured external HyperTagging artifact root; authenticate SHA-256 before consuming UIDs. See docs/repository_storage.md.",
+  "version": "supplementary-validation-reservations-v1"
 }
