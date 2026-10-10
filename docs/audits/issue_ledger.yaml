@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed prose-only text-wrap privacy repair and rendered-text regression; frozen metric transport unchanged, drafting provenance gaps disclosed.
+  - d0ad9cd2699572a98d0b16ff9bb2cf415ae9dc7a
   # Reviewed documentation fixture update for102 sources and API inventory contract;322 full documentation/archive CPU regressions pass.
   - 07bd2d157ca66c77ad8fde61f3b4116e2bf7e2e6
   # Reviewed heading-length correction and opaque packager privacy errors; scientific data and transport unchanged.
