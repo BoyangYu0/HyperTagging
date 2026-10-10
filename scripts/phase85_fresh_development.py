@@ -179,7 +179,57 @@ def check_rows(rows, *, expected_uids, per_category=None):
         )
 
 
-def fresh_rows(request, original_cache, legacy, output, started):
+def normalization_metadata(request, train_cache, cache_admission, legacy):
+    """Read only bound checkpoint metadata; never reopen a mixed-role event cache."""
+    import torch
+    from hypertagging.data.streaming import (
+        RuntimeFeatureNormalizer,
+        StreamingMaskedFeatureNormalizer,
+    )
+
+    require(
+        set(train_cache) == {"train", "runtime_normalizer"},
+        "Expected actual TRAIN-only cache schema",
+    )
+    provenance = request["normalizer_checkpoint"]
+    require(
+        provenance in cache_admission["bindings"],
+        "Normalizer checkpoint absent from TRAIN cache provenance",
+    )
+    payload = torch.load(checked(provenance), map_location="cpu", weights_only=False)
+    state = payload.get("normalizer_state", {})
+    contract = payload.get("feature_contract", {})
+    require(
+        {"track", "cluster", "common", "composite"} <= set(state)
+        and bool(contract.get("reconstruction_constraint_policy")),
+        "Incomplete authenticated normalization metadata",
+    )
+    blocks = {}
+    for name in ("common", "composite"):
+        block = StreamingMaskedFeatureNormalizer()
+        block.load_state_dict(state[name])
+        blocks[name] = block
+    runtime = RuntimeFeatureNormalizer(
+        common_mean=blocks["common"].mean,
+        common_std=blocks["common"].std,
+        composite_mean=blocks["composite"].mean,
+        composite_std=blocks["composite"].std,
+        common_count=blocks["common"].count,
+        composite_count=blocks["composite"].count,
+    )
+    legacy.equal_tree(
+        runtime.state_dict(),
+        train_cache["runtime_normalizer"].state_dict(),
+        "TRAIN cache versus provenance runtime normalizer",
+    )
+    return dict(
+        normalizer_state=state,
+        source_feature_contract=contract,
+        normalization_checkpoint=provenance,
+    )
+
+
+def fresh_rows(request, original_cache, metadata, legacy, output, started):
     from scripts.phase85_fresh_development_data import revalidate
     from hypertagging.evaluation.trained_context import load_trained_evaluation_context
     import torch
@@ -201,12 +251,12 @@ def fresh_rows(request, original_cache, legacy, output, started):
     )
     legacy.equal_tree(
         ctx.checkpoint["normalizer_state"],
-        original_cache["normalizer_state"],
+        metadata["normalizer_state"],
         "static normalizer",
     )
     legacy.equal_tree(
         ctx.checkpoint["feature_contract"],
-        original_cache["source_feature_contract"],
+        metadata["source_feature_contract"],
         "feature contract",
     )
     legacy.equal_tree(
@@ -231,8 +281,8 @@ def fresh_rows(request, original_cache, legacy, output, started):
             dict(
                 development=rows,
                 runtime_normalizer=original_cache["runtime_normalizer"],
-                normalizer_state=original_cache["normalizer_state"],
-                source_feature_contract=original_cache["source_feature_contract"],
+                normalizer_state=metadata["normalizer_state"],
+                source_feature_contract=metadata["source_feature_contract"],
             ),
             stream,
         )
@@ -521,6 +571,7 @@ def evaluate(request, mode, output):
         return value
 
     metric.paired_ratio = fresh_ratio
+    metadata = normalization_metadata(request, original, cache_admission, legacy)
     selected = nested(original["train"], 384)
     require(
         [r["uid"] for r in selected] == read(training["admission"])["selection"],
@@ -535,7 +586,7 @@ def evaluate(request, mode, output):
         )
 
         policy = ReconstructionConstraintPolicy.from_dict(
-            original["source_feature_contract"]["reconstruction_constraint_policy"]
+            metadata["source_feature_contract"]["reconstruction_constraint_policy"]
         )
         for row in rows:
             projected = encode_normalized(
@@ -556,7 +607,7 @@ def evaluate(request, mode, output):
             "Stale evaluation admission",
         )
         resource_guard(start)
-        rows = fresh_rows(request, original, legacy, output, start)
+        rows = fresh_rows(request, original, metadata, legacy, output, start)
         resource_guard(start)
     reports, evaluations, timings, observed = {}, {}, {}, {}
     for arm in ARMS:

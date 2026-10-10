@@ -320,3 +320,65 @@ def test_restore_uses_trained_weights_and_rejects_normalizer_change(
         original["runtime_normalizer"].weight.fill_(9)
     with pytest.raises(ValueError, match="normalizer"):
         runner.restore(req, original, "connection_on", legacy)
+
+
+def test_actual_train_only_schema_uses_bound_checkpoint_metadata(tmp_path, monkeypatch):
+    from hypertagging.data.streaming import (
+        RuntimeFeatureNormalizer,
+        StreamingMaskedFeatureNormalizer,
+    )
+
+    block = StreamingMaskedFeatureNormalizer()
+    block.load_state_dict(
+        dict(
+            count=torch.ones(3) * 4, mean=torch.arange(3).float(), m2=torch.ones(3) * 4
+        )
+    )
+    runtime = RuntimeFeatureNormalizer(
+        common_mean=block.mean,
+        common_std=block.std,
+        composite_mean=block.mean,
+        composite_std=block.std,
+        common_count=block.count,
+        composite_count=block.count,
+    )
+    # Exactly the production Phase81 schema: deliberately no static/feature metadata.
+    cache = {"train": [], "runtime_normalizer": runtime}
+    payload = dict(
+        normalizer_state={
+            name: block.state_dict()
+            for name in ("track", "cluster", "common", "composite")
+        },
+        feature_contract={"reconstruction_constraint_policy": {"test_fixture": True}},
+    )
+    path = tmp_path / "bound-normalization.pt"
+    torch.save(payload, path)
+    b = runner.binding(path)
+    request = {"normalizer_checkpoint": b}
+    admission = {"bindings": [b]}
+    original_load = torch.load
+    opened = []
+
+    def load(path, *args, **kwargs):
+        opened.append(str(path))
+        return original_load(path, *args, **kwargs)
+
+    monkeypatch.setattr(torch, "load", load)
+
+    def equal(a, b, name):
+        if a.keys() != b.keys() or any(not torch.equal(a[k], b[k]) for k in a):
+            raise ValueError(name)
+
+    legacy = SimpleNamespace(equal_tree=equal)
+    metadata = runner.normalization_metadata(request, cache, admission, legacy)
+    assert metadata["source_feature_contract"] == payload["feature_contract"]
+    assert set(cache) == {"train", "runtime_normalizer"}
+    assert opened == [
+        str(path)
+    ]  # No historical cache, development rows or dataset opened.
+    with pytest.raises(ValueError, match="provenance"):
+        runner.normalization_metadata(request, cache, {"bindings": []}, legacy)
+    with torch.no_grad():
+        cache["runtime_normalizer"].common_mean.add_(1)
+    with pytest.raises(ValueError, match="runtime normalizer"):
+        runner.normalization_metadata(request, cache, admission, legacy)
