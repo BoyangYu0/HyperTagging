@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed publication merge preserves 300 published evidence files, both histories and the final privacy cache; Phase86 source identifiers append after published entries. Final exact-source checks retained separately.
+  - bfd14da2766d2be69e831e7e493c9851a384c066
   # Phase86 publication requires bound source identity and unchanged passing source-set gate;7 integrity/scope regressions pass.
   - cb5421070fa48811e10beb7e980977c54b5dc82f
   # Withdraw overlapping private cache to preserve the separate publisher's final implementation;75 focused checks pass. Prototype commits/receipts remain immutable.
