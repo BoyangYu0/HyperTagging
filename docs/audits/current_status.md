@@ -1,5 +1,15 @@
 # Current repository audit status
 
+## Private structural diagnostic preparation — 2026-10-10
+
+Reviewed implementationcd0fa4d26c45e267415da57bf1849331cbd33987 adds opt-in detached post-PID
+decoder traces and an all-round TRAIN first-failure audit.210 focused CPU
+regressions pass, including unchanged baseline predictions and truth separation.
+The new finite authorization is separate from the concluded exposure campaign.
+No new scientific training or outcome claim is made; runtime admission remains
+required. Historical height-indexed455-target diagnostics remain unchanged.
+Research artifacts and subsequent decisions stay private; no publication here.
+
 ## Exposure/information sequence terminal review — 2026-10-10
 
 All six scientific trainings are terminal exit0: exposure96/1536/384 and its
