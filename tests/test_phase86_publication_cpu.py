@@ -13,11 +13,16 @@ M = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(M)
 
 
-def test_frozen_scope_and_lossless_summary(tmp_path):
+def test_frozen_scope_and_lossless_selected_aggregates(tmp_path):
     result = M.generate(ROOT, tmp_path)
     raw = (tmp_path / 'phase86-cleanup-summary.json').read_bytes()
-    assert raw == (ROOT / M.SOURCE / 'summary.json').read_bytes()
+    source = (ROOT / M.SOURCE / 'summary.json').read_bytes()
     value = json.loads(raw)
+    original = json.loads(source)
+    assert set(value) == {'schema', 'source_summary_sha256', 'cutoff', 'phase86', 'cleanup', 'cr001'}
+    assert value['source_summary_sha256'] == hashlib.sha256(source).hexdigest()
+    assert all(value[key] == original[key] for key in ('phase86', 'cleanup', 'cr001', 'cutoff'))
+    assert raw != source
     assert result['source_set_gates_passed']
     assert not result['recursive_topology_pid_reachability_verified']
     assert result['branches']['generation']['necessary_height_deep_fit'] == 4

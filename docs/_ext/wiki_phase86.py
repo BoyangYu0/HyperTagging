@@ -26,9 +26,21 @@ def generate(root, output):
             or phase['fresh_development_events'] or phase['complete_evaluation']
             or phase['recursive_topology_pid_reachability_verified']):
         raise ValueError('Phase86 diagnostic scope changed')
-    (output / 'phase86-cleanup-summary.json').write_bytes(raw)
+    # Publish a named aggregate projection, not a byte-for-byte source mirror.
+    # The source summary authenticates private report bindings; its digest is
+    # sufficient public provenance without copying that transport registry.
+    published = {
+        'schema': 'phase86-cleanup-public-download-v1',
+        'source_summary_sha256': binding['sha256'],
+        'cutoff': value['cutoff'],
+        'phase86': phase,
+        'cleanup': value['cleanup'],
+        'cr001': value['cr001'],
+    }
+    encoded = (json.dumps(published, sort_keys=True, indent=2, allow_nan=False) + '\n').encode()
+    (output / 'phase86-cleanup-summary.json').write_bytes(encoded)
     return phase | {'metric_download': {'filename': 'phase86-cleanup-summary.json',
-                    'bytes': len(raw), 'sha256': binding['sha256']}}
+                    'bytes': len(encoded), 'sha256': hashlib.sha256(encoded).hexdigest()}}
 
 
 def render(value):
