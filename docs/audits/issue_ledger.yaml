@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed numeric prose spacing after browser inspection; all nonwhitespace characters and metric archives unchanged, warning-as-error narrative regression passes.
+  - 9dba5adbb3b63b58569fe84810c4891b90d6e5a5
   # Reviewed RST heading and strong-markup correction; isolated complete narrative renders without Sphinx warnings and passes privacy rules.
   - 796f5394b4e8bc3eeb445ce6849cf4c237a2cd1e
   # Reviewed prose-only text-wrap privacy repair and rendered-text regression; frozen metric transport unchanged, drafting provenance gaps disclosed.
