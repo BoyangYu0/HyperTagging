@@ -79,7 +79,7 @@ def selection(tmp_path):
     return {
         "data_root": str(tmp_path),
         "selection_includes_test": False,
-        "normalizer_scope": "train",
+        "normalizer_scope": "train_split_only",
         "entries": [
             {"split": "train", "path": "train.parquet"},
             {"split": "validation", "path": "validation.parquet"},
@@ -97,6 +97,14 @@ def test_train_paths_never_include_validation(tmp_path):
             train_paths(changed)
     d["selection_includes_test"] = True
     with pytest.raises(ValueError, match="Sealed"):
+        train_paths(d)
+
+
+@pytest.mark.parametrize("scope", ["train", "validation", "all", None])
+def test_train_paths_require_native_selection_normalization_scope(tmp_path, scope):
+    d = selection(tmp_path)
+    d["normalizer_scope"] = scope
+    with pytest.raises(ValueError, match="normalization"):
         train_paths(d)
 
 

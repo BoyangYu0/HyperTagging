@@ -57,7 +57,7 @@ def train_uids(document):
 def train_paths(selection):
     if (
         selection.get("selection_includes_test") is not False
-        or selection.get("normalizer_scope") != "train"
+        or selection.get("normalizer_scope") != "train_split_only"
     ):
         raise ValueError("Sealed-test or normalization scope changed")
     base = Path(selection["data_root"]).resolve()

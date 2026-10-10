@@ -1,5 +1,31 @@
 # Current repository audit status
 
+## Phase84 information terminal and native admission correction — 2026-10-10
+
+Information diagnostic17122661 completed all four fixed2048-update probes.
+On384 event-disjoint TRAIN assessment identities, detector versus embedding
+conditional same/cross-B AUC is0.5563 versus0.5309, but balanced three-class
+recall is0.4922 versus0.5494. Both exceed their shuffled controls. The registered
+combined detector-superiority gate fails. Detector background pair errors are
+lower when pooled, but higher in every continuum category; pair confusion is
+not event fake-B acceptance. This does not demonstrate information loss,
+reconstruction improvement, or support automatic pretraining/data expansion.
+No validation identities or scientific encoder updates were used.
+
+Corrected information smoke17122654 passed. Its two-update timing extrapolation
+was rejected; one preregistered64-update/head discarded timing fixture17122660
+passed the unchanged3300s/12GiB admission limits using the slowest inclusive
+head time for all four fits. Original failures and resource receipts remain.
+Source61d62916 broad checks passed2639 tests with34 skips, both tiny CPU dry
+runs, audit integrity/views and fixture cleanup.
+
+Native hierarchy smoke17122662 stopped before model execution because the new
+diagnostic loader incorrectly expected selection normalization scope `train`.
+The canonical authenticated selection contract uses `train_split_only`.
+The loader now requires that exact value, with negative scope regressions;
+checkpoint statistics, native losses, physics constraints and all historical
+receipts remain unchanged. New source freeze and runtime admission are required.
+
 ## Phase84 exposure endpoints and information admission correction — 2026-10-10
 
 Jobs17121121/17121473/17121936 completed their fixed6000 updates and48000
