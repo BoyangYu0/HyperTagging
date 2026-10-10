@@ -1,5 +1,39 @@
 # Current repository audit status
 
+## Exposure/information sequence terminal review — 2026-10-10
+
+All six scientific trainings are terminal exit0: exposure96/1536/384 and its
+sampling-seed replication17121121/17121473/17121936/17122694, followed by matched
+pair-message connection off/on17122909/17122910. Each used6000 updates and48000
+presentations within2 CPUs/32GiB/8h, noGPU/requeue. Small-pool learnability and
+TRAIN384 connection gains do not establish full1536 convergence or generalization.
+
+Fresh fixed-checkpoint evaluation17123307 completed600 authenticated development
+collisions,100/category, with zero fitting. Both arms recover0/400 raw and accepted
+B source sets; continuum acceptance is48 versus58/400. Paired overall difference
+is0.025 with95% interval[-0.0025,0.055]; ccbar is20 versus32/100, difference0.12
+with interval[0.03,0.21]. The frozen exact and background gates fail. Source validity
+and coverage pass. Independent terminal review17123322 confirms joins, counts,
+paired uncertainty and gates; complete channel/source-size/category evidence and
+truth-free traces remain private. Empirical all-zero intervals do not establish
+population equivalence, and one fitted pair does not assess training-seed variance.
+
+Corrected evaluator source213401916a6aa6569b1aafaed4e8bed67d497bb3 passed2739 CPU tests with34 skips, both
+training dry runs, audit checks and fixture cleanup in17123265. TRAIN-only runtime
+admission17123261 passed canonical projection, normalization and deterministic
+checkpoint checks before fresh predictions. Its failed predecessor17123248 remains
+preserved. No scientific source/checkpoint or endpoint changed during evaluation.
+
+Information probes give mixed detector/embedding evidence, not support for a new
+pretraining campaign. The native hierarchy audit does not identify a specific
+head-weight/PID-prior contrast; existing level weights and soft type prior remain.
+The conditional diversity study was declined before fresh outcomes because the
+full1536 trainability prerequisite failed. This accepted sequence is concluded:
+no primary reservation, model promotion, additional study or publication here.
+Earlier running-state entries below are dated provenance, superseded by this
+terminal review. Research evidence is under phase84_exposure_information_20261009/
+level-addendum-integrated-v2; the separate publisher owns historical studies.
+
 ## Fresh evaluator metadata admission correction — 2026-10-10
 
 Full CPU17123218 passed2738 tests with34 skips, both dry runs and audit/cleanup
