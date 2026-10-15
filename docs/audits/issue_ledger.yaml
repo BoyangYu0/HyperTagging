@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Correct generated RST title underline and add focused coverage; no scientific value, evidence transport or limit change. Incomplete earlier build retained as stopped.
+  - ff776dd45976c7ce184c9998169b54a45297cadb
   # Append owned CR032 publication branch to CPU push triggers for existing guarded promotion; assertions, resource bounds and scientific exports unchanged.
   - d89f468e0514aa3af2deacbea234eba94adffdd8
   # AST-identical formatting of reviewed exporter/tests; late handoff edit invalidated first stable-source receipt, repeated final checks required.
