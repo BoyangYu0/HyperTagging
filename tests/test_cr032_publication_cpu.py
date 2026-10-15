@@ -76,10 +76,13 @@ def test_private_identity_and_operational_fields_absent():
     def walk(value):
         if isinstance(value, dict):
             assert not forbidden.intersection(value)
-            for child in value.values(): walk(child)
+            for child in value.values():
+                walk(child)
         elif isinstance(value, list):
-            for child in value: walk(child)
-    for value in documents().values(): walk(value)
+            for child in value:
+                walk(child)
+    for value in documents().values():
+        walk(value)
     # Failed attempts remain visible, with actual status and exit.
     resources = documents()['cr009-resources']
     assert resources['first_failed_attempt_retained']

@@ -62,11 +62,13 @@ def stats(value):
         if isinstance(v, dict):
             result['objects'] += 1
             result['object_fields'] += len(v)
-            for child in v.values(): walk(child)
+            for child in v.values():
+                walk(child)
         elif isinstance(v, list):
             result['arrays'] += 1
             result['array_items'] += len(v)
-            for child in v: walk(child)
+            for child in v:
+                walk(child)
         else:
             result['scalars'] += 1
             if isinstance(v, (int, float)) and not isinstance(v, bool):
@@ -80,11 +82,15 @@ def field_schema(value):
     result = {}
     def walk(v, path):
         if isinstance(v, dict):
-            if not v: result.setdefault(path, set()).add('empty_object')
-            for key, child in v.items(): walk(child, path+'.'+key)
+            if not v:
+                result.setdefault(path, set()).add('empty_object')
+            for key, child in v.items():
+                walk(child, path+'.'+key)
         elif isinstance(v, list):
-            if not v: result.setdefault(path, set()).add('empty_array')
-            for child in v: walk(child, path+'[]')
+            if not v:
+                result.setdefault(path, set()).add('empty_array')
+            for child in v:
+                walk(child, path+'[]')
         else:
             result.setdefault(path, set()).add(type(v).__name__)
     walk(value, '$')
