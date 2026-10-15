@@ -27,3 +27,13 @@ def test_review_renders_without_warnings_or_private_tokens(tmp_path):
     assert '50/64' in rendered and '61/64' in rendered
     assert 'not proved achievable' in rendered
     assert '2,565' in rendered and '4,293' in rendered
+
+
+def test_generated_review_heading_underlines_are_complete():
+    spec = importlib.util.spec_from_file_location('cr032_render', ROOT / 'docs/_ext/wiki_cr032.py')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    lines = module.render({})
+    for index, line in enumerate(lines):
+        if index and line and set(line) <= {'=', '-'}:
+            assert len(line) >= len(lines[index - 1])

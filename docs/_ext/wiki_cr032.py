@@ -84,7 +84,7 @@ def generate(root, output):
 def render(value):
     return [
         'CR032: fixed acceptance gate infeasible',
-        '--------------------------------------', '',
+        '---------------------------------------', '',
         'All 64 nominal B trials in 32 TRAIN collisions were processed; none failed or lacked membership truth.',
         'Fourteen target source groups have immutable detector charge outside the allowed mother-charge union',
         'of −1, 0 and +1. Exact daughter sums therefore cap accepted recovery at 50/64 (78.125%),',
