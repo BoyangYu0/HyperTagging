@@ -1,5 +1,23 @@
 # Current repository audit status
 
+## Fixed native membership gate feasibility — 2026-10-15
+
+CR032 audited all 64 nominal B units in the fixed 32-collision TRAIN panel.
+Fourteen immutable detector-charge obstructions cap accepted membership at
+50/64, below the unchanged 61/64 tiny-gate requirement. The raw upper bound
+is 64/64. This is a necessary bound; the remaining 50 are not proved achievable.
+Archived mixed recovery remains 1/64 raw and accepted. No new model calls,
+training, fresh confirmation or complete post-study evaluation occurred.
+
+This supports prospective retained-target/source-provenance contract review,
+while preserving every nominal target and physics constraint. It does not
+explain the remaining learning gap or authorize a revised threshold, subset,
+corpus growth or model promotion. The completed CR009 sampling comparison
+failed its original tiny gates and increased continuum fake acceptance.
+See the [dated review](../wiki/cr032.rst) for scoped counts, uncertainty,
+complete reduced metric downloads and immutable scientific source lineage.
+Earlier retrospective cutoffs below remain historical evidence.
+
 ## Authorized cleanup and Phase86 retrospective — 2026-10-10
 
 This release integrates portable cleanup recovery with the completed Phase86

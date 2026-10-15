@@ -13,6 +13,7 @@ The :doc:`Phase84–85 retrospective <phase84_85>` follows the
 .. toctree::
    :maxdepth: 1
 
+   cr032
    phase86
    phase78
    phase77

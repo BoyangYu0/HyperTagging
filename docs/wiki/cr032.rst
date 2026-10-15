@@ -1,0 +1,221 @@
+CR032: a fixed acceptance gate is infeasible
+============================================
+
+Reviewed 15 October 2026. The fixed native TRAIN panel cannot meet its
+unchanged accepted-membership gate under the existing target and decoder
+contracts. **Fourteen of 64 nominal B groups have incompatible immutable
+detector charge. Accepted recovery is therefore at most 50/64, below the
+required 61/64.** This is a feasibility finding, not a reconstruction gain.
+Observed archived mixed recovery remains 1/64 raw and accepted.
+
+Scope and necessary bound
+-------------------------
+
+CR032 audited exactly 32 previously used TRAIN collisions: 16 charged and
+16 mixed, contributing 64 nominal B trials. All 64 were processed; failed
+and membership-unavailable counts are both zero. Every original trial remains
+in the denominator. Scientific source is
+``6e1b5bd4a34a9a70174baf1099a01847ba7c0a1f``.
+
+.. list-table:: Fixed-panel certificate accounting
+   :header-rows: 1
+
+   * - Quantity
+     - Count
+   * - Charged-category obstructed units
+     - 8/32
+   * - Mixed-category obstructed units
+     - 6/32
+   * - Raw membership upper bound
+     - 64/64
+   * - Accepted membership upper bound
+     - 50/64
+   * - Accepted event-any upper bound
+     - 31/32
+   * - Accepted event-both upper bound
+     - 19/32
+   * - Unchanged raw and accepted requirement, each
+     - 61/64
+
+Persistent composite charge is the exact daughter sum. Across every allowed
+mother and all six rounds, accepted mother charges are restricted to
+{-1, 0, +1}. Fourteen target source groups have immutable charge outside that
+union: charge -3 for two groups, -2 for five, +2 for six and +4 for one.
+All 64 charge certificates are available. Missing identities, capacity,
+singleton and within-group alias checks certify no additional obstruction;
+cross-unit alias checks are false for all 32 events. Optional unavailable
+certificates remain optimistic, not measured failures. No archived positive
+witness is certified impossible.
+
+Raw bounds omit accepted charge constraints. The remaining 50 groups are
+**not proved achievable**: source-set and charge compatibility establish
+neither legal decoder reachability nor recursive topology/PID correctness.
+Physical mass/PID optimization is unavailable. Intrinsic target height and
+decoder round remain distinct. Whole-event bounds preserve joint source
+ownership, including retained internal composites. Certificates are never
+counted as reconstructed tags.
+
+Earlier flat studies had already identified charge incompatibility on their
+own panels. CR032 establishes the consequence for this unchanged native gate;
+it does not rename the earlier observation as a new learning method.
+
+Completed sampling comparison: CR009 context
+--------------------------------------------
+
+The user-authorized mixed-versus-generic-B comparison is completed historical
+TRAIN evidence, not new execution for this publication. Its scientific source
+is ``6ca8ef769c5137e1c5347d879372dbf0fe7c6472``. Mixed training used 4,376
+updates and 35,008 primary presentations; generic-B used 4,166 and 33,328.
+A frozen intermediate generic checkpoint at 3,416 updates supplied the separate
+matched-B-exposure comparison. Matched B presentations were 27,328 versus
+27,326; category/level exposure and actual CPU were not identical. Primary
+node-squared exposure proxies were 170,053,816 and 170,051,240, not measured
+FLOP equality. Initialization, seed, native architecture, losses, normalization
+support, thresholds and inference policy were controlled.
+
+.. list-table:: Original endpoints; all tiny gates failed
+   :header-rows: 1
+
+   * - Checkpoint
+     - Raw groups of 64
+     - Accepted groups of 64
+     - Raw event any; both of 32
+     - Accepted event any; both of 32
+     - Continuum fake events of 64
+   * - Mixed, 4,376 updates
+     - 1
+     - 1
+     - 1; 0
+     - 1; 0
+     - 10
+   * - Generic-B, 4,166 updates (primary)
+     - 5
+     - 3
+     - 4; 1
+     - 3; 0
+     - 27
+   * - Generic-B, 3,416 updates (matched B exposure)
+     - 4
+     - 2
+     - 3; 1
+     - 2; 0
+     - 26
+
+All membership successes are in charged events; mixed-category recovery is
+0/32 for each checkpoint. Available B trials are 64 each, unavailable zero.
+Raw/accepted failed trials are 63/63, 59/61 and 60/62, respectively.
+Shared exact tree/PID B tagging is 0/64 for every checkpoint. Shared inclusive
+source grouping is 1/64, 3/64 and 2/64; event-both success is zero throughout.
+Greedy top-1 and retained pool-at-one counts coincide; there is no beam study.
+
+The primary accepted difference is +3.125 percentage points, with paired 95%
+interval [0, 7.8125]. Continuum fake-event acceptance rises by 26.5625 points,
+with interval [14.0625, 39.0625]. Matched fake acceptance is unavailable.
+These are the saved whole-event, category-stratified bootstrap results,
+using 10,000 shared resamples; no bootstrap was rerun for publication.
+A single adaptive TRAIN panel and one training seed do not establish
+population generalization or seed robustness. The registered directional
+support gate failed.
+
+.. list-table:: Recursive target and deep-proposal diagnostics
+   :header-rows: 1
+
+   * - Checkpoint
+     - Recursive topology of 375
+     - Topology and PID of 375
+     - Deep generated of 179
+     - Deep retained of 179
+   * - Mixed primary
+     - 19
+     - 16
+     - 2
+     - 1
+   * - Generic-B primary
+     - 31
+     - 19
+     - 7
+     - 6
+   * - Generic-B matched exposure
+     - 32
+     - 19
+     - 8
+     - 7
+
+All 375 original retained mother targets remain scored, including incompatible
+ones. Proposal source-set support is distinct from accepted groups, exact
+recursive topology and legal reachability. The complete downloads retain
+channel/type/category, source-size, intrinsic-height, round, exposure,
+shared tag/inclusive, background and uncertainty tables with availability
+statuses. Continuum retained-component recovery is separate from fake B
+acceptance; parton ancestry and generator-quark reconstruction are unavailable.
+
+Each checkpoint assessed the same 96 TRAIN collisions: 16 per category in
+charged, mixed, ccbar, uubar, ddbar and ssbar. All processed, with zero failed
+or unavailable collision assessments. The 32 B collisions are resubstitution;
+the 64 continuum collisions are optimizer-disjoint but not held out from
+encoder pretraining or normalization. The 288 checkpoint-event assessments
+still represent only 96 distinct collisions. Total optimizer/assessment union
+is 176 identities. Mixed selected 112 optimizer identities but actually
+presented 91; generic presented all 32 selected identities. Unexposed selected
+targets remain in their original denominators. Complete evaluation would
+require at least 2,000 distinct collisions in each category per arm; this
+comparison is short by 1,984 per category per checkpoint. No fresh confirmation
+or sealed-test evaluation occurred.
+
+All 288 assessed states passed recursive daughter-sum p4/charge closure,
+structural validity and zero source-conflicting mother checks. Closure is an
+implementation invariant, not a momentum-resolution measurement. Strict
+inference used detector inputs only; truth joined after generation.
+
+Operations, evidence and limitations
+------------------------------------
+
+CR032 performed zero updates, checkpoint loads, model calls, rollouts or new
+candidate generation. It consumed all 32 selected payloads and 32 archive
+rows, transported within 96 archive rows. Consumer wall time was 69.510 s,
+CPU time 71.566 s and maximum resident memory 995,680 KiB. Allocation elapsed
+was 98.030 s. The allocation used two CPUs, no GPU, 32 GiB memory and an
+eight-hour ceiling without automatic requeue. Independent review recomputed
+all 64 certificates and found no positive-witness contradiction.
+
+CR009 completed both fits after one failed mixed preparation attempt. The
+failed attempt remains in resource accounting. Completed mixed and generic
+allocations elapsed 3:58:48 and 3:50:36, with CPU totals 7:28:15 and 7:05:16;
+peak monitored memory was 5.342 and 9.080 GiB. Its training/evaluation resource
+and exposure tables remain separate from the zero-fitting CR032 audit.
+
+A documented CR009 telemetry classification correction separates assessment
+calls accidentally counted again in the PID-diagnostic subset. Raw subset
+receipts retain 4,293 model calls, 8,586 encoder calls and 22,248 presentations;
+the corrected training-only totals are 2,565, 5,130 and 20,520. The difference
+is the assessment workload. Overall counts, optimizer behavior and scientific
+outcomes are unaffected; no model or bootstrap was rerun. Downloads preserve
+both raw accounting and its explicit correction.
+
+CR032 supplies no new tagging, deep-proposal, round-specific, continuum or
+recursive-topology performance. The inherited CR027 shared evaluation is
+archived control evidence, not new CR032 performance. The fixed-panel logical
+ceiling is exact for its assumptions; it is not a corpus-wide prevalence
+estimate. Neither study establishes physical full-tree or FEI-equivalent
+efficiency, complete post-study coverage, fresh-data improvement or robustness
+across seeds.
+
+The :doc:`metric catalogue <_generated/status/downloads>` provides complete
+privacy-safe scoped metrics, exact saved precision, availability fields,
+source hashes and a decoder. Event identities, private unit proofs, machine
+locations, raw payloads and checkpoints remain outside the public artifact.
+The :doc:`Phase84–85 <phase84_85>` and :doc:`Phase86 <phase86>` releases and
+their downloads remain unchanged, including the historical unfinished CR001
+infrastructure cutoff.
+
+Consequence for the campaign
+----------------------------
+
+Further parameter, loss or threshold trials aimed solely at passing this
+impossible fixed-panel accepted gate are not justified. The next design
+review should examine the retained-target and source-provenance contract
+prospectively, preserving all 64 nominal trials and the physics constraints.
+The observed 1/64 remains far below the optimistic 50/64 ceiling; the audit
+does not explain that remaining learning gap. A measured learning mechanism
+may still justify future training. This publication admits no revised gate,
+easier subset, new cohort, corpus expansion, model promotion or new study.

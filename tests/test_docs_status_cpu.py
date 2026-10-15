@@ -34,6 +34,7 @@ def evidence(tmp_path, monkeypatch):
     monkeypatch.delenv("SOURCE_DATE_EPOCH", raising=False)
     monkeypatch.setattr(status, "_git", lambda *_args: None)
     documents = {
+        "reconstruction_cr032_review": {"reserved": True},
         "reconstruction_phase86_review": {"reserved": True},
         "reconstruction_phase74_review": {"reserved": True},
         "reconstruction_phase75_review": {"reserved": True},
@@ -423,12 +424,13 @@ def test_current_repository_dashboard_surfaces_recorded_acceptance_values(tmp_pa
     assert manifest["pretraining"]["recorded_step"] == 54064 and manifest["pretraining"]["planned_steps"] == 108128
     assert manifest["pretraining"]["calibration_status"] == "PENDING"
     rendered_status = (tmp_path / "generated" / "index.rst").read_text().replace("\\-", "-")
-    assert "Phase86: structural support does not admit a contrast" in rendered_status
-    assert rendered_status.index("Phase86: structural support does not admit a contrast") < rendered_status.index("All studies")
-    assert "Height compatibility is necessary, not sufficient" in rendered_status
+    assert "CR032: fixed acceptance gate infeasible" in rendered_status
+    assert rendered_status.index("CR032: fixed acceptance gate infeasible") < rendered_status.index("All studies")
+    assert "50/64" in rendered_status
+    assert "Phase86 structural reachability" in rendered_status
     assert "Phase78 completed training-only partition diagnosis" not in rendered_status
     assert "Phase78 training-only partition diagnosis" in rendered_status
-    assert "phase86-cleanup-summary.json" in rendered_status
+    assert "phase86-cleanup-summary.json" in manifest["reconstruction"]["phase86"]["metric_download"]["filename"]
     assert "Phase85 pair-connection development" in rendered_status
     assert "Phase85 completed pair-connection development" not in rendered_status
     assert "Training-role evidence" in rendered_status
