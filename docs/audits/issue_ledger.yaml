@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # AST-identical formatting of reviewed exporter/tests; late handoff edit invalidated first stable-source receipt, repeated final checks required.
+  - 4a703b3fe0f4d294e0474b80d44d3b3e7e58ffbb
   # Reviewed CR032 feasibility publication and bound CR009 context; exact aggregate reconciliation, 8 exporter checks and rendered prose pass. No scientific runtime change; final publication checks recorded separately.
   - aa6b959d5343ad9a03d915f9c6d94c1339304fd3
   # Reviewed publication merge preserves 300 published evidence files, both histories and the final privacy cache; Phase86 source identifiers append after published entries. Final exact-source checks retained separately.
