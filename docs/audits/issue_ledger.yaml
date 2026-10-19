@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Append the reviewed generic-B dashboard publication branch to the existing CPU push triggers; assertions, resource bounds and publication content are unchanged.
+  - 0ea8363da02f75727e9ffa5a3304edb05e6278e1
   # Reviewed generic-sample census and CR054 dashboard publication; sanitized aggregates, source distinctions, incomplete-evaluation limits, privacy and rendered desktop/mobile views independently verified. No scientific runtime change.
   - b2bbc74d42361f0b4b51b4fc900c850852e302cc
   # Correct generated RST title underline and add focused coverage; no scientific value, evidence transport or limit change. Incomplete earlier build retained as stopped.
