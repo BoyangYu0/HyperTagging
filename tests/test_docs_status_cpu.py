@@ -34,6 +34,7 @@ def evidence(tmp_path, monkeypatch):
     monkeypatch.delenv("SOURCE_DATE_EPOCH", raising=False)
     monkeypatch.setattr(status, "_git", lambda *_args: None)
     documents = {
+        "generic_b_review": {"reserved": True},
         "reconstruction_cr032_review": {"reserved": True},
         "reconstruction_phase86_review": {"reserved": True},
         "reconstruction_phase74_review": {"reserved": True},
@@ -423,14 +424,23 @@ def test_current_repository_dashboard_surfaces_recorded_acceptance_values(tmp_pa
     assert manifest["notebooks"]["visual_review_status"] == "NOT_REVIEWED"
     assert manifest["pretraining"]["recorded_step"] == 54064 and manifest["pretraining"]["planned_steps"] == 108128
     assert manifest["pretraining"]["calibration_status"] == "PENDING"
-    rendered_status = (tmp_path / "generated" / "index.rst").read_text().replace("\\-", "-")
-    assert "CR032: fixed acceptance gate infeasible" in rendered_status
-    assert rendered_status.index("CR032: fixed acceptance gate infeasible") < rendered_status.index("All studies")
+    rendered_status = (tmp_path / "generated" / "index.rst").read_text().replace("\\-", "-").replace("\\/", "/")
+    assert "GB001: completed generic-sample static target-contract census" in rendered_status
+    assert rendered_status.index("GB001: completed generic-sample static target-contract census") < rendered_status.index("All studies")
+    assert "34,819" in rendered_status and "6,378" in rendered_status
+    assert "20,000 B and 8,000 continuum collisions" in rendered_status
+    assert "GB002: superseded snapshot and current replanning status" in rendered_status
+    assert "versioned B-only replanning" in rendered_status
+    assert "not an execution approval" in " ".join(rendered_status.split())
+    assert "Latest learned full reconstruction evaluation — CR054" in rendered_status
+    assert "CR032 native membership feasibility" in rendered_status
     assert "50/64" in rendered_status
     assert "Phase86 structural reachability" in rendered_status
     assert "Phase78 completed training-only partition diagnosis" not in rendered_status
     assert "Phase78 training-only partition diagnosis" in rendered_status
     assert "phase86-cleanup-summary.json" in manifest["reconstruction"]["phase86"]["metric_download"]["filename"]
+    assert manifest["reconstruction"]["generic_b"]["gb002"]["learned_metrics"]["exact_b_recovery"] is None
+    assert manifest["reconstruction"]["generic_b"]["cr054"]["arms"]["control"]["native"]["exact_b_recovery"] == {"correct": 0, "nominal": 256, "unavailable": 0}
     assert "Phase85 pair-connection development" in rendered_status
     assert "Phase85 completed pair-connection development" not in rendered_status
     assert "Training-role evidence" in rendered_status
@@ -453,6 +463,7 @@ def test_current_repository_dashboard_surfaces_recorded_acceptance_values(tmp_pa
     assert "Phase40r1 strict full-decay comparison" not in rendered_status
     assert "Phase68: hybrid" not in rendered_status
     assert "phase76-review.json" in downloads
+    assert "generic-b-status-summary.json" in downloads
     assert "phase75-review.json" in downloads and "phase74-review.json" in downloads
     assert "phase68-all-aggregate-metrics.json" in downloads
     assert "phase68-all-aggregate-metrics.json" not in rendered_status

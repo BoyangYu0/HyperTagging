@@ -1,0 +1,10 @@
+{
+  "schema": "generic-b-dashboard-public-binding-v1",
+  "status_date": "2026-10-19",
+  "source_file": "summary.json",
+  "source_bytes": 11661,
+  "source_sha256": "ea8776c553a2aa34a8d7bd18dbed01dff07be9a757258281ef59282ca6cdd26f",
+  "private_payloads_copied": false,
+  "contains_operational_identifiers": false,
+  "contains_cohort_member_identifiers": false
+}

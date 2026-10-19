@@ -23,6 +23,14 @@ Do not turn missing metrics into zeroes or treat training completion as
 convergence. Keep teacher-forced, rollout, strict-decay and oracle results
 identified by their actual populations.
 
+When a completed metadata or compatibility study is newer than the latest
+learned reconstruction evaluation, expand the completed study but retain a
+separately titled learned-evaluation section. Label static predicate counts as
+compatibility counts, never efficiency. Current operational work belongs in a
+separate status section and must use explicit unavailable values until a
+reviewed learned result exists; setup, admission and test counts are not model
+performance.
+
 Publication includes selected numeric fields, dates and source hashes.
 Credentials, private machine paths and operational records stay out of the
 artifact. Source copying is disabled. Generated files are derived outputs;

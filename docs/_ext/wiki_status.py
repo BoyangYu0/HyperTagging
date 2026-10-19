@@ -80,6 +80,9 @@ _phase65_spec.loader.exec_module(_phase65)
 _phase64_spec = importlib.util.spec_from_file_location("wiki_phase64", Path(__file__).with_name("wiki_phase64.py"))
 _phase64 = importlib.util.module_from_spec(_phase64_spec)
 _phase64_spec.loader.exec_module(_phase64)
+_generic_b_spec = importlib.util.spec_from_file_location("wiki_generic_b", Path(__file__).with_name("wiki_generic_b.py"))
+_generic_b = importlib.util.module_from_spec(_generic_b_spec)
+_generic_b_spec.loader.exec_module(_generic_b)
 
 def load_registry(path: Path):
     """Accept legacy generator output, rejecting conflicting packed copies."""
@@ -214,6 +217,7 @@ SOURCE_PATHS["reconstruction_phase85_review"] = _phase84_85.SOURCE + "/binding.j
 SOURCE_PATHS["reconstruction_phase83_review"] = _previous_studies.SOURCE + "/binding.json"
 SOURCE_PATHS["reconstruction_phase86_review"] = _phase86.SOURCE + "/binding.json"
 SOURCE_PATHS["reconstruction_cr032_review"] = _cr032.SOURCE + "/binding.json"
+SOURCE_PATHS["generic_b_review"] = _generic_b.SOURCE + "/binding.json"
 SOURCE_IDS = {key: f"source-{index:02d}" for index, key in enumerate(SOURCE_PATHS, 1)}
 FRESHNESS_DAYS = 30
 _MAX_SOURCE_BYTES = 5_000_000
@@ -3014,14 +3018,21 @@ def _render(manifest: dict[str, Any]) -> str:
             "All 64 nominal B trials retained: 14 immutable charge obstructions cap accepted recovery at 50/64, below the unchanged 61/64 requirement.",
             "Fixed 32-collision TRAIN audit; observed recovery remains 1/64. The other 50 are not proved achievable. No performance gain or fresh evaluation."
         ], "warning"))
+    if reconstruction.get("generic_b"):
+        cards.insert(0, ("GB001 generic-sample static target-contract census", "STATIC COMPATIBILITY ONLY", [
+            "Reviewed fixed TRAIN census of 20,000 B and 8,000 continuum collisions: accepted membership 34,819/40,000 and recursive topology+PID 6,378/40,000 nominal B predicates.",
+            "These metadata compatibility counts are not learned reconstruction efficiency, a ceiling or saturation. GB002 versioned B-only replanning is reported separately; CR054 is the latest learned full reconstruction assessment."
+        ], "warning"))
     # Cards are newest first. Keep historical decisions in one compact table.
     phase_cards = [card for card in cards if card[0].startswith("Phase")]
     latest_card = max(phase_cards, key=lambda card: int(re.match(r"Phase(\d+)", card[0]).group(1))) if phase_cards else cards[0]
-    if reconstruction.get("cr032"):
+    if reconstruction.get("generic_b"):
+        latest_card = next(card for card in cards if card[0].startswith("GB001 "))
+    elif reconstruction.get("cr032"):
         latest_card = next(card for card in cards if card[0].startswith("CR032 "))
     historical_cards = [card for card in cards if card is not latest_card]
     cards = [latest_card]
-    latest_phase = latest_card[0].split()[0].lower()
+    latest_phase = "generic_b" if latest_card[0].startswith("GB001 ") else latest_card[0].split()[0].lower()
     lines = ["Model performance and scientific status", "=======================================", "",
              "Recorded measurements from tracked evidence. Missing measurements are UNAVAILABLE;",
              "NOT_RUN describes a recorded evaluation status. Historical results do not verify",
@@ -3033,7 +3044,7 @@ def _render(manifest: dict[str, Any]) -> str:
              '   <section class="status-dashboard" aria-label="Recorded model performance">']
     for index, (title, value, paragraphs, kind) in enumerate(cards):
         record = reconstruction.get(latest_phase, {})
-        review_key = f"reconstruction_{latest_phase}_review"
+        review_key = "generic_b_review" if latest_phase == "generic_b" else f"reconstruction_{latest_phase}_review"
         refs = _refs(review_key) if review_key in SOURCE_IDS else record.get("source_ids", reconstruction["source_ids"])
         lines.extend("   " + line for line in _card(title, value, paragraphs, refs, kind, index).splitlines())
     lines += ["   </section>", "", ".. only:: not html", ""]
@@ -3042,6 +3053,7 @@ def _render(manifest: dict[str, Any]) -> str:
         lines.extend(f"   {_literal(paragraph)}" for paragraph in paragraphs)
         lines += [""]
     renderers = {
+        "generic_b": _generic_b.render,
         "cr032": _cr032.render,
         "phase86": _phase86.render,
         "phase85": _phase84_85.render,
@@ -3178,7 +3190,7 @@ def generate_status(repo_root: Path, output_dir: Path) -> dict[str, Any]:
     output = requested.resolve()
     if output == root or output in root.parents or any(part.is_symlink() for part in (requested, *requested.parents)):
         raise ValueError("Status output must be a dedicated non-symlink directory")
-    if output.exists() and any(path.name not in (_historical_rows.FILES | _cr032.FILES | _phase86.FILES | _phase84_85.FILES | _previous_studies.FILES | _phase78.FILES | _phase77.FILES | _phase76.FILES | _phase75.FILES | _phase74.FILES | {"phase72-scalar-decoder.txt", "phase72-scalar-integrity.json", *{f"phase72-set-overlap-{arm}-{kind}-scalars.json" for arm in ("off","on") for kind in ("training","checkpoint")}, "phase72-policy-reevaluation-v1.json", "phase72-policy-integrity.json", "phase72-policy-decoder.txt", "phase72-native-aggregates.json", "phase72-native-integrity.json", "phase72-native-decoder.txt", *{f"phase72-policy-part-{i}.json" for i in range(4)}} | {"phase71-policy-reevaluation-v1.json", "phase71-policy-integrity.json", "phase71-policy-decoder.txt", "phase71-native-aggregates.json", "phase71-native-integrity.json", "phase71-native-decoder.txt", *{f"phase71-policy-part-{i}.json" for i in range(4)}} | {"phase70-policy-reevaluation-v1.json", "phase70-policy-integrity.json", "phase70-policy-decoder.txt", "phase70-native-aggregates.json", "phase70-native-integrity.json", "phase70-native-decoder.txt", *{f"phase70-policy-part-{i}.json" for i in range(4)}} | {"phase69-" + view.replace("_", "-") + ".json" for view in _phase69.VIEWS} | {"phase69-review-metrics.json", "phase69-all-aggregate-metrics.json", "phase69-complete-aggregate-metrics-v3.json", "phase69-efficiencies-integrity.json", "phase69-efficiencies-decoder.txt", "phase69-policy-reevaluation-v1.json", "phase69-policy-integrity.json", "phase69-policy-decoder.txt", "phase69-policy-part-0.json", "phase69-policy-part-1.json", "phase69-policy-part-2.json", "phase69-policy-part-3.json"} | {"phase68-" + view.replace("_", "-") + ".json" for view in _phase68.VIEWS} | {"phase68-review-metrics.json", "phase68-all-aggregate-metrics.json"} | {"phase67-" + view.replace("_", "-") + ".json" for view in _phase67.VIEWS} | {"phase67-review-metrics.json", "phase67-all-aggregate-metrics.json"} | {"phase66-" + view.replace("_", "-") + ".json" for view in _phase66.VIEWS} | {"phase66-review-metrics.json", "phase66-all-aggregate-metrics.json"} | {"phase65-" + view.replace("_", "-") + ".json" for view in _phase65.VIEWS} | {"phase65-review-metrics.json", "phase65-all-aggregate-metrics.json"} | {"phase64-" + view.replace("_", "-") + ".json" for view in _phase64.VIEWS} | {"phase64-review-metrics.json", "phase64-all-aggregate-metrics.json"}) and path.name not in {"index.rst", "downloads.rst", "status.json", "phase61-metrics.json", "phase61-retained-metrics.json", "phase61-aggregation-metrics.json", "phase61-pretraining-metrics.json", "phase60-metrics.json", "phase44-retained-metrics.json", "phase45-metrics.json", "phase45-retained-metrics.json", "phase46-metrics.json", "phase46-retained-metrics.json", "phase47-metrics.json", "phase47-retained-metrics.json", "phase47-aggregation-metrics.json", "phase48-metrics.json", "phase48-retained-metrics.json", "phase48-aggregation-metrics.json", "phase49-metrics.json", "phase49-retained-metrics.json", "phase49-aggregation-metrics.json", "phase50-metrics.json", "phase50-retained-metrics.json", "phase50-aggregation-metrics.json", "phase51-metrics.json", "phase51-retained-metrics.json", "phase51-aggregation-metrics.json", "phase52-metrics.json", "phase52-retained-metrics.json", "phase52-aggregation-metrics.json", "phase53-metrics.json", "phase53-retained-metrics.json", "phase53-aggregation-metrics.json", "phase54-metrics.json", "phase54-retained-metrics.json", "phase54-aggregation-metrics.json", "phase41-metrics.json", "phase55-metrics.json", "phase55-retained-metrics.json", "phase55-aggregation-metrics.json", "phase55-pretraining-metrics.json", "phase56-metrics.json", "phase56-retained-metrics.json", "phase56-aggregation-metrics.json", "phase56-pretraining-metrics.json", "phase57-metrics.json", "phase57-retained-metrics.json", "phase57-aggregation-metrics.json", "phase57-pretraining-metrics.json", "phase58-metrics.json", "phase58-retained-metrics.json", "phase58-aggregation-metrics.json", "phase58-pretraining-metrics.json", "phase59-metrics.json", "phase59-retained-metrics.json", "phase59-aggregation-metrics.json", "phase59-pretraining-metrics.json"} for path in output.iterdir()):
+    if output.exists() and any(path.name not in (_generic_b.FILES | _historical_rows.FILES | _cr032.FILES | _phase86.FILES | _phase84_85.FILES | _previous_studies.FILES | _phase78.FILES | _phase77.FILES | _phase76.FILES | _phase75.FILES | _phase74.FILES | {"phase72-scalar-decoder.txt", "phase72-scalar-integrity.json", *{f"phase72-set-overlap-{arm}-{kind}-scalars.json" for arm in ("off","on") for kind in ("training","checkpoint")}, "phase72-policy-reevaluation-v1.json", "phase72-policy-integrity.json", "phase72-policy-decoder.txt", "phase72-native-aggregates.json", "phase72-native-integrity.json", "phase72-native-decoder.txt", *{f"phase72-policy-part-{i}.json" for i in range(4)}} | {"phase71-policy-reevaluation-v1.json", "phase71-policy-integrity.json", "phase71-policy-decoder.txt", "phase71-native-aggregates.json", "phase71-native-integrity.json", "phase71-native-decoder.txt", *{f"phase71-policy-part-{i}.json" for i in range(4)}} | {"phase70-policy-reevaluation-v1.json", "phase70-policy-integrity.json", "phase70-policy-decoder.txt", "phase70-native-aggregates.json", "phase70-native-integrity.json", "phase70-native-decoder.txt", *{f"phase70-policy-part-{i}.json" for i in range(4)}} | {"phase69-" + view.replace("_", "-") + ".json" for view in _phase69.VIEWS} | {"phase69-review-metrics.json", "phase69-all-aggregate-metrics.json", "phase69-complete-aggregate-metrics-v3.json", "phase69-efficiencies-integrity.json", "phase69-efficiencies-decoder.txt", "phase69-policy-reevaluation-v1.json", "phase69-policy-integrity.json", "phase69-policy-decoder.txt", "phase69-policy-part-0.json", "phase69-policy-part-1.json", "phase69-policy-part-2.json", "phase69-policy-part-3.json"} | {"phase68-" + view.replace("_", "-") + ".json" for view in _phase68.VIEWS} | {"phase68-review-metrics.json", "phase68-all-aggregate-metrics.json"} | {"phase67-" + view.replace("_", "-") + ".json" for view in _phase67.VIEWS} | {"phase67-review-metrics.json", "phase67-all-aggregate-metrics.json"} | {"phase66-" + view.replace("_", "-") + ".json" for view in _phase66.VIEWS} | {"phase66-review-metrics.json", "phase66-all-aggregate-metrics.json"} | {"phase65-" + view.replace("_", "-") + ".json" for view in _phase65.VIEWS} | {"phase65-review-metrics.json", "phase65-all-aggregate-metrics.json"} | {"phase64-" + view.replace("_", "-") + ".json" for view in _phase64.VIEWS} | {"phase64-review-metrics.json", "phase64-all-aggregate-metrics.json"}) and path.name not in {"index.rst", "downloads.rst", "status.json", "phase61-metrics.json", "phase61-retained-metrics.json", "phase61-aggregation-metrics.json", "phase61-pretraining-metrics.json", "phase60-metrics.json", "phase44-retained-metrics.json", "phase45-metrics.json", "phase45-retained-metrics.json", "phase46-metrics.json", "phase46-retained-metrics.json", "phase47-metrics.json", "phase47-retained-metrics.json", "phase47-aggregation-metrics.json", "phase48-metrics.json", "phase48-retained-metrics.json", "phase48-aggregation-metrics.json", "phase49-metrics.json", "phase49-retained-metrics.json", "phase49-aggregation-metrics.json", "phase50-metrics.json", "phase50-retained-metrics.json", "phase50-aggregation-metrics.json", "phase51-metrics.json", "phase51-retained-metrics.json", "phase51-aggregation-metrics.json", "phase52-metrics.json", "phase52-retained-metrics.json", "phase52-aggregation-metrics.json", "phase53-metrics.json", "phase53-retained-metrics.json", "phase53-aggregation-metrics.json", "phase54-metrics.json", "phase54-retained-metrics.json", "phase54-aggregation-metrics.json", "phase41-metrics.json", "phase55-metrics.json", "phase55-retained-metrics.json", "phase55-aggregation-metrics.json", "phase55-pretraining-metrics.json", "phase56-metrics.json", "phase56-retained-metrics.json", "phase56-aggregation-metrics.json", "phase56-pretraining-metrics.json", "phase57-metrics.json", "phase57-retained-metrics.json", "phase57-aggregation-metrics.json", "phase57-pretraining-metrics.json", "phase58-metrics.json", "phase58-retained-metrics.json", "phase58-aggregation-metrics.json", "phase58-pretraining-metrics.json", "phase59-metrics.json", "phase59-retained-metrics.json", "phase59-aggregation-metrics.json", "phase59-pretraining-metrics.json"} for path in output.iterdir()):
         raise ValueError("Status output contains unexpected files; use a fresh dedicated directory")
     history = _git(root, "log", "-1", "--format=%H%n%cI")
     lines = history.decode("utf-8", errors="replace").splitlines() if history else []
@@ -3397,6 +3409,8 @@ def generate_status(repo_root: Path, output_dir: Path) -> dict[str, Any]:
         manifest["reconstruction"]["cr032"] = _cr032.generate(root, output)
     if payloads.get("reconstruction_phase86_review") and not payloads["reconstruction_phase86_review"].get("reserved"):
         manifest["reconstruction"]["phase86"] = _phase86.generate(root, output)
+    if payloads.get("generic_b_review") and not payloads["generic_b_review"].get("reserved"):
+        manifest["reconstruction"]["generic_b"] = _generic_b.generate(root, output)
     manifest = _compact_exact_numbers(manifest)
     if payloads.get("reconstruction_phase42_44_archive") and not payloads["reconstruction_phase42_44_archive"].get("reserved"):
         _historical_rows.compact(root, output, manifest)

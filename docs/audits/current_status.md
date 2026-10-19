@@ -1,5 +1,39 @@
 # Current repository audit status
 
+## Generic-B census and learned-evaluation boundary — 2026-10-19
+
+GB001 completed and was independently reviewed as a fixed 28,000-collision
+TRAIN target-contract census containing 20,000 B and 8,000 continuum
+collisions. It reconciles 40,000 nominal B predicates without processing
+failure. Accepted-membership static compatibility is 34,819/40,000;
+recursive topology+PID static compatibility is 6,378/40,000. These are metadata
+necessary-condition counts, not learned reconstruction efficiency, a ceiling,
+saturation, or proof of legal decoder reachability. The needed provenance is
+unavailable in the census inputs, so original-mDST recovery was not assessed;
+physical completeness is unavailable for all 40,000 predicates. Background
+acceptance, purity, learned exact/inclusive recovery, uncertainty, and model
+runtime were not measured by GB001 and remain unavailable rather than zero.
+
+GB002's recorded preparation-admitted state is a historical, now-superseded
+operational snapshot, not approval of the current plan. The current state is
+versioned B-only replanning, with no completed training or learned evaluation.
+Operational validation counts are not performance metrics. Its learned
+exact/inclusive recovery, background, purity, recursive topology/PID, kinematic
+validity, uncertainty, and runtime remain explicitly unmeasured.
+
+The latest genuine learned full-reconstruction assessment remains CR054. The
+reused control and initial-feature-history arm each recover 0/256 native exact
+B tags and 0/256 inclusive FSP source groups. Retained topology is 101/2,644
+versus 97/2,644; topology+PID is 94/2,644 versus 89/2,644 with one unavailable
+predicate in each arm. Deep typed generation and acceptance are 0/992 in both.
+The 384-collision assessment has 64/category, 1,936/category short of complete
+evaluation. It uses one seed and a historical control, so seed uncertainty is
+unavailable. The flat 1/256 versus 0/256 source-group count is not full
+reconstruction. CR054 changes auxiliary feature history only; the native
+baseline remains the connected step-4,376 checkpoint. The registered gate
+failed, and no fresh confirmation, physical FEI efficiency, or promotion is
+claimed.
+
 ## Fixed native membership gate feasibility — 2026-10-15
 
 CR032 audited all 64 nominal B units in the fixed 32-collision TRAIN panel.

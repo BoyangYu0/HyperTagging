@@ -1,0 +1,245 @@
+{
+  "schema": "generic-b-dashboard-public-summary-v1",
+  "status_date": "2026-10-19",
+  "provenance": {
+    "gb001_execution_summary_sha256": "f511490e0ac744f3b083333fb232b63704147bff2512d9c0b78249e62c43e4de",
+    "gb001_endpoint_summary_sha256": "8159efcca7ac3abd5df75f4ff66d1a90ae1ebf1fb336a8b44dc45833546d4932",
+    "gb001_execution_report_sha256": "b32869a331f26653faf6f6b471c927ede48218ee29cd685064240a2f4b291f92",
+    "gb001_independent_review_sha256": "d7b275b465dfb3d378dc4290fcae18a115bd8ef84e8f57ca65f50ddb805552da",
+    "gb002_operational_review_sha256": "af1d61719f5afec88f9b346e5f014c8c5705e4915994037ebdfbe132b8444e8e",
+    "cr054_final_report_sha256": "cd9940bf3cf163645399840a54ee5093f53cf36cefff4880ce4f3656bf047639",
+    "cr054_complete_metrics_sha256": "6d7a6cd846fe8c54db42f66660b2af34a99d7b5aad9dd8fee2749e7b0cd1bed5",
+    "cr054_independent_review_sha256": "42df76e30e25387d1597ba537a6c8e8bbadafc29143eb9cb8c9d87da737258f3",
+    "cr054_tracked_source_revision": "080f5e4f26a2f21931e92e2782d0f977066f7281"
+  },
+  "gb001": {
+    "status": "COMPLETED_AND_INDEPENDENTLY_REVIEWED",
+    "evidence_class": "TRAIN_TARGET_CONTRACT_STATIC_CENSUS",
+    "learned_model_evaluation": false,
+    "legal_decoder_reachability_assessed": false,
+    "population": {
+      "collisions": 28000,
+      "b_collisions": 20000,
+      "continuum_collisions": 8000,
+      "nominal_b_predicates": 40000,
+      "processing_failures": 0,
+      "unit": "nominal_B_predicates"
+    },
+    "static_compatibility": {
+      "raw_membership": {"compatible": 40000, "available": 40000, "nominal": 40000, "unavailable": 0},
+      "accepted_membership": {"compatible": 34819, "available": 40000, "nominal": 40000, "unavailable": 0},
+      "recursive_topology_pid": {"compatible": 6378, "available": 40000, "nominal": 40000, "unavailable": 0},
+      "physical_completeness": {"compatible": null, "available": 0, "nominal": 40000, "unavailable": 40000}
+    },
+    "categories": {
+      "charged": {
+        "collisions": 10000,
+        "nominal_b_predicates": 20000,
+        "accepted_static_compatible": 16534,
+        "recursive_topology_pid_static_compatible": 3207
+      },
+      "mixed": {
+        "collisions": 10000,
+        "nominal_b_predicates": 20000,
+        "accepted_static_compatible": 18285,
+        "recursive_topology_pid_static_compatible": 3171
+      },
+      "ccbar": {"collisions": 2000, "nominal_b_predicates": 0},
+      "uubar": {"collisions": 2000, "nominal_b_predicates": 0},
+      "ddbar": {"collisions": 2000, "nominal_b_predicates": 0},
+      "ssbar": {"collisions": 2000, "nominal_b_predicates": 0}
+    },
+    "overlapping_recursive_blockers": {
+      "minimum_daughters": 28859,
+      "detector_vs_nominal_typed_charge": 20039,
+      "detector_vs_allowed_token_charge_union": 5878,
+      "duplicated_detector_resource_or_source_alias": 81,
+      "recursive_detector_source_conflict": 53
+    },
+    "learned_metrics": {
+      "exact_b_recovery": null,
+      "inclusive_b_recovery": null,
+      "background_acceptance": null,
+      "purity": null,
+      "uncertainty": null
+    },
+    "runtime": {
+      "allocated_cpu_seconds": 5162,
+      "recorded_cpu_seconds": 1474.132,
+      "peak_memory_bytes": 2740744192
+    }
+  },
+  "gb002": {
+    "status": "HISTORICAL_SUPERSEDED_OPERATIONAL_SNAPSHOT",
+    "snapshot_recorded_state": "OPERATIONAL_PREPARATION_ADMITTED",
+    "current_state": "VERSIONED_B_ONLY_REPLANNING",
+    "result_state": "NO_COMPLETED_TRAINING_OR_LEARNED_EVALUATION",
+    "completed_scientific_result": false,
+    "training_completed": false,
+    "full_evaluation_completed": false,
+    "learned_metrics": {
+      "exact_b_recovery": null,
+      "inclusive_b_recovery": null,
+      "background_acceptance": null,
+      "purity": null,
+      "recursive_topology": null,
+      "topology_pid": null,
+      "kinematic_validity": null,
+      "uncertainty": null,
+      "runtime": null
+    }
+  },
+  "cr054": {
+    "status": "COMPLETED_AND_INDEPENDENTLY_REVIEWED",
+    "scientific_gate": "FAILED",
+    "evidence_class": "PREVIOUSLY_INSPECTED_ADAPTIVE_TRAIN_ASSESSMENT",
+    "control_reuse": "CR053_HISTORICAL_CONTROL_NOT_FRESH_REPLICATION",
+    "baseline_checkpoint": "CR042_CONNECTED_STEP_4376",
+    "scientific_factor": "AUXILIARY_FEATURE_HISTORY_ONLY",
+    "coverage": {
+      "collisions_per_arm": 384,
+      "collisions_per_category": 64,
+      "required_collisions_per_category": 2000,
+      "shortfall_per_category": 1936,
+      "b_collisions": 128,
+      "continuum_collisions": 256,
+      "nominal_b_slots": 256,
+      "processed_failures": 0,
+      "membership_unavailable": 0,
+      "complete_post_study_evaluation": false
+    },
+    "arms": {
+      "control": {
+        "native": {
+          "exact_b_recovery": {"correct": 0, "nominal": 256, "unavailable": 0},
+          "inclusive_b_recovery": {"correct": 0, "nominal": 256, "unavailable": 0},
+          "event_any_exact": {"correct": 0, "nominal": 128},
+          "event_both_exact": {"correct": 0, "nominal": 128},
+          "accepted_candidate_purity": {"correct": 0, "accepted_candidates": 99}
+        },
+        "flat": {
+          "raw_b_recovery": {"correct": 1, "nominal": 256},
+          "accepted_b_recovery": {"correct": 1, "nominal": 256}
+        },
+        "b_categories": {
+          "charged": {"exact": 0, "inclusive": 0, "nominal_b_slots": 128},
+          "mixed": {"exact": 0, "inclusive": 0, "nominal_b_slots": 128}
+        },
+        "b_channel_coverage": {
+          "evaluated_channel_groups": 256,
+          "evaluated_b_trials": 256,
+          "exact_successes": 0,
+          "successful_channel_groups": 0,
+          "unavailable": 0
+        },
+        "continuum_fake_event_acceptance": {
+          "ccbar": {"accepted": 14, "collisions": 64},
+          "uubar": {"accepted": 14, "collisions": 64},
+          "ddbar": {"accepted": 11, "collisions": 64},
+          "ssbar": {"accepted": 8, "collisions": 64},
+          "all": {"accepted": 47, "collisions": 256}
+        },
+        "continuum_component_coverage": {
+          "ccbar": {"correct": 0, "nominal": 214, "unknown": 0, "parton_ancestry_available": false},
+          "uubar": {"correct": 3, "nominal": 175, "unknown": 0, "parton_ancestry_available": false},
+          "ddbar": {"correct": 6, "nominal": 190, "unknown": 0, "parton_ancestry_available": false},
+          "ssbar": {"correct": 3, "nominal": 179, "unknown": 0, "parton_ancestry_available": false}
+        },
+        "retained_predicates": {
+          "raw_membership": {"correct": 122, "nominal": 2644, "unavailable": 0},
+          "accepted_membership": {"correct": 104, "nominal": 2644, "unavailable": 0},
+          "generated": {"correct": 155, "nominal": 2644, "unavailable": 0},
+          "generated_typed": {"correct": 143, "nominal": 2644, "unavailable": 0},
+          "native_valid": {"correct": 117, "nominal": 2644, "unavailable": 0},
+          "accepted": {"correct": 101, "nominal": 2644, "unavailable": 0},
+          "topology": {"correct": 101, "nominal": 2644, "unavailable": 0},
+          "topology_pid": {"correct": 94, "nominal": 2644, "unavailable": 1}
+        },
+        "deep_predicates": {
+          "raw_membership": {"correct": 4, "nominal": 992, "unavailable": 0},
+          "accepted_membership": {"correct": 3, "nominal": 992, "unavailable": 0},
+          "generated_typed": {"correct": 0, "nominal": 992, "unavailable": 0},
+          "accepted_typed": {"correct": 0, "nominal": 992, "unavailable": 0},
+          "topology": {"correct": 0, "nominal": 992, "unavailable": 0},
+          "topology_pid": {"correct": 0, "nominal": 992, "unavailable": 1}
+        }
+      },
+      "initial_feature_history": {
+        "native": {
+          "exact_b_recovery": {"correct": 0, "nominal": 256, "unavailable": 0},
+          "inclusive_b_recovery": {"correct": 0, "nominal": 256, "unavailable": 0},
+          "event_any_exact": {"correct": 0, "nominal": 128},
+          "event_both_exact": {"correct": 0, "nominal": 128},
+          "accepted_candidate_purity": {"correct": 0, "accepted_candidates": 101}
+        },
+        "flat": {
+          "raw_b_recovery": {"correct": 0, "nominal": 256},
+          "accepted_b_recovery": {"correct": 0, "nominal": 256}
+        },
+        "b_categories": {
+          "charged": {"exact": 0, "inclusive": 0, "nominal_b_slots": 128},
+          "mixed": {"exact": 0, "inclusive": 0, "nominal_b_slots": 128}
+        },
+        "b_channel_coverage": {
+          "evaluated_channel_groups": 256,
+          "evaluated_b_trials": 256,
+          "exact_successes": 0,
+          "successful_channel_groups": 0,
+          "unavailable": 0
+        },
+        "continuum_fake_event_acceptance": {
+          "ccbar": {"accepted": 15, "collisions": 64},
+          "uubar": {"accepted": 13, "collisions": 64},
+          "ddbar": {"accepted": 12, "collisions": 64},
+          "ssbar": {"accepted": 9, "collisions": 64},
+          "all": {"accepted": 49, "collisions": 256}
+        },
+        "continuum_component_coverage": {
+          "ccbar": {"correct": 0, "nominal": 214, "unknown": 0, "parton_ancestry_available": false},
+          "uubar": {"correct": 3, "nominal": 175, "unknown": 0, "parton_ancestry_available": false},
+          "ddbar": {"correct": 6, "nominal": 190, "unknown": 0, "parton_ancestry_available": false},
+          "ssbar": {"correct": 3, "nominal": 179, "unknown": 0, "parton_ancestry_available": false}
+        },
+        "retained_predicates": {
+          "raw_membership": {"correct": 119, "nominal": 2644, "unavailable": 0},
+          "accepted_membership": {"correct": 101, "nominal": 2644, "unavailable": 0},
+          "generated": {"correct": 152, "nominal": 2644, "unavailable": 0},
+          "generated_typed": {"correct": 140, "nominal": 2644, "unavailable": 0},
+          "native_valid": {"correct": 112, "nominal": 2644, "unavailable": 0},
+          "accepted": {"correct": 97, "nominal": 2644, "unavailable": 0},
+          "topology": {"correct": 97, "nominal": 2644, "unavailable": 0},
+          "topology_pid": {"correct": 89, "nominal": 2644, "unavailable": 1}
+        },
+        "deep_predicates": {
+          "raw_membership": {"correct": 6, "nominal": 992, "unavailable": 0},
+          "accepted_membership": {"correct": 4, "nominal": 992, "unavailable": 0},
+          "generated_typed": {"correct": 0, "nominal": 992, "unavailable": 0},
+          "accepted_typed": {"correct": 0, "nominal": 992, "unavailable": 0},
+          "topology": {"correct": 0, "nominal": 992, "unavailable": 0},
+          "topology_pid": {"correct": 0, "nominal": 992, "unavailable": 1}
+        }
+      }
+    },
+    "validity": {
+      "source_conflicts_zero": true,
+      "closure_violations_zero": true,
+      "physical_momentum_resolution": null,
+      "physical_momentum_unavailable_reason": "retained_truth_composite_four_vectors_absent"
+    },
+    "uncertainty": {
+      "single_seed_uncertainty": null,
+      "native_exact_difference": {"value": 0.0, "lower_95": 0.0, "upper_95": 0.0, "denominator": 256},
+      "native_background_difference": {"value": 0.0078125, "lower_95": -0.01171875, "upper_95": 0.02734375, "denominator": 256},
+      "flat_accepted_difference": {"value": -0.00390625, "lower_95": -0.01171875, "upper_95": 0.0, "denominator": 256},
+      "all_zero_interval_limit": "EMPIRICAL_INTERVAL_DOES_NOT_ESTABLISH_POPULATION_ZERO"
+    },
+    "runtime": {
+      "new_scientific_child_wall_seconds": 6750.681,
+      "new_scientific_child_user_cpu_seconds": 7335.96,
+      "new_scientific_child_system_cpu_seconds": 19.0,
+      "maximum_child_rss_kib": 1628692,
+      "control_runtime_inherited": true,
+      "equal_flops_or_speedup_claimed": false
+    }
+  }
+}
