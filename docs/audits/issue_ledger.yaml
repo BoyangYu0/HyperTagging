@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed significant Generic-B readiness/plan dashboard update; explicit reviewed-loop-resumption snapshot preserves GB001 static and CR054 learned scopes while GB002 learned metrics remain unavailable. Source/privacy/render checks pass; no scientific runtime change.
+  - cf41c12e5250a7f70da0e62d95ebd87262bb75cd
   # Append the reviewed generic-B dashboard publication branch to the existing CPU push triggers; assertions, resource bounds and publication content are unchanged.
   - 0ea8363da02f75727e9ffa5a3304edb05e6278e1
   # Reviewed generic-sample census and CR054 dashboard publication; sanitized aggregates, source distinctions, incomplete-evaluation limits, privacy and rendered desktop/mobile views independently verified. No scientific runtime change.
