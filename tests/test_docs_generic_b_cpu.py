@@ -41,9 +41,26 @@ def test_generic_b_aggregate_preserves_static_and_unavailable_semantics(tmp_path
     assert gb001["population"]["continuum_collisions"] == 8000
     assert all(metric is None for metric in gb001["learned_metrics"].values())
     assert gb002["training_completed"] is False and gb002["full_evaluation_completed"] is False
-    assert gb002["status"] == "HISTORICAL_SUPERSEDED_OPERATIONAL_SNAPSHOT"
+    assert gb002["status"] == "ACTIVE_OPERATIONAL_REPAIR_NO_LEARNED_EVALUATION"
     assert gb002["snapshot_recorded_state"] == "OPERATIONAL_PREPARATION_ADMITTED"
-    assert gb002["current_state"] == "VERSIONED_B_ONLY_REPLANNING"
+    assert gb002["current_state"] == "CONTINUOUS_SCIENCE_LOOP_RESUMED_OPERATIONAL_REPAIR_ACTIVE"
+    assert gb002["snapshot_scope"] == "AS_OF_REVIEWED_SCIENCE_LOOP_RESUMPTION_BOUNDARY"
+    assert gb002["snapshot_is_live_monitor"] is False
+    assert gb002["local_data"] == {
+        "transfer_status": "COMPLETE_HASH_VERIFIED",
+        "transfer_scope": "OPAQUE_BYTES_ONLY",
+        "scientific_payload_authentication_complete": False,
+    }
+    assert gb002["resource_policy"]["project_cpu_time_limit_seconds"] is None
+    assert gb002["resource_policy"]["project_gpu_time_limit_hours"] is None
+    assert gb002["runtime_attempt_at_snapshot"]["runtime_admission_passed"] is True
+    assert gb002["runtime_attempt_at_snapshot"]["authenticated"] == 0
+    assert gb002["runtime_attempt_at_snapshot"]["failed"] == 1
+    assert gb002["replacement_transition"]["status"] == "FAILED_REVIEW_REQUIRED"
+    assert gb002["replacement_transition"]["payload_execution_authorized"] is False
+    assert gb002["science_loop"]["status"] == "RESUMED_UNDER_REVIEWED_ASTRA_SOL_ROUTING"
+    assert gb002["science_loop"]["native_baseline_status"] == "UNMEASURED"
+    assert gb002["next_scientific_plan"]["status"] == "SEALED_PROSPECTIVE_PLAN_NOT_A_RESULT"
     assert all(metric is None for metric in gb002["learned_metrics"].values())
     assert cr054["arms"]["control"]["native"]["exact_b_recovery"]["correct"] == 0
     assert cr054["arms"]["control"]["native"]["inclusive_b_recovery"]["nominal"] == 256
@@ -58,10 +75,18 @@ def test_generic_b_aggregate_preserves_static_and_unavailable_semantics(tmp_path
     assert "not reconstruction efficiency" in rendered
     assert "needed provenance is unavailable in the census inputs" in rendered
     assert "original-mDST recovery was not assessed" in rendered
-    assert "GB002: superseded snapshot and current replanning status" in rendered
+    assert "GB002: local transfer complete; scientific authentication unresolved" in rendered
     assert "historical and now-superseded operational snapshot" in rendered
-    assert "versioned B-only replanning" in rendered
-    assert "not an execution approval" in rendered
+    assert "as-of snapshot at the reviewed science-loop resumption boundary" in rendered
+    assert "not a live job monitor" in rendered
+    assert "opaque-byte identity only" in rendered
+    assert "0 authenticated, 1 failed and 3,071 unreached" in rendered
+    assert "event-number and source-entry identities were conflated" in rendered
+    assert "FAILED_REVIEW_REQUIRED" in rendered
+    assert "reviewed Astra/Sol science loop has since resumed" in rendered
+    assert "payload decoding and the native baseline remain pending" in rendered
+    assert "two Generic B training sample sizes by two network widths" in rendered
+    assert "do not constitute execution approval" in rendered
     assert "Every learned" in rendered and "UNAVAILABLE" in rendered
     assert "Latest learned full reconstruction evaluation — CR054" in rendered
     assert "Channel coverage" in rendered and "256 signed retained-channel groups" in rendered
@@ -69,7 +94,7 @@ def test_generic_b_aggregate_preserves_static_and_unavailable_semantics(tmp_path
     assert "1/256 versus 0/256" in rendered and "not full reconstruction" in rendered
     published = (output / "generic-b-status-summary.json").read_text()
     assert '"exact_b_recovery": null' in published
-    assert '"current_state": "VERSIONED_B_ONLY_REPLANNING"' in published
+    assert '"current_state": "CONTINUOUS_SCIENCE_LOOP_RESUMED_OPERATIONAL_REPAIR_ACTIVE"' in published
     private_prefix = "/" + "project/"
     operational_markers = ("allocation" + "-", "stage" + "-000")
     assert private_prefix not in published
@@ -100,6 +125,29 @@ def test_gb002_snapshot_cannot_be_presented_as_current_approval(tmp_path):
     summary_path = source / "summary.json"
     summary = json.loads(summary_path.read_text())
     summary["gb002"]["current_state"] = "EXECUTION_APPROVED"
+    summary_path.write_text(json.dumps(summary))
+    _regenerate_binding(root)
+    output = tmp_path / "generated"
+    output.mkdir()
+    with pytest.raises(ValueError, match="GB002 unmeasured status"):
+        generic_b.generate(root, output)
+
+
+@pytest.mark.parametrize(("section", "field", "value"), [
+    ("local_data", "scientific_payload_authentication_complete", True),
+    ("resource_policy", "project_cpu_time_limit_seconds", 1),
+    ("runtime_attempt_at_snapshot", "authenticated", 1),
+    ("replacement_transition", "status", "ACTIVATED"),
+])
+def test_gb002_readiness_cannot_overstate_operational_evidence(
+        tmp_path, section, field, value):
+    root = tmp_path / "repository"
+    source = root / generic_b.SOURCE
+    source.parent.mkdir(parents=True)
+    shutil.copytree(ROOT / generic_b.SOURCE, source)
+    summary_path = source / "summary.json"
+    summary = json.loads(summary_path.read_text())
+    summary["gb002"][section][field] = value
     summary_path.write_text(json.dumps(summary))
     _regenerate_binding(root)
     output = tmp_path / "generated"

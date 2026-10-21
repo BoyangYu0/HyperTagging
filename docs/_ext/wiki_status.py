@@ -3021,7 +3021,7 @@ def _render(manifest: dict[str, Any]) -> str:
     if reconstruction.get("generic_b"):
         cards.insert(0, ("GB001 generic-sample static target-contract census", "STATIC COMPATIBILITY ONLY", [
             "Reviewed fixed TRAIN census of 20,000 B and 8,000 continuum collisions: accepted membership 34,819/40,000 and recursive topology+PID 6,378/40,000 nominal B predicates.",
-            "These metadata compatibility counts are not learned reconstruction efficiency, a ceiling or saturation. GB002 versioned B-only replanning is reported separately; CR054 is the latest learned full reconstruction assessment."
+            "These metadata compatibility counts are not learned reconstruction efficiency, a ceiling or saturation. GB002 has a sealed prospective v3 plan but no learned evaluation; CR054 remains the latest learned full reconstruction assessment."
         ], "warning"))
     # Cards are newest first. Keep historical decisions in one compact table.
     phase_cards = [card for card in cards if card[0].startswith("Phase")]

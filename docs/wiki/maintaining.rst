@@ -31,6 +31,20 @@ separate status section and must use explicit unavailable values until a
 reviewed learned result exists; setup, admission and test counts are not model
 performance.
 
+Continuous research requests a dashboard revision only for a material state
+change: a new learned evaluation, a changed scientific-plan or readiness boundary,
+or a new or resolved terminal blocker that changes interpretation. Repeated
+operational updates with unchanged public meaning do not trigger publication.
+The research controller supplies a sanitized aggregate handoff; it does not edit,
+push or publish dashboard files. After independent review marks a change significant,
+the controller's durable study-review callback requests the separate dashboard owner
+without changing or delaying the next research action. The owner deduplicates
+at-least-once requests by reviewed source hashes and the current published binding.
+The dashboard owner authenticates source hashes, runs focused tests, warning-fatal
+rendering, privacy and desktop/mobile checks, obtains independent content review,
+records audit lineage, and requires exact-head CPU and documentation CI before
+guarded promotion and live verification.
+
 Publication includes selected numeric fields, dates and source hashes.
 Credentials, private machine paths and operational records stay out of the
 artifact. Source copying is disabled. Generated files are derived outputs;

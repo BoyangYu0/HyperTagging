@@ -1,6 +1,6 @@
 # Current repository audit status
 
-## Generic-B census and learned-evaluation boundary — 2026-10-19
+## Generic-B census, readiness and learned-evaluation boundary — 2026-10-21
 
 GB001 completed and was independently reviewed as a fixed 28,000-collision
 TRAIN target-contract census containing 20,000 B and 8,000 continuum
@@ -14,12 +14,31 @@ physical completeness is unavailable for all 40,000 predicates. Background
 acceptance, purity, learned exact/inclusive recovery, uncertainty, and model
 runtime were not measured by GB001 and remain unavailable rather than zero.
 
-GB002's recorded preparation-admitted state is a historical, now-superseded
-operational snapshot, not approval of the current plan. The current state is
-versioned B-only replanning, with no completed training or learned evaluation.
-Operational validation counts are not performance metrics. Its learned
-exact/inclusive recovery, background, purity, recursive topology/PID, kinematic
-validity, uncertainty, and runtime remain explicitly unmeasured.
+This section is an as-of snapshot at the reviewed science-loop resumption
+boundary rather than a live job monitor. GB002's required data transfer is
+complete and hash-verified, but this proves
+opaque-byte identity rather than scientific payload authentication. Project-level
+CPU and GPU time-admission ceilings have been removed while actual usage tracking,
+site scheduler limits and finite per-operation watchdogs remain. At this
+snapshot, the recorded allocation was 6,272 CPU-seconds and zero GPU-hours. The
+reviewed runtime attempt represented here passed resource admission, then failed
+closed on the first reached
+event because event-number and source-entry identities were conflated: 0/3,072
+authenticated, one failed and 3,071 unreached. It performed no training or
+inference. The replacement ownership transition ended ``FAILED_REVIEW_REQUIRED``
+before activation completed, with all 3,072 replacement events unreached. The
+reviewed Astra/Sol science loop has since resumed and is running a focused
+operational repair; payload decoding and the native baseline remain pending.
+
+The sealed prospective v3 plan prioritizes completing payload decoding and
+measuring the native baseline, then comparing two Generic B training sample sizes
+by two network widths with learning curves, alongside measured inference
+improvements. Recoverable operational failures route to focused repair and renewed
+reviewed execution. This plan is not an execution result. GB002 still has no
+completed training or learned evaluation; operational validation counts are not
+performance metrics. Its learned exact/inclusive recovery, background, purity,
+recursive topology/PID, kinematic validity, uncertainty, and runtime remain
+explicitly unmeasured.
 
 The latest genuine learned full-reconstruction assessment remains CR054. The
 reused control and initial-feature-history arm each recover 0/256 native exact

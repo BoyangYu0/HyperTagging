@@ -39,8 +39,8 @@ def generate(root, output):
     binding = json.loads(binding_path.read_bytes())
     raw = summary_path.read_bytes()
     _require(binding == {
-        "schema": "generic-b-dashboard-public-binding-v1",
-        "status_date": "2026-10-19",
+        "schema": "generic-b-dashboard-public-binding-v2",
+        "status_date": "2026-10-21",
         "source_file": "summary.json",
         "source_bytes": len(raw),
         "source_sha256": hashlib.sha256(raw).hexdigest(),
@@ -51,7 +51,7 @@ def generate(root, output):
     value = json.loads(raw)
     _require(set(value) == {"schema", "status_date", "provenance", "gb001", "gb002", "cr054"},
              "Generic-B summary fields differ")
-    _require(value["schema"] == "generic-b-dashboard-public-summary-v1", "Generic-B schema differs")
+    _require(value["schema"] == "generic-b-dashboard-public-summary-v2", "Generic-B schema differs")
     gb001, gb002, cr054 = value["gb001"], value["gb002"], value["cr054"]
     _require(set(gb001) == {"status", "evidence_class", "learned_model_evaluation",
                             "legal_decoder_reachability_assessed", "population", "static_compatibility",
@@ -59,7 +59,10 @@ def generate(root, output):
              "GB001 field allowlist differs")
     _require(set(gb002) == {"status", "result_state", "completed_scientific_result",
                             "snapshot_recorded_state", "current_state", "training_completed",
-                            "full_evaluation_completed", "learned_metrics"},
+                            "full_evaluation_completed", "learned_metrics", "local_data",
+                            "resource_policy", "runtime_attempt_at_snapshot", "replacement_transition",
+                            "snapshot_scope", "snapshot_is_live_monitor",
+                            "next_scientific_plan", "science_loop"},
              "GB002 field allowlist differs")
     _require(set(cr054) == {"status", "scientific_gate", "evidence_class", "control_reuse",
                             "baseline_checkpoint", "scientific_factor", "coverage", "arms", "validity",
@@ -80,13 +83,66 @@ def generate(root, output):
              and static["physical_completeness"]["unavailable"] == 40000
              and all(metric is None for metric in gb001["learned_metrics"].values()),
              "GB001 census scope differs")
-    _require(gb002["status"] == "HISTORICAL_SUPERSEDED_OPERATIONAL_SNAPSHOT"
+    _require(gb002["status"] == "ACTIVE_OPERATIONAL_REPAIR_NO_LEARNED_EVALUATION"
              and gb002["snapshot_recorded_state"] == "OPERATIONAL_PREPARATION_ADMITTED"
-             and gb002["current_state"] == "VERSIONED_B_ONLY_REPLANNING"
+             and gb002["current_state"] == "CONTINUOUS_SCIENCE_LOOP_RESUMED_OPERATIONAL_REPAIR_ACTIVE"
+             and gb002["snapshot_scope"] == "AS_OF_REVIEWED_SCIENCE_LOOP_RESUMPTION_BOUNDARY"
+             and gb002["snapshot_is_live_monitor"] is False
              and gb002["result_state"] == "NO_COMPLETED_TRAINING_OR_LEARNED_EVALUATION"
              and gb002["completed_scientific_result"] is False
              and gb002["training_completed"] is False
              and gb002["full_evaluation_completed"] is False
+             and gb002["local_data"] == {
+                 "transfer_status": "COMPLETE_HASH_VERIFIED",
+                 "transfer_scope": "OPAQUE_BYTES_ONLY",
+                 "scientific_payload_authentication_complete": False,
+             }
+             and gb002["resource_policy"] == {
+                 "project_cpu_time_limit_seconds": None,
+                 "project_gpu_time_limit_hours": None,
+                 "actual_usage_tracking_required": True,
+                 "site_scheduler_limits_enforced": True,
+                 "per_operation_watchdogs_enforced": True,
+                 "recorded_allocated_cpu_seconds": 6272,
+                 "recorded_gpu_hours": 0,
+                 "recorded_accounting_scope": "AT_REVIEWED_SCIENCE_LOOP_RESUMPTION_BOUNDARY",
+             }
+             and gb002["runtime_attempt_at_snapshot"] == {
+                 "runtime_admission_passed": True,
+                 "nominal_events": 3072,
+                 "reached": 1,
+                 "authenticated": 0,
+                 "failed": 1,
+                 "unreached": 3071,
+                 "failure_class": "EVENT_NUMBER_SOURCE_ENTRY_IDENTITY_MISMATCH",
+                 "all_jobs_terminal": True,
+                 "training_performed": False,
+                 "inference_performed": False,
+             }
+             and gb002["replacement_transition"] == {
+                 "status": "FAILED_REVIEW_REQUIRED",
+                 "nominal_events": 3072,
+                 "reached": 0,
+                 "payload_execution_authorized": False,
+                 "recovery_status": "SUPERSEDED_BY_RESUMED_REVIEWED_SCIENCE_LOOP",
+             }
+             and gb002["next_scientific_plan"] == {
+                 "status": "SEALED_PROSPECTIVE_PLAN_NOT_A_RESULT",
+                 "ordered_priorities": [
+                     "COMPLETE_PAYLOAD_DECODING_AND_MEASURE_NATIVE_BASELINE",
+                     "COMPARE_TWO_GENERIC_B_TRAINING_SAMPLE_SIZES_BY_TWO_NETWORK_WIDTHS",
+                     "REPORT_LEARNING_CURVES_AND_MEASURED_INFERENCE_IMPROVEMENTS",
+                 ],
+                 "recoverable_operational_failure_policy": "FOCUSED_REPAIR_THEN_RENEWED_REVIEWED_EXECUTION",
+                 "dashboard_update_policy": "SIGNIFICANT_CHANGE_ONLY",
+             }
+             and gb002["science_loop"] == {
+                 "status": "RESUMED_UNDER_REVIEWED_ASTRA_SOL_ROUTING",
+                 "active_work": "FOCUSED_OPERATIONAL_REPAIR",
+                 "payload_decoding_status": "PENDING",
+                 "native_baseline_status": "UNMEASURED",
+                 "training_status": "NOT_STARTED",
+             }
              and all(metric is None for metric in gb002["learned_metrics"].values()),
              "GB002 unmeasured status differs")
     _require(cr054["status"] == "COMPLETED_AND_INDEPENDENTLY_REVIEWED"
@@ -122,7 +178,7 @@ def generate(root, output):
     # This tracked file is already a small sanitized source. Re-encode it to
     # make the public download deterministic rather than copying source bytes.
     published = {
-        "schema": "generic-b-dashboard-public-download-v1",
+        "schema": "generic-b-dashboard-public-download-v2",
         "source_summary_sha256": binding["source_sha256"],
         "status_date": value["status_date"],
         "provenance": value["provenance"],
@@ -173,12 +229,27 @@ def render(value):
         "resource or source alias 81; recursive detector-source conflict 53.",
         "Recorded resources: 5,162 allocated CPU-seconds, 1,474.132 recorded CPU-seconds, and",
         "2,740,744,192 bytes peak memory. These are execution resources, not model runtime throughput.", "",
-        "GB002: superseded snapshot and current replanning status",
-        "--------------------------------------------------------", "",
+        "GB002: local transfer complete; scientific authentication unresolved",
+        "--------------------------------------------------------------------", "",
+        "This section is an as-of snapshot at the reviewed science-loop resumption boundary, not a live job monitor.",
         f"The recorded {gb002['snapshot_recorded_state'].replace('_', ' ')} state is a historical",
-        "and now-superseded operational snapshot. It does not describe the current plan and is not an execution",
-        "approval. The current GB002 state is versioned B-only replanning, with no completed training or",
-        "learned evaluation. This is not a completed scientific result. Every learned",
+        "and now-superseded operational snapshot. The required data transfer is complete and hash-verified,",
+        "but it establishes opaque-byte identity only; scientific payload authentication remains incomplete.",
+        "Project-level CPU and GPU time-admission ceilings were removed. Actual usage accounting, site",
+        "scheduler limits and finite per-operation watchdogs remain enforced. At this snapshot,",
+        "the recorded 6,272 allocated CPU-seconds and zero GPU-hours are operational cost, not reconstruction performance.", "",
+        "The reviewed runtime attempt represented in this snapshot passed scheduler and resource admission,",
+        "reached the first of 3,072",
+        "events, and failed closed before authentication because event-number and source-entry identities were",
+        "conflated: 0 authenticated, 1 failed and 3,071 unreached. It performed no training or inference.",
+        "The replacement ownership transition then ended FAILED_REVIEW_REQUIRED before activation completed,",
+        "with all 3,072 replacement events unreached. The reviewed Astra/Sol science loop has since resumed and",
+        "is running a focused operational repair; payload decoding and the native baseline remain pending.", "",
+        "The sealed prospective v3 plan prioritizes payload decoding and a native baseline, then compares two",
+        "Generic B training sample sizes by two network widths with learning curves, alongside measured inference",
+        "improvements. Recoverable operational failures route to focused repair and renewed reviewed execution.",
+        "The plan and transition do not constitute execution approval or a completed scientific result.",
+        "There is still no completed GB002 training or learned evaluation. Every learned",
         "metric—exact/inclusive B recovery, background, purity, recursive topology/PID, kinematic validity,",
         "uncertainty and runtime—is explicitly UNAVAILABLE. Operational test counts are not performance metrics.", "",
         "Latest learned full reconstruction evaluation — CR054",

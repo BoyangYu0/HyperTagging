@@ -429,9 +429,13 @@ def test_current_repository_dashboard_surfaces_recorded_acceptance_values(tmp_pa
     assert rendered_status.index("GB001: completed generic-sample static target-contract census") < rendered_status.index("All studies")
     assert "34,819" in rendered_status and "6,378" in rendered_status
     assert "20,000 B and 8,000 continuum collisions" in rendered_status
-    assert "GB002: superseded snapshot and current replanning status" in rendered_status
-    assert "versioned B-only replanning" in rendered_status
-    assert "not an execution approval" in " ".join(rendered_status.split())
+    assert "GB002: local transfer complete; scientific authentication unresolved" in rendered_status
+    assert "as-of snapshot at the reviewed science-loop resumption boundary" in " ".join(rendered_status.split())
+    assert "not a live job monitor" in rendered_status
+    assert "0 authenticated, 1 failed and 3,071 unreached" in rendered_status
+    assert "reviewed Astra/Sol science loop has since resumed" in " ".join(rendered_status.split())
+    assert "two Generic B training sample sizes by two network widths" in " ".join(rendered_status.split())
+    assert "do not constitute execution approval" in " ".join(rendered_status.split())
     assert "Latest learned full reconstruction evaluation — CR054" in rendered_status
     assert "CR032 native membership feasibility" in rendered_status
     assert "50/64" in rendered_status
