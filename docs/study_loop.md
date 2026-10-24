@@ -35,8 +35,9 @@ stage for a locally reproducible defect.
 Use continuous partial quality to select near-term improvements while exact
 recovery is sparse. Exact recursive topology plus PID remains the final goal
 and a reported endpoint; zero exact recovery does not veto a continuous gain.
-Metric definitions and complete-evaluation rules belong in the
-[evaluation contract](full_decay_reconstruction_evaluation.md).
+The reviewed protocol must bind its continuous metric definitions and observer
+version. Shared evaluator definitions and complete-evaluation rules belong in
+the [evaluation contract](full_decay_reconstruction_evaluation.md).
 
 The private closeout records:
 

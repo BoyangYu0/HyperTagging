@@ -32,6 +32,9 @@ lineage. Require CPU and documentation CI on the exact commit before guarded
 promotion and live verification.
 
 Publication includes selected numeric fields, dates and source hashes.
+The controller sends a sanitized reviewed handoff to the separate publication
+owner, which deduplicates requests using reviewed hashes and the published
+binding; research workers do not directly edit or push dashboard output.
 Credentials, private machine paths and operational records stay out of the
 artifact. Source copying is disabled. Generated files are derived outputs;
 do not edit them or commit ``docs/wiki/_generated`` or ``docs/_build``.
