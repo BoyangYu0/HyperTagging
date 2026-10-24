@@ -144,9 +144,9 @@ submission. A later receipt records actual scheduler job IDs and status.
 
 Machine-readable evidence is in `artifacts/codex/reconstruction_phase62_*_20260928.json`;
 large scalar/tree exports and job artifacts remain in the data path. The
-existing [online operations proposal](online_study_operations.md) continues to
-define monitoring, planning and bounded execution; no online service is deployed
-by this training submission.
+then-current [online operations proposal](https://github.com/BoyangYu0/HyperTagging/blob/cdf4534045eca3dcc24cf0726a0083371449d35c/docs/online_study_operations.md)
+was intended to define monitoring, planning and bounded execution; no online
+service was deployed by this training submission.
 
 ## Submission snapshot
 

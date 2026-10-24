@@ -1,5 +1,8 @@
 # Training and evaluation
 
+Follow the [study loop](study_loop.md) for study sequencing, evaluation cadence
+and dashboard publication. This guide defines training commands and contracts.
+
 ## Local CPU verification
 
 ```bash
@@ -15,13 +18,7 @@ python scripts/execute_notebook_smoke_tests.py \
 These commands use synthetic fixtures. They validate software behavior and do
 not measure physics performance.
 
-## Publishing post-training status
-
-Training outputs do not update the public dashboard directly. After validating
-a terminal receipt, publish only reduced metadata through a reviewed PR/MR; the
-documentation build then regenerates the dashboard. The canonical evidence,
-privacy, validation, GitHub deployment, and GitLab-mirror procedure is in
-[`docs/wiki/maintaining.rst`](wiki/maintaining.rst).
+## Reconstruction training
 
 Model architecture is resolved from `tiny_cpu`, `gpu_debug`, `small_candidate`,
 or `production_baseline`; every dimension and level-specific query/cardinality
