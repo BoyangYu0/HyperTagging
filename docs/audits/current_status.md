@@ -744,7 +744,7 @@ six-hour estimate; v3 passes the measured eight-hour bound. This scheduling snap
 B hierarchy and beam-pool metrics remain unavailable; latent source-set proposal
 survival is explicitly diagnostic. At least95% tiny raw membership and count-backed
 held-out gains with background/validity remain prerequisites for any primary study.
-See the [Phase74 continuation plan](../phase74_continuation_20261008.md).
+See the [Phase74 continuation plan](../../configs/reconstruction/phase74_capacity_development_plan.json).
 
 Publication follows exact branch CPU/docs checks, guarded master promotion and
 actual live-page/download verification, with immutable receipts outside Git.

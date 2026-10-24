@@ -7,6 +7,9 @@ format. The input is the same `direct-mdst-tree-v4` Parquet data and immutable
 selection/index contract used by the current pretraining and reconstruction
 jobs.
 
+The [study loop](study_loop.md) defines current evaluation cadence and dashboard
+publication policy. This guide owns inference, coverage and metric definitions.
+
 The central information boundary is:
 
 ```text
@@ -20,7 +23,7 @@ truth PID target may enter reconstruction. Higher-level particles are useful
 only after inference, when the predicted forest is compared with the retained
 truth forest.
 
-## Reading the latest efficiency results
+## Historical category-sized evaluation
 
 The historical [Phase69 supplementary evaluation](wiki/phase69_policy.rst) reports a
 complete greedy evaluation on 12,000 collisions per arm, with 2,000
@@ -33,11 +36,10 @@ Scopes reuse the same events and do not enlarge the cohort. Sixteen exact-truth
 trials and one inclusive-membership trial remain unavailable in the nominal
 denominators. These are retained-truth lower bounds, not physical FEI efficiencies.
 
-The dashboard presents exact/inclusive efficiencies before tree diagnostics,
-then a summary of all studies. Historical 100-event/20-event Phase69 reports
-and the new 60-event beam diagnostic remain separately labelled. All metric
-downloads are preserved in the evidence catalogue. Consult the tagging contract
-below for matching, candidate-pool accounting and availability semantics.
+Historical 100-event/20-event Phase69 reports and its 60-event beam diagnostic
+remain separately labelled. All metric downloads are preserved in the evidence
+catalogue. Consult the tagging contract below for matching, candidate-pool
+accounting and availability semantics.
 
 ## Development-only flat membership diagnostics
 
@@ -156,7 +158,7 @@ training data, or authorize access to sealed test data. The low-level evaluator
 still permits diagnostic sample sizes; operators must check this coverage
 requirement before declaring a study evaluation complete.
 
-## Required tagging evaluation after each reconstruction study
+## Tagging metrics and coverage
 
 Every new invocation of `scripts/evaluate_full_decay.py` includes a versioned
 `tag_efficiency` block, its per-event records, and B-channel/continuum-type

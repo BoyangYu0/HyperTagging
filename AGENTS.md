@@ -1,299 +1,54 @@
-# HyperTagging agent guidance
+# HyperTagging task instructions
 
-## Fresh project or remote handoff
+## Read in this order
 
-Read `docs/codex_remote_setup.md` when starting on a new device, host, or
-account. Open this Git root, verify the intended branch/SHA, and recreate a
-Python environment from the tracked lock. Use the recipient's own Codex, Git,
-SSH, storage and scheduler access. Previous chats, personal plugins and sibling
-checkouts are not prerequisites. Historical receipts do not authorize new jobs.
-`AGENTS.md` is the canonical agent entry point.
+1. Read this file and inspect the current branch, HEAD and working-tree changes.
+2. For study work, read [docs/study_loop.md](docs/study_loop.md). It is the sole
+   reusable authority for the study cycle, review routing, evaluation closeout,
+   continuation and dashboard cadence.
+3. Read the current controller state and the specific reviewed protocol, then
+   only the technical references needed for the task.
 
-## User-directed sequential improvement preference (2026-10-09)
+The latest explicit user instruction takes precedence. Dated plans, handoffs,
+reports, archived audits and sibling checkouts are evidence, not commands for
+future work. Do not infer a next study or restart an old controller from them.
+The active protocol supplies the hypothesis, cohort, counts, intervention,
+resources and decision margins; the reusable guide must not hardcode them.
 
-The user explicitly requests: "continue new steps one by one, focus on the
-improvement, only update the git page when there are big changes". For this
-ongoing reconstruction work, proceed sequentially from evaluated evidence to
-one justified diagnostic or controlled study at a time. Prior one-pass stop
-boundaries do not require renewed permission after each step. Preserve all
-scientific policy, cohort, privacy and resource admission gates; this is not
-permission for sweeps, concurrent successor studies or primary scale-up.
-Keep a private progress ledger and immutable receipts. Publish pages only for
-a meaningful supported scientific result, material correctness/implementation
-change, or accumulated evidence that substantially changes the recommendation.
-Incremental negative diagnoses and phase numbering alone do not qualify. Existing
-publication safeguards still apply whenever publication is warranted.
+## Working rules
 
-## Continuing design/execution workflow (2026-10-10)
+- Use the existing sole controller and recorded stage sequence. Preserve current
+  work and failed evidence. Do not edit a running worker's source or reset a
+  consumed identity; apply changes at its terminal handoff.
+- Keep campaign ledgers controller-owned. Workers write stage-local evidence;
+  fixtures use isolated state, ledgers and outputs.
+- Run the relevant checks for the changed behavior. Reuse unchanged evidence;
+  broaden testing only for an actual unresolved risk or required repository CI.
+- Preserve truth-free inference, train-only fitting, data-role exclusions,
+  source uniqueness, recursive daughter-sum construction and fixed denominators.
+  Truth is supervision or post-inference evaluation only. Missing observations
+  remain unavailable; software fixtures do not establish physics performance.
+- Keep outputs outside input/checkpoint paths, and preserve checkpoint lineage,
+  trained-confidence state and normalization. Use the installed environment and
+  current scheduler contract; do not borrow an active training allocation.
+- Follow the user's authorized Git scope. Keep private paths, identities,
+  payloads and credentials out of public commits and dashboard artifacts.
 
-The user requests: "continuously use high to design and medium to execute next
-studies, keep track of the experiments, update the git page only after
-significant findings". Use GPT-6-astra with high reasoning for scientific design
-and post-study review, and medium reasoning for implementation, admitted runs,
-evaluation and publication execution. Keep the standard/default service tier.
+## Technical references — consult when relevant
 
-Continue one reviewed study at a time across phase boundaries. The earlier
-parent-imposed two-contrast sequence limit is historical, not a limit on this
-new continuing authorization. Each individual study still needs a finite,
-preregistered protocol, authenticated cohort/source/resource admission and
-explicit stop/success rules. A negative study returns to high-reasoning review;
-it does not authorize an unreviewed successor or a blind sweep. Preserve the
-scientific policy and all frozen historical gates. Do not lower a threshold,
-change an endpoint, or repeatedly select samples to manufacture admission.
+| Task | Reference |
+| --- | --- |
+| New host or environment | [Remote setup](docs/codex_remote_setup.md) |
+| Training, checkpoints and commands | [Training](docs/training.md) |
+| Metric definitions, truth matching and coverage | [Reconstruction evaluation](docs/full_decay_reconstruction_evaluation.md) |
+| Data and normalization contracts | [Preprocessing](docs/preprocessing_design.md) |
+| Current implementation findings | [Audit status](docs/audits/current_status.md) |
+| Publication commands, CI and privacy | [Wiki maintenance](docs/wiki/maintaining.rst) |
+| Basf2/ONNX deployment | [Deployment contract](docs/basf2_onnx_full_decay.md) |
 
-Maintain an append-only experiment ledger with hypothesis, evidence, source,
-cohort and compute contracts, model/effort, jobs, metrics, failures, decision and
-next action. The controller and each worker must record actual process exits.
-Do not start another scientific study while the preceding one's jobs remain
-active. Continue with a justified diagnostic when training is unsupported;
-pause and notify the user for a genuine external blocker or no defensible next
-experiment, instead of repeating the same calls or inventing a result.
-
-Publish only after high-reasoning review identifies a supported substantial
-finding: a credible fresh-data performance improvement, a material correctness
-fix, or accumulated evidence that materially changes the recommendation.
-Phase numbering, a small negative diagnosis, lower training loss or an isolated
-proxy gain is insufficient. Keep per-study evidence private until that gate is
-met, and retain all existing publication/CI/privacy/live-verification checks.
-The separately authorized retrospective Phase84–85 publication may finish in
-its owned checkout; do not interfere with it or include later research there.
-
-## Scope and working discipline
-
-- Work in this Git root. Historical sibling repositories are read-only
-  references. Check `git status --short` before editing; tracked modifications,
-  untracked files, deployment code, checkpoints, reports, and snapshots already
-  present belong to the user. Build on relevant work without replacing it.
-- Do not commit, push, reset, clean, delete, or overwrite unrelated files unless
-  the user explicitly requests that action. Keep generated test artifacts in
-  a new, task-specific directory and inspect the final diff.
-- Read `README.md` and the relevant current docs/code/tests
-  before changing scientific behavior. `docs/audits/current_status.md` owns
-  mutable audit claims; historical audits and run receipts are evidence, not
-  current implementation specifications. Do not infer physics quality from
-  synthetic CPU fixtures.
-
-## Architecture and authoritative paths
-
-Package paths below are relative to `src/hypertagging/`; CLI paths are relative
-to the repository root.
-
-- `preprocessing/schema_v4.py` produces streamable `direct-mdst-tree-v4` event
-  rows with detector inputs, retained truth targets, masks, and provenance.
-  V1–v3 are compatibility inputs; v5 is experimental nested Arrow storage.
-- `data/heterogeneous.py`, `data/streaming.py`, `data/dataset_index.py`, and
-  `training/data_module.py` implement tensor contracts, lazy loading, masked
-  normalization, indexed capacity checks, and source-safe selection/splits.
-- `models/heterogeneous.py` supplies detector/composite adapters and shared
-  contextual features. `models/level_autoregressive.py` performs detector PID
-  inference, reconstructs PID-dependent quantities, then runs the refined
-  context and mother/pointer decoder. `models/relations.py` owns physical and
-  hyperbolic relation features; `models/stair_masks.py` owns level causality.
-- `losses/hyperbolic_pretraining.py` implements exact-tree relation/parent,
-  distance, radius, channel, variance, and covariance objectives.
-  `losses/level_reconstruction.py` and `losses/set_matching.py` implement
-  unordered mother targets and Hungarian matching; production requires SciPy.
-- `training/pretrain_trainer.py` and `training/reconstruction_trainer.py` own
-  real training. `reconstruction/constraints.py`, `pid_state.py`, and
-  `level_rollout.py` share decoder policy and persistent composite construction.
-- Strict offline inference starts at `reconstruction/hierarchical_inference.py`;
-  `evaluation/full_decay_metrics.py` and `full_decay_runner.py` score and
-  serialize its results. `scripts/evaluate_full_decay.py` is the current CLI.
-  Historical `full_reconstruction.py` / `evaluate_reconstruction.py` consume
-  GraFEI pairs and preserve different legacy metrics; keep their regressions.
-- `deployment/` and `basf2_integration/` export and execute manifest-bound ONNX
-  level graphs and construct basf2 candidates. Keep deployment imports usable
-  without training-time PyTorch or basf2 where their contracts require it.
-
-## Scientific invariants
-
-- Never use truth PID/adjacency/parents, truth geometry, B-side/channel labels,
-  completeness flags, or stored truth composites to generate, score, prune, or
-  stop inference. Strict offline inference physically projects to detector FSPs
-  and scrubs target-only fields. Its evaluation-only source-key map must stay
-  outside the model. Current links created by reconstruction are valid state.
-- Model-input daughter PID histograms and truth-supervision histograms are
-  separate contracts. Missing detector values have availability masks; zero is
-  a placeholder, not a measurement. Do not fabricate track/ECL/KLM features.
-- Every new mother points only to eligible, pre-existing, parentless forest
-  roots. Enforce one parent, unique daughter/query use, allowed mother ontology,
-  charge/cardinality/physics policy, and recursive detector-source disjointness
-  within each coherent hypothesis. Distinct node IDs can share an ECL/KLM or
-  copied source. Competing hypotheses may reuse a source independently.
-- Persistent mother p4 and charge are exact recursive daughter sums. Rebuild
-  source masks, current daughter PID summaries, and composite features from
-  those daughters. Never copy truth mother kinematics or add a free p4 head.
-- Raw-track PID choices must respect charge. Preserve the checkpoint's separate
-  decision and construction modes: `soft_decision_hard_construction` uses soft
-  kinematics for neural decisions and hard PID when persisting daughters.
-- Track and ECL static blocks use train-fitted normalization; KLM uses the
-  fixed physical scales in its encoder. Common and
-  composite blocks remain in physical units until the model-owned runtime
-  normalizer; apply the same transform after PID/composite rebuilding. Runtime
-  slots without training observations use identity scaling. Categorical slots
-  are embeddings, and target-only composite slots remain masked.
-- Reconstruction level is generation height, not edge depth. Exact retained
-  parent/LCA/path geometry drives geometry targets; leaves lie farther out in
-  the radius convention. Keep hyperbolic and VIC numerical kernels in FP32.
-
-## Training, configuration, and checkpoints
-
-- Before preregistering a new reconstruction successor, read
-  `docs/assembly_diagnosis_20261007.md` and apply
-  `configs/reconstruction/next_study_policy.json` with
-  `scripts/validate_next_reconstruction_study.py`. Prioritize measured structural
-  membership/assembly failures. Final-B-pool reranking requires a correct-pool
-  gap; training-loss gains or tiny-set memorization alone do not justify primary
-  scale-up. Preserve existing Phase72 and historical contracts. Planning checks
-  do not replace authenticated cohort/resource admission or authorize a chain.
-
-- For representation studies, use the policy's capacity/pretraining contrast:
-  contextual width 128 versus 256 crossed with existing versus assembly-targeted
-  objectives, initially fixing hyperbolic width at 32 and encoder depth. Read
-  `configs/reconstruction/capacity_pretraining_development_plan.json`. Control
-  pretraining history and downstream head bottlenecks; report actual compute.
-  Truth remains supervision only, including within-B relation targets and
-  generated-state training. Require held-out downstream evidence before 512-wide
-  or separate hyperbolic-width scaling; tiny memorization is not capacity proof.
-
-- YAML precedence is defaults < YAML < explicitly supplied CLI flags. Reject
-  unknown settings and invalid capacities rather than silently ignoring them.
-  Architecture presets/overrides, PID vocabulary, feature specifications,
-  normalizers, target/constraint policies, and rollout PID mode are contracts.
-- Scientific runs use immutable source-role selection manifests plus their
-  authenticated dataset index. Fit statistics on train only; preserve fixed
-  validation UID cohorts. Include the authenticated private cohorts bound by
-  `configs/reconstruction/supplementary_validation_reservations.json` in future
-  validation exclusion unions; historical free-capacity counts predate them.
-  Raw event prefixes are diagnostic, and the sealed
-  test role is not a tuning/normalization source. Validate policy-specific
-  query/cardinality capacity before training; overflow must be accounted for.
-- `complete_only`, `reconstructable_partial`, and diagnostic targets describe
-  different populations. Keep their denominators and reports separate.
-  `complete_only` does not mean complete reconstruction of every physical event.
-- Checkpoints include model/encoder, optimizer/scheduler/scaler, RNG, curriculum
-  and sampling state, normalization, architecture/features/PID, split/data-order
-  identity, and validation selection. Preserve mismatch checks and atomic saves.
-  Only load trusted checkpoints. Exact mid-epoch replay is supported with zero
-  loader workers; do not claim exact prefetched multiworker resume.
-- Encoder transfer needs measured key/shape coverage and checkpoint lineage.
-  Learned confidence is usable only when its trained-state flag permits it.
-  Teacher-forced and rollout best-checkpoint tracks have distinct meanings;
-  primary rollout selection retains its denominator, validity, p4-closure, and
-  zero-source-conflict gates. See `docs/training.md` for the complete contract.
-
-## Reconstruction and evaluation
-
-- Validate checkpoint lineage with
-  `scripts/validate_reconstruction_checkpoint_pair.py`, then evaluate immutable
-  validation/test selections with `scripts/evaluate_full_decay.py`. The strict
-  offline path is CPU-only and uses `eval()` plus inference mode. Output must
-  not alias checkpoints, manifests, indexes, or input shards.
-- Greedy remains the default. Opt-in full-depth beam search retains multiple
-  mother/type/daughter alternatives and coherent event states across levels.
-  Preserve its explicit proposal/state bounds, deterministic canonical
-  deduplication, source exclusivity, node-axis cap, terminal-root lane, and
-  comparable cumulative scoring. Live states with different model-visible
-  confidence/features are not equivalent even when topology matches.
-  Width one follows greedy for valid source-exclusive semantics. Do not replace
-  global state search with local top-k followed by immediate greedy collapse.
-- Search is truth-free. Oracle@K metrics may inspect truth only after all
-  candidate generation/ranking is complete; label them as oracle metrics and
-  keep deployable top-1 and existing greedy metric keys separate. Report search
-  limits, pruning, candidate ranks/scores, and numerator/denominator counts.
-  Optional candidate-survival traces contain detached reconstructed state only;
-  join truth after search completes. Track eligibility, threshold support,
-  generated/local-retained proposals and forest/final-pool survival by level.
-  Clean-root membership coverage is only an optimistic necessary condition;
-  never report it as verified legal decoder reachability.
-- Complete post-study evaluation requires at least 2,000 distinct processed
-  collision events in EACH of `charged`, `mixed`, `ccbar`, `uubar`, `ddbar` and
-  `ssbar` (at least 12,000 per model/arm), on authenticated, reserved validation
-  cohorts disjoint from training and checkpoint selection. Compare arms on the
-  same cohort; candidates, B trials, repeat runs and scopes do not multiply
-  sample counts. Report per-category processed/failure/unavailable counts and
-  fail the coverage requirement on shortages. Smaller smoke/selection/beam
-  samples are diagnostic only; do not present them as complete evaluations.
-  Preserve historical/frozen contracts and version any enlarged reevaluation
-  separately. Follow the category-coverage policy in
-  `docs/full_decay_reconstruction_evaluation.md`; never use sealed test data to
-  fill quotas.
-- Every new reconstruction-study evaluation must retain the shared evaluator's
-  `tag_efficiency` report and channel/type coverage, including greedy, model-ranked
-  top-1 and retained beam-pool results. Generic B-pair tagging uses two trials per
-  input collision and counts each true B at most once; also report event-level
-  efficiency. Keep continuum fake-B acceptance and retained-component recovery
-  separate. List recovered B channels and continuum source types with evaluated,
-  correct and unavailable counts. Current retained/reduced-PID truth is a proxy,
-  not an FEI-equivalent physical efficiency or generator-quark reconstruction.
-  Also report inclusive candidate-group efficiency: exact FSP source-set
-  equality for model-produced groups, independent of intermediate tree/PID
-  correctness, with the same per-B/beam accounting and channel/type coverage.
-  Keep membership availability separate from PID availability; do not invent
-  continuum parton ancestry or combine disconnected predicted components.
-  Preserve missing truth as unavailable, not zero measured success. See the
-  post-study tagging contract in `docs/full_decay_reconstruction_evaluation.md`.
-- Full scope contributes one eligible root unit/event; B-half scope contributes
-  two units plus one event-level both-halves result. Continuum uses explicit
-  top-level retained components, never invented truth hemispheres. Direct-target
-  incompatibilities remain failed primary trials; contraction is diagnostic.
-- Match by reconstructed source/topology before PID or p4 scoring. Aggregate
-  counts before division, preserve unavailable/failed distinctions, and do not
-  average per-event rates into micro metrics. Daughter-sum p4 closure is an
-  implementation invariant, not physical momentum resolution.
-- See `docs/full_decay_reconstruction_evaluation.md` for API/CLI beam settings,
-  score semantics, report structure, and interpretation, and
-  `docs/basf2_onnx_full_decay.md` for deployment-specific contracts.
-
-## Validation and environment
-
-Use the installed project Python environment; inspect availability before
-assuming a documented host-specific path exists. `.venv` is the normal project
-environment; the separately locked GPU environment is described in
-`environment/gpu/README.md`. Do not mutate an existing frozen environment or
-relock dependencies as an incidental fix.
-
-Run focused CPU tests first, then the broadest practical CPU suite:
-
-```bash
-CUDA_VISIBLE_DEVICES="" OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 python -m pytest -q \
-  tests/test_bounded_search_cpu.py tests/test_full_depth_beam_cpu.py \
-  tests/test_full_depth_beam_regressions_cpu.py \
-  tests/test_hierarchical_inference_cpu.py tests/test_full_decay_metrics_cpu.py \
-  tests/test_full_decay_runner_cpu.py tests/test_full_decay_cli_cpu.py \
-  tests/test_recursive_source_exclusivity_cpu.py tests/test_no_truth_leakage_cpu.py
-CUDA_VISIBLE_DEVICES="" OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 python -m pytest -q
-python scripts/train_hyperbolic_pretrain.py --dry-run --tiny --device cpu --max-steps 2 --batch-size 2
-python scripts/train_level_reconstruction.py --dry-run --tiny --device cpu --max-steps 2 --batch-size 2
-```
-
-Also run new feature tests and relevant ONNX contract tests when changing shared
-search/deployment code. Basf2 smoke scripts require the documented CVMFS release;
-ordinary CPU fixtures do not establish basf2 or physics performance. Notebook
-checks use `scripts/execute_notebook_smoke_tests.py` when notebook behavior changes.
-
-Real-size CUDA/production jobs use the tracked guarded Slurm or HTCondor
-workflows. Renderers do not submit jobs. Local CUDA diagnostics have explicit
-admission/watchdog or tiny-test guards; never bypass them or borrow an active
-training GPU. Keep CPU workers/BLAS threads bounded and large data/checkpoints
-on the configured data/project volume. Report tests actually run, failures,
-external environment limitations, and any unverified scientific claims.
-
-## Documentation and repository maintenance
-
-- Keep metric definitions in the evaluation contract and wiki evaluation guide.
-  Expand only the latest completed study on the dashboard; retain earlier
-  studies in the summary and preserve immutable evidence and metric downloads.
-- Validate documentation and generated-notebook consistency after relevant
-  changes. Keep source and Git metadata stable during full-site validation.
-- Before publishing implementation commits, retain the audit-lineage follow-up:
-  record the reviewed implementation SHA in the audit ledger and rerun audit
-  integrity on the final head. Website retirement does not waive this check.
-- PR CI runs the CPU suite and audit integrity once. Full documentation layouts
-  and notebook execution run weekly or manually; run relevant local checks for
-  changes to those sources. Preserve documentation validation and privacy checks.
-- For the explicitly authorized Phase72 publication, push the development branch
-  first and require CPU and full Documentation and Pages success on the exact
-  commit. Use `scripts/promote_verified_commit.py`, then `--push`, for guarded
-  fast-forward publication. Verify actual live pages and downloads.
-- Preserve scientific basf2/ONNX deployment contracts and historical snapshots.
+Maintain one definition per topic. Change the study-loop guide for workflow,
+not a new dated instruction file. Keep technical definitions in their reference
+contracts and historical results in evidence records. Add only short navigation
+links elsewhere. Remove superseded prose plans when their unique information
+is preserved in a contract or Git history; retain files required by policy or
+audit bindings with their original bytes.

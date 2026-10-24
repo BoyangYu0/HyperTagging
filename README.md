@@ -24,6 +24,7 @@ separately.
 ## Documentation
 
 - [Documentation wiki source](docs/index.rst)
+- [Current study loop and publication policy](docs/study_loop.md)
 - [Training and evaluation guide](docs/training.md)
 - [Preprocessing contract](docs/preprocessing_design.md)
 - [Full-decay evaluation contract](docs/full_decay_reconstruction_evaluation.md)
@@ -41,7 +42,6 @@ separately.
 - [Phase69 supplementary category-policy evaluation](docs/wiki/phase69_policy.rst)
 - [Phase69 completed confirmation](docs/phase69_closeout_20261005.md)
 - [Earlier studies](docs/wiki/studies.rst)
-- [Online study monitoring and execution proposal](docs/online_study_operations.md)
 - [External artifact storage and recovery](docs/repository_storage.md)
 
 The [dashboard](https://boyangyu0.github.io/HyperTagging/wiki/_generated/status/)
@@ -183,33 +183,11 @@ oracle@K metrics.
 
 ## Updating the dashboard after training
 
-The dashboard is generated from a small allowlist of tracked evidence declared
-in `docs/_ext/wiki_status.py`; it does not poll jobs, inspect arbitrary run
-directories, or execute training. Never edit or commit `docs/wiki/_generated/`
-or `docs/_build/`.
-
-After a training or evaluation run:
-
-1. Validate the run receipt, then add only the reduced, reviewable metadata
-   needed for the dashboard. Keep checkpoints, raw logs, host/user paths,
-   scheduler identifiers, and data outside the publication boundary.
-2. Append the relevant verification record and update the reviewed current
-   status or issue ledger only when their claims actually change. Do not
-   overwrite dated receipts; add a new immutable record and update the
-   `SOURCE_PATHS` allowlist and its tests in the same branch when a campaign is
-   superseded.
-3. Regenerate nothing in place. Verify the derived dashboard with:
-
-   ```bash
-   python -m pytest -q tests/test_docs_*_cpu.py
-   docs_check="$(mktemp -d)"
-   python scripts/build_docs.py --output "$docs_check" --check-generation
-   ```
-
-Review the generated status values, source hashes, freshness warnings and metric
-populations. The dashboard expands the latest completed study and collects older
-studies in its summary, retaining their metric downloads. See the
-[maintenance guide](docs/wiki/maintaining.rst) for validation details.
+The [study loop](docs/study_loop.md) defines when a finding warrants publication
+and how the latest and previous studies appear on the dashboard. Follow the
+[maintenance guide](docs/wiki/maintaining.rst) for evidence allowlists, privacy,
+validation commands and deployment. The dashboard reads reviewed evidence; it
+does not poll jobs or execute training.
 
 ## Historical scope and limitations
 

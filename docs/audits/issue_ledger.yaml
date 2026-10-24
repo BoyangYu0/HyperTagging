@@ -19,6 +19,10 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # User-requested instruction consolidation only: two workflow authorities, three obsolete prose plans removed, scientific contracts retained; links reviewed.
+  - 4b9b9bc391021330a1bb1178e568eccba129bccc
+  # Clarify that continuous metric definitions come from the reviewed protocol and preserve the separate publisher handoff; no runtime or scientific result changes.
+  - 4659ef88f16aba50e0d1830339778b0cbf2d2750
   # Reviewed significant Generic-B readiness/plan dashboard update; explicit reviewed-loop-resumption snapshot preserves GB001 static and CR054 learned scopes while GB002 learned metrics remain unavailable. Source/privacy/render checks pass; no scientific runtime change.
   - cf41c12e5250a7f70da0e62d95ebd87262bb75cd
   # Append the reviewed generic-B dashboard publication branch to the existing CPU push triggers; assertions, resource bounds and publication content are unchanged.
