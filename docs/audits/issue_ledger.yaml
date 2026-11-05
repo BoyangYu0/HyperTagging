@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed GB101 saved-beam diagnosis publication; sanitized retained-pool versus top-1 quality, uncertainty, coverage, background and compute aggregates are added without new inference, training or scientific promotion.
+  - ac292aee0b402ae43397500dd79d17c3cb1af814
   # Re-encode the retained GB101 v3 source into its exact historical public bytes so the privacy boundary passes without a tracked raw-body copy; corrected v4 content remains distinct and unchanged.
   - 1e1f5e3a7f89f1082d792bb78d5810655004ecb3
   # Minimal GB101 publication repair restores the exact historical v3 download bytes and publishes the reviewed correction under a distinct v4 filename; scientific aggregates and interpretation are unchanged.
