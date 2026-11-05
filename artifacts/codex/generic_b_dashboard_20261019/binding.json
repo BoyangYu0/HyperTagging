@@ -2,9 +2,9 @@
   "contains_cohort_member_identifiers": false,
   "contains_operational_identifiers": false,
   "private_payloads_copied": false,
-  "schema": "generic-b-dashboard-public-binding-v3",
-  "source_bytes": 25153,
+  "schema": "generic-b-dashboard-public-binding-v4",
+  "source_bytes": 27393,
   "source_file": "summary.json",
-  "source_sha256": "c8de16ce050b6dddecfc6ef50e303ded5e75c6b9f92129a67d4937d05195cdaa",
+  "source_sha256": "273adbc36a416dedd2bd296c0e154b842832ab0333874ee4441cd64fa42be12e",
   "status_date": "2026-11-05"
 }

@@ -1,4 +1,4 @@
-"""Bounded aggregate publication for GB001, GB002 status, and CR054."""
+"""Bounded aggregate publication for Generic-B reconstruction studies."""
 from __future__ import annotations
 
 import hashlib
@@ -39,7 +39,7 @@ def generate(root, output):
     binding = json.loads(binding_path.read_bytes())
     raw = summary_path.read_bytes()
     _require(binding == {
-        "schema": "generic-b-dashboard-public-binding-v3",
+        "schema": "generic-b-dashboard-public-binding-v4",
         "status_date": "2026-11-05",
         "source_file": "summary.json",
         "source_bytes": len(raw),
@@ -51,19 +51,54 @@ def generate(root, output):
     value = json.loads(raw)
     _require(set(value) == {"schema", "status_date", "provenance", "gb001", "gb002", "cr054", "gb101"},
              "Generic-B summary fields differ")
-    _require(value["schema"] == "generic-b-dashboard-public-summary-v3", "Generic-B schema differs")
+    _require(value["schema"] == "generic-b-dashboard-public-summary-v4", "Generic-B schema differs")
     gb001, gb002, cr054, gb101 = value["gb001"], value["gb002"], value["cr054"], value["gb101"]
     _require(gb101["status"] == "COMPLETED_COVERAGE_INCOMPLETE_NULL_OR_HARM"
              and gb101["scientific_gate"] == "FAILED"
              and gb101["checkpoint_promoted"] is False
-             and gb101["coverage"]["complete_post_study_evaluation"] is False
-             and gb101["coverage"]["development_collisions_per_category"] == 8
-             and gb101["coverage"]["requested_complete_collisions_per_category"] == 2000
-             and gb101["latest_beam4"]["exact_top1"] == {"correct": 0, "nominal": 96}
-             and gb101["latest_beam4"]["exact_oracle_at_4"] == {"correct": 0, "nominal": 96}
-             and gb101["latest_beam4"]["topology_oracle_at_4"] == {"correct": 0, "nominal": 96}
-             and gb101["latest_beam4"]["inclusive_oracle_at_4"] == {"correct": 0, "nominal": 96},
+             and gb101["coverage"] == {
+                 "authenticated_local_inventory_per_category": 512,
+                 "complete_post_study_evaluation": False,
+                 "diagnostic_collisions": 80,
+                 "exploratory_development_collisions_per_category": 8,
+                 "exploratory_processed_per_category": 8,
+                 "exploratory_processed_total": 48,
+                 "exploratory_shortfall_per_category": 1992,
+                 "historical_pretraining_exposure":
+                     "INCOMPLETE_FOR_SAME_512_EVENT_POPULATION_NOT_ADDITIONAL_EVENTS",
+                 "naf_inventory": "UNAVAILABLE_AUTHENTICATION",
+                 "prior_adaptive_development_reservation_per_category": 512,
+                 "strict_eligible_available_per_category": 0,
+                 "strict_eligible_available_total": 0,
+                 "strict_eligible_processed_per_category": 0,
+                 "strict_eligible_processed_total": 0,
+                 "strict_eligible_selected_per_category": 0,
+                 "strict_eligible_selected_total": 0,
+                 "strict_requested_per_category": 2000,
+                 "strict_requested_total": 12000,
+                 "strict_shortfall_per_category": 2000,
+                 "train_diagnostics": 32,
+             },
              "GB101 result scope differs")
+    separated = gb101["role_separated_endpoints"]
+    _require(separated["endpoint_order"] == [
+                 "exact_topology_pid", "topology_only", "inclusive_source"]
+             and separated["roles"] == {
+                 "development": {"collisions": 16, "nominal_b_slots": 32},
+                 "train_diagnostic": {"collisions": 32, "nominal_b_slots": 64},
+             }
+             and set(separated["views"]) == {
+                 "latest_beam4", "latest_native_gb101",
+                 "unpromoted_parent_beam4", "unpromoted_parent_native"},
+             "GB101 role-separated endpoint scope differs")
+    for view_name, view in separated["views"].items():
+        expected_keys = {"top1_correct_in_endpoint_order", "oracle_at_1_correct_in_endpoint_order"}
+        if "beam4" in view_name:
+            expected_keys.add("oracle_at_4_correct_in_endpoint_order")
+        for role in ("development", "train_diagnostic"):
+            _require(set(view[role]) == expected_keys
+                     and all(view[role][key] == [0, 0, 0] for key in expected_keys),
+                     "GB101 role-separated endpoint values differ")
     _require(set(gb001) == {"status", "evidence_class", "learned_model_evaluation",
                             "legal_decoder_reachability_assessed", "population", "static_compatibility",
                             "categories", "overlapping_recursive_blockers", "learned_metrics", "runtime"},
@@ -189,7 +224,7 @@ def generate(root, output):
     # This tracked file is already a small sanitized source. Re-encode it to
     # make the public download deterministic rather than copying source bytes.
     published = {
-        "schema": "generic-b-dashboard-public-download-v3",
+        "schema": "generic-b-dashboard-public-download-v4",
         "source_summary_sha256": binding["source_sha256"],
         "status_date": value["status_date"],
         "provenance": value["provenance"],
@@ -210,6 +245,14 @@ def render(value):
     static = gb001["static_compatibility"]
     selected = gb101["selected_b_development"]
     latest = gb101["latest_beam4"]
+    separated = gb101["role_separated_endpoints"]
+    endpoint_labels = {
+        "exact_topology_pid": "Exact topology+PID",
+        "topology_only": "Topology only",
+        "inclusive_source": "Inclusive source grouping",
+    }
+    latest_native = separated["views"]["latest_native_gb101"]
+    latest_beam = separated["views"]["latest_beam4"]
     lines = [
         "GB101: full-depth beam search on the latest H3-adapted checkpoint",
         "------------------------------------------------------------------", "",
@@ -217,18 +260,48 @@ def render(value):
         "80-collision reused exploratory panel. GB101 H3 conflict packing was bound into the nominal",
         "beam lane; alternate forests retained the documented likelihood policy difference. No truth",
         "entered generation, pruning, ranking or stopping, and no checkpoint was promoted.", "",
-        "Coverage is incomplete: development contributes only 8 collisions per category versus the",
-        "required 2,000. The authenticated local inventory contains 512/category, but this execution",
-        "processed only the compatible frozen 8/category panel; NAF inventory access was unavailable.",
-        "The other 32 rows are TRAIN diagnostics and are reported separately, not generalization.", "",
+        "Strict validation coverage is unavailable: 0 of 2,000 eligible collisions per category were",
+        "available, selected or processed (0/12,000 total), leaving a strict shortfall of 2,000/category.",
+        "All 512 locally inventoried collisions/category are prior adaptive-development reservations;",
+        "incomplete historical pretraining exposure applies to that same population and is not another",
+        "512/category. This inventory does not establish that the other 1,488/category were inspected.", "",
+        "The retained numerical results use 8 exploratory observations/category (48 total), leaving a",
+        "diagnostic numerical shortfall of 1,992/category. They do not satisfy the strict validation quota.",
+        "Of the signal observations, 16 development collisions supply 32 B slots. Another 32 charged/mixed",
+        "collisions are TRAIN diagnostics supplying 64 B slots and are reported separately, not as",
+        "generalization. NAF inventory access was unavailable and was not retried for this correction.", "",
     ]
-    lines += _table(["Latest-checkpoint endpoint", "Beam width 4", "GB101 native greedy", "Interpretation"], [
+    lines += _table(["Coverage class", "Per category", "All six categories", "Interpretation"], [
+        ["Strict requested", "2,000", "12,000", "complete-study target"],
+        ["Strict eligible available / selected / processed", "0 / 0 / 0", "0 / 0 / 0", "quota unmet"],
+        ["Strict shortfall", "2,000", "12,000", "unavailable"],
+        ["Exploratory processed", "8", "48", "reused adaptive observations"],
+        ["Exploratory numerical shortfall", "1,992", "11,952", "not strict coverage"],
+    ])
+    lines += _table(["Latest-checkpoint continuous endpoint", "Beam width 4", "GB101 native greedy", "Role"], [
         ["Selected-B source F1", f"{selected['latest_beam4_source_f1']['point']:.6f}", f"{selected['latest_greedy_source_f1']['point']:.6f}", "development only"],
         ["Selected-B soft-edge F1", f"{selected['latest_beam4_soft_edge_f1']['point']:.6f}", f"{selected['latest_greedy_soft_edge_f1']['point']:.6f}", "development only"],
-        ["Exact topology+PID top-1", f"{latest['exact_top1']['correct']}/{latest['exact_top1']['nominal']}", "0/32 in native development endpoint", "TRAIN+development beam denominator"],
-        ["Exact topology+PID oracle@4", f"{latest['exact_oracle_at_4']['correct']}/{latest['exact_oracle_at_4']['nominal']}", "not applicable", "post-inference oracle; not promoted"],
-        ["Topology-only oracle@4", f"{latest['topology_oracle_at_4']['correct']}/{latest['topology_oracle_at_4']['nominal']}", "not applicable", "PID ignored"],
-        ["Inclusive source oracle@4", f"{latest['inclusive_oracle_at_4']['correct']}/{latest['inclusive_oracle_at_4']['nominal']}", "not applicable", "source grouping only"],
+    ])
+    endpoint_order = separated["endpoint_order"]
+    lines += _table(["Development endpoint (32 B slots)", "Greedy top-1", "Greedy oracle@1",
+                     "Beam top-1", "Beam oracle@1", "Beam oracle@4"], [
+        [endpoint_labels[name],
+         f"{latest_native['development']['top1_correct_in_endpoint_order'][index]}/32",
+         f"{latest_native['development']['oracle_at_1_correct_in_endpoint_order'][index]}/32",
+         f"{latest_beam['development']['top1_correct_in_endpoint_order'][index]}/32",
+         f"{latest_beam['development']['oracle_at_1_correct_in_endpoint_order'][index]}/32",
+         f"{latest_beam['development']['oracle_at_4_correct_in_endpoint_order'][index]}/32"]
+        for index, name in enumerate(endpoint_order)
+    ])
+    lines += _table(["TRAIN diagnostic endpoint (64 B slots)", "Greedy top-1", "Greedy oracle@1",
+                     "Beam top-1", "Beam oracle@1", "Beam oracle@4"], [
+        [endpoint_labels[name],
+         f"{latest_native['train_diagnostic']['top1_correct_in_endpoint_order'][index]}/64",
+         f"{latest_native['train_diagnostic']['oracle_at_1_correct_in_endpoint_order'][index]}/64",
+         f"{latest_beam['train_diagnostic']['top1_correct_in_endpoint_order'][index]}/64",
+         f"{latest_beam['train_diagnostic']['oracle_at_1_correct_in_endpoint_order'][index]}/64",
+         f"{latest_beam['train_diagnostic']['oracle_at_4_correct_in_endpoint_order'][index]}/64"]
+        for index, name in enumerate(endpoint_order)
     ])
     delta = selected["beam_minus_greedy_source_f1"]
     edge_delta = selected["beam_minus_greedy_soft_edge_f1"]
@@ -239,7 +312,9 @@ def render(value):
         f"[{edge_delta['seed5001_interval']['lower']:.6f}, {edge_delta['seed5001_interval']['upper']:.6f}].",
         "Beam reduced continuum accepted events from greedy 5/8, 5/8, 4/8 and 6/8 to",
         "1/8, 0/8, 1/8 and 1/8 for ccbar, uubar, ddbar and ssbar, respectively, but",
-        "this came with a large signal-quality loss and zero exact/inclusive oracle recovery.", "",
+        "this came with a large signal-quality loss and zero exact/inclusive oracle recovery. The",
+        "unpromoted parent reference is also zero for all three endpoints in both role-separated views;",
+        "no pooled 0/96 denominator is used and no oracle result is promoted.", "",
         f"The latest beam averaged {latest['latency_seconds_per_collision']:.3f} seconds/collision,",
         f"made {latest['model_calls']} model calls, returned {latest['returned_candidates']} ranked",
         f"candidates, and hit the per-query expansion limit in {latest['query_limit_events']['numerator']}/80 events.",
