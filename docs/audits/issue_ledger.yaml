@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed GB101 correction separates strict zero-eligible coverage from reused exploratory observations and splits exact/topology/inclusive denominators into development and TRAIN diagnostic roles; historical downloads and measured null/harm results remain unchanged.
+  - 80ae286578525fb533a9583d4e11ab33390f596f
   # Reviewed GB101 full-depth coherent-forest beam publication; sanitized coverage-incomplete null/harm metrics, paired uncertainty, background acceptance, compute, limitations, and source identity are added without changing private scientific runtime.
   - bf67f11511fa9c65702077a1a0a70958b0c88255
   # Reviewed significant Generic-B readiness/plan dashboard update; explicit reviewed-loop-resumption snapshot preserves GB001 static and CR054 learned scopes while GB002 learned metrics remain unavailable. Source/privacy/render checks pass; no scientific runtime change.
