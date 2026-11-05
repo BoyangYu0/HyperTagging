@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Re-encode the retained GB101 v3 source into its exact historical public bytes so the privacy boundary passes without a tracked raw-body copy; corrected v4 content remains distinct and unchanged.
+  - 1e1f5e3a7f89f1082d792bb78d5810655004ecb3
   # Minimal GB101 publication repair restores the exact historical v3 download bytes and publishes the reviewed correction under a distinct v4 filename; scientific aggregates and interpretation are unchanged.
   - f7b73d6723846fffe3fc0f4e346f08613179a479
   # Reviewed GB101 correction separates strict zero-eligible coverage from reused exploratory observations and splits exact/topology/inclusive denominators into development and TRAIN diagnostic roles; historical downloads and measured null/harm results remain unchanged.
