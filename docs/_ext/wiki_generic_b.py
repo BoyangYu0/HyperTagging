@@ -39,8 +39,8 @@ def generate(root, output):
     binding = json.loads(binding_path.read_bytes())
     raw = summary_path.read_bytes()
     _require(binding == {
-        "schema": "generic-b-dashboard-public-binding-v2",
-        "status_date": "2026-10-21",
+        "schema": "generic-b-dashboard-public-binding-v3",
+        "status_date": "2026-11-05",
         "source_file": "summary.json",
         "source_bytes": len(raw),
         "source_sha256": hashlib.sha256(raw).hexdigest(),
@@ -49,10 +49,21 @@ def generate(root, output):
         "contains_cohort_member_identifiers": False,
     }, "Generic-B binding differs")
     value = json.loads(raw)
-    _require(set(value) == {"schema", "status_date", "provenance", "gb001", "gb002", "cr054"},
+    _require(set(value) == {"schema", "status_date", "provenance", "gb001", "gb002", "cr054", "gb101"},
              "Generic-B summary fields differ")
-    _require(value["schema"] == "generic-b-dashboard-public-summary-v2", "Generic-B schema differs")
-    gb001, gb002, cr054 = value["gb001"], value["gb002"], value["cr054"]
+    _require(value["schema"] == "generic-b-dashboard-public-summary-v3", "Generic-B schema differs")
+    gb001, gb002, cr054, gb101 = value["gb001"], value["gb002"], value["cr054"], value["gb101"]
+    _require(gb101["status"] == "COMPLETED_COVERAGE_INCOMPLETE_NULL_OR_HARM"
+             and gb101["scientific_gate"] == "FAILED"
+             and gb101["checkpoint_promoted"] is False
+             and gb101["coverage"]["complete_post_study_evaluation"] is False
+             and gb101["coverage"]["development_collisions_per_category"] == 8
+             and gb101["coverage"]["requested_complete_collisions_per_category"] == 2000
+             and gb101["latest_beam4"]["exact_top1"] == {"correct": 0, "nominal": 96}
+             and gb101["latest_beam4"]["exact_oracle_at_4"] == {"correct": 0, "nominal": 96}
+             and gb101["latest_beam4"]["topology_oracle_at_4"] == {"correct": 0, "nominal": 96}
+             and gb101["latest_beam4"]["inclusive_oracle_at_4"] == {"correct": 0, "nominal": 96},
+             "GB101 result scope differs")
     _require(set(gb001) == {"status", "evidence_class", "learned_model_evaluation",
                             "legal_decoder_reachability_assessed", "population", "static_compatibility",
                             "categories", "overlapping_recursive_blockers", "learned_metrics", "runtime"},
@@ -178,13 +189,14 @@ def generate(root, output):
     # This tracked file is already a small sanitized source. Re-encode it to
     # make the public download deterministic rather than copying source bytes.
     published = {
-        "schema": "generic-b-dashboard-public-download-v2",
+        "schema": "generic-b-dashboard-public-download-v3",
         "source_summary_sha256": binding["source_sha256"],
         "status_date": value["status_date"],
         "provenance": value["provenance"],
         "gb001": gb001,
         "gb002": gb002,
         "cr054": cr054,
+        "gb101": gb101,
     }
     encoded = (json.dumps(published, sort_keys=True, indent=2, allow_nan=False) + "\n").encode()
     (output / "generic-b-status-summary.json").write_bytes(encoded)
@@ -194,9 +206,46 @@ def generate(root, output):
 
 def render(value):
     """Render completed results separately from current operational state."""
-    gb001, gb002, cr054 = value["gb001"], value["gb002"], value["cr054"]
+    gb001, gb002, cr054, gb101 = value["gb001"], value["gb002"], value["cr054"], value["gb101"]
     static = gb001["static_compatibility"]
+    selected = gb101["selected_b_development"]
+    latest = gb101["latest_beam4"]
     lines = [
+        "GB101: full-depth beam search on the latest H3-adapted checkpoint",
+        "------------------------------------------------------------------", "",
+        "The requested width-4 coherent-forest beam evaluation completed 160 new rollouts on the",
+        "80-collision reused exploratory panel. GB101 H3 conflict packing was bound into the nominal",
+        "beam lane; alternate forests retained the documented likelihood policy difference. No truth",
+        "entered generation, pruning, ranking or stopping, and no checkpoint was promoted.", "",
+        "Coverage is incomplete: development contributes only 8 collisions per category versus the",
+        "required 2,000. The authenticated local inventory contains 512/category, but this execution",
+        "processed only the compatible frozen 8/category panel; NAF inventory access was unavailable.",
+        "The other 32 rows are TRAIN diagnostics and are reported separately, not generalization.", "",
+    ]
+    lines += _table(["Latest-checkpoint endpoint", "Beam width 4", "GB101 native greedy", "Interpretation"], [
+        ["Selected-B source F1", f"{selected['latest_beam4_source_f1']['point']:.6f}", f"{selected['latest_greedy_source_f1']['point']:.6f}", "development only"],
+        ["Selected-B soft-edge F1", f"{selected['latest_beam4_soft_edge_f1']['point']:.6f}", f"{selected['latest_greedy_soft_edge_f1']['point']:.6f}", "development only"],
+        ["Exact topology+PID top-1", f"{latest['exact_top1']['correct']}/{latest['exact_top1']['nominal']}", "0/32 in native development endpoint", "TRAIN+development beam denominator"],
+        ["Exact topology+PID oracle@4", f"{latest['exact_oracle_at_4']['correct']}/{latest['exact_oracle_at_4']['nominal']}", "not applicable", "post-inference oracle; not promoted"],
+        ["Topology-only oracle@4", f"{latest['topology_oracle_at_4']['correct']}/{latest['topology_oracle_at_4']['nominal']}", "not applicable", "PID ignored"],
+        ["Inclusive source oracle@4", f"{latest['inclusive_oracle_at_4']['correct']}/{latest['inclusive_oracle_at_4']['nominal']}", "not applicable", "source grouping only"],
+    ])
+    delta = selected["beam_minus_greedy_source_f1"]
+    edge_delta = selected["beam_minus_greedy_soft_edge_f1"]
+    lines += [
+        f"Beam minus greedy selected-B source-F1 was {delta['point']:.6f} with the shared-seed-5001",
+        f"paired 95% interval [{delta['seed5001_interval']['lower']:.6f}, {delta['seed5001_interval']['upper']:.6f}].",
+        f"The soft-edge delta was {edge_delta['point']:.6f}, interval",
+        f"[{edge_delta['seed5001_interval']['lower']:.6f}, {edge_delta['seed5001_interval']['upper']:.6f}].",
+        "Beam reduced continuum accepted events from greedy 5/8, 5/8, 4/8 and 6/8 to",
+        "1/8, 0/8, 1/8 and 1/8 for ccbar, uubar, ddbar and ssbar, respectively, but",
+        "this came with a large signal-quality loss and zero exact/inclusive oracle recovery.", "",
+        f"The latest beam averaged {latest['latency_seconds_per_collision']:.3f} seconds/collision,",
+        f"made {latest['model_calls']} model calls, returned {latest['returned_candidates']} ranked",
+        f"candidates, and hit the per-query expansion limit in {latest['query_limit_events']['numerator']}/80 events.",
+        "Four CPU jobs consumed 826 allocated CPU-seconds and zero GPU-hours; the serial paired",
+        "aggregation used 296.46 local CPU-seconds. This is a coverage-incomplete null/harm result,",
+        "not population performance or physical FEI completeness.", "",
         "GB001: completed generic-sample static target-contract census",
         "-------------------------------------------------------------", "",
         "GB001 is a reviewed TRAIN target-contract metadata census, not a learned-model evaluation.",
@@ -330,6 +379,6 @@ def render(value):
         "The registered scientific gate failed. The 1/256 versus 0/256 flat accepted count is mediator",
         "evidence, not full reconstruction. No fresh confirmation, physical FEI efficiency, promotion or",
         "complete post-study evaluation is claimed.", "",
-        ":download:`Sanitized GB001, GB002 and CR054 aggregates with content hashes <generic-b-status-summary.json>`.", "",
+        ":download:`Sanitized GB001, GB002, CR054 and GB101 aggregates with content hashes <generic-b-status-summary.json>`.", "",
     ]
     return lines
