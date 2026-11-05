@@ -6,8 +6,10 @@ import json
 
 
 SOURCE = "artifacts/codex/generic_b_dashboard_20261019"
-FILES = {"generic-b-status-summary.json"}
+FILES = {"generic-b-status-summary.json", "generic-b-status-summary-v4.json"}
 LIMIT = 32_768
+HISTORICAL_V3_BYTES = 25_249
+HISTORICAL_V3_SHA256 = "612f24cbfa13d0c6e1440a168da8c31939de6ed7b03dd6cf73954dd98c933d2f"
 
 
 def _require(condition, message):
@@ -33,8 +35,11 @@ def generate(root, output):
     source = root / SOURCE
     binding_path = source / "binding.json"
     summary_path = source / "summary.json"
-    _require(not binding_path.is_symlink() and not summary_path.is_symlink(), "Unsafe generic-B source")
-    _require(binding_path.stat().st_size <= LIMIT and summary_path.stat().st_size <= LIMIT,
+    historical_path = source / "historical-download-v3.json"
+    _require(not binding_path.is_symlink() and not summary_path.is_symlink()
+             and not historical_path.is_symlink(), "Unsafe generic-B source")
+    _require(binding_path.stat().st_size <= LIMIT and summary_path.stat().st_size <= LIMIT
+             and historical_path.stat().st_size <= LIMIT,
              "Generic-B source exceeds limit")
     binding = json.loads(binding_path.read_bytes())
     raw = summary_path.read_bytes()
@@ -221,8 +226,19 @@ def generate(root, output):
                  and arm["deep_predicates"]["generated_typed"]["correct"] == 0
                  and arm["deep_predicates"]["accepted_typed"]["correct"] == 0,
                  "CR054 learned endpoint differs")
-    # This tracked file is already a small sanitized source. Re-encode it to
-    # make the public download deterministic rather than copying source bytes.
+    historical_raw = historical_path.read_bytes()
+    _require(len(historical_raw) == HISTORICAL_V3_BYTES
+             and hashlib.sha256(historical_raw).hexdigest() == HISTORICAL_V3_SHA256,
+             "Historical Generic-B v3 download differs")
+    historical = json.loads(historical_raw)
+    _require(historical["schema"] == "generic-b-dashboard-public-download-v3"
+             and historical["gb101"]["status"] == gb101["status"]
+             and historical["provenance"]["gb101_source_revision"]
+                 == value["provenance"]["gb101_source_revision"],
+             "Historical Generic-B v3 scope differs")
+    # Retain the exact prior public bytes at their historical filename and add
+    # a separately versioned corrected download for the current dashboard.
+    (output / "generic-b-status-summary.json").write_bytes(historical_raw)
     published = {
         "schema": "generic-b-dashboard-public-download-v4",
         "source_summary_sha256": binding["source_sha256"],
@@ -234,9 +250,15 @@ def generate(root, output):
         "gb101": gb101,
     }
     encoded = (json.dumps(published, sort_keys=True, indent=2, allow_nan=False) + "\n").encode()
-    (output / "generic-b-status-summary.json").write_bytes(encoded)
-    return value | {"metric_download": {"filename": "generic-b-status-summary.json",
-                    "bytes": len(encoded), "sha256": hashlib.sha256(encoded).hexdigest()}}
+    (output / "generic-b-status-summary-v4.json").write_bytes(encoded)
+    return value | {
+        "metric_download": {"filename": "generic-b-status-summary-v4.json",
+                            "bytes": len(encoded),
+                            "sha256": hashlib.sha256(encoded).hexdigest()},
+        "historical_metric_download": {"filename": "generic-b-status-summary.json",
+                                       "bytes": len(historical_raw),
+                                       "sha256": hashlib.sha256(historical_raw).hexdigest()},
+    }
 
 
 def render(value):
@@ -454,6 +476,7 @@ def render(value):
         "The registered scientific gate failed. The 1/256 versus 0/256 flat accepted count is mediator",
         "evidence, not full reconstruction. No fresh confirmation, physical FEI efficiency, promotion or",
         "complete post-study evaluation is claimed.", "",
-        ":download:`Sanitized GB001, GB002, CR054 and GB101 aggregates with content hashes <generic-b-status-summary.json>`.", "",
+        ":download:`Corrected v4 GB001, GB002, CR054 and GB101 aggregates with content hashes <generic-b-status-summary-v4.json>`.",
+        ":download:`Historical v3 aggregate retained with its original bytes <generic-b-status-summary.json>`.", "",
     ]
     return lines
