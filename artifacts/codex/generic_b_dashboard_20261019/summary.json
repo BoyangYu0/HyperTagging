@@ -635,6 +635,73 @@
       "uubar": 5
     },
     "latest_policy": "GB101_H3_PACKING_NOMINAL_LANE_PLUS_FULL_DEPTH_BEAM4",
+    "saved_beam_diagnosis": {
+      "analysis": {
+        "bootstrap_replicates": 2000,
+        "saved_rows": 160,
+        "scheduler_jobs": 0
+      },
+      "classification": "RETAINED_POOL_DEFICIT_ONLY",
+      "compute": {
+        "failed_attempt_cpu_seconds": 6.1,
+        "failed_attempt_peak_rss_kib": 739120,
+        "failed_attempt_wall_seconds": 6.14,
+        "successful_analysis_cpu_seconds": 8.44,
+        "successful_analysis_peak_rss_kib": 739076,
+        "successful_analysis_wall_seconds": 8.49
+      },
+      "continuum_acceptance": {
+        "ccbar": {"nominal": 8, "processed": 8, "top1_events": 1, "top1_candidates": 1, "union_k4_events": 1, "union_k4_candidates": 1},
+        "ddbar": {"nominal": 8, "processed": 8, "top1_events": 1, "top1_candidates": 1, "union_k4_events": 2, "union_k4_candidates": 6},
+        "ssbar": {"nominal": 8, "processed": 8, "top1_events": 1, "top1_candidates": 1, "union_k4_events": 2, "union_k4_candidates": 2},
+        "uubar": {"nominal": 8, "processed": 8, "top1_events": 0, "top1_candidates": 0, "union_k4_events": 3, "union_k4_candidates": 3}
+      },
+      "development_equal_category": {
+        "contrasts": {
+          "pool_minus_greedy": {
+            "soft_edge_f1": {"point": -0.056456094047563875, "lower95": -0.08606686552505788, "upper95": -0.02958349116529389},
+            "source_f1": {"point": -0.1936740342990343, "lower95": -0.28599358974358974, "upper95": -0.10710268897768904},
+            "source_iou": {"point": -0.1344155844155844, "lower95": -0.2017770055465368, "upper95": -0.073319466991342}
+          },
+          "pool_minus_top1": {
+            "soft_edge_f1": {"point": 0.004792778428565231, "lower95": 0.0, "upper95": 0.014642717688402968},
+            "source_f1": {"point": 0.014423076923076924, "lower95": 0.0, "upper95": 0.04326923076923077},
+            "source_iou": {"point": 0.009375000000000001, "lower95": 0.0, "upper95": 0.028124999999999997}
+          }
+        },
+        "states": {
+          "beam_top1": {"soft_edge_f1": 0.003472222222222222, "source_f1": 0.020833333333333332, "source_iou": 0.015625},
+          "greedy": {"soft_edge_f1": 0.06472109469835133, "source_f1": 0.22893044455544453, "source_iou": 0.1594155844155844},
+          "retained_pool_oracle": {"soft_edge_f1": 0.008265000650787453, "source_f1": 0.035256410256410256, "source_iou": 0.025}
+        }
+      },
+      "development_source_f1_by_category": {
+        "charged": {"beam_top1": 0.041666666666666664, "greedy": 0.24780844155844156, "retained_pool_oracle": 0.07051282051282051},
+        "mixed": {"beam_top1": 0.0, "greedy": 0.21005244755244754, "retained_pool_oracle": 0.0}
+      },
+      "interpretation": {
+        "ranking_opportunity_supported": false,
+        "ranking_rule": "POOL_MINUS_TOP1_SOURCE_F1_LOWER95_STRICTLY_POSITIVE",
+        "retained_pool_deficit_supported": true,
+        "truth_scored_oracle_promoted": false
+      },
+      "next_scientific_question": "ONE_CONTROLLED_PROPOSAL_RETENTION_CHANGE_AT_SATURATED_QUERY_CAP_WITH_MODEL_BEAM_WIDTH_AND_SCORING_FIXED",
+      "signal_diagnostics_combined_train_and_development": {
+        "b_root_only_below_top1": 2,
+        "no_b_root_anywhere_retained": 40,
+        "no_b_root_top1": 42,
+        "query_expansion_cap_hit": 43,
+        "signal_collisions": 48
+      },
+      "telemetry": {
+        "causal_pruning_attribution": false,
+        "dropped_forest_quality": false,
+        "h3_nominal_lane_later_survival": false,
+        "saved_candidate_whole_hypothesis_quality": true,
+        "saved_search_pruning_and_saturation_counters": true,
+        "strict_validation_coverage": false
+      }
+    },
     "limitations": [
       "Reused exploratory panel; not independent generalization.",
       "Exact, topology-only and inclusive recovery are zero even in the oracle-at-4 pool.",
@@ -844,8 +911,10 @@
     "gb101_reviewed_plan_sha256": "26775ecffe229bdc2f8c6623e1754c4e44722d9e3daf13c80dd3b374557906a9",
     "gb101_role_separated_endpoints_sha256": "e1a54e59208975f01ae94117d4ca6a6b19e1275efe68ef83f7884513379e6e5f",
     "gb101_scientific_result_sha256": "2e64df8be4394998a0e317b0c961d7133440c4fa07d6eddd0cfcea9ba6fec991",
+    "gb101_saved_beam_diagnosis_review_sha256": "f786ebcf4680a3645860c68d7a994b57f2c0145e266978f05af959403ba20a41",
+    "gb101_saved_beam_diagnosis_sha256": "09a087fc356bb1f9c7536dae7553e09df6abeea6102215a7c2f1785fe88a8057",
     "gb101_source_revision": "71879f9fa51730d39888ade2b0f0c47e49c8c7f3"
   },
-  "schema": "generic-b-dashboard-public-summary-v4",
+  "schema": "generic-b-dashboard-public-summary-v5",
   "status_date": "2026-11-05"
 }

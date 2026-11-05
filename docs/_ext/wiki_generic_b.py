@@ -6,10 +6,17 @@ import json
 
 
 SOURCE = "artifacts/codex/generic_b_dashboard_20261019"
-FILES = {"generic-b-status-summary.json", "generic-b-status-summary-v4.json"}
+FILES = {
+    "generic-b-status-summary.json",
+    "generic-b-status-summary-v4.json",
+    "generic-b-status-summary-v5.json",
+}
 LIMIT = 32_768
 HISTORICAL_V3_BYTES = 25_249
 HISTORICAL_V3_SHA256 = "612f24cbfa13d0c6e1440a168da8c31939de6ed7b03dd6cf73954dd98c933d2f"
+HISTORICAL_V4_SOURCE_SHA256 = "273adbc36a416dedd2bd296c0e154b842832ab0333874ee4441cd64fa42be12e"
+HISTORICAL_V4_BYTES = 28_609
+HISTORICAL_V4_SHA256 = "2be7a36e81269fa41b71cfb1c0ccc109366f86fec82e29c45f7f2ec974d0823b"
 
 
 def _require(condition, message):
@@ -44,7 +51,7 @@ def generate(root, output):
     binding = json.loads(binding_path.read_bytes())
     raw = summary_path.read_bytes()
     _require(binding == {
-        "schema": "generic-b-dashboard-public-binding-v4",
+        "schema": "generic-b-dashboard-public-binding-v5",
         "status_date": "2026-11-05",
         "source_file": "summary.json",
         "source_bytes": len(raw),
@@ -56,7 +63,7 @@ def generate(root, output):
     value = json.loads(raw)
     _require(set(value) == {"schema", "status_date", "provenance", "gb001", "gb002", "cr054", "gb101"},
              "Generic-B summary fields differ")
-    _require(value["schema"] == "generic-b-dashboard-public-summary-v4", "Generic-B schema differs")
+    _require(value["schema"] == "generic-b-dashboard-public-summary-v5", "Generic-B schema differs")
     gb001, gb002, cr054, gb101 = value["gb001"], value["gb002"], value["cr054"], value["gb101"]
     _require(gb101["status"] == "COMPLETED_COVERAGE_INCOMPLETE_NULL_OR_HARM"
              and gb101["scientific_gate"] == "FAILED"
@@ -104,6 +111,48 @@ def generate(root, output):
             _require(set(view[role]) == expected_keys
                      and all(view[role][key] == [0, 0, 0] for key in expected_keys),
                      "GB101 role-separated endpoint values differ")
+    diagnosis = gb101["saved_beam_diagnosis"]
+    _require(diagnosis["classification"] == "RETAINED_POOL_DEFICIT_ONLY"
+             and diagnosis["analysis"] == {
+                 "bootstrap_replicates": 2000, "saved_rows": 160, "scheduler_jobs": 0}
+             and diagnosis["interpretation"] == {
+                 "ranking_opportunity_supported": False,
+                 "ranking_rule": "POOL_MINUS_TOP1_SOURCE_F1_LOWER95_STRICTLY_POSITIVE",
+                 "retained_pool_deficit_supported": True,
+                 "truth_scored_oracle_promoted": False,
+             }
+             and diagnosis["signal_diagnostics_combined_train_and_development"] == {
+                 "b_root_only_below_top1": 2,
+                 "no_b_root_anywhere_retained": 40,
+                 "no_b_root_top1": 42,
+                 "query_expansion_cap_hit": 43,
+                 "signal_collisions": 48,
+             }
+             and diagnosis["telemetry"] == {
+                 "causal_pruning_attribution": False,
+                 "dropped_forest_quality": False,
+                 "h3_nominal_lane_later_survival": False,
+                 "saved_candidate_whole_hypothesis_quality": True,
+                 "saved_search_pruning_and_saturation_counters": True,
+                 "strict_validation_coverage": False,
+             }
+             and diagnosis["next_scientific_question"]
+                 == "ONE_CONTROLLED_PROPOSAL_RETENTION_CHANGE_AT_SATURATED_QUERY_CAP_WITH_MODEL_BEAM_WIDTH_AND_SCORING_FIXED",
+             "GB101 saved-beam diagnosis differs")
+    development = diagnosis["development_equal_category"]
+    _require(development["states"]["greedy"]["source_f1"] == 0.22893044455544453
+             and development["states"]["beam_top1"]["source_f1"] == 0.020833333333333332
+             and development["states"]["retained_pool_oracle"]["source_f1"] == 0.035256410256410256
+             and development["contrasts"]["pool_minus_top1"]["source_f1"] == {
+                 "point": 0.014423076923076924,
+                 "lower95": 0.0,
+                 "upper95": 0.04326923076923077,
+             }
+             and development["contrasts"]["pool_minus_greedy"]["source_f1"] == {
+                 "point": -0.1936740342990343,
+                 "lower95": -0.28599358974358974,
+                 "upper95": -0.10710268897768904,
+             }, "GB101 saved-beam quality differs")
     _require(set(gb001) == {"status", "evidence_class", "learned_model_evaluation",
                             "legal_decoder_reachability_assessed", "population", "static_compatibility",
                             "categories", "overlapping_recursive_blockers", "learned_metrics", "runtime"},
@@ -241,8 +290,30 @@ def generate(root, output):
              and hashlib.sha256(historical_encoded).hexdigest() == HISTORICAL_V3_SHA256,
              "Historical Generic-B v3 download differs")
     (output / "generic-b-status-summary.json").write_bytes(historical_encoded)
-    published = {
+    historical_v4 = {
         "schema": "generic-b-dashboard-public-download-v4",
+        "source_summary_sha256": HISTORICAL_V4_SOURCE_SHA256,
+        "status_date": value["status_date"],
+        "provenance": {
+            key: item for key, item in value["provenance"].items()
+            if key not in {"gb101_saved_beam_diagnosis_review_sha256",
+                           "gb101_saved_beam_diagnosis_sha256"}
+        },
+        "gb001": gb001,
+        "gb002": gb002,
+        "cr054": cr054,
+        "gb101": {key: item for key, item in gb101.items()
+                  if key != "saved_beam_diagnosis"},
+    }
+    historical_v4_encoded = (
+        json.dumps(historical_v4, sort_keys=True, indent=2, allow_nan=False) + "\n"
+    ).encode()
+    _require(len(historical_v4_encoded) == HISTORICAL_V4_BYTES
+             and hashlib.sha256(historical_v4_encoded).hexdigest() == HISTORICAL_V4_SHA256,
+             "Historical Generic-B v4 download differs")
+    (output / "generic-b-status-summary-v4.json").write_bytes(historical_v4_encoded)
+    published = {
+        "schema": "generic-b-dashboard-public-download-v5",
         "source_summary_sha256": binding["source_sha256"],
         "status_date": value["status_date"],
         "provenance": value["provenance"],
@@ -252,11 +323,14 @@ def generate(root, output):
         "gb101": gb101,
     }
     encoded = (json.dumps(published, sort_keys=True, indent=2, allow_nan=False) + "\n").encode()
-    (output / "generic-b-status-summary-v4.json").write_bytes(encoded)
+    (output / "generic-b-status-summary-v5.json").write_bytes(encoded)
     return value | {
-        "metric_download": {"filename": "generic-b-status-summary-v4.json",
+        "metric_download": {"filename": "generic-b-status-summary-v5.json",
                             "bytes": len(encoded),
                             "sha256": hashlib.sha256(encoded).hexdigest()},
+        "historical_v4_metric_download": {"filename": "generic-b-status-summary-v4.json",
+                                           "bytes": len(historical_v4_encoded),
+                                           "sha256": hashlib.sha256(historical_v4_encoded).hexdigest()},
         "historical_metric_download": {"filename": "generic-b-status-summary.json",
                                        "bytes": len(historical_encoded),
                                        "sha256": hashlib.sha256(historical_encoded).hexdigest()},
@@ -269,6 +343,7 @@ def render(value):
     static = gb001["static_compatibility"]
     selected = gb101["selected_b_development"]
     latest = gb101["latest_beam4"]
+    diagnosis = gb101["saved_beam_diagnosis"]
     separated = gb101["role_separated_endpoints"]
     endpoint_labels = {
         "exact_topology_pid": "Exact topology+PID",
@@ -345,6 +420,57 @@ def render(value):
         "Four CPU jobs consumed 826 allocated CPU-seconds and zero GPU-hours; the serial paired",
         "aggregation used 296.46 local CPU-seconds. This is a coverage-incomplete null/harm result,",
         "not population performance or physical FEI completeness.", "",
+        "Saved-beam diagnosis: retained-pool quality, not final ranking",
+        "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", "",
+        "The reviewed 160-row saved-output diagnosis separates quality retained anywhere in the width-4",
+        "pool from the deployable top-1 choice. On development observations, equal-category source F1 is",
+        "0.228930 for greedy, 0.020833 for beam top-1 and 0.035256 for the post-inference retained-pool",
+        "oracle. Pool minus top-1 is +0.014423 with the shared-seed-5001 paired 95% interval",
+        "[0.000000, 0.043269]. Because its lower bound is not strictly positive, the registered",
+        "ranking-opportunity rule does not pass. This does not establish that ranking can never help.", "",
+        "Pool minus greedy source F1 is -0.193674, interval [-0.285994, -0.107103], establishing an",
+        "exploratory retained-pool deficit. Source IoU and membership-edge F1 show the same pattern:",
+        "pool-minus-greedy -0.134416 [-0.201777, -0.073319] and -0.056456",
+        "[-0.086067, -0.029583], respectively. The oracle uses truth only after inference and remains",
+        "diagnostic and unpromoted.", "",
+    ]
+    diagnosis_states = diagnosis["development_equal_category"]["states"]
+    lines += _table(["Development equal-category state", "Source F1", "Source IoU", "Membership-edge F1"], [
+        ["Greedy", f"{diagnosis_states['greedy']['source_f1']:.6f}",
+         f"{diagnosis_states['greedy']['source_iou']:.6f}",
+         f"{diagnosis_states['greedy']['soft_edge_f1']:.6f}"],
+        ["Beam top-1", f"{diagnosis_states['beam_top1']['source_f1']:.6f}",
+         f"{diagnosis_states['beam_top1']['source_iou']:.6f}",
+         f"{diagnosis_states['beam_top1']['soft_edge_f1']:.6f}"],
+        ["Retained-pool oracle", f"{diagnosis_states['retained_pool_oracle']['source_f1']:.6f}",
+         f"{diagnosis_states['retained_pool_oracle']['source_iou']:.6f}",
+         f"{diagnosis_states['retained_pool_oracle']['soft_edge_f1']:.6f}"],
+    ])
+    category_f1 = diagnosis["development_source_f1_by_category"]
+    lines += _table(["Development category", "Greedy source F1", "Beam top-1", "Retained-pool oracle"], [
+        [category, f"{row['greedy']:.6f}", f"{row['beam_top1']:.6f}",
+         f"{row['retained_pool_oracle']:.6f}"]
+        for category, row in category_f1.items()
+    ])
+    continuum = diagnosis["continuum_acceptance"]
+    lines += _table(["Continuum flavour", "Top-1 events", "Top-1 candidates",
+                     "Retained-union events", "Retained-union candidates"], [
+        [category, f"{row['top1_events']}/{row['processed']}", row["top1_candidates"],
+         f"{row['union_k4_events']}/{row['processed']}", row["union_k4_candidates"]]
+        for category, row in continuum.items()
+    ])
+    lines += [
+        "The retained union is a post-inference diagnostic pool, not deployable background acceptance.",
+        "Across the combined TRAIN and development signal diagnostics, 40/48 collisions have no B root",
+        "anywhere in the retained pool, 42/48 have none at top-1, and only 2/48 have a B root below",
+        "top-1. The query-expansion cap was hit in 43/48. These counts are not development-only, and cap",
+        "saturation is associative rather than proof of causal pruning loss. Quality of forests pruned",
+        "before the saved pool and later survival of the H3 nominal lane are unavailable.", "",
+        "The successful saved-output analysis used 8.44 process CPU-seconds, 8.49 wall-seconds and",
+        "739,076 KiB peak RSS. The preserved compatibility failure used 6.10 CPU-seconds, 6.14",
+        "wall-seconds and 739,120 KiB peak RSS. No new inference, training or scheduler job was run.",
+        "The next scientific question is one finite proposal-retention change at the saturated query cap,",
+        "with model, beam width and scoring fixed; it requires a separate reviewed protocol.", "",
         "GB001: completed generic-sample static target-contract census",
         "-------------------------------------------------------------", "",
         "GB001 is a reviewed TRAIN target-contract metadata census, not a learned-model evaluation.",
@@ -478,7 +604,8 @@ def render(value):
         "The registered scientific gate failed. The 1/256 versus 0/256 flat accepted count is mediator",
         "evidence, not full reconstruction. No fresh confirmation, physical FEI efficiency, promotion or",
         "complete post-study evaluation is claimed.", "",
-        ":download:`Corrected v4 GB001, GB002, CR054 and GB101 aggregates with content hashes <generic-b-status-summary-v4.json>`.",
+        ":download:`Reviewed v5 GB001, GB002, CR054 and GB101 aggregates with the saved-beam diagnosis <generic-b-status-summary-v5.json>`.",
+        ":download:`Historical corrected v4 aggregate retained with its original bytes <generic-b-status-summary-v4.json>`.",
         ":download:`Historical v3 aggregate retained with its original bytes <generic-b-status-summary.json>`.", "",
     ]
     return lines
