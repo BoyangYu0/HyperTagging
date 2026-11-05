@@ -35,7 +35,7 @@ def generate(root, output):
     source = root / SOURCE
     binding_path = source / "binding.json"
     summary_path = source / "summary.json"
-    historical_path = source / "historical-download-v3.json"
+    historical_path = source / "historical-summary-v3-source.json"
     _require(not binding_path.is_symlink() and not summary_path.is_symlink()
              and not historical_path.is_symlink(), "Unsafe generic-B source")
     _require(binding_path.stat().st_size <= LIMIT and summary_path.stat().st_size <= LIMIT
@@ -226,19 +226,21 @@ def generate(root, output):
                  and arm["deep_predicates"]["generated_typed"]["correct"] == 0
                  and arm["deep_predicates"]["accepted_typed"]["correct"] == 0,
                  "CR054 learned endpoint differs")
-    historical_raw = historical_path.read_bytes()
-    _require(len(historical_raw) == HISTORICAL_V3_BYTES
-             and hashlib.sha256(historical_raw).hexdigest() == HISTORICAL_V3_SHA256,
-             "Historical Generic-B v3 download differs")
-    historical = json.loads(historical_raw)
+    historical = json.loads(historical_path.read_bytes())
     _require(historical["schema"] == "generic-b-dashboard-public-download-v3"
              and historical["gb101"]["status"] == gb101["status"]
              and historical["provenance"]["gb101_source_revision"]
                  == value["provenance"]["gb101_source_revision"],
              "Historical Generic-B v3 scope differs")
-    # Retain the exact prior public bytes at their historical filename and add
-    # a separately versioned corrected download for the current dashboard.
-    (output / "generic-b-status-summary.json").write_bytes(historical_raw)
+    # Re-encode the historical source so the prior public bytes are retained
+    # without copying a tracked raw source body into the publication artifact.
+    historical_encoded = (
+        json.dumps(historical, sort_keys=True, indent=2, allow_nan=False) + "\n"
+    ).encode()
+    _require(len(historical_encoded) == HISTORICAL_V3_BYTES
+             and hashlib.sha256(historical_encoded).hexdigest() == HISTORICAL_V3_SHA256,
+             "Historical Generic-B v3 download differs")
+    (output / "generic-b-status-summary.json").write_bytes(historical_encoded)
     published = {
         "schema": "generic-b-dashboard-public-download-v4",
         "source_summary_sha256": binding["source_sha256"],
@@ -256,8 +258,8 @@ def generate(root, output):
                             "bytes": len(encoded),
                             "sha256": hashlib.sha256(encoded).hexdigest()},
         "historical_metric_download": {"filename": "generic-b-status-summary.json",
-                                       "bytes": len(historical_raw),
-                                       "sha256": hashlib.sha256(historical_raw).hexdigest()},
+                                       "bytes": len(historical_encoded),
+                                       "sha256": hashlib.sha256(historical_encoded).hexdigest()},
     }
 
 
