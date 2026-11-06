@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed GB101 cap256 publication; sanitized null/harm quality, coverage, background and measured cost aggregates are added while prior downloads remain byte-identical. The same commit repairs stock Sphinx CSS authentication to the configured public theme values.
+  - f057039adfa583e437fd561f0b0d834bfb8b9eb9
   # Reviewed GB101 saved-beam diagnosis publication; sanitized retained-pool versus top-1 quality, uncertainty, coverage, background and compute aggregates are added without new inference, training or scientific promotion.
   - ac292aee0b402ae43397500dd79d17c3cb1af814
   # Re-encode the retained GB101 v3 source into its exact historical public bytes so the privacy boundary passes without a tracked raw-body copy; corrected v4 content remains distinct and unchanged.
