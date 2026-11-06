@@ -3072,7 +3072,7 @@ def _trusted_vendor_hashes() -> dict[str, set[str]]:
         css_environment.filters.update(tobool=_tobool, todim=_todim)
         css_context = {
             "theme_sidebarwidth": "270px",
-            "theme_body_min_width": "450",
+            "theme_body_min_width": "360",
             "theme_body_max_width": "1180px",
             "theme_rightsidebar": "false",
             "theme_stickysidebar": "false",
@@ -3093,21 +3093,28 @@ def _trusted_vendor_hashes() -> dict[str, set[str]]:
             "theme_headtextcolor": "#20435c",
             "theme_headlinkcolor": "#c60f0f",
             "theme_linkcolor": "#355f7c",
-            "theme_visitedlinkcolor": "#355f7c",
+            "theme_visitedlinkcolor": "#551a8b",
             "theme_codebgcolor": "unset",
             "theme_codetextcolor": "unset",
             "theme_bodyfont": "sans-serif",
             "theme_headfont": "'Trebuchet MS', sans-serif",
         }
+        legacy_css_context = dict(css_context)
+        legacy_css_context.update({
+            "theme_body_min_width": "450",
+            "theme_visitedlinkcolor": "#355f7c",
+        })
         for theme_name in ("basic", "classic"):
             template_path = (
                 themes / theme_name / "static" / f"{theme_name}.css_t"
             )
             if template_path.is_file() and not template_path.is_symlink():
-                rendered = css_environment.from_string(
+                template = css_environment.from_string(
                     template_path.read_text(encoding="utf-8")
-                ).render(css_context)
-                add(f"{theme_name}.css", rendered.encode("utf-8"))
+                )
+                for context in (css_context, legacy_css_context):
+                    rendered = template.render(context)
+                    add(f"{theme_name}.css", rendered.encode("utf-8"))
 
         from sphinx.highlighting import PygmentsBridge
         add(
