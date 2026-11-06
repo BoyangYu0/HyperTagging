@@ -635,6 +635,52 @@
       "uubar": 5
     },
     "latest_policy": "GB101_H3_PACKING_NOMINAL_LANE_PLUS_FULL_DEPTH_BEAM4",
+    "cap256_intervention": {
+      "classification": "NULL_OR_HARM",
+      "changed_factor": {"max_candidate_expansions_per_query": {"control": 128, "treatment": 256}},
+      "controls_held_fixed": ["GB100_H3_ADAPTED_CHECKPOINT", "GB101_H3_NOMINAL_LANE_ADAPTER", "BEAM_WIDTH4", "QUERY_LOG_SCORE", "NORMALIZATION", "TYPE_AND_PID_HEADS"],
+      "source_revisions": {"gb101_scientific": "d3e20ee2dcf9d0ab4e62ae3e8c698c9c296b8254", "cap256_implementation": "cc9608b899b6471a850966ee600b319d4260b3e0"},
+      "support": {"nominal": 80, "processed": 80, "failed": 0, "incompatible": 0, "unavailable": 0, "train_diagnostic": 32, "development": 48, "development_per_category": 8, "strict_eligible_per_category": 0, "strict_requested_per_category": 2000},
+      "development_equal_category": {
+        "top1_source_f1": {"cap128": 0.020833333333333332, "cap256": 0.020833333333333332, "delta": 0.0, "lower95": 0.0, "upper95": 0.0},
+        "retained_pool_oracle_source_f1": {"cap128": 0.035256410256410256, "cap256": 0.035256410256410256, "delta": 0.0, "lower95": 0.0, "upper95": 0.0},
+        "top1_membership_edge_f1_delta": {"point": 0.0, "lower95": 0.0, "upper95": 0.0},
+        "height3_retained": {
+          "source_f1_delta": {"point": 0.002604166666666685, "lower95": -0.007812499999999972, "upper95": 0.015625},
+          "source_iou_delta": {"point": 0.0035849567099567325, "lower95": -0.004870129870129858, "upper95": 0.015625}
+        },
+        "bootstrap_seed": 5001,
+        "bootstrap_replicates": 2000,
+        "degenerate_zero_interval_proves_population_equivalence": false
+      },
+      "continuum_acceptance": {
+        "cap128": {
+          "ccbar": {"top1_events": 1, "top1_candidates": 1, "union_events": 1, "union_candidates": 1, "nominal": 8},
+          "ddbar": {"top1_events": 1, "top1_candidates": 1, "union_events": 2, "union_candidates": 6, "nominal": 8},
+          "ssbar": {"top1_events": 1, "top1_candidates": 1, "union_events": 2, "union_candidates": 2, "nominal": 8},
+          "uubar": {"top1_events": 0, "top1_candidates": 0, "union_events": 3, "union_candidates": 3, "nominal": 8}
+        },
+        "cap256": {
+          "ccbar": {"top1_events": 2, "top1_candidates": 2, "union_events": 2, "union_candidates": 2, "nominal": 8},
+          "ddbar": {"top1_events": 1, "top1_candidates": 1, "union_events": 2, "union_candidates": 6, "nominal": 8},
+          "ssbar": {"top1_events": 1, "top1_candidates": 1, "union_events": 2, "union_candidates": 2, "nominal": 8},
+          "uubar": {"top1_events": 0, "top1_candidates": 0, "union_events": 3, "union_candidates": 3, "nominal": 8}
+        }
+      },
+      "search_and_cost": {
+        "cap128": {"cap_hit_events": 63, "cap_hits": 554, "daughter_partial_states_expanded": 102528, "candidates_generated": 21078, "mean_latency_seconds": 1.6356390372537135},
+        "cap256": {"cap_hit_events": 60, "cap_hits": 411, "daughter_partial_states_expanded": 163230, "candidates_generated": 22455, "mean_latency_seconds": 1.9010888611577683},
+        "latency_increase_fraction": 0.1622912010890576,
+        "allocated_cpu_seconds": 546,
+        "measured_scheduler_cpu_seconds": 348.904,
+        "gpu_hours": 0.0,
+        "peak_batch_rss_kib": 1244760,
+        "successful_aggregation": {"wall_seconds": 267.26, "cpu_seconds": 263.03, "peak_rss_kib": 1286588},
+        "preserved_aggregation_failure": "MISSING_PYTHONPATH_BEFORE_SAME_SOURCE_AGGREGATION_REPAIR"
+      },
+      "endpoints_unchanged": {"development_nominal_b_slots": 32, "train_nominal_b_slots": 64, "top1_exact_topology_pid": 0, "top1_topology_only": 0, "top1_inclusive_source": 0, "oracle4_exact_topology_pid": 0, "oracle4_topology_only": 0, "oracle4_inclusive_source": 0},
+      "interpretation": {"top1_gain_rule_passed": false, "pool_gain_rule_passed": false, "membership_edge_guardrail_passed": true, "background_guardrail_passed_at_boundary": true, "checkpoint_or_policy_promoted": false, "raw_query_telemetry_available": false, "global_cap_irrelevance_established": false, "recommendation": "DO_NOT_ADOPT_CAP256_OR_CONTINUE_CAP_SWEEP; CONSIDER_SEPARATELY_REVIEWED_H3_NOMINAL_LANE_SURVIVAL_INVESTIGATION"}
+    },
     "saved_beam_diagnosis": {
       "analysis": {
         "bootstrap_replicates": 2000,
@@ -913,8 +959,11 @@
     "gb101_scientific_result_sha256": "2e64df8be4394998a0e317b0c961d7133440c4fa07d6eddd0cfcea9ba6fec991",
     "gb101_saved_beam_diagnosis_review_sha256": "f786ebcf4680a3645860c68d7a994b57f2c0145e266978f05af959403ba20a41",
     "gb101_saved_beam_diagnosis_sha256": "09a087fc356bb1f9c7536dae7553e09df6abeea6102215a7c2f1785fe88a8057",
+    "gb101_cap256_scientific_result_sha256": "b4d99f8560212bbce1ac1f49eba90dc2a8107c0f22acfc2239e5a5a3f1b4e18d",
+    "gb101_cap256_closeout_sha256": "1ca0ae581f8938c14063980a365a7f640339def6a01a0723323f7f9d49b776f7",
+    "gb101_cap256_review_sha256": "9cd92a6916b760cb086f6191a556ba7e7692612dda686547670b683ffba7e43c",
     "gb101_source_revision": "71879f9fa51730d39888ade2b0f0c47e49c8c7f3"
   },
-  "schema": "generic-b-dashboard-public-summary-v5",
+  "schema": "generic-b-dashboard-public-summary-v6",
   "status_date": "2026-11-05"
 }

@@ -10,13 +10,17 @@ FILES = {
     "generic-b-status-summary.json",
     "generic-b-status-summary-v4.json",
     "generic-b-status-summary-v5.json",
+    "generic-b-status-summary-v6.json",
 }
-LIMIT = 32_768
+LIMIT = 40_960
 HISTORICAL_V3_BYTES = 25_249
 HISTORICAL_V3_SHA256 = "612f24cbfa13d0c6e1440a168da8c31939de6ed7b03dd6cf73954dd98c933d2f"
 HISTORICAL_V4_SOURCE_SHA256 = "273adbc36a416dedd2bd296c0e154b842832ab0333874ee4441cd64fa42be12e"
 HISTORICAL_V4_BYTES = 28_609
 HISTORICAL_V4_SHA256 = "2be7a36e81269fa41b71cfb1c0ccc109366f86fec82e29c45f7f2ec974d0823b"
+HISTORICAL_V5_SOURCE_SHA256 = "5f89af37af06e4603b02b3f21ea512f583d3f2a46982724e790511592af8ba3f"
+HISTORICAL_V5_BYTES = 33_319
+HISTORICAL_V5_SHA256 = "85352c695dadcce57607b4649cf7b43c882a900ec0a1dfdc0e103a0c45b625aa"
 
 
 def _require(condition, message):
@@ -51,7 +55,7 @@ def generate(root, output):
     binding = json.loads(binding_path.read_bytes())
     raw = summary_path.read_bytes()
     _require(binding == {
-        "schema": "generic-b-dashboard-public-binding-v5",
+        "schema": "generic-b-dashboard-public-binding-v6",
         "status_date": "2026-11-05",
         "source_file": "summary.json",
         "source_bytes": len(raw),
@@ -63,7 +67,7 @@ def generate(root, output):
     value = json.loads(raw)
     _require(set(value) == {"schema", "status_date", "provenance", "gb001", "gb002", "cr054", "gb101"},
              "Generic-B summary fields differ")
-    _require(value["schema"] == "generic-b-dashboard-public-summary-v5", "Generic-B schema differs")
+    _require(value["schema"] == "generic-b-dashboard-public-summary-v6", "Generic-B schema differs")
     gb001, gb002, cr054, gb101 = value["gb001"], value["gb002"], value["cr054"], value["gb101"]
     _require(gb101["status"] == "COMPLETED_COVERAGE_INCOMPLETE_NULL_OR_HARM"
              and gb101["scientific_gate"] == "FAILED"
@@ -139,6 +143,38 @@ def generate(root, output):
              and diagnosis["next_scientific_question"]
                  == "ONE_CONTROLLED_PROPOSAL_RETENTION_CHANGE_AT_SATURATED_QUERY_CAP_WITH_MODEL_BEAM_WIDTH_AND_SCORING_FIXED",
              "GB101 saved-beam diagnosis differs")
+    cap = gb101["cap256_intervention"]
+    _require(cap["classification"] == "NULL_OR_HARM"
+             and cap["changed_factor"] == {
+                 "max_candidate_expansions_per_query": {"control": 128, "treatment": 256}}
+             and cap["source_revisions"] == {
+                 "gb101_scientific": "d3e20ee2dcf9d0ab4e62ae3e8c698c9c296b8254",
+                 "cap256_implementation": "cc9608b899b6471a850966ee600b319d4260b3e0"}
+             and cap["support"] == {
+                 "nominal": 80, "processed": 80, "failed": 0, "incompatible": 0,
+                 "unavailable": 0, "train_diagnostic": 32, "development": 48,
+                 "development_per_category": 8, "strict_eligible_per_category": 0,
+                 "strict_requested_per_category": 2000}
+             and cap["development_equal_category"]["top1_source_f1"] == {
+                 "cap128": 0.020833333333333332, "cap256": 0.020833333333333332,
+                 "delta": 0.0, "lower95": 0.0, "upper95": 0.0}
+             and cap["development_equal_category"]["retained_pool_oracle_source_f1"] == {
+                 "cap128": 0.035256410256410256, "cap256": 0.035256410256410256,
+                 "delta": 0.0, "lower95": 0.0, "upper95": 0.0}
+             and cap["development_equal_category"]["height3_retained"]["source_f1_delta"] == {
+                 "point": 0.002604166666666685, "lower95": -0.007812499999999972,
+                 "upper95": 0.015625}
+             and cap["development_equal_category"]["height3_retained"]["source_iou_delta"] == {
+                 "point": 0.0035849567099567325, "lower95": -0.004870129870129858,
+                 "upper95": 0.015625}
+             and cap["search_and_cost"]["cap128"]["cap_hit_events"] == 63
+             and cap["search_and_cost"]["cap256"]["cap_hit_events"] == 60
+             and cap["search_and_cost"]["cap128"]["daughter_partial_states_expanded"] == 102528
+             and cap["search_and_cost"]["cap256"]["daughter_partial_states_expanded"] == 163230
+             and cap["search_and_cost"]["latency_increase_fraction"] == 0.1622912010890576
+             and cap["interpretation"]["checkpoint_or_policy_promoted"] is False
+             and cap["interpretation"]["global_cap_irrelevance_established"] is False,
+             "GB101 cap256 intervention differs")
     development = diagnosis["development_equal_category"]
     _require(development["states"]["greedy"]["source_f1"] == 0.22893044455544453
              and development["states"]["beam_top1"]["source_f1"] == 0.020833333333333332
@@ -297,13 +333,16 @@ def generate(root, output):
         "provenance": {
             key: item for key, item in value["provenance"].items()
             if key not in {"gb101_saved_beam_diagnosis_review_sha256",
-                           "gb101_saved_beam_diagnosis_sha256"}
+                           "gb101_saved_beam_diagnosis_sha256",
+                           "gb101_cap256_scientific_result_sha256",
+                           "gb101_cap256_closeout_sha256",
+                           "gb101_cap256_review_sha256"}
         },
         "gb001": gb001,
         "gb002": gb002,
         "cr054": cr054,
         "gb101": {key: item for key, item in gb101.items()
-                  if key != "saved_beam_diagnosis"},
+                  if key not in {"saved_beam_diagnosis", "cap256_intervention"}},
     }
     historical_v4_encoded = (
         json.dumps(historical_v4, sort_keys=True, indent=2, allow_nan=False) + "\n"
@@ -312,8 +351,31 @@ def generate(root, output):
              and hashlib.sha256(historical_v4_encoded).hexdigest() == HISTORICAL_V4_SHA256,
              "Historical Generic-B v4 download differs")
     (output / "generic-b-status-summary-v4.json").write_bytes(historical_v4_encoded)
-    published = {
+    historical_v5 = {
         "schema": "generic-b-dashboard-public-download-v5",
+        "source_summary_sha256": HISTORICAL_V5_SOURCE_SHA256,
+        "status_date": value["status_date"],
+        "provenance": {
+            key: item for key, item in value["provenance"].items()
+            if key not in {"gb101_cap256_scientific_result_sha256",
+                           "gb101_cap256_closeout_sha256",
+                           "gb101_cap256_review_sha256"}
+        },
+        "gb001": gb001,
+        "gb002": gb002,
+        "cr054": cr054,
+        "gb101": {key: item for key, item in gb101.items()
+                  if key != "cap256_intervention"},
+    }
+    historical_v5_encoded = (
+        json.dumps(historical_v5, sort_keys=True, indent=2, allow_nan=False) + "\n"
+    ).encode()
+    _require(len(historical_v5_encoded) == HISTORICAL_V5_BYTES
+             and hashlib.sha256(historical_v5_encoded).hexdigest() == HISTORICAL_V5_SHA256,
+             "Historical Generic-B v5 download differs")
+    (output / "generic-b-status-summary-v5.json").write_bytes(historical_v5_encoded)
+    published = {
+        "schema": "generic-b-dashboard-public-download-v6",
         "source_summary_sha256": binding["source_sha256"],
         "status_date": value["status_date"],
         "provenance": value["provenance"],
@@ -323,11 +385,14 @@ def generate(root, output):
         "gb101": gb101,
     }
     encoded = (json.dumps(published, sort_keys=True, indent=2, allow_nan=False) + "\n").encode()
-    (output / "generic-b-status-summary-v5.json").write_bytes(encoded)
+    (output / "generic-b-status-summary-v6.json").write_bytes(encoded)
     return value | {
-        "metric_download": {"filename": "generic-b-status-summary-v5.json",
+        "metric_download": {"filename": "generic-b-status-summary-v6.json",
                             "bytes": len(encoded),
                             "sha256": hashlib.sha256(encoded).hexdigest()},
+        "historical_v5_metric_download": {"filename": "generic-b-status-summary-v5.json",
+                                           "bytes": len(historical_v5_encoded),
+                                           "sha256": hashlib.sha256(historical_v5_encoded).hexdigest()},
         "historical_v4_metric_download": {"filename": "generic-b-status-summary-v4.json",
                                            "bytes": len(historical_v4_encoded),
                                            "sha256": hashlib.sha256(historical_v4_encoded).hexdigest()},
@@ -344,6 +409,7 @@ def render(value):
     selected = gb101["selected_b_development"]
     latest = gb101["latest_beam4"]
     diagnosis = gb101["saved_beam_diagnosis"]
+    cap = gb101["cap256_intervention"]
     separated = gb101["role_separated_endpoints"]
     endpoint_labels = {
         "exact_topology_pid": "Exact topology+PID",
@@ -469,8 +535,66 @@ def render(value):
         "The successful saved-output analysis used 8.44 process CPU-seconds, 8.49 wall-seconds and",
         "739,076 KiB peak RSS. The preserved compatibility failure used 6.10 CPU-seconds, 6.14",
         "wall-seconds and 739,120 KiB peak RSS. No new inference, training or scheduler job was run.",
-        "The next scientific question is one finite proposal-retention change at the saturated query cap,",
-        "with model, beam width and scoring fixed; it requires a separate reviewed protocol.", "",
+        "The resulting cap intervention is reported below; it supersedes the earlier recommendation to",
+        "increase this query cap, while retaining the saved-pool diagnosis as evidence.", "",
+        "Controlled query-expansion cap intervention",
+        "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", "",
+        "The reviewed intervention changed only the per-query expansion cap from 128 to 256. The GB100",
+        "H3-adapted checkpoint, GB101 nominal-lane adapter, width-4 beam, normalization, trained heads and",
+        "query-log scoring remained fixed. All 80 reused exploratory collisions completed: 32 TRAIN",
+        "diagnostics and 48 development observations (8/category), with zero failed, incompatible or",
+        "unavailable rows inside this panel. Strict eligible coverage remains 0/2,000 per category.", "",
+    ]
+    top1 = cap["development_equal_category"]["top1_source_f1"]
+    pool = cap["development_equal_category"]["retained_pool_oracle_source_f1"]
+    h3 = cap["development_equal_category"]["height3_retained"]
+    lines += _table(["Development equal-category endpoint", "Cap 128", "Cap 256", "Delta and seed-5001 paired 95% interval"], [
+        ["Top-1 selected-B source F1", f"{top1['cap128']:.6f}", f"{top1['cap256']:.6f}",
+         f"{top1['delta']:+.6f} [{top1['lower95']:.6f}, {top1['upper95']:.6f}]"],
+        ["Retained-pool oracle source F1", f"{pool['cap128']:.6f}", f"{pool['cap256']:.6f}",
+         f"{pool['delta']:+.6f} [{pool['lower95']:.6f}, {pool['upper95']:.6f}]"],
+        ["Height-3 retained proposal source F1", "—", "—",
+         f"{h3['source_f1_delta']['point']:+.6f} [{h3['source_f1_delta']['lower95']:.6f}, {h3['source_f1_delta']['upper95']:.6f}]"],
+        ["Height-3 retained proposal source IoU", "—", "—",
+         f"{h3['source_iou_delta']['point']:+.6f} [{h3['source_iou_delta']['lower95']:.6f}, {h3['source_iou_delta']['upper95']:.6f}]"],
+    ])
+    lines += [
+        "Top-1 membership-edge F1 also had zero delta and interval [0, 0]. These degenerate empirical",
+        "intervals on a small reused panel do not prove population equivalence. The +0.02 practical-gain",
+        "rule and strictly-positive-interval rule both fail; no checkpoint, beam policy or oracle is promoted.",
+        "Exact topology+PID, topology-only and inclusive-source recovery remain 0/32 development and",
+        "0/64 TRAIN diagnostics for both top-1 and oracle@4.", "",
+    ]
+    background128 = cap["continuum_acceptance"]["cap128"]
+    background256 = cap["continuum_acceptance"]["cap256"]
+    lines += _table(["Continuum flavour", "Cap128 top-1 events/candidates", "Cap256 top-1 events/candidates",
+                     "Cap128 retained union", "Cap256 retained union", "Nominal"], [
+        [category,
+         f"{background128[category]['top1_events']} / {background128[category]['top1_candidates']}",
+         f"{background256[category]['top1_events']} / {background256[category]['top1_candidates']}",
+         f"{background128[category]['union_events']} / {background128[category]['union_candidates']}",
+         f"{background256[category]['union_events']} / {background256[category]['union_candidates']}",
+         background128[category]["nominal"]]
+        for category in ("ccbar", "uubar", "ddbar", "ssbar")
+    ])
+    cost = cap["search_and_cost"]
+    lines += _table(["Measured search/cost quantity", "Cap 128", "Cap 256"], [
+        ["Events hitting query cap", f"{cost['cap128']['cap_hit_events']}/80", f"{cost['cap256']['cap_hit_events']}/80"],
+        ["Total query-cap hits", cost["cap128"]["cap_hits"], cost["cap256"]["cap_hits"]],
+        ["Daughter partial states expanded", cost["cap128"]["daughter_partial_states_expanded"], cost["cap256"]["daughter_partial_states_expanded"]],
+        ["Candidates generated", cost["cap128"]["candidates_generated"], cost["cap256"]["candidates_generated"]],
+        ["Mean seconds/collision", f"{cost['cap128']['mean_latency_seconds']:.6f}", f"{cost['cap256']['mean_latency_seconds']:.6f}"],
+    ])
+    lines += [
+        "Mean latency increased 16.229%. New inference consumed 546 allocated CPU-seconds, 348.904",
+        "measured scheduler CPU-seconds and zero GPU-hours; peak batch RSS was 1,244,760 KiB. Successful",
+        "aggregation used 267.26 wall-seconds, 263.03 CPU-seconds and 1,286,588 KiB peak RSS. An initial",
+        "missing-PYTHONPATH aggregation launch is preserved; inference was not rerun for that repair.", "",
+        "Increasing this cap changed search work but did not remedy the retained-pool deficit and increased",
+        "ccbar top-1 acceptance from 1/8 to 2/8. Do not adopt cap256 or continue a cap sweep on this evidence.",
+        "Other search limits still bind, so global cap irrelevance is not established. A finite H3",
+        "nominal-lane survival/retention investigation is a candidate for separate Astra design, not an",
+        "established causal diagnosis or an admitted experiment.", "",
         "GB001: completed generic-sample static target-contract census",
         "-------------------------------------------------------------", "",
         "GB001 is a reviewed TRAIN target-contract metadata census, not a learned-model evaluation.",
@@ -604,7 +728,8 @@ def render(value):
         "The registered scientific gate failed. The 1/256 versus 0/256 flat accepted count is mediator",
         "evidence, not full reconstruction. No fresh confirmation, physical FEI efficiency, promotion or",
         "complete post-study evaluation is claimed.", "",
-        ":download:`Reviewed v5 GB001, GB002, CR054 and GB101 aggregates with the saved-beam diagnosis <generic-b-status-summary-v5.json>`.",
+        ":download:`Reviewed v6 GB001, GB002, CR054 and GB101 aggregates with the cap256 intervention <generic-b-status-summary-v6.json>`.",
+        ":download:`Historical v5 aggregate with the saved-beam diagnosis retained with its original bytes <generic-b-status-summary-v5.json>`.",
         ":download:`Historical corrected v4 aggregate retained with its original bytes <generic-b-status-summary-v4.json>`.",
         ":download:`Historical v3 aggregate retained with its original bytes <generic-b-status-summary.json>`.", "",
     ]

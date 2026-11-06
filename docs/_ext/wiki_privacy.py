@@ -3072,7 +3072,7 @@ def _trusted_vendor_hashes() -> dict[str, set[str]]:
         css_environment.filters.update(tobool=_tobool, todim=_todim)
         css_context = {
             "theme_sidebarwidth": "270px",
-            "theme_body_min_width": "360",
+            "theme_body_min_width": "450",
             "theme_body_max_width": "1180px",
             "theme_rightsidebar": "false",
             "theme_stickysidebar": "false",
@@ -3093,7 +3093,7 @@ def _trusted_vendor_hashes() -> dict[str, set[str]]:
             "theme_headtextcolor": "#20435c",
             "theme_headlinkcolor": "#c60f0f",
             "theme_linkcolor": "#355f7c",
-            "theme_visitedlinkcolor": "#551a8b",
+            "theme_visitedlinkcolor": "#355f7c",
             "theme_codebgcolor": "unset",
             "theme_codetextcolor": "unset",
             "theme_bodyfont": "sans-serif",
