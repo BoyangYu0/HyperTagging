@@ -99,7 +99,7 @@ jobs:
       github.ref == 'refs/heads/master'
     needs: [build, compatibility]
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 20
     permissions:
       pages: write
       id-token: write
