@@ -19,7 +19,9 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
-  # Reviewed GB101 cap256 publication; sanitized null/harm quality, coverage, background and measured cost aggregates are added while prior downloads remain byte-identical. The same commit repairs stock Sphinx CSS authentication to the configured public theme values.
+  # Authenticate the two deterministic stock CSS variants emitted by the pinned Sphinx 3.4 local environment and Sphinx 7.3 CI environment; publication content and privacy rules are unchanged.
+  - 4c8c043f5ac465ee16a71b9f673d5c83fd9b0464
+  # Reviewed GB101 cap256 publication; sanitized null/harm quality, coverage, background and measured cost aggregates are added while prior downloads remain byte-identical.
   - f057039adfa583e437fd561f0b0d834bfb8b9eb9
   # Reviewed GB101 saved-beam diagnosis publication; sanitized retained-pool versus top-1 quality, uncertainty, coverage, background and compute aggregates are added without new inference, training or scientific promotion.
   - ac292aee0b402ae43397500dd79d17c3cb1af814
