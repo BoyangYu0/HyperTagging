@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Allow the validated Pages artifact deploy to complete after the first exact master attempt exhausted the former 10-minute job bound; validation, artifact contents, privacy gates and scientific interpretation are unchanged.
+  - 71c38ae13e35c8ef3e0838d36ed95b91e5b9d7ba
   # Authenticate the two deterministic stock CSS variants emitted by the pinned Sphinx 3.4 local environment and Sphinx 7.3 CI environment; publication content and privacy rules are unchanged.
   - 4c8c043f5ac465ee16a71b9f673d5c83fd9b0464
   # Reviewed GB101 cap256 publication; sanitized null/harm quality, coverage, background and measured cost aggregates are added while prior downloads remain byte-identical.
