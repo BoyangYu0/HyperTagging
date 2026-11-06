@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed GB101 accumulated-model publication; six protected-H3 H2/H1 adaptations, paired uncertainty, corrected per-flavour acceptance, score inflation and measured costs are added while v3-v6 downloads remain byte-identical. No checkpoint or oracle promotion.
+  - c9c6778d142fab78c87a6697c5b6a6f3833d4828
   # Set the pinned deploy-pages action's independent timeout to 20 minutes inside the validator's unchanged 30-minute fail-closed job ceiling after two exact deployments exhausted the action's 10-minute default; publication bytes and scientific claims are unchanged.
   - 044eae071dd01d9abeed79e36f4c8c0accaa5aaa
   # Keep the fail-closed workflow mutation regression aligned with the reviewed 20-minute Pages deploy bound; its deliberately invalid mutation remains above the validator's unchanged 30-minute ceiling.
