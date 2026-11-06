@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # One-shot replacement for a Pages service deployment that reached the backend-enforced 600-second action limit after every exact content, privacy and compatibility gate passed; publication content and scientific claims are unchanged.
+  - 7770d41ef1d4ee3dbe881daa24828d58bb0909af
   # Reviewed GB101 accumulated-model publication; six protected-H3 H2/H1 adaptations, paired uncertainty, corrected per-flavour acceptance, score inflation and measured costs are added while v3-v6 downloads remain byte-identical. No checkpoint or oracle promotion.
   - c9c6778d142fab78c87a6697c5b6a6f3833d4828
   # Set the pinned deploy-pages action's independent timeout to 20 minutes inside the validator's unchanged 30-minute fail-closed job ceiling after two exact deployments exhausted the action's 10-minute default; publication bytes and scientific claims are unchanged.
