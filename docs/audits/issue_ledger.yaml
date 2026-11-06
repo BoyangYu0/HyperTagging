@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Set the pinned deploy-pages action's independent timeout to 20 minutes inside the validator's unchanged 30-minute fail-closed job ceiling after two exact deployments exhausted the action's 10-minute default; publication bytes and scientific claims are unchanged.
+  - 044eae071dd01d9abeed79e36f4c8c0accaa5aaa
   # Keep the fail-closed workflow mutation regression aligned with the reviewed 20-minute Pages deploy bound; its deliberately invalid mutation remains above the validator's unchanged 30-minute ceiling.
   - 4b6b2d8818de8f262204d32ae01fb560e83a1f53
   # Allow the validated Pages artifact deploy to complete after the first exact master attempt exhausted the former 10-minute job bound; validation, artifact contents, privacy gates and scientific interpretation are unchanged.
