@@ -99,7 +99,7 @@ jobs:
       github.ref == 'refs/heads/master'
     needs: [build, compatibility]
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 30
     permissions:
       pages: write
       id-token: write
@@ -117,3 +117,5 @@ jobs:
       - name: Deploy the validated artifact
         id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+        with:
+          timeout: 1200000
