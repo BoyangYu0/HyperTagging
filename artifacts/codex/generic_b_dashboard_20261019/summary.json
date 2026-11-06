@@ -635,6 +635,38 @@
       "uubar": 5
     },
     "latest_policy": "GB101_H3_PACKING_NOMINAL_LANE_PLUS_FULL_DEPTH_BEAM4",
+    "model_adaptation_series": {
+      "classification": "ACCUMULATED_REUSED_PANEL_NULL_OR_HARM",
+      "controls": "PROTECTED_H3_WIDTH4_BEAM_CAP128_WITH_FIXED_CHECKPOINT_NORMALIZATION_AND_HEADS",
+      "support": {"nominal": 80, "processed": 80, "failed": 0, "development": 48, "development_per_category": 8, "strict_processed": 0, "strict_requested": 12000, "train_contexts": 32, "updates_per_fit": 32},
+      "parent_selected_b_source_f1": 0.056628787878787876,
+      "experiments": [
+        {"name": "H2 confidence adaptation", "source_revision": "48b92316e9722bd9d8ac3859e2cf3b0522855985", "selected_b_source_f1": 0.056628787878787876, "delta": 0.0, "lower95": 0.0, "upper95": 0.0, "allocated_cpu_seconds": 712, "gpu_seconds": 27, "verdict": "NULL_OR_HARM"},
+        {"name": "H2 unweighted daughter pointer", "source_revision": "fc28557888a0ffe7fc9252bdd543b834010cccc9", "selected_b_source_f1": 0.10266053391053391, "delta": 0.046031746031746035, "lower95": 0.0, "upper95": 0.11130952380952382, "allocated_cpu_seconds": 1128, "gpu_seconds": 78, "verdict": "NULL_OR_HARM"},
+        {"name": "H2 balanced daughter pointer", "source_revision": "ab52d40528f0f56ca37bca901ebe7ae539a9d35f", "selected_b_source_f1": 0.09097222222222223, "delta": 0.034343434343434356, "lower95": -0.009090909090909094, "upper95": 0.11666666666666667, "allocated_cpu_seconds": 774, "gpu_seconds": 29, "verdict": "NULL_OR_HARM"},
+        {"name": "H2 ranking daughter pointer", "source_revision": "18369b5f5d2657e21ec7b585a64313c99b444ab6", "selected_b_source_f1": 0.09733382936507937, "delta": 0.04070504148629149, "lower95": -0.005326704545454558, "upper95": 0.1113095238095238, "allocated_cpu_seconds": 668, "gpu_seconds": 32, "verdict": "NULL_OR_HARM"},
+        {"name": "H1 ranking pointer", "source_revision": "672857fd4b065b83137b7937ff047adb1aa7bb0e", "selected_b_source_f1": 0.0619047619047619, "delta": 0.005275974025974024, "lower95": -0.042207792207792194, "upper95": 0.04910714285714285, "allocated_cpu_seconds": 1026, "gpu_seconds": 66, "verdict": "NULL_OR_HARM"},
+        {"name": "H1 ranking plus positive anchor", "source_revision": "e09545f73d5765d4ae1b0f2c711ad18d5f92006c", "selected_b_source_f1": 0.06704545454545455, "delta": 0.010416666666666671, "lower95": 0.0, "upper95": 0.03125, "allocated_cpu_seconds": 742, "gpu_seconds": 29, "verdict": "NULL_OR_HARM"}
+      ],
+      "positive_anchor_diagnosis": {
+        "positive_bce_before": 1.0815527439117432,
+        "positive_bce_after": 0.3031325340270996,
+        "negative_bce_before": 0.18460996448993683,
+        "negative_bce_after": 0.9431222081184387,
+        "negative_sigmoid_mean_before": 0.10511230677366257,
+        "negative_sigmoid_mean_after": 0.36744949221611023,
+        "membership_edge_f1_delta": 0.001429330750333916,
+        "continuum_top1_events": {"ccbar": 1, "uubar": 1, "ddbar": 4, "ssbar": 1},
+        "continuum_event_deltas_vs_parent": {"ccbar": -1, "uubar": 1, "ddbar": 2, "ssbar": 0},
+        "continuum_nominal_per_flavour": 8,
+        "background_guardrail_passed": false,
+        "interpretation": "POSITIVE_ANCHOR_RAISED_NEGATIVE_SCORES_WITHOUT_SUPPORTED_NATIVE_GAIN; DDBAR_ASSOCIATION_NOT_CAUSAL"
+      },
+      "endpoints": {"development_nominal_b_slots": 32, "top1_exact_topology_pid": 0, "top1_topology_only": 0, "top1_inclusive_source": 0, "oracle4_exact_topology_pid": 0, "oracle4_topology_only": 0, "oracle4_inclusive_source": 0},
+      "bootstrap_seed": 5001,
+      "bootstrap_replicates": 2000,
+      "checkpoint_promoted": false
+    },
     "cap256_intervention": {
       "classification": "NULL_OR_HARM",
       "changed_factor": {"max_candidate_expansions_per_query": {"control": 128, "treatment": 256}},
@@ -962,8 +994,11 @@
     "gb101_cap256_scientific_result_sha256": "b4d99f8560212bbce1ac1f49eba90dc2a8107c0f22acfc2239e5a5a3f1b4e18d",
     "gb101_cap256_closeout_sha256": "1ca0ae581f8938c14063980a365a7f640339def6a01a0723323f7f9d49b776f7",
     "gb101_cap256_review_sha256": "9cd92a6916b760cb086f6191a556ba7e7692612dda686547670b683ffba7e43c",
+    "gb101_h1_positive_anchor_scientific_result_sha256": "c4c5095ec993281b0978d432b77b3620f7947640019c02dcdfdd33985bf26680",
+    "gb101_h1_positive_anchor_closeout_sha256": "78f73d18a9b0ec5807f0881791490120c600a2093f4af95d4015eac6ac6e6b68",
+    "gb101_h1_positive_anchor_review_sha256": "7cab6b94f648204f6d619a80cb627281453b6decee2134a4a0fdd8964b046984",
     "gb101_source_revision": "71879f9fa51730d39888ade2b0f0c47e49c8c7f3"
   },
-  "schema": "generic-b-dashboard-public-summary-v6",
-  "status_date": "2026-11-05"
+  "schema": "generic-b-dashboard-public-summary-v7",
+  "status_date": "2026-11-06"
 }

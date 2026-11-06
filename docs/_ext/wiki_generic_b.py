@@ -11,6 +11,7 @@ FILES = {
     "generic-b-status-summary-v4.json",
     "generic-b-status-summary-v5.json",
     "generic-b-status-summary-v6.json",
+    "generic-b-status-summary-v7.json",
 }
 LIMIT = 40_960
 HISTORICAL_V3_BYTES = 25_249
@@ -21,6 +22,14 @@ HISTORICAL_V4_SHA256 = "2be7a36e81269fa41b71cfb1c0ccc109366f86fec82e29c45f7f2ec9
 HISTORICAL_V5_SOURCE_SHA256 = "5f89af37af06e4603b02b3f21ea512f583d3f2a46982724e790511592af8ba3f"
 HISTORICAL_V5_BYTES = 33_319
 HISTORICAL_V5_SHA256 = "85352c695dadcce57607b4649cf7b43c882a900ec0a1dfdc0e103a0c45b625aa"
+HISTORICAL_V6_SOURCE_SHA256 = "49eb9a331299bf99a18d2fbe0ed1270a60be6be0f15ca80f4601e9d790b70bb0"
+HISTORICAL_V6_BYTES = 39_142
+HISTORICAL_V6_SHA256 = "b1c8b14a63bdb90e16a878ad66a910c8a228e183d89bd5abb6393fafb5409fae"
+LATEST_PROVENANCE = {
+    "gb101_h1_positive_anchor_scientific_result_sha256",
+    "gb101_h1_positive_anchor_closeout_sha256",
+    "gb101_h1_positive_anchor_review_sha256",
+}
 
 
 def _require(condition, message):
@@ -55,8 +64,8 @@ def generate(root, output):
     binding = json.loads(binding_path.read_bytes())
     raw = summary_path.read_bytes()
     _require(binding == {
-        "schema": "generic-b-dashboard-public-binding-v6",
-        "status_date": "2026-11-05",
+        "schema": "generic-b-dashboard-public-binding-v7",
+        "status_date": "2026-11-06",
         "source_file": "summary.json",
         "source_bytes": len(raw),
         "source_sha256": hashlib.sha256(raw).hexdigest(),
@@ -67,7 +76,7 @@ def generate(root, output):
     value = json.loads(raw)
     _require(set(value) == {"schema", "status_date", "provenance", "gb001", "gb002", "cr054", "gb101"},
              "Generic-B summary fields differ")
-    _require(value["schema"] == "generic-b-dashboard-public-summary-v6", "Generic-B schema differs")
+    _require(value["schema"] == "generic-b-dashboard-public-summary-v7", "Generic-B schema differs")
     gb001, gb002, cr054, gb101 = value["gb001"], value["gb002"], value["cr054"], value["gb101"]
     _require(gb101["status"] == "COMPLETED_COVERAGE_INCOMPLETE_NULL_OR_HARM"
              and gb101["scientific_gate"] == "FAILED"
@@ -175,6 +184,33 @@ def generate(root, output):
              and cap["interpretation"]["checkpoint_or_policy_promoted"] is False
              and cap["interpretation"]["global_cap_irrelevance_established"] is False,
              "GB101 cap256 intervention differs")
+    adaptation = gb101["model_adaptation_series"]
+    _require(adaptation["classification"] == "ACCUMULATED_REUSED_PANEL_NULL_OR_HARM"
+             and adaptation["support"] == {
+                 "nominal": 80, "processed": 80, "failed": 0, "development": 48,
+                 "development_per_category": 8, "strict_processed": 0,
+                 "strict_requested": 12000, "train_contexts": 32, "updates_per_fit": 32}
+             and adaptation["parent_selected_b_source_f1"] == 0.056628787878787876
+             and [item["name"] for item in adaptation["experiments"]] == [
+                 "H2 confidence adaptation", "H2 unweighted daughter pointer",
+                 "H2 balanced daughter pointer", "H2 ranking daughter pointer",
+                 "H1 ranking pointer", "H1 ranking plus positive anchor"]
+             and all(item["verdict"] == "NULL_OR_HARM"
+                     for item in adaptation["experiments"])
+             and adaptation["positive_anchor_diagnosis"]["positive_bce_after"]
+                 == 0.3031325340270996
+             and adaptation["positive_anchor_diagnosis"]["negative_bce_after"]
+                 == 0.9431222081184387
+             and adaptation["positive_anchor_diagnosis"]["continuum_top1_events"]
+                 == {"ccbar": 1, "uubar": 1, "ddbar": 4, "ssbar": 1}
+             and adaptation["positive_anchor_diagnosis"]["background_guardrail_passed"] is False
+             and adaptation["endpoints"] == {
+                 "development_nominal_b_slots": 32, "top1_exact_topology_pid": 0,
+                 "top1_topology_only": 0, "top1_inclusive_source": 0,
+                 "oracle4_exact_topology_pid": 0, "oracle4_topology_only": 0,
+                 "oracle4_inclusive_source": 0}
+             and adaptation["checkpoint_promoted"] is False,
+             "GB101 model-adaptation series differs")
     development = diagnosis["development_equal_category"]
     _require(development["states"]["greedy"]["source_f1"] == 0.22893044455544453
              and development["states"]["beam_top1"]["source_f1"] == 0.020833333333333332
@@ -329,20 +365,21 @@ def generate(root, output):
     historical_v4 = {
         "schema": "generic-b-dashboard-public-download-v4",
         "source_summary_sha256": HISTORICAL_V4_SOURCE_SHA256,
-        "status_date": value["status_date"],
+        "status_date": "2026-11-05",
         "provenance": {
             key: item for key, item in value["provenance"].items()
             if key not in {"gb101_saved_beam_diagnosis_review_sha256",
                            "gb101_saved_beam_diagnosis_sha256",
                            "gb101_cap256_scientific_result_sha256",
                            "gb101_cap256_closeout_sha256",
-                           "gb101_cap256_review_sha256"}
+                           "gb101_cap256_review_sha256", *LATEST_PROVENANCE}
         },
         "gb001": gb001,
         "gb002": gb002,
         "cr054": cr054,
         "gb101": {key: item for key, item in gb101.items()
-                  if key not in {"saved_beam_diagnosis", "cap256_intervention"}},
+                  if key not in {"saved_beam_diagnosis", "cap256_intervention",
+                                 "model_adaptation_series"}},
     }
     historical_v4_encoded = (
         json.dumps(historical_v4, sort_keys=True, indent=2, allow_nan=False) + "\n"
@@ -354,18 +391,18 @@ def generate(root, output):
     historical_v5 = {
         "schema": "generic-b-dashboard-public-download-v5",
         "source_summary_sha256": HISTORICAL_V5_SOURCE_SHA256,
-        "status_date": value["status_date"],
+        "status_date": "2026-11-05",
         "provenance": {
             key: item for key, item in value["provenance"].items()
             if key not in {"gb101_cap256_scientific_result_sha256",
                            "gb101_cap256_closeout_sha256",
-                           "gb101_cap256_review_sha256"}
+                           "gb101_cap256_review_sha256", *LATEST_PROVENANCE}
         },
         "gb001": gb001,
         "gb002": gb002,
         "cr054": cr054,
         "gb101": {key: item for key, item in gb101.items()
-                  if key != "cap256_intervention"},
+                  if key not in {"cap256_intervention", "model_adaptation_series"}},
     }
     historical_v5_encoded = (
         json.dumps(historical_v5, sort_keys=True, indent=2, allow_nan=False) + "\n"
@@ -374,8 +411,27 @@ def generate(root, output):
              and hashlib.sha256(historical_v5_encoded).hexdigest() == HISTORICAL_V5_SHA256,
              "Historical Generic-B v5 download differs")
     (output / "generic-b-status-summary-v5.json").write_bytes(historical_v5_encoded)
-    published = {
+    historical_v6 = {
         "schema": "generic-b-dashboard-public-download-v6",
+        "source_summary_sha256": HISTORICAL_V6_SOURCE_SHA256,
+        "status_date": "2026-11-05",
+        "provenance": {key: item for key, item in value["provenance"].items()
+                       if key not in LATEST_PROVENANCE},
+        "gb001": gb001,
+        "gb002": gb002,
+        "cr054": cr054,
+        "gb101": {key: item for key, item in gb101.items()
+                  if key != "model_adaptation_series"},
+    }
+    historical_v6_encoded = (
+        json.dumps(historical_v6, sort_keys=True, indent=2, allow_nan=False) + "\n"
+    ).encode()
+    _require(len(historical_v6_encoded) == HISTORICAL_V6_BYTES
+             and hashlib.sha256(historical_v6_encoded).hexdigest() == HISTORICAL_V6_SHA256,
+             "Historical Generic-B v6 download differs")
+    (output / "generic-b-status-summary-v6.json").write_bytes(historical_v6_encoded)
+    published = {
+        "schema": "generic-b-dashboard-public-download-v7",
         "source_summary_sha256": binding["source_sha256"],
         "status_date": value["status_date"],
         "provenance": value["provenance"],
@@ -385,11 +441,14 @@ def generate(root, output):
         "gb101": gb101,
     }
     encoded = (json.dumps(published, sort_keys=True, indent=2, allow_nan=False) + "\n").encode()
-    (output / "generic-b-status-summary-v6.json").write_bytes(encoded)
+    (output / "generic-b-status-summary-v7.json").write_bytes(encoded)
     return value | {
-        "metric_download": {"filename": "generic-b-status-summary-v6.json",
+        "metric_download": {"filename": "generic-b-status-summary-v7.json",
                             "bytes": len(encoded),
                             "sha256": hashlib.sha256(encoded).hexdigest()},
+        "historical_v6_metric_download": {"filename": "generic-b-status-summary-v6.json",
+                                           "bytes": len(historical_v6_encoded),
+                                           "sha256": hashlib.sha256(historical_v6_encoded).hexdigest()},
         "historical_v5_metric_download": {"filename": "generic-b-status-summary-v5.json",
                                            "bytes": len(historical_v5_encoded),
                                            "sha256": hashlib.sha256(historical_v5_encoded).hexdigest()},
@@ -410,6 +469,7 @@ def render(value):
     latest = gb101["latest_beam4"]
     diagnosis = gb101["saved_beam_diagnosis"]
     cap = gb101["cap256_intervention"]
+    adaptation = gb101["model_adaptation_series"]
     separated = gb101["role_separated_endpoints"]
     endpoint_labels = {
         "exact_topology_pid": "Exact topology+PID",
@@ -595,6 +655,31 @@ def render(value):
         "Other search limits still bind, so global cap irrelevance is not established. A finite H3",
         "nominal-lane survival/retention investigation is a candidate for separate Astra design, not an",
         "established causal diagnosis or an admitted experiment.", "",
+        "Accumulated H2/H1 model adaptations",
+        "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", "",
+        "Six finite model adaptations reused the same 80-collision protected-H3 panel and fixed beam",
+        "controls. Each fit used 32 cached TRAIN contexts and 32 updates. The table reports development",
+        "selected-B source F1 against the protected-H3 parent (0.056629), with whole-collision",
+        "seed-5001 paired intervals. Every result is exploratory: strict eligible coverage remains",
+        "0/12,000, and none passed the registered gain and background rules.", "",
+    ]
+    lines += _table(["Adaptation", "Selected-B source F1", "Delta and paired 95% interval",
+                     "Allocated CPU/GPU seconds", "Decision"], [
+        [item["name"], f"{item['selected_b_source_f1']:.6f}",
+         f"{item['delta']:+.6f} [{item['lower95']:.6f}, {item['upper95']:.6f}]",
+         f"{item['allocated_cpu_seconds']} / {item['gpu_seconds']}", item["verdict"]]
+        for item in adaptation["experiments"]
+    ])
+    lines += [
+        "The latest positive-anchor fit improved positive-label BCE from 1.081553 to 0.303133 and",
+        "ranking loss, but negative-label BCE worsened from 0.184610 to 0.943122 while mean negative",
+        "probability rose from 0.105112 to 0.367449. Its source-F1 gain was only +0.010417",
+        "[0, 0.031250], below the +0.02 margin; membership-edge F1 changed by +0.001429.", "",
+        "Dedicated top-1 continuum acceptance was ccbar 1/8, uubar 1/8, ddbar 4/8 and ssbar 1/8.",
+        "Relative to the protected-H3 parent, ddbar increased by 2/8 and failed the background",
+        "guardrail. This is an association, not causal attribution. Exact topology+PID, topology-only",
+        "and inclusive-source recovery stayed 0/32 development B slots for top-1 and oracle@4.",
+        "No adaptation checkpoint, beam policy or oracle was promoted.", "",
         "GB001: completed generic-sample static target-contract census",
         "-------------------------------------------------------------", "",
         "GB001 is a reviewed TRAIN target-contract metadata census, not a learned-model evaluation.",
@@ -728,7 +813,8 @@ def render(value):
         "The registered scientific gate failed. The 1/256 versus 0/256 flat accepted count is mediator",
         "evidence, not full reconstruction. No fresh confirmation, physical FEI efficiency, promotion or",
         "complete post-study evaluation is claimed.", "",
-        ":download:`Reviewed v6 GB001, GB002, CR054 and GB101 aggregates with the cap256 intervention <generic-b-status-summary-v6.json>`.",
+        ":download:`Reviewed v7 GB001, GB002, CR054 and GB101 aggregates with accumulated H2/H1 adaptations <generic-b-status-summary-v7.json>`.",
+        ":download:`Historical v6 aggregate with the cap256 intervention retained with its original bytes <generic-b-status-summary-v6.json>`.",
         ":download:`Historical v5 aggregate with the saved-beam diagnosis retained with its original bytes <generic-b-status-summary-v5.json>`.",
         ":download:`Historical corrected v4 aggregate retained with its original bytes <generic-b-status-summary-v4.json>`.",
         ":download:`Historical v3 aggregate retained with its original bytes <generic-b-status-summary.json>`.", "",
