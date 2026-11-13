@@ -12,6 +12,7 @@ FILES = {
     "generic-b-status-summary-v5.json",
     "generic-b-status-summary-v6.json",
     "generic-b-status-summary-v7.json",
+    "generic-b-neural-support-v1.json",
 }
 LIMIT = 40_960
 HISTORICAL_V3_BYTES = 25_249
@@ -442,7 +443,9 @@ def generate(root, output):
     }
     encoded = (json.dumps(published, sort_keys=True, indent=2, allow_nan=False) + "\n").encode()
     (output / "generic-b-status-summary-v7.json").write_bytes(encoded)
+    supplement = _neural_support(source, output)
     return value | {
+        "neural_support": supplement,
         "metric_download": {"filename": "generic-b-status-summary-v7.json",
                             "bytes": len(encoded),
                             "sha256": hashlib.sha256(encoded).hexdigest()},
@@ -459,6 +462,81 @@ def generate(root, output):
                                        "bytes": len(historical_encoded),
                                        "sha256": hashlib.sha256(historical_encoded).hexdigest()},
     }
+
+
+def _neural_support(source, output):
+    """Project the separately reviewed adaptive neural/support snapshot."""
+    path = source / "neural-support-source.json"
+    binding_path = source / "neural-support-binding.json"
+    _require(not path.is_symlink() and not binding_path.is_symlink()
+             and path.stat().st_size <= LIMIT and binding_path.stat().st_size <= LIMIT,
+             "Unsafe neural-support source")
+    raw = path.read_bytes()
+    binding = json.loads(binding_path.read_bytes())
+    _require(binding == {
+        "schema": "generic-b-neural-support-binding-v1", "status_date": "2026-11-13",
+        "source_file": "neural-support-source.json", "source_bytes": len(raw),
+        "source_sha256": hashlib.sha256(raw).hexdigest(),
+        "private_payloads_copied": False, "contains_operational_identifiers": False,
+        "contains_cohort_member_identifiers": False,
+    }, "Neural-support binding differs")
+    value = json.loads(raw)
+    support = value["teacher_support_correction"]
+    _require(value["schema"] == "generic-b-neural-support-public-source-v1"
+             and len(value["studies"]) == 6 and value["promotion"] is False
+             and support["nominal_slots"] == 320
+             and [support[k] for k in ("charge_compatible", "incompatible", "unavailable", "absent")]
+                 == [1, 92, 49, 178]
+             and support["compatible_by_category"] == {"charged": 0, "mixed": 1}
+             and value["strict_validation"]["processed"] == 0,
+             "Neural-support scope differs")
+    published = value | {"schema": "generic-b-neural-support-public-download-v1",
+                         "source_sha256": binding["source_sha256"]}
+    encoded = (json.dumps(published, sort_keys=True, indent=2, allow_nan=False) + "\n").encode()
+    filename = "generic-b-neural-support-v1.json"
+    (output / filename).write_bytes(encoded)
+    return value | {"metric_download": {"filename": filename, "bytes": len(encoded),
+                                        "sha256": hashlib.sha256(encoded).hexdigest()}}
+
+
+def _render_neural_support(value):
+    rows = []
+    for study in value["studies"]:
+        cell = next(r for r in study["selected_B"]
+                    if r["panel"] == "native_assessment4" and r["metric"] == "f1")
+        rows.append((study["name"], f'{cell["control"]:.6f}', f'{cell["treatment"]:.6f}',
+                     f'{cell["delta"]:+.6f}',
+                     f'[{cell["paired95"][0]:+.6f}, {cell["paired95"][1]:+.6f}]',
+                     study["scientific_gate"]))
+    lines = ["GB101: neural fit/native divergence and corrected H3 support",
+             "------------------------------------------------------------", "",
+             "Reviewed snapshot: 13 November 2026. These are adaptive reused TRAIN mechanism",
+             "studies, separate from the original 80-collision greedy/beam evaluation below.",
+             "Each native assessment uses four charged/mixed collisions (eight nominal B slots);",
+             "the twelve-collision native-fit panel is reported separately in the download.",
+             "Intervals use 2,000 paired whole-collision seed-5001 draws and equal category weights.", ""]
+    lines += _table(["Intervention", "Control F1", "Treatment F1", "Delta", "Paired 95%", "Gate"], rows)
+    lines += ["Projection changes produced uncertain assessment gains; weighting, contextualization",
+              "and refreshed states failed safeguards. Better conditional TRAIN fit did not establish",
+              "reliable native improvement. Root-anchored refresh reduced selected-B source F1 from",
+              "0.285362 to 0.123413; its paired interval excludes zero in the harmful direction.", "",
+              "The latest support correction retains all 320 nominal H3 slots: one charge-compatible",
+              "mixed target, 92 incompatible, 49 unavailable and 178 absent. Five structural candidates",
+              "had previously been counted before detector-charge compatibility was measured.",
+              "There is zero charged teacher support. Charge guards remain unchanged; these counts",
+              "describe supervision eligibility and do not measure learned or physical completeness.", "",
+              "Strict independent validation remains 0/12,000, with 2,000 missing per category.",
+              "Every continuum flavour's event and candidate acceptance is unavailable for these",
+              "newer studies. Missing depth cells remain unavailable. No model, oracle or policy is",
+              "promoted, and no overall PASS is supported. The admitted single-target supervision",
+              "contrast has no measured outcome in this reviewed snapshot.", "",
+              "The download preserves per-category deltas, source F1/IoU, depth source/edge guards,",
+              "fit operands, source/review hashes and measured scheduler compute. Its six scientific",
+              "operations used " + str(sum(r["allocated_cpu_seconds"] for r in value["studies"])) +
+              " allocated CPU-seconds and " + str(sum(r["allocated_gpu_seconds"] for r in value["studies"])) +
+              " allocated GPU-seconds; this is scoped accounting, not total campaign spend.", "",
+              ":download:`Reviewed neural/support metrics <generic-b-neural-support-v1.json>`", ""]
+    return lines
 
 
 def render(value):
@@ -819,4 +897,4 @@ def render(value):
         ":download:`Historical corrected v4 aggregate retained with its original bytes <generic-b-status-summary-v4.json>`.",
         ":download:`Historical v3 aggregate retained with its original bytes <generic-b-status-summary.json>`.", "",
     ]
-    return lines
+    return _render_neural_support(value["neural_support"]) + lines
