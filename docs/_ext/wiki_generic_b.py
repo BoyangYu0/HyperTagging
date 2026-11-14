@@ -17,6 +17,7 @@ FILES = {
     "generic-b-h2-anchor-v1.json",
     "generic-b-positive-object-v1.json",
     "generic-b-retained-source-v1.json",
+    "generic-b-preservation-v1.json",
     "generic-b-corrected-depth-v1.json",
 }
 LIMIT = 40_960
@@ -640,7 +641,8 @@ def _render_supported_h3(value):
 def _h2_anchor(source, output):
     """Publish reviewed aggregate H2 outcomes and additive saved-depth correction."""
     result = {}
-    for key, basename, schema in (("retained_source", "retained-source", "generic-b-retained-source"),
+    for key, basename, schema in (("preservation", "preservation", "generic-b-preservation"),
+                                  ("retained_source", "retained-source", "generic-b-retained-source"),
                                   ("positive_object", "positive-object", "generic-b-positive-object"),
                                   ("outcome", "h2-anchor", "generic-b-h2-anchor"),
                                   ("depth", "corrected-depth", "generic-b-corrected-depth")):
@@ -853,7 +855,7 @@ def _render_positive_object(value):
 
 
 def _render_retained_source(value):
-    title = "GB101 latest: retained-source learning improves selected B, harms deeper structure"
+    title = "GB101 earlier: retained-source learning improves selected B, harms deeper structure"
     lines = [title, "-" * len(title), "",
         "Reviewed 14 November 2026. Masked retained-source supervision is learnable and",
         "improves selected-B quality on four adaptive TRAIN assessment collisions. Charged",
@@ -927,13 +929,78 @@ def _render_retained_source(value):
         "rollouts each. Process-cumulative memory and model-call counts are in the download;",
         "the memory measurements are not isolated arm comparisons. Earlier studies and",
         "publication overhead are excluded from these scientific operation totals.", "",
-        "Next: the independently admitted matched generated-state preservation contrast",
-        "uses 14 frozen TRAIN contexts, coefficient zero versus one, 40 updates per arm",
-        "and 32 native rollouts. Its mechanism and efficacy await independent review.",
+        "The subsequent matched generated-state preservation result is reported above.",
+        "Its reviewed null changes the next recommendation to generated-input supervision.",
         "Mixed generated-state support and direct H4 preservation anchors are absent.", "",
         ":download:`Retained-source outcomes, uncertainty, depth and checkpoint lineage <generic-b-retained-source-v1.json>`", "",
         "Earlier reviewed studies and their historical downloads follow.", ""]
     return lines
+
+def _render_preservation(value):
+    title = "GB101 latest: preserving generated states reduces drift but harms native quality"
+    lines = [title, "-" * len(title), "",
+        "Reviewed 14 November 2026. Frozen generated-state preservation reduced drift but",
+        "worsened selected-B quality on four reused adaptive TRAIN assessment collisions.",
+        "The scientific gate failed; no promotion or independent generalization claim.", "",
+        "Both arms restore the same 436-tensor checkpoint, train the same 36 tensors for",
+        "40 updates, and retain identical detector anchor and retained-source objectives.",
+        "The changed factor is coefficient zero versus one on pointer/object/type KL",
+        "against saved common-initialization generated outputs. Fourteen frozen generated",
+        "contexts are observed of 96 nominal; 82 remain unreached. Mixed generated-state",
+        "support and direct H4 anchors are absent. Detector labels cover 42/168 targets;",
+        "126 remain unavailable. Missing terms are not observed zero error.", ""]
+    arms = ["retained_source_control40", "generated_preservation40"]
+    lines += _table(["Metric", "Control", "Preservation"], [
+        ("Fixed-nominal generated KL", *[f'{value["generated_KL"][a]:.6f}' for a in arms]),
+        ("Fixed-nominal retained BCE", f'{value["fit_BCE"]["control"]:.6f}', f'{value["fit_BCE"]["treatment"]:.6f}')])
+    rows=[]
+    for panel,key in [("assessment4","assessment_selected_B"),("fit12","fit_selected_B")]:
+        for metric,v in value[key].items():
+            rows.append((panel,metric,f'{v["registered_equal_category_point_delta"]:+.6f}',str(v["paired_bootstrap95"])))
+    lines += _table(["Panel", "Selected-B metric", "Treatment minus control", "Paired 95%"],rows)
+    lines += ["Assessment selected-B F1 falls by 0.064932 (paired 95% [-0.104888, -0.024975]);",
+        "charged changes by -0.077110 and mixed by -0.052753. IoU falls by 0.030571.",
+        "Charged H3/H4 mean source-F1 change is -0.037037 [-0.074074, 0.000000].",
+        "Intervals use 2,000 shared seed-5001 whole-collision draws and equal category",
+        "weights. Repeated adaptive study selection is not covered by these intervals.", ""]
+    depth=value["per_generation"];rows=[]
+    for row in depth["rows"]:
+        v=dict(zip(depth["columns"],row))
+        if v["panel"]!="assessment4" or v["metric"] not in ("f1","soft_edge_f1"):continue
+        rows.append((v["category"],"H"+str(v["height"]),v["metric"],v["delta"] if v["delta"] is not None else "unavailable",str(v["paired95"]),v["known_pairs"],v["nominal_pairs"]))
+    lines += _table(["Category", "Height", "Metric", "Delta", "Paired 95%", "Known pairs", "Nominal pairs"],rows)
+    lines += ["The download retains fit12 separately, source F1/IoU/precision/recall, hard and",
+        "soft membership edge quality by generation, support, endpoints and uncertainty.",
+        "Proposal correctness and calibrated PID/confidence proper scores remain unavailable.", "",
+        "Exact recursive topology+PID, topology-only and inclusive source recovery remain",
+        "0/8 assessment B trials per arm (4 charged, 4 mixed), separately for selected top1",
+        "and actual oracle@1/@4. Fit12 remains 0/24 per arm. Oracle pools are post-inference",
+        "diagnostics and cannot select a deployable model. All 32 native rollouts completed.", "",
+        "Independent coverage remains 0/12,000: charged, mixed, ccbar, uubar, ddbar and",
+        "ssbar each have 0/2,000 processed; eligible independent availability is unestablished.",
+        "Each continuum flavour's event and candidate acceptance is unavailable, not zero.",
+        "Background nonharm, confirmation and physical completeness are unestablished.", "",
+        "Inference retains GB101 H3 nominal packing and full-depth coherent-forest width4",
+        "beam, unchanged terminal selection and bounded postdecode donor transaction.",
+        "Level1 uses eight candidates/query, later levels four: this adaptive descendant",
+        "is distinct from the original default-four greedy/beam evaluation below.",
+        "Truth is loss supervision or post-inference scoring only. Checkpoint architecture,",
+        "reference-conditioned type heads, trained PID/confidence, source uniqueness and",
+        "train-only normalization are preserved. No normalization fitting or sealed access.", "",
+        "Execution completed 80 updates, 3,580 model forwards, 7,160 encoder passes and",
+        "191,546 beam expansions. Allocated compute: 3,048 CPU-seconds and 381 GPU-seconds;",
+        "scheduler CPU usage: 376.021 seconds. Native latency totals are 50.576 seconds for",
+        "control and 48.539 for preservation over 16 rollouts each. Peak device memory was",
+        "293,159,424 bytes and host RSS 2,472,904 KiB; memory peaks are process-cumulative,",
+        "not isolated arm comparisons. Publication overhead is separate.", "",
+        "Frozen source: ``7ea90bb71cc0fc83358d78715b1adf5e09d9bbcf``. Lower generated KL",
+        "alone does not repair native reconstruction; this contrast does not identify cause.",
+        "Next: independently admitted matched generated-input retained-source supervision",
+        "versus detector-only learning. Its efficacy awaits independent outcome review.", "",
+        ":download:`Preservation outcomes, depth, support, uncertainty and cost <generic-b-preservation-v1.json>`", "",
+        "Earlier reviewed results and all historical downloads follow.", ""]
+    return lines
+
 
 def render(value):
     """Render completed results separately from current operational state."""
@@ -1293,4 +1360,4 @@ def render(value):
         ":download:`Historical corrected v4 aggregate retained with its original bytes <generic-b-status-summary-v4.json>`.",
         ":download:`Historical v3 aggregate retained with its original bytes <generic-b-status-summary.json>`.", "",
     ]
-    return _render_retained_source(value["h2_anchor"]["retained_source"]) + _render_positive_object(value["h2_anchor"]["positive_object"]) + _render_h2_anchor(value["h2_anchor"]) + _render_supported_h3(value["supported_h3"]) + _render_neural_support(value["neural_support"]) + lines
+    return _render_preservation(value["h2_anchor"]["preservation"]) + _render_retained_source(value["h2_anchor"]["retained_source"]) + _render_positive_object(value["h2_anchor"]["positive_object"]) + _render_h2_anchor(value["h2_anchor"]) + _render_supported_h3(value["supported_h3"]) + _render_neural_support(value["neural_support"]) + lines

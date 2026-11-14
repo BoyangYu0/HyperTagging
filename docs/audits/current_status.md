@@ -1,10 +1,18 @@
+<!-- Reviewed preservation outcome; private event/host records excluded. -->
+GB101 frozen generated-state preservation reduced fixed-nominal KL from
+0.008275 to 0.001910 but worsened adaptive TRAIN assessment selected-B F1 by
+0.064932 (paired 95% [-0.104888, -0.024975]). Native/nonharm gates failed;
+no promotion. Exact/topology/inclusive recovery remains zero. Independent
+coverage 0/12000; continuum acceptance and physical completeness unavailable.
+Next: independently admitted matched generated-input retained-source supervision;
+efficacy awaits independent outcome review. Historical downloads retained.
+
 <!-- Reviewed retained-source aggregate; private event and host records excluded. -->
 GB101 retained-source supervision completed: adaptive assessment selected-B F1
 0.155309 to 0.287848, paired delta +0.132539 [0.034558, 0.230519].
 Charged H3/H4 source and edge quality harmed; gate failed and no promotion.
 Independent coverage 0/12000; each continuum background unavailable. Historical
-downloads retained. Next: matched frozen generated-state preservation; efficacy
-awaits independent outcome review.
+downloads retained. The subsequently reviewed preservation outcome is reported above.
 
 <!-- Reviewed aggregate update; private event/host records excluded. -->
 GB101 positive-object supervision completed: adaptive assessment selected-B F1
