@@ -505,7 +505,7 @@ def _render_neural_support(value):
         for cell in study["selected_B"]:
             if cell["panel"] != "native_assessment4" or cell["metric"] != "f1":
                 continue
-            rows.append((study["name"], cell["control_identity"], cell["treatment_identity"],
+            rows.append((study["name"], cell["control_id"], cell["treatment_id"],
                          f'{cell["control"]:.6f}', f'{cell["treatment"]:.6f}',
                          f'{cell["delta"]:+.6f}',
                          f'[{cell["paired95"][0]:+.6f}, {cell["paired95"][1]:+.6f}]',
@@ -517,6 +517,8 @@ def _render_neural_support(value):
              "Each native assessment uses four charged/mixed collisions (eight nominal B slots);",
              "the twelve-collision native-fit panel is reported separately in the download.",
              "Intervals use 2,000 paired whole-collision seed-5001 draws and equal category weights.", ""]
+    lines += ["Arm identities (the second-pass intervention is compared separately with N and B):", ""]
+    lines += _table(["ID", "Exact arm identity"], sorted(value["arm_identities"].items()))
     lines += _table(["Intervention", "Control identity", "Treatment identity", "Control F1", "Treatment F1", "Delta", "Paired 95%", "Gate"], rows)
     lines += ["Projection changes produced uncertain assessment gains; weighting, contextualization",
               "and refreshed states failed safeguards. Better conditional TRAIN fit did not establish",
