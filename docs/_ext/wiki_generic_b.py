@@ -14,6 +14,8 @@ FILES = {
     "generic-b-status-summary-v7.json",
     "generic-b-neural-support-v1.json",
     "generic-b-supported-h3-v1.json",
+    "generic-b-h2-anchor-v1.json",
+    "generic-b-corrected-depth-v1.json",
 }
 LIMIT = 40_960
 HISTORICAL_V3_BYTES = 25_249
@@ -448,6 +450,7 @@ def generate(root, output):
     return value | {
         "neural_support": supplement,
         "supported_h3": _supported_h3(source, output),
+        "h2_anchor": _h2_anchor(source, output),
         "metric_download": {"filename": "generic-b-status-summary-v7.json",
                             "bytes": len(encoded),
                             "sha256": hashlib.sha256(encoded).hexdigest()},
@@ -580,7 +583,7 @@ def _supported_h3(source, output):
 
 
 def _render_supported_h3(value):
-    title = "GB101 latest: supported H3 learning changes selected-B quality"
+    title = "GB101 history: supported H3 learning changes selected-B quality"
     lines = [title, "-" * len(title), "",
              "Reviewed outcome: 14 November 2026. Adaptive reused TRAIN evidence only.",
              "Matched anchor-only terminal40 is the control; single-H3 teacher terminal40 is",
@@ -628,6 +631,124 @@ def _render_supported_h3(value):
               "Next: recover depth metrics from saved outputs, then independently review a finite",
               "category-balanced anchor-objective proposal before further training.", "",
               ":download:`Reviewed supported-H3 learning metrics <generic-b-supported-h3-v1.json>`", ""]
+    return lines
+
+
+
+def _h2_anchor(source, output):
+    """Publish reviewed aggregate H2 outcomes and additive saved-depth correction."""
+    result = {}
+    for key, basename, schema in (("outcome", "h2-anchor", "generic-b-h2-anchor"),
+                                  ("depth", "corrected-depth", "generic-b-corrected-depth")):
+        path = source / (basename + "-source.json")
+        binding_path = source / (basename + "-binding.json")
+        _require(not path.is_symlink() and not binding_path.is_symlink()
+                 and path.stat().st_size <= LIMIT and binding_path.stat().st_size <= LIMIT,
+                 "Unsafe H2/depth aggregate source")
+        raw = path.read_bytes()
+        binding = json.loads(binding_path.read_bytes())
+        _require(binding == {"schema": schema + "-binding-v1", "status_date": "2026-11-14",
+                 "source_file": path.name, "source_bytes": len(raw),
+                 "source_sha256": hashlib.sha256(raw).hexdigest(),
+                 "private_payloads_copied": False, "contains_operational_identifiers": False,
+                 "contains_cohort_member_identifiers": False}, "H2/depth binding differs")
+        value = json.loads(raw)
+        _require(value["schema"] == schema + "-public-source-v1"
+                 and value["promotion"] is False and value["overall_PASS"] is False,
+                 "H2/depth publication scope differs")
+        published = value | {"schema": schema + "-public-download-v1",
+                             "source_sha256": binding["source_sha256"]}
+        encoded = (json.dumps(published, sort_keys=True, indent=2, allow_nan=False) + "\n").encode()
+        filename = schema + "-v1.json"
+        (output / filename).write_bytes(encoded)
+        result[key] = value | {"metric_download": {"filename": filename, "bytes": len(encoded),
+                                                   "sha256": hashlib.sha256(encoded).hexdigest()}}
+    return result
+
+
+def _render_h2_anchor(record):
+    value, depth = record["outcome"], record["depth"]
+    title = "GB101 latest: H2 membership fit does not establish native benefit"
+    lines = [title, "-" * len(title), "",
+             "Reviewed 14 November 2026. All evidence is adaptive reused TRAIN, including the",
+             "four-collision assessment panel; it does not measure independent generalization.",
+             "The completed H3 teacher model is the control; adding 15 supported H2 teacher",
+             "membership contexts is the treatment. The same initialization, 69 trainable",
+             "tensors, optimizer, 40 updates and terminal checkpoint rule are retained.", ""]
+    rows = []
+    for cell in value["selected_B"]:
+        c = cell["contrast"]
+        lo, hi = c["paired_bootstrap95"]
+        rows.append((cell["panel"], cell["metric"].upper(),
+                     f'{cell["states"][value["control_identity"]]:.6f}',
+                     f'{cell["states"][value["treatment_identity"]]:.6f}',
+                     f'{c["registered_equal_category_point_delta"]:+.6f}',
+                     f'[{lo:+.6f}, {hi:+.6f}]'))
+    lines += _table(["Panel", "Selected-B metric", "Control", "H2 treatment", "Delta", "Paired 95%"], rows)
+    lines += ["Assessment selected-B F1 changes by +0.076923 for charged but -0.051159 for",
+              "mixed. The equal-category F1 delta is +0.012882 with paired 95% interval",
+              "[-0.059441, +0.085205]; IoU delta is -0.004222. Native benefit is inconclusive",
+              "and the scientific gate failed. These are collision-paired intervals from",
+              "2,000 shared seed-5001 draws, with equal category weights.", ""]
+    rows = []
+    for category in ("charged", "mixed"):
+        for population, metric in (("teacher_H2", "H2"), ("teacher_H2", "H2:object"),
+                                   ("generated20", "H2"), ("generated20", "H2:object")):
+            cell = value["fit_operands"][category + ":" + population + ":" + metric + ":vs_matched_control40"]
+            rows.append((category, population, metric,
+                         f'{cell["reference"]:.6f}', f'{cell["treatment"]:.6f}'))
+    lines += _table(["Category", "Fit population", "Loss", "Control", "H2 treatment"], rows)
+    lines += ["Teacher H2 membership fit improves strongly in both categories. Mixed teacher",
+              "positive-object loss rises from 0.798053 to 0.965922; mixed generated-state H2",
+              "membership and object losses also worsen. Better teacher membership fitting",
+              "does not establish improved native reconstruction or its causal mechanism.", "",
+              "Saved-depth correction and limits", "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", "",
+              "All ten previously failed arm/event depth observations were recovered from",
+              "retained operands without new inference. Earlier H3 selected-B gains remain,",
+              "but corrected mixed assessment H1 source F1 falls by 0.080000 and H4 source",
+              "F1 by 0.123016. This materially limits the interpretation of the H3 gain.",
+              "The corrected H2 comparison below uses the same saved control selection identities.",
+              "Recovered observation failures are distinct from genuinely absent or unsupported",
+              "heights. Missing observations remain unavailable; neither nonharm nor a PASS",
+              "is inferred from missing support. Detailed support and intervals are downloadable.", ""]
+    rows = []
+    for values in depth["data"]:
+        row = dict(zip(depth["columns"], values))
+        if row["panel"] == "assessment4" and row["metric"] in ("f1", "soft_edge_f1"):
+            ci = row.get("paired_bootstrap95")
+            rows.append((row["comparison"], "H" + str(row["height"]), row["metric"],
+                         "unavailable" if row["delta"] is None else f'{row["delta"]:+.6f}',
+                         "unavailable" if ci is None or any(v is None for v in ci) else f'[{ci[0]:+.6f}, {ci[1]:+.6f}]',
+                         row["known_pairs"], row["nominal_pairs"]))
+    lines += _table(["Comparison", "Height", "Metric", "Equal-category delta", "Paired 95%", "Known pairs", "Nominal pairs"], rows)
+    lines += ["Exact recursive topology+PID, topology-only and inclusive source recovery remain",
+              "0/32 B trials per arm: assessment 0/8 and fit 0/24, separately for selected top1",
+              "and oracle@1/@4 pools. Oracle pools never determine a deployed candidate.",
+              "Selected-B membership metrics and retained-forest depth metrics describe distinct",
+              "views. Proposal correctness remains unavailable without retained stage operands.", "",
+              "Strict independent coverage is 0/12,000. Charged, mixed, ccbar, uubar, ddbar and",
+              "ssbar are each 2,000 short; eligible independent availability is unestablished.",
+              "Event and candidate acceptance for each continuum flavour remain unavailable.",
+              "There is no promotion, background-safety claim, or physical-completeness claim.", "",
+              "The matched adaptive GB101 descendant retains H3 packing as its nominal lane",
+              "and coherent-forest width4 search, with inherited eight candidates/query at",
+              "level1 and four elsewhere. It is distinct from the original default-four",
+              "full-depth evaluation retained below. Truth is post-inference scoring only.",
+              "Existing train-only normalization, checkpoint architecture and trained head",
+              "state remain bound. Source and checkpoint hashes are in the aggregate download.", "",
+              "Actual H2 execution: 40 updates, 16 new rollouts; the completed 16 control rows",
+              "were reused. There were 90,800 query expansions and 357 native model forwards.",
+              "Measured cost: 3,488 allocated CPU-seconds, 436 allocated GPU-seconds and",
+              "424.925 scheduler CPU-seconds. Saved scoring used 12.311695 child CPU-seconds",
+              "without new model calls. New-rollout latency totals 49.341 seconds (3.084 mean);",
+              "peak host RSS was 2,845,504 KiB and peak device memory 222,499,328 bytes.", "",
+              "Next: independently review a finite positive-object supervision contrast, adding",
+              "0.1 times H2 teacher positive-object loss with the same support and controls.",
+              "Preparation does not authorize training; no coefficient or architecture sweep.", "",
+              ":download:`Reviewed H2 outcome and lineage <generic-b-h2-anchor-v1.json>`", "",
+              ":download:`Corrected H3 and H2 depth metrics and support <generic-b-corrected-depth-v1.json>`", "",
+              "Earlier published snapshots and downloads follow unchanged; their missingness",
+              "statements describe those historical snapshots and are superseded by this correction.", ""]
     return lines
 
 
@@ -989,4 +1110,4 @@ def render(value):
         ":download:`Historical corrected v4 aggregate retained with its original bytes <generic-b-status-summary-v4.json>`.",
         ":download:`Historical v3 aggregate retained with its original bytes <generic-b-status-summary.json>`.", "",
     ]
-    return _render_supported_h3(value["supported_h3"]) + _render_neural_support(value["neural_support"]) + lines
+    return _render_h2_anchor(value["h2_anchor"]) + _render_supported_h3(value["supported_h3"]) + _render_neural_support(value["neural_support"]) + lines

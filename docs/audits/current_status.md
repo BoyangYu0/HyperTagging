@@ -1,5 +1,9 @@
 # Current repository audit status
 
+## Generic-B H2 fit/native divergence and corrected depth (14 November 2026)
+
+The matched H2 membership-anchor treatment produced an inconclusive adaptive TRAIN selected-B F1 delta +0.012882, paired 95% [-0.059441, 0.085205]; mixed assessment F1 fell by 0.051159. Teacher membership fitting improved while mixed teacher/generated object losses worsened. The scientific gate failed. All ten earlier failed depth observations were recovered from saved outputs: the prior H3 selected-B gain coexists with corrected mixed depth harm. Exact/topology/inclusive recovery remains zero; independent coverage is 0/12000 and continuum acceptance unavailable. No promotion. The dashboard presents the corrected H3 and H2 contrasts, support, uncertainty and measured costs, while retaining earlier downloads. A matched positive-object supervision candidate is prepared for independent execution review.
+
 ## Generic-B supported-H3 exploratory learning (14 November 2026)
 
 Matched anchor-only versus single-supported mixed H3 teacher, each fixed at 40 updates and 69 trainable tensors, improved adaptive TRAIN assessment selected-B F1 from 0.057292 to 0.175066 (delta +0.117774, paired 95% [0.099185, 0.136364]). Mixed native-fit F1 declined by 0.062958; exact/topology/inclusive recovery stayed zero. Conditional teacher BCE fell from 3.136909 to 0.000637. Ten arm/event depth records remain unavailable pending independent review of saved-output scoring. Independent coverage is 0/12000; newer-study backgrounds and charged teacher support remain unavailable. No promotion or generalization claim. The latest dashboard presents the reviewed matched result separately from historical adaptive studies and the original full-depth greedy/beam evaluation.
