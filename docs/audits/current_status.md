@@ -1,3 +1,11 @@
+<!-- Reviewed aggregate update; private event/host records excluded. -->
+GB101 positive-object supervision completed: adaptive assessment selected-B F1
+0.187948 to 0.162440, paired delta -0.025508 [ -0.104528, 0.053512 ].
+Charged H3 quality harmed despite improved teacher fit. Gate failed; no promotion.
+Independent coverage 0/12000; each continuum background unavailable. Historical
+downloads retained. Next: independently reviewed generated-state capture/support,
+then matched training only after finite counts are frozen.
+
 # Current repository audit status
 
 ## Generic-B H2 fit/native divergence and corrected depth (14 November 2026)

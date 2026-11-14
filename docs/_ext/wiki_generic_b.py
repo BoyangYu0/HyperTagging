@@ -15,6 +15,7 @@ FILES = {
     "generic-b-neural-support-v1.json",
     "generic-b-supported-h3-v1.json",
     "generic-b-h2-anchor-v1.json",
+    "generic-b-positive-object-v1.json",
     "generic-b-corrected-depth-v1.json",
 }
 LIMIT = 40_960
@@ -638,7 +639,8 @@ def _render_supported_h3(value):
 def _h2_anchor(source, output):
     """Publish reviewed aggregate H2 outcomes and additive saved-depth correction."""
     result = {}
-    for key, basename, schema in (("outcome", "h2-anchor", "generic-b-h2-anchor"),
+    for key, basename, schema in (("positive_object", "positive-object", "generic-b-positive-object"),
+                                  ("outcome", "h2-anchor", "generic-b-h2-anchor"),
                                   ("depth", "corrected-depth", "generic-b-corrected-depth")):
         path = source / (basename + "-source.json")
         binding_path = source / (basename + "-binding.json")
@@ -668,7 +670,7 @@ def _h2_anchor(source, output):
 
 def _render_h2_anchor(record):
     value, depth = record["outcome"], record["depth"]
-    title = "GB101 latest: H2 membership fit does not establish native benefit"
+    title = "GB101 earlier: H2 membership fit does not establish native benefit"
     lines = [title, "-" * len(title), "",
              "Reviewed 14 November 2026. All evidence is adaptive reused TRAIN, including the",
              "four-collision assessment panel; it does not measure independent generalization.",
@@ -748,15 +750,104 @@ def _render_h2_anchor(record):
               "424.925 scheduler CPU-seconds. Saved scoring used 12.311695 child CPU-seconds",
               "without new model calls. New-rollout latency totals 49.341 seconds (3.084 mean);",
               "peak host RSS was 2,845,504 KiB and peak device memory 222,499,328 bytes.", "",
-              "Next: independently review a finite positive-object supervision contrast, adding",
-              "0.1 times H2 teacher positive-object loss with the same support and controls.",
-              "Preparation does not authorize training; no coefficient or architecture sweep.", "",
+              "The following positive-object contrast is now completed and reported above.",
+              "This earlier snapshot and its downloads retain the original comparison.", "",
               ":download:`Reviewed H2 outcome and lineage <generic-b-h2-anchor-v1.json>`", "",
               ":download:`Corrected H3 and H2 depth metrics and support <generic-b-corrected-depth-v1.json>`", "",
               "Earlier published snapshots and downloads follow unchanged; their missingness",
               "statements describe those historical snapshots and are superseded by this correction.", ""]
     return lines
 
+
+
+def _render_positive_object(value):
+    title = "GB101 latest: positive-object fit improves while native quality fails"
+    lines = [title, "-" * len(title), "",
+        "Reviewed 14 November 2026. The H2 membership model is the control; adding",
+        "0.1 times positive-object teacher loss is the treatment. Forty updates and",
+        "16 new native rollouts completed; the 16 control rows were reused. Both arms",
+        "share the original nonlinear initialization, optimizer, 69 trainable tensors,",
+        "support, normalization and fixed terminal checkpoint. The object head stayed",
+        "frozen; its gradients reached the H2 representation on all 40 updates.", "",
+        "All 12 fit and four assessment collisions are adaptive reused TRAIN. These",
+        "measurements do not establish independent generalization. Scientific gate",
+        "failed; the model is not promoted.", ""]
+    rows = []
+    for cell in value["selected_B"]:
+        c = cell["contrast"]; lo, hi = c["paired_bootstrap95"]
+        rows.append((cell["panel"], cell["metric"],
+            f'{cell["states"][value["control_identity"]]:.6f}',
+            f'{cell["states"][value["treatment_identity"]]:.6f}',
+            f'{c["registered_equal_category_point_delta"]:+.6f}',
+            f'[{lo:+.6f}, {hi:+.6f}]'))
+    lines += _table(["Panel", "Selected-B metric", "Control", "Object treatment", "Delta", "Paired 95%"], rows)
+    lines += ["Assessment charged F1 falls 0.076923 while mixed rises 0.025906. Aggregate",
+        "F1 falls 0.025508 (paired 95% [-0.104528, +0.053512]); IoU falls 0.006939.",
+        "Intervals use 2,000 shared seed-5001 whole-collision draws and equal category",
+        "weights. Reused-panel uncertainty does not account for adaptive study selection.", ""]
+    rows = []
+    for category in ("charged", "mixed"):
+        for population in ("teacher_H2", "generated20"):
+            key = population + ":" + category
+            c = value["positive_object_fit"][value["control_identity"]][key]
+            t = value["positive_object_fit"][value["treatment_identity"]][key]
+            rows.append((category, population, f'{c["conditional"]:.6f}',
+                f'{t["conditional"]:.6f}', t["supported_queries"], t["nominal_query_slots"],
+                f'{t["nominal_known_contribution"]:.6f}'))
+    lines += _table(["Category", "Fit population", "Control object loss", "Treatment object loss",
+        "Supported queries", "Nominal query slots", "Known nominal contribution"], rows)
+    lines += ["Conditional positive-object fit improved in all four cells; unobserved nominal",
+        "slots are unavailable, not zero loss. Teacher H2 has only 15 supported unique",
+        "contexts; teacher H3 has one compatible target among 320 nominal slots.",
+        "Better teacher and saved-generated fit did not establish native benefit.", "",
+        "Retained selected-forest depth quality", "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", ""]
+    rows = []
+    d = value["depth"]
+    for data in d["data"]:
+        r = dict(zip(d["columns"], data))
+        if r["panel"] != "assessment4" or r["metric"] not in ("f1", "soft_edge_f1"):
+            continue
+        for category in ("charged", "mixed"):
+            c = dict(zip(d["category_columns"], r[category])); delta=c["registered_point_delta"]; ci=c["paired_bootstrap95"]
+            rows.append((category, "H" + str(r["height"]), r["metric"],
+                "unavailable" if delta is None else f'{delta:+.6f}',
+                "unavailable" if ci is None or any(x is None for x in ci) else f'[{ci[0]:+.6f}, {ci[1]:+.6f}]',
+                c["known_pairs"], c["nominal_pairs"]))
+    lines += _table(["Category", "Height", "Metric", "Delta", "Paired 95%", "Known pairs", "Nominal pairs"], rows)
+    lines += ["Charged assessment H3 source F1 falls 0.035714, paired 95% [-0.071429, 0].",
+        "Charged native and H3 safeguards failed. Missing mixed depth support remains",
+        "unavailable; absent H6 target population is distinct from an observation failure.",
+        "Source F1/IoU, precision/recall and hard/soft membership edge contrasts for all",
+        "six heights and both panels are included in the download. Proposal correctness",
+        "is unavailable without the necessary retained stage operands.", "",
+        "Exact recursive topology+PID, topology-only and inclusive recovery stay 0/32",
+        "nominal B slots per arm (fit 0/24, assessment 0/8), separately for selected",
+        "top1 and actual oracle@1/@4 pools. Oracle results never select a deployed output.",
+        "Strict independent coverage remains 0/12,000: charged, mixed, ccbar, uubar,",
+        "ddbar and ssbar each have 0/2,000 processed. Eligible independent availability",
+        "is unestablished. Each continuum flavour's event and candidate acceptance is",
+        "unavailable. No background safety or physical completeness is claimed.", "",
+        "This adaptive GB101 descendant retains H3 packing, coherent full-depth width4",
+        "beam search and the bounded donor transaction. It keeps eight candidates/query",
+        "at level1 and four elsewhere, with unchanged terminal selection. It differs",
+        "from the original default-four full-depth evaluation preserved below.",
+        "Truth is supervision or post-inference scoring only. Checkpoint architecture,",
+        "reference-conditioned heads, trained PID/confidence and normalization are preserved.", "",
+        "Native completion used 335 model forwards and 92,147 beam expansions. Native",
+        "latency total was 39.039 seconds (2.440 mean); peak host RSS 2,228,748 KiB,",
+        "peak device memory 83,362,816 bytes. Training plus native completion consumed",
+        "3,256 allocated CPU-seconds, 407 allocated GPU-seconds and 397.050 scheduler",
+        "CPU-seconds; prior controls and preparation are excluded. The first completion",
+        "attempt failed before rollout after saving the trained checkpoint; completion",
+        "restored it without retraining.", "",
+        "Next: prepare a matched frozen-replay versus refreshed-generated-context contrast.",
+        "The cause of teacher/native divergence remains unproven. Independent capture/support",
+        "review must precede frozen training counts and execution admission; no training is",
+        "admitted by preparation. Source and checkpoint hashes accompany the download.", "",
+        ":download:`Positive-object native outcomes, depth support and lineage <generic-b-positive-object-v1.json>`", "",
+        "Earlier reviewed H2, corrected H3 and original full-depth results follow; their",
+        "downloads remain available.", ""]
+    return lines
 
 def render(value):
     """Render completed results separately from current operational state."""
@@ -1116,4 +1207,4 @@ def render(value):
         ":download:`Historical corrected v4 aggregate retained with its original bytes <generic-b-status-summary-v4.json>`.",
         ":download:`Historical v3 aggregate retained with its original bytes <generic-b-status-summary.json>`.", "",
     ]
-    return _render_h2_anchor(value["h2_anchor"]) + _render_supported_h3(value["supported_h3"]) + _render_neural_support(value["neural_support"]) + lines
+    return _render_positive_object(value["h2_anchor"]["positive_object"]) + _render_h2_anchor(value["h2_anchor"]) + _render_supported_h3(value["supported_h3"]) + _render_neural_support(value["neural_support"]) + lines
