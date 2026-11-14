@@ -876,7 +876,7 @@ def _render_retained_source(value):
         "[+0.007888, +0.136696]. Charged F1 rises +0.071021 and mixed +0.194057.",
         "Intervals use 2,000 shared seed-5001 whole-collision draws, stratified by category",
         "with equal category weights. They do not adjust for adaptive study selection.", "",
-        "Auxiliary masked fit, separate from native reconstruction", "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", ""]
+        "Auxiliary masked fit, separate from native reconstruction", "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", ""]
     rows=[]
     for metric in ("fixed_nominal_BCE","eligible_only_equal_cell_BCE"):
         r=value["fit"][metric];rows.append((metric,f'{r["control"]:.6f}',f'{r["treatment"]:.6f}'))
@@ -889,7 +889,7 @@ def _render_retained_source(value):
     lines += ["The fixed-nominal BCE keeps missing slots in its denominator; it is a known",
         "contribution, not evidence that unavailable targets have zero loss. Eligible-only",
         "BCE and soft Dice describe observed support. Unknown source membership is masked.", "",
-        "Native depth response and nonharm", "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", ""]
+        "Native depth response and nonharm", "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", ""]
     rows=[]
     d=value["depth"]
     for record in d["data"]:
