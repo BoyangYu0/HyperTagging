@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed retained-source selected-B gain with charged H3/H4 harm. Adaptive TRAIN only; no promotion.
+  - cd1b93c144f9221f9024433db1dddceef8207841
   # Reviewed positive-object teacher/native divergence and charged H3 harm. Adaptive TRAIN only; no promotion.
   - 5eba2f6cb89cc9bcc0e271629daf8a66202cb935
   # Reviewed positive-object teacher/native divergence and charged H3 harm. Adaptive TRAIN only; no promotion.
