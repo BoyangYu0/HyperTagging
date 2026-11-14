@@ -708,6 +708,12 @@ def _render_h2_anchor(record):
               "but corrected mixed assessment H1 source F1 falls by 0.080000 and H4 source",
               "F1 by 0.123016. This materially limits the interpretation of the H3 gain.",
               "The corrected H2 comparison below uses the same saved control selection identities.",
+              "Its saved control depths are observed for all 16 collisions. Five H2 treatment",
+              "depth rows remain unavailable (four fit and one assessment); this operation",
+              "did not recover them. H1-H6 equal-category H2 deltas therefore remain unavailable.",
+              "H6 has no retained truth-target population; that absence is distinct from",
+              "an observation failure. Charged-only assessment observations do not fill the",
+              "missing mixed support or establish aggregate nonharm.",
               "Recovered observation failures are distinct from genuinely absent or unsupported",
               "heights. Missing observations remain unavailable; neither nonharm nor a PASS",
               "is inferred from missing support. Detailed support and intervals are downloadable.", ""]
