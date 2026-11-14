@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Minimal H2 publication privacy repair: checkpoint hashes retained under neutral update labels; no changed measurements, source states, privacy rule, historical download or science replay.
+  - 1aa2903ca974e6fccb7029f1d8432c06ebcb534d
   # Independently reviewed H2 teacher/native divergence, mixed assessment harm and recovered prior H3 depth interpretation. Adaptive TRAIN only, zero exact recovery and independent/background coverage unavailable. Historical downloads retained; no promotion.
   - e2db181d2d9621d874ee070921ddcb38e29e2f4a
   # Independently reviewed H2 teacher/native divergence, mixed assessment harm and recovered prior H3 depth interpretation. Adaptive TRAIN only, zero exact recovery and independent/background coverage unavailable. Historical downloads retained; no promotion.
