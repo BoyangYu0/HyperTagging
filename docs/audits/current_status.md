@@ -1,3 +1,11 @@
+GB101 reviewed decoder membership-only adaptation: generated fit improved but
+adaptive native assessment selected-B F1 delta -0.0402,paired95%[-0.0769,-0.0035];
+charged/mixed +0.0617/-0.1422. Two matched40-update arms,32 rollouts completed.
+Exact/topology/inclusive0/32 per arm including oracle pools. Gate failed;no promotion.
+Do not repeat unchanged. Joint object/type+membership supervision is a controlled
+next hypothesis,not an established cause. Independent0/12000;backgrounds/physical
+completeness unavailable. Historical results and support corrections follow.
+
 GB101 reviewed relation-support correction: all292 mapping-unavailable occurrences
 resolved using explicit saved incidence;400 states/709 occurrences processed,
 672 valid,37 incompatible. Complete eligible support:41 occurrences across13 H2

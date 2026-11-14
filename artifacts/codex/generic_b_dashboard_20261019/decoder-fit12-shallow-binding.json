@@ -1,0 +1,1 @@
+{"schema": "generic-b-decoder-fit12-shallow-binding-v1", "status_date": "2026-11-14", "source_file": "decoder-fit12-shallow-source.json", "source_bytes": 28426, "source_sha256": "c228fbac17fa42a81174ca916ad0c3c9cdd018df8e6913259dfbed8b63b57f2a", "private_payloads_copied": false, "contains_operational_identifiers": false, "contains_cohort_member_identifiers": false}

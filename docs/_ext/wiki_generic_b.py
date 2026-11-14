@@ -21,6 +21,11 @@ FILES = {
     "generic-b-source-supervision-v1.json",
     "generic-b-support-capture-v1.json",
     "generic-b-relation-support-v1.json",
+    "generic-b-decoder-native-v1.json",
+    "generic-b-decoder-assessment4-deep-v1.json",
+    "generic-b-decoder-assessment4-shallow-v1.json",
+    "generic-b-decoder-fit12-deep-v1.json",
+    "generic-b-decoder-fit12-shallow-v1.json",
     "generic-b-corrected-depth-v1.json",
 }
 LIMIT = 40_960
@@ -644,7 +649,9 @@ def _render_supported_h3(value):
 def _h2_anchor(source, output):
     """Publish reviewed aggregate H2 outcomes and additive saved-depth correction."""
     result = {}
-    for key, basename, schema in (("relation_support", "relation-support", "generic-b-relation-support"),
+    for key, basename, schema in (("decoder-fit12-shallow", "decoder-fit12-shallow", "generic-b-decoder-fit12-shallow"),
+                                  ("decoder_native", "decoder-native", "generic-b-decoder-native"),
+                                  ("relation_support", "relation-support", "generic-b-relation-support"),
                                   ("support_capture", "support-capture", "generic-b-support-capture"),
                                   ("source_supervision", "source-supervision", "generic-b-source-supervision"),
                                   ("preservation", "preservation", "generic-b-preservation"),
@@ -1152,6 +1159,55 @@ def _render_relation_support(value):
     return lines
 
 
+def _render_decoder_native(value):
+    title = "GB101 latest learned result: membership fit improves while native assessment worsens"
+    lines = [title, "-" * len(title), "",
+        "Reviewed 15 November 2026. Two matched 40-update decoder arms completed",
+        "with generated membership coefficient 0 versus 1, identical detector anchors,",
+        "60 trainable tensors,470 assignments across372 primary states,384 nominal slots.",
+        "Generated TRAIN32 and detector fit12 were disjoint; assessment4 was excluded",
+        "from all new fitting. This is adaptive ancestral TRAIN, not independent validation.", "",
+        "Generated nominal loss improved from0.9103 to0.2242, while detector eligible",
+        "BCE worsened from0.7789 to0.8948. Saved-state fit did not translate into benefit.",
+        "Assessment selected-B F1 fell from0.1813 to0.1411: delta -0.0402, paired95%",
+        "interval[-0.0769,-0.0035]. Charged/mixed deltas:+0.0617/-0.1422.",
+        "Selected-B IoU delta:-0.0219, interval[-0.0455,+0.0017]. Shared seed5001",
+        "whole-collision draws (2,000 replicates) use registered equal-category weights.",
+        "Only four assessment collisions (two/category) limit interpretation.", "",
+        "All32 native rollouts completed (fit12 plus assessment4 in each arm). Exact",
+        "recursive topology+PID,topology-only and inclusive source recovery remained",
+        "0/32 nominal B trials per arm, including oracle@1/@4 pools. Selected-B and",
+        "depth source F1/IoU,membership edge quality,charged/mixed estimates,intervals",
+        "and support counts are retained in the download. Oracle results are not deployable.",
+        "The fixed full-depth GB101 descendant width4 policy and trained-state lineage",
+        "were preserved. No inference/search intervention or model promotion occurred.", "",
+        "Selected-B gain,mixed nonharm and mixed H3 source-F1 gates failed. Do not",
+        "promote or repeat unchanged membership-only adaptation. Joint supported",
+        "membership/object/type supervision is the next controlled hypothesis; this",
+        "result does not prove that unsupervised head drift caused the native harm.",
+        "Proposal quality and PID/confidence proper scores remain unavailable.",
+        "Independent coverage remains0/12,000:0/2,000 in each required category.",
+        "Each continuum flavour's event/candidate acceptance and physical completeness",
+        "remain unavailable. TRAIN evidence is not relabelled independent validation.", "",
+        "Actual allocation:9,928 CPU-seconds and1,241 GPU-seconds (0.344722 GPU-hours).",
+        "Scheduler CPU1,228.928 seconds and application CPU1,222.206 seconds are",
+        "alternative counters. Total32,893 forwards and196,296 beam expansions.",
+        "Native control/treatment measured wall time:49.460/47.636 seconds for16",
+        "rollouts each; native forwards371/358; expansions94,166/102,130.",
+        "Peak host RSS2,577,160 KiB;device allocation275,480,064 bytes (cumulative peak).",
+        "Publication runner allocation is unavailable and separate from scientific cost.", "",
+        "Scientific source: ``3b399e65a1d74c771c3565180e33dcebc631b109``.",
+        "Initialization SHA256: ``202b8a4999ab64827ad91bab7359ab52be157ec61c1e0967c3893fd780c78b91``.",
+        "Next: prepare the matched joint-supervision candidate for independent review.",
+        "Historical downloads and earlier comparisons below remain available.", "",
+        ":download:`fit12-shallow depth metrics <generic-b-decoder-fit12-shallow-v1.json>`", "",
+        ":download:`fit12-deep depth metrics <generic-b-decoder-fit12-deep-v1.json>`", "",
+        ":download:`assessment4-shallow depth metrics <generic-b-decoder-assessment4-shallow-v1.json>`", "",
+        ":download:`assessment4-deep depth metrics <generic-b-decoder-assessment4-deep-v1.json>`", "",
+        ":download:`Matched decoder fit, native quality, depth, endpoints and compute <generic-b-decoder-native-v1.json>`", ""]
+    return lines
+
+
 def render(value):
     """Render completed results separately from current operational state."""
     gb001, gb002, cr054, gb101 = value["gb001"], value["gb002"], value["cr054"], value["gb101"]
@@ -1510,4 +1566,4 @@ def render(value):
         ":download:`Historical corrected v4 aggregate retained with its original bytes <generic-b-status-summary-v4.json>`.",
         ":download:`Historical v3 aggregate retained with its original bytes <generic-b-status-summary.json>`.", "",
     ]
-    return _render_relation_support(value["h2_anchor"]["relation_support"]) + _render_support_capture(value["h2_anchor"]["support_capture"]) + _render_source_supervision(value["h2_anchor"]["source_supervision"]) + _render_preservation(value["h2_anchor"]["preservation"]) + _render_retained_source(value["h2_anchor"]["retained_source"]) + _render_positive_object(value["h2_anchor"]["positive_object"]) + _render_h2_anchor(value["h2_anchor"]) + _render_supported_h3(value["supported_h3"]) + _render_neural_support(value["neural_support"]) + lines
+    return _render_decoder_native(value["h2_anchor"]["decoder_native"]) + _render_relation_support(value["h2_anchor"]["relation_support"]) + _render_support_capture(value["h2_anchor"]["support_capture"]) + _render_source_supervision(value["h2_anchor"]["source_supervision"]) + _render_preservation(value["h2_anchor"]["preservation"]) + _render_retained_source(value["h2_anchor"]["retained_source"]) + _render_positive_object(value["h2_anchor"]["positive_object"]) + _render_h2_anchor(value["h2_anchor"]) + _render_supported_h3(value["supported_h3"]) + _render_neural_support(value["neural_support"]) + lines
