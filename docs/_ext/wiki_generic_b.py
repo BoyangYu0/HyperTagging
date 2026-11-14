@@ -502,12 +502,14 @@ def _neural_support(source, output):
 def _render_neural_support(value):
     rows = []
     for study in value["studies"]:
-        cell = next(r for r in study["selected_B"]
-                    if r["panel"] == "native_assessment4" and r["metric"] == "f1")
-        rows.append((study["name"], f'{cell["control"]:.6f}', f'{cell["treatment"]:.6f}',
-                     f'{cell["delta"]:+.6f}',
-                     f'[{cell["paired95"][0]:+.6f}, {cell["paired95"][1]:+.6f}]',
-                     study["scientific_gate"]))
+        for cell in study["selected_B"]:
+            if cell["panel"] != "native_assessment4" or cell["metric"] != "f1":
+                continue
+            rows.append((study["name"], cell["control_identity"], cell["treatment_identity"],
+                         f'{cell["control"]:.6f}', f'{cell["treatment"]:.6f}',
+                         f'{cell["delta"]:+.6f}',
+                         f'[{cell["paired95"][0]:+.6f}, {cell["paired95"][1]:+.6f}]',
+                         study["scientific_gate"]))
     lines = ["GB101: neural fit/native divergence and corrected H3 support",
              "------------------------------------------------------------", "",
              "Reviewed snapshot: 13 November 2026. These are adaptive reused TRAIN mechanism",
@@ -515,7 +517,7 @@ def _render_neural_support(value):
              "Each native assessment uses four charged/mixed collisions (eight nominal B slots);",
              "the twelve-collision native-fit panel is reported separately in the download.",
              "Intervals use 2,000 paired whole-collision seed-5001 draws and equal category weights.", ""]
-    lines += _table(["Intervention", "Control F1", "Treatment F1", "Delta", "Paired 95%", "Gate"], rows)
+    lines += _table(["Intervention", "Control identity", "Treatment identity", "Control F1", "Treatment F1", "Delta", "Paired 95%", "Gate"], rows)
     lines += ["Projection changes produced uncertain assessment gains; weighting, contextualization",
               "and refreshed states failed safeguards. Better conditional TRAIN fit did not establish",
               "reliable native improvement. Root-anchored refresh reduced selected-B source F1 from",
@@ -528,8 +530,10 @@ def _render_neural_support(value):
               "Strict independent validation remains 0/12,000, with 2,000 missing per category.",
               "Every continuum flavour's event and candidate acceptance is unavailable for these",
               "newer studies. Missing depth cells remain unavailable. No model, oracle or policy is",
-              "promoted, and no overall PASS is supported. The admitted single-target supervision",
-              "contrast has no measured outcome in this reviewed snapshot.", "",
+              "promoted, and no overall PASS is supported. Teacher construction failed before learning;",
+              "no learned result was produced. Next: repair the detector-source to pointer-row",
+              "mask mapping and persist its operands before a newly independently reviewed",
+              "matched single-target H3 supervision run.", "",
               "The download preserves per-category deltas, source F1/IoU, depth source/edge guards,",
               "fit operands, source/review hashes and measured scheduler compute. Its six scientific",
               "operations used " + str(sum(r["allocated_cpu_seconds"] for r in value["studies"])) +
