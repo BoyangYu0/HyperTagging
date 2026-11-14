@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed source supervision improves fit without established native benefit. Adaptive TRAIN only; no promotion.
+  - bad878af6c1c07a0bd9a162a1ba42e0a6ff29770
   # Reviewed generated-state preservation reduces drift but harms native quality. Adaptive TRAIN only; no promotion.
   - 0fee1958128fa4765de163ccea0fd87b7bb613bb
   # Reviewed retained-source selected-B gain with charged H3/H4 harm. Adaptive TRAIN only; no promotion.
