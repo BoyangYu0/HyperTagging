@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Minimal publication privacy correction: exact checkpoint hashes retained under semantic control/treatment update identities; no private checkpoint filenames, changed metrics, rule relaxation or scientific rerun. Prior failed publication preserved.
+  - 47d28dc048c464a10365b22b4545020ea73cfe5e
   # Independently reviewed single-supported mixed H3 learning: matched adaptive selected-B gain, mixed fit harm, zero exact recovery and explicit missing depth/independent/background coverage. Historical downloads preserved; no model promotion.
   - ab3a4c223c5e77756111fa274d91261d9305d743
   # Independently reviewed accumulated Generic-B neural nulls, fit/native divergence, refresh harm and corrected supervision support; sanitized adaptive TRAIN aggregates, historical downloads preserved, no private scientific runtime or promotion.
