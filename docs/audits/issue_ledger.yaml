@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed relation support correction changes training readiness; no neural benefit claimed. Adaptive TRAIN only; no promotion.
+  - 5aa21e735e646e15135eb30515933aebfe040723
   # Reviewed generated-state capture changes support readiness; no neural benefit claimed. Adaptive TRAIN only; no promotion.
   - 2622f54e8245417c0412282585313051bbb9017b
   # Reviewed source supervision improves fit without established native benefit. Adaptive TRAIN only; no promotion.
