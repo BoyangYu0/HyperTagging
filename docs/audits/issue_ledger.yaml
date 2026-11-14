@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed generated-state preservation reduces drift but harms native quality. Adaptive TRAIN only; no promotion.
+  - 0fee1958128fa4765de163ccea0fd87b7bb613bb
   # Reviewed retained-source selected-B gain with charged H3/H4 harm. Adaptive TRAIN only; no promotion.
   - f3b624e5a6860ae94fe5084b11602be1912641c1
   # Reviewed retained-source selected-B gain with charged H3/H4 harm. Adaptive TRAIN only; no promotion.
