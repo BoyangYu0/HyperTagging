@@ -1,3 +1,13 @@
+GB101 reviewed support update: 32 exposed TRAIN collisions (16 charged,16 mixed),
+400 saved H2/H3/H4 states. All 384 primary slots accounted:372 reached,12 unreached;
+28 donor states separate. Under the current consumer:709 target-state occurrences,
+380 valid,292 unavailable,37 incompatible. Ten eligible exact-daughter occurrences
+cover four distinct H2 targets; none H3/H4. Unequal FSP/detector axes affect 13 events;
+explicit incidence repair and corrected yield remain pending. No neural improvement
+or promotion; training unadmitted, independent0/12000, backgrounds/physical
+completeness unavailable. Next: relation-aware supervision, then reviewed decoder/
+membership learning. The latest learned comparison and historical downloads follow.
+
 GB101 generated-source supervision improved generated BCE 0.037021 to 0.013112.
 Adaptive TRAIN assessment selected-B F1 delta -0.037019, paired 95%
 [-0.160256, 0.086219]; aggregate harm is not established. Charged +0.066017,
