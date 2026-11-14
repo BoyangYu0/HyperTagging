@@ -1,5 +1,9 @@
 # Current repository audit status
 
+## Generic-B supported-H3 exploratory learning (14 November 2026)
+
+Matched anchor-only versus single-supported mixed H3 teacher, each fixed at 40 updates and 69 trainable tensors, improved adaptive TRAIN assessment selected-B F1 from 0.057292 to 0.175066 (delta +0.117774, paired 95% [0.099185, 0.136364]). Mixed native-fit F1 declined by 0.062958; exact/topology/inclusive recovery stayed zero. Conditional teacher BCE fell from 3.136909 to 0.000637. Ten arm/event depth records remain unavailable pending independent review of saved-output scoring. Independent coverage is 0/12000; newer-study backgrounds and charged teacher support remain unavailable. No promotion or generalization claim. The latest dashboard presents the reviewed matched result separately from historical adaptive studies and the original full-depth greedy/beam evaluation.
+
 ## Generic-B census, readiness and learned-evaluation boundary — 2026-10-21
 
 GB001 completed and was independently reviewed as a fixed 28,000-collision

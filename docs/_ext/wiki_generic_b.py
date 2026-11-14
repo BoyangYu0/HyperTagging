@@ -13,6 +13,7 @@ FILES = {
     "generic-b-status-summary-v6.json",
     "generic-b-status-summary-v7.json",
     "generic-b-neural-support-v1.json",
+    "generic-b-supported-h3-v1.json",
 }
 LIMIT = 40_960
 HISTORICAL_V3_BYTES = 25_249
@@ -446,6 +447,7 @@ def generate(root, output):
     supplement = _neural_support(source, output)
     return value | {
         "neural_support": supplement,
+        "supported_h3": _supported_h3(source, output),
         "metric_download": {"filename": "generic-b-status-summary-v7.json",
                             "bytes": len(encoded),
                             "sha256": hashlib.sha256(encoded).hexdigest()},
@@ -510,8 +512,8 @@ def _render_neural_support(value):
                          f'{cell["delta"]:+.6f}',
                          f'[{cell["paired95"][0]:+.6f}, {cell["paired95"][1]:+.6f}]',
                          study["scientific_gate"]))
-    lines = ["GB101: neural fit/native divergence and corrected H3 support",
-             "------------------------------------------------------------", "",
+    lines = ["GB101 history: neural fit/native divergence and corrected H3 support",
+             "------------------------------------------------------------------", "",
              "Reviewed snapshot: 13 November 2026. These are adaptive reused TRAIN mechanism",
              "studies, separate from the original 80-collision greedy/beam evaluation below.",
              "Each native assessment uses four charged/mixed collisions (eight nominal B slots);",
@@ -532,16 +534,100 @@ def _render_neural_support(value):
               "Strict independent validation remains 0/12,000, with 2,000 missing per category.",
               "Every continuum flavour's event and candidate acceptance is unavailable for these",
               "newer studies. Missing depth cells remain unavailable. No model, oracle or policy is",
-              "promoted, and no overall PASS is supported. Teacher construction failed before learning;",
-              "no learned result was produced. Next: repair the detector-source to pointer-row",
-              "mask mapping and persist its operands before a newly independently reviewed",
-              "matched single-target H3 supervision run.", "",
+              "promoted, and no overall PASS is supported. At this historical snapshot teacher",
+              "construction failed before learning. The newer supported-H3 result above supersedes",
+              "that earlier next action while preserving this snapshot and its download.", "",
               "The download preserves per-category deltas, source F1/IoU, depth source/edge guards,",
               "fit operands, source/review hashes and measured scheduler compute. Its six scientific",
               "operations used " + str(sum(r["allocated_cpu_seconds"] for r in value["studies"])) +
               " allocated CPU-seconds and " + str(sum(r["allocated_gpu_seconds"] for r in value["studies"])) +
               " allocated GPU-seconds; this is scoped accounting, not total campaign spend.", "",
               ":download:`Reviewed neural/support metrics <generic-b-neural-support-v1.json>`", ""]
+    return lines
+
+
+
+def _supported_h3(source, output):
+    """Publish the reviewed single-supported-target matched neural outcome."""
+    path = source / "supported-h3-source.json"
+    binding_path = source / "supported-h3-binding.json"
+    _require(not path.is_symlink() and not binding_path.is_symlink()
+             and path.stat().st_size <= LIMIT and binding_path.stat().st_size <= LIMIT,
+             "Unsafe supported-H3 source")
+    raw = path.read_bytes()
+    binding = json.loads(binding_path.read_bytes())
+    _require(binding == {
+        "schema": "generic-b-supported-h3-binding-v1", "status_date": "2026-11-14",
+        "source_file": "supported-h3-source.json", "source_bytes": len(raw),
+        "source_sha256": hashlib.sha256(raw).hexdigest(),
+        "private_payloads_copied": False, "contains_operational_identifiers": False,
+        "contains_cohort_member_identifiers": False,
+    }, "Supported-H3 binding differs")
+    value = json.loads(raw)
+    _require(value["schema"] == "generic-b-supported-h3-public-source-v1"
+             and value["promotion"] is False and value["overall_PASS"] is False
+             and value["coverage"]["strict_validation_processed"] == 0
+             and value["teacher_support"]["nominal_slots"] == 320
+             and value["actual_counts"]["native_rollouts"] == 32,
+             "Supported-H3 scope differs")
+    published = value | {"schema": "generic-b-supported-h3-public-download-v1",
+                         "source_sha256": binding["source_sha256"]}
+    encoded = (json.dumps(published, sort_keys=True, indent=2, allow_nan=False) + "\n").encode()
+    filename = "generic-b-supported-h3-v1.json"
+    (output / filename).write_bytes(encoded)
+    return value | {"metric_download": {"filename": filename, "bytes": len(encoded),
+                                        "sha256": hashlib.sha256(encoded).hexdigest()}}
+
+
+def _render_supported_h3(value):
+    title = "GB101 latest: supported H3 learning changes selected-B quality"
+    lines = [title, "-" * len(title), "",
+             "Reviewed outcome: 14 November 2026. Adaptive reused TRAIN evidence only.",
+             "Matched anchor-only terminal40 is the control; single-H3 teacher terminal40 is",
+             "the treatment. Both start from the same checkpoint and train the same 69 tensors",
+             "for 40 updates. Historical parent/common0 is a separate safeguard comparator.", ""]
+    rows = []
+    for panel, label in (("assessment4", "Adaptive assessment: 4 collisions"),
+                         ("fit12", "Native fit: 12 collisions")):
+        for metric in ("f1", "iou"):
+            cell = value["selected_B"][panel][metric]
+            delta = cell["treatment_minus_control"]
+            bounds = delta["paired_bootstrap95"]
+            rows.append((label, metric.upper(),
+                         f'{cell["control"]["registered_equal_category_point"]:.6f}',
+                         f'{cell["treatment"]["registered_equal_category_point"]:.6f}',
+                         f'{delta["registered_equal_category_point_delta"]:+.6f}',
+                         f'[{bounds[0]:+.6f}, {bounds[1]:+.6f}]'))
+    lines += _table(["Panel", "Selected-B source metric", "Control", "Treatment", "Delta", "Paired 95%"], rows)
+    lines += ["Assessment F1 is unchanged for charged and rises by +0.235548 for mixed.",
+              "Native-fit F1 rises by +0.106322 for charged but falls by -0.062958 for mixed.",
+              "Equal-category aggregation retains that mixed harm; it is not hidden by the",
+              "aggregate fit delta. Intervals use 2,000 shared seed-5001 whole-collision draws.", "",
+              "The one supported mixed H3 teacher's conditional BCE falls from 3.136909 at",
+              "initialization to 0.000637 in treatment; the matched control ends at 3.796123.",
+              "There is no supported charged H3 teacher. The 320 nominal supervision slots",
+              "remain one charge-compatible, 92 incompatible, 49 unavailable and 178 absent.", "",
+              "Exact recursive topology+PID, topology-only and inclusive recovery remain zero:",
+              "0/8 assessment and 0/24 fit B trials per arm, for selected top1 and oracle@1/@4.",
+              "Oracle pools are post-inference diagnostics and are never promoted.",
+              "Ten arm/event records lack reviewed depth scoring (nine fit, one assessment);",
+              "heights 1-6 and proposal-quality missingness remain explicit pending independent",
+              "review of an additive saved-output correction. Missing observations are not zero.", "",
+              "This adaptive GB101 descendant uses coherent-forest width4 with inherited",
+              "eight candidates/query at level1 and a protected H3 packing continuation lane.",
+              "It is distinct from the original default-four full-depth evaluation below.",
+              "No new normalization fit or sealed-role access occurred.", "",
+              "Strict independent coverage is 0/12,000: all six categories remain 2,000 short.",
+              "For ccbar, uubar, ddbar and ssbar, event and candidate acceptance are unavailable",
+              "for this newer study. Background nonharm and generalization are unestablished.",
+              "The scientific gate remains unresolved; no overall PASS or model promotion.", "",
+              "Measured execution: 80 updates, 32 native rollouts, 154,054 query expansions;",
+              "5,000 allocated CPU-seconds, 625 allocated GPU-seconds and 610.620 measured",
+              "scheduler CPU-seconds. Peak device memory was 288,529,920 bytes; peak host RSS",
+              "was 2,955,756 KiB. Per-arm inference latency and checkpoint hashes are in the download.", "",
+              "Next: recover depth metrics from saved outputs, then independently review a finite",
+              "category-balanced anchor-objective proposal before further training.", "",
+              ":download:`Reviewed supported-H3 learning metrics <generic-b-supported-h3-v1.json>`", ""]
     return lines
 
 
@@ -903,4 +989,4 @@ def render(value):
         ":download:`Historical corrected v4 aggregate retained with its original bytes <generic-b-status-summary-v4.json>`.",
         ":download:`Historical v3 aggregate retained with its original bytes <generic-b-status-summary.json>`.", "",
     ]
-    return _render_neural_support(value["neural_support"]) + lines
+    return _render_supported_h3(value["supported_h3"]) + _render_neural_support(value["neural_support"]) + lines
