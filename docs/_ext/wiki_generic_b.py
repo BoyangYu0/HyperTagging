@@ -16,6 +16,7 @@ FILES = {
     "generic-b-supported-h3-v1.json",
     "generic-b-h2-anchor-v1.json",
     "generic-b-positive-object-v1.json",
+    "generic-b-retained-source-v1.json",
     "generic-b-corrected-depth-v1.json",
 }
 LIMIT = 40_960
@@ -639,7 +640,8 @@ def _render_supported_h3(value):
 def _h2_anchor(source, output):
     """Publish reviewed aggregate H2 outcomes and additive saved-depth correction."""
     result = {}
-    for key, basename, schema in (("positive_object", "positive-object", "generic-b-positive-object"),
+    for key, basename, schema in (("retained_source", "retained-source", "generic-b-retained-source"),
+                                  ("positive_object", "positive-object", "generic-b-positive-object"),
                                   ("outcome", "h2-anchor", "generic-b-h2-anchor"),
                                   ("depth", "corrected-depth", "generic-b-corrected-depth")):
         path = source / (basename + "-source.json")
@@ -761,7 +763,7 @@ def _render_h2_anchor(record):
 
 
 def _render_positive_object(value):
-    title = "GB101 latest: positive-object fit improves while native quality fails"
+    title = "GB101 earlier: positive-object fit improves while native quality fails"
     lines = [title, "-" * len(title), "",
         "Reviewed 14 November 2026. The H2 membership model is the control; adding",
         "0.1 times positive-object teacher loss is the treatment. Forty updates and",
@@ -847,6 +849,90 @@ def _render_positive_object(value):
         ":download:`Positive-object native outcomes, depth support and lineage <generic-b-positive-object-v1.json>`", "",
         "Earlier reviewed H2, corrected H3 and original full-depth results follow; their",
         "downloads remain available.", ""]
+    return lines
+
+
+def _render_retained_source(value):
+    title = "GB101 latest: retained-source learning improves selected B, harms deeper structure"
+    lines = [title, "-" * len(title), "",
+        "Reviewed 14 November 2026. Masked retained-source supervision is learnable and",
+        "improves selected-B quality on four adaptive TRAIN assessment collisions. Charged",
+        "H3/H4 source and edge quality harmed, so the scientific gate failed. No promotion.",
+        "This is exploratory evidence from a reused panel, not independent generalization.", "",
+        "Both arms restore the same full 436-tensor checkpoint and train the same 36",
+        "native tensors for 40 updates. The control preserves common-initialization",
+        "detector outputs; the treatment adds frozen-matched masked retained-source BCE.",
+        "Initialization, optimizer, normalization, terminal checkpoint and inference",
+        "controls are matched. Only 42/168 nominal target slots are eligible; 126 remain",
+        "unavailable. Retained-source membership is distinct from physical completeness.", ""]
+    rows=[]
+    for r in value["selected_B"]:
+        lo,hi=r["ci95"]
+        rows.append((r["panel"],r["metric"],f'{r["states"][value["control_identity"]]:.6f}',
+            f'{r["states"][value["treatment_identity"]]:.6f}',f'{r["delta"]:+.6f}',f'[{lo:+.6f}, {hi:+.6f}]'))
+    lines += _table(["Panel","Selected-B metric","Control","Retained-source treatment","Delta","Paired 95%"],rows)
+    lines += ["Assessment selected-B F1 rises 0.155309 to 0.287848: delta +0.132539",
+        "(paired 95% [+0.034558, +0.230519]). IoU rises +0.072292",
+        "[+0.007888, +0.136696]. Charged F1 rises +0.071021 and mixed +0.194057.",
+        "Intervals use 2,000 shared seed-5001 whole-collision draws, stratified by category",
+        "with equal category weights. They do not adjust for adaptive study selection.", "",
+        "Auxiliary masked fit, separate from native reconstruction", "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", ""]
+    rows=[]
+    for metric in ("fixed_nominal_BCE","eligible_only_equal_cell_BCE"):
+        r=value["fit"][metric];rows.append((metric,f'{r["control"]:.6f}',f'{r["treatment"]:.6f}'))
+    lines += _table(["Fit metric","Control","Treatment"],rows)
+    rows=[]
+    for r in value["fit"]["per_cell"]:
+        rows.append((r["category"],r["level"],f'{r["control_BCE"]:.6f}',f'{r["treatment_BCE"]:.6f}',
+            f'{r["control_soft_dice"]:.6f}',f'{r["treatment_soft_dice"]:.6f}'))
+    lines += _table(["Category","Height","Control BCE","Treatment BCE","Control soft Dice","Treatment soft Dice"],rows)
+    lines += ["The fixed-nominal BCE keeps missing slots in its denominator; it is a known",
+        "contribution, not evidence that unavailable targets have zero loss. Eligible-only",
+        "BCE and soft Dice describe observed support. Unknown source membership is masked.", "",
+        "Native depth response and nonharm", "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", ""]
+    rows=[]
+    d=value["depth"]
+    for record in d["data"]:
+        r=dict(zip(d["columns"],record))
+        if r["panel"]!="assessment4" or r["metric"] not in ("f1","soft_edge_f1"):continue
+        for category in ("charged","mixed"):
+            c=dict(zip(d["category_columns"],r[category]));v=c["delta"];ci=c["ci95"]
+            rows.append((category,"H"+str(r["height"]),r["metric"],"unavailable" if v is None else f'{v:+.6f}',
+                "unavailable" if ci is None or any(v is None for v in ci) else f'[{ci[0]:+.6f}, {ci[1]:+.6f}]',c["known_pairs"],c["nominal_pairs"]))
+    lines += _table(["Category","Height","Metric","Delta","Paired 95%","Known pairs","Nominal pairs"],rows)
+    lines += ["Charged H3 source F1 falls 0.082540 and soft-edge F1 falls 0.082129; H4",
+        "source F1 falls 0.064394 and soft-edge F1 falls 0.062290. These harms fail",
+        "registered safeguards despite the selected-B gain. H5/H6 support is incomplete.",
+        "The download retains both panels, six heights, source F1/IoU/precision/recall,",
+        "hard/soft membership edge contrasts, nominal support, bounds and intervals.",
+        "Proposal correctness and calibrated PID/confidence proper scores remain unavailable.", "",
+        "Assessment exact recursive topology+PID, topology-only and inclusive source",
+        "recovery remain 0/8 nominal B slots per arm, separately for selected top1 and",
+        "actual oracle@1/@4. Fit diagnostics remain separate in the download. Oracle",
+        "selection never defines a deployable output. All 32 requested rollouts completed.",
+        "Independent coverage remains 0/12,000: charged, mixed, ccbar, uubar, ddbar and",
+        "ssbar each have 0/2,000 processed. Eligible independent availability is unestablished.",
+        "Each continuum flavour's event and candidate acceptance is unavailable, not zero.",
+        "No background safety, confirmation or physical completeness is established.", "",
+        "Matched inference retains GB101 nominal H3 packing with coherent full-depth",
+        "width4 forest beam and a bounded postdecode donor transaction. Level1 uses eight",
+        "candidates/query and later levels four; terminal selection is unchanged. This",
+        "adaptive descendant is distinct from the original default-four evaluation below.",
+        "Truth is supervision or post-inference scoring only; it never ranks or stops",
+        "inference. Native architecture, reference-conditioned type heads, trained PID",
+        "and confidence state, recursive source uniqueness and normalization are preserved.", "",
+        "Training and inference used 1,760 allocated CPU-seconds, 220 allocated GPU-seconds",
+        "and 222.944 scheduler CPU-seconds. Native beam expansions total 188,895. Native",
+        "inference totals 43.736 seconds for control and 51.893 for treatment across 16",
+        "rollouts each. Process-cumulative memory and model-call counts are in the download;",
+        "the memory measurements are not isolated arm comparisons. Earlier studies and",
+        "publication overhead are excluded from these scientific operation totals.", "",
+        "Next: the independently admitted matched generated-state preservation contrast",
+        "uses 14 frozen TRAIN contexts, coefficient zero versus one, 40 updates per arm",
+        "and 32 native rollouts. Its mechanism and efficacy await independent review.",
+        "Mixed generated-state support and direct H4 preservation anchors are absent.", "",
+        ":download:`Retained-source outcomes, uncertainty, depth and checkpoint lineage <generic-b-retained-source-v1.json>`", "",
+        "Earlier reviewed studies and their historical downloads follow.", ""]
     return lines
 
 def render(value):
@@ -1207,4 +1293,4 @@ def render(value):
         ":download:`Historical corrected v4 aggregate retained with its original bytes <generic-b-status-summary-v4.json>`.",
         ":download:`Historical v3 aggregate retained with its original bytes <generic-b-status-summary.json>`.", "",
     ]
-    return _render_positive_object(value["h2_anchor"]["positive_object"]) + _render_h2_anchor(value["h2_anchor"]) + _render_supported_h3(value["supported_h3"]) + _render_neural_support(value["neural_support"]) + lines
+    return _render_retained_source(value["h2_anchor"]["retained_source"]) + _render_positive_object(value["h2_anchor"]["positive_object"]) + _render_h2_anchor(value["h2_anchor"]) + _render_supported_h3(value["supported_h3"]) + _render_neural_support(value["neural_support"]) + lines

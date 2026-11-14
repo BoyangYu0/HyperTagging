@@ -1,3 +1,11 @@
+<!-- Reviewed retained-source aggregate; private event and host records excluded. -->
+GB101 retained-source supervision completed: adaptive assessment selected-B F1
+0.155309 to 0.287848, paired delta +0.132539 [0.034558, 0.230519].
+Charged H3/H4 source and edge quality harmed; gate failed and no promotion.
+Independent coverage 0/12000; each continuum background unavailable. Historical
+downloads retained. Next: matched frozen generated-state preservation; efficacy
+awaits independent outcome review.
+
 <!-- Reviewed aggregate update; private event/host records excluded. -->
 GB101 positive-object supervision completed: adaptive assessment selected-B F1
 0.187948 to 0.162440, paired delta -0.025508 [ -0.104528, 0.053512 ].
