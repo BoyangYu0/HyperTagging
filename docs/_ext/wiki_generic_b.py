@@ -513,7 +513,7 @@ def _render_neural_support(value):
                          f'[{cell["paired95"][0]:+.6f}, {cell["paired95"][1]:+.6f}]',
                          study["scientific_gate"]))
     lines = ["GB101 history: neural fit/native divergence and corrected H3 support",
-             "------------------------------------------------------------------", "",
+             "-" * len("GB101 history: neural fit/native divergence and corrected H3 support"), "",
              "Reviewed snapshot: 13 November 2026. These are adaptive reused TRAIN mechanism",
              "studies, separate from the original 80-collision greedy/beam evaluation below.",
              "Each native assessment uses four charged/mixed collisions (eight nominal B slots);",
