@@ -1,3 +1,12 @@
+GB101 reviewed relation-support correction: all292 mapping-unavailable occurrences
+resolved using explicit saved incidence;400 states/709 occurrences processed,
+672 valid,37 incompatible. Complete eligible support:41 occurrences across13 H2
+targets in12 exposed TRAIN collisions;none H3/H4. Nominal384 primary slots retained,
+372 reached/12 unreached;28 donor states separate. No new inference/training and no
+neural benefit or promotion. Independent0/12000; backgrounds/physical completeness
+unavailable. Next: independently reviewed matched relation-masked decoder membership
+experiment. Historical prior-consumer support and learned comparisons follow.
+
 GB101 reviewed support update: 32 exposed TRAIN collisions (16 charged,16 mixed),
 400 saved H2/H3/H4 states. All 384 primary slots accounted:372 reached,12 unreached;
 28 donor states separate. Under the current consumer:709 target-state occurrences,

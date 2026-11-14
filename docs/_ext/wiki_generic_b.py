@@ -20,6 +20,7 @@ FILES = {
     "generic-b-preservation-v1.json",
     "generic-b-source-supervision-v1.json",
     "generic-b-support-capture-v1.json",
+    "generic-b-relation-support-v1.json",
     "generic-b-corrected-depth-v1.json",
 }
 LIMIT = 40_960
@@ -643,7 +644,8 @@ def _render_supported_h3(value):
 def _h2_anchor(source, output):
     """Publish reviewed aggregate H2 outcomes and additive saved-depth correction."""
     result = {}
-    for key, basename, schema in (("support_capture", "support-capture", "generic-b-support-capture"),
+    for key, basename, schema in (("relation_support", "relation-support", "generic-b-relation-support"),
+                                  ("support_capture", "support-capture", "generic-b-support-capture"),
                                   ("source_supervision", "source-supervision", "generic-b-source-supervision"),
                                   ("preservation", "preservation", "generic-b-preservation"),
                                   ("retained_source", "retained-source", "generic-b-retained-source"),
@@ -1067,7 +1069,7 @@ def _render_source_supervision(value):
 
 
 def _render_support_capture(value):
-    title = "GB101 latest support: mixed and charged generated-state capture is available with sparse exact support"
+    title = "GB101 historical capture support: mixed and charged generated-state capture is available with sparse exact support"
     lines = [title, "-" * len(title), "",
         "Reviewed 14 November 2026. Saved 400 native H2/H3/H4 states from 32 exposed",
         "TRAIN collisions, 16 charged and 16 mixed, with model soft PID and checkpoint",
@@ -1109,6 +1111,44 @@ def _render_support_capture(value):
         "reviewed generated-state decoder/membership experiment with known-label masks.",
         "Training is not yet admitted; no model promotion.", "",
         ":download:`Generated-state capture support, native quality and cost <generic-b-support-capture-v1.json>`", ""]
+    return lines
+
+
+def _render_relation_support(value):
+    title = "GB101 latest support correction: explicit relations resolve 292 unavailable support occurrences"
+    lines = [title, "-" * len(title), "",
+        "Reviewed 14 November 2026. Explicit saved FSP-to-detector incidence relations",
+        "resolve all 292 previously mapping-unavailable target-state occurrences, without",
+        "replaying capture or inference. All 400 states and 709 occurrences were processed:",
+        "672 valid and 37 incompatible. Thirteen events have unequal source axes; no",
+        "positional pairing or replacement observations were used.", "",
+        "Complete eligible daughter support rises from four to 13 distinct H2 targets",
+        "in 12 exposed TRAIN collisions, with 41 occurrences. None exists at H3/H4.",
+        "The unchanged 32-collision roster contains 16 charged and 16 mixed collisions.",
+        "All 384 primary slots remain accounted:372 reached,12 unreached;28 donor states",
+        "are separate. Donor-chain provenance remains separately available or unavailable.", "",
+        "Known membership labels comprise 1,059 positive and 23,809 disjoint-negative",
+        "operands;8,312 unknown and674 incompatible operands remain masked. These",
+        "are correlated target-state observations, not independent events, recursive",
+        "topology/PID recovery or physical completeness. Partial labels do not invent",
+        "complete deep targets. Truth is used only after inference for supervision.", "",
+        "This correction changes training readiness, not measured reconstruction quality.",
+        "There were zero new forwards, rollouts, updates or normalization fits. Native",
+        "quality observations and the latest paired learned comparison remain below.",
+        "No paired gain interval, independent validation, neural benefit or promotion",
+        "is established. Independent coverage remains0/12,000,0/2,000 per category.",
+        "Each continuum flavour's event/candidate acceptance and physical completeness",
+        "remain unavailable. No exposed TRAIN data is relabelled independent validation.", "",
+        "The correction used36 allocated CPU-seconds and zero GPU. Scheduler CPU9.532",
+        "seconds and application CPU5.590611 seconds are alternative usage counters.",
+        "Peak host RSS493,580 KiB. Runtime cgroup and scratch telemetry were not sampled.",
+        "Publication runner allocation is unavailable and separate from scientific cost.", "",
+        "Corrected support source: ``868f8b5444697fe26da73d914fde38081adf30d9``.",
+        "Next: independently review matched detector-anchor training with generated",
+        "relation-masked decoder-membership coefficient0 versus1,40 updates per arm.",
+        "Training remains unadmitted. Historical support counts below describe the",
+        "original consumer; this correction supersedes their mapping-unavailable yield.", "",
+        ":download:`Corrected support, category/depth counts and compute <generic-b-relation-support-v1.json>`", ""]
     return lines
 
 
@@ -1470,4 +1510,4 @@ def render(value):
         ":download:`Historical corrected v4 aggregate retained with its original bytes <generic-b-status-summary-v4.json>`.",
         ":download:`Historical v3 aggregate retained with its original bytes <generic-b-status-summary.json>`.", "",
     ]
-    return _render_support_capture(value["h2_anchor"]["support_capture"]) + _render_source_supervision(value["h2_anchor"]["source_supervision"]) + _render_preservation(value["h2_anchor"]["preservation"]) + _render_retained_source(value["h2_anchor"]["retained_source"]) + _render_positive_object(value["h2_anchor"]["positive_object"]) + _render_h2_anchor(value["h2_anchor"]) + _render_supported_h3(value["supported_h3"]) + _render_neural_support(value["neural_support"]) + lines
+    return _render_relation_support(value["h2_anchor"]["relation_support"]) + _render_support_capture(value["h2_anchor"]["support_capture"]) + _render_source_supervision(value["h2_anchor"]["source_supervision"]) + _render_preservation(value["h2_anchor"]["preservation"]) + _render_retained_source(value["h2_anchor"]["retained_source"]) + _render_positive_object(value["h2_anchor"]["positive_object"]) + _render_h2_anchor(value["h2_anchor"]) + _render_supported_h3(value["supported_h3"]) + _render_neural_support(value["neural_support"]) + lines
