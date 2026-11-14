@@ -18,6 +18,7 @@ FILES = {
     "generic-b-positive-object-v1.json",
     "generic-b-retained-source-v1.json",
     "generic-b-preservation-v1.json",
+    "generic-b-source-supervision-v1.json",
     "generic-b-corrected-depth-v1.json",
 }
 LIMIT = 40_960
@@ -641,7 +642,8 @@ def _render_supported_h3(value):
 def _h2_anchor(source, output):
     """Publish reviewed aggregate H2 outcomes and additive saved-depth correction."""
     result = {}
-    for key, basename, schema in (("preservation", "preservation", "generic-b-preservation"),
+    for key, basename, schema in (("source_supervision", "source-supervision", "generic-b-source-supervision"),
+                                  ("preservation", "preservation", "generic-b-preservation"),
                                   ("retained_source", "retained-source", "generic-b-retained-source"),
                                   ("positive_object", "positive-object", "generic-b-positive-object"),
                                   ("outcome", "h2-anchor", "generic-b-h2-anchor"),
@@ -937,7 +939,7 @@ def _render_retained_source(value):
     return lines
 
 def _render_preservation(value):
-    title = "GB101 latest: preserving generated states reduces drift but harms native quality"
+    title = "GB101 earlier: preserving generated states reduces drift but harms native quality"
     lines = [title, "-" * len(title), "",
         "Reviewed 14 November 2026. Frozen generated-state preservation reduced drift but",
         "worsened selected-B quality on four reused adaptive TRAIN assessment collisions.",
@@ -995,10 +997,70 @@ def _render_preservation(value):
         "not isolated arm comparisons. Publication overhead is separate.", "",
         "Frozen source: ``7ea90bb71cc0fc83358d78715b1adf5e09d9bbcf``. Lower generated KL",
         "alone does not repair native reconstruction; this contrast does not identify cause.",
-        "Next: independently admitted matched generated-input retained-source supervision",
-        "versus detector-only learning. Its efficacy awaits independent outcome review.", "",
+        "The subsequent reviewed generated-source supervision outcome is reported above.", "",
         ":download:`Preservation outcomes, depth, support, uncertainty and cost <generic-b-preservation-v1.json>`", "",
         "Earlier reviewed results and all historical downloads follow.", ""]
+    return lines
+
+
+def _render_source_supervision(value):
+    title = "GB101 latest: generated-source supervision improves fit without established native benefit"
+    lines = [title, "-" * len(title), "",
+        "Reviewed 14 November 2026. Matched coefficient-zero versus coefficient-one",
+        "generated-input retained-source supervision improved fixed-nominal generated BCE",
+        "from 0.037021 to 0.013112. Both arms restore the same 436-tensor unpromoted",
+        "checkpoint and train the same 36 tensors for 40 updates, with detector anchors",
+        "and native inference controls matched. No model promotion: native improvement",
+        "and nonharm gates failed. These are reused adaptive TRAIN observations.", ""]
+    rows=[]
+    for panel, metrics in value["selected_B"].items():
+        for metric in ("f1", "iou", "precision", "recall"):
+            v=metrics[metric]
+            rows.append((panel,metric,f'{v["registered_equal_category_point_delta"]:+.6f}',str(v["paired_bootstrap95"])))
+    lines += _table(["Panel", "Selected-B metric", "Treatment minus control", "Paired 95%"],rows)
+    lines += ["Assessment selected-B F1 delta is -0.037019, paired 95% [-0.160256, 0.086219];",
+        "the interval spans zero, so aggregate native harm is not established. Charged",
+        "changes by +0.066017 and mixed by -0.140054. Assessment has two collisions per",
+        "category, separate from fit12. Intervals use 2,000 shared seed5001 whole-collision",
+        "draws and equal-category weighting; they do not account for adaptive selection.", ""]
+    depth=value["per_generation"];rows=[]
+    for row in depth["rows"]:
+        v=dict(zip(depth["columns"],row))
+        if v["panel"]!="assessment4" or v["metric"] not in ("f1","soft_edge_f1"):continue
+        rows.append((v["category"],"H"+str(v["height"]),v["metric"],v["delta"] if v["delta"] is not None else "unavailable",str(v["paired95"]),v["known_pairs"],v["nominal_pairs"]))
+    lines += _table(["Category", "Height", "Metric", "Delta", "Paired 95%", "Known", "Nominal"],rows)
+    lines += ["The download retains source F1/IoU, precision/recall and hard/soft membership",
+        "edge quality for fit and assessment separately, with known and nominal support.",
+        "Exact recursive topology+PID, topology-only and inclusive source recovery remain",
+        "0/8 assessment B trials per arm (4 charged, 4 mixed), for selected top1 and actual",
+        "oracle@1/@4 separately. Fit remains 0/24 per arm. Oracle pools are diagnostics.", "",
+        "There are 26 eligible generated target occurrences among 672 nominal slots;",
+        "646 are unavailable. Fourteen of 96 generated states were observed; 82 were",
+        "unreached. Mixed generated support and direct H4 anchors are absent. Detector",
+        "supervision covers 42/168 targets. Missing terms are not zero error.", "",
+        "Independent coverage remains 0/12,000: each of charged, mixed, ccbar, uubar,",
+        "ddbar and ssbar has 0/2,000 processed. Each continuum flavour's event/candidate",
+        "acceptance, independent calibration and physical completeness remain unavailable.",
+        "Existing development reservations cannot be relabelled TRAIN or independent.", "",
+        "All 80 updates and 32 full-depth width4 coherent-forest beam rollouts completed,",
+        "with GB101 H3 packing and the unchanged bounded postdecode donor transaction.",
+        "Level1 uses eight candidates/query, later levels four; this adaptive descendant",
+        "differs from the original default-four evaluation retained below. Truth enters",
+        "supervision or post-inference scoring only. Architecture, reference-conditioned",
+        "types, trained PID/confidence, train-only normalization and source uniqueness persist.", "",
+        "Measured beam expansions: 195,553. Native latency totals: control 49.291 seconds,",
+        "supervision 46.474 seconds, 16 rollouts each. Peak device allocation 281,338,880",
+        "bytes is process-cumulative, not an isolated arm comparison. Allocated compute:",
+        "3,232 CPU-seconds and 404 GPU-seconds; scheduler CPU usage 396.977 seconds.",
+        "Publication overhead is separate and its runner CPU/GPU allocation is unavailable.", "",
+        "Frozen source: ``bc196f7df9e3f5fcedd7bf2ae839f3710cdd8d92``; common checkpoint",
+        "SHA-256: ``202b8a4999ab64827ad91bab7359ab52be157ec61c1e0967c3893fd780c78b91``.",
+        "Together with the preservation result below, improved fit alone does not establish",
+        "native benefit. Next: acquire role-separated mixed and matched charged generated",
+        "support with checkpoint provenance and model soft PID. NAF metadata access has",
+        "been restored; this does not establish new eligible independent coverage.", "",
+        ":download:`Generated-source supervision quality, depth, support and cost <generic-b-source-supervision-v1.json>`", "",
+        "Earlier results and all historical downloads follow.", ""]
     return lines
 
 
@@ -1360,4 +1422,4 @@ def render(value):
         ":download:`Historical corrected v4 aggregate retained with its original bytes <generic-b-status-summary-v4.json>`.",
         ":download:`Historical v3 aggregate retained with its original bytes <generic-b-status-summary.json>`.", "",
     ]
-    return _render_preservation(value["h2_anchor"]["preservation"]) + _render_retained_source(value["h2_anchor"]["retained_source"]) + _render_positive_object(value["h2_anchor"]["positive_object"]) + _render_h2_anchor(value["h2_anchor"]) + _render_supported_h3(value["supported_h3"]) + _render_neural_support(value["neural_support"]) + lines
+    return _render_source_supervision(value["h2_anchor"]["source_supervision"]) + _render_preservation(value["h2_anchor"]["preservation"]) + _render_retained_source(value["h2_anchor"]["retained_source"]) + _render_positive_object(value["h2_anchor"]["positive_object"]) + _render_h2_anchor(value["h2_anchor"]) + _render_supported_h3(value["supported_h3"]) + _render_neural_support(value["neural_support"]) + lines

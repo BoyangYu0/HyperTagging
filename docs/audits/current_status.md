@@ -1,3 +1,12 @@
+GB101 generated-source supervision improved generated BCE 0.037021 to 0.013112.
+Adaptive TRAIN assessment selected-B F1 delta -0.037019, paired 95%
+[-0.160256, 0.086219]; aggregate harm is not established. Charged +0.066017,
+mixed -0.140054. Native/nonharm gates failed, no promotion. Exact/topology/
+inclusive recovery remains zero; independent coverage 0/12000, background
+acceptance and physical completeness unavailable. Next: role-separated NAF/ETP
+support acquisition with model soft PID and generated-state provenance.
+Historical downloads and measured preservation outcome remain available.
+
 <!-- Reviewed preservation outcome; private event/host records excluded. -->
 GB101 frozen generated-state preservation reduced fixed-nominal KL from
 0.008275 to 0.001910 but worsened adaptive TRAIN assessment selected-B F1 by
