@@ -20,6 +20,8 @@ allowed_post_audit_paths:
   - notebooks/index.yaml
 allowed_post_audit_commits:
   # Independently reviewed H2 teacher/native divergence, mixed assessment harm and recovered prior H3 depth interpretation. Adaptive TRAIN only, zero exact recovery and independent/background coverage unavailable. Historical downloads retained; no promotion.
+  - e2db181d2d9621d874ee070921ddcb38e29e2f4a
+  # Independently reviewed H2 teacher/native divergence, mixed assessment harm and recovered prior H3 depth interpretation. Adaptive TRAIN only, zero exact recovery and independent/background coverage unavailable. Historical downloads retained; no promotion.
   - 0bf1941aff67f672f5838e3dc23e5242edd622bb
   # Independently reviewed H2 teacher/native divergence, mixed assessment harm and recovered prior H3 depth interpretation. Adaptive TRAIN only, zero exact recovery and independent/background coverage unavailable. Historical downloads retained; no promotion.
   - e6409aab5df44a2fa4243ff6faabcd85b5f13a95
