@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Bounded delivery of reviewed replay metrics;all scientific values retained.
+  - 42f9d673be4169a32637ea1b6cad788d3178de75
   # Reviewed alternating state replay harm; no promotion.
   - fcfa69df0a918fc98be7ea6d3e96e4c6cdf80258
   # Lossless compact delivery of new refresh generation metrics.
