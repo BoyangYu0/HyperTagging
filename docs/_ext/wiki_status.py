@@ -3426,6 +3426,17 @@ def generate_status(repo_root: Path, output_dir: Path) -> dict[str, Any]:
                 "metric_download": record["metric_download"],
                 "full_metrics_in_download": True,
             }
+    # These earlier Generic-B families also have complete unchanged downloads.
+    # Use the same lossless index contract rather than duplicating their rows.
+    for key in ("neural_support", "supported_h3"):
+        record = generic.get(key)
+        if isinstance(record, dict) and "metric_download" in record:
+            generic[key] = {
+                "schema": record.get("schema"),
+                "source_sha": record.get("source_sha"),
+                "metric_download": record["metric_download"],
+                "full_metrics_in_download": True,
+            }
     _write(output / "status.json", (json.dumps(manifest, separators=(",", ":"), sort_keys=True, allow_nan=False) + "\n").encode())
     _write(output / "index.rst", rendered_status.encode())
     downloads = ["Study metric downloads", "======================", "",

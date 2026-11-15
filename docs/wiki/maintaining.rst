@@ -234,3 +234,12 @@ byte count and SHA-256 rather than duplicating every metric. The page renders
 from the full aggregates before that manifest compaction. New decoder downloads
 use compact JSON; historical download bytes are unchanged. Site and per-file
 byte limits, privacy checks and historical metric content remain unchanged.
+
+Generic-B historical aggregate indexing
+---------------------------------------
+
+The earlier neural-support and supported-H3 families now use the same
+lossless download pointers as the H2 and successor families in status.json.
+The page still renders the complete aggregates, and their historical download
+bytes, hashes, metrics and links are unchanged. This removes duplicated
+serialization at the existing site byte bound; no privacy or size limit changes.
