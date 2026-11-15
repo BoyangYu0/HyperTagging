@@ -20,6 +20,8 @@ allowed_post_audit_paths:
   - notebooks/index.yaml
 allowed_post_audit_commits:
   # Reviewed refreshed-supervision outcomes; adaptive TRAIN only; no promotion; historical downloads retained. Adaptive TRAIN only; no promotion.
+  - cb6e92560ad9ba62225028b5506c08d134b1d849
+  # Reviewed refreshed-supervision outcomes; adaptive TRAIN only; no promotion; historical downloads retained. Adaptive TRAIN only; no promotion.
   - 81734ca721159170768c30efcea63e02268ab928
   # Reviewed refreshed-supervision outcomes; adaptive TRAIN only; no promotion; historical downloads retained. Adaptive TRAIN only; no promotion.
   - ef1f62b8275dba70835fc9ff6c73118cd39d3e39
