@@ -3483,6 +3483,23 @@ def generate_status(repo_root: Path, output_dir: Path) -> dict[str, Any]:
             }
             detail.pop("tree")
             detail.pop("retained")
+    # Phase69 uses the same complete decoded policy summaries as70..72.
+    # Render first above, then index duplicate JSON; downloads stay byte-exact.
+    policy69 = manifest.get("reconstruction", {}).get("phase69", {}).get("policy_reevaluation", {})
+    for arm, detail in policy69.get("arms", {}).items():
+        if "tree" not in detail or "retained" not in detail:
+            continue
+        detail["tree_retained_download"] = {
+            "downloads": policy69["downloads"],
+            "decoder": "phase69-policy-decoder.txt",
+            "decoded_key_paths": {
+                "tree": ["arms", arm, "greedy", "summaries"],
+                "retained": ["arms", arm, "greedy", "retained_tree_checks", "summaries"],
+            },
+            "full_metrics_in_download": True,
+        }
+        detail.pop("tree")
+        detail.pop("retained")
     _write(output / "status.json", (json.dumps(manifest, separators=(",", ":"), sort_keys=True, allow_nan=False) + "\n").encode())
     _write(output / "index.rst", rendered_status.encode())
     downloads = ["Study metric downloads", "======================", "",

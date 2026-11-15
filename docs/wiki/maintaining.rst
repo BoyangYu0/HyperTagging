@@ -263,3 +263,14 @@ The page renders those summaries before the general status JSON replaces
 only their duplicate copies with download hashes and structured decoded-key
 arrays. Tag results remain inline. No historical download, scientific value,
 privacy check or publication limit changes.
+
+Phase69 duplicate-summary indexing
+---------------------------------
+
+The complete Phase69 tree and retained summaries now use the same decoded
+policy-download index as Phase70 through Phase72 after full page rendering.
+Their original downloads and decoder retain exact bytes, tag results remain
+inline, and no scientific metric or publication limit changes. The new replay
+endpoint download shares common zero values explicitly across its fully
+specified model/panel/category/endpoint/view denominator table; zero measured
+recovery remains distinct from unavailable metrics.
