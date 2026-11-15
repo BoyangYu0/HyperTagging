@@ -1,0 +1,10 @@
+{
+  "schema": "generic-b-query-refresh-assessment4-shallow-binding-v1",
+  "status_date": "2026-11-15",
+  "source_file": "query-refresh-assessment4-shallow-source.json",
+  "source_bytes": 20827,
+  "source_sha256": "dec2c80d7665eb31a6d3530bc17da500ba91689624d0de1c8726a79245514132",
+  "private_payloads_copied": false,
+  "contains_operational_identifiers": false,
+  "contains_cohort_member_identifiers": false
+}

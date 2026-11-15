@@ -1,0 +1,10 @@
+{
+  "schema": "generic-b-query-refresh-fit12-shallow-binding-v1",
+  "status_date": "2026-11-15",
+  "source_file": "query-refresh-fit12-shallow-source.json",
+  "source_bytes": 22255,
+  "source_sha256": "842c1e4199803b3729da050e478b1066cfaee77adda602c28e0e64276d97236b",
+  "private_payloads_copied": false,
+  "contains_operational_identifiers": false,
+  "contains_cohort_member_identifiers": false
+}

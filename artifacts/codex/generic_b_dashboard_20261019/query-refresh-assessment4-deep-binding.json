@@ -1,0 +1,10 @@
+{
+  "schema": "generic-b-query-refresh-assessment4-deep-binding-v1",
+  "status_date": "2026-11-15",
+  "source_file": "query-refresh-assessment4-deep-source.json",
+  "source_bytes": 17167,
+  "source_sha256": "c0ef8d18f9ec61d483c607572e98c2c410b13caded3bef6836b5c0ed28955312",
+  "private_payloads_copied": false,
+  "contains_operational_identifiers": false,
+  "contains_cohort_member_identifiers": false
+}
