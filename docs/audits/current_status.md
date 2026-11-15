@@ -1,3 +1,9 @@
+GB101 latest learned comparison: balanced replay mixedH3 +0.09380 versus
+refreshed-only,but selected-B F1 0.13052 to0.08229,95%delta[-0.09091,-0.00556].
+Selected-B and charged-H3 nonharm fail;no promotion. Exact/topology/inclusive0/32
+per model;independent0/12000. Next: prepare64 distinct TRAIN support collisions.
+Historical findings follow.
+
 GB101 latest learned comparison: refreshed joint supervision improves adaptive
 assessment selected-B F1 +0.05176941,95%[0.04798327,0.05555556],but mixedH3
 sourceF1 -0.03296703 fails -0.02 nonharm. Fit12 mixedH3 also worsens.

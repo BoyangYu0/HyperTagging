@@ -1,0 +1,1 @@
+{"schema": "generic-b-replay-fit12-deep-binding-v1", "status_date": "2026-11-15", "source_file": "replay-fit12-deep-source.json", "source_bytes": 33977, "source_sha256": "fece116a9db3674243e403c568d2e68ccc7e05728336ce52f78fcf873a1f66d1", "private_payloads_copied": false, "contains_operational_identifiers": false, "contains_cohort_member_identifiers": false}

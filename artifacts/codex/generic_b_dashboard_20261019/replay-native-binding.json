@@ -1,0 +1,1 @@
+{"schema": "generic-b-replay-native-binding-v1", "status_date": "2026-11-15", "source_file": "replay-native-source.json", "source_bytes": 33426, "source_sha256": "c53d7390b1ab35db919e64a8c3791bd7e5138e6893b088221f25e3eb0c3d6af6", "private_payloads_copied": false, "contains_operational_identifiers": false, "contains_cohort_member_identifiers": false}
