@@ -1,3 +1,11 @@
+GB101 current-checkpoint capture:64 TRAIN rollouts,768 nominal primary slots;
+720 reached,48 unreached. Treatment exposes4 complete H3 occurrences of1 target
+in1 mixed collision;control0. No complete H4. Selected-B F1 delta+0.04395409,
+paired95%[-0.01572835,0.09788245];adaptive TRAIN only,no promotion.
+Independent0/12000;backgrounds and physical completeness unavailable.
+Next: prepare matched stale-versus-refreshed joint supervision for review.
+Latest learned evaluation and historical evidence follow.
+
 GB101 reviewed joint supervision: assessment4 selected-B F1 delta +0.0162,
 paired95% [0,0.0324]; fit12 H3 source-F1 delta -0.0835, paired95%
 [-0.1446,-0.0268]. Two matched40-update arms and32 rollouts completed.
