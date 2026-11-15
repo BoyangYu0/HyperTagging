@@ -20,6 +20,8 @@ allowed_post_audit_paths:
   - notebooks/index.yaml
 allowed_post_audit_commits:
   # Reviewed balanced-replay outcomes; adaptive TRAIN only; no promotion; historical downloads retained. Adaptive TRAIN only; no promotion.
+  # Reviewed TRAIN96 native category tradeoff; adaptive TRAIN only, no promotion.
+  - a1f80fa8ea18398999a3b1e6ed30e08cba574df7
   - 5a729114652c774153f50700994ad29a6ad72885
   # Reviewed balanced-replay outcomes; adaptive TRAIN only; no promotion; historical downloads retained. Adaptive TRAIN only; no promotion.
   - 5ac8bdcd9227868daf457a80869c9adba9aa99c6
