@@ -20,6 +20,8 @@ allowed_post_audit_paths:
   - notebooks/index.yaml
 allowed_post_audit_commits:
   # Reviewed current-checkpoint support outcomes; adaptive TRAIN only; no promotion; historical downloads retained. Adaptive TRAIN only; no promotion.
+  - c6513ca83e3d8946c74a67cc423b0066635f3640
+  # Reviewed current-checkpoint support outcomes; adaptive TRAIN only; no promotion; historical downloads retained. Adaptive TRAIN only; no promotion.
   - c4be1b6c2e69d67a30525eb78c8c20fcbff5064e
   # Reviewed joint supervision outcomes; adaptive TRAIN only; no promotion; historical downloads retained. Adaptive TRAIN only; no promotion.
   - 5b543337645f88a7c72b9c6be5105b9a466dbe15
