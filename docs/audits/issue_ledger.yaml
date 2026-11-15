@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed dynamic assignment gain and residual H3 harm; no promotion.
+  - 7eb00932cfac5b4883c8cbcfb3b7798c620a95aa
   # One-character heading repair; measured content and download bytes unchanged.
   - d3a98429be7a16a2c945f1484c3f4eb2ff9f98b9
   # Reviewed category-gradient null; adaptive TRAIN, no promotion.
