@@ -20,6 +20,8 @@ allowed_post_audit_paths:
   - notebooks/index.yaml
 allowed_post_audit_commits:
   # Reviewed joint supervision outcomes; adaptive TRAIN only; no promotion; historical downloads retained. Adaptive TRAIN only; no promotion.
+  - 696b78531109db49d62f808cdc3c7524219b19b9
+  # Reviewed joint supervision outcomes; adaptive TRAIN only; no promotion; historical downloads retained. Adaptive TRAIN only; no promotion.
   - 28c64efb663bed7876e297bb25550c308dbcae33
   # Correct heading underline for existing reviewed publication;scientific values and historical downloads unchanged. Adaptive TRAIN only; no promotion.
   - d693bb115302548d3e2c27833da629e1c2bd7b77
