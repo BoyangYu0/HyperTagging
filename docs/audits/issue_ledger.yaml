@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed dynamic assignment gain and residual H3 harm; no promotion.
+  - 80d7ab30e17d2a41983d554c992d61bc31e0c184
   # Correct observed teacher and category projections before promotion.
   - 00f9ceedea447b0538679de6815909e3c6920f16
   # Reviewed dynamic assignment gain and residual H3 harm; no promotion.
