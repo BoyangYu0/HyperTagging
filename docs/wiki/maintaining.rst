@@ -265,7 +265,7 @@ arrays. Tag results remain inline. No historical download, scientific value,
 privacy check or publication limit changes.
 
 Phase69 duplicate-summary indexing
----------------------------------
+----------------------------------
 
 The complete Phase69 tree and retained summaries now use the same decoded
 policy-download index as Phase70 through Phase72 after full page rendering.
