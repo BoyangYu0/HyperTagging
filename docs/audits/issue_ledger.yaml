@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Correct heading underline for existing reviewed publication;scientific values and historical downloads unchanged. Adaptive TRAIN only; no promotion.
+  - d693bb115302548d3e2c27833da629e1c2bd7b77
   # Scoped lossless delivery repair for already reviewed decoder harm;historical downloads unchanged. Adaptive TRAIN only; no promotion.
   - c67da107f1129e9314bc40d5fb53629a213273b0
   # Reviewed decoder adaptation harms mixed native assessment; no promotion. Adaptive TRAIN only; no promotion.
