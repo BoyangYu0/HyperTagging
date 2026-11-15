@@ -250,6 +250,6 @@ Historical summary indexing
 The main status manifest indexes decoded CR032 certificate details, Phase77
 and Phase78 populations, and historical GB101 details through their existing
 complete downloads. Their original download bytes and decoders remain unchanged.
-The rendered page retains the full summaries. Explicit decoded JSON pointers
+The rendered page retains the full summaries. Explicit decoded key paths
 locate each indexed field; metrics remain available without duplicate payloads
 in the main manifest. This delivery change keeps the existing artifact bounds.

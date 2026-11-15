@@ -3445,7 +3445,7 @@ def generate_status(repo_root: Path, output_dir: Path) -> dict[str, Any]:
         if "populations" in record and "metric_download" in record:
             record["populations_download"] = {
                 **record["metric_download"],
-                "decoded_json_pointer": "/populations",
+                "decoded_key_path": ["populations"],
                 "decoder": phase + "-decoder.txt",
                 "full_metrics_in_download": True,
             }
@@ -3456,13 +3456,13 @@ def generate_status(repo_root: Path, output_dir: Path) -> dict[str, Any]:
                         if row["filename"] == "cr032-summary.json")
         certificate["summary_download"] = {
             **complete, "decoder": "cr032-decoder.txt",
-            "decoded_json_pointer": "", "full_metrics_in_download": True,
+            "decoded_key_path": [], "full_metrics_in_download": True,
         }
         certificate.pop("summary")
     if "gb101" in generic and "metric_download" in generic:
         generic["gb101"] = {
             "metric_download": generic["metric_download"],
-            "decoded_json_pointer": "/gb101", "full_metrics_in_download": True,
+            "decoded_key_path": ["gb101"], "full_metrics_in_download": True,
         }
     _write(output / "status.json", (json.dumps(manifest, separators=(",", ":"), sort_keys=True, allow_nan=False) + "\n").encode())
     _write(output / "index.rst", rendered_status.encode())
