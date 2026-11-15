@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed category-gradient null; adaptive TRAIN, no promotion.
+  - 34804253e5fa2fdc8b25659660229124b84f5f10
   # Lossless search-index whitespace delivery; reviewed TRAIN96 data and all limits unchanged.
   - b9c5fd4e6c7ef83094419117a322c42fff41e33e
   # Reviewed balanced-replay outcomes; adaptive TRAIN only; no promotion; historical downloads retained. Adaptive TRAIN only; no promotion.
