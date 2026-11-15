@@ -1,3 +1,8 @@
+GB101 latest learned comparison: category projection activated18/40 updates
+but assessment selected-B F1 fell0.08236 to0.07045,paired95% delta[-0.02381,0].
+H3 unchanged versus expanded96;native margins failed. No promotion.
+Independent0/12000;next: detached dynamic TRAIN assignment preparation.
+
 GB101 latest learned comparison: broader TRAIN96 support improved teacher fit
 but retained native category tradeoffs. Selected-B F1 0.13052 to0.08236,
 paired95% delta[-0.09633,0];mixedH3 +0.09372,chargedH3 -0.28466.
