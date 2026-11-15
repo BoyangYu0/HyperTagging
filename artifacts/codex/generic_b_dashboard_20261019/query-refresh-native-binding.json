@@ -2,8 +2,8 @@
   "schema": "generic-b-query-refresh-native-binding-v1",
   "status_date": "2026-11-15",
   "source_file": "query-refresh-native-source.json",
-  "source_bytes": 16702,
-  "source_sha256": "fd48ef47ce8c3a0dba0b679d822cf047d5e9240758b0a44cf1958390d223310b",
+  "source_bytes": 16291,
+  "source_sha256": "3516496af91e6b1ab559e31bd3a995ca3bb03ae7a44b327e0ec4b4e1b8a153c9",
   "private_payloads_copied": false,
   "contains_operational_identifiers": false,
   "contains_cohort_member_identifiers": false
