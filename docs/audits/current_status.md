@@ -1,3 +1,10 @@
+GB101 latest learned comparison: refreshed joint supervision improves adaptive
+assessment selected-B F1 +0.05176941,95%[0.04798327,0.05555556],but mixedH3
+sourceF1 -0.03296703 fails -0.02 nonharm. Fit12 mixedH3 also worsens.
+Exact/topology/inclusive remain0/32 per arm;independent0/12000;no promotion.
+Next: fixed50/50 balanced replay preparation,40updates and16rollouts,for admission.
+Historical findings follow.
+
 GB101 current-checkpoint capture:64 TRAIN rollouts,768 nominal primary slots;
 720 reached,48 unreached. Treatment exposes4 complete H3 occurrences of1 target
 in1 mixed collision;control0. No complete H4. Selected-B F1 delta+0.04395409,
