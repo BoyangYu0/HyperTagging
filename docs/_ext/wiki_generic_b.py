@@ -679,7 +679,7 @@ def _h2_anchor(source, output):
                  "Unsafe H2/depth aggregate source")
         raw = path.read_bytes()
         binding = json.loads(binding_path.read_bytes())
-        _require(binding == {"schema": schema + "-binding-v1", "status_date": "2026-11-14",
+        _require(binding == {"schema": schema + "-binding-v1", "status_date": ("2026-11-15" if basename.startswith("joint-") else "2026-11-14"),
                  "source_file": path.name, "source_bytes": len(raw),
                  "source_sha256": hashlib.sha256(raw).hexdigest(),
                  "private_payloads_copied": False, "contains_operational_identifiers": False,
@@ -691,7 +691,7 @@ def _h2_anchor(source, output):
         published = value | {"schema": schema + "-public-download-v1",
                              "source_sha256": binding["source_sha256"]}
         # New downloads use compact JSON; historical download bytes stay exact.
-        options = {"separators": (",", ":")} if basename.startswith("decoder-") else {"indent": 2}
+        options = {"separators": (",", ":")} if basename.startswith(("decoder-", "joint-")) else {"indent": 2}
         encoded = (json.dumps(published, sort_keys=True, allow_nan=False, **options) + "\n").encode()
         filename = schema + "-v1.json"
         (output / filename).write_bytes(encoded)
