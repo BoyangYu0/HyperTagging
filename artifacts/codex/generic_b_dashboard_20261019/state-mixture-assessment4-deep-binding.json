@@ -1,0 +1,10 @@
+{
+  "schema": "generic-b-state-mixture-assessment4-deep-binding-v1",
+  "status_date": "2026-11-16",
+  "source_file": "state-mixture-assessment4-deep-source.json",
+  "source_bytes": 26292,
+  "source_sha256": "4277e28089779e7ef3c38d8e6cffab392bd9ba44edb88abdd34c31b05f00e4c3",
+  "private_payloads_copied": false,
+  "contains_operational_identifiers": false,
+  "contains_cohort_member_identifiers": false
+}

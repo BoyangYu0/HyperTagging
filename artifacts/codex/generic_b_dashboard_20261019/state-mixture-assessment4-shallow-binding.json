@@ -1,0 +1,10 @@
+{
+  "schema": "generic-b-state-mixture-assessment4-shallow-binding-v1",
+  "status_date": "2026-11-16",
+  "source_file": "state-mixture-assessment4-shallow-source.json",
+  "source_bytes": 14824,
+  "source_sha256": "1f2c9315096ebedf8af6ec402ecffbd19219e2a67a5a6e599fb1f768e6a926e1",
+  "private_payloads_copied": false,
+  "contains_operational_identifiers": false,
+  "contains_cohort_member_identifiers": false
+}

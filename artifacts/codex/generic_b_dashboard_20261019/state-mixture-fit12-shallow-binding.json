@@ -1,0 +1,10 @@
+{
+  "schema": "generic-b-state-mixture-fit12-shallow-binding-v1",
+  "status_date": "2026-11-16",
+  "source_file": "state-mixture-fit12-shallow-source.json",
+  "source_bytes": 16542,
+  "source_sha256": "ca0a8ee9afcf2e046dd5a4bb2b4dd77a48cc2855f177b1287a59ed54e3143713",
+  "private_payloads_copied": false,
+  "contains_operational_identifiers": false,
+  "contains_cohort_member_identifiers": false
+}

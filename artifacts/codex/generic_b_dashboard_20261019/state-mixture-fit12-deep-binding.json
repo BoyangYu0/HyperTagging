@@ -1,0 +1,10 @@
+{
+  "schema": "generic-b-state-mixture-fit12-deep-binding-v1",
+  "status_date": "2026-11-16",
+  "source_file": "state-mixture-fit12-deep-source.json",
+  "source_bytes": 28204,
+  "source_sha256": "4f468ec02af8faab91a910fd7330c5117ac471eaa9617eccf8ca9d74191fe2ae",
+  "private_payloads_copied": false,
+  "contains_operational_identifiers": false,
+  "contains_cohort_member_identifiers": false
+}
