@@ -243,3 +243,13 @@ lossless download pointers as the H2 and successor families in status.json.
 The page still renders the complete aggregates, and their historical download
 bytes, hashes, metrics and links are unchanged. This removes duplicated
 serialization at the existing site byte bound; no privacy or size limit changes.
+
+Historical summary indexing
+---------------------------
+
+The main status manifest indexes decoded CR032 certificate details, Phase77
+and Phase78 populations, and historical GB101 details through their existing
+complete downloads. Their original download bytes and decoders remain unchanged.
+The rendered page retains the full summaries. Explicit decoded JSON pointers
+locate each indexed field; metrics remain available without duplicate payloads
+in the main manifest. This delivery change keeps the existing artifact bounds.

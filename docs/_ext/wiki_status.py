@@ -3437,6 +3437,33 @@ def generate_status(repo_root: Path, output_dir: Path) -> dict[str, Any]:
                 "metric_download": record["metric_download"],
                 "full_metrics_in_download": True,
             }
+    # These historical decoded fields also have byte-preserved complete downloads.
+    # The page above still renders their full summaries; the JSON indexes the
+    # already delivered payload rather than repeating it at the site byte bound.
+    for phase in ("phase77", "phase78"):
+        record = manifest.get("reconstruction", {}).get(phase, {})
+        if "populations" in record and "metric_download" in record:
+            record["populations_download"] = {
+                **record["metric_download"],
+                "decoded_json_pointer": "/populations",
+                "decoder": phase + "-decoder.txt",
+                "full_metrics_in_download": True,
+            }
+            record.pop("populations")
+    certificate = manifest.get("reconstruction", {}).get("cr032", {})
+    if "summary" in certificate:
+        complete = next(row for row in certificate["metric_downloads"]
+                        if row["filename"] == "cr032-summary.json")
+        certificate["summary_download"] = {
+            **complete, "decoder": "cr032-decoder.txt",
+            "decoded_json_pointer": "", "full_metrics_in_download": True,
+        }
+        certificate.pop("summary")
+    if "gb101" in generic and "metric_download" in generic:
+        generic["gb101"] = {
+            "metric_download": generic["metric_download"],
+            "decoded_json_pointer": "/gb101", "full_metrics_in_download": True,
+        }
     _write(output / "status.json", (json.dumps(manifest, separators=(",", ":"), sort_keys=True, allow_nan=False) + "\n").encode())
     _write(output / "index.rst", rendered_status.encode())
     downloads = ["Study metric downloads", "======================", "",
