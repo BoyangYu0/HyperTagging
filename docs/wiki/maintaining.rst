@@ -226,7 +226,7 @@ files and decoders are not rewritten. No byte, work, decoder-memory or time
 bound is raised. Complete builds still check links, privacy and regeneration.
 
 Generic-B bounded aggregate delivery
------------------------------------
+------------------------------------
 
 The Generic-B H2 and successor result families retain their complete aggregate
 JSON downloads. The main status manifest indexes those downloads by filename,
