@@ -649,7 +649,10 @@ def _render_supported_h3(value):
 def _h2_anchor(source, output):
     """Publish reviewed aggregate H2 outcomes and additive saved-depth correction."""
     result = {}
-    for key, basename, schema in (("decoder-fit12-shallow", "decoder-fit12-shallow", "generic-b-decoder-fit12-shallow"),
+    for key, basename, schema in (("decoder-fit12-deep", "decoder-fit12-deep", "generic-b-decoder-fit12-deep"),
+                                  ("decoder-assessment4-shallow", "decoder-assessment4-shallow", "generic-b-decoder-assessment4-shallow"),
+                                  ("decoder-assessment4-deep", "decoder-assessment4-deep", "generic-b-decoder-assessment4-deep"),
+                                  ("decoder-fit12-shallow", "decoder-fit12-shallow", "generic-b-decoder-fit12-shallow"),
                                   ("decoder_native", "decoder-native", "generic-b-decoder-native"),
                                   ("relation_support", "relation-support", "generic-b-relation-support"),
                                   ("support_capture", "support-capture", "generic-b-support-capture"),
@@ -677,7 +680,9 @@ def _h2_anchor(source, output):
                  "H2/depth publication scope differs")
         published = value | {"schema": schema + "-public-download-v1",
                              "source_sha256": binding["source_sha256"]}
-        encoded = (json.dumps(published, sort_keys=True, indent=2, allow_nan=False) + "\n").encode()
+        # New downloads use compact JSON; historical download bytes stay exact.
+        options = {"separators": (",", ":")} if basename.startswith("decoder-") else {"indent": 2}
+        encoded = (json.dumps(published, sort_keys=True, allow_nan=False, **options) + "\n").encode()
         filename = schema + "-v1.json"
         (output / filename).write_bytes(encoded)
         result[key] = value | {"metric_download": {"filename": filename, "bytes": len(encoded),

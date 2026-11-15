@@ -3414,8 +3414,20 @@ def generate_status(repo_root: Path, output_dir: Path) -> dict[str, Any]:
     manifest = _compact_exact_numbers(manifest)
     if payloads.get("reconstruction_phase42_44_archive") and not payloads["reconstruction_phase42_44_archive"].get("reserved"):
         _historical_rows.compact(root, output, manifest)
+    # Render the full aggregate, then index already-complete Generic-B downloads.
+    # This avoids serializing their full metrics twice at the fixed site bound.
+    rendered_status = _render(manifest)
+    generic = manifest.get("reconstruction", {}).get("generic_b", {})
+    for key, record in generic.get("h2_anchor", {}).items():
+        if isinstance(record, dict) and "metric_download" in record:
+            generic["h2_anchor"][key] = {
+                "schema": record.get("schema"),
+                "source_sha": record.get("source_sha"),
+                "metric_download": record["metric_download"],
+                "full_metrics_in_download": True,
+            }
     _write(output / "status.json", (json.dumps(manifest, separators=(",", ":"), sort_keys=True, allow_nan=False) + "\n").encode())
-    _write(output / "index.rst", _render(manifest).encode())
+    _write(output / "index.rst", rendered_status.encode())
     downloads = ["Study metric downloads", "======================", "",
                  "Complete latest and historical evidence. Cohorts and metric definitions differ between studies; consult the dated reports before comparing values.", "",
                  ":doc:`Return to the latest evaluation <index>`.", ""]

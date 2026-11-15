@@ -224,3 +224,13 @@ Catalogue and repository metadata use compact JSON whitespace. These mutable
 coverage inventories change with source additions; historical scientific metric
 files and decoders are not rewritten. No byte, work, decoder-memory or time
 bound is raised. Complete builds still check links, privacy and regeneration.
+
+Generic-B bounded aggregate delivery
+-----------------------------------
+
+The Generic-B H2 and successor result families retain their complete aggregate
+JSON downloads. The main status manifest indexes those downloads by filename,
+byte count and SHA-256 rather than duplicating every metric. The page renders
+from the full aggregates before that manifest compaction. New decoder downloads
+use compact JSON; historical download bytes are unchanged. Site and per-file
+byte limits, privacy checks and historical metric content remain unchanged.
