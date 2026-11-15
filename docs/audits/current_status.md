@@ -1,3 +1,5 @@
+GB101 query-state refresh: assessment selected-B F1 delta -0.00061, paired95 [-0.04167,0.04044]; fit12 delta +0.09059. Complete H3 support fell five to zero. Scientific gate failed; no promotion; independent0/12000. Next: fixed old/refreshed state replay preparation.
+
 GB101 query interaction raised adaptive assessment selected-B F1 from0.14091 to0.22075; paired95 delta[0.00060,0.15909]. Charged H3 nonharm fails and fit12 declines. No promotion;independent0/12000. Next: matched generated-state refresh preparation.
 
 GB101 latest learned comparison: dynamic assignment raised adaptive selected-B F1
