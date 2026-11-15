@@ -2,8 +2,8 @@
   "schema": "generic-b-query-interaction-native-binding-v1",
   "status_date": "2026-11-15",
   "source_file": "query-interaction-native-source.json",
-  "source_bytes": 12806,
-  "source_sha256": "a900c36914913a567e5c21ae8115ea4d42b46d029d5b4c73f1a2a8f8e32a6365",
+  "source_bytes": 12597,
+  "source_sha256": "a140d1bfb23236821480da3637fbb840d9a4799e66301aed18e77785e07f3451",
   "private_payloads_copied": false,
   "contains_operational_identifiers": false,
   "contains_cohort_member_identifiers": false
