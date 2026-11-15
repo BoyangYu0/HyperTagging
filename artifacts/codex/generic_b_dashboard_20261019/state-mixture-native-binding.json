@@ -1,0 +1,10 @@
+{
+  "schema": "generic-b-state-mixture-native-binding-v1",
+  "status_date": "2026-11-16",
+  "source_file": "state-mixture-native-source.json",
+  "source_bytes": 101137,
+  "source_sha256": "596fe2dac46e3ebd6c8075f665da1edac27b17ca222a804a8b0a817710b25aef",
+  "private_payloads_copied": false,
+  "contains_operational_identifiers": false,
+  "contains_cohort_member_identifiers": false
+}
