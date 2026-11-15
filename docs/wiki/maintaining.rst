@@ -274,3 +274,11 @@ inline, and no scientific metric or publication limit changes. The new replay
 endpoint download shares common zero values explicitly across its fully
 specified model/panel/category/endpoint/view denominator table; zero measured
 recovery remains distinct from unavailable metrics.
+
+Search-index delivery
+---------------------
+
+Sphinx search-index JSON is serialized without redundant whitespace before
+artifact validation. Every search term, title, object and document remains
+unchanged. Scientific downloads retain their original format and exact
+historical bytes; all publication limits and privacy checks remain active.

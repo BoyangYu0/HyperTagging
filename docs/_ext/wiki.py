@@ -199,6 +199,24 @@ def on_build_finished(app, exception):
     empty_sources = output / "_sources"
     if empty_sources.is_dir() and not empty_sources.is_symlink() and not any(empty_sources.iterdir()):
         empty_sources.rmdir()
+    # Sphinx's JSON whitespace is redundant in Search.setIndex. Preserve every
+    # term, title, object and document while keeping the fixed artifact bound.
+    search_index = output / "searchindex.js"
+    _check_path(search_index)
+    if app.builder.name == "html" and search_index.is_file():
+        raw = search_index.read_text(encoding="utf-8")
+        match = re.fullmatch(r"\s*Search\.setIndex\((.*)\);?\s*", raw, re.S)
+        if match is None:
+            raise ValueError("Unexpected generated search-index envelope")
+        value = json.loads(match.group(1))
+        compact = "Search.setIndex(" + json.dumps(
+            value, separators=(",", ":"), sort_keys=True, allow_nan=False,
+        ) + ")"
+        search_index.write_text(compact, encoding="utf-8")
+        print("Lossless search-index delivery: " + json.dumps({
+            "original_bytes": len(raw.encode("utf-8")),
+            "compact_bytes": len(compact.encode("utf-8")),
+        }))
     validate_artifact(
         output,
         Path(__file__).resolve().parents[2],
