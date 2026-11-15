@@ -1,0 +1,10 @@
+{
+  "schema": "generic-b-expanded96-fit12-deep-binding-v1",
+  "status_date": "2026-11-15",
+  "source_file": "expanded96-fit12-deep-source.json",
+  "source_bytes": 34109,
+  "source_sha256": "976934375e6fa292b507aa61ebae1a197fe1be0182fc0707250d4a51901938f6",
+  "private_payloads_copied": false,
+  "contains_operational_identifiers": false,
+  "contains_cohort_member_identifiers": false
+}

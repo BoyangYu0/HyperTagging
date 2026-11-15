@@ -1,3 +1,10 @@
+GB101 latest learned comparison: broader TRAIN96 support improved teacher fit
+but retained native category tradeoffs. Selected-B F1 0.13052 to0.08236,
+paired95% delta[-0.09633,0];mixedH3 +0.09372,chargedH3 -0.28466.
+Scientific margins failed;no promotion. Exact/topology/inclusive0/32 per model;
+independent0/12000. Next: matched category-gradient projection preparation.
+Historical findings follow.
+
 GB101 latest learned comparison: balanced replay mixedH3 +0.09380 versus
 refreshed-only,but selected-B F1 0.13052 to0.08229,95%delta[-0.09091,-0.00556].
 Selected-B and charged-H3 nonharm fail;no promotion. Exact/topology/inclusive0/32

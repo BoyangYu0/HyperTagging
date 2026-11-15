@@ -1,0 +1,10 @@
+{
+  "schema": "generic-b-expanded96-native-binding-v1",
+  "status_date": "2026-11-15",
+  "source_file": "expanded96-native-source.json",
+  "source_bytes": 33690,
+  "source_sha256": "9c561f3944b31697cb6d911fd2c7a627322b17d73cfdd1098056a7273a56c249",
+  "private_payloads_copied": false,
+  "contains_operational_identifiers": false,
+  "contains_cohort_member_identifiers": false
+}

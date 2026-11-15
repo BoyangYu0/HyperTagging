@@ -1,0 +1,10 @@
+{
+  "schema": "generic-b-expanded96-assessment4-deep-binding-v1",
+  "status_date": "2026-11-15",
+  "source_file": "expanded96-assessment4-deep-source.json",
+  "source_bytes": 31625,
+  "source_sha256": "968f8c5ab250a3470b6c54436a2f3c55fed302583e77f52de05ce175199a9d5f",
+  "private_payloads_copied": false,
+  "contains_operational_identifiers": false,
+  "contains_cohort_member_identifiers": false
+}
