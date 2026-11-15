@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed query-state refresh null and support loss; no promotion.
+  - 203f441bde9b87cdd61b87f1cc7ffa919709b5a7
   # Restore historical scientific labels/caveats in compact summary.
   - 8704467d300ff462520491598ec7ed0416317f67
   # Coalesce historical prose;retain downloads and all privacy/resource limits.
