@@ -3464,6 +3464,25 @@ def generate_status(repo_root: Path, output_dir: Path) -> dict[str, Any]:
             "metric_download": generic["metric_download"],
             "decoded_key_path": ["gb101"], "full_metrics_in_download": True,
         }
+    # The full page is already rendered. These exact tree/retained summaries
+    # are also in the unchanged decoded policy downloads. Keep tag results
+    # inline and index the duplicate summaries through their existing decoders.
+    for phase in ("phase70", "phase71", "phase72"):
+        record = manifest.get("reconstruction", {}).get(phase, {})
+        for arm, detail in record.get("arms", {}).items():
+            if "tree" not in detail or "retained" not in detail:
+                continue
+            detail["tree_retained_download"] = {
+                "downloads": record["downloads"],
+                "decoder": phase + "-policy-decoder.txt",
+                "decoded_key_paths": {
+                    "tree": ["arms", arm, "greedy", "summaries"],
+                    "retained": ["arms", arm, "greedy", "retained_tree_checks", "summaries"],
+                },
+                "full_metrics_in_download": True,
+            }
+            detail.pop("tree")
+            detail.pop("retained")
     _write(output / "status.json", (json.dumps(manifest, separators=(",", ":"), sort_keys=True, allow_nan=False) + "\n").encode())
     _write(output / "index.rst", rendered_status.encode())
     downloads = ["Study metric downloads", "======================", "",

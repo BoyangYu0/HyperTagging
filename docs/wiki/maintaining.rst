@@ -253,3 +253,13 @@ complete downloads. Their original download bytes and decoders remain unchanged.
 The rendered page retains the full summaries. Explicit decoded key paths
 locate each indexed field; metrics remain available without duplicate payloads
 in the main manifest. This delivery change keeps the existing artifact bounds.
+
+Lossless policy-summary indexing
+--------------------------------
+
+The complete Phase70, Phase71 and Phase72 tree and retained-tree summaries
+remain in their original policy downloads and standard-library decoders.
+The page renders those summaries before the general status JSON replaces
+only their duplicate copies with download hashes and structured decoded-key
+arrays. Tag results remain inline. No historical download, scientific value,
+privacy check or publication limit changes.
