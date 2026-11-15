@@ -1,3 +1,5 @@
+GB101 query interaction raised adaptive assessment selected-B F1 from0.14091 to0.22075; paired95 delta[0.00060,0.15909]. Charged H3 nonharm fails and fit12 declines. No promotion;independent0/12000. Next: matched generated-state refresh preparation.
+
 GB101 latest learned comparison: dynamic assignment raised adaptive selected-B F1
 from 0.08236 to 0.14091; paired 95% delta [0, 0.11710]. Charged H3 nonharm
 still failed versus refreshed32. No promotion; independent coverage 0/12000.
