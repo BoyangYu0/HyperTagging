@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Remove stray render-summary key from measured teacher aggregate.
+  - 54950ae13c861aa904fbfb6bc0da2092b56ec410
   # Reviewed dynamic assignment gain and residual H3 harm; no promotion.
   - 80d7ab30e17d2a41983d554c992d61bc31e0c184
   # Correct observed teacher and category projections before promotion.
