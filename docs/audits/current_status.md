@@ -1,3 +1,11 @@
+GB101 reviewed joint supervision: assessment4 selected-B F1 delta +0.0162,
+paired95% [0,0.0324]; fit12 H3 source-F1 delta -0.0835, paired95%
+[-0.1446,-0.0268]. Two matched40-update arms and32 rollouts completed.
+Exact/topology/inclusive0/32 per arm including oracle pools; no promotion.
+Adaptive TRAIN only; independent0/12000, backgrounds/physical completeness
+unavailable. Next: prepare paired current-checkpoint TRAIN32 capture for review.
+Historical results follow.
+
 GB101 reviewed decoder membership-only adaptation: generated fit improved but
 adaptive native assessment selected-B F1 delta -0.0402,paired95%[-0.0769,-0.0035];
 charged/mixed +0.0617/-0.1422. Two matched40-update arms,32 rollouts completed.
