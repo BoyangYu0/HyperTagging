@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Exact reviewed five-decimal rounding; aggregate values unchanged.
+  - 2a84a9119dc6e9f8bc763c25984946e42a952eec
   # Reviewed within-update mixing null and accumulated native replay harm.
   - 657ff5d4adb3eb54f2b8e0d6d410abf411835d91
   - 90ea609050218feeef317d1dec8072b7d2c7aa50
