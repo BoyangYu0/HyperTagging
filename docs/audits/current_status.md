@@ -1,3 +1,5 @@
+GB101 restricted head gradients: adaptive selected-B F1 0.22180 versus0.15729,delta +0.06451,paired95 [0,0.12902];five depth safeguards failed,no promotion,independent0/12000. Next: dedicated H3 object/type residual representation.
+
 GB101 targeted H3 replay: adaptive selected-B F1 0.15729 versus0.22014,delta -0.06285,paired95 [-0.12570,0];11 safeguards failed,no promotion,independent0/12000. Next: restrict supplemental object/type gradient destinations while preserving membership and primary gradients.
 
 GB101 composite adaptation: adaptive selected-B F1 0.12902,delta +0.02123 versus within-update,paired95 [-0.14511,0.18758];still 0.09113 below refreshed-only.14 safeguards failed,no promotion,independent0/12000. Next: targeted supported H3 replay preparation.
