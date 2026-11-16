@@ -1,3 +1,5 @@
+GB101 composite adaptation: adaptive selected-B F1 0.12902,delta +0.02123 versus within-update,paired95 [-0.14511,0.18758];still 0.09113 below refreshed-only.14 safeguards failed,no promotion,independent0/12000. Next: targeted supported H3 replay preparation.
+
 GB101 within-update mixing: adaptive selected-B F1 0.10778,delta +0.02177 versus alternating replay,paired95 [-0.00192,0.04545];still 0.11236 below refreshed-only.13 safeguards failed,no promotion,independent0/12000. Next: composite-encoder adaptation preparation.
 
 GB101 alternating saved-state replay: adaptive selected-B F1 delta -0.13413,paired95 [-0.20833,-0.05992];teacher losses improved despite native harm and retained H3 support. Scientific gate failed,no promotion,independent0/12000. Next: matched within-update mixture preparation.
