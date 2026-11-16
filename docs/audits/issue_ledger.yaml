@@ -20,6 +20,9 @@ allowed_post_audit_paths:
   - notebooks/index.yaml
 allowed_post_audit_commits:
   # Reviewed targeted H3 replay null and accumulated replay harm.
+  - 153be55554160b64de10e87b4e36d3c3ed88c4fd
+  - c0ef619825fe695bd9fa7f4632a5f62d1d51107f
+  # Reviewed targeted H3 replay null and accumulated replay harm.
   - 6cf2b287ec1b109b8fb386fc373fbe8a5784be6b
   - 197f9aa8d432e04cfe5c80029895492942b3066d
   # Reviewed utilized composite adaptation null and accumulated replay harm.
