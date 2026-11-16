@@ -19,6 +19,9 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed targeted H3 replay null and accumulated replay harm.
+  - 6cf2b287ec1b109b8fb386fc373fbe8a5784be6b
+  - 197f9aa8d432e04cfe5c80029895492942b3066d
   # Reviewed utilized composite adaptation null and accumulated replay harm.
   - f35547081ccbab26ab40ebeefcc47b005168bb3c
   - 1143ade449d5517942e0cd8b8e7f9f68e52d22bf
