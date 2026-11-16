@@ -1,4 +1,4 @@
-"""Bounded aggregate publication for GB001, GB002 status, and CR054."""
+"""Bounded aggregate publication for Generic-B reconstruction studies."""
 from __future__ import annotations
 
 import hashlib
@@ -6,8 +6,82 @@ import json
 
 
 SOURCE = "artifacts/codex/generic_b_dashboard_20261019"
-FILES = {"generic-b-status-summary.json"}
-LIMIT = 32_768
+FILES = {
+    "generic-b-status-summary.json",
+    "generic-b-status-summary-v4.json",
+    "generic-b-status-summary-v5.json",
+    "generic-b-status-summary-v6.json",
+    "generic-b-status-summary-v7.json",
+    "generic-b-neural-support-v1.json",
+    "generic-b-supported-h3-v1.json",
+    "generic-b-h2-anchor-v1.json",
+    "generic-b-positive-object-v1.json",
+    "generic-b-retained-source-v1.json",
+    "generic-b-preservation-v1.json",
+    "generic-b-source-supervision-v1.json",
+    "generic-b-support-capture-v1.json",
+    "generic-b-relation-support-v1.json",
+    "generic-b-decoder-native-v1.json",
+    "generic-b-query-refresh-fit12-shallow-v1.json",
+    "generic-b-query-refresh-fit12-deep-v1.json",
+    "generic-b-query-refresh-assessment4-shallow-v1.json",
+    "generic-b-query-refresh-assessment4-deep-v1.json",
+    "generic-b-query-refresh-native-v1.json",
+    "generic-b-query-interaction-native-v1.json",
+    "generic-b-dynamic-native-v1.json",
+    "generic-b-projection-native-v1.json",
+    "generic-b-expanded96-native-v1.json",
+    "generic-b-expanded96-teacher-v1.json",
+    "generic-b-expanded96-endpoints-v1.json",
+    "generic-b-expanded96-fit12-shallow-v1.json",
+    "generic-b-expanded96-fit12-deep-v1.json",
+    "generic-b-expanded96-assessment4-shallow-v1.json",
+    "generic-b-expanded96-assessment4-deep-v1.json",
+    "generic-b-replay-native-v1.json",
+    "generic-b-replay-teacher-v1.json",
+    "generic-b-replay-endpoints-v1.json",
+    "generic-b-replay-fit12-shallow-v1.json",
+    "generic-b-replay-fit12-deep-v1.json",
+    "generic-b-replay-assessment4-shallow-v1.json",
+    "generic-b-replay-assessment4-deep-v1.json",
+    "generic-b-balanced-refresh-native-v1.json",
+    "generic-b-balanced-refresh-teacher-comparison-v1.json",
+    "generic-b-balanced-refresh-endpoints-by-category-v1.json",
+    "generic-b-balanced-refresh-fit12-shallow-v1.json",
+    "generic-b-balanced-refresh-fit12-deep-v1.json",
+    "generic-b-balanced-refresh-assessment4-shallow-v1.json",
+    "generic-b-balanced-refresh-assessment4-deep-v1.json",
+    "generic-b-refresh-native-v1.json",
+    "generic-b-refresh-shallow-v1.json",
+    "generic-b-refresh-deep-v1.json",
+    "generic-b-joint-native-v1.json",
+    "generic-b-joint-assessment4-deep-v1.json",
+    "generic-b-joint-assessment4-shallow-v1.json",
+    "generic-b-joint-fit12-deep-v1.json",
+    "generic-b-joint-fit12-shallow-v1.json",
+    "generic-b-decoder-assessment4-deep-v1.json",
+    "generic-b-decoder-assessment4-shallow-v1.json",
+    "generic-b-decoder-fit12-deep-v1.json",
+    "generic-b-decoder-fit12-shallow-v1.json",
+    "generic-b-corrected-depth-v1.json",
+}
+LIMIT = 40_960
+HISTORICAL_V3_BYTES = 25_249
+HISTORICAL_V3_SHA256 = "612f24cbfa13d0c6e1440a168da8c31939de6ed7b03dd6cf73954dd98c933d2f"
+HISTORICAL_V4_SOURCE_SHA256 = "273adbc36a416dedd2bd296c0e154b842832ab0333874ee4441cd64fa42be12e"
+HISTORICAL_V4_BYTES = 28_609
+HISTORICAL_V4_SHA256 = "2be7a36e81269fa41b71cfb1c0ccc109366f86fec82e29c45f7f2ec974d0823b"
+HISTORICAL_V5_SOURCE_SHA256 = "5f89af37af06e4603b02b3f21ea512f583d3f2a46982724e790511592af8ba3f"
+HISTORICAL_V5_BYTES = 33_319
+HISTORICAL_V5_SHA256 = "85352c695dadcce57607b4649cf7b43c882a900ec0a1dfdc0e103a0c45b625aa"
+HISTORICAL_V6_SOURCE_SHA256 = "49eb9a331299bf99a18d2fbe0ed1270a60be6be0f15ca80f4601e9d790b70bb0"
+HISTORICAL_V6_BYTES = 39_142
+HISTORICAL_V6_SHA256 = "b1c8b14a63bdb90e16a878ad66a910c8a228e183d89bd5abb6393fafb5409fae"
+LATEST_PROVENANCE = {
+    "gb101_h1_positive_anchor_scientific_result_sha256",
+    "gb101_h1_positive_anchor_closeout_sha256",
+    "gb101_h1_positive_anchor_review_sha256",
+}
 
 
 def _require(condition, message):
@@ -33,14 +107,17 @@ def generate(root, output):
     source = root / SOURCE
     binding_path = source / "binding.json"
     summary_path = source / "summary.json"
-    _require(not binding_path.is_symlink() and not summary_path.is_symlink(), "Unsafe generic-B source")
-    _require(binding_path.stat().st_size <= LIMIT and summary_path.stat().st_size <= LIMIT,
+    historical_path = source / "historical-summary-v3-source.json"
+    _require(not binding_path.is_symlink() and not summary_path.is_symlink()
+             and not historical_path.is_symlink(), "Unsafe generic-B source")
+    _require(binding_path.stat().st_size <= LIMIT and summary_path.stat().st_size <= LIMIT
+             and historical_path.stat().st_size <= LIMIT,
              "Generic-B source exceeds limit")
     binding = json.loads(binding_path.read_bytes())
     raw = summary_path.read_bytes()
     _require(binding == {
-        "schema": "generic-b-dashboard-public-binding-v2",
-        "status_date": "2026-10-21",
+        "schema": "generic-b-dashboard-public-binding-v7",
+        "status_date": "2026-11-06",
         "source_file": "summary.json",
         "source_bytes": len(raw),
         "source_sha256": hashlib.sha256(raw).hexdigest(),
@@ -49,10 +126,157 @@ def generate(root, output):
         "contains_cohort_member_identifiers": False,
     }, "Generic-B binding differs")
     value = json.loads(raw)
-    _require(set(value) == {"schema", "status_date", "provenance", "gb001", "gb002", "cr054"},
+    _require(set(value) == {"schema", "status_date", "provenance", "gb001", "gb002", "cr054", "gb101"},
              "Generic-B summary fields differ")
-    _require(value["schema"] == "generic-b-dashboard-public-summary-v2", "Generic-B schema differs")
-    gb001, gb002, cr054 = value["gb001"], value["gb002"], value["cr054"]
+    _require(value["schema"] == "generic-b-dashboard-public-summary-v7", "Generic-B schema differs")
+    gb001, gb002, cr054, gb101 = value["gb001"], value["gb002"], value["cr054"], value["gb101"]
+    _require(gb101["status"] == "COMPLETED_COVERAGE_INCOMPLETE_NULL_OR_HARM"
+             and gb101["scientific_gate"] == "FAILED"
+             and gb101["checkpoint_promoted"] is False
+             and gb101["coverage"] == {
+                 "authenticated_local_inventory_per_category": 512,
+                 "complete_post_study_evaluation": False,
+                 "diagnostic_collisions": 80,
+                 "exploratory_development_collisions_per_category": 8,
+                 "exploratory_processed_per_category": 8,
+                 "exploratory_processed_total": 48,
+                 "exploratory_shortfall_per_category": 1992,
+                 "historical_pretraining_exposure":
+                     "INCOMPLETE_FOR_SAME_512_EVENT_POPULATION_NOT_ADDITIONAL_EVENTS",
+                 "naf_inventory": "UNAVAILABLE_AUTHENTICATION",
+                 "prior_adaptive_development_reservation_per_category": 512,
+                 "strict_eligible_available_per_category": 0,
+                 "strict_eligible_available_total": 0,
+                 "strict_eligible_processed_per_category": 0,
+                 "strict_eligible_processed_total": 0,
+                 "strict_eligible_selected_per_category": 0,
+                 "strict_eligible_selected_total": 0,
+                 "strict_requested_per_category": 2000,
+                 "strict_requested_total": 12000,
+                 "strict_shortfall_per_category": 2000,
+                 "train_diagnostics": 32,
+             },
+             "GB101 result scope differs")
+    separated = gb101["role_separated_endpoints"]
+    _require(separated["endpoint_order"] == [
+                 "exact_topology_pid", "topology_only", "inclusive_source"]
+             and separated["roles"] == {
+                 "development": {"collisions": 16, "nominal_b_slots": 32},
+                 "train_diagnostic": {"collisions": 32, "nominal_b_slots": 64},
+             }
+             and set(separated["views"]) == {
+                 "latest_beam4", "latest_native_gb101",
+                 "unpromoted_parent_beam4", "unpromoted_parent_native"},
+             "GB101 role-separated endpoint scope differs")
+    for view_name, view in separated["views"].items():
+        expected_keys = {"top1_correct_in_endpoint_order", "oracle_at_1_correct_in_endpoint_order"}
+        if "beam4" in view_name:
+            expected_keys.add("oracle_at_4_correct_in_endpoint_order")
+        for role in ("development", "train_diagnostic"):
+            _require(set(view[role]) == expected_keys
+                     and all(view[role][key] == [0, 0, 0] for key in expected_keys),
+                     "GB101 role-separated endpoint values differ")
+    diagnosis = gb101["saved_beam_diagnosis"]
+    _require(diagnosis["classification"] == "RETAINED_POOL_DEFICIT_ONLY"
+             and diagnosis["analysis"] == {
+                 "bootstrap_replicates": 2000, "saved_rows": 160, "scheduler_jobs": 0}
+             and diagnosis["interpretation"] == {
+                 "ranking_opportunity_supported": False,
+                 "ranking_rule": "POOL_MINUS_TOP1_SOURCE_F1_LOWER95_STRICTLY_POSITIVE",
+                 "retained_pool_deficit_supported": True,
+                 "truth_scored_oracle_promoted": False,
+             }
+             and diagnosis["signal_diagnostics_combined_train_and_development"] == {
+                 "b_root_only_below_top1": 2,
+                 "no_b_root_anywhere_retained": 40,
+                 "no_b_root_top1": 42,
+                 "query_expansion_cap_hit": 43,
+                 "signal_collisions": 48,
+             }
+             and diagnosis["telemetry"] == {
+                 "causal_pruning_attribution": False,
+                 "dropped_forest_quality": False,
+                 "h3_nominal_lane_later_survival": False,
+                 "saved_candidate_whole_hypothesis_quality": True,
+                 "saved_search_pruning_and_saturation_counters": True,
+                 "strict_validation_coverage": False,
+             }
+             and diagnosis["next_scientific_question"]
+                 == "ONE_CONTROLLED_PROPOSAL_RETENTION_CHANGE_AT_SATURATED_QUERY_CAP_WITH_MODEL_BEAM_WIDTH_AND_SCORING_FIXED",
+             "GB101 saved-beam diagnosis differs")
+    cap = gb101["cap256_intervention"]
+    _require(cap["classification"] == "NULL_OR_HARM"
+             and cap["changed_factor"] == {
+                 "max_candidate_expansions_per_query": {"control": 128, "treatment": 256}}
+             and cap["source_revisions"] == {
+                 "gb101_scientific": "d3e20ee2dcf9d0ab4e62ae3e8c698c9c296b8254",
+                 "cap256_implementation": "cc9608b899b6471a850966ee600b319d4260b3e0"}
+             and cap["support"] == {
+                 "nominal": 80, "processed": 80, "failed": 0, "incompatible": 0,
+                 "unavailable": 0, "train_diagnostic": 32, "development": 48,
+                 "development_per_category": 8, "strict_eligible_per_category": 0,
+                 "strict_requested_per_category": 2000}
+             and cap["development_equal_category"]["top1_source_f1"] == {
+                 "cap128": 0.020833333333333332, "cap256": 0.020833333333333332,
+                 "delta": 0.0, "lower95": 0.0, "upper95": 0.0}
+             and cap["development_equal_category"]["retained_pool_oracle_source_f1"] == {
+                 "cap128": 0.035256410256410256, "cap256": 0.035256410256410256,
+                 "delta": 0.0, "lower95": 0.0, "upper95": 0.0}
+             and cap["development_equal_category"]["height3_retained"]["source_f1_delta"] == {
+                 "point": 0.002604166666666685, "lower95": -0.007812499999999972,
+                 "upper95": 0.015625}
+             and cap["development_equal_category"]["height3_retained"]["source_iou_delta"] == {
+                 "point": 0.0035849567099567325, "lower95": -0.004870129870129858,
+                 "upper95": 0.015625}
+             and cap["search_and_cost"]["cap128"]["cap_hit_events"] == 63
+             and cap["search_and_cost"]["cap256"]["cap_hit_events"] == 60
+             and cap["search_and_cost"]["cap128"]["daughter_partial_states_expanded"] == 102528
+             and cap["search_and_cost"]["cap256"]["daughter_partial_states_expanded"] == 163230
+             and cap["search_and_cost"]["latency_increase_fraction"] == 0.1622912010890576
+             and cap["interpretation"]["checkpoint_or_policy_promoted"] is False
+             and cap["interpretation"]["global_cap_irrelevance_established"] is False,
+             "GB101 cap256 intervention differs")
+    adaptation = gb101["model_adaptation_series"]
+    _require(adaptation["classification"] == "ACCUMULATED_REUSED_PANEL_NULL_OR_HARM"
+             and adaptation["support"] == {
+                 "nominal": 80, "processed": 80, "failed": 0, "development": 48,
+                 "development_per_category": 8, "strict_processed": 0,
+                 "strict_requested": 12000, "train_contexts": 32, "updates_per_fit": 32}
+             and adaptation["parent_selected_b_source_f1"] == 0.056628787878787876
+             and [item["name"] for item in adaptation["experiments"]] == [
+                 "H2 confidence adaptation", "H2 unweighted daughter pointer",
+                 "H2 balanced daughter pointer", "H2 ranking daughter pointer",
+                 "H1 ranking pointer", "H1 ranking plus positive anchor"]
+             and all(item["verdict"] == "NULL_OR_HARM"
+                     for item in adaptation["experiments"])
+             and adaptation["positive_anchor_diagnosis"]["positive_bce_after"]
+                 == 0.3031325340270996
+             and adaptation["positive_anchor_diagnosis"]["negative_bce_after"]
+                 == 0.9431222081184387
+             and adaptation["positive_anchor_diagnosis"]["continuum_top1_events"]
+                 == {"ccbar": 1, "uubar": 1, "ddbar": 4, "ssbar": 1}
+             and adaptation["positive_anchor_diagnosis"]["background_guardrail_passed"] is False
+             and adaptation["endpoints"] == {
+                 "development_nominal_b_slots": 32, "top1_exact_topology_pid": 0,
+                 "top1_topology_only": 0, "top1_inclusive_source": 0,
+                 "oracle4_exact_topology_pid": 0, "oracle4_topology_only": 0,
+                 "oracle4_inclusive_source": 0}
+             and adaptation["checkpoint_promoted"] is False,
+             "GB101 model-adaptation series differs")
+    development = diagnosis["development_equal_category"]
+    _require(development["states"]["greedy"]["source_f1"] == 0.22893044455544453
+             and development["states"]["beam_top1"]["source_f1"] == 0.020833333333333332
+             and development["states"]["retained_pool_oracle"]["source_f1"] == 0.035256410256410256
+             and development["contrasts"]["pool_minus_top1"]["source_f1"] == {
+                 "point": 0.014423076923076924,
+                 "lower95": 0.0,
+                 "upper95": 0.04326923076923077,
+             }
+             and development["contrasts"]["pool_minus_greedy"]["source_f1"] == {
+                 "point": -0.1936740342990343,
+                 "lower95": -0.28599358974358974,
+                 "upper95": -0.10710268897768904,
+             }, "GB101 saved-beam quality differs")
     _require(set(gb001) == {"status", "evidence_class", "learned_model_evaluation",
                             "legal_decoder_reachability_assessed", "population", "static_compatibility",
                             "categories", "overlapping_recursive_blockers", "learned_metrics", "runtime"},
@@ -175,161 +399,412 @@ def generate(root, output):
                  and arm["deep_predicates"]["generated_typed"]["correct"] == 0
                  and arm["deep_predicates"]["accepted_typed"]["correct"] == 0,
                  "CR054 learned endpoint differs")
-    # This tracked file is already a small sanitized source. Re-encode it to
-    # make the public download deterministic rather than copying source bytes.
+    historical = json.loads(historical_path.read_bytes())
+    _require(historical["schema"] == "generic-b-dashboard-public-download-v3"
+             and historical["gb101"]["status"] == gb101["status"]
+             and historical["provenance"]["gb101_source_revision"]
+                 == value["provenance"]["gb101_source_revision"],
+             "Historical Generic-B v3 scope differs")
+    # Re-encode the historical source so the prior public bytes are retained
+    # without copying a tracked raw source body into the publication artifact.
+    historical_encoded = (
+        json.dumps(historical, sort_keys=True, indent=2, allow_nan=False) + "\n"
+    ).encode()
+    _require(len(historical_encoded) == HISTORICAL_V3_BYTES
+             and hashlib.sha256(historical_encoded).hexdigest() == HISTORICAL_V3_SHA256,
+             "Historical Generic-B v3 download differs")
+    (output / "generic-b-status-summary.json").write_bytes(historical_encoded)
+    historical_v4 = {
+        "schema": "generic-b-dashboard-public-download-v4",
+        "source_summary_sha256": HISTORICAL_V4_SOURCE_SHA256,
+        "status_date": "2026-11-05",
+        "provenance": {
+            key: item for key, item in value["provenance"].items()
+            if key not in {"gb101_saved_beam_diagnosis_review_sha256",
+                           "gb101_saved_beam_diagnosis_sha256",
+                           "gb101_cap256_scientific_result_sha256",
+                           "gb101_cap256_closeout_sha256",
+                           "gb101_cap256_review_sha256", *LATEST_PROVENANCE}
+        },
+        "gb001": gb001,
+        "gb002": gb002,
+        "cr054": cr054,
+        "gb101": {key: item for key, item in gb101.items()
+                  if key not in {"saved_beam_diagnosis", "cap256_intervention",
+                                 "model_adaptation_series"}},
+    }
+    historical_v4_encoded = (
+        json.dumps(historical_v4, sort_keys=True, indent=2, allow_nan=False) + "\n"
+    ).encode()
+    _require(len(historical_v4_encoded) == HISTORICAL_V4_BYTES
+             and hashlib.sha256(historical_v4_encoded).hexdigest() == HISTORICAL_V4_SHA256,
+             "Historical Generic-B v4 download differs")
+    (output / "generic-b-status-summary-v4.json").write_bytes(historical_v4_encoded)
+    historical_v5 = {
+        "schema": "generic-b-dashboard-public-download-v5",
+        "source_summary_sha256": HISTORICAL_V5_SOURCE_SHA256,
+        "status_date": "2026-11-05",
+        "provenance": {
+            key: item for key, item in value["provenance"].items()
+            if key not in {"gb101_cap256_scientific_result_sha256",
+                           "gb101_cap256_closeout_sha256",
+                           "gb101_cap256_review_sha256", *LATEST_PROVENANCE}
+        },
+        "gb001": gb001,
+        "gb002": gb002,
+        "cr054": cr054,
+        "gb101": {key: item for key, item in gb101.items()
+                  if key not in {"cap256_intervention", "model_adaptation_series"}},
+    }
+    historical_v5_encoded = (
+        json.dumps(historical_v5, sort_keys=True, indent=2, allow_nan=False) + "\n"
+    ).encode()
+    _require(len(historical_v5_encoded) == HISTORICAL_V5_BYTES
+             and hashlib.sha256(historical_v5_encoded).hexdigest() == HISTORICAL_V5_SHA256,
+             "Historical Generic-B v5 download differs")
+    (output / "generic-b-status-summary-v5.json").write_bytes(historical_v5_encoded)
+    historical_v6 = {
+        "schema": "generic-b-dashboard-public-download-v6",
+        "source_summary_sha256": HISTORICAL_V6_SOURCE_SHA256,
+        "status_date": "2026-11-05",
+        "provenance": {key: item for key, item in value["provenance"].items()
+                       if key not in LATEST_PROVENANCE},
+        "gb001": gb001,
+        "gb002": gb002,
+        "cr054": cr054,
+        "gb101": {key: item for key, item in gb101.items()
+                  if key != "model_adaptation_series"},
+    }
+    historical_v6_encoded = (
+        json.dumps(historical_v6, sort_keys=True, indent=2, allow_nan=False) + "\n"
+    ).encode()
+    _require(len(historical_v6_encoded) == HISTORICAL_V6_BYTES
+             and hashlib.sha256(historical_v6_encoded).hexdigest() == HISTORICAL_V6_SHA256,
+             "Historical Generic-B v6 download differs")
+    (output / "generic-b-status-summary-v6.json").write_bytes(historical_v6_encoded)
     published = {
-        "schema": "generic-b-dashboard-public-download-v2",
+        "schema": "generic-b-dashboard-public-download-v7",
         "source_summary_sha256": binding["source_sha256"],
         "status_date": value["status_date"],
         "provenance": value["provenance"],
         "gb001": gb001,
         "gb002": gb002,
         "cr054": cr054,
+        "gb101": gb101,
     }
     encoded = (json.dumps(published, sort_keys=True, indent=2, allow_nan=False) + "\n").encode()
-    (output / "generic-b-status-summary.json").write_bytes(encoded)
-    return value | {"metric_download": {"filename": "generic-b-status-summary.json",
-                    "bytes": len(encoded), "sha256": hashlib.sha256(encoded).hexdigest()}}
+    (output / "generic-b-status-summary-v7.json").write_bytes(encoded)
+    supplement = _neural_support(source, output)
+    return value | {
+        "neural_support": supplement,
+        "supported_h3": _supported_h3(source, output),
+        "h2_anchor": _h2_anchor(source, output),
+        "metric_download": {"filename": "generic-b-status-summary-v7.json",
+                            "bytes": len(encoded),
+                            "sha256": hashlib.sha256(encoded).hexdigest()},
+        "historical_v6_metric_download": {"filename": "generic-b-status-summary-v6.json",
+                                           "bytes": len(historical_v6_encoded),
+                                           "sha256": hashlib.sha256(historical_v6_encoded).hexdigest()},
+        "historical_v5_metric_download": {"filename": "generic-b-status-summary-v5.json",
+                                           "bytes": len(historical_v5_encoded),
+                                           "sha256": hashlib.sha256(historical_v5_encoded).hexdigest()},
+        "historical_v4_metric_download": {"filename": "generic-b-status-summary-v4.json",
+                                           "bytes": len(historical_v4_encoded),
+                                           "sha256": hashlib.sha256(historical_v4_encoded).hexdigest()},
+        "historical_metric_download": {"filename": "generic-b-status-summary.json",
+                                       "bytes": len(historical_encoded),
+                                       "sha256": hashlib.sha256(historical_encoded).hexdigest()},
+    }
+
+
+def _neural_support(source, output):
+    """Project the separately reviewed adaptive neural/support snapshot."""
+    path = source / "neural-support-source.json"
+    binding_path = source / "neural-support-binding.json"
+    _require(not path.is_symlink() and not binding_path.is_symlink()
+             and path.stat().st_size <= LIMIT and binding_path.stat().st_size <= LIMIT,
+             "Unsafe neural-support source")
+    raw = path.read_bytes()
+    binding = json.loads(binding_path.read_bytes())
+    _require(binding == {
+        "schema": "generic-b-neural-support-binding-v1", "status_date": "2026-11-13",
+        "source_file": "neural-support-source.json", "source_bytes": len(raw),
+        "source_sha256": hashlib.sha256(raw).hexdigest(),
+        "private_payloads_copied": False, "contains_operational_identifiers": False,
+        "contains_cohort_member_identifiers": False,
+    }, "Neural-support binding differs")
+    value = json.loads(raw)
+    support = value["teacher_support_correction"]
+    _require(value["schema"] == "generic-b-neural-support-public-source-v1"
+             and len(value["studies"]) == 6 and value["promotion"] is False
+             and support["nominal_slots"] == 320
+             and [support[k] for k in ("charge_compatible", "incompatible", "unavailable", "absent")]
+                 == [1, 92, 49, 178]
+             and support["compatible_by_category"] == {"charged": 0, "mixed": 1}
+             and value["strict_validation"]["processed"] == 0,
+             "Neural-support scope differs")
+    published = value | {"schema": "generic-b-neural-support-public-download-v1",
+                         "source_sha256": binding["source_sha256"]}
+    encoded = (json.dumps(published, sort_keys=True, indent=2, allow_nan=False) + "\n").encode()
+    filename = "generic-b-neural-support-v1.json"
+    (output / filename).write_bytes(encoded)
+    return value | {"metric_download": {"filename": filename, "bytes": len(encoded),
+                                        "sha256": hashlib.sha256(encoded).hexdigest()}}
+
+
+def _render_neural_support(value):
+    rows = []
+    for study in value["studies"]:
+        for cell in study["selected_B"]:
+            if cell["panel"] != "native_assessment4" or cell["metric"] != "f1":
+                continue
+            rows.append((study["name"], cell["control_id"], cell["treatment_id"],
+                         f'{cell["control"]:.6f}', f'{cell["treatment"]:.6f}',
+                         f'{cell["delta"]:+.6f}',
+                         f'[{cell["paired95"][0]:+.6f}, {cell["paired95"][1]:+.6f}]',
+                         study["scientific_gate"]))
+    lines = ["GB101 history: neural fit/native divergence and corrected H3 support",
+             "-" * len("GB101 history: neural fit/native divergence and corrected H3 support"), "",
+             "Reviewed snapshot: 13 November 2026. These are adaptive reused TRAIN mechanism",
+             "studies, separate from the original 80-collision greedy/beam evaluation below.",
+             "Each native assessment uses four charged/mixed collisions (eight nominal B slots);",
+             "the twelve-collision native-fit panel is reported separately in the download.",
+             "Intervals use 2,000 paired whole-collision seed-5001 draws and equal category weights.", ""]
+    lines += ["Arm identities (the second-pass intervention is compared separately with N and B):", ""]
+    lines += _table(["ID", "Exact arm identity"], sorted(value["arm_identities"].items()))
+    lines += _table(["Intervention", "Control identity", "Treatment identity", "Control F1", "Treatment F1", "Delta", "Paired 95%", "Gate"], rows)
+    lines += ["Projection changes produced uncertain assessment gains; weighting, contextualization",
+              "and refreshed states failed safeguards. Better conditional TRAIN fit did not establish",
+              "reliable native improvement. Root-anchored refresh reduced selected-B source F1 from",
+              "0.285362 to 0.123413; its paired interval excludes zero in the harmful direction.", "",
+              "The latest support correction retains all 320 nominal H3 slots: one charge-compatible",
+              "mixed target, 92 incompatible, 49 unavailable and 178 absent. Five structural candidates",
+              "had previously been counted before detector-charge compatibility was measured.",
+              "There is zero charged teacher support. Charge guards remain unchanged; these counts",
+              "describe supervision eligibility and do not measure learned or physical completeness.", "",
+              "Strict independent validation remains 0/12,000, with 2,000 missing per category.",
+              "Every continuum flavour's event and candidate acceptance is unavailable for these",
+              "newer studies. Missing depth cells remain unavailable. No model, oracle or policy is",
+              "promoted, and no overall PASS is supported. At this historical snapshot teacher",
+              "construction failed before learning. The newer supported-H3 result above supersedes",
+              "that earlier next action while preserving this snapshot and its download.", "",
+              "The download preserves per-category deltas, source F1/IoU, depth source/edge guards,",
+              "fit operands, source/review hashes and measured scheduler compute. Its six scientific",
+              "operations used " + str(sum(r["allocated_cpu_seconds"] for r in value["studies"])) +
+              " allocated CPU-seconds and " + str(sum(r["allocated_gpu_seconds"] for r in value["studies"])) +
+              " allocated GPU-seconds; this is scoped accounting, not total campaign spend.", "",
+              ":download:`Reviewed neural/support metrics <generic-b-neural-support-v1.json>`", ""]
+    return lines
+
+
+
+def _supported_h3(source, output):
+    """Publish the reviewed single-supported-target matched neural outcome."""
+    path = source / "supported-h3-source.json"
+    binding_path = source / "supported-h3-binding.json"
+    _require(not path.is_symlink() and not binding_path.is_symlink()
+             and path.stat().st_size <= LIMIT and binding_path.stat().st_size <= LIMIT,
+             "Unsafe supported-H3 source")
+    raw = path.read_bytes()
+    binding = json.loads(binding_path.read_bytes())
+    _require(binding == {
+        "schema": "generic-b-supported-h3-binding-v1", "status_date": "2026-11-14",
+        "source_file": "supported-h3-source.json", "source_bytes": len(raw),
+        "source_sha256": hashlib.sha256(raw).hexdigest(),
+        "private_payloads_copied": False, "contains_operational_identifiers": False,
+        "contains_cohort_member_identifiers": False,
+    }, "Supported-H3 binding differs")
+    value = json.loads(raw)
+    _require(value["schema"] == "generic-b-supported-h3-public-source-v1"
+             and value["promotion"] is False and value["overall_PASS"] is False
+             and value["coverage"]["strict_validation_processed"] == 0
+             and value["teacher_support"]["nominal_slots"] == 320
+             and value["actual_counts"]["native_rollouts"] == 32,
+             "Supported-H3 scope differs")
+    published = value | {"schema": "generic-b-supported-h3-public-download-v1",
+                         "source_sha256": binding["source_sha256"]}
+    encoded = (json.dumps(published, sort_keys=True, indent=2, allow_nan=False) + "\n").encode()
+    filename = "generic-b-supported-h3-v1.json"
+    (output / filename).write_bytes(encoded)
+    return value | {"metric_download": {"filename": filename, "bytes": len(encoded),
+                                        "sha256": hashlib.sha256(encoded).hexdigest()}}
+
+
+def _render_supported_h3(value):
+    return ['GB101 history: supported H3 learning changes selected-B quality', '---------------------------------------------------------------', '', 'Supported H3 learning changed selected-B quality without establishing all native margins. Sparse complete supervision, adaptive TRAIN roles and missing backgrounds limit interpretation. No promotion.', '', 'Historical quality,coverage,uncertainty,source/checkpoint and cost remain available in the original downloads.', '', ':download:`Reviewed supported-H3 learning metrics <generic-b-supported-h3-v1.json>`', '']
+
+
+
+def _h2_anchor(source, output):
+    """Publish reviewed aggregate H2 outcomes and additive saved-depth correction."""
+    result = {}
+    for key, basename, schema in (("decoder-fit12-deep", "decoder-fit12-deep", "generic-b-decoder-fit12-deep"),
+                                  ("decoder-assessment4-shallow", "decoder-assessment4-shallow", "generic-b-decoder-assessment4-shallow"),
+                                  ("decoder-assessment4-deep", "decoder-assessment4-deep", "generic-b-decoder-assessment4-deep"),
+                                  ("decoder-fit12-shallow", "decoder-fit12-shallow", "generic-b-decoder-fit12-shallow"),
+                                  ("joint-fit12-shallow", "joint-fit12-shallow", "generic-b-joint-fit12-shallow"),
+                                  ("joint-fit12-deep", "joint-fit12-deep", "generic-b-joint-fit12-deep"),
+                                  ("joint-assessment4-shallow", "joint-assessment4-shallow", "generic-b-joint-assessment4-shallow"),
+                                  ("joint-assessment4-deep", "joint-assessment4-deep", "generic-b-joint-assessment4-deep"),
+                                  ("query-refresh-fit12-shallow", "query-refresh-fit12-shallow", "generic-b-query-refresh-fit12-shallow"),
+                                  ("query-refresh-fit12-deep", "query-refresh-fit12-deep", "generic-b-query-refresh-fit12-deep"),
+                                  ("query-refresh-assessment4-shallow", "query-refresh-assessment4-shallow", "generic-b-query-refresh-assessment4-shallow"),
+                                  ("query-refresh-assessment4-deep", "query-refresh-assessment4-deep", "generic-b-query-refresh-assessment4-deep"),
+                                  ("query-refresh-native", "query-refresh-native", "generic-b-query-refresh-native"),
+                                  ("query-interaction-native", "query-interaction-native", "generic-b-query-interaction-native"),
+                                  ("dynamic-native", "dynamic-native", "generic-b-dynamic-native"),
+                                  ("projection-native", "projection-native", "generic-b-projection-native"),
+                                  ("expanded96-native", "expanded96-native", "generic-b-expanded96-native"),
+                                  ("expanded96-teacher", "expanded96-teacher", "generic-b-expanded96-teacher"),
+                                  ("expanded96-endpoints", "expanded96-endpoints", "generic-b-expanded96-endpoints"),
+                                  ("expanded96-fit12-shallow", "expanded96-fit12-shallow", "generic-b-expanded96-fit12-shallow"),
+                                  ("expanded96-fit12-deep", "expanded96-fit12-deep", "generic-b-expanded96-fit12-deep"),
+                                  ("expanded96-assessment4-shallow", "expanded96-assessment4-shallow", "generic-b-expanded96-assessment4-shallow"),
+                                  ("expanded96-assessment4-deep", "expanded96-assessment4-deep", "generic-b-expanded96-assessment4-deep"),
+                                  ("replay-native", "replay-native", "generic-b-replay-native"),
+                                  ("replay-teacher", "replay-teacher", "generic-b-replay-teacher"),
+                                  ("replay-endpoints", "replay-endpoints", "generic-b-replay-endpoints"),
+                                  ("replay-fit12-shallow", "replay-fit12-shallow", "generic-b-replay-fit12-shallow"),
+                                  ("replay-fit12-deep", "replay-fit12-deep", "generic-b-replay-fit12-deep"),
+                                  ("replay-assessment4-shallow", "replay-assessment4-shallow", "generic-b-replay-assessment4-shallow"),
+                                  ("replay-assessment4-deep", "replay-assessment4-deep", "generic-b-replay-assessment4-deep"),
+                                  ("balanced-refresh-native", "balanced-refresh-native", "generic-b-balanced-refresh-native"),
+                                  ("balanced-refresh-teacher-comparison", "balanced-refresh-teacher-comparison", "generic-b-balanced-refresh-teacher-comparison"),
+                                  ("balanced-refresh-endpoints-by-category", "balanced-refresh-endpoints-by-category", "generic-b-balanced-refresh-endpoints-by-category"),
+                                  ("balanced-refresh-fit12-shallow", "balanced-refresh-fit12-shallow", "generic-b-balanced-refresh-fit12-shallow"),
+                                  ("balanced-refresh-fit12-deep", "balanced-refresh-fit12-deep", "generic-b-balanced-refresh-fit12-deep"),
+                                  ("balanced-refresh-assessment4-shallow", "balanced-refresh-assessment4-shallow", "generic-b-balanced-refresh-assessment4-shallow"),
+                                  ("balanced-refresh-assessment4-deep", "balanced-refresh-assessment4-deep", "generic-b-balanced-refresh-assessment4-deep"),
+                                  ("refresh-native", "refresh-native", "generic-b-refresh-native"),
+                                  ("refresh-shallow", "refresh-shallow", "generic-b-refresh-shallow"),
+                                  ("refresh-deep", "refresh-deep", "generic-b-refresh-deep"),
+                                  ("joint-native", "joint-native", "generic-b-joint-native"),
+                                  ("decoder_native", "decoder-native", "generic-b-decoder-native"),
+                                  ("relation_support", "relation-support", "generic-b-relation-support"),
+                                  ("support_capture", "support-capture", "generic-b-support-capture"),
+                                  ("source_supervision", "source-supervision", "generic-b-source-supervision"),
+                                  ("preservation", "preservation", "generic-b-preservation"),
+                                  ("retained_source", "retained-source", "generic-b-retained-source"),
+                                  ("positive_object", "positive-object", "generic-b-positive-object"),
+                                  ("outcome", "h2-anchor", "generic-b-h2-anchor"),
+                                  ("depth", "corrected-depth", "generic-b-corrected-depth")):
+        path = source / (basename + "-source.json")
+        binding_path = source / (basename + "-binding.json")
+        _require(not path.is_symlink() and not binding_path.is_symlink()
+                 and path.stat().st_size <= LIMIT and binding_path.stat().st_size <= LIMIT,
+                 "Unsafe H2/depth aggregate source")
+        raw = path.read_bytes()
+        binding = json.loads(binding_path.read_bytes())
+        _require(binding == {"schema": schema + "-binding-v1", "status_date": ("2026-11-16" if basename.startswith("state-mixture-") else "2026-11-15" if basename.startswith(("joint-", "refresh-", "balanced-refresh-", "replay-", "expanded96-", "projection-", "dynamic-", "query-interaction-", "query-refresh-")) else "2026-11-14"),
+                 "source_file": path.name, "source_bytes": len(raw),
+                 "source_sha256": hashlib.sha256(raw).hexdigest(),
+                 "private_payloads_copied": False, "contains_operational_identifiers": False,
+                 "contains_cohort_member_identifiers": False}, "H2/depth binding differs")
+        value = json.loads(raw)
+        _require(value["schema"] == schema + "-public-source-v1"
+                 and value["promotion"] is False and value["overall_PASS"] is False,
+                 "H2/depth publication scope differs")
+        published = value | {"schema": schema + "-public-download-v1",
+                             "source_sha256": binding["source_sha256"]}
+        # New downloads use compact JSON; historical download bytes stay exact.
+        options = {"separators": (",", ":")} if basename.startswith(("state-mixture-", "decoder-", "joint-", "refresh-", "balanced-refresh-", "replay-", "expanded96-", "projection-", "dynamic-", "query-refresh-")) else {"indent": 2}
+        encoded = (json.dumps(published, sort_keys=True, allow_nan=False, **options) + "\n").encode()
+        filename = schema + "-v1.json"
+        (output / filename).write_bytes(encoded)
+        # Every self-contained Generic-B metric family remains complete in its exact JSON download.
+        # Avoid duplicating every cell again inside the aggregate status manifest.
+        # Historical download bytes remain identical; the live aggregate indexes them once.
+        projected = {k: value[k] for k in ("schema", "status_date", "source_sha",
+                     "checkpoint_sha256", "promotion", "overall_PASS") if k in value}
+        result[key] = projected | {"metric_download": {"filename": filename, "bytes": len(encoded),
+                                                       "sha256": hashlib.sha256(encoded).hexdigest()}}
+    return result
+
+
+def _render_h2_anchor(value):
+    return ['GB101 earlier: H2 membership fit does not establish native benefit', '------------------------------------------------------------------', '', 'Earlier H2 membership fitting did not establish native benefit. All ten previously failed arm/event depth observations were recovered in the additive saved-depth correction. Native quality, uncertainty and unavailable support remain in the unchanged downloads. No promotion.', '', 'Historical quality,coverage,uncertainty,source/checkpoint and cost remain available in the original downloads.', '', ':download:`Reviewed H2 outcome and lineage <generic-b-h2-anchor-v1.json>`', '', ':download:`Corrected H3 and H2 depth metrics and support <generic-b-corrected-depth-v1.json>`', '']
+
+
+
+def _render_positive_object(value):
+    return ['GB101 earlier: positive-object fit improves while native quality fails', '----------------------------------------------------------------------', '', 'Positive-object teacher fit improved while native quality failed its margins. Adaptive TRAIN fitting did not establish calibration or generalization. No promotion.', '', 'Historical quality,coverage,uncertainty,source/checkpoint and cost remain available in the original downloads.', '', ':download:`Positive-object native outcomes, depth support and lineage <generic-b-positive-object-v1.json>`', '']
+
+
+def _render_retained_source(value):
+    return ['GB101 earlier: retained-source learning improves selected B, harms deeper structure', '-----------------------------------------------------------------------------------', '', 'Retained-source learning improved selected-B quality while harming deeper structure. The native category/depth tradeoff prevented promotion.', '', 'Historical quality,coverage,uncertainty,source/checkpoint and cost remain available in the original downloads.', '', ':download:`Retained-source outcomes, uncertainty, depth and checkpoint lineage <generic-b-retained-source-v1.json>`', '']
+
+def _render_preservation(value):
+    return ['GB101 earlier: preserving generated states reduces drift but harms native quality', '---------------------------------------------------------------------------------', '', 'Preserving generated states reduced teacher drift but harmed native quality. Better teacher fit did not establish native transfer; no promotion.', '', 'Historical quality,coverage,uncertainty,source/checkpoint and cost remain available in the original downloads.', '', ':download:`Preservation outcomes, depth, support, uncertainty and cost <generic-b-preservation-v1.json>`', '']
+
+
+def _render_source_supervision(value):
+    return ['GB101 latest learned comparison: generated-source supervision improves fit without established native benefit', '-------------------------------------------------------------------------------------------------------------', '', 'Generated-source supervision improved teacher fit without establishing native benefit. Supported labels remained separate from truth-free inference. No promotion.', '', 'Historical quality,coverage,uncertainty,source/checkpoint and cost remain available in the original downloads.', '', ':download:`Generated-source supervision quality, depth, support and cost <generic-b-source-supervision-v1.json>`', '']
+
+
+def _render_support_capture(value):
+    return ['GB101 historical capture support: mixed and charged generated-state capture is available with sparse exact support', '------------------------------------------------------------------------------------------------------------------', '', 'Matched mixed and charged generated-state capture became available with sparse complete support. Capture activity is support evidence,not reconstruction efficiency or physical completeness.', '', 'Historical quality,coverage,uncertainty,source/checkpoint and cost remain available in the original downloads.', '', ':download:`Generated-state capture support, native quality and cost <generic-b-support-capture-v1.json>`', '']
+
+
+def _render_relation_support(value):
+    return ['GB101 latest support correction: explicit relations resolve 292 unavailable support occurrences', '-----------------------------------------------------------------------------------------------', '', 'Explicit detector/FSP incidence resolved 292 previously unavailable support occurrences. Partial and unknown membership stayed distinct;complete deep labels were not invented.', '', 'Historical quality,coverage,uncertainty,source/checkpoint and cost remain available in the original downloads.', '', ':download:`Corrected support, category/depth counts and compute <generic-b-relation-support-v1.json>`', '']
+
+
+def _render_decoder_native(value):
+    return ['GB101 preceding learned result: membership fit improves while native assessment worsens', '---------------------------------------------------------------------------------------', '', 'Decoder adaptation improved teacher fit while native assessment worsened. Adaptive TRAIN only;no promotion.', '', 'Historical quality,coverage,uncertainty,source/checkpoint and cost remain available in the original downloads.', '', ':download:`fit12-shallow depth metrics <generic-b-decoder-fit12-shallow-v1.json>`', '', ':download:`fit12-deep depth metrics <generic-b-decoder-fit12-deep-v1.json>`', '', ':download:`assessment4-shallow depth metrics <generic-b-decoder-assessment4-shallow-v1.json>`', '', ':download:`assessment4-deep depth metrics <generic-b-decoder-assessment4-deep-v1.json>`', '', ':download:`Matched decoder fit, native quality, depth, endpoints and compute <generic-b-decoder-native-v1.json>`', '']
+
+
+def _render_joint_native(value):
+    return ['GB101 prior learned result: joint supervision gives a mixed native response', '---------------------------------------------------------------------------', '', 'Joint complete-only membership, object and PID supervision did not establish all native margins. Adaptive TRAIN results remain exploratory; no promotion.', '', 'Historical quality, coverage, uncertainty, source/checkpoint and cost are retained in the downloads.', '', ':download:`joint-fit12-shallow aggregate metrics <generic-b-joint-fit12-shallow-v1.json>`', '', ':download:`joint-fit12-deep aggregate metrics <generic-b-joint-fit12-deep-v1.json>`', '', ':download:`joint-assessment4-shallow aggregate metrics <generic-b-joint-assessment4-shallow-v1.json>`', '', ':download:`joint-assessment4-deep aggregate metrics <generic-b-joint-assessment4-deep-v1.json>`', '', ':download:`joint-native aggregate metrics <generic-b-joint-native-v1.json>`', '']
+
+
+def _render_refresh_support(value):
+    return ['GB101 current checkpoint exposes limited H3 support', '---------------------------------------------------', '', 'Refreshed generated-state support improved teacher fit without establishing native nonharm. Adaptive TRAIN only; no promotion.', '', 'Historical quality, coverage, uncertainty, source/checkpoint and cost are retained in the downloads.', '', ':download:`refresh-native aggregate metrics <generic-b-refresh-native-v1.json>`', '', ':download:`refresh-shallow aggregate metrics <generic-b-refresh-shallow-v1.json>`', '', ':download:`refresh-deep aggregate metrics <generic-b-refresh-deep-v1.json>`', '']
+
+
+def _render_balanced_refresh(value):
+    return ['GB101 support refresh improves selected B but harms mixed H3', '------------------------------------------------------------', '', 'Refreshed balanced support retained native category tradeoffs. Adaptive TRAIN results and their uncertainty remain in the unchanged downloads.', '', 'Historical quality, coverage, uncertainty, source/checkpoint and cost are retained in the downloads.', '', ':download:`balanced-refresh-native aggregate metrics <generic-b-balanced-refresh-native-v1.json>`', '', ':download:`balanced-refresh-teacher-comparison aggregate metrics <generic-b-balanced-refresh-teacher-comparison-v1.json>`', '', ':download:`balanced-refresh-endpoints-by-category aggregate metrics <generic-b-balanced-refresh-endpoints-by-category-v1.json>`', '', ':download:`balanced-refresh-fit12-shallow aggregate metrics <generic-b-balanced-refresh-fit12-shallow-v1.json>`', '', ':download:`balanced-refresh-fit12-deep aggregate metrics <generic-b-balanced-refresh-fit12-deep-v1.json>`', '', ':download:`balanced-refresh-assessment4-shallow aggregate metrics <generic-b-balanced-refresh-assessment4-shallow-v1.json>`', '', ':download:`balanced-refresh-assessment4-deep aggregate metrics <generic-b-balanced-refresh-assessment4-deep-v1.json>`', '']
+
+
+def _render_replay(value):
+    return ['GB101 balanced replay repairs mixed H3 but harms charged reconstruction', '-----------------------------------------------------------------------', '', 'Balanced support replay retained category-dependent native harm despite better teacher fit. This adaptive TRAIN comparison did not support promotion.', '', 'Historical quality, coverage, uncertainty, source/checkpoint and cost are retained in the downloads.', '', ':download:`replay-native aggregate metrics <generic-b-replay-native-v1.json>`', '', ':download:`replay-teacher aggregate metrics <generic-b-replay-teacher-v1.json>`', '', ':download:`replay-endpoints aggregate metrics <generic-b-replay-endpoints-v1.json>`', '', ':download:`replay-fit12-shallow aggregate metrics <generic-b-replay-fit12-shallow-v1.json>`', '', ':download:`replay-fit12-deep aggregate metrics <generic-b-replay-fit12-deep-v1.json>`', '', ':download:`replay-assessment4-shallow aggregate metrics <generic-b-replay-assessment4-shallow-v1.json>`', '', ':download:`replay-assessment4-deep aggregate metrics <generic-b-replay-assessment4-deep-v1.json>`', '']
+
+
+def _render_expanded96(value):
+    return ['GB101 broader TRAIN support retains charged and mixed tradeoff', '--------------------------------------------------------------', '', 'Broader TRAIN96 support at matched 40 updates lowered selected-B F1 from 0.13052 to 0.08236; paired 95% delta [-0.09633, 0]. Mixed H3 improved while charged H3 worsened. No promotion.', '', 'Historical quality, coverage, uncertainty, source/checkpoint and cost are retained in the downloads.', '', ':download:`expanded96-native aggregate metrics <generic-b-expanded96-native-v1.json>`', '', ':download:`expanded96-teacher aggregate metrics <generic-b-expanded96-teacher-v1.json>`', '', ':download:`expanded96-endpoints aggregate metrics <generic-b-expanded96-endpoints-v1.json>`', '', ':download:`expanded96-fit12-shallow aggregate metrics <generic-b-expanded96-fit12-shallow-v1.json>`', '', ':download:`expanded96-fit12-deep aggregate metrics <generic-b-expanded96-fit12-deep-v1.json>`', '', ':download:`expanded96-assessment4-shallow aggregate metrics <generic-b-expanded96-assessment4-shallow-v1.json>`', '', ':download:`expanded96-assessment4-deep aggregate metrics <generic-b-expanded96-assessment4-deep-v1.json>`', '']
+
+
+def _render_projection(value):
+    return ['GB101 category-gradient projection retains native transfer harm', '---------------------------------------------------------------', '', 'Category projection activated 18/40 updates but selected-B F1 fell 0.08236 to 0.07045; paired 95% delta [-0.02381, 0]. H3 was unchanged versus expanded96. No promotion.', '', 'Historical quality, coverage, uncertainty, source/checkpoint and cost are retained in the downloads.', '', ':download:`category projection aggregate metrics <generic-b-projection-native-v1.json>`', '']
+
+
+def _render_dynamic(value):
+    return ['GB101 dynamic assignment improves selected-B quality with residual charged H3 harm', '----------------------------------------------------------------------------------', '', 'Dynamic assignment raised adaptive selected-B F1 from0.08236 to0.14091 but retained charged H3 harm. Frozen/rematched teacher views and historical metrics remain in the unchanged download.', '', 'Historical quality, coverage, uncertainty, source/checkpoint and cost are retained in the downloads.', '', ':download:`dynamic assignment aggregate metrics <generic-b-dynamic-native-v1.json>`', '']
+
+
+def _render_query_interaction(value):
+    return ['GB101 query interaction improves selected-B quality with residual charged H3 harm', '---------------------------------------------------------------------------------', '', 'Reviewed 15 November 2026. Training the 12 existing query self-attention tensors alongside', 'the prior 72 trainables increased adaptive assessment selected-B F1 from 0.140909 to', '0.220753: delta +0.079844, paired 95% interval [0.000597, 0.159091] versus dynamic96.', 'All 12 added tensors received gradients and changed. Charged H3 source-F1 and soft-edge', 'nonharm still failed versus refreshed32. Fit12 selected-B F1 decreased by 0.01141.', 'The gain is not uniform: the scientific gate FAILED and there is no model promotion.', '', 'Earlier complete quality,depth,uncertainty,coverage,lineage and cost remain in the unchanged downloads.', '', ':download:`query interaction aggregate metrics <generic-b-query-interaction-native-v1.json>`', '']
+
+
+def _render_query_refresh(value):
+    return ['GB101 query-state refresh fit gain does not transfer to adaptive assessment', '---------------------------------------------------------------------------', '', 'Reviewed 15 November 2026. Refreshing generated TRAIN96 states changed assessment selected-B', 'F1 from 0.220753 to 0.220142: delta -0.000611, paired 95% interval [-0.041667, 0.040444].', 'Fit12 selected-B F1 increased from 0.153935 to 0.244525: delta +0.090590, paired 95%', 'interval [0.021052, 0.155464]. Fit and assessment are distinct. Charged assessment F1', 'fell by 0.035256 while mixed rose by 0.034034. Selected-B gain and several category/H3', 'nonharm checks FAILED. No promotion.', '', 'Earlier complete quality,depth,uncertainty,coverage,lineage and cost remain in the unchanged downloads.', '', ':download:`query-state refresh aggregate metrics <generic-b-query-refresh-native-v1.json>`', '', ':download:`query refresh fit12 shallow metrics <generic-b-query-refresh-fit12-shallow-v1.json>`', '', ':download:`query refresh fit12 deep metrics <generic-b-query-refresh-fit12-deep-v1.json>`', '', ':download:`query refresh assessment4 shallow metrics <generic-b-query-refresh-assessment4-shallow-v1.json>`', '', ':download:`query refresh assessment4 deep metrics <generic-b-query-refresh-assessment4-deep-v1.json>`', '']
+
+
+def _render_state_mixture(value):
+    return ['GB101 alternating replay harms native reconstruction despite better teacher fit', '-------------------------------------------------------------------------------', '', 'Reviewed 16 November 2026. Alternating saved old/refreshed TRAIN96 states reduced adaptive', 'assessment selected-B F1 from 0.220142 to 0.086016: delta -0.134126, paired 95% interval', '[-0.208333, -0.059918]. IoU fell from 0.137740 to 0.050424. Charged F1 delta was', '-0.111111 and mixed -0.157140. Fit12 F1 fell from 0.244525 to 0.182960:', 'delta -0.061565, paired 95% interval [-0.159661, 0.037325]. Gain and multiple', 'category/depth nonharm checks FAILED. No promotion.', '', 'Frozen-query and rematched teacher losses improved on all three saved banks, while native', 'reconstruction worsened. All five saved complete H3 occurrences were retained and all31', 'scheduled presentations were used. Retaining supported H3 alone did not yield a native', 'gain; the cause remains unproven. Partial deep labels remain partial, unknown membership', 'masked. Complete H4 supervision and physical completeness remain unavailable.', '', 'All16 final full-depth native width4 rollouts completed: fit12 plus adaptive assessment4.', 'Exact recursive topology+PID, topology-only and inclusive recovery remain0/32 nominal B', 'trials, including actual oracle@1/@4. The unchanged adaptive GB101 descendant retains H3', 'packing and bounded donor transactions; generation1 uses8 candidates/query, later levels4.', 'Truth is supervision or post-inference scoring only. Oracle pools cannot support promotion.', '', 'The download reports selected-B F1/IoU, source precision/recall/F1 and membership-edge', 'quality by generation and category, paired intervals, frozen/rematched teacher losses,', 'support, latency, memory, endpoints and lineage. Compact generation rows have explicit', 'column and arm/category registries; null remains unavailable. Native proposal/proper scores', 'remain unavailable. Assessment4 is adaptive TRAIN, not independent validation. Intervals', 'use shared seed5001,2000 whole-collision draws and equal-category weighting.', '', 'Independent coverage remains0/12000:0/2000 each charged,mixed,ccbar,uubar,ddbar,ssbar.', 'Every continuum flavour event and candidate acceptance remains unavailable.', '', 'The operation completed40 updates,15360 nominal presentations and16 native rollouts:', '6584 allocated CPU-seconds;823 V100-seconds (0.228611 GPU-hours),20880 forwards and', '111210 beam expansions. Scheduler,wrapper and application exits were zero. No recapture,', 'control replay or retries. Publication runner time is separate;runner allocations unavailable.', 'Scientific source: ``ffb20b625c402545d51cbe2f46bfe446e87956cd``. Checkpoint SHA-256:', '``293d9b287f98677ae4cee216006225c26a2364fc6a7750719071afbbeb450064``.', '', 'Next: prepare within-update old/refreshed mixing of the exact same presentation multiset:', '40 updates,15360 presentations,84 trainable tensors and16 final native rollouts. Preserve', 'initialization,optimizer,masks,roles and inference. Scheduling benefit remains unmeasured;', 'independent review precedes submission. No ratio/order sweep or causal claim.', '', '`alternating state mixture aggregate metrics (complete JSON, versioned public repository) <https://github.com/BoyangYu0/HyperTagging/blob/5806f57ead0c2785f39f588c7a110c0e97540680/docs/metrics/generic-b-state-mixture-native-v1.json>`_', '', '`state mixture fit12 shallow metrics (complete JSON, versioned public repository) <https://github.com/BoyangYu0/HyperTagging/blob/5806f57ead0c2785f39f588c7a110c0e97540680/docs/metrics/generic-b-state-mixture-fit12-shallow-v1.json>`_', '', '`state mixture fit12 deep metrics (complete JSON, versioned public repository) <https://github.com/BoyangYu0/HyperTagging/blob/5806f57ead0c2785f39f588c7a110c0e97540680/docs/metrics/generic-b-state-mixture-fit12-deep-v1.json>`_', '', '`state mixture assessment4 shallow metrics (complete JSON, versioned public repository) <https://github.com/BoyangYu0/HyperTagging/blob/5806f57ead0c2785f39f588c7a110c0e97540680/docs/metrics/generic-b-state-mixture-assessment4-shallow-v1.json>`_', '', '`state mixture assessment4 deep metrics (complete JSON, versioned public repository) <https://github.com/BoyangYu0/HyperTagging/blob/5806f57ead0c2785f39f588c7a110c0e97540680/docs/metrics/generic-b-state-mixture-assessment4-deep-v1.json>`_', '', 'Complete latest JSON supplements are served from the immutable public repository revision', '5806f57ead0c2785f39f588c7a110c0e97540680. They retain all scientific scalars,intervals and source/checkpoint hashes.', 'The five links above map the native summary and each panel/depth fragment. They require', 'network access;historical on-site downloads remain byte-identical. This avoids duplicating', 'new data within the unchanged256MiB site bound. No scientific metric or privacy check is removed.', '', 'Earlier reviewed results and their historical downloads follow.', '']
+
+
+def _render_within_update(value):
+    return ['GB101 within-update mixing leaves substantial native reconstruction harm', '------------------------------------------------------------------------', '', 'Reviewed 16 November 2026. Within-update mixing raised adaptive assessment selected-B F1', 'from 0.08602 to 0.10778 versus alternating replay: delta +0.02177, paired 95% interval', '[-0.00192, 0.04545]. F1 remained 0.11236 below refreshed-only training (0.22014).', 'Thirteen registered nonharm checks FAILED. No promotion. This modest rebound does not', 'resolve the accumulated replay harm; the cause remains unproven.', '', 'Frozen-query and rematched teacher fit remain separate from native quality. All five saved', 'complete H3 occurrences and all31 scheduled presentations were retained. Unknown membership', 'remains masked; partial deep labels remain partial. Complete H4 supervision is unavailable.', '', 'All16 final full-depth native width4 rollouts completed: fit12 plus adaptive assessment4.', 'Exact recursive topology+PID, topology-only and inclusive recovery remain0/32 nominal B', 'trials in selected top1 and actual oracle@1/@4 pools. The unchanged adaptive GB101 descendant', 'retains H3 packing and bounded donor transactions, six generations, generation1 eight', 'candidates/query and later levels four. It is not the original GB100/GB101 baseline.', 'Truth is supervision or post-inference scoring only. Oracle results cannot support promotion.', '', 'The complete aggregate links report selected-B F1/IoU, source precision/recall/F1 and', 'membership-sensitive edge quality by generation and category, teacher fit, top1/oracle', 'endpoints, support, latency, memory, source/checkpoint versions and paired intervals.', 'Intervals use shared seed5001,2000 whole-collision draws with equal-category weighting.', 'Four assessment collisions are adaptive TRAIN evidence, not independent validation.', 'Native proposal/proper scores and physical completeness remain unavailable.', '', 'Independent coverage remains0/12000:0/2000 each charged,mixed,ccbar,uubar,ddbar,ssbar.', 'Each continuum flavour event and candidate acceptance remains unavailable. No generalization', 'or complete-study claim is supported. Historical results and downloads remain available.', '', 'This operation completed40 updates,15360 presentations,20898 forwards,114526 beam expansions', 'and16 native rollouts:6704 allocated CPU-seconds;838 V100-seconds (0.232778 GPU-hours).', 'All scheduler,wrapper and application exits were zero. No recapture,control replay or retry.', 'Publication runner time is separate;runner allocations unavailable.', 'Scientific source: ``9521953340e53cde39e2af5c68c939ec0283b076``. Checkpoint SHA-256:', '``91b296ad54a1cc13474f6746f7d7c485ceaea8874c42ad00d74b074e80277336``.', '', 'Next: prepare a matched representation intervention training the original84 plus12 existing', 'composite-encoder tensors. Preserve common initialization,optimizer,supervision,roles,', 'exact saved schedule and inference:40 updates,15360 presentations,16 final native rollouts.', 'Its benefit remains unmeasured;independent scientific admission precedes submission.', '', '`within update native (complete aggregate JSON) <https://github.com/BoyangYu0/HyperTagging/blob/657ff5d4adb3eb54f2b8e0d6d410abf411835d91/docs/metrics/generic-b-within-update-native-v1.json>`_', '', '`within update fit12 shallow (complete aggregate JSON) <https://github.com/BoyangYu0/HyperTagging/blob/657ff5d4adb3eb54f2b8e0d6d410abf411835d91/docs/metrics/generic-b-within-update-fit12-shallow-v1.json>`_', '', '`within update fit12 deep (complete aggregate JSON) <https://github.com/BoyangYu0/HyperTagging/blob/657ff5d4adb3eb54f2b8e0d6d410abf411835d91/docs/metrics/generic-b-within-update-fit12-deep-v1.json>`_', '', '`within update assessment4 shallow (complete aggregate JSON) <https://github.com/BoyangYu0/HyperTagging/blob/657ff5d4adb3eb54f2b8e0d6d410abf411835d91/docs/metrics/generic-b-within-update-assessment4-shallow-v1.json>`_', '', '`within update assessment4 deep (complete aggregate JSON) <https://github.com/BoyangYu0/HyperTagging/blob/657ff5d4adb3eb54f2b8e0d6d410abf411835d91/docs/metrics/generic-b-within-update-assessment4-deep-v1.json>`_', '', 'Complete aggregate JSON is served from the immutable public repository revision above.', 'Network access is required. Existing on-site downloads retain their original bytes.', 'Earlier reviewed findings follow.', '']
+
+
+def _render_composite(value):
+    return ['GB101 composite adaptation does not resolve accumulated replay harm', '-------------------------------------------------------------------', '', 'Reviewed 16 November 2026. Training the composite encoder raised adaptive assessment', 'selected-B F1 from 0.10778 to 0.12902 versus decoder-only within-update mixing: delta', '+0.02123, paired 95% interval [-0.14511, 0.18758]. Fourteen registered safeguards FAILED.', 'F1 remained 0.09113 below refreshed-only training (0.22014). No promotion. Neither', 'within-update mixing nor demonstrably utilized composite adaptation resolved the', 'accumulated whole-bank replay harm. The cause remains unproven.', '', 'All12 added composite tensors received gradients throughout training and changed.', 'Old32 fixed-query membership cost worsened despite improved old96/new96 teacher fit.', 'Frozen-query and rematched diagnostics remain separate from native quality. All five', 'saved complete-H3 occurrences and all31 scheduled presentations were used. Unknown', 'membership remains masked; partial labels remain partial. Complete H4 is unavailable.', '', 'All16 full-depth native width4 rollouts completed: fit12 plus adaptive TRAIN assessment4.', 'Exact recursive topology+PID, topology-only and inclusive recovery remained0/32 nominal', 'B trials in selected top1 and actual oracle@1/@4 pools. The unchanged adaptive GB101', 'descendant retains H3 packing and bounded donor transactions, six generations, generation1', 'eight candidates/query and later levels four; it is not the original GB100/GB101 baseline.', 'Truth is supervision or post-inference scoring only. Oracle results cannot support promotion.', '', 'Complete aggregate links report selected-B F1/IoU, source precision/recall/F1 and membership', 'edge quality by generation and category, teacher fit, endpoints, support, latency, memory,', 'source/checkpoint versions and paired intervals. Intervals use shared seed5001,2000', 'whole-collision draws and equal-category weighting. Four adaptive TRAIN assessment', 'collisions do not establish generalization. Native proposal/proper scores remain unavailable.', '', 'Independent coverage remains0/12000:0/2000 each charged,mixed,ccbar,uubar,ddbar,ssbar.', 'Each continuum flavour event and candidate acceptance and physical completeness remain', 'unavailable. Historical results and downloads retain their original bytes.', '', 'This operation completed40 updates,15360 presentations,20908 forwards,104493 beam expansions', 'and16 native rollouts:9616 allocated CPU-seconds;1202 V100-seconds (0.333889 GPU-hours).', 'All scheduler,wrapper and application exits were zero. No recapture,control replay or retry.', 'Publication runner time is separate;runner allocations unavailable.', 'Scientific source: ``0bed8294da6e656ab943bc8e770fbab9cf27cf18``. Checkpoint SHA-256:', '``8d6e11afd7a281594c118f0f16296366e80a79523c64e3c6e31aa78c4b2ef605``.', '', 'Next: prepare targeted supported H3 replay on the unchanged refreshed-only84 schedule:', '40 updates,15360 primary presentations plus31 supplemental target-state presentations,', 'and16 final native rollouts. This adds exposure and is not an equal-exposure comparison.', 'Common initialization,optimizer,roles,masks and inference remain fixed. Benefit is', 'unmeasured;independent scientific admission precedes submission.', '', '`composite native (complete aggregate JSON) <https://github.com/BoyangYu0/HyperTagging/blob/f35547081ccbab26ab40ebeefcc47b005168bb3c/docs/metrics/generic-b-composite-native-v1.json>`_', '', '`composite fit12 shallow (complete aggregate JSON) <https://github.com/BoyangYu0/HyperTagging/blob/f35547081ccbab26ab40ebeefcc47b005168bb3c/docs/metrics/generic-b-composite-fit12-shallow-v1.json>`_', '', '`composite fit12 deep (complete aggregate JSON) <https://github.com/BoyangYu0/HyperTagging/blob/f35547081ccbab26ab40ebeefcc47b005168bb3c/docs/metrics/generic-b-composite-fit12-deep-v1.json>`_', '', '`composite assessment4 shallow (complete aggregate JSON) <https://github.com/BoyangYu0/HyperTagging/blob/f35547081ccbab26ab40ebeefcc47b005168bb3c/docs/metrics/generic-b-composite-assessment4-shallow-v1.json>`_', '', '`composite assessment4 deep (complete aggregate JSON) <https://github.com/BoyangYu0/HyperTagging/blob/f35547081ccbab26ab40ebeefcc47b005168bb3c/docs/metrics/generic-b-composite-assessment4-deep-v1.json>`_', '', 'Complete aggregate JSON is served from the immutable public repository revision above.', 'Network access is required. Earlier reviewed findings follow.', '']
+
+
+def _render_targeted_h3(value):
+    return ['GB101 targeted H3 replay also fails native safeguards', '-----------------------------------------------------', '', 'Reviewed 16 November 2026. Targeted complete-H3 replay achieved adaptive assessment', 'selected-B F1 0.15729 versus 0.22014 for refreshed-only training: delta -0.06285,', 'paired 95% interval [-0.12570, 0]. Eleven registered safeguards FAILED. No promotion.', 'Whole-bank replay harm was not resolved by within-update mixing, utilized composite', 'adaptation or targeted H3 replay. These accumulated nulls motivate a gradient-path', 'intervention; they do not establish a causal mechanism.', '', 'Mixed H3 teacher type NLL improved from 10.28549 to 1.94121, while membership BCE', 'worsened from 0.19277 to 0.32161. Frozen-query and rematched teacher diagnostics', 'remain separate from native quality. All31 supplemental presentations across five', 'saved occurrences, two targets and two TRAIN collisions were used. Supplemental', 'gradients were observed on all13 scheduled updates. Unknown membership remains', 'masked, partial labels remain partial, and complete H4 supervision is unavailable.', '', 'All16 full-depth native width4 rollouts completed: fit12 plus adaptive TRAIN assessment4.', 'Exact recursive topology+PID, topology-only and inclusive recovery remained0/32 nominal', 'B trials in selected top1 and actual oracle@1/@4 pools. The unchanged adaptive GB101', 'descendant retains H3 packing and bounded donor transactions, six generations, generation1', 'eight candidates/query and later levels four; it is not the original GB100/GB101 baseline.', 'Truth is supervision or post-inference scoring only. Oracle results cannot support promotion.', '', 'Complete aggregate links report selected-B F1/IoU, source precision/recall/F1 and membership', 'edge quality by generation and category, teacher fit, endpoints, support, latency, memory,', 'source/checkpoint versions and paired intervals. Intervals use shared seed5001,2000', 'whole-collision draws and equal-category weighting. Four adaptive TRAIN assessment', 'collisions do not establish generalization. Native proposal/proper scores remain unavailable.', '', 'Independent coverage remains0/12000:0/2000 each charged,mixed,ccbar,uubar,ddbar,ssbar.', 'Each continuum flavour event and candidate acceptance and physical completeness remain', 'unavailable. Historical results and downloads retain their original bytes.', '', 'This operation completed40 updates,15360 primary plus31 supplemental presentations,', '800 detector presentations,20787 forwards,107324 beam expansions and16 native rollouts:', '6632 allocated CPU-seconds;829 V100-seconds (0.230278 GPU-hours). All scheduler,wrapper', 'and application exits were zero. No recapture,control replay or retry.', 'Publication runner time is separate;runner allocations unavailable.', '', 'Next: prepare the matched84-tensor experiment with the same40 updates,15360 primary', 'plus31 supplemental presentations,800 detector presentations and16 native rollouts.', 'Restrict only supplemental object/type gradients to four level3 head tensors, preserving', 'supplemental membership and all primary gradients. Keep one global clip and optimizer', 'step. Common initialization,optimizer,roles,masks and inference remain fixed. Benefit', 'is unmeasured;independent scientific admission precedes submission.', '', 'Scientific source: ``b078c90a6f56c2eb941850214fd9b977bac48671``. Checkpoint SHA-256:', '``ba1dd4c24671a0e7bafde147dff847b0b70606cdf899c92e549e2932c8962863``.', '', '`targeted h3 native (complete aggregate JSON) <https://github.com/BoyangYu0/HyperTagging/blob/6cf2b287ec1b109b8fb386fc373fbe8a5784be6b/docs/metrics/generic-b-targeted-h3-native-v1.json>`_', '', '`targeted h3 fit12 shallow (complete aggregate JSON) <https://github.com/BoyangYu0/HyperTagging/blob/6cf2b287ec1b109b8fb386fc373fbe8a5784be6b/docs/metrics/generic-b-targeted-h3-fit12-shallow-v1.json>`_', '', '`targeted h3 fit12 deep (complete aggregate JSON) <https://github.com/BoyangYu0/HyperTagging/blob/6cf2b287ec1b109b8fb386fc373fbe8a5784be6b/docs/metrics/generic-b-targeted-h3-fit12-deep-v1.json>`_', '', '`targeted h3 assessment4 shallow (complete aggregate JSON) <https://github.com/BoyangYu0/HyperTagging/blob/6cf2b287ec1b109b8fb386fc373fbe8a5784be6b/docs/metrics/generic-b-targeted-h3-assessment4-shallow-v1.json>`_', '', '`targeted h3 assessment4 deep (complete aggregate JSON) <https://github.com/BoyangYu0/HyperTagging/blob/6cf2b287ec1b109b8fb386fc373fbe8a5784be6b/docs/metrics/generic-b-targeted-h3-assessment4-deep-v1.json>`_', '', 'Complete aggregate JSON is served from the immutable public repository revision above.', 'Network access is required. Earlier reviewed findings follow.', '']
 
 
 def render(value):
-    """Render completed results separately from current operational state."""
-    gb001, gb002, cr054 = value["gb001"], value["gb002"], value["cr054"]
-    static = gb001["static_compatibility"]
-    lines = [
-        "GB001: completed generic-sample static target-contract census",
-        "-------------------------------------------------------------", "",
-        "GB001 is a reviewed TRAIN target-contract metadata census, not a learned-model evaluation.",
-        "The fixed 28,000-collision sample contains 20,000 B and 8,000 continuum collisions. Its unit",
-        "is a nominal B predicate (40,000 in the B collisions), not a reconstructed B tag.",
-        "The 34,819 accepted-membership and 6,378 recursive-topology+PID counts are static compatibility",
-        "necessary conditions. They are not reconstruction efficiency, a ceiling, saturation, or legal",
-        "decoder reachability. All 40,000 predicates were reconciled with zero processing failures.", "",
-    ]
-    lines += _table(["Static endpoint", "Compatible", "Available", "Nominal", "Unavailable"], [
-        [name.replace("_", " "), point["compatible"] if point["compatible"] is not None else "UNAVAILABLE",
-         point["available"], point["nominal"], point["unavailable"]]
-        for name, point in static.items()
-    ])
-    lines += [
-        "The percentages implied by these counts describe this fixed predicate census only. Physical",
-        "completeness is UNAVAILABLE for all 40,000 predicates because the needed provenance is",
-        "unavailable in the census inputs, so original-mDST recovery was not assessed.",
-        "Background acceptance, purity, exact/inclusive learned recovery and uncertainty are UNAVAILABLE,",
-        "not zero, because GB001 ran no model inference.", "",
-    ]
-    lines += _table(["Category", "Collisions", "Nominal B predicates", "Accepted static", "Recursive topology+PID static"], [
-        [name, row["collisions"], row["nominal_b_predicates"], row.get("accepted_static_compatible", "N/A"),
-         row.get("recursive_topology_pid_static_compatible", "N/A")]
-        for name, row in gb001["categories"].items()
-    ])
-    lines += [
-        "Recursive blocker counts overlap and must not be summed as a partition: minimum daughters 28,859;",
-        "detector/nominal typed charge 20,039; allowed-token charge union 5,878; duplicated detector",
-        "resource or source alias 81; recursive detector-source conflict 53.",
-        "Recorded resources: 5,162 allocated CPU-seconds, 1,474.132 recorded CPU-seconds, and",
-        "2,740,744,192 bytes peak memory. These are execution resources, not model runtime throughput.", "",
-        "GB002: local transfer complete; scientific authentication unresolved",
-        "--------------------------------------------------------------------", "",
-        "This section is an as-of snapshot at the reviewed science-loop resumption boundary, not a live job monitor.",
-        f"The recorded {gb002['snapshot_recorded_state'].replace('_', ' ')} state is a historical",
-        "and now-superseded operational snapshot. The required data transfer is complete and hash-verified,",
-        "but it establishes opaque-byte identity only; scientific payload authentication remains incomplete.",
-        "Project-level CPU and GPU time-admission ceilings were removed. Actual usage accounting, site",
-        "scheduler limits and finite per-operation watchdogs remain enforced. At this snapshot,",
-        "the recorded 6,272 allocated CPU-seconds and zero GPU-hours are operational cost, not reconstruction performance.", "",
-        "The reviewed runtime attempt represented in this snapshot passed scheduler and resource admission,",
-        "reached the first of 3,072",
-        "events, and failed closed before authentication because event-number and source-entry identities were",
-        "conflated: 0 authenticated, 1 failed and 3,071 unreached. It performed no training or inference.",
-        "The replacement ownership transition then ended FAILED_REVIEW_REQUIRED before activation completed,",
-        "with all 3,072 replacement events unreached. The reviewed Astra/Sol science loop has since resumed and",
-        "is running a focused operational repair; payload decoding and the native baseline remain pending.", "",
-        "The sealed prospective v3 plan prioritizes payload decoding and a native baseline, then compares two",
-        "Generic B training sample sizes by two network widths with learning curves, alongside measured inference",
-        "improvements. Recoverable operational failures route to focused repair and renewed reviewed execution.",
-        "The plan and transition do not constitute execution approval or a completed scientific result.",
-        "There is still no completed GB002 training or learned evaluation. Every learned",
-        "metric—exact/inclusive B recovery, background, purity, recursive topology/PID, kinematic validity,",
-        "uncertainty and runtime—is explicitly UNAVAILABLE. Operational test counts are not performance metrics.", "",
-        "Latest learned full reconstruction evaluation — CR054",
-        "-----------------------------------------------------", "",
-        "CR054 compares the reused CR053 control with initial-feature history while retaining the CR042",
-        "connected step-4,376 native baseline. Only auxiliary feature history changes. The control is not",
-        "a fresh replication. This previously inspected adaptive-TRAIN assessment has 384 collisions per",
-        "arm (64/category), 1,936/category short of the required complete-evaluation coverage.", "",
-    ]
-    arms = cr054["arms"]
-    lines += _table(["Learned endpoint", "Reused control", "Initial feature history", "Unit"], [
-        ["Native exact B recovery", _point(arms["control"]["native"]["exact_b_recovery"]),
-         _point(arms["initial_feature_history"]["native"]["exact_b_recovery"]), "B slots"],
-        ["Native inclusive FSP-group recovery", _point(arms["control"]["native"]["inclusive_b_recovery"]),
-         _point(arms["initial_feature_history"]["native"]["inclusive_b_recovery"]), "B slots"],
-        ["Event any exact", _point(arms["control"]["native"]["event_any_exact"]),
-         _point(arms["initial_feature_history"]["native"]["event_any_exact"]), "B collisions"],
-        ["Event both exact", _point(arms["control"]["native"]["event_both_exact"]),
-         _point(arms["initial_feature_history"]["native"]["event_both_exact"]), "B collisions"],
-        ["Exact accepted-candidate purity", _point(arms["control"]["native"]["accepted_candidate_purity"], "correct", "accepted_candidates"),
-         _point(arms["initial_feature_history"]["native"]["accepted_candidate_purity"], "correct", "accepted_candidates"), "accepted B candidates"],
-        ["Flat accepted source-group recovery", _point(arms["control"]["flat"]["accepted_b_recovery"]),
-         _point(arms["initial_feature_history"]["flat"]["accepted_b_recovery"]), "B slots; not full reconstruction"],
-    ])
-    lines += _table(["B category", "Control exact", "Control inclusive", "Initial exact", "Initial inclusive", "Nominal slots/arm"], [
-        [category, arms["control"]["b_categories"][category]["exact"],
-         arms["control"]["b_categories"][category]["inclusive"],
-         arms["initial_feature_history"]["b_categories"][category]["exact"],
-         arms["initial_feature_history"]["b_categories"][category]["inclusive"],
-         arms["control"]["b_categories"][category]["nominal_b_slots"]]
-        for category in ("charged", "mixed")
-    ])
-    lines += _table(["Continuum category", "Control fake-event acceptance", "Initial fake-event acceptance",
-                     "Control retained-component recovery", "Initial retained-component recovery", "Collisions/arm"], [
-        [category, row["accepted"], arms["initial_feature_history"]["continuum_fake_event_acceptance"][category]["accepted"],
-         _point(arms["control"]["continuum_component_coverage"][category]),
-         _point(arms["initial_feature_history"]["continuum_component_coverage"][category]), row["collisions"]]
-        for category, row in arms["control"]["continuum_fake_event_acceptance"].items()
-        if category != "all"
-    ] + [["all continuum", 47, 49, "12/758", "12/758", 256]])
-    lines += [
-        "Exact tag purity is zero among 99 control and 101 initial-history accepted B candidates.",
-        "This is distinct from continuum fake-event acceptance (47/256 versus 49/256). The retained-",
-        "component denominator is truth components, not collision events or B slots. Continuum parton",
-        "ancestry reconstruction is UNAVAILABLE because the schema has no quark roots or ancestry.", "",
-        "Channel coverage",
-        "~~~~~~~~~~~~~~~~", "",
-        "Each arm evaluates 256 signed retained-channel groups across 256 B trials, with zero exact",
-        "successes, zero successful groups and zero unavailable trials. These are reduced retained-tree",
-        "channel groups; full generator decay descriptions and physical FEI equivalence are unavailable.", "",
-        "Recursive/source/PID validity",
-        "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", "",
-    ]
-    retained_names = ("raw_membership", "accepted_membership", "generated", "generated_typed",
-                      "native_valid", "accepted", "topology", "topology_pid")
-    lines += _table(["Retained-predicate stage", "Control", "Initial feature history", "Unavailable"], [
-        [name.replace("_", " "), _point(arms["control"]["retained_predicates"][name]),
-         _point(arms["initial_feature_history"]["retained_predicates"][name]),
-         f"{arms['control']['retained_predicates'][name]['unavailable']} / {arms['initial_feature_history']['retained_predicates'][name]['unavailable']}"]
-        for name in retained_names
-    ])
-    lines += [
-        "Every retained row keeps the full 2,644-predicate nominal denominator. Deep typed generated and",
-        "accepted recovery is 0/992 in both arms; topology+PID has one unavailable predicate per arm.",
-        "Committed source conflicts and daughter-sum closure violations are zero. Physical momentum",
-        "resolution is UNAVAILABLE because retained truth composite four-vectors are absent; closure is",
-        "an implementation invariant, not physical kinematic resolution. Beam evaluation was not run.", "",
-        "Uncertainty and runtime",
-        "~~~~~~~~~~~~~~~~~~~~~~~", "",
-        "Native exact recovery difference is 0 with an empirical paired 95% interval [0, 0] over 256 B slots.",
-        "Native continuum background difference is +0.0078125 with interval [-0.01171875, 0.02734375]",
-        "over 256 continuum collisions. Flat accepted difference is -0.00390625 with interval",
-        "[-0.01171875, 0] over 256 B slots. An all-zero empirical interval does not prove population zero.",
-        "Training-seed uncertainty is UNAVAILABLE (one seed).", "",
-        "New scientific-child cost was 6,750.681 wall-seconds, 7,335.960 user CPU-seconds and 19.000",
-        "system CPU-seconds; maximum child RSS was 1,628,692 KiB. The inherited control runtime is separate,",
-        "and the treatment adds a frozen feature pass, so no equal-FLOPs or speedup claim is supported.", "",
-        "The registered scientific gate failed. The 1/256 versus 0/256 flat accepted count is mediator",
-        "evidence, not full reconstruction. No fresh confirmation, physical FEI efficiency, promotion or",
-        "complete post-study evaluation is claimed.", "",
-        ":download:`Sanitized GB001, GB002 and CR054 aggregates with content hashes <generic-b-status-summary.json>`.", "",
-    ]
-    return lines
+    lines = ['Earlier Generic-B campaign results', '----------------------------------', '', 'GB001: completed generic-sample static target-contract census (historical). The frozen pool', 'contained 20,000 B and 8,000 continuum collisions. Static accepted membership was 34,819/40,000', 'and recursive topology/PID compatibility was 6,378/40,000. This was not a learned-model evaluation', 'and these counts are not reconstruction efficiency. The needed provenance is unavailable in the census inputs;', 'original-mDST recovery was not assessed. Every learned metric in this census remains UNAVAILABLE.', '', 'GB002: local transfer complete; scientific authentication unresolved is a historical and now-superseded operational snapshot,', 'an as-of snapshot at the reviewed science-loop resumption boundary, not a live job monitor.', 'The transfer established opaque-byte identity only: 0 authenticated, 1 failed and 3,071 unreached.', 'The event-number and source-entry identities were conflated; replacement status was FAILED_REVIEW_REQUIRED.', 'The reviewed Astra/Sol science loop has since resumed; in that snapshot payload decoding and the native baseline remain pending.', 'The prospective two Generic B training sample sizes by two network widths do not constitute execution approval.', '', 'The historical heading Latest learned full reconstruction evaluation — CR054 refers to the earlier diagnostic,', 'not the current GB101 comparison displayed above. Channel coverage included 256 signed retained-channel groups.', 'Retained parton compatibility was 12/758; parton ancestry reconstruction is UNAVAILABLE.', 'The flat accepted 1/256 versus 0/256 comparison is not full reconstruction and did not support promotion.', '', 'Historical quality,source/checkpoint versions,uncertainty,cost,unavailable support and limitations remain', 'in the unchanged versioned downloads and historical study pages. No physical tagging-efficiency claim is implied.', '', ':download:`Reviewed v7 GB001, GB002, CR054 and GB101 aggregates with accumulated H2/H1 adaptations <generic-b-status-summary-v7.json>`.', '', ':download:`Historical v6 aggregate with the cap256 intervention retained with its original bytes <generic-b-status-summary-v6.json>`.', '', ':download:`Historical v5 aggregate with the saved-beam diagnosis retained with its original bytes <generic-b-status-summary-v5.json>`.', '', ':download:`Historical corrected v4 aggregate retained with its original bytes <generic-b-status-summary-v4.json>`.', '', ':download:`Historical v3 aggregate retained with its original bytes <generic-b-status-summary.json>`.', '']
+    return _render_targeted_h3(value) + _render_composite(value) + _render_within_update(value) + _render_state_mixture({}) + _render_query_refresh(value["h2_anchor"]["query-refresh-native"]) + _render_query_interaction(value["h2_anchor"]["query-interaction-native"]) + _render_dynamic(value["h2_anchor"]["dynamic-native"]) + _render_projection(value["h2_anchor"]["projection-native"]) + _render_expanded96(value["h2_anchor"]["expanded96-native"]) + _render_replay(value["h2_anchor"]["replay-native"]) + _render_balanced_refresh(value["h2_anchor"]["balanced-refresh-native"]) + _render_refresh_support(value["h2_anchor"]["refresh-native"]) + _render_joint_native(value["h2_anchor"]["joint-native"]) + _render_decoder_native(value["h2_anchor"]["decoder_native"]) + _render_relation_support(value["h2_anchor"]["relation_support"]) + _render_support_capture(value["h2_anchor"]["support_capture"]) + _render_source_supervision(value["h2_anchor"]["source_supervision"]) + _render_preservation(value["h2_anchor"]["preservation"]) + _render_retained_source(value["h2_anchor"]["retained_source"]) + _render_positive_object(value["h2_anchor"]["positive_object"]) + _render_h2_anchor(value["h2_anchor"]) + _render_supported_h3(value["supported_h3"]) + _render_neural_support(value["neural_support"]) + lines

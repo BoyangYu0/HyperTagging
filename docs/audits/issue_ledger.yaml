@@ -23,6 +23,156 @@ allowed_post_audit_commits:
   - 4b9b9bc391021330a1bb1178e568eccba129bccc
   # Clarify that continuous metric definitions come from the reviewed protocol and preserve the separate publisher handoff; no runtime or scientific result changes.
   - 4659ef88f16aba50e0d1830339778b0cbf2d2750
+  # Reviewed targeted H3 replay null and accumulated replay harm.
+  - 6cf2b287ec1b109b8fb386fc373fbe8a5784be6b
+  - 197f9aa8d432e04cfe5c80029895492942b3066d
+  # Reviewed utilized composite adaptation null and accumulated replay harm.
+  - f35547081ccbab26ab40ebeefcc47b005168bb3c
+  - 1143ade449d5517942e0cd8b8e7f9f68e52d22bf
+  # Actual renderer call repair; reviewed aggregate values and historical downloads unchanged.
+  - 703a40c1b8012347fcb2717ed1c90dcbd6afbed9
+  # Exact reviewed five-decimal rounding; aggregate values unchanged.
+  - 2a84a9119dc6e9f8bc763c25984946e42a952eec
+  # Reviewed within-update mixing null and accumulated native replay harm.
+  - 657ff5d4adb3eb54f2b8e0d6d410abf411835d91
+  - 90ea609050218feeef317d1dec8072b7d2c7aa50
+  # Aggregate-only public metric paths and immutable links;privacy checks unchanged.
+  - 5806f57ead0c2785f39f588c7a110c0e97540680
+  - 4aa76822b02420eb3686b98b8940000a4d355be3
+  # Versioned public supplements avoid site duplication;historical downloads retained.
+  - 8d0221734fe7a2de943d0005ae580eba83604857
+  # Complete unchanged metric downloads indexed once;latest study expanded.
+  - c77e524d529f4e2631cb66be3ae258b11d8b5103
+  # Index new complete downloads once;historical metric bytes unchanged.
+  - 5d0893b2005abea63b9467d7b0b0989072c42412
+  # Bounded delivery of reviewed replay metrics;all scientific values retained.
+  - 42f9d673be4169a32637ea1b6cad788d3178de75
+  # Reviewed alternating state replay harm; no promotion.
+  - fcfa69df0a918fc98be7ea6d3e96e4c6cdf80258
+  # Lossless compact delivery of new refresh generation metrics.
+  - c91d628efe773538cee6ee98a60f40f0ec88ba99
+  # Remove private operation metadata;scientific aggregate cells unchanged.
+  - 36ac890c65a5296a9f61f0843447823666d7077b
+  # Lossless bounded delivery of reviewed query refresh measurements.
+  - 531a1f68a435d589dcf6d9d08adb0d66429afe0a
+  # Reviewed query-state refresh null and support loss; no promotion.
+  - 203f441bde9b87cdd61b87f1cc7ffa919709b5a7
+  # Restore historical scientific labels/caveats in compact summary.
+  - 8704467d300ff462520491598ec7ed0416317f67
+  # Coalesce historical prose;retain downloads and all privacy/resource limits.
+  - 600b8ca9f7f79b3bd0962e7bcdd751b09f06f7d0
+  # Remove stray render-summary key from measured teacher aggregate.
+  - 54950ae13c861aa904fbfb6bc0da2092b56ec410
+  # Reviewed dynamic assignment gain and residual H3 harm; no promotion.
+  - 80d7ab30e17d2a41983d554c992d61bc31e0c184
+  # Correct observed teacher and category projections before promotion.
+  - 00f9ceedea447b0538679de6815909e3c6920f16
+  # Reviewed dynamic assignment gain and residual H3 harm; no promotion.
+  - 7eb00932cfac5b4883c8cbcfb3b7798c620a95aa
+  # One-character heading repair; measured content and download bytes unchanged.
+  - d3a98429be7a16a2c945f1484c3f4eb2ff9f98b9
+  # Reviewed category-gradient null; adaptive TRAIN, no promotion.
+  - 34804253e5fa2fdc8b25659660229124b84f5f10
+  # Lossless search-index whitespace delivery; reviewed TRAIN96 data and all limits unchanged.
+  - b9c5fd4e6c7ef83094419117a322c42fff41e33e
+  # Reviewed balanced-replay outcomes; adaptive TRAIN only; no promotion; historical downloads retained. Adaptive TRAIN only; no promotion.
+  # Reviewed TRAIN96 native category tradeoff; adaptive TRAIN only, no promotion.
+  - a1f80fa8ea18398999a3b1e6ed30e08cba574df7
+  - 5a729114652c774153f50700994ad29a6ad72885
+  # Reviewed balanced-replay outcomes; adaptive TRAIN only; no promotion; historical downloads retained. Adaptive TRAIN only; no promotion.
+  - 5ac8bdcd9227868daf457a80869c9adba9aa99c6
+  # Reviewed balanced-replay outcomes; adaptive TRAIN only; no promotion; historical downloads retained. Adaptive TRAIN only; no promotion.
+  - c284d06df12ee771612df53742899bf07bb984c0
+  # Reviewed balanced-replay outcomes; adaptive TRAIN only; no promotion; historical downloads retained. Adaptive TRAIN only; no promotion.
+  - 79851063e9ada26b0d28caa5c10aa0afac277556
+  # Reviewed balanced-replay outcomes; adaptive TRAIN only; no promotion; historical downloads retained. Adaptive TRAIN only; no promotion.
+  - 8403e1c8f11e0bbcf3ccfc6b481204a84f4d7e9b
+  # Reviewed refreshed-supervision outcomes; adaptive TRAIN only; no promotion; historical downloads retained. Adaptive TRAIN only; no promotion.
+  - cb6e92560ad9ba62225028b5506c08d134b1d849
+  # Reviewed refreshed-supervision outcomes; adaptive TRAIN only; no promotion; historical downloads retained. Adaptive TRAIN only; no promotion.
+  - 81734ca721159170768c30efcea63e02268ab928
+  # Reviewed refreshed-supervision outcomes; adaptive TRAIN only; no promotion; historical downloads retained. Adaptive TRAIN only; no promotion.
+  - ef1f62b8275dba70835fc9ff6c73118cd39d3e39
+  # Reviewed current-checkpoint support outcomes; adaptive TRAIN only; no promotion; historical downloads retained. Adaptive TRAIN only; no promotion.
+  - 522f68afbe2d0df798656ae2f04ffe5a7c91f1e0
+  # Reviewed current-checkpoint support outcomes; adaptive TRAIN only; no promotion; historical downloads retained. Adaptive TRAIN only; no promotion.
+  - 7944cd5da9c78019b40d70eb4cc72756ee2f3d0b
+  # Reviewed current-checkpoint support outcomes; adaptive TRAIN only; no promotion; historical downloads retained. Adaptive TRAIN only; no promotion.
+  - c6513ca83e3d8946c74a67cc423b0066635f3640
+  # Reviewed current-checkpoint support outcomes; adaptive TRAIN only; no promotion; historical downloads retained. Adaptive TRAIN only; no promotion.
+  - c4be1b6c2e69d67a30525eb78c8c20fcbff5064e
+  # Reviewed joint supervision outcomes; adaptive TRAIN only; no promotion; historical downloads retained. Adaptive TRAIN only; no promotion.
+  - 5b543337645f88a7c72b9c6be5105b9a466dbe15
+  # Reviewed joint supervision outcomes; adaptive TRAIN only; no promotion; historical downloads retained. Adaptive TRAIN only; no promotion.
+  - 696b78531109db49d62f808cdc3c7524219b19b9
+  # Reviewed joint supervision outcomes; adaptive TRAIN only; no promotion; historical downloads retained. Adaptive TRAIN only; no promotion.
+  - 28c64efb663bed7876e297bb25550c308dbcae33
+  # Correct heading underline for existing reviewed publication;scientific values and historical downloads unchanged. Adaptive TRAIN only; no promotion.
+  - d693bb115302548d3e2c27833da629e1c2bd7b77
+  # Scoped lossless delivery repair for already reviewed decoder harm;historical downloads unchanged. Adaptive TRAIN only; no promotion.
+  - c67da107f1129e9314bc40d5fb53629a213273b0
+  # Reviewed decoder adaptation harms mixed native assessment; no promotion. Adaptive TRAIN only; no promotion.
+  - 69527a816baaa9fa7e1835658df9de9214ddf0da
+  # Reviewed relation support correction changes training readiness; no neural benefit claimed. Adaptive TRAIN only; no promotion.
+  - 5aa21e735e646e15135eb30515933aebfe040723
+  # Reviewed generated-state capture changes support readiness; no neural benefit claimed. Adaptive TRAIN only; no promotion.
+  - 2622f54e8245417c0412282585313051bbb9017b
+  # Reviewed source supervision improves fit without established native benefit. Adaptive TRAIN only; no promotion.
+  - bad878af6c1c07a0bd9a162a1ba42e0a6ff29770
+  # Reviewed generated-state preservation reduces drift but harms native quality. Adaptive TRAIN only; no promotion.
+  - 0fee1958128fa4765de163ccea0fd87b7bb613bb
+  # Reviewed retained-source selected-B gain with charged H3/H4 harm. Adaptive TRAIN only; no promotion.
+  - f3b624e5a6860ae94fe5084b11602be1912641c1
+  # Reviewed retained-source selected-B gain with charged H3/H4 harm. Adaptive TRAIN only; no promotion.
+  - cd1b93c144f9221f9024433db1dddceef8207841
+  # Reviewed positive-object teacher/native divergence and charged H3 harm. Adaptive TRAIN only; no promotion.
+  - 5eba2f6cb89cc9bcc0e271629daf8a66202cb935
+  # Reviewed positive-object teacher/native divergence and charged H3 harm. Adaptive TRAIN only; no promotion.
+  - 53ccd151c30c424584bc87e6892dc58865956416
+  # Minimal H2 publication privacy repair: checkpoint hashes retained under neutral update labels; no changed measurements, source states, privacy rule, historical download or science replay.
+  - 1aa2903ca974e6fccb7029f1d8432c06ebcb534d
+  # Independently reviewed H2 teacher/native divergence, mixed assessment harm and recovered prior H3 depth interpretation. Adaptive TRAIN only, zero exact recovery and independent/background coverage unavailable. Historical downloads retained; no promotion.
+  - e2db181d2d9621d874ee070921ddcb38e29e2f4a
+  # Independently reviewed H2 teacher/native divergence, mixed assessment harm and recovered prior H3 depth interpretation. Adaptive TRAIN only, zero exact recovery and independent/background coverage unavailable. Historical downloads retained; no promotion.
+  - 0bf1941aff67f672f5838e3dc23e5242edd622bb
+  # Independently reviewed H2 teacher/native divergence, mixed assessment harm and recovered prior H3 depth interpretation. Adaptive TRAIN only, zero exact recovery and independent/background coverage unavailable. Historical downloads retained; no promotion.
+  - e6409aab5df44a2fa4243ff6faabcd85b5f13a95
+  # Minimal generated RST formatting correction after warning-fatal actual render; derive heading underline from title length. Reviewed scientific values, privacy policy, checkpoint hashes and historical downloads unchanged.
+  - ed2ee55b38764a73fda6d3481d86f4c3a7ae67fc
+  # Minimal publication privacy correction: exact checkpoint hashes retained under semantic control/treatment update identities; no private checkpoint filenames, changed metrics, rule relaxation or scientific rerun. Prior failed publication preserved.
+  - 47d28dc048c464a10365b22b4545020ea73cfe5e
+  # Independently reviewed single-supported mixed H3 learning: matched adaptive selected-B gain, mixed fit harm, zero exact recovery and explicit missing depth/independent/background coverage. Historical downloads preserved; no model promotion.
+  - ab3a4c223c5e77756111fa274d91261d9305d743
+  # Independently reviewed accumulated Generic-B neural nulls, fit/native divergence, refresh harm and corrected supervision support; sanitized adaptive TRAIN aggregates, historical downloads preserved, no private scientific runtime or promotion.
+  - 5a88358c9f1d87fb218865d52d53198814facc65
+  # Review-authorized explicit control/treatment identities and factual teacher mask-coordinate repair dependency; numerical outcomes, denominators, intervals and limitations unchanged. Initial publication attempt retained as failed.
+  - cdddde92b3b2df1a209de6ed1ae4732bba48cb9f
+  # Lossless dictionary encoding of the explicit comparator identities and displayed full legend within the unchanged40960-byte source bound; all scientific values and prior downloads unchanged. No local tests or new inference.
+  - 145bcd12c457246108227fe238edf0c7838c432a
+  # One-shot replacement for a Pages service deployment that reached the backend-enforced 600-second action limit after every exact content, privacy and compatibility gate passed; publication content and scientific claims are unchanged.
+  - 7770d41ef1d4ee3dbe881daa24828d58bb0909af
+  # Reviewed GB101 accumulated-model publication; six protected-H3 H2/H1 adaptations, paired uncertainty, corrected per-flavour acceptance, score inflation and measured costs are added while v3-v6 downloads remain byte-identical. No checkpoint or oracle promotion.
+  - c9c6778d142fab78c87a6697c5b6a6f3833d4828
+  # Set the pinned deploy-pages action's independent timeout to 20 minutes inside the validator's unchanged 30-minute fail-closed job ceiling after two exact deployments exhausted the action's 10-minute default; publication bytes and scientific claims are unchanged.
+  - 044eae071dd01d9abeed79e36f4c8c0accaa5aaa
+  # Keep the fail-closed workflow mutation regression aligned with the reviewed 20-minute Pages deploy bound; its deliberately invalid mutation remains above the validator's unchanged 30-minute ceiling.
+  - 4b6b2d8818de8f262204d32ae01fb560e83a1f53
+  # Allow the validated Pages artifact deploy to complete after the first exact master attempt exhausted the former 10-minute job bound; validation, artifact contents, privacy gates and scientific interpretation are unchanged.
+  - 71c38ae13e35c8ef3e0838d36ed95b91e5b9d7ba
+  # Authenticate the two deterministic stock CSS variants emitted by the pinned Sphinx 3.4 local environment and Sphinx 7.3 CI environment; publication content and privacy rules are unchanged.
+  - 4c8c043f5ac465ee16a71b9f673d5c83fd9b0464
+  # Reviewed GB101 cap256 publication; sanitized null/harm quality, coverage, background and measured cost aggregates are added while prior downloads remain byte-identical.
+  - f057039adfa583e437fd561f0b0d834bfb8b9eb9
+  # Reviewed GB101 saved-beam diagnosis publication; sanitized retained-pool versus top-1 quality, uncertainty, coverage, background and compute aggregates are added without new inference, training or scientific promotion.
+  - ac292aee0b402ae43397500dd79d17c3cb1af814
+  # Re-encode the retained GB101 v3 source into its exact historical public bytes so the privacy boundary passes without a tracked raw-body copy; corrected v4 content remains distinct and unchanged.
+  - 1e1f5e3a7f89f1082d792bb78d5810655004ecb3
+  # Minimal GB101 publication repair restores the exact historical v3 download bytes and publishes the reviewed correction under a distinct v4 filename; scientific aggregates and interpretation are unchanged.
+  - f7b73d6723846fffe3fc0f4e346f08613179a479
+  # Reviewed GB101 correction separates strict zero-eligible coverage from reused exploratory observations and splits exact/topology/inclusive denominators into development and TRAIN diagnostic roles; historical downloads and measured null/harm results remain unchanged.
+  - 80ae286578525fb533a9583d4e11ab33390f596f
+  # Reviewed GB101 full-depth coherent-forest beam publication; sanitized coverage-incomplete null/harm metrics, paired uncertainty, background acceptance, compute, limitations, and source identity are added without changing private scientific runtime.
+  - bf67f11511fa9c65702077a1a0a70958b0c88255
   # Reviewed significant Generic-B readiness/plan dashboard update; explicit reviewed-loop-resumption snapshot preserves GB001 static and CR054 learned scopes while GB002 learned metrics remain unavailable. Source/privacy/render checks pass; no scientific runtime change.
   - cf41c12e5250a7f70da0e62d95ebd87262bb75cd
   # Append the reviewed generic-B dashboard publication branch to the existing CPU push triggers; assertions, resource bounds and publication content are unchanged.

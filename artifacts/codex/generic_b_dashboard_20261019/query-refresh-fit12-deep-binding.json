@@ -1,0 +1,10 @@
+{
+  "schema": "generic-b-query-refresh-fit12-deep-binding-v1",
+  "status_date": "2026-11-15",
+  "source_file": "query-refresh-fit12-deep-source.json",
+  "source_bytes": 10840,
+  "source_sha256": "1303303d1651c26dc64d9e78191832af8c898eb613b59e27de18bc3b72790092",
+  "private_payloads_copied": false,
+  "contains_operational_identifiers": false,
+  "contains_cohort_member_identifiers": false
+}

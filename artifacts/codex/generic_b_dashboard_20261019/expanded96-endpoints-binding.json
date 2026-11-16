@@ -1,0 +1,10 @@
+{
+  "schema": "generic-b-expanded96-endpoints-binding-v1",
+  "status_date": "2026-11-15",
+  "source_file": "expanded96-endpoints-source.json",
+  "source_bytes": 26565,
+  "source_sha256": "bc2859aaf652c6a929c833fc8c3ef2e8b9a10b84aca6ebd28788cda887809476",
+  "private_payloads_copied": false,
+  "contains_operational_identifiers": false,
+  "contains_cohort_member_identifiers": false
+}

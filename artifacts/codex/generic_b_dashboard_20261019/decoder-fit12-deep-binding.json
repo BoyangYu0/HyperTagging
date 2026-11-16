@@ -1,0 +1,1 @@
+{"schema": "generic-b-decoder-fit12-deep-binding-v1", "status_date": "2026-11-14", "source_file": "decoder-fit12-deep-source.json", "source_bytes": 26333, "source_sha256": "3f837e47a3ee69c61fdf496a01b24b1d212ae383334e8475e4a7e03a54845e1b", "private_payloads_copied": false, "contains_operational_identifiers": false, "contains_cohort_member_identifiers": false}

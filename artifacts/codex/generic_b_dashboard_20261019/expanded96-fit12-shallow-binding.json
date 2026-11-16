@@ -1,0 +1,10 @@
+{
+  "schema": "generic-b-expanded96-fit12-shallow-binding-v1",
+  "status_date": "2026-11-15",
+  "source_file": "expanded96-fit12-shallow-source.json",
+  "source_bytes": 37654,
+  "source_sha256": "2937b05599341a16af0c832b516db4ff78e772e3829769e27770751f3f6a19f6",
+  "private_payloads_copied": false,
+  "contains_operational_identifiers": false,
+  "contains_cohort_member_identifiers": false
+}

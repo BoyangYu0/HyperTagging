@@ -1,0 +1,1 @@
+{"schema": "generic-b-balanced-refresh-native-binding-v1", "status_date": "2026-11-15", "source_file": "balanced-refresh-native-source.json", "source_bytes": 34111, "source_sha256": "ff31468e9230d24eb01c1ff451eca4bb1eb0bebb7275cf05c32e4cd8458750b4", "private_payloads_copied": false, "contains_operational_identifiers": false, "contains_cohort_member_identifiers": false}

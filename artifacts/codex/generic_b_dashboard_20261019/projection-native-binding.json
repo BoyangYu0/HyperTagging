@@ -1,0 +1,10 @@
+{
+  "schema": "generic-b-projection-native-binding-v1",
+  "status_date": "2026-11-15",
+  "source_file": "projection-native-source.json",
+  "source_bytes": 3723,
+  "source_sha256": "db06ee09ed5293751064561b992205841defb48f09a6bb21b623d692e747cc4a",
+  "private_payloads_copied": false,
+  "contains_operational_identifiers": false,
+  "contains_cohort_member_identifiers": false
+}

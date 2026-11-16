@@ -3414,8 +3414,94 @@ def generate_status(repo_root: Path, output_dir: Path) -> dict[str, Any]:
     manifest = _compact_exact_numbers(manifest)
     if payloads.get("reconstruction_phase42_44_archive") and not payloads["reconstruction_phase42_44_archive"].get("reserved"):
         _historical_rows.compact(root, output, manifest)
+    # Render the full aggregate, then index already-complete Generic-B downloads.
+    # This avoids serializing their full metrics twice at the fixed site bound.
+    rendered_status = _render(manifest)
+    generic = manifest.get("reconstruction", {}).get("generic_b", {})
+    for key, record in generic.get("h2_anchor", {}).items():
+        if isinstance(record, dict) and "metric_download" in record:
+            generic["h2_anchor"][key] = {
+                "schema": record.get("schema"),
+                "source_sha": record.get("source_sha"),
+                "metric_download": record["metric_download"],
+                "full_metrics_in_download": True,
+            }
+    # These earlier Generic-B families also have complete unchanged downloads.
+    # Use the same lossless index contract rather than duplicating their rows.
+    for key in ("neural_support", "supported_h3"):
+        record = generic.get(key)
+        if isinstance(record, dict) and "metric_download" in record:
+            generic[key] = {
+                "schema": record.get("schema"),
+                "source_sha": record.get("source_sha"),
+                "metric_download": record["metric_download"],
+                "full_metrics_in_download": True,
+            }
+    # These historical decoded fields also have byte-preserved complete downloads.
+    # The page above still renders their full summaries; the JSON indexes the
+    # already delivered payload rather than repeating it at the site byte bound.
+    for phase in ("phase77", "phase78"):
+        record = manifest.get("reconstruction", {}).get(phase, {})
+        if "populations" in record and "metric_download" in record:
+            record["populations_download"] = {
+                **record["metric_download"],
+                "decoded_key_path": ["populations"],
+                "decoder": phase + "-decoder.txt",
+                "full_metrics_in_download": True,
+            }
+            record.pop("populations")
+    certificate = manifest.get("reconstruction", {}).get("cr032", {})
+    if "summary" in certificate:
+        complete = next(row for row in certificate["metric_downloads"]
+                        if row["filename"] == "cr032-summary.json")
+        certificate["summary_download"] = {
+            **complete, "decoder": "cr032-decoder.txt",
+            "decoded_key_path": [], "full_metrics_in_download": True,
+        }
+        certificate.pop("summary")
+    if "gb101" in generic and "metric_download" in generic:
+        generic["gb101"] = {
+            "metric_download": generic["metric_download"],
+            "decoded_key_path": ["gb101"], "full_metrics_in_download": True,
+        }
+    # The full page is already rendered. These exact tree/retained summaries
+    # are also in the unchanged decoded policy downloads. Keep tag results
+    # inline and index the duplicate summaries through their existing decoders.
+    for phase in ("phase70", "phase71", "phase72"):
+        record = manifest.get("reconstruction", {}).get(phase, {})
+        for arm, detail in record.get("arms", {}).items():
+            if "tree" not in detail or "retained" not in detail:
+                continue
+            detail["tree_retained_download"] = {
+                "downloads": record["downloads"],
+                "decoder": phase + "-policy-decoder.txt",
+                "decoded_key_paths": {
+                    "tree": ["arms", arm, "greedy", "summaries"],
+                    "retained": ["arms", arm, "greedy", "retained_tree_checks", "summaries"],
+                },
+                "full_metrics_in_download": True,
+            }
+            detail.pop("tree")
+            detail.pop("retained")
+    # Phase69 uses the same complete decoded policy summaries as70..72.
+    # Render first above, then index duplicate JSON; downloads stay byte-exact.
+    policy69 = manifest.get("reconstruction", {}).get("phase69", {}).get("policy_reevaluation", {})
+    for arm, detail in policy69.get("arms", {}).items():
+        if "tree" not in detail or "retained" not in detail:
+            continue
+        detail["tree_retained_download"] = {
+            "downloads": policy69["downloads"],
+            "decoder": "phase69-policy-decoder.txt",
+            "decoded_key_paths": {
+                "tree": ["arms", arm, "greedy", "summaries"],
+                "retained": ["arms", arm, "greedy", "retained_tree_checks", "summaries"],
+            },
+            "full_metrics_in_download": True,
+        }
+        detail.pop("tree")
+        detail.pop("retained")
     _write(output / "status.json", (json.dumps(manifest, separators=(",", ":"), sort_keys=True, allow_nan=False) + "\n").encode())
-    _write(output / "index.rst", _render(manifest).encode())
+    _write(output / "index.rst", rendered_status.encode())
     downloads = ["Study metric downloads", "======================", "",
                  "Complete latest and historical evidence. Cohorts and metric definitions differ between studies; consult the dated reports before comparing values.", "",
                  ":doc:`Return to the latest evaluation <index>`.", ""]

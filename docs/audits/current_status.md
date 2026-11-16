@@ -1,4 +1,130 @@
+GB101 targeted H3 replay: adaptive selected-B F1 0.15729 versus0.22014,delta -0.06285,paired95 [-0.12570,0];11 safeguards failed,no promotion,independent0/12000. Next: restrict supplemental object/type gradient destinations while preserving membership and primary gradients.
+
+GB101 composite adaptation: adaptive selected-B F1 0.12902,delta +0.02123 versus within-update,paired95 [-0.14511,0.18758];still 0.09113 below refreshed-only.14 safeguards failed,no promotion,independent0/12000. Next: targeted supported H3 replay preparation.
+
+GB101 within-update mixing: adaptive selected-B F1 0.10778,delta +0.02177 versus alternating replay,paired95 [-0.00192,0.04545];still 0.11236 below refreshed-only.13 safeguards failed,no promotion,independent0/12000. Next: composite-encoder adaptation preparation.
+
+GB101 alternating saved-state replay: adaptive selected-B F1 delta -0.13413,paired95 [-0.20833,-0.05992];teacher losses improved despite native harm and retained H3 support. Scientific gate failed,no promotion,independent0/12000. Next: matched within-update mixture preparation.
+
+GB101 query-state refresh: assessment selected-B F1 delta -0.00061, paired95 [-0.04167,0.04044]; fit12 delta +0.09059. Complete H3 support fell five to zero. Scientific gate failed; no promotion; independent0/12000. Next: fixed old/refreshed state replay preparation.
+
+GB101 query interaction raised adaptive assessment selected-B F1 from0.14091 to0.22075; paired95 delta[0.00060,0.15909]. Charged H3 nonharm fails and fit12 declines. No promotion;independent0/12000. Next: matched generated-state refresh preparation.
+
+GB101 latest learned comparison: dynamic assignment raised adaptive selected-B F1
+from 0.08236 to 0.14091; paired 95% delta [0, 0.11710]. Charged H3 nonharm
+still failed versus refreshed32. No promotion; independent coverage 0/12000.
+Next: matched query self-attention trainability preparation for independent admission.
+
+GB101 latest learned comparison: category projection activated18/40 updates
+but assessment selected-B F1 fell0.08236 to0.07045,paired95% delta[-0.02381,0].
+H3 unchanged versus expanded96;native margins failed. No promotion.
+Independent0/12000;next: detached dynamic TRAIN assignment preparation.
+
+GB101 latest learned comparison: broader TRAIN96 support improved teacher fit
+but retained native category tradeoffs. Selected-B F1 0.13052 to0.08236,
+paired95% delta[-0.09633,0];mixedH3 +0.09372,chargedH3 -0.28466.
+Scientific margins failed;no promotion. Exact/topology/inclusive0/32 per model;
+independent0/12000. Next: matched category-gradient projection preparation.
+Historical findings follow.
+
+GB101 latest learned comparison: balanced replay mixedH3 +0.09380 versus
+refreshed-only,but selected-B F1 0.13052 to0.08229,95%delta[-0.09091,-0.00556].
+Selected-B and charged-H3 nonharm fail;no promotion. Exact/topology/inclusive0/32
+per model;independent0/12000. Next: prepare64 distinct TRAIN support collisions.
+Historical findings follow.
+
+GB101 latest learned comparison: refreshed joint supervision improves adaptive
+assessment selected-B F1 +0.05176941,95%[0.04798327,0.05555556],but mixedH3
+sourceF1 -0.03296703 fails -0.02 nonharm. Fit12 mixedH3 also worsens.
+Exact/topology/inclusive remain0/32 per arm;independent0/12000;no promotion.
+Next: fixed50/50 balanced replay preparation,40updates and16rollouts,for admission.
+Historical findings follow.
+
+GB101 current-checkpoint capture:64 TRAIN rollouts,768 nominal primary slots;
+720 reached,48 unreached. Treatment exposes4 complete H3 occurrences of1 target
+in1 mixed collision;control0. No complete H4. Selected-B F1 delta+0.04395409,
+paired95%[-0.01572835,0.09788245];adaptive TRAIN only,no promotion.
+Independent0/12000;backgrounds and physical completeness unavailable.
+Next: prepare matched stale-versus-refreshed joint supervision for review.
+Latest learned evaluation and historical evidence follow.
+
+GB101 reviewed joint supervision: assessment4 selected-B F1 delta +0.0162,
+paired95% [0,0.0324]; fit12 H3 source-F1 delta -0.0835, paired95%
+[-0.1446,-0.0268]. Two matched40-update arms and32 rollouts completed.
+Exact/topology/inclusive0/32 per arm including oracle pools; no promotion.
+Adaptive TRAIN only; independent0/12000, backgrounds/physical completeness
+unavailable. Next: prepare paired current-checkpoint TRAIN32 capture for review.
+Historical results follow.
+
+GB101 reviewed decoder membership-only adaptation: generated fit improved but
+adaptive native assessment selected-B F1 delta -0.0402,paired95%[-0.0769,-0.0035];
+charged/mixed +0.0617/-0.1422. Two matched40-update arms,32 rollouts completed.
+Exact/topology/inclusive0/32 per arm including oracle pools. Gate failed;no promotion.
+Do not repeat unchanged. Joint object/type+membership supervision is a controlled
+next hypothesis,not an established cause. Independent0/12000;backgrounds/physical
+completeness unavailable. Historical results and support corrections follow.
+
+GB101 reviewed relation-support correction: all292 mapping-unavailable occurrences
+resolved using explicit saved incidence;400 states/709 occurrences processed,
+672 valid,37 incompatible. Complete eligible support:41 occurrences across13 H2
+targets in12 exposed TRAIN collisions;none H3/H4. Nominal384 primary slots retained,
+372 reached/12 unreached;28 donor states separate. No new inference/training and no
+neural benefit or promotion. Independent0/12000; backgrounds/physical completeness
+unavailable. Next: independently reviewed matched relation-masked decoder membership
+experiment. Historical prior-consumer support and learned comparisons follow.
+
+GB101 reviewed support update: 32 exposed TRAIN collisions (16 charged,16 mixed),
+400 saved H2/H3/H4 states. All 384 primary slots accounted:372 reached,12 unreached;
+28 donor states separate. Under the current consumer:709 target-state occurrences,
+380 valid,292 unavailable,37 incompatible. Ten eligible exact-daughter occurrences
+cover four distinct H2 targets; none H3/H4. Unequal FSP/detector axes affect 13 events;
+explicit incidence repair and corrected yield remain pending. No neural improvement
+or promotion; training unadmitted, independent0/12000, backgrounds/physical
+completeness unavailable. Next: relation-aware supervision, then reviewed decoder/
+membership learning. The latest learned comparison and historical downloads follow.
+
+GB101 generated-source supervision improved generated BCE 0.037021 to 0.013112.
+Adaptive TRAIN assessment selected-B F1 delta -0.037019, paired 95%
+[-0.160256, 0.086219]; aggregate harm is not established. Charged +0.066017,
+mixed -0.140054. Native/nonharm gates failed, no promotion. Exact/topology/
+inclusive recovery remains zero; independent coverage 0/12000, background
+acceptance and physical completeness unavailable. Next: role-separated NAF/ETP
+support acquisition with model soft PID and generated-state provenance.
+Historical downloads and measured preservation outcome remain available.
+
+<!-- Reviewed preservation outcome; private event/host records excluded. -->
+GB101 frozen generated-state preservation reduced fixed-nominal KL from
+0.008275 to 0.001910 but worsened adaptive TRAIN assessment selected-B F1 by
+0.064932 (paired 95% [-0.104888, -0.024975]). Native/nonharm gates failed;
+no promotion. Exact/topology/inclusive recovery remains zero. Independent
+coverage 0/12000; continuum acceptance and physical completeness unavailable.
+Next: independently admitted matched generated-input retained-source supervision;
+efficacy awaits independent outcome review. Historical downloads retained.
+
+<!-- Reviewed retained-source aggregate; private event and host records excluded. -->
+GB101 retained-source supervision completed: adaptive assessment selected-B F1
+0.155309 to 0.287848, paired delta +0.132539 [0.034558, 0.230519].
+Charged H3/H4 source and edge quality harmed; gate failed and no promotion.
+Independent coverage 0/12000; each continuum background unavailable. Historical
+downloads retained. The subsequently reviewed preservation outcome is reported above.
+
+<!-- Reviewed aggregate update; private event/host records excluded. -->
+GB101 positive-object supervision completed: adaptive assessment selected-B F1
+0.187948 to 0.162440, paired delta -0.025508 [ -0.104528, 0.053512 ].
+Charged H3 quality harmed despite improved teacher fit. Gate failed; no promotion.
+Independent coverage 0/12000; each continuum background unavailable. Historical
+downloads retained. Next: independently reviewed generated-state capture/support,
+then matched training only after finite counts are frozen.
+
 # Current repository audit status
+
+## Generic-B H2 fit/native divergence and corrected depth (14 November 2026)
+
+The matched H2 membership-anchor treatment produced an inconclusive adaptive TRAIN selected-B F1 delta +0.012882, paired 95% [-0.059441, 0.085205]; mixed assessment F1 fell by 0.051159. Teacher membership fitting improved while mixed teacher/generated object losses worsened. The scientific gate failed. All ten earlier failed depth observations were recovered from saved outputs: the prior H3 selected-B gain coexists with corrected mixed depth harm. Exact/topology/inclusive recovery remains zero; independent coverage is 0/12000 and continuum acceptance unavailable. No promotion. The dashboard presents the corrected H3 and H2 contrasts, support, uncertainty and measured costs, while retaining earlier downloads. A matched positive-object supervision candidate is prepared for independent execution review.
+
+## Generic-B supported-H3 exploratory learning (14 November 2026)
+
+Matched anchor-only versus single-supported mixed H3 teacher, each fixed at 40 updates and 69 trainable tensors, improved adaptive TRAIN assessment selected-B F1 from 0.057292 to 0.175066 (delta +0.117774, paired 95% [0.099185, 0.136364]). Mixed native-fit F1 declined by 0.062958; exact/topology/inclusive recovery stayed zero. Conditional teacher BCE fell from 3.136909 to 0.000637. Ten arm/event depth records remain unavailable pending independent review of saved-output scoring. Independent coverage is 0/12000; newer-study backgrounds and charged teacher support remain unavailable. No promotion or generalization claim. The latest dashboard presents the reviewed matched result separately from historical adaptive studies and the original full-depth greedy/beam evaluation.
 
 ## Generic-B census, readiness and learned-evaluation boundary — 2026-10-21
 

@@ -681,7 +681,8 @@ def validate_workflow() -> dict:
              and configure.get("with") == {"enablement": False},
              "Pages configuration must not enable repository settings")
     _require(publish.get("uses") == "actions/deploy-pages@" + ACTION_PINS["deploy-pages"]
-             and publish.get("id") == "deployment" and "with" not in publish,
+             and publish.get("id") == "deployment"
+             and publish.get("with") == {"timeout": 1200000},
              "Deployment must publish the default validated Pages artifact")
     return {"workflow": ".github/workflows/docs.yml", "permission_boundary": "PASS",
             "action_pins": len(ACTION_PINS), "deployment_branch": "master",

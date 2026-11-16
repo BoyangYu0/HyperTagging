@@ -1,0 +1,10 @@
+{
+  "schema": "generic-b-dynamic-native-binding-v1",
+  "status_date": "2026-11-15",
+  "source_file": "dynamic-native-source.json",
+  "source_bytes": 12323,
+  "source_sha256": "5c33326267ef0fd7a4545c57f74a57f2be78c88fd8ab59dd7a4cf45084dc833f",
+  "private_payloads_copied": false,
+  "contains_operational_identifiers": false,
+  "contains_cohort_member_identifiers": false
+}

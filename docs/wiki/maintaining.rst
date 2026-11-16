@@ -213,3 +213,61 @@ Catalogue and repository metadata use compact JSON whitespace. These mutable
 coverage inventories change with source additions; historical scientific metric
 files and decoders are not rewritten. No byte, work, decoder-memory or time
 bound is raised. Complete builds still check links, privacy and regeneration.
+
+Generic-B bounded aggregate delivery
+------------------------------------
+
+The Generic-B H2 and successor result families retain their complete aggregate
+JSON downloads. The main status manifest indexes those downloads by filename,
+byte count and SHA-256 rather than duplicating every metric. The page renders
+from the full aggregates before that manifest compaction. New decoder downloads
+use compact JSON; historical download bytes are unchanged. Site and per-file
+byte limits, privacy checks and historical metric content remain unchanged.
+
+Generic-B historical aggregate indexing
+---------------------------------------
+
+The earlier neural-support and supported-H3 families now use the same
+lossless download pointers as the H2 and successor families in status.json.
+The page still renders the complete aggregates, and their historical download
+bytes, hashes, metrics and links are unchanged. This removes duplicated
+serialization at the existing site byte bound; no privacy or size limit changes.
+
+Historical summary indexing
+---------------------------
+
+The main status manifest indexes decoded CR032 certificate details, Phase77
+and Phase78 populations, and historical GB101 details through their existing
+complete downloads. Their original download bytes and decoders remain unchanged.
+The rendered page retains the full summaries. Explicit decoded key paths
+locate each indexed field; metrics remain available without duplicate payloads
+in the main manifest. This delivery change keeps the existing artifact bounds.
+
+Lossless policy-summary indexing
+--------------------------------
+
+The complete Phase70, Phase71 and Phase72 tree and retained-tree summaries
+remain in their original policy downloads and standard-library decoders.
+The page renders those summaries before the general status JSON replaces
+only their duplicate copies with download hashes and structured decoded-key
+arrays. Tag results remain inline. No historical download, scientific value,
+privacy check or publication limit changes.
+
+Phase69 duplicate-summary indexing
+----------------------------------
+
+The complete Phase69 tree and retained summaries now use the same decoded
+policy-download index as Phase70 through Phase72 after full page rendering.
+Their original downloads and decoder retain exact bytes, tag results remain
+inline, and no scientific metric or publication limit changes. The new replay
+endpoint download shares common zero values explicitly across its fully
+specified model/panel/category/endpoint/view denominator table; zero measured
+recovery remains distinct from unavailable metrics.
+
+Search-index delivery
+---------------------
+
+Sphinx search-index JSON is serialized without redundant whitespace before
+artifact validation. Every search term, title, object and document remains
+unchanged. Scientific downloads retain their original format and exact
+historical bytes; all publication limits and privacy checks remain active.

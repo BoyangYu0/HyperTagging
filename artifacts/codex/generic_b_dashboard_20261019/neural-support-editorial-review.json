@@ -1,0 +1,14 @@
+{
+  "comparator_encoding": "Every selected-B contrast binds explicit control_id and treatment_id through arm_identities; full legend shown. Same numerical rows, including both second-pass comparators.",
+  "corrections": [
+    "Explicit control and treatment on every selected-B contrast; both second-pass comparators displayed.",
+    "Repair teacher source-to-pointer mapping before new reviewed matched run; failed construction produced no learned result."
+  ],
+  "numbers_denominators_intervals_unchanged": true,
+  "prior_failed_publication_commit": "cdddde92b3b2df1a209de6ed1ae4732bba48cb9f",
+  "private_payloads_copied": false,
+  "review_sha256": "25a07183386856588b4c5f5784846d21f108e5c0c7278d512f4c32edade2df75",
+  "reviewed_parent_commit": "5a88358c9f1d87fb218865d52d53198814facc65",
+  "schema": "generic-b-neural-support-editorial-review-v1",
+  "source_byte_bound_unchanged": 40960
+}

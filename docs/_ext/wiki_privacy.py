@@ -3099,15 +3099,22 @@ def _trusted_vendor_hashes() -> dict[str, set[str]]:
             "theme_bodyfont": "sans-serif",
             "theme_headfont": "'Trebuchet MS', sans-serif",
         }
+        legacy_css_context = dict(css_context)
+        legacy_css_context.update({
+            "theme_body_min_width": "450",
+            "theme_visitedlinkcolor": "#355f7c",
+        })
         for theme_name in ("basic", "classic"):
             template_path = (
                 themes / theme_name / "static" / f"{theme_name}.css_t"
             )
             if template_path.is_file() and not template_path.is_symlink():
-                rendered = css_environment.from_string(
+                template = css_environment.from_string(
                     template_path.read_text(encoding="utf-8")
-                ).render(css_context)
-                add(f"{theme_name}.css", rendered.encode("utf-8"))
+                )
+                for context in (css_context, legacy_css_context):
+                    rendered = template.render(context)
+                    add(f"{theme_name}.css", rendered.encode("utf-8"))
 
         from sphinx.highlighting import PygmentsBridge
         add(
