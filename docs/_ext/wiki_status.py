@@ -3021,7 +3021,7 @@ def _render(manifest: dict[str, Any]) -> str:
     if reconstruction.get("generic_b"):
         cards.insert(0, ("GB001 generic-sample static target-contract census", "STATIC COMPATIBILITY ONLY", [
             "Reviewed fixed TRAIN census of 20,000 B and 8,000 continuum collisions: accepted membership 34,819/40,000 and recursive topology+PID 6,378/40,000 nominal B predicates.",
-            "These metadata compatibility counts are not learned reconstruction efficiency, a ceiling or saturation. GB002 has a sealed prospective v3 plan but no learned evaluation; CR054 remains the latest learned full reconstruction assessment."
+            "These historical metadata compatibility counts are not learned reconstruction efficiency, a ceiling or saturation. Later reviewed learned results and their original populations are reported below."
         ], "warning"))
     # Cards are newest first. Keep historical decisions in one compact table.
     phase_cards = [card for card in cards if card[0].startswith("Phase")]
@@ -3072,11 +3072,12 @@ def _render(manifest: dict[str, Any]) -> str:
     if latest_phase in renderers:
         lines += renderers[latest_phase](reconstruction[latest_phase])
     lines += ["All studies — summary", "---------------------", "",
+              "The latest study is detailed above; this table summarizes earlier results.",
               "Historical evidence is retained in the complete metric download; missing newer metrics",
               "are unavailable, not zero. Dated study reports remain archival references.", ""]
     lines += _table(["Study", "Recorded decision", "Summary"], [
         [title, value, " ".join(paragraphs[:2]) if paragraphs else "UNKNOWN"]
-        for title, value, paragraphs, _kind in [latest_card, *historical_cards]
+        for title, value, paragraphs, _kind in historical_cards
     ])
     lines += ["Complete evidence archive", "-------------------------", "",
               "Study summaries above are not cross-cohort rankings. Full historical reports remain in :doc:`../../studies`; every original metric file remains in the download catalogue.", "",

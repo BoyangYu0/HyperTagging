@@ -1,87 +1,18 @@
 # HyperTagging
 
-HyperTagging is a unified, CPU-testable implementation of the historical
-HyperTagging, GraFEI, reduced-GraFEI, and GPT-like reconstruction studies. The
-current production path uses truth-separated `direct-mdst-tree-v4` events, a
-shared hyperbolic encoder, and level-autoregressive set reconstruction.
+HyperTagging combines detector-input preprocessing, hyperbolic pretraining and
+level-autoregressive full-decay reconstruction. The current data contract is
+`direct-mdst-tree-v4`; historical adapters remain compatibility references.
 
-The software contracts are exercised on small CPU fixtures. A historical
-bounded real-mDST pilot verified the Belle II preprocessing API path at its
-recorded revision; no current-revision real pilot has run, and full-training
-physics performance is not established by this repository. Treat the
-[current audit](docs/audits/current_status.md) as the sole mutable readiness
-statement; historical reports and run receipts are evidence for their recorded
-revisions only.
+Start with [AGENTS.md](AGENTS.md) for working rules and
+[the study loop](docs/study_loop.md) for planning, parallel execution, evaluation,
+result tracking and dashboard updates. [Current audit status](docs/audits/current_status.md)
+owns readiness claims; CPU fixtures establish software behavior, not physics performance.
 
-## Start from another device or account
+## Setup
 
-Follow the [remote Codex setup and handoff guide](docs/codex_remote_setup.md)
-for a fresh clone, account access, SSH execution, cloud setup, and bounded CPU
-verification. Open this Git root; historical sibling checkouts and previous
-Codex conversations are not required. External data and HPC access are provisioned
-separately.
-
-## Documentation
-
-- [Documentation wiki source](docs/index.rst)
-- [Training and evaluation guide](docs/training.md)
-- [Preprocessing contract](docs/preprocessing_design.md)
-- [Full-decay evaluation contract](docs/full_decay_reconstruction_evaluation.md)
-- [Assembly diagnosis and next-study policy](docs/assembly_diagnosis_20261007.md)
-- [basf2 and ONNX deployment](docs/basf2_onnx_full_decay.md)
-- [CR032 fixed-panel membership feasibility](docs/wiki/cr032.rst)
-- [Phase86 structural diagnostic and cleanup retrospective](docs/wiki/phase86.rst)
-- [Phase84–85 exposure, information and pair connection](docs/wiki/phase84_85.rst)
-- [Previous studies through Phase83](docs/wiki/previous_studies.rst)
-- [Phase75 gradient-routing development review](docs/wiki/phase75.rst)
-- [Phase74 development factorial review](docs/wiki/phase74.rst)
-- [Phase72 complete set-overlap and tagging review](docs/wiki/phase72.rst)
-- [Phase71 complete reconstruction and tagging review](docs/wiki/phase71.rst)
-- [Phase70 complete category-policy review](docs/wiki/phase70.rst)
-- [Phase69 supplementary category-policy evaluation](docs/wiki/phase69_policy.rst)
-- [Phase69 completed confirmation](docs/phase69_closeout_20261005.md)
-- [Earlier studies](docs/wiki/studies.rst)
-- [Online study monitoring and execution proposal](docs/online_study_operations.md)
-- [External artifact storage and recovery](docs/repository_storage.md)
-
-The [dashboard](https://boyangyu0.github.io/HyperTagging/wiki/_generated/status/)
-is published through the validated GitHub Pages workflow. Build locally:
-
-```bash
-python3.11 -m venv .venv-docs
-.venv-docs/bin/python -m pip install -r docs/requirements.txt
-docs_out="$(mktemp -d)"
-.venv-docs/bin/python scripts/build_docs.py --output "$docs_out"
-docs_html="$(find "$docs_out" -maxdepth 1 -type d -name html -print -quit)"
-.venv-docs/bin/python -m http.server 8000 --directory "$docs_html"
-```
-
-The build is offline after dependency installation and does not import the
-project, open training data or checkpoints, or require basf2 or CUDA. See the
-[wiki maintenance guide](docs/wiki/maintaining.rst) for its validation and
-privacy boundary.
-
-## Repository layout
-
-- `src/hypertagging/`: data contracts, preprocessing, models, losses, training,
-  reconstruction, evaluation, and deployment integration.
-- `configs/`: model presets, ablations, data selections, and guarded production
-  contracts.
-- `scripts/`: user-facing preprocessing, training, evaluation, documentation,
-  and batch-rendering commands.
-- `tests/`: CPU contract, regression, and compatibility tests.
-- `examples/`: minimal fixture-based CPU runs.
-- `notebooks/`: the registry-backed inspection and evidence suite.
-- `docs/`: current guides plus explicitly separated audit history.
-
-Compatibility adapters keep v1-v3 inputs readable without making them the
-production contract. The [schema history](docs/schema_migration_history.md)
-records those boundaries. Exact scientific and implementation invariants for
-contributors and coding agents are in [AGENTS.md](AGENTS.md).
-
-## Project environment
-
-Use the existing lock without relocking dependencies:
+For a new host or account, follow [remote setup](docs/codex_remote_setup.md).
+Reuse the installed environment, or install from the existing lock:
 
 ```bash
 uv sync --frozen --all-extras --python 3.11
@@ -89,144 +20,59 @@ source scripts/activate_env.sh project
 python scripts/check_uv_lock_direct_dependencies.py
 ```
 
-The default `.venv` is local and ignored by Git. Keep datasets, checkpoints,
-notebook outputs, and other large artifacts outside the checkout. The root
-lock selects CUDA 12.6 PyTorch wheels, which also run CPU fixtures without a GPU;
-it is not a CPU-only dependency install. The separately frozen CUDA environment and its
-verification procedure are documented in
-[environment/gpu/README.md](environment/gpu/README.md).
+The root lock selects CUDA 12.6 PyTorch wheels, which also run CPU fixtures.
+The separately frozen GPU environment and shared-resource rules are in
+[GPU setup](environment/gpu/README.md). Production jobs use
+[Slurm/HTCondor workflows](docs/condor.md).
 
-Run the CPU suite with bounded threads:
+## Working and data paths
 
-```bash
-CUDA_VISIBLE_DEVICES="" OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 \
-  python -m pytest -q
-```
+| Path | Purpose |
+| --- | --- |
+| `src/hypertagging/` | Data, models, training, reconstruction, evaluation and deployment |
+| `scripts/`, `configs/` | Entry points and reusable settings |
+| `tests/`, `examples/` | Behavioral regressions and small runnable examples |
+| `docs/`, `notebooks/` | Reference guides and notebook source |
+| Configured data volume | Datasets, checkpoints, logs, private study records and generated output |
 
-Small end-to-end training checks are available without data or a GPU:
+Use distinct study/operation output directories. Keep source and small portable
+publication evidence in Git; follow [storage and recovery](docs/repository_storage.md)
+for large artifacts. Train on allocated GPUs while evaluating completed checkpoints
+on CPU and progressing independent registered studies.
 
-```bash
-python scripts/train_hyperbolic_pretrain.py \
-  --dry-run --tiny --device cpu --max-steps 2 --batch-size 2
-python scripts/train_level_reconstruction.py \
-  --dry-run --tiny --device cpu --max-steps 2 --batch-size 2
-python scripts/execute_notebook_smoke_tests.py --list
-```
+## Training and evaluation
 
-Fixture results validate software behavior, not physics performance.
+- [Training](docs/training.md): configuration, normalization, checkpoints and resume.
+- [Preprocessing](docs/preprocessing_design.md): detector inputs and truth separation.
+- [Full-decay evaluation](docs/full_decay_reconstruction_evaluation.md): fixed cohorts,
+  native reconstruction, metrics, coverage and uncertainty.
+- [Deployment](docs/basf2_onnx_full_decay.md): basf2 and ONNX contracts.
+- [Examples](examples/README.md) and [notebooks](notebooks/README.md): inspection tools.
 
-## Continuous integration
+Use matched controls and track actual results, failures, denominators and compute.
+Evaluate reconstruction quality as well as training loss; record the next decision
+in the study ledger. Keep train, development and primary/test populations distinct.
 
-PRs, pushes to `master` and the authorized Phase70, Phase71 and Phase72 review branches run CPU
-correctness, including documentation regressions and audit integrity. New
-commits cancel superseded runs. Cached dependencies use CPU PyTorch wheels.
+## Validation
 
-Full HTML/text/basf2 documentation builds run on branch pushes, pull requests
-and manual dispatch. Notebook execution retains its weekly/manual schedule. When changing documentation or notebooks, run the relevant
-local checks before review; use the full workflows for archive/layout validation.
-Documentation builds retain privacy, link, coverage and regeneration checks.
-For the authorized Phase72 review, exact branch CPU and Documentation and Pages
-validation precede guarded master promotion and GitHub Pages publication.
-
-## Core workflows
-
-### Preprocess mDST data
-
-Run the producer inside the documented Belle II release, writing output to a
-data volume:
+Run tests relevant to the change and reuse unchanged evidence. For the full CPU suite:
 
 ```bash
-source /cvmfs/belle.cern.ch/tools/b2setup release-08-03-00
-python3 scripts/preprocess_mdst.py \
-  --input /path/to/generic_mdst.root \
-  --output /data/volume/hypertagging/processed.parquet \
-  --schema-version direct-mdst-tree-v4 \
-  --max-events 50
+CUDA_VISIBLE_DEVICES="" OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 python -m pytest -q
 ```
 
-Then verify the event rows with ordinary Python:
+See [test guidance](tests/README.md) for external evidence requirements. CI runs
+CPU correctness and documentation checks; notebook execution has its own workflow.
+Full training or broad repeated tests are unnecessary for prose-only changes.
 
-```bash
-python scripts/verify_preprocessing.py \
-  --input /data/volume/hypertagging/processed.parquet \
-  --all-events --check-tree --check-p4 --check-charge --check-pid
-```
+## Results and dashboard
 
-The producer never migrates existing Parquet files in place. Raw-track PID,
-detector availability, model-input summaries, truth-only targets, event
-identity, and recursive source provenance remain separate contracts.
+The [dashboard](https://boyangyu0.github.io/HyperTagging/wiki/_generated/status/)
+shows reviewed public evidence. [Earlier studies](docs/wiki/studies.rst) summarize
+historical conclusions and retain complete reports/downloads.
 
-### Train and evaluate
-
-Real runs consume an immutable source-role selection and authenticated dataset
-index. Fit normalization on training rows only, preserve the validation UID
-cohort, and never use the sealed test role for tuning. A typical reconstruction
-invocation is:
-
-```bash
-python scripts/train_level_reconstruction.py \
-  --config configs/model_presets/production_baseline.yaml \
-  --data /data/volume/train-selection.json \
-  --dataset-index /data/volume/dataset_index.json \
-  --scientific-mode \
-  --pretrained-encoder /data/volume/pretrain/checkpoint.pt \
-  --device cuda \
-  --output-dir /data/volume/reconstruction
-```
-
-Production jobs use the guarded Slurm or HTCondor workflows documented in
-[docs/condor.md](docs/condor.md); rendering a job never submits it. Validate a
-trusted pretraining/reconstruction checkpoint pair before running the strict
-CPU full-decay evaluator. Greedy inference remains the default. Opt-in bounded
-full-depth beam search reports deployable top-1 separately from truth-only
-oracle@K metrics.
-
-## Updating the dashboard after training
-
-The dashboard is generated from a small allowlist of tracked evidence declared
-in `docs/_ext/wiki_status.py`; it does not poll jobs, inspect arbitrary run
-directories, or execute training. Never edit or commit `docs/wiki/_generated/`
-or `docs/_build/`.
-
-After a training or evaluation run:
-
-1. Validate the run receipt, then add only the reduced, reviewable metadata
-   needed for the dashboard. Keep checkpoints, raw logs, host/user paths,
-   scheduler identifiers, and data outside the publication boundary.
-2. Append the relevant verification record and update the reviewed current
-   status or issue ledger only when their claims actually change. Do not
-   overwrite dated receipts; add a new immutable record and update the
-   `SOURCE_PATHS` allowlist and its tests in the same branch when a campaign is
-   superseded.
-3. Regenerate nothing in place. Verify the derived dashboard with:
-
-   ```bash
-   python -m pytest -q tests/test_docs_*_cpu.py
-   docs_check="$(mktemp -d)"
-   python scripts/build_docs.py --output "$docs_check" --check-generation
-   ```
-
-Review the generated status values, source hashes, freshness warnings and metric
-populations. The dashboard expands the latest completed study and collects older
-studies in its summary, retaining their metric downloads. See the
-[maintenance guide](docs/wiki/maintaining.rst) for validation details.
-
-## Historical scope and limitations
-
-The unified package preserves selected behavior from the original Toy-MC
-HyperTagging repository, HyperTaggingColab, GraFEI, `graFEI_reduced`, and
-`graFEI_gpt`. Historical paths and variants remain compatibility references,
-not current production defaults. The detailed Phase 1-13 decisions and
-historical source mapping are preserved in the
-[migration provenance](docs/historical_migration_provenance.md). In particular:
-
-- full-data reproduction still depends on external data and checkpoint
-  provenance;
-- legacy scripts may contain historical site-specific paths;
-- synthetic CPU fixtures do not establish convergence, throughput, basf2
-  interoperability, or physics quality;
-- archived audits, reports, receipts, snapshots, and production data cards are
-  retained intentionally and must not be treated as duplicate active guides.
-
-Use the [examples guide](examples/README.md) for minimal runnable paths and the
-[notebook guide](notebooks/README.md) for the evidence registry.
+Record publish/defer at each scientific review. Publish meaningful findings,
+accumulated diagnoses or material corrections, rather than every test or job update.
+Use the existing publication owner and [wiki maintenance](docs/wiki/maintaining.rst)
+for source allowlists, local builds, required CI, deployment and live verification.
+Do not edit generated dashboard files.

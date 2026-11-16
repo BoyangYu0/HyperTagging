@@ -7,6 +7,33 @@ format. The input is the same `direct-mdst-tree-v4` Parquet data and immutable
 selection/index contract used by the current pretraining and reconstruction
 jobs.
 
+The [study loop](study_loop.md) defines current evaluation cadence and dashboard
+publication policy. This guide owns inference, coverage and metric definitions.
+
+## Evaluation workflow
+
+1. Bind the evaluator/source version, immutable checkpoints, inference settings,
+   selection/index hashes and compared arms in the study record. Validate checkpoint
+   lineage with `scripts/validate_reconstruction_checkpoint_pair.py`.
+2. Use the same fixed cohort across arms. Keep train, checkpoint-selection,
+   development and primary/test roles distinct; fit normalization on train only.
+3. Run `scripts/evaluate_full_decay.py` on CPU with bounded threads, writing to a
+   fresh operation directory on the data volume. Evaluate completed checkpoints
+   in parallel with training; see [CPU execution](#cpu-only-execution) for flags.
+4. Report native full/half reconstruction and each continuum category. Include
+   per-generation source F1/IoU and edge quality, selected B quality, exact topology
+   plus PID, inclusive tagging, validity and daughter-sum p4 closure. Keep
+   teacher-forced, native top-1 and oracle/pool metrics separate. Report confidence
+   proper scores only when trained probabilities and their provenance exist.
+5. Retain nominal, processed, failed, incompatible and unavailable counts. Use
+   registered aggregation and whole-collision paired uncertainty; account for
+   unmatched targets and extra proposals. Include latency, memory and compute.
+6. Compare with the control and record limitations and the next decision. Label
+   smaller panels diagnostic/development; complete primary evaluation requires
+   the [category coverage below](#minimum-category-coverage-for-study-evaluation).
+   Missing metrics are unavailable, not zeros. A measurement repair should reuse
+   existing checkpoints where possible.
+
 The central information boundary is:
 
 ```text
@@ -20,7 +47,7 @@ truth PID target may enter reconstruction. Higher-level particles are useful
 only after inference, when the predicted forest is compared with the retained
 truth forest.
 
-## Reading the latest efficiency results
+## Historical category-sized evaluation
 
 The historical [Phase69 supplementary evaluation](wiki/phase69_policy.rst) reports a
 complete greedy evaluation on 12,000 collisions per arm, with 2,000
@@ -33,11 +60,10 @@ Scopes reuse the same events and do not enlarge the cohort. Sixteen exact-truth
 trials and one inclusive-membership trial remain unavailable in the nominal
 denominators. These are retained-truth lower bounds, not physical FEI efficiencies.
 
-The dashboard presents exact/inclusive efficiencies before tree diagnostics,
-then a summary of all studies. Historical 100-event/20-event Phase69 reports
-and the new 60-event beam diagnostic remain separately labelled. All metric
-downloads are preserved in the evidence catalogue. Consult the tagging contract
-below for matching, candidate-pool accounting and availability semantics.
+Historical 100-event/20-event Phase69 reports and its 60-event beam diagnostic
+remain separately labelled. All metric downloads are preserved in the evidence
+catalogue. Consult the tagging contract below for matching, candidate-pool
+accounting and availability semantics.
 
 ## Development-only flat membership diagnostics
 
@@ -156,7 +182,7 @@ training data, or authorize access to sealed test data. The low-level evaluator
 still permits diagnostic sample sizes; operators must check this coverage
 requirement before declaring a study evaluation complete.
 
-## Required tagging evaluation after each reconstruction study
+## Tagging metrics and coverage
 
 Every new invocation of `scripts/evaluate_full_decay.py` includes a versioned
 `tag_efficiency` block, its per-event records, and B-channel/continuum-type

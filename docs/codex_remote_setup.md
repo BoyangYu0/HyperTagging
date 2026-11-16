@@ -11,6 +11,9 @@ This guide prepares a development project and bounded CPU checks. Real data,
 trained checkpoints, Belle II software, and scheduler access require separate
 provisioning. Repository access alone cannot provide them.
 
+After setup, use the [study loop](study_loop.md) for current study sequencing,
+evaluation cadence and dashboard publication.
+
 ## Access and handoff prerequisites
 
 Treat these identities separately:
@@ -190,8 +193,8 @@ jobs. Model export/deployment has its own [basf2/ONNX contract](basf2_onnx_full_
 
 ```text
 Work in this HyperTagging Git root. Read AGENTS.md, README.md,
-docs/codex_remote_setup.md and docs/audits/current_status.md. Inspect the
-branch, HEAD and git status; preserve existing changes. Verify the intended
+docs/study_loop.md, docs/codex_remote_setup.md and docs/audits/current_status.md.
+Inspect the branch, HEAD and git status; preserve existing changes. Verify the intended
 handoff revision and the available Python environment. Use bounded CPU
 fixtures to check setup. Read the relevant current contract before changing
 scientific behavior. Historical sibling checkouts and earlier chat history

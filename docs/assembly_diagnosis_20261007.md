@@ -278,7 +278,7 @@ events. No eligible replacement was found among these designated candidates.
 Phase74 training is blocked before runtime implementation and submission; passing
 the scientific-plan validator does not override cohort admission. Historical
 receipts and Phase73's explicit exploratory-reuse interpretation remain unchanged.
-See the [feasibility review](phase74_feasibility_20261008.md).
+See the [feasibility record](../configs/reconstruction/phase74_development_feasibility.json).
 
 ## Follow-up through Phase74 — 2026-10-09
 

@@ -190,13 +190,13 @@ study receipts and immutable selections, changes no scientific model behavior,
 and does not rewrite history. This is an active-tree reduction, not a promise
 of shrinking every existing clone.
 
-The [online deployment procedure](online_study_operations.md) defines a private
-Site and ChatGPT Work client backed by one authenticated operations service on
-the institute infrastructure. It specifies read/plan/validate/submit tools,
-freshness, budget authority, idempotency and receipt handling. The current Pages
-dashboard remains a reviewed evidence publication, while the proposed service
-supplies live monitoring and bounded execution. No online service was deployed
-or new training submitted in this review.
+The historical [online deployment proposal](https://github.com/BoyangYu0/HyperTagging/blob/cdf4534045eca3dcc24cf0726a0083371449d35c/docs/online_study_operations.md)
+described a private Site and ChatGPT Work client backed by one authenticated
+operations service on the institute infrastructure. It specified read/plan/validate/submit tools,
+freshness, budget authority, idempotency and receipt handling. The Pages
+dashboard remained a reviewed evidence publication; the proposed service was
+intended to supply live monitoring and bounded execution. No online service was
+deployed or new training submitted in this review.
 
 Validation results and remote integration status are recorded in the change's
 review/PR and the accompanying verification note; passing software checks

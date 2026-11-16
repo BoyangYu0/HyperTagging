@@ -19,6 +19,15 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Independently reviewed synchronization: preserve published evidence, simplify guidance,
+  # retain all corruption cases, and correct the stale historical-card latest-result claim.
+  - 2393bb7af5756e05997dd96b312020c60eb1dd12
+  - 522f83c5ec24349909139b172ae612404a9dfd28
+  - d429e74639dd47f259e45bfb7fa2e07975089820
+  # User-requested instruction consolidation only: two workflow authorities, three obsolete prose plans removed, scientific contracts retained; links reviewed.
+  - 4b9b9bc391021330a1bb1178e568eccba129bccc
+  # Clarify that continuous metric definitions come from the reviewed protocol and preserve the separate publisher handoff; no runtime or scientific result changes.
+  - 4659ef88f16aba50e0d1830339778b0cbf2d2750
   # Reviewed targeted H3 replay null and accumulated replay harm.
   - 6cf2b287ec1b109b8fb386fc373fbe8a5784be6b
   - 197f9aa8d432e04cfe5c80029895492942b3066d

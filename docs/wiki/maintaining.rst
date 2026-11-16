@@ -11,41 +11,30 @@ scientific stack. See :doc:`basf2` for embedding and :doc:`setup` for dependenci
 Updating scientific results
 ---------------------------
 
+The `study loop <https://github.com/BoyangYu0/HyperTagging/blob/master/docs/study_loop.md>`_
+owns publication timing and the dashboard's latest-study/history policy. Use
+the procedure below when that policy calls for a reviewed publication.
+
 The dashboard reads the fixed ``SOURCE_PATHS`` collection in
 ``docs/_ext/wiki_status.py``. Add a reduced tracked result and explicitly map
 its metric names, cohort counts and observation date. Preserve dated receipts;
 update the source selection and parsing tests when a newer result supersedes
-one. Expand only the latest completed study on the dashboard. Earlier studies
-belong in its compact summary; retain historical metric downloads and dated
-reports through :doc:`studies`. ``docs/audits/current_status.md`` owns mutable
+one. Retain historical metric downloads and dated reports through
+:doc:`studies`. ``docs/audits/current_status.md`` owns mutable
 scientific status.
 Do not turn missing metrics into zeroes or treat training completion as
 convergence. Keep teacher-forced, rollout, strict-decay and oracle results
 identified by their actual populations.
 
-When a completed metadata or compatibility study is newer than the latest
-learned reconstruction evaluation, expand the completed study but retain a
-separately titled learned-evaluation section. Label static predicate counts as
-compatibility counts, never efficiency. Current operational work belongs in a
-separate status section and must use explicit unavailable values until a
-reviewed learned result exists; setup, admission and test counts are not model
-performance.
-
-Continuous research requests a dashboard revision only for a material state
-change: a new learned evaluation, a changed scientific-plan or readiness boundary,
-or a new or resolved terminal blocker that changes interpretation. Repeated
-operational updates with unchanged public meaning do not trigger publication.
-The research controller supplies a sanitized aggregate handoff; it does not edit,
-push or publish dashboard files. After independent review marks a change significant,
-the controller's durable study-review callback requests the separate dashboard owner
-without changing or delaying the next research action. The owner deduplicates
-at-least-once requests by reviewed source hashes and the current published binding.
-The dashboard owner authenticates source hashes, runs focused tests, warning-fatal
-rendering, privacy and desktop/mobile checks, obtains independent content review,
-records audit lineage, and requires exact-head CPU and documentation CI before
-guarded promotion and live verification.
+Authenticate source hashes, run focused tests, warning-fatal rendering, privacy
+and desktop/mobile checks, obtain independent content review, and record audit
+lineage. Require CPU and documentation CI on the exact commit before guarded
+promotion and live verification.
 
 Publication includes selected numeric fields, dates and source hashes.
+The controller sends a sanitized reviewed handoff to the separate publication
+owner, which deduplicates requests using reviewed hashes and the published
+binding; research workers do not directly edit or push dashboard output.
 Credentials, private machine paths and operational records stay out of the
 artifact. Source copying is disabled. Generated files are derived outputs;
 do not edit them or commit ``docs/wiki/_generated`` or ``docs/_build``.
