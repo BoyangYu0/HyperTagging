@@ -721,8 +721,14 @@ def _h2_anchor(source, output):
         encoded = (json.dumps(published, sort_keys=True, allow_nan=False, **options) + "\n").encode()
         filename = schema + "-v1.json"
         (output / filename).write_bytes(encoded)
-        result[key] = value | {"metric_download": {"filename": filename, "bytes": len(encoded),
-                                                   "sha256": hashlib.sha256(encoded).hexdigest()}}
+        # New replay metrics are complete in their exact indexed JSON downloads.
+        # Avoid duplicating every cell again inside the aggregate status manifest.
+        # Earlier families retain byte-identical historical projections/downloads.
+        projected = ({k: value[k] for k in ("schema", "status_date", "source_sha",
+                      "checkpoint_sha256", "promotion", "overall_PASS")}
+                     if basename.startswith("state-mixture-") else value)
+        result[key] = projected | {"metric_download": {"filename": filename, "bytes": len(encoded),
+                                                       "sha256": hashlib.sha256(encoded).hexdigest()}}
     return result
 
 
