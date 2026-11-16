@@ -1,3 +1,5 @@
+GB101 refreshed generated support: adaptive selected-B F1 0.221803 to0.174616;delta -0.047187,paired95[-0.094374,0];17 checks failed,no promotion,independent0/12000. Next: authenticated partial-H3 parent-type supervision.
+
 GB101 residual teacher/native divergence: adaptive selected-B F1 0.221803 unchanged,delta0,paired95 [0,0];mixed H3 teacher type NLL10.07954 to5.91116;six checks failed,no promotion,independent0/12000. Next: exact-model TRAIN96 generated-state support.
 
 GB101 restricted head gradients: adaptive selected-B F1 0.22180 versus0.15729,delta +0.06451,paired95 [0,0.12902];five depth safeguards failed,no promotion,independent0/12000. Next: dedicated H3 object/type residual representation.
