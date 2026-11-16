@@ -19,6 +19,9 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed negative matched generated-support refresh.
+  - bde7aad29ae9b93dd85317bda3790098b0c71766
+  - 5eab43fc44e559aa883f8be23bd72a0aeaeb0b0c
   # Reviewed residual teacher/native divergence and model-specific support recommendation.
   - 8ec6579abc603b88084d6a20e927e157743e13c7
   - d142c75b398f2f3e69de28935aeb14fd91c72626
