@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Formatting-only correction of reviewed head-gradient heading.
+  - ee4e4b90cbcd295df9575220ff869db8ca44c7b0
   # Reviewed targeted H3 replay null and accumulated replay harm.
   - 153be55554160b64de10e87b4e36d3c3ed88c4fd
   - c0ef619825fe695bd9fa7f4632a5f62d1d51107f
