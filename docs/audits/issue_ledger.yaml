@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Index new complete downloads once;historical metric bytes unchanged.
+  - 5d0893b2005abea63b9467d7b0b0989072c42412
   # Bounded delivery of reviewed replay metrics;all scientific values retained.
   - 42f9d673be4169a32637ea1b6cad788d3178de75
   # Reviewed alternating state replay harm; no promotion.
