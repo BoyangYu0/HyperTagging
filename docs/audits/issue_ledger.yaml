@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Lossless HTML5 stylesheet serialization; scientific downloads unchanged.
+  - 10e9b2f57c06e7f606f02d25083c859af43149cd
   # Formatting-only correction of reviewed head-gradient heading.
   - ee4e4b90cbcd295df9575220ff869db8ca44c7b0
   # Reviewed targeted H3 replay null and accumulated replay harm.
