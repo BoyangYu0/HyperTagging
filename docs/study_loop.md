@@ -1,120 +1,109 @@
-# Continuous reconstruction study loop
+# Reconstruction study workflow
 
-This is the single reusable study workflow. The latest user instruction and
-current reviewed protocol determine the work; dated reports and old handoffs
-are evidence only. Obtain the current study and next operation from the sole
-controller, not from a hardcoded phase number in documentation.
+Use the current controller state and reviewed protocol to choose work. Historical
+plans do not authorize new runs. Be practical, not overly defensive: complete
+authorized steps, repair concrete failures and reuse valid results instead of
+repeating approvals, broad tests or completed training.
 
-## Run the cycle
+## Plan, execute, evaluate, decide
 
-1. **Plan:** choose one improvement question from the previous measured result.
-   Define its paired control, changed factor, data roles, finite scientific
-   counts, practical margins and next-decision rule before execution.
-2. **Implement:** fix the concrete prerequisite or model/algorithm change.
-   Exercise the actual affected entry point and relevant failure path, reuse
-   unaffected evidence, and return the concrete candidate for review.
-3. **Execute:** run the reviewed operations, reuse valid data/checkpoints and
-   retain outputs, actual exits and compute. Keep accepted jobs owned through
-   terminal reconciliation. Registered parallel work is allowed by the protocol.
-4. **Review:** compare reconstruction quality with the control, identify the
-   supported bottleneck, and issue one concrete next handoff. Every work stage
-   returns to review on success, a scientific null or operational failure.
-5. **Continue:** a negative result selects a diagnosis or changed experiment;
-   a repairable error selects a root-cause repair. Neither ends the campaign.
+1. Define one scientific question, a paired control, changed factors, fixed data
+   roles, finite sample/update counts, metrics, practical margins and a decision rule.
+2. Implement the necessary change. Check the affected entry point and meaningful
+   failure cases; broaden tests only for unresolved risk or required CI.
+3. Run registered operations, retain checkpoints and actual exits, and reconcile
+   accepted jobs through completion or failure.
+4. Evaluate reconstruction using the [evaluation workflow](full_decay_reconstruction_evaluation.md#evaluation-workflow).
+   Compare with the control; distinguish a software repair from a scientific gain.
+5. Record the result, publication decision and concrete next experiment or repair.
+   A null result selects a useful diagnosis; it does not justify a blind retry.
 
-Astra medium handles design and independent review; Sol high handles
-implementation, execution, monitoring and publication, at the default service
-tier. Follow the installed schema and include the actual study_id. Validate the
-outgoing route in isolation. Avoid repeated generic checks, blind retries,
-unnecessary retraining and unmotivated width/data sweeps. NAF can resolve a
-concrete environment-dependent question; it is not a compulsory verification
-stage for a locally reproducible defect.
+Use the configured design/review and implementation/execution roles and installed
+routing schema, including the actual study ID. A remote check is useful when it
+resolves an environment-specific question, not as a compulsory extra stage.
 
-## Evaluate after each reconstruction operation
+## Use resources in parallel
 
-Use continuous partial quality to select near-term improvements while exact
-recovery is sparse. Exact recursive topology plus PID remains the final goal
-and a reported endpoint; zero exact recovery does not veto a continuous gain.
-The reviewed protocol must bind its continuous metric definitions and observer
-version. Shared evaluator definitions and complete-evaluation rules belong in
-the [evaluation contract](full_decay_reconstruction_evaluation.md).
+Keep training and full-reconstruction studies moving together. Evaluate immutable,
+completed checkpoints on CPU while GPUs train; prepare data or run independent
+registered controls on other available allocations. Parallelize independent work,
+not operations that depend on an unfinished result or write the same state.
 
-The private closeout records:
+The existing controller records each operation's owner, source revision, inputs,
+output directory, job ID, dependencies and requested resources. Workers write
+separate evidence; only the controller updates campaign state. Use immutable
+source snapshots when live workers need different code versions.
 
-- Per-generation source F1/IoU, precision/recall and membership-sensitive edge
-  quality, separating shallow from deep response and proposal stages from the
-  final selected output. Counts alone measure activity, not correctness.
-- Selected B quality separately from oracle/pool quality; PID and confidence
-  proper scores only when actual probabilities and trained-state provenance
-  exist. Teacher-forced fit and native rollout remain distinct.
-- Exact, topology-only and inclusive endpoints; each continuum flavour's
-  acceptance; nominal, processed, failed, incompatible and unavailable counts.
-- Paired control differences, practical margins, whole-collision uncertainty,
-  category/level support, update/presentation counts, latency, memory and compute.
+Size concurrency to allocated GPU memory, CPU threads, RAM and storage bandwidth.
+Reuse datasets, normalization and valid checkpoints; measure throughput and memory
+before increasing concurrency. Reduce idle time without slowing other users' jobs.
+Follow the [shared-GPU rules](../environment/gpu/README.md#shared-gpu-rules).
+Project CPU/GPU budgets and elapsed cutoffs remain unset; administrator allocation
+limits and supported diagnostic limits still apply. Scientific counts stay finite.
 
-Use the registered aggregation consistently for point estimates and bootstrap.
-Include unmatched truth and extra wrong proposals appropriately. Keep failed
-collisions in nominal accounting and missing truth/scores explicit, with bounds
-where defined. Do not fabricate telemetry or add unregistered inference solely
-for a report. Reuse existing checkpoints for a reviewed measurement repair.
-Small diagnostic panels are useful but do not establish complete evaluation,
-independent calibration, confirmation, generalization or physical completeness.
+## Track results once
 
-Choose the next intervention from the measured bottleneck: poor TRAIN fit
+Keep a private study record on the data volume, linked from the campaign ledger:
+
+- Study/operation ID, hypothesis, control, changed factor and decision margins.
+- Source/config hashes, data roles and manifest/index hashes, checkpoint lineage,
+  evaluator version, inference settings and seeds.
+- Jobs, actual exits, sample/update/presentation counts, elapsed time and compute.
+- Metrics and denominators, paired differences and uncertainty, coverage,
+  failures/unavailable values, artifact locations and interpretation.
+- Next action, dependencies/live owners, and publish/defer with its reason.
+
+Retain failed attempts and partial results. Corrected attempts get fresh identities;
+never overwrite evidence to make an operation appear successful. Keep reusable
+rules in these guides and transient decisions in the study record. See
+[storage](repository_storage.md) for file placement and recovery.
+
+## Evaluate and choose the next study
+
+Run native full reconstruction after each reconstruction operation; teacher-forced
+loss alone is insufficient. Use continuous source/edge quality to guide progress
+while exact recovery is sparse. Exact recursive topology plus PID remains the goal;
+zero exact recovery does not erase a supported continuous gain.
+
+Use the registered metrics and fixed cohorts in the
+[evaluation contract](full_decay_reconstruction_evaluation.md). Poor TRAIN fit
 motivates loss/gradient/matching diagnosis; teacher/native divergence motivates
-generated-state training; useful proposals lost at a filter motivate one
+generated-state training; useful proposals lost during selection motivate a
 controlled inference change; structural gain with weak PID motivates PID work.
-Use observed slopes to justify a finite continuation. Do not promote TRAIN-only
-or oracle-only gains as native development improvement.
+Use measured trends to justify continuation. TRAIN-only and oracle-only gains
+are not native development gains. Repair measurement using existing checkpoints
+when possible rather than retraining.
 
-## Keep handoffs continuous
+## Keep ownership continuous
 
-Maintain one controller and operation registry. Each transition must return
-both success and reconciled failure to that controller's review path. Preserve
-rollback, partial outputs and actual failure; a launch exit or partial readiness
-file is not proof of adoption. Corrected attempts use fresh identities.
+Use one controller and operation registry. Return success, null results and
+reconciled failures to review with the exact remaining action. Preserve explicit
+user pauses. A temporary STOP_AFTER_STAGE ownership marker is reconciled under
+the lock by the sole owner after the worker is terminal, then archived before
+resuming the saved result. Do not reset consumed identities or duplicate owners.
 
-An automated STOP_AFTER_STAGE used for ownership transfer is temporary. Once
-its worker/transition is terminal, the sole owner reconciles state under the
-lock, archives the matching marker and resumes the saved result into review.
-Preserve explicit user stops/pauses. Never remove a lock, reset a consumed hook,
-replay completed work or start a duplicate coordinator. Uncertain ownership
-requires continued reconciliation before successor launch.
+Continue useful authorized work through routine failures. Stop for an explicit
+user request or an evidenced absence of meaningful authorized alternatives; record
+what would resume progress. Reserve UNSOLVABLE_TERMINAL for that supported decision.
 
-Project CPU/GPU budgets and elapsed cutoffs are null: queue waiting,
-preparation, training, evaluation, owner observation, elapsed watchdog and
-reconciliation. Service runtime is unlimited; administrator allocation limits
-still apply and must be refreshed at admission. Recoverable query timeouts are
-not cumulative deadlines. Scientific sample/update counts remain finite.
+## When and how to update the dashboard
 
-Stop only on explicit user request or an evidenced absence of meaningful
-authorized alternatives. Record what would resume progress. Routine errors,
-zero recovery, missing metrics and completion of a finite study are not terminal
-conditions. The controller's UNSOLVABLE_TERMINAL marker is reserved for a
-supported terminal decision.
+At every review, record **publish or defer**, why, and what published claim changes.
+Publish a supported quality result, accumulated diagnosis that changes the next
+experiment, material correction, or meaningful readiness change. Ordinary tests,
+queue polls, routine repairs and unchanged failures stay in the private record.
 
-## Decide dashboard publication at every review
+Send the existing publication owner a reviewed handoff with source hashes,
+sanitized aggregates, uncertainty, coverage, cost, limitations and next action.
+Follow [wiki maintenance](wiki/maintaining.rst): authenticate inputs, update the
+allowlisted sources, validate rendering/privacy/links and required exact-commit CI,
+then use guarded deployment and verify the live page and downloads.
 
-Every reconstruction gets a private closeout. Every scientific review records
-**publish or defer**, why, and which currently published evidence would change.
-Publish a significant reviewed continuous-quality result, a diagnosis or
-accumulated negative evidence that changes the recommendation, a substantial
-correction, or a material plan/readiness change. Nonzero exact recovery is not
-a publication prerequisite; small reused-panel gains remain exploratory.
+Expand the latest published study; summarize older studies and retain their
+reports/downloads. Label the latest learned evaluation separately from operational
+updates. Counts and readiness are not reconstruction efficiency. Publication
+repairs should not repeat completed science or block independent study work.
 
-Do not publish each test, stage, queue poll, ordinary repair or unchanged
-failure. Coalesce them until interpretation changes. Show quality, uncertainty,
-coverage, cost, limitations and the next experiment using sanitized aggregates.
-Expand the latest study admitted for publication; summarize earlier published
-studies and retain their downloads. If the latest update concerns metadata or
-operations, keep the latest learned evaluation separately labelled. Static
-counts and operational readiness are not reconstruction efficiency.
-Use the existing publication owner and stable dashboard, with the
-[publication procedure](wiki/maintaining.rst) for CI, privacy and live checks.
-Publication failures return to repair/review without repeating completed
-science or unnecessarily blocking its next authorized step.
-
-A handoff names completed work, preserved failures, metric comparison, exact
-remaining operation/dependencies, next action, study_id, publication decision
-and any live owner/job. Keep transient study decisions in that record, not in
-another Markdown instruction file.
+When the local app is unavailable, retain reports in the controller's durable
+outbox. On reconnection, deliver one current summary linked to the full archive;
+clear only successfully delivered entries. Study work continues independently.

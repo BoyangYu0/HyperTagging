@@ -274,7 +274,9 @@ command is explicitly tiny and
 `--allow-local-tiny-gpu-test` is supplied; that path checks `condor_q`,
 `nvidia-smi`, and active GPU processes first. No training script submits a job.
 
-See `docs/condor.md` for render and experiment commands.
+See [batch commands](condor.md) and the [shared-GPU rules](../environment/gpu/README.md#shared-gpu-rules).
+Overlap training with CPU full-reconstruction evaluation of completed checkpoints
+and other independent registered studies; isolate outputs and budget total resources.
 
 ## Real trainer state and transfer
 

@@ -3072,11 +3072,12 @@ def _render(manifest: dict[str, Any]) -> str:
     if latest_phase in renderers:
         lines += renderers[latest_phase](reconstruction[latest_phase])
     lines += ["All studies — summary", "---------------------", "",
+              "The latest study is detailed above; this table summarizes earlier results.",
               "Historical evidence is retained in the complete metric download; missing newer metrics",
               "are unavailable, not zero. Dated study reports remain archival references.", ""]
     lines += _table(["Study", "Recorded decision", "Summary"], [
         [title, value, " ".join(paragraphs[:2]) if paragraphs else "UNKNOWN"]
-        for title, value, paragraphs, _kind in [latest_card, *historical_cards]
+        for title, value, paragraphs, _kind in historical_cards
     ])
     lines += ["Complete evidence archive", "-------------------------", "",
               "Study summaries above are not cross-cohort rankings. Full historical reports remain in :doc:`../../studies`; every original metric file remains in the download catalogue.", "",

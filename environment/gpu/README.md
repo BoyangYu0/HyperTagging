@@ -1,4 +1,23 @@
-# Frozen one-GPU environment
+# GPU use and frozen environment
+
+## Shared-GPU rules
+
+- Run production training through the site’s Slurm/HTCondor allocation. Confirm
+  the assigned GPU, memory and CPU resources before launch; use only those devices.
+- Check scheduler ownership and GPU processes as well as memory/utilization. An
+  apparently idle GPU or spare VRAM does not authorize sharing another allocation.
+- Share a device only when site policy and the allocation explicitly permit it.
+  Register concurrent jobs, budget their combined memory and leave measured headroom.
+  Otherwise use separate allocations or queue the work.
+- Monitor throughput, memory and contention. Adjust or stop your own conflicting
+  workload; never kill another user’s process or change their device settings.
+- Overlap GPU training with CPU full-reconstruction evaluation of completed
+  checkpoints. Bound CPU threads, RAM and I/O so evaluation does not starve training.
+- Local CUDA diagnostics use the supported admission/watchdog path below;
+  admission and completion receipts are required where the renderer expects them.
+  Do not bypass guards or modify an environment used by a running job.
+
+## Frozen environment
 
 This environment is separate from the repository's project `uv.lock` (which also selects CUDA wheels). The
 resolved lock pins the CUDA 12.6 PyTorch build and every transitive Python
@@ -39,16 +58,18 @@ create the fresh three-sample admission receipt, then launch only through the
 mandatory `run` watchdog subcommand (never invoke `local_microtest` directly):
 
 ```bash
+ht_diag_dir="${HYPERTAGGING_DATA_ROOT:?Set the data-volume root}/local-v100/<operation-id>"
+mkdir -p "$ht_diag_dir"
 python scripts/slurm/v100_local_admission.py admit \
-  --output artifacts/local-v100/admission.json \
+  --output "$ht_diag_dir/admission.json" \
   --max-steps 10 --batch-size 2 --duration-seconds 300
 python scripts/slurm/v100_local_admission.py run \
-  --receipt artifacts/local-v100/admission.json \
-  --completion-output artifacts/local-v100/completion.json -- \
+  --receipt "$ht_diag_dir/admission.json" \
+  --completion-output "$ht_diag_dir/completion.json" -- \
   /path/to/frozen/bin/python scripts/train_hyperbolic_pretrain.py \
   --config configs/slurm/pretrain_diagnostic.yaml \
   --gpu-execution-mode local_microtest \
-  --local-admission-receipt artifacts/local-v100/admission.json \
+  --local-admission-receipt "$ht_diag_dir/admission.json" \
   --max-steps 10 --batch-size 2
 ```
 

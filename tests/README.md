@@ -7,3 +7,10 @@ science results. On a validation host with the evidence mounted, run
 fail. An available but corrupt artifact still fails its original assertions.
 Ownership fixtures bind their expected UID to the test process; production
 ownership constants remain unchanged.
+
+For documentation-only edits, run the affected documentation tests. Historical
+retained-metric corruption cases share one parametrized test while preserving
+all phase and failure combinations. The shared status download size is checked
+once by `test_complete_metric_download_stays_within_publication_limit`.
+Keep scientific, provenance and negative-path regressions; do not rerun training
+smokes for prose or dashboard layout changes. CI retains the full CPU suite.

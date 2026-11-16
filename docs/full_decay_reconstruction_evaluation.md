@@ -10,6 +10,30 @@ jobs.
 The [study loop](study_loop.md) defines current evaluation cadence and dashboard
 publication policy. This guide owns inference, coverage and metric definitions.
 
+## Evaluation workflow
+
+1. Bind the evaluator/source version, immutable checkpoints, inference settings,
+   selection/index hashes and compared arms in the study record. Validate checkpoint
+   lineage with `scripts/validate_reconstruction_checkpoint_pair.py`.
+2. Use the same fixed cohort across arms. Keep train, checkpoint-selection,
+   development and primary/test roles distinct; fit normalization on train only.
+3. Run `scripts/evaluate_full_decay.py` on CPU with bounded threads, writing to a
+   fresh operation directory on the data volume. Evaluate completed checkpoints
+   in parallel with training; see [CPU execution](#cpu-only-execution) for flags.
+4. Report native full/half reconstruction and each continuum category. Include
+   per-generation source F1/IoU and edge quality, selected B quality, exact topology
+   plus PID, inclusive tagging, validity and daughter-sum p4 closure. Keep
+   teacher-forced, native top-1 and oracle/pool metrics separate. Report confidence
+   proper scores only when trained probabilities and their provenance exist.
+5. Retain nominal, processed, failed, incompatible and unavailable counts. Use
+   registered aggregation and whole-collision paired uncertainty; account for
+   unmatched targets and extra proposals. Include latency, memory and compute.
+6. Compare with the control and record limitations and the next decision. Label
+   smaller panels diagnostic/development; complete primary evaluation requires
+   the [category coverage below](#minimum-category-coverage-for-study-evaluation).
+   Missing metrics are unavailable, not zeros. A measurement repair should reuse
+   existing checkpoints where possible.
+
 The central information boundary is:
 
 ```text

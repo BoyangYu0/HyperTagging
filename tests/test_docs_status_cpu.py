@@ -617,7 +617,6 @@ def test_phase41_arbitrary_labels_and_nested_strings_do_not_publish():
     assert 'private' not in json.dumps(status._phase41_projection(payload))
 
 
-
 def test_phase42_metrics_are_complete_and_keep_counts():
     payload = json.loads((ROOT / status.SOURCE_PATHS['reconstruction_phase42']).read_text())
     result = status._phase41_projection(payload, phase=42, labels=('pretrain81096_control', 'pretrain108128'))
@@ -637,7 +636,6 @@ def test_phase42_incomplete_metrics_fail_closed(missing):
         del payload['arms']['pretrain108128']['beam']['half']['greedy']
     with pytest.raises(ValueError):
         status._phase41_projection(payload, phase=42, labels=('pretrain81096_control', 'pretrain108128'))
-
 
 
 def test_complete_metric_download_stays_within_publication_limit(tmp_path, copy_complete_documentation_status):
@@ -761,17 +759,6 @@ def test_phase45_full_metric_downloads_are_lossless(tmp_path, copy_complete_docu
         assert binding['metric_count'] == len(raw['metric_rows'])
     assert record['retained_tree_checks']['arms']['encoder_lr005_control']['beam_candidate_count'] == 37
     assert record['retained_tree_checks']['arms']['encoder_lr010']['beam_candidate_count'] == 35
-    assert (tmp_path/'status/status.json').stat().st_size < 10 * 1024 * 1024
-
-
-@pytest.mark.parametrize('change',['missing','duplicate','beam'])
-def test_phase45_incomplete_retained_metrics_cannot_publish(change):
-    raw = json.loads((ROOT/status.SOURCE_PATHS['reconstruction_phase45_retained']).read_text())
-    if change == 'missing': raw['metric_rows'].pop()
-    if change == 'duplicate': raw['metric_rows'].append(raw['metric_rows'][0])
-    if change == 'beam': raw['all_returned_beam_candidates_checked'] = False
-    with pytest.raises(ValueError):
-        status._phase45_retained_projection(raw)
 
 
 def test_phase45_source_boundary_cannot_be_silently_relabelled():
@@ -795,17 +782,6 @@ def test_phase46_full_metric_downloads_are_lossless(tmp_path, copy_complete_docu
         assert binding['metric_count'] == len(raw['metric_rows'])
     assert record['retained_tree_checks']['arms']['late_adaptation_control']['beam_candidate_count'] == 40
     assert record['retained_tree_checks']['arms']['frozen_encoder']['beam_candidate_count'] == 39
-    assert (tmp_path/'status/status.json').stat().st_size < 10 * 1024 * 1024
-
-
-@pytest.mark.parametrize('change',['missing','duplicate','beam'])
-def test_phase46_incomplete_retained_metrics_cannot_publish(change):
-    raw = json.loads((ROOT/status.SOURCE_PATHS['reconstruction_phase46_retained']).read_text())
-    if change == 'missing': raw['metric_rows'].pop()
-    if change == 'duplicate': raw['metric_rows'].append(raw['metric_rows'][0])
-    if change == 'beam': raw['all_returned_beam_candidates_checked'] = False
-    with pytest.raises(ValueError):
-        status._phase46_retained_projection(raw)
 
 
 def test_phase46_source_boundary_cannot_be_silently_relabelled():
@@ -829,17 +805,6 @@ def test_phase47_full_metric_downloads_are_lossless(tmp_path, copy_complete_docu
         assert binding['metric_count'] == len(raw['metric_rows'])
     assert record['retained_tree_checks']['arms']['late_adaptation_control']['beam_candidate_count'] == 42
     assert record['retained_tree_checks']['arms']['frozen_encoder']['beam_candidate_count'] == 42
-    assert (tmp_path/'status/status.json').stat().st_size < 10 * 1024 * 1024
-
-
-@pytest.mark.parametrize('change',['missing','duplicate','beam'])
-def test_phase47_incomplete_retained_metrics_cannot_publish(change):
-    raw = json.loads((ROOT/status.SOURCE_PATHS['reconstruction_phase47_retained']).read_text())
-    if change == 'missing': raw['metric_rows'].pop()
-    if change == 'duplicate': raw['metric_rows'].append(raw['metric_rows'][0])
-    if change == 'beam': raw['all_returned_beam_candidates_checked'] = False
-    with pytest.raises(ValueError):
-        status._phase47_retained_projection(raw)
 
 
 def test_phase47_source_boundary_cannot_be_silently_relabelled():
@@ -880,17 +845,6 @@ def test_phase49_full_metric_downloads_are_lossless(tmp_path, copy_complete_docu
         assert binding['metric_count'] == len(raw['metric_rows'])
     assert record['retained_tree_checks']['arms']['late_adaptation_control']['beam_candidate_count'] == 61
     assert record['retained_tree_checks']['arms']['late_pid_adaptation']['beam_candidate_count'] == 60
-    assert (tmp_path/'status/status.json').stat().st_size < 10 * 1024 * 1024
-
-
-@pytest.mark.parametrize('change',['missing','duplicate','beam'])
-def test_phase49_incomplete_retained_metrics_cannot_publish(change):
-    raw = json.loads((ROOT/status.SOURCE_PATHS['reconstruction_phase49_retained']).read_text())
-    if change == 'missing': raw['metric_rows'].pop()
-    if change == 'duplicate': raw['metric_rows'].append(raw['metric_rows'][0])
-    if change == 'beam': raw['all_returned_beam_candidates_checked'] = False
-    with pytest.raises(ValueError):
-        status._phase49_retained_projection(raw)
 
 
 def test_phase49_source_boundary_cannot_be_silently_relabelled():
@@ -914,17 +868,6 @@ def test_phase50_full_metric_downloads_are_lossless(tmp_path, copy_complete_docu
         assert binding['metric_count'] == len(raw['metric_rows'])
     assert record['retained_tree_checks']['arms']['late_adaptation_control']['beam_candidate_count'] == 65
     assert record['retained_tree_checks']['arms']['late_pid_adaptation']['beam_candidate_count'] == 64
-    assert (tmp_path/'status/status.json').stat().st_size < 10 * 1024 * 1024
-
-
-@pytest.mark.parametrize('change',['missing','duplicate','beam'])
-def test_phase50_incomplete_retained_metrics_cannot_publish(change):
-    raw = json.loads((ROOT/status.SOURCE_PATHS['reconstruction_phase50_retained']).read_text())
-    if change == 'missing': raw['metric_rows'].pop()
-    if change == 'duplicate': raw['metric_rows'].append(raw['metric_rows'][0])
-    if change == 'beam': raw['all_returned_beam_candidates_checked'] = False
-    with pytest.raises(ValueError):
-        status._phase50_retained_projection(raw)
 
 
 def test_phase50_source_boundary_cannot_be_silently_relabelled():
@@ -948,17 +891,6 @@ def test_phase51_full_metric_downloads_are_lossless(tmp_path, copy_complete_docu
         assert binding['metric_count'] == len(raw['metric_rows'])
     assert record['retained_tree_checks']['arms']['late_adaptation_control']['beam_candidate_count'] == 65
     assert record['retained_tree_checks']['arms']['late_pid_adaptation']['beam_candidate_count'] == 59
-    assert (tmp_path/'status/status.json').stat().st_size < 10 * 1024 * 1024
-
-
-@pytest.mark.parametrize('change',['missing','duplicate','beam'])
-def test_phase51_incomplete_retained_metrics_cannot_publish(change):
-    raw = json.loads((ROOT/status.SOURCE_PATHS['reconstruction_phase51_retained']).read_text())
-    if change == 'missing': raw['metric_rows'].pop()
-    if change == 'duplicate': raw['metric_rows'].append(raw['metric_rows'][0])
-    if change == 'beam': raw['all_returned_beam_candidates_checked'] = False
-    with pytest.raises(ValueError):
-        status._phase51_retained_projection(raw)
 
 
 def test_phase51_source_boundary_cannot_be_silently_relabelled():
@@ -982,17 +914,6 @@ def test_phase52_full_metric_downloads_are_lossless(tmp_path, copy_complete_docu
         assert binding['metric_count'] == len(raw['metric_rows'])
     assert record['retained_tree_checks']['arms']['late_adaptation_control']['beam_candidate_count'] == 58
     assert record['retained_tree_checks']['arms']['stronger_recovery']['beam_candidate_count'] == 60
-    assert (tmp_path/'status/status.json').stat().st_size < 10 * 1024 * 1024
-
-
-@pytest.mark.parametrize('change',['missing','duplicate','beam'])
-def test_phase52_incomplete_retained_metrics_cannot_publish(change):
-    raw = json.loads((ROOT/status.SOURCE_PATHS['reconstruction_phase52_retained']).read_text())
-    if change == 'missing': raw['metric_rows'].pop()
-    if change == 'duplicate': raw['metric_rows'].append(raw['metric_rows'][0])
-    if change == 'beam': raw['all_returned_beam_candidates_checked'] = False
-    with pytest.raises(ValueError):
-        status._phase52_retained_projection(raw)
 
 
 def test_phase52_source_boundary_cannot_be_silently_relabelled():
@@ -1016,17 +937,6 @@ def test_phase53_full_metric_downloads_are_lossless(tmp_path, copy_complete_docu
         assert binding['metric_count'] == len(raw['metric_rows'])
     assert record['retained_tree_checks']['arms']['late_adaptation_control']['beam_candidate_count'] == 72
     assert record['retained_tree_checks']['arms']['weaker_recovery']['beam_candidate_count'] == 69
-    assert (tmp_path/'status/status.json').stat().st_size < 10 * 1024 * 1024
-
-
-@pytest.mark.parametrize('change',['missing','duplicate','beam'])
-def test_phase53_incomplete_retained_metrics_cannot_publish(change):
-    raw = json.loads((ROOT/status.SOURCE_PATHS['reconstruction_phase53_retained']).read_text())
-    if change == 'missing': raw['metric_rows'].pop()
-    if change == 'duplicate': raw['metric_rows'].append(raw['metric_rows'][0])
-    if change == 'beam': raw['all_returned_beam_candidates_checked'] = False
-    with pytest.raises(ValueError):
-        status._phase53_retained_projection(raw)
 
 
 def test_phase53_source_boundary_cannot_be_silently_relabelled():
@@ -1060,17 +970,6 @@ def test_phase54_full_metric_downloads_are_lossless(tmp_path, copy_complete_docu
         assert binding['metric_count'] == len(raw['metric_rows'])
     assert record['retained_tree_checks']['arms']['late_adaptation_control']['beam_candidate_count'] == 65
     assert record['retained_tree_checks']['arms']['weaker_recovery']['beam_candidate_count'] == 59
-    assert (tmp_path/'status/status.json').stat().st_size < 10 * 1024 * 1024
-
-
-@pytest.mark.parametrize('change',['missing','duplicate','beam'])
-def test_phase54_incomplete_retained_metrics_cannot_publish(change):
-    raw = json.loads((ROOT/status.SOURCE_PATHS['reconstruction_phase54_retained']).read_text())
-    if change == 'missing': raw['metric_rows'].pop()
-    if change == 'duplicate': raw['metric_rows'].append(raw['metric_rows'][0])
-    if change == 'beam': raw['all_returned_beam_candidates_checked'] = False
-    with pytest.raises(ValueError):
-        status._phase54_retained_projection(raw)
 
 
 def test_phase54_source_boundary_cannot_be_silently_relabelled():
@@ -1078,7 +977,6 @@ def test_phase54_source_boundary_cannot_be_silently_relabelled():
     raw['source_boundary'] = 'pre_scientific_audit_fixes'
     with pytest.raises(ValueError, match='source boundary'):
         status._phase41_projection(raw,phase=54,labels=('late_adaptation_control','weaker_recovery'))
-
 
 
 def test_phase55_recovered_metrics_and_pretraining_downloads_are_lossless(tmp_path, copy_complete_documentation_status):
@@ -1256,3 +1154,17 @@ def test_phase61_retained_registry_rejects_missing_half_metric():
     raw['metric_rows'].pop(i)
     with pytest.raises(ValueError, match='Incomplete'):
         status._phase61_retained_projection(raw)
+
+
+@pytest.mark.parametrize("phase", [45, 46, 47, 49, 50, 51, 52, 53, 54])
+@pytest.mark.parametrize("change", ["missing", "duplicate", "beam"])
+def test_historical_retained_metrics_fail_closed(phase, change):
+    raw = json.loads((ROOT / status.SOURCE_PATHS[f"reconstruction_phase{phase}_retained"]).read_text())
+    if change == "missing":
+        raw["metric_rows"].pop()
+    elif change == "duplicate":
+        raw["metric_rows"].append(raw["metric_rows"][0])
+    else:
+        raw["all_returned_beam_candidates_checked"] = False
+    with pytest.raises(ValueError):
+        getattr(status, f"_phase{phase}_retained_projection")(raw)

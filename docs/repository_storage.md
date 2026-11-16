@@ -1,5 +1,22 @@
 # Repository storage and recovery
 
+## Put files in the correct paths
+
+| Content | Location |
+| --- | --- |
+| Package code, entry points, reusable settings | `src/`, `scripts/`, `configs/` in Git |
+| Behavioral tests and concise reusable guides | `tests/`, `docs/`, root `AGENTS.md` |
+| Datasets, indexes, checkpoints, logs, executed notebooks, build/test output | Configured data volume, under distinct study/operation directories |
+| Private ledgers, identities, raw results and recovery manifests | Data volume; outside public Git and dashboard inputs |
+| Reviewed public results | Small sanitized, allowlisted tracked evidence and dated reports |
+| Generated dashboard/site | External build directory and deployment artifact; never tracked generated pages |
+
+Record actual artifact paths in the study ledger. Preserve input/checkpoint paths;
+new operations write to new output directories. Keep private absolute symlinks out
+of Git and retain portable evidence required by offline dashboard builds.
+
+## Historical archive and recovery
+
 The 2026-09-28 cleanup preserves scientific evidence while removing expanded
 dashboard allowlists and generated report payloads from the active Git tree.
 `configs/repository_artifacts.json` records each original path, byte count,
@@ -119,3 +136,18 @@ reduction or Git-history shrinkage. Private archive and verification payloads
 remain on the data volume, outside Git and website inputs. No scientific model
 behavior changed. The public retrospective retains only sanitized aggregate
 accounting and source hashes.
+
+## Working checkout hygiene
+
+Write scheduler stdout/stderr directly to a run-specific directory on the data
+volume. For completed local logs, confirm the jobs are terminal, copy to a new
+archive, verify byte counts and SHA-256, then replace the old path with a
+compatibility symlink. Keep the source-to-archive manifest beside the archive.
+Root scheduler logs are ignored by Git; ignoring a log does not delete it.
+
+Inspect all linked worktrees before Git maintenance. Keep dirty checkouts,
+active worker sources, object stores used by alternates, immutable snapshots
+and checkpoint lineage. Do not prune refs or rewrite history to reduce size.
+Store cleanup inventories and recovery manifests privately on the data volume,
+not in public dashboard evidence. Shared environments are runtime dependencies;
+do not move an environment used by a running worker.
