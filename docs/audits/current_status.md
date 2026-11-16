@@ -1,3 +1,5 @@
+GB101 residual teacher/native divergence: adaptive selected-B F1 0.221803 unchanged,delta0,paired95 [0,0];mixed H3 teacher type NLL10.07954 to5.91116;six checks failed,no promotion,independent0/12000. Next: exact-model TRAIN96 generated-state support.
+
 GB101 restricted head gradients: adaptive selected-B F1 0.22180 versus0.15729,delta +0.06451,paired95 [0,0.12902];five depth safeguards failed,no promotion,independent0/12000. Next: dedicated H3 object/type residual representation.
 
 GB101 targeted H3 replay: adaptive selected-B F1 0.15729 versus0.22014,delta -0.06285,paired95 [-0.12570,0];11 safeguards failed,no promotion,independent0/12000. Next: restrict supplemental object/type gradient destinations while preserving membership and primary gradients.
