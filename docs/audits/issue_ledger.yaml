@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Versioned public supplements avoid site duplication;historical downloads retained.
+  - 8d0221734fe7a2de943d0005ae580eba83604857
   # Complete unchanged metric downloads indexed once;latest study expanded.
   - c77e524d529f4e2631cb66be3ae258b11d8b5103
   # Index new complete downloads once;historical metric bytes unchanged.
