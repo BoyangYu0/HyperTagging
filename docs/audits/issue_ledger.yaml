@@ -19,6 +19,9 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed residual teacher/native divergence and model-specific support recommendation.
+  - 8ec6579abc603b88084d6a20e927e157743e13c7
+  - d142c75b398f2f3e69de28935aeb14fd91c72626
   # Lossless HTML5 stylesheet serialization; scientific downloads unchanged.
   - 10e9b2f57c06e7f606f02d25083c859af43149cd
   # Formatting-only correction of reviewed head-gradient heading.
