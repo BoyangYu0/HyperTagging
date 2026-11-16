@@ -19,6 +19,9 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Correct production section formatting without changing reviewed metrics.
+  - c4e1bd86e744166ef65ed8eb6f1012ed0e74555a
+  - ef1a8ae7c209c7a903c7d0a5c9ab551d1a4f3a91
   # Reviewed negative matched generated-support refresh.
   - bde7aad29ae9b93dd85317bda3790098b0c71766
   - 5eab43fc44e559aa883f8be23bd72a0aeaeb0b0c
