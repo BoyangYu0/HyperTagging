@@ -20,6 +20,9 @@ allowed_post_audit_paths:
   - notebooks/index.yaml
 allowed_post_audit_commits:
   # Reviewed partial-H3 type-loss reconstruction tradeoff.
+  - 141fd7c6f489d70ab0f03cab09de1d33b8f138f7
+  - 0db5957534ed1e3219f0cf7fd1d0f7556e172098
+  # Reviewed partial-H3 type-loss reconstruction tradeoff.
   - cfa5b5213f49329514a25ceeec949748ead8aa77
   - 81edc2cc006c9ac259c1d23f424a2387212aba63
   # Correct production section formatting without changing reviewed metrics.
