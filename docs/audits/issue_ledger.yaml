@@ -19,6 +19,9 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed H3 teacher projection;historical downloads preserved.
+  - 333230bd181c21e33b055512b800103bea63ec3e
+  - 86c67cc82a7f1a2fadf68d89b4c341543fc2dff9
   # Reviewed hybrid-context native harm; retained historical downloads.
   - afb7d173352788556e090d8c321e1ab54946b6ea
   - 828d48cb1d03e0b26261492662181028f59cee22
