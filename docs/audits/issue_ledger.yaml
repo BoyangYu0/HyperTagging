@@ -19,6 +19,9 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed partial-H3 type-loss reconstruction tradeoff.
+  - 136b0e641efb785db3a049f2d823c465b4c7bec1
+  - 65394f0fb19922e3e65da310ab61959ad62ed12f
   # Formatting-only repair of reviewed type-isolation publication.
   - e90655d45a33446952ad70f9a99aed0e040dc5ba
   # Reviewed partial-H3 type-loss reconstruction tradeoff.
