@@ -1,3 +1,5 @@
+GB101 authenticated H3 teacher supervision: adaptive selected-B F1 0.174616 to 0.094952; delta -0.079664,95% interval [-0.208333,0.049005] includes zero. Teacher fit improves but selected-B declines in both categories;5 checks fail. No promotion,independent0/12000. Next: matched teacher type-loss ablation.
+
 GB101 type-head isolation: adaptive selected-B F1 0.254731 to 0.182950; delta -0.071782,95% interval [-0.130529,-0.013034]. Mixed improves,charged worsens by0.177778;10 checks failed,no promotion,independent0/12000. Next: authenticated retained H3 direct-daughter teacher contexts.
 
 GB101 partial-H3 type supervision: adaptive selected-B F1 0.174616 to 0.254731;delta +0.080115,95% interval [0.035256,0.124974]. Charged improves,mixed worsens by0.034214;22 checks failed,no promotion,independent0/12000. Next: isolate only added type-loss gradients to H3 type head.
