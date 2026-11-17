@@ -1,3 +1,5 @@
+GB101 partial-H3 type supervision: adaptive selected-B F1 0.174616 to 0.254731;delta +0.080115,95% interval [0.035256,0.124974]. Charged improves,mixed worsens by0.034214;22 checks failed,no promotion,independent0/12000. Next: isolate only added type-loss gradients to H3 type head.
+
 GB101 refreshed generated support: adaptive selected-B F1 0.221803 to0.174616;delta -0.047187,paired95[-0.094374,0];17 checks failed,no promotion,independent0/12000. Next: authenticated partial-H3 parent-type supervision.
 
 GB101 residual teacher/native divergence: adaptive selected-B F1 0.221803 unchanged,delta0,paired95 [0,0];mixed H3 teacher type NLL10.07954 to5.91116;six checks failed,no promotion,independent0/12000. Next: exact-model TRAIN96 generated-state support.
