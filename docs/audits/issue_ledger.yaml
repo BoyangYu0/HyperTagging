@@ -19,6 +19,9 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Correct demonstrated warning-fatal RST title formatting only.
+  - c86467db17837c61307e4bac2eda078608498f4a
+  - e2ea04b259df5ef7b267f656fb2f2f06859d3748
   # Correct inherited aggregate scope; scientific counts and outcomes unchanged.
   - 42c4c33cde690b2cb9e78830cddb3f6959fa1063
   - 555fceab6e07a8b66f514ea38f64c09168586cc7
