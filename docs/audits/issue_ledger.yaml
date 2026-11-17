@@ -19,6 +19,10 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Correct inherited aggregate scope; scientific counts and outcomes unchanged.
+  - 42c4c33cde690b2cb9e78830cddb3f6959fa1063
+  - 555fceab6e07a8b66f514ea38f64c09168586cc7
+  - eb34da0a05f7984b16bb0e3527d91a2b15a76bc5
   # Reviewed partial-H3 type-loss reconstruction tradeoff.
   - 4909ebc80ca904d108d3106521d6e7f2e4c25414
   - a0828bc0213c24b9581bd5769438a3b15447c4f1
