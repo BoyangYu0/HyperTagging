@@ -19,6 +19,9 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed hybrid-context native harm; retained historical downloads.
+  - afb7d173352788556e090d8c321e1ab54946b6ea
+  - 828d48cb1d03e0b26261492662181028f59cee22
   # Correct demonstrated warning-fatal RST title formatting only.
   - c86467db17837c61307e4bac2eda078608498f4a
   - e2ea04b259df5ef7b267f656fb2f2f06859d3748
