@@ -1,3 +1,5 @@
+GB101 hybrid contexts: teacher fit improves while adaptive selected-B F1 falls0.174616 to0.115278;delta -0.059338,paired95[-0.111111,-0.007566];mixed reaches0. Fifteen of22 checks fail. No promotion,independent0/12000. Next: one-sided H3 teacher-gradient protection.
+
 GB101 teacher type-loss ablation: adaptive selected-B F1 0.094952 to 0.174616; delta +0.079664,95% interval [-0.049005,0.208333]. Matches earlier reference; mixed H3 worsens,5 checks fail. No promotion,independent0/12000. Next: matched teacher/generated context support.
 
 GB101 authenticated H3 teacher supervision: adaptive selected-B F1 0.174616 to 0.094952; delta -0.079664,95% interval [-0.208333,0.049005] includes zero. Teacher fit improves but selected-B declines in both categories;5 checks fail. No promotion,independent0/12000. Next: matched teacher type-loss ablation.
