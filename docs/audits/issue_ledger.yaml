@@ -19,6 +19,9 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed partial-H3 type-loss reconstruction tradeoff.
+  - 4909ebc80ca904d108d3106521d6e7f2e4c25414
+  - a0828bc0213c24b9581bd5769438a3b15447c4f1
   # Reviewed lossless dashboard summary to remain within existing delivery capacity.
   - a18e3cb67a3d6104ce0f99ebc7c0c1c877c358e5
   - f2bb4829716027372616b81baf922c9f43bcf910
