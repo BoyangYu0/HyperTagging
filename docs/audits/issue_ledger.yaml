@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed beam recovery and accumulated neural nulls; downloads retained.
+  - 5e4bb1f79894d7b500195811da106bb4aa96b5b9
   # Reviewed H3 teacher projection;historical downloads preserved.
   - 333230bd181c21e33b055512b800103bea63ec3e
   - 86c67cc82a7f1a2fadf68d89b4c341543fc2dff9
