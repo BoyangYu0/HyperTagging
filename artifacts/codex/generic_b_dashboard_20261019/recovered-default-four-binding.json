@@ -1,0 +1,11 @@
+{
+  "contains_cohort_member_identifiers": false,
+  "contains_operational_identifiers": false,
+  "private_payloads_copied": false,
+  "review_sha256": "265abab464417059cc90d03626cb370d3dc8b3ac36b643d7cea8bfb3507a3b9b",
+  "schema": "generic-b-recovered-default-four-binding-v1",
+  "source_bytes": 29567,
+  "source_file": "recovered-default-four-source.json",
+  "source_sha256": "2c3e16bd2fb0467e4a0749578a49b1f9b93ef97e8f52b4222076b2b8833e1468",
+  "status_date": "2026-11-18"
+}

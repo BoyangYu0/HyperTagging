@@ -7,6 +7,7 @@ import json
 
 SOURCE = "artifacts/codex/generic_b_dashboard_20261019"
 FILES = {
+    "generic-b-recovered-default-four-v1.json",
     "generic-b-status-summary.json",
     "generic-b-status-summary-v4.json",
     "generic-b-status-summary-v5.json",
@@ -496,6 +497,7 @@ def generate(root, output):
     (output / "generic-b-status-summary-v7.json").write_bytes(encoded)
     supplement = _neural_support(source, output)
     return value | {
+        "recovered_default_four": _recovered_default_four(source, output),
         "neural_support": supplement,
         "supported_h3": _supported_h3(source, output),
         "h2_anchor": _h2_anchor(source, output),
@@ -838,9 +840,133 @@ def _render_hybrid_teacher_context(value):
 
 
 def _render_hybrid_teacher_gradient(value):
-    return ['GB101 H3 gradient protection partially recovers native quality but fails the screen', '-----------------------------------------------------------------------------------', '', 'Reviewed 17 November 2026. Adaptive TRAIN assessment selected-B source F1 reached', '0.179167 versus0.115278 for the hybrid control:delta +0.063889,paired95[0,0.127778].', 'Against both earlier controls the gain was only0.004550,paired95[-0.015899,0.025000].', 'Eight of33 registered checks failed,including selected-B improvement and mixed-category', 'selected-B/H2 nonharm. No promotion. These four reused TRAIN assessment collisions', 'do not establish generalization;fit12 is reported separately.', '', 'The sole change projects conflicting teacher gradients against ordinary H3 gradients', 'before the shared clip1 and AdamW step. Projection applied on26/40 updates. Raw-gradient', 'protection does not guarantee optimizer or native nonharm;type-gradient components may', 'be introduced despite zero added teacher type loss. All105 contexts,88 trainable tensors,', 'initialization,ordinary losses,40 updates and16 native rollouts remained matched.', '', 'The application failed diagnostic closeout after all fitting and rollouts:an omitted', 'measurement hook left210 teacher observations unmeasured. This failure and the failed', 'native screen remain preserved. Separate checkpoint-only recovery is being prepared;', 'no retraining,native replay or diagnostic values are claimed.', '', 'Exact recursive topology+PID,topology-only and inclusive recovery remain0/32,including', 'actual oracle@1/@4. Oracle pools are not deployable. GB101 H3 packing and the inherited', 'bounded donor search remain:width4,generation1 eight candidates/query,later levels four,', 'six generations. Truth is supervision or post-inference scoring only.', '', 'Independent coverage remains0/12000:0/2000 each charged,mixed,ccbar,uubar,ddbar,ssbar.', 'Each continuum flavour acceptance,native proposal/retention quality and physical', 'completeness remain unavailable. Unknown labels remain masked;6/111 nominal parents', 'are unavailable. Shared seed5001,2000 whole-collision draws and equal-category weighting', 'define paired intervals. Complete links retain category/depth F1,IoU,source precision/recall,', 'membership edges,exact endpoints,latency,memory,uncertainty and versions.', '', 'Actual science:6976 allocated CPU-seconds,872 V100-seconds (0.242222 GPU-hours),', '21248 forwards and104120 beam expansions. Publication cost is separate.', 'Next:recover210 missing teacher diagnostics at saved update0/final40,then review mixed', 'preservation before another matched neural intervention. No automatic variant sweep.', 'Scientific source: ``6dd2136cd9b595e1a09b8c21409f8168e1da9a2c``. Checkpoint SHA-256:', '``e65a857f186915b7f07bb95de9bbc402818d35bbccdaffd0ad61c02b27dfc001``.', '', '`hybrid teacher gradient native (complete aggregate JSON) <https://github.com/BoyangYu0/HyperTagging/blob/333230bd181c21e33b055512b800103bea63ec3e/docs/metrics/generic-b-hybrid-teacher-gradient-native-v1.json>`_', '', '`hybrid teacher gradient fit12 shallow (complete aggregate JSON) <https://github.com/BoyangYu0/HyperTagging/blob/333230bd181c21e33b055512b800103bea63ec3e/docs/metrics/generic-b-hybrid-teacher-gradient-fit12-shallow-v1.json>`_', '', '`hybrid teacher gradient fit12 deep (complete aggregate JSON) <https://github.com/BoyangYu0/HyperTagging/blob/333230bd181c21e33b055512b800103bea63ec3e/docs/metrics/generic-b-hybrid-teacher-gradient-fit12-deep-v1.json>`_', '', '`hybrid teacher gradient assessment4 shallow (complete aggregate JSON) <https://github.com/BoyangYu0/HyperTagging/blob/333230bd181c21e33b055512b800103bea63ec3e/docs/metrics/generic-b-hybrid-teacher-gradient-assessment4-shallow-v1.json>`_', '', '`hybrid teacher gradient assessment4 deep (complete aggregate JSON) <https://github.com/BoyangYu0/HyperTagging/blob/333230bd181c21e33b055512b800103bea63ec3e/docs/metrics/generic-b-hybrid-teacher-gradient-assessment4-deep-v1.json>`_', '', 'Earlier reviewed outcomes and all historical downloads remain available.', '']
+    return ['GB101 history: H3 gradient protection fails the native screen', '-------------------------------------------------------------', '', 'Reviewed 17 November 2026. Adaptive TRAIN assessment selected-B source F1 reached', '0.179167 versus0.115278 for the hybrid control:delta +0.063889,paired95[0,0.127778].', 'Against both earlier controls the gain was only0.004550,paired95[-0.015899,0.025000].', 'Eight of33 registered checks failed,including selected-B improvement and mixed-category', 'selected-B/H2 nonharm. No promotion. These four reused TRAIN assessment collisions', 'do not establish generalization;fit12 is reported separately.', '', 'The sole change projects conflicting teacher gradients against ordinary H3 gradients', 'before the shared clip1 and AdamW step. Projection applied on26/40 updates. Raw-gradient', 'protection does not guarantee optimizer or native nonharm;type-gradient components may', 'be introduced despite zero added teacher type loss. All105 contexts,88 trainable tensors,', 'initialization,ordinary losses,40 updates and16 native rollouts remained matched.', '', 'The application failed diagnostic closeout after all fitting and rollouts:an omitted', 'measurement hook left210 teacher observations unmeasured. This failure and the failed', 'native screen remain preserved. Separate checkpoint-only recovery is being prepared;', 'no retraining,native replay or diagnostic values are claimed.', '', 'Exact recursive topology+PID,topology-only and inclusive recovery remain0/32,including', 'actual oracle@1/@4. Oracle pools are not deployable. GB101 H3 packing and the inherited', 'bounded donor search remain:width4,generation1 eight candidates/query,later levels four,', 'six generations. Truth is supervision or post-inference scoring only.', '', 'Independent coverage remains0/12000:0/2000 each charged,mixed,ccbar,uubar,ddbar,ssbar.', 'Each continuum flavour acceptance,native proposal/retention quality and physical', 'completeness remain unavailable. Unknown labels remain masked;6/111 nominal parents', 'are unavailable. Shared seed5001,2000 whole-collision draws and equal-category weighting', 'define paired intervals. Complete links retain category/depth F1,IoU,source precision/recall,', 'membership edges,exact endpoints,latency,memory,uncertainty and versions.', '', 'Actual science:6976 allocated CPU-seconds,872 V100-seconds (0.242222 GPU-hours),', '21248 forwards and104120 beam expansions. Publication cost is separate.', 'Next:recover210 missing teacher diagnostics at saved update0/final40,then review mixed', 'preservation before another matched neural intervention. No automatic variant sweep.', 'Scientific source: ``6dd2136cd9b595e1a09b8c21409f8168e1da9a2c``. Checkpoint SHA-256:', '``e65a857f186915b7f07bb95de9bbc402818d35bbccdaffd0ad61c02b27dfc001``.', '', '`hybrid teacher gradient native (complete aggregate JSON) <https://github.com/BoyangYu0/HyperTagging/blob/333230bd181c21e33b055512b800103bea63ec3e/docs/metrics/generic-b-hybrid-teacher-gradient-native-v1.json>`_', '', '`hybrid teacher gradient fit12 shallow (complete aggregate JSON) <https://github.com/BoyangYu0/HyperTagging/blob/333230bd181c21e33b055512b800103bea63ec3e/docs/metrics/generic-b-hybrid-teacher-gradient-fit12-shallow-v1.json>`_', '', '`hybrid teacher gradient fit12 deep (complete aggregate JSON) <https://github.com/BoyangYu0/HyperTagging/blob/333230bd181c21e33b055512b800103bea63ec3e/docs/metrics/generic-b-hybrid-teacher-gradient-fit12-deep-v1.json>`_', '', '`hybrid teacher gradient assessment4 shallow (complete aggregate JSON) <https://github.com/BoyangYu0/HyperTagging/blob/333230bd181c21e33b055512b800103bea63ec3e/docs/metrics/generic-b-hybrid-teacher-gradient-assessment4-shallow-v1.json>`_', '', '`hybrid teacher gradient assessment4 deep (complete aggregate JSON) <https://github.com/BoyangYu0/HyperTagging/blob/333230bd181c21e33b055512b800103bea63ec3e/docs/metrics/generic-b-hybrid-teacher-gradient-assessment4-deep-v1.json>`_', '', 'Earlier reviewed outcomes and all historical downloads remain available.', '']
+
+
+
+def _recovered_default_four(source, output):
+    """Retain the complete reviewed correction without rewriting historical bytes."""
+    path = source / "recovered-default-four-source.json"
+    binding_path = source / "recovered-default-four-binding.json"
+    _require(not path.is_symlink() and not binding_path.is_symlink()
+             and path.stat().st_size <= LIMIT and binding_path.stat().st_size <= LIMIT,
+             "Unsafe recovered default-four aggregate")
+    raw = path.read_bytes()
+    binding = json.loads(binding_path.read_bytes())
+    _require(binding == {'contains_cohort_member_identifiers': False, 'contains_operational_identifiers': False, 'private_payloads_copied': False, 'review_sha256': '265abab464417059cc90d03626cb370d3dc8b3ac36b643d7cea8bfb3507a3b9b', 'schema': 'generic-b-recovered-default-four-binding-v1', 'source_bytes': 29567, 'source_file': 'recovered-default-four-source.json', 'source_sha256': '2c3e16bd2fb0467e4a0749578a49b1f9b93ef97e8f52b4222076b2b8833e1468', 'status_date': '2026-11-18'},
+             "Recovered default-four binding differs")
+    _require(len(raw) == binding["source_bytes"]
+             and hashlib.sha256(raw).hexdigest() == binding["source_sha256"],
+             "Recovered default-four source differs")
+    value = json.loads(raw)
+    _require(value["schema"] == "gb101-recovered-default-four-publication-aggregates-v1"
+             and value["strict_independent_collisions"] == 0
+             and value["requested_independent_collisions"] == 12000
+             and value["nominal_B_slots"] == {"development": 32, "train": 64}
+             and value["new_inference_performed"] is False,
+             "Recovered default-four scope differs")
+    filename = "generic-b-recovered-default-four-v1.json"
+    # Publish an explicit metric projection, excluding source-only publication
+    # routing/status fields. The input remains authenticated above; the normal
+    # source-body and complete artifact privacy gates stay fully enabled.
+    public_keys = (
+        "beam_implementation_sha", "checkpoint_sha256", "coverage_complete",
+        "endpoints", "latency_seconds", "limitations", "new_inference_performed",
+        "nominal_B_slots", "original_beam_seed5001", "peak_host_rss_kib",
+        "requested_independent_collisions", "requested_per_category",
+        "retained_exploratory_development_per_category", "reused_beam_rows",
+        "reviewed_weight075_neural_result", "reviewed_partial_H3_ordering_result",
+        "scientific_source_base_sha",
+        "strict_independent_collisions", "strict_shortfall_per_category",
+        "study_id", "train_diagnostic_collisions",
+    )
+    projected = {"schema": "generic-b-recovered-default-four-metrics-v1"}
+    projected.update({key: value[key] for key in public_keys})
+    payload = (json.dumps(projected, separators=(",", ":"), sort_keys=True,
+                          allow_nan=False) + "\n").encode("utf-8")
+    (output / filename).write_bytes(payload)
+    return value | {"metric_download": {"filename": filename, "bytes": len(payload),
+                                        "sha256": hashlib.sha256(payload).hexdigest()}}
+
+
+def _render_recovered_default_four(value):
+    recovered = value["recovered_default_four"]
+    beam = recovered["original_beam_seed5001"]
+    neural = recovered["reviewed_weight075_neural_result"]
+    title = "GB101 reviewed update: accumulated neural nulls and recovered beam harm"
+    lines = [title, "-" * len(title), "",
+             "Reviewed 18 November 2026. The original 80-collision full-depth/default-four",
+             "beam diagnostic is completed. Its saved outputs and full aggregate tables were",
+             "recovered without training or inference replay. This is a completed diagnostic;",
+             "strict independent coverage remains 0/12000, with 0/2000 in each of charged,",
+             "mixed, ccbar, uubar, ddbar and ssbar. No checkpoint is promoted.", "",
+             "Original reused panel: 48 development collisions (8/category) and 32 TRAIN",
+             "diagnostic collisions. Signal development has 16 collisions and 32 nominal B slots;",
+             "TRAIN has 32 collisions and 64 nominal B slots. Exact topology+PID, topology-only",
+             "and inclusive source grouping are each 0/32 development and separately 0/64 TRAIN",
+             "for both checkpoints, greedy, beam top-1 and available oracle@1/@4. These roles",
+             "remain separate; the endpoints do not establish physical tagging efficiency.", "",
+             "Original beam versus greedy on the same exploratory development collisions", "~" * len("Original beam versus greedy on the same exploratory development collisions"), ""]
+    lines += _table(["State", "Selected-B source F1", "Selected-B soft edge F1"], [
+        [name, f"{beam['states'][key]['selected_B_source_f1']['point']:.5f}",
+         f"{beam['states'][key]['selected_B_soft_edge_f1']['point']:.5f}"]
+        for name, key in [("Latest greedy", "latest_greedy"),
+                          ("Latest beam top-1", "latest_beam4_top1"),
+                          ("Unpromoted parent greedy", "parent_greedy"),
+                          ("Unpromoted parent beam top-1", "parent_beam4_top1")]])
+    delta = beam["paired_contrasts"]["latest_beam4_minus_latest_gb101_greedy"]["selected_B_source_f1"]
+    lines += [f"Latest paired source-F1 difference: {delta['point']:.5f}; whole-collision paired",
+              f"95% interval [{delta['interval'][0]:.5f}, {delta['interval'][1]:.5f}].",
+              "Equal-category aggregation, 2000 paired bootstrap draws and seed5001 are authoritative.",
+              "Beam top-1 reduced selected-B quality. Lower continuum acceptance does not",
+              "establish better signal reconstruction or a usable tagger.", ""]
+    lines += _table(["Continuum flavour", "Latest greedy accepted events", "Latest beam accepted events"], [
+        [category, f"{beam['backgrounds']['latest_greedy'][category]['accepted_events']}/8",
+         f"{beam['backgrounds']['latest_beam4_top1'][category]['accepted_events']}/8"]
+        for category in ("ccbar", "uubar", "ddbar", "ssbar")])
+    lines += ["Historical reviewed neural weight0.75 comparison", "~" * len("Historical reviewed neural weight0.75 comparison"), "",
+              "Historical reviewed snapshot before the latest ordering comparison. Its four",
+              "displayed adaptive TRAIN contrasts failed; complete registered tables failed",
+              "5/12 margins versus unit weight and 6/12 versus the stale control:", ""]
+    lines += _table(["Paired contrast", "Difference", "Paired 95% interval"], [
+        [label, f"{neural[key]['value']:.5f}",
+         f"[{neural[key]['paired_bootstrap95'][0]:.5f}, {neural[key]['paired_bootstrap95'][1]:.5f}]"]
+        for key, label in [("selected_B_delta_unit", "Selected B versus unit control"),
+                           ("H3_delta_unit", "H3 versus unit control"),
+                           ("selected_B_delta_stale", "Selected B versus stale control"),
+                           ("H3_delta_stale", "H3 versus stale control")]])
+    lines += ["This neural diagnostic reports exact, topology-only and inclusive recovery 0/32",
+              "nominal B trials on adaptive TRAIN only; its continuum acceptance is unavailable.",
+              "Rematched teacher losses are not fixed-query losses. No causal attribution,",
+              "independent calibration or generalization follows from these reused panels.", "",
+              "Neural cost: 5648 allocated CPU-seconds, 706 allocated GPU-seconds,",
+              "658.254 scheduler CPU-seconds and 651.132111329 application CPU-seconds;",
+              "paired analysis used 15.509 CPU-seconds. Original saved beam mean latency was",
+              "1.635639 seconds/collision latest and 1.469861 parent; peak host RSS was",
+              "1660688 KiB and 1696428 KiB respectively. Publication cost is separate.", "",
+              "Latest reviewed neural result: partial H3 BCE plus ordering", 
+              "~" * len("Latest reviewed neural result: partial H3 BCE plus ordering"), "",
+              "Both arms completed 20 updates and 16 native rollouts. Four of twelve",
+              "registered margins failed on adaptive TRAIN assessment4; this is not independent validation.",
+              "Selected-B F1 delta +0.000715, paired 95% interval [-0.100000, +0.101430];",
+              "H3 source F1 delta +0.007692, interval [0.000000, +0.015385]. Both missed +0.02.",
+              "Mixed selected-B and H3 soft-edge nonharm also failed. Exact, topology-only",
+              "and inclusive recovery remained 0/32 nominal B trials per arm; no promotion.",
+              "Fixed-query ordering improved; rematched teacher membership BCE worsened.",
+              "Cost: 4088 allocated CPU-seconds, 511 V100-seconds and 481.011 scheduler CPU-seconds.",
+              "All twelve margins are in the aggregate download. Independent coverage is 0/12000;",
+              "neural background acceptance remains unavailable for each continuum flavour.", "",
+              "Current reviewed next action: materialize supported terminal fit12 H3 states;",
+              "if ordinary tensor inputs are absent, separately review finite same-fit12 capture",
+              "before a matched old-bank versus refreshed-bank BCE intervention.",
+              "Support construction is not reconstruction efficiency.",
+              "Historical native quality, uncertainty, category/depth support and downloads remain",
+              "available below. Full beam endpoints, both checkpoints, backgrounds, versions,",
+              "cost, limitations and exact values are retained in the authenticated download.", "",
+              ":download:`Recovered original beam and reviewed neural aggregates <generic-b-recovered-default-four-v1.json>`", ""]
+    return lines
 
 
 def render(value):
     lines = ['Earlier Generic-B campaign results', '----------------------------------', '', 'GB001: completed generic-sample static target-contract census (historical). The frozen pool', 'contained 20,000 B and 8,000 continuum collisions. Static accepted membership was 34,819/40,000', 'and recursive topology/PID compatibility was 6,378/40,000. This was not a learned-model evaluation', 'and these counts are not reconstruction efficiency. The needed provenance is unavailable in the census inputs;', 'original-mDST recovery was not assessed. Every learned metric in this census remains UNAVAILABLE.', '', 'GB002: local transfer complete; scientific authentication unresolved is a historical and now-superseded operational snapshot,', 'an as-of snapshot at the reviewed science-loop resumption boundary, not a live job monitor.', 'The transfer established opaque-byte identity only: 0 authenticated, 1 failed and 3,071 unreached.', 'The event-number and source-entry identities were conflated; replacement status was FAILED_REVIEW_REQUIRED.', 'The reviewed Astra/Sol science loop has since resumed; in that snapshot payload decoding and the native baseline remain pending.', 'The prospective two Generic B training sample sizes by two network widths do not constitute execution approval.', '', 'The historical heading Latest learned full reconstruction evaluation — CR054 refers to the earlier diagnostic,', 'not the current GB101 comparison displayed above. Channel coverage included 256 signed retained-channel groups.', 'Retained parton compatibility was 12/758; parton ancestry reconstruction is UNAVAILABLE.', 'The flat accepted 1/256 versus 0/256 comparison is not full reconstruction and did not support promotion.', '', 'Historical quality,source/checkpoint versions,uncertainty,cost,unavailable support and limitations remain', 'in the unchanged versioned downloads and historical study pages. No physical tagging-efficiency claim is implied.', '', ':download:`Reviewed v7 GB001, GB002, CR054 and GB101 aggregates with accumulated H2/H1 adaptations <generic-b-status-summary-v7.json>`.', '', ':download:`Historical v6 aggregate with the cap256 intervention retained with its original bytes <generic-b-status-summary-v6.json>`.', '', ':download:`Historical v5 aggregate with the saved-beam diagnosis retained with its original bytes <generic-b-status-summary-v5.json>`.', '', ':download:`Historical corrected v4 aggregate retained with its original bytes <generic-b-status-summary-v4.json>`.', '', ':download:`Historical v3 aggregate retained with its original bytes <generic-b-status-summary.json>`.', '']
-    return _render_hybrid_teacher_gradient(value) + _render_hybrid_teacher_context(value) + _render_teacher_context_ablation(value) + _render_authenticated_teacher_tradeoff(value) + _render_type_isolation_tradeoff(value) + _render_partial_type_tradeoff(value) + _render_residual_support_refresh(value) + _render_h3_residual(value) + _render_head_gradient(value) + _render_targeted_h3(value) + _render_composite(value) + _render_within_update(value) + _render_state_mixture({}) + _render_query_refresh(value["h2_anchor"]["query-refresh-native"]) + _render_query_interaction(value["h2_anchor"]["query-interaction-native"]) + _render_dynamic(value["h2_anchor"]["dynamic-native"]) + _render_projection(value["h2_anchor"]["projection-native"]) + _render_expanded96(value["h2_anchor"]["expanded96-native"]) + _render_replay(value["h2_anchor"]["replay-native"]) + _render_balanced_refresh(value["h2_anchor"]["balanced-refresh-native"]) + _render_refresh_support(value["h2_anchor"]["refresh-native"]) + _render_joint_native(value["h2_anchor"]["joint-native"]) + _render_decoder_native(value["h2_anchor"]["decoder_native"]) + _render_relation_support(value["h2_anchor"]["relation_support"]) + _render_support_capture(value["h2_anchor"]["support_capture"]) + _render_source_supervision(value["h2_anchor"]["source_supervision"]) + _render_preservation(value["h2_anchor"]["preservation"]) + _render_retained_source(value["h2_anchor"]["retained_source"]) + _render_positive_object(value["h2_anchor"]["positive_object"]) + _render_h2_anchor(value["h2_anchor"]) + _render_supported_h3(value["supported_h3"]) + _render_neural_support(value["neural_support"]) + lines
+    return _render_recovered_default_four(value) + _render_hybrid_teacher_gradient(value) + _render_hybrid_teacher_context(value) + _render_teacher_context_ablation(value) + _render_authenticated_teacher_tradeoff(value) + _render_type_isolation_tradeoff(value) + _render_partial_type_tradeoff(value) + _render_residual_support_refresh(value) + _render_h3_residual(value) + _render_head_gradient(value) + _render_targeted_h3(value) + _render_composite(value) + _render_within_update(value) + _render_state_mixture({}) + _render_query_refresh(value["h2_anchor"]["query-refresh-native"]) + _render_query_interaction(value["h2_anchor"]["query-interaction-native"]) + _render_dynamic(value["h2_anchor"]["dynamic-native"]) + _render_projection(value["h2_anchor"]["projection-native"]) + _render_expanded96(value["h2_anchor"]["expanded96-native"]) + _render_replay(value["h2_anchor"]["replay-native"]) + _render_balanced_refresh(value["h2_anchor"]["balanced-refresh-native"]) + _render_refresh_support(value["h2_anchor"]["refresh-native"]) + _render_joint_native(value["h2_anchor"]["joint-native"]) + _render_decoder_native(value["h2_anchor"]["decoder_native"]) + _render_relation_support(value["h2_anchor"]["relation_support"]) + _render_support_capture(value["h2_anchor"]["support_capture"]) + _render_source_supervision(value["h2_anchor"]["source_supervision"]) + _render_preservation(value["h2_anchor"]["preservation"]) + _render_retained_source(value["h2_anchor"]["retained_source"]) + _render_positive_object(value["h2_anchor"]["positive_object"]) + _render_h2_anchor(value["h2_anchor"]) + _render_supported_h3(value["supported_h3"]) + _render_neural_support(value["neural_support"]) + lines

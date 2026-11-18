@@ -3019,9 +3019,9 @@ def _render(manifest: dict[str, Any]) -> str:
             "Fixed 32-collision TRAIN audit; observed recovery remains 1/64. The other 50 are not proved achievable. No performance gain or fresh evaluation."
         ], "warning"))
     if reconstruction.get("generic_b"):
-        cards.insert(0, ("GB001 generic-sample static target-contract census", "STATIC COMPATIBILITY ONLY", [
-            "Reviewed fixed TRAIN census of 20,000 B and 8,000 continuum collisions: accepted membership 34,819/40,000 and recursive topology+PID 6,378/40,000 nominal B predicates.",
-            "These metadata compatibility counts are not learned reconstruction efficiency, a ceiling or saturation. GB002 has a sealed prospective v3 plan but no learned evaluation; CR054 remains the latest learned full reconstruction assessment."
+        cards.insert(0, ("GB001 history and GB101 reviewed reconstruction status", "DIAGNOSTIC COMPLETE; NO PROMOTION", [
+            "Original80 full-depth/default-four beam diagnostic completed. Latest exploratory selected-B F1: beam0.02083 versus greedy0.22893; paired difference -0.20810,95% interval[-0.28916,-0.13654].",
+            "Independent coverage0/12000. Exact,topology-only and inclusive endpoints remain0/32 development and separately0/64 TRAIN. Accumulated neural fit gains have not established native benefit."
         ], "warning"))
     # Cards are newest first. Keep historical decisions in one compact table.
     phase_cards = [card for card in cards if card[0].startswith("Phase")]
@@ -3428,7 +3428,7 @@ def generate_status(repo_root: Path, output_dir: Path) -> dict[str, Any]:
             }
     # These earlier Generic-B families also have complete unchanged downloads.
     # Use the same lossless index contract rather than duplicating their rows.
-    for key in ("neural_support", "supported_h3"):
+    for key in ("neural_support", "supported_h3", "recovered_default_four"):
         record = generic.get(key)
         if isinstance(record, dict) and "metric_download" in record:
             generic[key] = {
