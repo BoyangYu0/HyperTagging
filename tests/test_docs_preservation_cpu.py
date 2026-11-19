@@ -263,7 +263,7 @@ def test_build_additional_checks_share_one_complete_validator(staging_repository
     assert checks[checks.index('--html') + 1] == str(output / 'html')
     content = 'docs/wiki' if layout == 'basf2' else 'wiki'
     assert checks[checks.index('--generated') + 1] == str(output / 'source' / content / '_generated')
-    assert 'html_theme_options.globaltoc_maxdepth=' + ('4' if layout == 'basf2' else '0') in sphinx
+    assert 'html_theme_options.globaltoc_maxdepth=0' in sphinx
     assert (output / 'source' / content / 'index.rst').read_text() == (root / 'docs/wiki/index.rst').read_text()
     if layout == 'basf2':
         assert ':maxdepth: 2' in (output / 'source/index.rst').read_text()

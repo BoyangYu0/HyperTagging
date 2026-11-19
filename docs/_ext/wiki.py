@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+from html.parser import HTMLParser
 import json
 from pathlib import Path
 import re
@@ -190,6 +191,44 @@ def suppress_source_pages(app, *unused):
     return []
 
 
+def compact_head_whitespace(payload):
+    """Remove only whitespace data nodes in head, outside title/script/style.
+
+    Keep raw tag/attribute/comment bytes, all non-whitespace data and the entire
+    body. Source slicing avoids HTML reserialization or download modification.
+    """
+    end = payload.find("</head>")
+    if end < 0:
+        raise ValueError("Generated HTML has no closed head")
+    prefix = payload[:end + len("</head>")]
+    offsets = [0] + [match.end() for match in re.finditer("\n", prefix)]
+    class HeadWhitespace(HTMLParser):
+        def __init__(self):
+            super().__init__(convert_charrefs=False)
+            self.in_head, self.raw, self.spans = False, None, []
+        def handle_starttag(self, tag, attrs):
+            if tag == "head":
+                self.in_head = True
+            elif self.in_head and tag in {"title", "script", "style"}:
+                self.raw = tag
+        def handle_endtag(self, tag):
+            if tag == self.raw:
+                self.raw = None
+            if tag == "head":
+                self.in_head = False
+        def handle_data(self, data):
+            if self.in_head and self.raw is None and data and data.isspace():
+                line, column = self.getpos()
+                start = offsets[line - 1] + column
+                self.spans.append((start, start + len(data)))
+    parser = HeadWhitespace()
+    parser.feed(prefix)
+    parser.close()
+    for start, stop in reversed(parser.spans):
+        payload = payload[:start] + payload[stop:]
+    return payload
+
+
 def on_build_finished(app, exception):
     if exception is not None or app.builder.name not in {"html", "text"}:
         return
@@ -217,6 +256,15 @@ def on_build_finished(app, exception):
             "original_bytes": len(raw.encode("utf-8")),
             "compact_bytes": len(compact.encode("utf-8")),
         }))
+    if app.builder.name == "html":
+        saved_bytes = 0
+        for page in sorted(output.rglob("*.html")):
+            _check_path(page)
+            original = page.read_text(encoding="utf-8")
+            compact = compact_head_whitespace(original)
+            saved_bytes += len(original.encode("utf-8")) - len(compact.encode("utf-8"))
+            page.write_text(compact, encoding="utf-8")
+        print("Lossless head-whitespace delivery: " + str(saved_bytes) + " bytes")
     validate_artifact(
         output,
         Path(__file__).resolve().parents[2],
