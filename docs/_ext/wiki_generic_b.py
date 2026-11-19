@@ -895,7 +895,7 @@ def _render_recovered_default_four(value):
     neural = recovered["reviewed_weight075_neural_result"]
     title = "GB101 reviewed update: accumulated neural nulls and recovered beam harm"
     lines = [title, "-" * len(title), "",
-             "Reviewed 18 November 2026. The original 80-collision full-depth/default-four",
+             "Reviewed 18 November 2026. The original 80-collision full-depth, default-four",
              "beam diagnostic is completed. Its saved outputs and full aggregate tables were",
              "recovered without training or inference replay. This is a completed diagnostic;",
              "strict independent coverage remains 0/12000, with 0/2000 in each of charged,",

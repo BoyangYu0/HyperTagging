@@ -3020,7 +3020,7 @@ def _render(manifest: dict[str, Any]) -> str:
         ], "warning"))
     if reconstruction.get("generic_b"):
         cards.insert(0, ("GB001 history and GB101 reviewed reconstruction status", "DIAGNOSTIC COMPLETE; NO PROMOTION", [
-            "Original80 full-depth/default-four beam diagnostic completed. Latest exploratory selected-B F1: beam0.02083 versus greedy0.22893; paired difference -0.20810,95% interval[-0.28916,-0.13654].",
+            "Original80 full-depth, default-four beam diagnostic completed. Latest exploratory selected-B F1: beam0.02083 versus greedy0.22893; paired difference -0.20810,95% interval[-0.28916,-0.13654].",
             "Independent coverage0/12000. Exact,topology-only and inclusive endpoints remain0/32 development and separately0/64 TRAIN. Accumulated neural fit gains have not established native benefit."
         ], "warning"))
     # Cards are newest first. Keep historical decisions in one compact table.
