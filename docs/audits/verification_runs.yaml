@@ -1361,3 +1361,31 @@ supplemental_runs:
       archive bytes or privacy/size limits change. Previous local documentation
       suite285passed; own superseded build stopped before editing,not a pass.
       Exact final full CI and live release verification remain required.
+
+  - source_sha: 8f229af621cb246179d26bd66bd57c987fb2ce80
+    metadata_head: recorded_by_followup_audit
+    worktree_state: reviewed_accumulated_generic_b_publication
+    date: '2026-11-20'
+    commands:
+      - actual Generic-B aggregate projection and historical download hash comparison
+      - warning-fatal minimal Sphinx HTML build
+      - actual generated aggregate artifact privacy scan
+      - python scripts/validate_audit_integrity.py
+    pytest: {result: NOT_RUN_USER_INSTRUCTION}
+    notebooks: {result: NOT_RUN_UNCHANGED}
+    real_data_inputs: none_opened_by_publication
+    checkpoint: none_opened_or_promoted
+    ci_run: EXACT_FINAL_COMMIT_CPU_AND_FULL_DOCUMENTATION_REQUIRED_BEFORE_GUARDED_PROMOTION
+    human_visual_review_status: NOT_REVIEWED
+    evidence_limitations: >-
+      One reviewed coalesced update uses selected sanitized aggregates and hashes.
+      All58historical Generic-B downloads remain byte-identical. Privacy scan and
+      warning-fatal minimal HTML build passed; full layouts remain CI-gated.
+      First projection exceeded unchanged source size bound before writing;
+      explicit conditional-mean and availability projection fits35320bytes.
+      First privacy scan rejected slash-joined checkpoint and source prose;
+      wording repaired without changing any privacy rule. Adaptive TRAIN only:
+      all overall scientific gates fail,independent0/12000,current backgrounds
+      unavailable,no checkpoint or oracle promotion. No local tests,fixtures,
+      dry runs,training,inference or scientific jobs. Live page and download
+      readback at deployed revision remains required after exact-commit CI.

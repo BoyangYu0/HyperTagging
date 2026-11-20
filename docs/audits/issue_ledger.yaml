@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed coalesced Generic-B adaptive TRAIN findings; historical downloads retained.
+  - 8f229af621cb246179d26bd66bd57c987fb2ce80
   # Reviewed lossless head whitespace delivery and navigation assertion.
   - b786925e12f19ba188d2b298d0a7a61b21fca819
   # Reviewed beam recovery and accumulated neural nulls; downloads retained.
