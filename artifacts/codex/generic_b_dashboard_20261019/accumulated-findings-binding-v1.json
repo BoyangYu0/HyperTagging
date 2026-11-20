@@ -1,0 +1,12 @@
+{
+  "contains_cohort_member_identifiers": false,
+  "contains_operational_identifiers": false,
+  "private_payloads_copied": false,
+  "publication_review_sha256": "e6c23a599fcb753db9ac36805c1b5cadc3283cd4445636c8d5cf097c2a31067b",
+  "reviewed_handoff_sha256": "5c5e3709aa59b269e4ff46bac66d1352d3cde40a70021ecebb734de9d45933cd",
+  "schema": "generic-b-accumulated-findings-binding-v1",
+  "source_bytes": 35320,
+  "source_file": "accumulated-findings-source-v1.json",
+  "source_sha256": "5d7f080fd717cdea508db308a7d86e19cd1bc2fd2fcb78c7f0c9c980c5a3c714",
+  "status_date": "2026-11-20"
+}

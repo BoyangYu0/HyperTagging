@@ -217,7 +217,7 @@ SOURCE_PATHS["reconstruction_phase85_review"] = _phase84_85.SOURCE + "/binding.j
 SOURCE_PATHS["reconstruction_phase83_review"] = _previous_studies.SOURCE + "/binding.json"
 SOURCE_PATHS["reconstruction_phase86_review"] = _phase86.SOURCE + "/binding.json"
 SOURCE_PATHS["reconstruction_cr032_review"] = _cr032.SOURCE + "/binding.json"
-SOURCE_PATHS["generic_b_review"] = _generic_b.SOURCE + "/binding.json"
+SOURCE_PATHS["generic_b_review"] = _generic_b.SOURCE + "/accumulated-findings-binding-v1.json"
 SOURCE_IDS = {key: f"source-{index:02d}" for index, key in enumerate(SOURCE_PATHS, 1)}
 FRESHNESS_DAYS = 30
 _MAX_SOURCE_BYTES = 5_000_000
@@ -3020,8 +3020,9 @@ def _render(manifest: dict[str, Any]) -> str:
         ], "warning"))
     if reconstruction.get("generic_b"):
         cards.insert(0, ("GB001 history and GB101 reviewed reconstruction status", "DIAGNOSTIC COMPLETE; NO PROMOTION", [
+            "Accumulated adaptive TRAIN update: generated-context H3 edge gain coexists with mixed/depth harms; all four corrected weighting primaries fail. Assignment H3 edge gain+0.02476 accompanies selected-B difference-0.04279 and seven failed nonharm checks. Zero new contexts/masks.",
             "Original80 full-depth, default-four beam diagnostic completed. Latest exploratory selected-B F1: beam0.02083 versus greedy0.22893; paired difference -0.20810,95% interval[-0.28916,-0.13654].",
-            "Independent coverage0/12000. Exact,topology-only and inclusive endpoints remain0/32 development and separately0/64 TRAIN. Accumulated neural fit gains have not established native benefit."
+            "Independent coverage0/12000; current-continuation backgrounds unavailable. Original exact/topology/inclusive endpoints remain0/32 development and separately0/64 TRAIN; later adaptive TRAIN remains0/32 per arm. No promotion."
         ], "warning"))
     # Cards are newest first. Keep historical decisions in one compact table.
     phase_cards = [card for card in cards if card[0].startswith("Phase")]
@@ -3428,7 +3429,7 @@ def generate_status(repo_root: Path, output_dir: Path) -> dict[str, Any]:
             }
     # These earlier Generic-B families also have complete unchanged downloads.
     # Use the same lossless index contract rather than duplicating their rows.
-    for key in ("neural_support", "supported_h3", "recovered_default_four"):
+    for key in ("neural_support", "supported_h3", "recovered_default_four", "accumulated_findings"):
         record = generic.get(key)
         if isinstance(record, dict) and "metric_download" in record:
             generic[key] = {
