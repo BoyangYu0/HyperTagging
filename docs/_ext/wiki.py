@@ -230,12 +230,14 @@ def compact_head_whitespace(payload):
 
 
 def compact_structural_whitespace(payload):
-    """Slice layout-only ASCII whitespace from explicit block containers.
+    """Trim layout indentation without removing text-node boundaries.
 
     Accept only well-nested markup and containers containing their expected
     direct children. Preserve uncertain containers, inline separators, entities,
     comments, raw markup and whitespace-sensitive subtrees without reserializing.
-    The fixed documentation styles render these children as block/table boxes.
+    Retain every vertical separator and one space for horizontal-only nodes.
+    The fixed documentation styles render the admitted children as block/table
+    boxes; mixed inline containers are left unchanged.
     """
     children = {
         "table": {"caption", "colgroup", "thead", "tbody", "tfoot", "tr"},
@@ -244,6 +246,18 @@ def compact_structural_whitespace(payload):
         "tr": {"td", "th"}, "ul": {"li"}, "ol": {"li"},
         "dl": {"dt", "dd"},
     }
+    block_children = {
+        "div", "section", "article", "main", "nav", "aside", "header",
+        "footer", "blockquote", "figure", "figcaption", "details", "form",
+        "p", "h1", "h2", "h3", "h4", "h5", "h6", "table", "ul", "ol",
+        "dl", "pre", "hr", "script",
+    }
+    for tag in (
+        "body", "div", "section", "article", "main", "nav", "aside",
+        "header", "footer", "blockquote", "figure", "figcaption", "details",
+        "li", "dd", "td", "th", "form",
+    ):
+        children[tag] = block_children
     # All other ancestors block compaction, including pre/code/script/style,
     # textarea/title, foreign content, templates and unknown elements.
     ancestors = set(children) | {
@@ -316,6 +330,12 @@ def compact_structural_whitespace(payload):
     pieces, previous = [], 0
     for start, stop in sorted(parser.spans):
         pieces.append(payload[previous:start])
+        data = payload[start:stop]
+        # Empty deletion joins API definition text in the privacy projection.
+        # Keep its original vertical boundaries (including blank lines); only
+        # indentation is redundant. Horizontal-only nodes still separate text.
+        vertical = data.translate({ord(" "): None, ord("\t"): None})
+        pieces.append(vertical or " ")
         previous = stop
     pieces.append(payload[previous:])
     return "".join(pieces)
