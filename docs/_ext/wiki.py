@@ -229,6 +229,98 @@ def compact_head_whitespace(payload):
     return payload
 
 
+def compact_structural_whitespace(payload):
+    """Slice layout-only ASCII whitespace from explicit block containers.
+
+    Accept only well-nested markup and containers containing their expected
+    direct children. Preserve uncertain containers, inline separators, entities,
+    comments, raw markup and whitespace-sensitive subtrees without reserializing.
+    The fixed documentation styles render these children as block/table boxes.
+    """
+    children = {
+        "table": {"caption", "colgroup", "thead", "tbody", "tfoot", "tr"},
+        "colgroup": {"col"},
+        "thead": {"tr"}, "tbody": {"tr"}, "tfoot": {"tr"},
+        "tr": {"td", "th"}, "ul": {"li"}, "ol": {"li"},
+        "dl": {"dt", "dd"},
+    }
+    # All other ancestors block compaction, including pre/code/script/style,
+    # textarea/title, foreign content, templates and unknown elements.
+    ancestors = set(children) | {
+        "html", "body", "div", "section", "article", "main", "nav", "aside",
+        "header", "footer", "blockquote", "figure", "figcaption", "details",
+        "li", "dd", "td", "th", "form",
+    }
+    void = {
+        "area", "base", "br", "col", "embed", "hr", "img", "input", "link",
+        "meta", "param", "source", "track", "wbr",
+    }
+    offsets = [0] + [match.end() for match in re.finditer("\n", payload)]
+
+    class StructuralWhitespace(HTMLParser):
+        def __init__(self):
+            super().__init__(convert_charrefs=False)
+            self.stack, self.spans, self.malformed = [], [], False
+
+        def handle_starttag(self, tag, attrs):
+            if self.stack and self.stack[-1]["tag"] in children:
+                parent = self.stack[-1]
+                if tag not in children[parent["tag"]]:
+                    parent["valid"] = False
+            attrs = dict(attrs)
+            classes = (attrs.get("class") or "").lower().split()
+            sensitive = any(
+                word in {"pre", "literal", "nowrap", "line-block", "math"}
+                or word.startswith("highlight") for word in classes
+            ) or any(key in attrs for key in ("style", "xml:space", "contenteditable"))
+            safe = (not self.stack or self.stack[-1]["safe"]) and tag in ancestors and not sensitive
+            if tag not in void:
+                self.stack.append({"tag": tag, "safe": safe, "valid": True, "spans": []})
+
+        def handle_startendtag(self, tag, attrs):
+            self.handle_starttag(tag, attrs)
+            if tag not in void:
+                self.handle_endtag(tag)
+
+        def handle_endtag(self, tag):
+            if not self.stack or self.stack[-1]["tag"] != tag:
+                self.malformed = True
+                return
+            frame = self.stack.pop()
+            if frame["tag"] in children and frame["safe"] and frame["valid"]:
+                self.spans.extend(frame["spans"])
+
+        def handle_data(self, data):
+            if not self.stack or self.stack[-1]["tag"] not in children:
+                return
+            frame = self.stack[-1]
+            if data and not data.strip(" \t\r\n\f"):
+                line, column = self.getpos()
+                start = offsets[line - 1] + column
+                frame["spans"].append((start, start + len(data)))
+            else:
+                frame["valid"] = False
+
+        def uncertain(self, unused):
+            if self.stack:
+                self.stack[-1]["valid"] = False
+
+        handle_comment = handle_entityref = handle_charref = uncertain
+        handle_decl = handle_pi = unknown_decl = uncertain
+
+    parser = StructuralWhitespace()
+    parser.feed(payload)
+    parser.close()
+    if parser.malformed or parser.stack:
+        return payload
+    pieces, previous = [], 0
+    for start, stop in sorted(parser.spans):
+        pieces.append(payload[previous:start])
+        previous = stop
+    pieces.append(payload[previous:])
+    return "".join(pieces)
+
+
 def on_build_finished(app, exception):
     if exception is not None or app.builder.name not in {"html", "text"}:
         return
@@ -257,14 +349,17 @@ def on_build_finished(app, exception):
             "compact_bytes": len(compact.encode("utf-8")),
         }))
     if app.builder.name == "html":
-        saved_bytes = 0
+        head_saved_bytes = structural_saved_bytes = 0
         for page in sorted(output.rglob("*.html")):
             _check_path(page)
             original = page.read_text(encoding="utf-8")
             compact = compact_head_whitespace(original)
-            saved_bytes += len(original.encode("utf-8")) - len(compact.encode("utf-8"))
-            page.write_text(compact, encoding="utf-8")
-        print("Lossless head-whitespace delivery: " + str(saved_bytes) + " bytes")
+            structural = compact_structural_whitespace(compact)
+            head_saved_bytes += len(original.encode("utf-8")) - len(compact.encode("utf-8"))
+            structural_saved_bytes += len(compact.encode("utf-8")) - len(structural.encode("utf-8"))
+            page.write_text(structural, encoding="utf-8")
+        print("Lossless head-whitespace delivery: " + str(head_saved_bytes) + " bytes")
+        print("Structural-whitespace delivery: " + str(structural_saved_bytes) + " bytes")
     validate_artifact(
         output,
         Path(__file__).resolve().parents[2],
