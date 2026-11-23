@@ -7,6 +7,11 @@ import json
 
 SOURCE = "artifacts/codex/generic_b_dashboard_20261019"
 FILES = {
+    "generic-b-programme-closeout-v1.json",
+    "generic-b-programme-ancestry-diagnostics-v1.json",
+    "generic-b-programme-paired-search-v1.json",
+    "generic-b-programme-ancestry-paired-depth-v1.json",
+    "generic-b-programme-search-depth-v1.json",
     "generic-b-accumulated-findings-v1.json",
     "generic-b-recovered-default-four-v1.json",
     "generic-b-status-summary.json",
@@ -67,6 +72,7 @@ FILES = {
     "generic-b-decoder-fit12-shallow-v1.json",
     "generic-b-corrected-depth-v1.json",
 }
+PROGRAMME_BINDING_SHA256 = 'a3278b07ec18368953b375bee77f8a6f663e623600523b4202c6bdac122265e9'
 LIMIT = 40_960
 HISTORICAL_V3_BYTES = 25_249
 HISTORICAL_V3_SHA256 = "612f24cbfa13d0c6e1440a168da8c31939de6ed7b03dd6cf73954dd98c933d2f"
@@ -498,6 +504,8 @@ def generate(root, output):
     (output / "generic-b-status-summary-v7.json").write_bytes(encoded)
     supplement = _neural_support(source, output)
     return value | {
+        "status_date": "2026-11-23",
+        "programme_closeout": _programme_closeout(source, output),
         "accumulated_findings": _accumulated_findings(source, output),
         "recovered_default_four": _recovered_default_four(source, output),
         "neural_support": supplement,
@@ -846,6 +854,134 @@ def _render_hybrid_teacher_gradient(value):
 
 
 
+def _programme_closeout(source, output):
+    """Deliver bounded reviewed aggregates, retaining all earlier downloads."""
+    path = source / "programme-closeout-binding-v1.json"
+    _require(not path.is_symlink() and path.stat().st_size <= LIMIT,
+             "Unsafe programme binding")
+    raw = path.read_bytes()
+    _require(hashlib.sha256(raw).hexdigest() == PROGRAMME_BINDING_SHA256,
+             "Programme binding differs")
+    binding = json.loads(raw)
+    values, downloads = [], []
+    for entry in binding["sources"]:
+        name = entry["source_file"]
+        _require("/" not in name and "\\" not in name
+                 and entry["download"] in FILES, "Unsafe programme filename")
+        path = source / name
+        _require(not path.is_symlink() and path.stat().st_size <= LIMIT,
+                 "Unsafe programme aggregate")
+        raw = path.read_bytes()
+        _require(len(raw) == entry["source_bytes"]
+                 and hashlib.sha256(raw).hexdigest() == entry["source_sha256"],
+                 "Programme aggregate differs")
+        value = json.loads(raw)
+        _require(value["study_id"] == "gb101_height3_conflict_set_packing_v1",
+                 "Programme study differs")
+        public = value | {"source_summary_sha256": entry["source_sha256"]}
+        payload = (json.dumps(public, sort_keys=True, separators=(",", ":"),
+                              allow_nan=False) + "\n").encode()
+        (output / entry["download"]).write_bytes(payload)
+        values.append(value)
+        downloads.append(dict(filename=entry["download"], bytes=len(payload),
+                              sha256=hashlib.sha256(payload).hexdigest()))
+    core = values[0]
+    _require(core["status"] == "scientifically_closed_no_qualifying_finalist"
+             and core["promotion"] is False
+             and core["independent_coverage"]["processed"] == 0
+             and core["independent_coverage"]["requested"] == 12000,
+             "Programme closure differs")
+    return core | {"metric_download": downloads[0],
+                   "supplementary_downloads": downloads[1:],
+                   "paired_search_metrics": values[2]}
+
+
+def _render_programme_closeout(value):
+    core = value["programme_closeout"]
+    ancestry = core["ancestry"]
+    paired = core["paired_search"]
+    title = "GB101 programme closed: no qualifying full-decay finalist"
+    lines = [title, "-" * len(title), "",
+             "Reviewed 23 November 2026. Retain the reference; no model or oracle is promoted.",
+             "H4 fitting, the later beam policy comparison and ancestry guidance each failed",
+             "their registered scientific requirements. Better TRAIN fit did not deliver a",
+             "qualifying native result. This programme is closed; the campaign is not terminal.", "",
+             'Later same-checkpoint greedy versus beam policy', "~" * len('Later same-checkpoint greedy versus beam policy'), "",
+             "All 96 views completed on 48 reused adaptive-development collisions, eight per",
+             "category. Selected-B source F1 gained 0.11654, paired 95% interval",
+             "[0.05554, 0.17232]. Charged gained 0.12532 and mixed 0.10777. Background event",
+             "acceptance rose by 0.125 for ccbar and ddbar and 0.375 for ssbar, failing nonharm.",
+             "This is a policy comparison, not an isolated beam-width effect. It uses the later",
+             "broader-support checkpoint and must not replace the original GB101 comparison below.",
+             "The application exited during aggregation after inference; saved-row recovery",
+             "completed the analysis without replay. The original failure remains preserved.", ""]
+    backgrounds = core["paired_search_metrics"]["backgrounds"]
+    lines += _table(["Flavour", "Greedy event acceptance", "Beam event acceptance",
+                     "Greedy candidates/support", "Beam candidates/support"], [
+        [cat, f"{b['greedy']['event_acceptance']['conditional_mean']:.3f}",
+         f"{b['beam']['event_acceptance']['conditional_mean']:.3f}",
+         f"{b['greedy']['accepted_candidates']}/{b['greedy']['candidate_support']}",
+         f"{b['beam']['accepted_candidates']}/{b['beam']['candidate_support']}"]
+        for cat, b in sorted(backgrounds.items())])
+    lines += ["Candidate support is actual legal B-typed proposals before packing and differs",
+              "between policies. These ratios do not establish matched rejection efficiency.", "",
+              'H4 neural adaptation and ancestry guidance', "~" * len('H4 neural adaptation and ancestry guidance'), "",
+              "H4 partial-membership teacher BCE/Brier improved in all four support cells.",
+              "Its four-collision adaptive TRAIN assessment gained 0.01997 selected-B F1,",
+              "paired 95% interval [-0.02159, 0.06154], missing +0.02. Mixed H4 source F1",
+              "fell 0.13784 and soft-edge F1 fell 0.09443. Complete recursive H4 support",
+              "remained zero. The H4 fitting variant is closed.", "",
+              "The ancestry head completed 20 updates, 640 collision presentations and 81600",
+              "pair presentations. H1-versus-known-higher labels are narrower than different-tree",
+              "ancestry. Initial TRAIN NLL/Brier were 0.69315/0.25; final equal-collision NLL",
+              "was 0.47844 charged and 0.47464 mixed, with Brier 0.16793/0.16805.",
+              "The separately weighted training-objective NLL 0.46243 is a different estimand.",
+              "An initial ranker conflict stopped native evaluation; recovery reused the fitted",
+              "head and controls and completed all 48 guided rollouts without retraining.", "",
+              "Native ancestry selected-B F1 gained only 0.00103, paired 95% interval",
+              "[-0.03248, 0.03248], missing the +0.02 requirement and positive interval bound.",
+              "Charged H1/H2 source F1 each fell 0.02083. All observed per-flavour background",
+              "increment screens passed; eight events per flavour cannot establish percent-level",
+              "independent nonharm. Missing depth guards remain unavailable.", ""]
+    lines += _table(["Signal category", "Unguided selected-B F1", "Guided selected-B F1"], [
+        [cat, f"{ancestry['signal']['unguided'][cat]['conditional_mean']:.6f}",
+         f"{ancestry['signal']['guided'][cat]['conditional_mean']:.6f}"]
+        for cat in ["charged", "mixed"]])
+    lines += ["Exact recursive topology+PID, topology-only and inclusive source recovery remained",
+              "0/32 nominal signal B slots per view in the later paired-search and ancestry",
+              "comparisons, including actual coherent oracle@1/@4. H4's distinct fit/assessment",
+              "scope retains 72 nominal slots. Oracle pools never drive inference or promotion.", "",
+              'Coverage, versions and cost', "~" * len('Coverage, versions and cost'), "",
+              "Independent coverage remains 0/12000: 0/2000 each in charged, mixed, ccbar,",
+              "uubar, ddbar and ssbar. Additional eligible independent inventory is not established,",
+              "not proved physically absent. No sealed role is reopened. Physical completeness",
+              "and generalization remain unavailable. Paired intervals use seed5001, 2000",
+              "whole-collision draws and registered equal-category weighting.", "",
+              "Original GB101 default-four beam results, accumulated neural nulls and all historical",
+              "downloads remain below. Their dated access observations and next actions are historical;",
+              "this programme closure supersedes those next actions.", ""]
+    lines += _table(["Operation", "Allocated CPU-seconds", "GPU-hours", "Scheduler CPU-seconds"], [
+        ["H4 fitting", 1872, 0.065, 227.284],
+        ["Later paired search", 2578, 0, 527.856],
+        ["Ancestry fitting and preserved failure", 208, 0.007222222222222222, 19.967],
+        ["Ancestry inference recovery", 2284, 0, 463.150]])
+    lines += ["Controls are reused and not recounted; allocation is not utilization. Scheduler and",
+              "application measurements overlap. Ancestry recovery used 1056 model forwards and",
+              "144046 expansions; mean latency 20.69582 s, p95 40.01689 s, peak RSS 1263956 KiB.",
+              "Downloads retain per-category/depth source F1/IoU/precision/recall, membership edges,",
+              "selected and actual oracle endpoints, background denominators, uncertainty, source",
+              "and checkpoint hashes, latency, memory and cost. Fully known points omit redundant",
+              "nominal bounds; unavailable measurements retain bounds. No event rows are published.", "",
+              "Scientific source: ``" + ancestry['source_sha'] + "``.",
+              "Reference checkpoint SHA-256: ``" + ancestry['checkpoint_sha256'] + "``.",
+              "Ancestry head SHA-256: ``" + ancestry['head_sha256'] + "``.", "",
+              "Next: retain the reference. A distinct NN successor requires newly certified support",
+              "or a distinct reproducible first-loss mechanism and independent design/review.", ""]
+    for download in [core['metric_download'], *core['supplementary_downloads']]:
+        lines += [":download:`Reviewed " + download['filename'] + " <" + download['filename'] + ">`.", ""]
+    return lines
+
+
 def _accumulated_findings(source, output):
     """Publish selected reviewed aggregates with explicit adaptive TRAIN scope."""
     path = source / "accumulated-findings-source-v1.json"
@@ -1098,4 +1234,4 @@ def _render_recovered_default_four(value):
 
 def render(value):
     lines = ['Earlier Generic-B campaign results', '----------------------------------', '', 'GB001: completed generic-sample static target-contract census (historical). The frozen pool', 'contained 20,000 B and 8,000 continuum collisions. Static accepted membership was 34,819/40,000', 'and recursive topology/PID compatibility was 6,378/40,000. This was not a learned-model evaluation', 'and these counts are not reconstruction efficiency. The needed provenance is unavailable in the census inputs;', 'original-mDST recovery was not assessed. Every learned metric in this census remains UNAVAILABLE.', '', 'GB002: local transfer complete; scientific authentication unresolved is a historical and now-superseded operational snapshot,', 'an as-of snapshot at the reviewed science-loop resumption boundary, not a live job monitor.', 'The transfer established opaque-byte identity only: 0 authenticated, 1 failed and 3,071 unreached.', 'The event-number and source-entry identities were conflated; replacement status was FAILED_REVIEW_REQUIRED.', 'The reviewed Astra/Sol science loop has since resumed; in that snapshot payload decoding and the native baseline remain pending.', 'The prospective two Generic B training sample sizes by two network widths do not constitute execution approval.', '', 'The historical heading Latest learned full reconstruction evaluation — CR054 refers to the earlier diagnostic,', 'not the current GB101 comparison displayed above. Channel coverage included 256 signed retained-channel groups.', 'Retained parton compatibility was 12/758; parton ancestry reconstruction is UNAVAILABLE.', 'The flat accepted 1/256 versus 0/256 comparison is not full reconstruction and did not support promotion.', '', 'Historical quality,source/checkpoint versions,uncertainty,cost,unavailable support and limitations remain', 'in the unchanged versioned downloads and historical study pages. No physical tagging-efficiency claim is implied.', '', ':download:`Reviewed v7 GB001, GB002, CR054 and GB101 aggregates with accumulated H2/H1 adaptations <generic-b-status-summary-v7.json>`.', '', ':download:`Historical v6 aggregate with the cap256 intervention retained with its original bytes <generic-b-status-summary-v6.json>`.', '', ':download:`Historical v5 aggregate with the saved-beam diagnosis retained with its original bytes <generic-b-status-summary-v5.json>`.', '', ':download:`Historical corrected v4 aggregate retained with its original bytes <generic-b-status-summary-v4.json>`.', '', ':download:`Historical v3 aggregate retained with its original bytes <generic-b-status-summary.json>`.', '']
-    return _render_accumulated_findings(value) + _render_recovered_default_four(value) + _render_hybrid_teacher_gradient(value) + _render_hybrid_teacher_context(value) + _render_teacher_context_ablation(value) + _render_authenticated_teacher_tradeoff(value) + _render_type_isolation_tradeoff(value) + _render_partial_type_tradeoff(value) + _render_residual_support_refresh(value) + _render_h3_residual(value) + _render_head_gradient(value) + _render_targeted_h3(value) + _render_composite(value) + _render_within_update(value) + _render_state_mixture({}) + _render_query_refresh(value["h2_anchor"]["query-refresh-native"]) + _render_query_interaction(value["h2_anchor"]["query-interaction-native"]) + _render_dynamic(value["h2_anchor"]["dynamic-native"]) + _render_projection(value["h2_anchor"]["projection-native"]) + _render_expanded96(value["h2_anchor"]["expanded96-native"]) + _render_replay(value["h2_anchor"]["replay-native"]) + _render_balanced_refresh(value["h2_anchor"]["balanced-refresh-native"]) + _render_refresh_support(value["h2_anchor"]["refresh-native"]) + _render_joint_native(value["h2_anchor"]["joint-native"]) + _render_decoder_native(value["h2_anchor"]["decoder_native"]) + _render_relation_support(value["h2_anchor"]["relation_support"]) + _render_support_capture(value["h2_anchor"]["support_capture"]) + _render_source_supervision(value["h2_anchor"]["source_supervision"]) + _render_preservation(value["h2_anchor"]["preservation"]) + _render_retained_source(value["h2_anchor"]["retained_source"]) + _render_positive_object(value["h2_anchor"]["positive_object"]) + _render_h2_anchor(value["h2_anchor"]) + _render_supported_h3(value["supported_h3"]) + _render_neural_support(value["neural_support"]) + lines
+    return _render_programme_closeout(value) + _render_accumulated_findings(value) + _render_recovered_default_four(value) + _render_hybrid_teacher_gradient(value) + _render_hybrid_teacher_context(value) + _render_teacher_context_ablation(value) + _render_authenticated_teacher_tradeoff(value) + _render_type_isolation_tradeoff(value) + _render_partial_type_tradeoff(value) + _render_residual_support_refresh(value) + _render_h3_residual(value) + _render_head_gradient(value) + _render_targeted_h3(value) + _render_composite(value) + _render_within_update(value) + _render_state_mixture({}) + _render_query_refresh(value["h2_anchor"]["query-refresh-native"]) + _render_query_interaction(value["h2_anchor"]["query-interaction-native"]) + _render_dynamic(value["h2_anchor"]["dynamic-native"]) + _render_projection(value["h2_anchor"]["projection-native"]) + _render_expanded96(value["h2_anchor"]["expanded96-native"]) + _render_replay(value["h2_anchor"]["replay-native"]) + _render_balanced_refresh(value["h2_anchor"]["balanced-refresh-native"]) + _render_refresh_support(value["h2_anchor"]["refresh-native"]) + _render_joint_native(value["h2_anchor"]["joint-native"]) + _render_decoder_native(value["h2_anchor"]["decoder_native"]) + _render_relation_support(value["h2_anchor"]["relation_support"]) + _render_support_capture(value["h2_anchor"]["support_capture"]) + _render_source_supervision(value["h2_anchor"]["source_supervision"]) + _render_preservation(value["h2_anchor"]["preservation"]) + _render_retained_source(value["h2_anchor"]["retained_source"]) + _render_positive_object(value["h2_anchor"]["positive_object"]) + _render_h2_anchor(value["h2_anchor"]) + _render_supported_h3(value["supported_h3"]) + _render_neural_support(value["neural_support"]) + lines
