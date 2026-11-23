@@ -19,6 +19,9 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Independently reviewed bounded HTML delivery repairs; scientific downloads unchanged.
+  - fd8d185add91dc1c4b30591dd6d11c82e2eae35b
+  - 9d7d9a6834046df75e41dc6d2d2c79f9f027645e
   # Reviewed Generic-B programme closure; bounded aggregates, no promotion.
   - 3fe6adf4353bcca8347a0e61081ea998b3b22f6f
   # Reviewed coalesced Generic-B adaptive TRAIN findings; historical downloads retained.
