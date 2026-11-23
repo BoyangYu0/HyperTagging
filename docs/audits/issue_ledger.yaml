@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Reviewed Generic-B programme closure; bounded aggregates, no promotion.
+  - 3fe6adf4353bcca8347a0e61081ea998b3b22f6f
   # Reviewed coalesced Generic-B adaptive TRAIN findings; historical downloads retained.
   - 8f229af621cb246179d26bd66bd57c987fb2ce80
   # Reviewed lossless head whitespace delivery and navigation assertion.
