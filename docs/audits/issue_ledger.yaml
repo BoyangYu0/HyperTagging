@@ -829,6 +829,12 @@ allowed_post_audit_commits:
   - 301695c97986ca8dcb61055509bed35bbbadaf42
   - 85417544fc1fd2face5685e4bc771956232122d6
   - 24aa70a8ed95d277f099fcf396e8d25a7a89aee4
+  # Reviewed lossless historical-status delivery; scientific content unchanged.
+  - 479acee50b3c072860681ee152bc0a0252acc29d
+  - f379314e6560fff0981c020a97d97f201daf9d81
+  - a46c5d7887c00229f09edca7927bc6bb8e9ab1e2
+  # Output-directory repair candidate; independent review required before publication.
+  - 55dd888b108f1576a022c520da94528272dc7775
 audit_tool_version: hypertagging-audit-integrity-v4
 verification_commands:
   - /home/b/Boyang.Yu/.local/bin/uv lock --check
