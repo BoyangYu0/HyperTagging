@@ -3502,6 +3502,9 @@ def generate_status(repo_root: Path, output_dir: Path) -> dict[str, Any]:
         }
         detail.pop("tree")
         detail.pop("retained")
+    # The page is rendered above; retain complete historical records once in
+    # a bounded lossless archive, with exact per-record reconstruction pointers.
+    _historical_rows.compact_status_records(output, manifest)
     _write(output / "status.json", (json.dumps(manifest, separators=(",", ":"), sort_keys=True, allow_nan=False) + "\n").encode())
     _write(output / "index.rst", rendered_status.encode())
     downloads = ["Study metric downloads", "======================", "",

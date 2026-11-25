@@ -282,3 +282,15 @@ Sphinx search-index JSON is serialized without redundant whitespace before
 artifact validation. Every search term, title, object and document remains
 unchanged. Scientific downloads retain their original format and exact
 historical bytes; all publication limits and privacy checks remain active.
+
+Historical status record delivery
+---------------------------------
+
+The status download indexes complete Phase41--61 records through
+``full_record_download`` pointers into ``phase41-61-status-records.json``.
+The bounded gzip/base32 envelope and standard-library decoder preserve every
+original field, including counts, uncertainty, provenance and limitations.
+Per-record and whole-archive hashes bind exact reconstruction. The page renders
+from the complete records before indexing; all existing historical metric
+and row downloads remain unchanged. Byte limits and privacy checks remain
+unchanged. This is a delivery repair, without new scientific measurements.
