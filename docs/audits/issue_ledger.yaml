@@ -19,6 +19,8 @@ allowed_post_audit_paths:
   - docs/audits/archive/2026-08-02_6e46423_production_integrity_correction.md
   - notebooks/index.yaml
 allowed_post_audit_commits:
+  # Independently reviewed pairwise TRAIN publication; no model promotion.
+  - 3384ead4459baa83ca6c8f990a7ca1a64e63c55e
   # Independently reviewed bounded HTML delivery repairs; scientific downloads unchanged.
   - fd8d185add91dc1c4b30591dd6d11c82e2eae35b
   - 9d7d9a6834046df75e41dc6d2d2c79f9f027645e
