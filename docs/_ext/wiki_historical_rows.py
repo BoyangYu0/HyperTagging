@@ -145,7 +145,7 @@ def compact_status_records(output, manifest):
     (output / "phase41-61-status-decoder.txt").write_text(STATUS_DECODER)
 
 
-STATUS_DECODER = '''# Python 3 standard library: restore the complete historical status records.
+STATUS_DECODER = r'''# Python 3 standard library: restore the complete historical status records.
 # Usage: python phase41-61-status-decoder.txt
 # Run beside status.json and phase41-61-status-records.json.
 import base64, hashlib, json, pathlib, zlib
