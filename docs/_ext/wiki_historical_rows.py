@@ -126,6 +126,7 @@ def compact_status_records(output, manifest):
     if codec.decode(json.loads(encoded), 5_000_000) != data:
         raise ValueError("Historical status delivery mismatch")
     filename = "phase41-61-status-records.json"
+    output.mkdir(parents=True, exist_ok=True)
     (output / filename).write_bytes(encoded)
     for phase, record in records.items():
         reconstruction[phase] = {
