@@ -835,6 +835,8 @@ allowed_post_audit_commits:
   - a46c5d7887c00229f09edca7927bc6bb8e9ab1e2
   # Output-directory repair candidate; independent review required before publication.
   - 55dd888b108f1576a022c520da94528272dc7775
+  # Historical archive filename expectation candidate; independent review required before publication.
+  - bc9a88b1dac52fb01a8282024d06a9b10c66b4d6
 audit_tool_version: hypertagging-audit-integrity-v4
 verification_commands:
   - /home/b/Boyang.Yu/.local/bin/uv lock --check
