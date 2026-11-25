@@ -236,7 +236,10 @@ def test_sources_are_hashed_but_never_copied_or_named(evidence, tmp_path):
         assert "path" not in source and "download" not in source
         assert path not in published
         assert (evidence / path).read_text() not in published
-    assert {path.name for path in output.iterdir()} == {"index.rst", "downloads.rst", "status.json"}
+    assert {path.name for path in output.iterdir()} == {
+        "index.rst", "downloads.rst", "status.json",
+        "phase41-61-status-records.json", "phase41-61-status-decoder.txt",
+    }
     assert manifest["provenance"]["as_of"] is None
     assert manifest["audit"]["revision_match"] == "unknown"
     assert json.loads((output / "status.json").read_text()) == manifest
