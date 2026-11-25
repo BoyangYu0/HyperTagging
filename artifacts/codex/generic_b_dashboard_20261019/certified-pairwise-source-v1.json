@@ -1,0 +1,1441 @@
+{
+  "backgrounds": {
+    "ccbar": {
+      "candidate_acceptance": null,
+      "event_acceptance": null,
+      "processed": 0,
+      "requested": 2000,
+      "unavailable": 2000
+    },
+    "ddbar": {
+      "candidate_acceptance": null,
+      "event_acceptance": null,
+      "processed": 0,
+      "requested": 2000,
+      "unavailable": 2000
+    },
+    "ssbar": {
+      "candidate_acceptance": null,
+      "event_acceptance": null,
+      "processed": 0,
+      "requested": 2000,
+      "unavailable": 2000
+    },
+    "uubar": {
+      "candidate_acceptance": null,
+      "event_acceptance": null,
+      "processed": 0,
+      "requested": 2000,
+      "unavailable": 2000
+    }
+  },
+  "compute": {
+    "allocated_cpu_seconds": 2698,
+    "allocated_gpu_hours": 0.01,
+    "elapsed_seconds": 1241,
+    "other_local_overhead": "incompletely measured",
+    "scheduler_used_cpu_seconds": 496.399
+  },
+  "control": "Completed matched BCE control reused",
+  "decision": "Native effect below registered margin and interval includes zero; observed mixed upper-depth nonharm failures. Not evidence of equivalence or statistically established harm.",
+  "depth_comparison": {
+    "H1:soft_edge_f1": {
+      "charged": {
+        "conditional_paired95": [
+          -0.04960142299006464,
+          0.02967721769651916
+        ],
+        "conditional_paired_delta": -0.010910127454245102,
+        "known_pairs": {
+          "charged": 16
+        }
+      },
+      "equal_category": {
+        "conditional_paired95": [
+          -0.019085873350271395,
+          0.030597251730789844
+        ],
+        "conditional_paired_delta": 0.00456230452553982,
+        "known_pairs": {
+          "charged": 16,
+          "mixed": 10
+        }
+      },
+      "mixed": {
+        "conditional_paired95": [
+          -0.006250000000000002,
+          0.052261691195514694
+        ],
+        "conditional_paired_delta": 0.02003473650532474,
+        "known_pairs": {
+          "mixed": 10
+        }
+      }
+    },
+    "H1:source_f1": {
+      "charged": {
+        "conditional_paired95": [
+          -0.027085193452380956,
+          0.0181547619047619
+        ],
+        "conditional_paired_delta": -0.004501488095238097,
+        "known_pairs": {
+          "charged": 16
+        }
+      },
+      "equal_category": {
+        "conditional_paired95": [
+          -0.010609033978174606,
+          0.030246414103835953
+        ],
+        "conditional_paired_delta": 0.009257192460317457,
+        "known_pairs": {
+          "charged": 16,
+          "mixed": 10
+        }
+      },
+      "mixed": {
+        "conditional_paired95": [
+          -0.0078125,
+          0.057539682539682536
+        ],
+        "conditional_paired_delta": 0.02301587301587301,
+        "known_pairs": {
+          "mixed": 10
+        }
+      }
+    },
+    "H2:soft_edge_f1": {
+      "charged": {
+        "conditional_paired95": [
+          -0.03924154897466233,
+          0.02084668758638891
+        ],
+        "conditional_paired_delta": -0.005225397648671301,
+        "known_pairs": {
+          "charged": 16
+        }
+      },
+      "equal_category": {
+        "conditional_paired95": [
+          -0.011867098866104934,
+          0.024071864598682727
+        ],
+        "conditional_paired_delta": 0.007532055807391561,
+        "known_pairs": {
+          "charged": 16,
+          "mixed": 10
+        }
+      },
+      "mixed": {
+        "conditional_paired95": [
+          0.0042310405643739,
+          0.039886176051196716
+        ],
+        "conditional_paired_delta": 0.020289509263454422,
+        "known_pairs": {
+          "mixed": 10
+        }
+      }
+    },
+    "H2:source_f1": {
+      "charged": {
+        "conditional_paired95": [
+          -0.04822679924242425,
+          0.04201129599567098
+        ],
+        "conditional_paired_delta": -0.0019886363636363556,
+        "known_pairs": {
+          "charged": 16
+        }
+      },
+      "equal_category": {
+        "conditional_paired95": [
+          -0.017156762193181366,
+          0.037119416939866465
+        ],
+        "conditional_paired_delta": 0.009440797384876336,
+        "known_pairs": {
+          "charged": 16,
+          "mixed": 10
+        }
+      },
+      "mixed": {
+        "conditional_paired95": [
+          -0.004629629629629629,
+          0.05413096108326367
+        ],
+        "conditional_paired_delta": 0.02087023113338903,
+        "known_pairs": {
+          "mixed": 10
+        }
+      }
+    },
+    "H3:soft_edge_f1": {
+      "charged": {
+        "conditional_paired95": [
+          -0.009229216334726977,
+          0.03232602043814026
+        ],
+        "conditional_paired_delta": 0.010115427278930016,
+        "known_pairs": {
+          "charged": 16
+        }
+      },
+      "equal_category": {
+        "conditional_paired95": [
+          -0.036292718565365464,
+          0.017029737438106537
+        ],
+        "conditional_paired_delta": -0.006069728560807677,
+        "known_pairs": {
+          "charged": 16,
+          "mixed": 10
+        }
+      },
+      "mixed": {
+        "conditional_paired95": [
+          -0.07921656902144308,
+          0.017512988989462068
+        ],
+        "conditional_paired_delta": -0.02225488440054537,
+        "known_pairs": {
+          "mixed": 10
+        }
+      }
+    },
+    "H3:source_f1": {
+      "charged": {
+        "conditional_paired95": [
+          -0.037506634756175196,
+          0.025321293290043286
+        ],
+        "conditional_paired_delta": -0.0061634597020626455,
+        "known_pairs": {
+          "charged": 16
+        }
+      },
+      "equal_category": {
+        "conditional_paired95": [
+          -0.052510758660089085,
+          0.018405905263762488
+        ],
+        "conditional_paired_delta": -0.014896944363614256,
+        "known_pairs": {
+          "charged": 16,
+          "mixed": 10
+        }
+      },
+      "mixed": {
+        "conditional_paired95": [
+          -0.0906287488871221,
+          0.036749716333049666
+        ],
+        "conditional_paired_delta": -0.023630429025165867,
+        "known_pairs": {
+          "mixed": 10
+        }
+      }
+    },
+    "H4:soft_edge_f1": {
+      "charged": {
+        "conditional_paired95": [
+          -0.009509004515030646,
+          0.05723542498690038
+        ],
+        "conditional_paired_delta": 0.02285031500938768,
+        "known_pairs": {
+          "charged": 16
+        }
+      },
+      "equal_category": {
+        "conditional_paired95": [
+          -0.033061060519596584,
+          0.022346664231411725
+        ],
+        "conditional_paired_delta": -0.0023472883730151946,
+        "known_pairs": {
+          "charged": 16,
+          "mixed": 9
+        }
+      },
+      "mixed": {
+        "conditional_paired95": [
+          -0.077795771479982,
+          0.005488721804511274
+        ],
+        "conditional_paired_delta": -0.02754489175541807,
+        "known_pairs": {
+          "mixed": 9
+        }
+      }
+    },
+    "H4:source_f1": {
+      "charged": {
+        "conditional_paired95": [
+          -0.04282157742829814,
+          0.07558690175521578
+        ],
+        "conditional_paired_delta": 0.013807569479226216,
+        "known_pairs": {
+          "charged": 16
+        }
+      },
+      "equal_category": {
+        "conditional_paired95": [
+          -0.06463218972287844,
+          0.02950226495425392
+        ],
+        "conditional_paired_delta": -0.012952559018332475,
+        "known_pairs": {
+          "charged": 16,
+          "mixed": 9
+        }
+      },
+      "mixed": {
+        "conditional_paired95": [
+          -0.11907958301550975,
+          0.012028708133971267
+        ],
+        "conditional_paired_delta": -0.03971268751589117,
+        "known_pairs": {
+          "mixed": 9
+        }
+      }
+    },
+    "H5:soft_edge_f1": {
+      "charged": {
+        "conditional_paired95": [
+          -0.006607377695248921,
+          0.11210786784659495
+        ],
+        "conditional_paired_delta": 0.050327880430479026,
+        "known_pairs": {
+          "charged": 11
+        }
+      },
+      "equal_category": {
+        "conditional_paired95": [
+          -0.012603627298515645,
+          0.05326163659625014
+        ],
+        "conditional_paired_delta": 0.019390038549309985,
+        "known_pairs": {
+          "charged": 11,
+          "mixed": 8
+        }
+      },
+      "mixed": {
+        "conditional_paired95": [
+          -0.04238516459215264,
+          0.0032581453634085247
+        ],
+        "conditional_paired_delta": -0.011547803331859056,
+        "known_pairs": {
+          "mixed": 8
+        }
+      }
+    },
+    "H5:source_f1": {
+      "charged": {
+        "conditional_paired95": [
+          -0.030229627003820543,
+          0.13651589789520813
+        ],
+        "conditional_paired_delta": 0.04982931810720263,
+        "known_pairs": {
+          "charged": 11
+        }
+      },
+      "equal_category": {
+        "conditional_paired95": [
+          -0.048023549163903514,
+          0.054203586109672165
+        ],
+        "conditional_paired_delta": 0.003917122107788509,
+        "known_pairs": {
+          "charged": 11,
+          "mixed": 8
+        }
+      },
+      "mixed": {
+        "conditional_paired95": [
+          -0.10785831574008913,
+          0.0
+        ],
+        "conditional_paired_delta": -0.041995073891625614,
+        "known_pairs": {
+          "mixed": 8
+        }
+      }
+    },
+    "H6:soft_edge_f1": {
+      "charged": {
+        "conditional_paired95": null,
+        "conditional_paired_delta": null,
+        "known_pairs": {
+          "charged": 0
+        }
+      },
+      "equal_category": {
+        "conditional_paired95": null,
+        "conditional_paired_delta": null,
+        "known_pairs": {
+          "charged": 0,
+          "mixed": 0
+        }
+      },
+      "mixed": {
+        "conditional_paired95": null,
+        "conditional_paired_delta": null,
+        "known_pairs": {
+          "mixed": 0
+        }
+      }
+    },
+    "H6:source_f1": {
+      "charged": {
+        "conditional_paired95": null,
+        "conditional_paired_delta": null,
+        "known_pairs": {
+          "charged": 0
+        }
+      },
+      "equal_category": {
+        "conditional_paired95": null,
+        "conditional_paired_delta": null,
+        "known_pairs": {
+          "charged": 0,
+          "mixed": 0
+        }
+      },
+      "mixed": {
+        "conditional_paired95": null,
+        "conditional_paired_delta": null,
+        "known_pairs": {
+          "mixed": 0
+        }
+      }
+    }
+  },
+  "endpoints": {
+    "exact_topology_pid:event_any": {
+      "charged": {
+        "C_BCE_reuse": {
+          "conditional_mean": 0.0,
+          "known": 16,
+          "nominal_bounds": [
+            0.0,
+            0.0
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": 0.0,
+          "sum": 0.0,
+          "unavailable": 0
+        },
+        "P_parent": {
+          "conditional_mean": 0.0,
+          "known": 16,
+          "nominal_bounds": [
+            0.0,
+            0.0
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": 0.0,
+          "sum": 0.0,
+          "unavailable": 0
+        },
+        "T_BCE_pairwise": {
+          "conditional_mean": 0.0,
+          "known": 16,
+          "nominal_bounds": [
+            0.0,
+            0.0
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": 0.0,
+          "sum": 0.0,
+          "unavailable": 0
+        }
+      },
+      "mixed": {
+        "C_BCE_reuse": {
+          "conditional_mean": 0.0,
+          "known": 10,
+          "nominal_bounds": [
+            0.0,
+            0.375
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": null,
+          "sum": 0.0,
+          "unavailable": 6
+        },
+        "P_parent": {
+          "conditional_mean": 0.0,
+          "known": 10,
+          "nominal_bounds": [
+            0.0,
+            0.375
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": null,
+          "sum": 0.0,
+          "unavailable": 6
+        },
+        "T_BCE_pairwise": {
+          "conditional_mean": 0.0,
+          "known": 10,
+          "nominal_bounds": [
+            0.0,
+            0.375
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": null,
+          "sum": 0.0,
+          "unavailable": 6
+        }
+      }
+    },
+    "exact_topology_pid:event_both": {
+      "charged": {
+        "C_BCE_reuse": {
+          "conditional_mean": 0.0,
+          "known": 16,
+          "nominal_bounds": [
+            0.0,
+            0.0
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": 0.0,
+          "sum": 0.0,
+          "unavailable": 0
+        },
+        "P_parent": {
+          "conditional_mean": 0.0,
+          "known": 16,
+          "nominal_bounds": [
+            0.0,
+            0.0
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": 0.0,
+          "sum": 0.0,
+          "unavailable": 0
+        },
+        "T_BCE_pairwise": {
+          "conditional_mean": 0.0,
+          "known": 16,
+          "nominal_bounds": [
+            0.0,
+            0.0
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": 0.0,
+          "sum": 0.0,
+          "unavailable": 0
+        }
+      },
+      "mixed": {
+        "C_BCE_reuse": {
+          "conditional_mean": 0.0,
+          "known": 10,
+          "nominal_bounds": [
+            0.0,
+            0.375
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": null,
+          "sum": 0.0,
+          "unavailable": 6
+        },
+        "P_parent": {
+          "conditional_mean": 0.0,
+          "known": 10,
+          "nominal_bounds": [
+            0.0,
+            0.375
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": null,
+          "sum": 0.0,
+          "unavailable": 6
+        },
+        "T_BCE_pairwise": {
+          "conditional_mean": 0.0,
+          "known": 10,
+          "nominal_bounds": [
+            0.0,
+            0.375
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": null,
+          "sum": 0.0,
+          "unavailable": 6
+        }
+      }
+    },
+    "exact_topology_pid:per_B": {
+      "charged": {
+        "C_BCE_reuse": {
+          "conditional_mean": 0.0,
+          "known": 16,
+          "nominal_bounds": [
+            0.0,
+            0.0
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": 0.0,
+          "sum": 0.0,
+          "unavailable": 0
+        },
+        "P_parent": {
+          "conditional_mean": 0.0,
+          "known": 16,
+          "nominal_bounds": [
+            0.0,
+            0.0
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": 0.0,
+          "sum": 0.0,
+          "unavailable": 0
+        },
+        "T_BCE_pairwise": {
+          "conditional_mean": 0.0,
+          "known": 16,
+          "nominal_bounds": [
+            0.0,
+            0.0
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": 0.0,
+          "sum": 0.0,
+          "unavailable": 0
+        }
+      },
+      "mixed": {
+        "C_BCE_reuse": {
+          "conditional_mean": 0.0,
+          "known": 10,
+          "nominal_bounds": [
+            0.0,
+            0.375
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": null,
+          "sum": 0.0,
+          "unavailable": 6
+        },
+        "P_parent": {
+          "conditional_mean": 0.0,
+          "known": 10,
+          "nominal_bounds": [
+            0.0,
+            0.375
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": null,
+          "sum": 0.0,
+          "unavailable": 6
+        },
+        "T_BCE_pairwise": {
+          "conditional_mean": 0.0,
+          "known": 10,
+          "nominal_bounds": [
+            0.0,
+            0.375
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": null,
+          "sum": 0.0,
+          "unavailable": 6
+        }
+      }
+    },
+    "inclusive_source_recovery:event_any": {
+      "charged": {
+        "C_BCE_reuse": {
+          "conditional_mean": 0.0,
+          "known": 16,
+          "nominal_bounds": [
+            0.0,
+            0.0
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": 0.0,
+          "sum": 0.0,
+          "unavailable": 0
+        },
+        "P_parent": {
+          "conditional_mean": 0.0,
+          "known": 16,
+          "nominal_bounds": [
+            0.0,
+            0.0
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": 0.0,
+          "sum": 0.0,
+          "unavailable": 0
+        },
+        "T_BCE_pairwise": {
+          "conditional_mean": 0.0,
+          "known": 16,
+          "nominal_bounds": [
+            0.0,
+            0.0
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": 0.0,
+          "sum": 0.0,
+          "unavailable": 0
+        }
+      },
+      "mixed": {
+        "C_BCE_reuse": {
+          "conditional_mean": 0.0,
+          "known": 10,
+          "nominal_bounds": [
+            0.0,
+            0.375
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": null,
+          "sum": 0.0,
+          "unavailable": 6
+        },
+        "P_parent": {
+          "conditional_mean": 0.0,
+          "known": 10,
+          "nominal_bounds": [
+            0.0,
+            0.375
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": null,
+          "sum": 0.0,
+          "unavailable": 6
+        },
+        "T_BCE_pairwise": {
+          "conditional_mean": 0.0,
+          "known": 10,
+          "nominal_bounds": [
+            0.0,
+            0.375
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": null,
+          "sum": 0.0,
+          "unavailable": 6
+        }
+      }
+    },
+    "inclusive_source_recovery:event_both": {
+      "charged": {
+        "C_BCE_reuse": {
+          "conditional_mean": 0.0,
+          "known": 16,
+          "nominal_bounds": [
+            0.0,
+            0.0
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": 0.0,
+          "sum": 0.0,
+          "unavailable": 0
+        },
+        "P_parent": {
+          "conditional_mean": 0.0,
+          "known": 16,
+          "nominal_bounds": [
+            0.0,
+            0.0
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": 0.0,
+          "sum": 0.0,
+          "unavailable": 0
+        },
+        "T_BCE_pairwise": {
+          "conditional_mean": 0.0,
+          "known": 16,
+          "nominal_bounds": [
+            0.0,
+            0.0
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": 0.0,
+          "sum": 0.0,
+          "unavailable": 0
+        }
+      },
+      "mixed": {
+        "C_BCE_reuse": {
+          "conditional_mean": 0.0,
+          "known": 10,
+          "nominal_bounds": [
+            0.0,
+            0.375
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": null,
+          "sum": 0.0,
+          "unavailable": 6
+        },
+        "P_parent": {
+          "conditional_mean": 0.0,
+          "known": 10,
+          "nominal_bounds": [
+            0.0,
+            0.375
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": null,
+          "sum": 0.0,
+          "unavailable": 6
+        },
+        "T_BCE_pairwise": {
+          "conditional_mean": 0.0,
+          "known": 10,
+          "nominal_bounds": [
+            0.0,
+            0.375
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": null,
+          "sum": 0.0,
+          "unavailable": 6
+        }
+      }
+    },
+    "inclusive_source_recovery:per_B": {
+      "charged": {
+        "C_BCE_reuse": {
+          "conditional_mean": 0.0,
+          "known": 16,
+          "nominal_bounds": [
+            0.0,
+            0.0
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": 0.0,
+          "sum": 0.0,
+          "unavailable": 0
+        },
+        "P_parent": {
+          "conditional_mean": 0.0,
+          "known": 16,
+          "nominal_bounds": [
+            0.0,
+            0.0
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": 0.0,
+          "sum": 0.0,
+          "unavailable": 0
+        },
+        "T_BCE_pairwise": {
+          "conditional_mean": 0.0,
+          "known": 16,
+          "nominal_bounds": [
+            0.0,
+            0.0
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": 0.0,
+          "sum": 0.0,
+          "unavailable": 0
+        }
+      },
+      "mixed": {
+        "C_BCE_reuse": {
+          "conditional_mean": 0.0,
+          "known": 10,
+          "nominal_bounds": [
+            0.0,
+            0.375
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": null,
+          "sum": 0.0,
+          "unavailable": 6
+        },
+        "P_parent": {
+          "conditional_mean": 0.0,
+          "known": 10,
+          "nominal_bounds": [
+            0.0,
+            0.375
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": null,
+          "sum": 0.0,
+          "unavailable": 6
+        },
+        "T_BCE_pairwise": {
+          "conditional_mean": 0.0,
+          "known": 10,
+          "nominal_bounds": [
+            0.0,
+            0.375
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": null,
+          "sum": 0.0,
+          "unavailable": 6
+        }
+      }
+    },
+    "topology_only:event_any": {
+      "charged": {
+        "C_BCE_reuse": {
+          "conditional_mean": 0.0,
+          "known": 16,
+          "nominal_bounds": [
+            0.0,
+            0.0
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": 0.0,
+          "sum": 0.0,
+          "unavailable": 0
+        },
+        "P_parent": {
+          "conditional_mean": 0.0,
+          "known": 16,
+          "nominal_bounds": [
+            0.0,
+            0.0
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": 0.0,
+          "sum": 0.0,
+          "unavailable": 0
+        },
+        "T_BCE_pairwise": {
+          "conditional_mean": 0.0,
+          "known": 16,
+          "nominal_bounds": [
+            0.0,
+            0.0
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": 0.0,
+          "sum": 0.0,
+          "unavailable": 0
+        }
+      },
+      "mixed": {
+        "C_BCE_reuse": {
+          "conditional_mean": 0.0,
+          "known": 10,
+          "nominal_bounds": [
+            0.0,
+            0.375
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": null,
+          "sum": 0.0,
+          "unavailable": 6
+        },
+        "P_parent": {
+          "conditional_mean": 0.0,
+          "known": 10,
+          "nominal_bounds": [
+            0.0,
+            0.375
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": null,
+          "sum": 0.0,
+          "unavailable": 6
+        },
+        "T_BCE_pairwise": {
+          "conditional_mean": 0.0,
+          "known": 10,
+          "nominal_bounds": [
+            0.0,
+            0.375
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": null,
+          "sum": 0.0,
+          "unavailable": 6
+        }
+      }
+    },
+    "topology_only:event_both": {
+      "charged": {
+        "C_BCE_reuse": {
+          "conditional_mean": 0.0,
+          "known": 16,
+          "nominal_bounds": [
+            0.0,
+            0.0
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": 0.0,
+          "sum": 0.0,
+          "unavailable": 0
+        },
+        "P_parent": {
+          "conditional_mean": 0.0,
+          "known": 16,
+          "nominal_bounds": [
+            0.0,
+            0.0
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": 0.0,
+          "sum": 0.0,
+          "unavailable": 0
+        },
+        "T_BCE_pairwise": {
+          "conditional_mean": 0.0,
+          "known": 16,
+          "nominal_bounds": [
+            0.0,
+            0.0
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": 0.0,
+          "sum": 0.0,
+          "unavailable": 0
+        }
+      },
+      "mixed": {
+        "C_BCE_reuse": {
+          "conditional_mean": 0.0,
+          "known": 10,
+          "nominal_bounds": [
+            0.0,
+            0.375
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": null,
+          "sum": 0.0,
+          "unavailable": 6
+        },
+        "P_parent": {
+          "conditional_mean": 0.0,
+          "known": 10,
+          "nominal_bounds": [
+            0.0,
+            0.375
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": null,
+          "sum": 0.0,
+          "unavailable": 6
+        },
+        "T_BCE_pairwise": {
+          "conditional_mean": 0.0,
+          "known": 10,
+          "nominal_bounds": [
+            0.0,
+            0.375
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": null,
+          "sum": 0.0,
+          "unavailable": 6
+        }
+      }
+    },
+    "topology_only:per_B": {
+      "charged": {
+        "C_BCE_reuse": {
+          "conditional_mean": 0.0,
+          "known": 16,
+          "nominal_bounds": [
+            0.0,
+            0.0
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": 0.0,
+          "sum": 0.0,
+          "unavailable": 0
+        },
+        "P_parent": {
+          "conditional_mean": 0.0,
+          "known": 16,
+          "nominal_bounds": [
+            0.0,
+            0.0
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": 0.0,
+          "sum": 0.0,
+          "unavailable": 0
+        },
+        "T_BCE_pairwise": {
+          "conditional_mean": 0.0,
+          "known": 16,
+          "nominal_bounds": [
+            0.0,
+            0.0
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": 0.0,
+          "sum": 0.0,
+          "unavailable": 0
+        }
+      },
+      "mixed": {
+        "C_BCE_reuse": {
+          "conditional_mean": 0.0,
+          "known": 10,
+          "nominal_bounds": [
+            0.0,
+            0.375
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": null,
+          "sum": 0.0,
+          "unavailable": 6
+        },
+        "P_parent": {
+          "conditional_mean": 0.0,
+          "known": 10,
+          "nominal_bounds": [
+            0.0,
+            0.375
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": null,
+          "sum": 0.0,
+          "unavailable": 6
+        },
+        "T_BCE_pairwise": {
+          "conditional_mean": 0.0,
+          "known": 10,
+          "nominal_bounds": [
+            0.0,
+            0.375
+          ],
+          "nominal_collisions": 16,
+          "nominal_mean": null,
+          "sum": 0.0,
+          "unavailable": 6
+        }
+      }
+    }
+  },
+  "independent": false,
+  "independent_coverage": {
+    "processed": 0,
+    "requested": 12000
+  },
+  "limitations": [
+    "Conditional collision-level intervals do not establish generalization; unavailable nominal observations retain bounds.",
+    "Observed mixed H3/H4/H5 source and H3/H4 edge nonharm failures are not statistically established harm.",
+    "Independent coverage 0/12000 and all four background acceptances unavailable.",
+    "Retain accumulated full-depth greedy/beam evidence and all historical downloads; oracle pools do not justify promotion."
+  ],
+  "next_scientific_action": "Certify additional TRAIN support before conditional matched BCE breadth fitting; no same-support sweep.",
+  "nominal": {
+    "disposition_counts": {
+      "processed": 52,
+      "unavailable_parent_state": 12
+    },
+    "historical_unavailable_collision_views": 12,
+    "nominal_B_slots": 128,
+    "nominal_collision_views": 64
+  },
+  "observation_date": "2026-11-25",
+  "optimizer_updates": 20,
+  "parent_mixed_flag": {
+    "conditional_is_not_generalization": true,
+    "conditional_paired95": [
+      -0.10207132711038959,
+      0.012494929584519327
+    ],
+    "conditional_paired_delta": -0.04654893266348374,
+    "known_pairs": {
+      "mixed": 10
+    },
+    "nominal": {
+      "mixed": 16
+    },
+    "nominal_delta_bound95": [
+      -0.6439979937972996,
+      0.6060412794925661
+    ],
+    "nominal_delta_bounds": [
+      -0.4040930829146773,
+      0.3459069170853227
+    ],
+    "nominal_paired_delta": null,
+    "unit": "whole_collision_with_two_B_slots"
+  },
+  "presentations": 640,
+  "primary": {
+    "conditional_is_not_generalization": true,
+    "conditional_paired95": [
+      -0.022107948033487406,
+      0.037041089554150614
+    ],
+    "conditional_paired_delta": 0.007446604028066881,
+    "known_pairs": {
+      "charged": 16,
+      "mixed": 10
+    },
+    "nominal": {
+      "charged": 16,
+      "mixed": 16
+    },
+    "nominal_delta_bound95": [
+      -0.3051520438746518,
+      0.3200588844957072
+    ],
+    "nominal_delta_bounds": [
+      -0.18024652656425103,
+      0.19475347343574897
+    ],
+    "nominal_paired_delta": null,
+    "unit": "whole_collision_with_two_B_slots"
+  },
+  "promotion": false,
+  "reference_retained": true,
+  "registered_effect_margin": 0.02,
+  "role": "adaptive TRAIN diagnostic",
+  "schema": "generic-b-certified-pairwise-publication-candidate-v1",
+  "source_sha": "9c529bf351f41c1a08b12e9a89c36575ae5f79b8",
+  "study_id": "generic_b_H1_certified_pairwise_membership_supervision_v1",
+  "teacher_fit": {
+    "control_reruns": 0,
+    "native_assessment_required": true,
+    "new_decoder_calls": 30,
+    "rows": [
+      {
+        "arm": "T_BCE_pairwise",
+        "categories": {
+          "charged": {
+            "collisions": 5,
+            "metrics": {
+              "BCE": 0.8266659359137218,
+              "Brier": 0.20825053068498772,
+              "F1": 0.06285714285714286,
+              "balanced_BCE": 2.0746873319149017,
+              "complete_certified_rank_separation": 0.0,
+              "inversion_fraction": 0.5630236539060067,
+              "pairwise_loss": 2.6390991745643033,
+              "precision": 0.048333333333333325,
+              "recall": 0.09166666666666666,
+              "treatment_loss": 2.356893253239603
+            }
+          },
+          "mixed": {
+            "collisions": 10,
+            "metrics": {
+              "BCE": 0.8212716538707416,
+              "Brier": 0.20356610907862588,
+              "F1": 0.06907712657712659,
+              "balanced_BCE": 2.2238517775634925,
+              "complete_certified_rank_separation": 0.0,
+              "inversion_fraction": 0.5285042735042735,
+              "pairwise_loss": 2.8630877174037614,
+              "precision": 0.05708874458874459,
+              "recall": 0.13833333333333334,
+              "treatment_loss": 2.5434697474836274
+            }
+          }
+        },
+        "equal_category": {
+          "BCE": 0.8239687948922317,
+          "Brier": 0.2059083198818068,
+          "F1": 0.06596713471713472,
+          "balanced_BCE": 2.149269554739197,
+          "complete_certified_rank_separation": 0.0,
+          "inversion_fraction": 0.5457639637051401,
+          "pairwise_loss": 2.7510934459840324,
+          "precision": 0.05271103896103896,
+          "recall": 0.11499999999999999,
+          "treatment_loss": 2.450181500361615
+        },
+        "independent": false,
+        "pair_is_not_independent_unit": true,
+        "role": "TRAIN",
+        "target_pooled_diagnostic": {
+          "certified_pairs": 2023,
+          "completely_rank_separated_targets": 0.0,
+          "inverted_or_tied_pairs": 1019,
+          "targets": 51
+        },
+        "update": 0
+      },
+      {
+        "arm": "T_BCE_pairwise",
+        "categories": {
+          "charged": {
+            "collisions": 5,
+            "metrics": {
+              "BCE": 0.5493560776114463,
+              "Brier": 0.18756569077571233,
+              "F1": 0.43053613053613055,
+              "balanced_BCE": 0.47451840440432236,
+              "complete_certified_rank_separation": 0.3,
+              "inversion_fraction": 0.11950357920946156,
+              "pairwise_loss": 0.5269830004883367,
+              "precision": 0.2900962000962001,
+              "recall": 0.9166666666666667,
+              "treatment_loss": 0.5007507024463296
+            }
+          },
+          "mixed": {
+            "collisions": 10,
+            "metrics": {
+              "BCE": 0.6044667369127273,
+              "Brier": 0.20053933531045912,
+              "F1": 0.37769876419876425,
+              "balanced_BCE": 0.5461112032830715,
+              "complete_certified_rank_separation": 0.05833333333333333,
+              "inversion_fraction": 0.18529218466718467,
+              "pairwise_loss": 0.6761326348965202,
+              "precision": 0.257027454027454,
+              "recall": 0.8683333333333334,
+              "treatment_loss": 0.6111219190897959
+            }
+          }
+        },
+        "equal_category": {
+          "BCE": 0.5769114072620869,
+          "Brier": 0.19405251304308574,
+          "F1": 0.40411744736744737,
+          "balanced_BCE": 0.5103148038436969,
+          "complete_certified_rank_separation": 0.17916666666666667,
+          "inversion_fraction": 0.1523978819383231,
+          "pairwise_loss": 0.6015578176924284,
+          "precision": 0.2735618270618271,
+          "recall": 0.8925000000000001,
+          "treatment_loss": 0.5559363107680627
+        },
+        "independent": false,
+        "pair_is_not_independent_unit": true,
+        "role": "TRAIN",
+        "target_pooled_diagnostic": {
+          "certified_pairs": 2023,
+          "completely_rank_separated_targets": 4.0,
+          "inverted_or_tied_pairs": 393,
+          "targets": 51
+        },
+        "update": 20
+      },
+      {
+        "arm": "C_BCE_reuse",
+        "categories": {
+          "charged": {
+            "collisions": 5,
+            "metrics": {
+              "BCE": 0.8266659359137218,
+              "Brier": 0.20825053068498772,
+              "F1": 0.06285714285714286,
+              "balanced_BCE": 2.0746873319149017,
+              "complete_certified_rank_separation": 0.0,
+              "inversion_fraction": 0.5630236539060067,
+              "pairwise_loss": 2.6390991745643033,
+              "precision": 0.048333333333333325,
+              "recall": 0.09166666666666666,
+              "treatment_loss": 2.356893253239603
+            }
+          },
+          "mixed": {
+            "collisions": 10,
+            "metrics": {
+              "BCE": 0.8212716538707416,
+              "Brier": 0.20356610907862588,
+              "F1": 0.06907712657712659,
+              "balanced_BCE": 2.2238517775634925,
+              "complete_certified_rank_separation": 0.0,
+              "inversion_fraction": 0.5285042735042735,
+              "pairwise_loss": 2.8630877174037614,
+              "precision": 0.05708874458874459,
+              "recall": 0.13833333333333334,
+              "treatment_loss": 2.5434697474836274
+            }
+          }
+        },
+        "equal_category": {
+          "BCE": 0.8239687948922317,
+          "Brier": 0.2059083198818068,
+          "F1": 0.06596713471713472,
+          "balanced_BCE": 2.149269554739197,
+          "complete_certified_rank_separation": 0.0,
+          "inversion_fraction": 0.5457639637051401,
+          "pairwise_loss": 2.7510934459840324,
+          "precision": 0.05271103896103896,
+          "recall": 0.11499999999999999,
+          "treatment_loss": 2.450181500361615
+        },
+        "independent": false,
+        "pair_is_not_independent_unit": true,
+        "role": "TRAIN",
+        "target_pooled_diagnostic": {
+          "certified_pairs": 2023,
+          "completely_rank_separated_targets": 0.0,
+          "inverted_or_tied_pairs": 1019,
+          "targets": 51
+        },
+        "update": 0
+      },
+      {
+        "arm": "C_BCE_reuse",
+        "categories": {
+          "charged": {
+            "collisions": 5,
+            "metrics": {
+              "BCE": 0.47757692337036134,
+              "Brier": 0.16289439400037128,
+              "F1": 0.42777777777777776,
+              "balanced_BCE": 0.4600389778614044,
+              "complete_certified_rank_separation": 0.3,
+              "inversion_fraction": 0.13593681917211328,
+              "pairwise_loss": 0.5642735360736342,
+              "precision": 0.2937037037037037,
+              "recall": 0.8416666666666668,
+              "treatment_loss": 0.5121562569675193
+            }
+          },
+          "mixed": {
+            "collisions": 10,
+            "metrics": {
+              "BCE": 0.5543938839932283,
+              "Brier": 0.18508907310664652,
+              "F1": 0.3595244015244015,
+              "balanced_BCE": 0.5538277825713158,
+              "complete_certified_rank_separation": 0.03333333333333333,
+              "inversion_fraction": 0.21157055907055908,
+              "pairwise_loss": 0.7465243273494984,
+              "precision": 0.24955561105561105,
+              "recall": 0.765,
+              "treatment_loss": 0.6501760549604071
+            }
+          }
+        },
+        "equal_category": {
+          "BCE": 0.5159854036817948,
+          "Brier": 0.1739917335535089,
+          "F1": 0.39365108965108964,
+          "balanced_BCE": 0.5069333802163601,
+          "complete_certified_rank_separation": 0.16666666666666666,
+          "inversion_fraction": 0.17375368912133618,
+          "pairwise_loss": 0.6553989317115663,
+          "precision": 0.2716296573796574,
+          "recall": 0.8033333333333335,
+          "treatment_loss": 0.5811661559639631
+        },
+        "independent": false,
+        "pair_is_not_independent_unit": true,
+        "role": "TRAIN",
+        "target_pooled_diagnostic": {
+          "certified_pairs": 2023,
+          "completely_rank_separated_targets": 3.0,
+          "inverted_or_tied_pairs": 438,
+          "targets": 51
+        },
+        "update": 20
+      }
+    ]
+  }
+}

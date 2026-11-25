@@ -1,0 +1,11 @@
+{
+  "contains_cohort_member_identifiers": false,
+  "contains_operational_identifiers": false,
+  "private_payloads_copied": false,
+  "publication_review_sha256": "f77c0a9ece430d3f7537aa268bd5f81e4d6301f4ba7106e1b0814da3f3143c52",
+  "schema": "generic-b-certified-pairwise-binding-v1",
+  "source_bytes": 37750,
+  "source_file": "certified-pairwise-source-v1.json",
+  "source_sha256": "b26cd0b9978f07f7a66ee1a436710e9d7685096d7a904a118329abf772322fec",
+  "status_date": "2026-11-25"
+}

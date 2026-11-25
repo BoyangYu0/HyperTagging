@@ -217,7 +217,7 @@ SOURCE_PATHS["reconstruction_phase85_review"] = _phase84_85.SOURCE + "/binding.j
 SOURCE_PATHS["reconstruction_phase83_review"] = _previous_studies.SOURCE + "/binding.json"
 SOURCE_PATHS["reconstruction_phase86_review"] = _phase86.SOURCE + "/binding.json"
 SOURCE_PATHS["reconstruction_cr032_review"] = _cr032.SOURCE + "/binding.json"
-SOURCE_PATHS["generic_b_review"] = _generic_b.SOURCE + "/programme-closeout-binding-v1.json"
+SOURCE_PATHS["generic_b_review"] = _generic_b.SOURCE + "/certified-pairwise-binding-v1.json"
 SOURCE_IDS = {key: f"source-{index:02d}" for index, key in enumerate(SOURCE_PATHS, 1)}
 FRESHNESS_DAYS = 30
 _MAX_SOURCE_BYTES = 5_000_000
@@ -3429,7 +3429,7 @@ def generate_status(repo_root: Path, output_dir: Path) -> dict[str, Any]:
             }
     # These earlier Generic-B families also have complete unchanged downloads.
     # Use the same lossless index contract rather than duplicating their rows.
-    for key in ("neural_support", "supported_h3", "recovered_default_four", "accumulated_findings", "programme_closeout"):
+    for key in ("neural_support", "supported_h3", "recovered_default_four", "accumulated_findings", "programme_closeout", "certified_pairwise"):
         record = generic.get(key)
         if isinstance(record, dict) and "metric_download" in record:
             generic[key] = {

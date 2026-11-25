@@ -7,6 +7,7 @@ import json
 
 SOURCE = "artifacts/codex/generic_b_dashboard_20261019"
 FILES = {
+    "generic-b-certified-pairwise-v1.json",
     "generic-b-programme-closeout-v1.json",
     "generic-b-programme-ancestry-diagnostics-v1.json",
     "generic-b-programme-paired-search-v1.json",
@@ -73,6 +74,7 @@ FILES = {
     "generic-b-corrected-depth-v1.json",
 }
 PROGRAMME_BINDING_SHA256 = 'a3278b07ec18368953b375bee77f8a6f663e623600523b4202c6bdac122265e9'
+PAIRWISE_BINDING_SHA256 = '1101466c35b930270997c459b09829a5f50fe796ce312eca771d4a7bd29d2afb'
 LIMIT = 40_960
 HISTORICAL_V3_BYTES = 25_249
 HISTORICAL_V3_SHA256 = "612f24cbfa13d0c6e1440a168da8c31939de6ed7b03dd6cf73954dd98c933d2f"
@@ -504,7 +506,8 @@ def generate(root, output):
     (output / "generic-b-status-summary-v7.json").write_bytes(encoded)
     supplement = _neural_support(source, output)
     return value | {
-        "status_date": "2026-11-23",
+        "status_date": "2026-11-25",
+        "certified_pairwise": _certified_pairwise(source, output),
         "programme_closeout": _programme_closeout(source, output),
         "accumulated_findings": _accumulated_findings(source, output),
         "recovered_default_four": _recovered_default_four(source, output),
@@ -852,6 +855,109 @@ def _render_hybrid_teacher_context(value):
 def _render_hybrid_teacher_gradient(value):
     return ['GB101 history: H3 gradient protection fails the native screen', '-------------------------------------------------------------', '', 'Reviewed 17 November 2026. Adaptive TRAIN assessment selected-B source F1 reached', '0.179167 versus0.115278 for the hybrid control:delta +0.063889,paired95[0,0.127778].', 'Against both earlier controls the gain was only0.004550,paired95[-0.015899,0.025000].', 'Eight of33 registered checks failed,including selected-B improvement and mixed-category', 'selected-B/H2 nonharm. No promotion. These four reused TRAIN assessment collisions', 'do not establish generalization;fit12 is reported separately.', '', 'The sole change projects conflicting teacher gradients against ordinary H3 gradients', 'before the shared clip1 and AdamW step. Projection applied on26/40 updates. Raw-gradient', 'protection does not guarantee optimizer or native nonharm;type-gradient components may', 'be introduced despite zero added teacher type loss. All105 contexts,88 trainable tensors,', 'initialization,ordinary losses,40 updates and16 native rollouts remained matched.', '', 'The application failed diagnostic closeout after all fitting and rollouts:an omitted', 'measurement hook left210 teacher observations unmeasured. This failure and the failed', 'native screen remain preserved. Separate checkpoint-only recovery is being prepared;', 'no retraining,native replay or diagnostic values are claimed.', '', 'Exact recursive topology+PID,topology-only and inclusive recovery remain0/32,including', 'actual oracle@1/@4. Oracle pools are not deployable. GB101 H3 packing and the inherited', 'bounded donor search remain:width4,generation1 eight candidates/query,later levels four,', 'six generations. Truth is supervision or post-inference scoring only.', '', 'Independent coverage remains0/12000:0/2000 each charged,mixed,ccbar,uubar,ddbar,ssbar.', 'Each continuum flavour acceptance,native proposal/retention quality and physical', 'completeness remain unavailable. Unknown labels remain masked;6/111 nominal parents', 'are unavailable. Shared seed5001,2000 whole-collision draws and equal-category weighting', 'define paired intervals. Complete links retain category/depth F1,IoU,source precision/recall,', 'membership edges,exact endpoints,latency,memory,uncertainty and versions.', '', 'Actual science:6976 allocated CPU-seconds,872 V100-seconds (0.242222 GPU-hours),', '21248 forwards and104120 beam expansions. Publication cost is separate.', 'Next:recover210 missing teacher diagnostics at saved update0/final40,then review mixed', 'preservation before another matched neural intervention. No automatic variant sweep.', 'Scientific source: ``6dd2136cd9b595e1a09b8c21409f8168e1da9a2c``. Checkpoint SHA-256:', '``e65a857f186915b7f07bb95de9bbc402818d35bbccdaffd0ad61c02b27dfc001``.', '', '`hybrid teacher gradient native (complete aggregate JSON) <https://github.com/BoyangYu0/HyperTagging/blob/333230bd181c21e33b055512b800103bea63ec3e/docs/metrics/generic-b-hybrid-teacher-gradient-native-v1.json>`_', '', '`hybrid teacher gradient fit12 shallow (complete aggregate JSON) <https://github.com/BoyangYu0/HyperTagging/blob/333230bd181c21e33b055512b800103bea63ec3e/docs/metrics/generic-b-hybrid-teacher-gradient-fit12-shallow-v1.json>`_', '', '`hybrid teacher gradient fit12 deep (complete aggregate JSON) <https://github.com/BoyangYu0/HyperTagging/blob/333230bd181c21e33b055512b800103bea63ec3e/docs/metrics/generic-b-hybrid-teacher-gradient-fit12-deep-v1.json>`_', '', '`hybrid teacher gradient assessment4 shallow (complete aggregate JSON) <https://github.com/BoyangYu0/HyperTagging/blob/333230bd181c21e33b055512b800103bea63ec3e/docs/metrics/generic-b-hybrid-teacher-gradient-assessment4-shallow-v1.json>`_', '', '`hybrid teacher gradient assessment4 deep (complete aggregate JSON) <https://github.com/BoyangYu0/HyperTagging/blob/333230bd181c21e33b055512b800103bea63ec3e/docs/metrics/generic-b-hybrid-teacher-gradient-assessment4-deep-v1.json>`_', '', 'Earlier reviewed outcomes and all historical downloads remain available.', '']
 
+
+
+def _certified_pairwise(source, output):
+    """Append the independently reviewed TRAIN aggregate without changing history."""
+    binding_path = source / "certified-pairwise-binding-v1.json"
+    path = source / "certified-pairwise-source-v1.json"
+    _require(not binding_path.is_symlink() and not path.is_symlink()
+             and binding_path.stat().st_size <= LIMIT and path.stat().st_size <= LIMIT,
+             "Unsafe certified-pairwise aggregate")
+    binding_raw = binding_path.read_bytes()
+    _require(hashlib.sha256(binding_raw).hexdigest() == PAIRWISE_BINDING_SHA256,
+             "Certified-pairwise binding differs")
+    binding = json.loads(binding_raw)
+    raw = path.read_bytes()
+    _require(binding["source_file"] == path.name and len(raw) == binding["source_bytes"]
+             and hashlib.sha256(raw).hexdigest() == binding["source_sha256"],
+             "Certified-pairwise source differs")
+    value = json.loads(raw)
+    _require(value["schema"] == "generic-b-certified-pairwise-publication-candidate-v1"
+             and value["study_id"] == "generic_b_H1_certified_pairwise_membership_supervision_v1"
+             and value["role"] == "adaptive TRAIN diagnostic"
+             and value["independent"] is False and value["promotion"] is False
+             and value["independent_coverage"] == {"processed": 0, "requested": 12000}
+             and value["nominal"]["disposition_counts"] == {
+                 "processed": 52, "unavailable_parent_state": 12}
+             and value["registered_effect_margin"] == 0.02,
+             "Certified-pairwise scope differs")
+    filename = "generic-b-certified-pairwise-v1.json"
+    public = value | {"schema": "generic-b-certified-pairwise-metrics-v1",
+                      "source_summary_sha256": binding["source_sha256"]}
+    payload = (json.dumps(public, separators=(",", ":"), sort_keys=True,
+                          allow_nan=False) + "\n").encode()
+    (output / filename).write_bytes(payload)
+    return value | {"metric_download": {"filename": filename, "bytes": len(payload),
+                                        "sha256": hashlib.sha256(payload).hexdigest()}}
+
+
+def _render_certified_pairwise(value):
+    reviewed = value["certified_pairwise"]
+    primary = reviewed["primary"]
+    title = "GB101 pairwise TRAIN result: certify broader support next"
+    lines = [title, "-" * len(title), "",
+             "Reviewed 25 November 2026. The accumulated full-depth greedy/beam and neural",
+             "findings below remain in force, including the programme closure. Pairwise",
+             "membership supervision does not establish native benefit over the reused matched",
+             "BCE control. No checkpoint or truth-scored oracle is promoted. The reference is retained.", "",
+             "This adaptive TRAIN diagnostic completed 20 updates and 640 presentations.",
+             "Improved rank fit does not establish downstream reconstruction or generalization.",
+             "Selected-B source F1, equal-category treatment minus matched BCE control:",
+             f"delta +{primary['conditional_paired_delta']}, conditional paired 95% interval",
+             f"[{primary['conditional_paired95'][0]}, {primary['conditional_paired95'][1]}].",
+             f"The registered improvement margin is {reviewed['registered_effect_margin']}; it fails.",
+             "The interval includes zero: neither equivalence nor statistically established harm is claimed.", "",
+             f"Nominal delta bounds: [{primary['nominal_delta_bounds'][0]}, {primary['nominal_delta_bounds'][1]}].",
+             f"Nominal delta bound95: [{primary['nominal_delta_bound95'][0]}, {primary['nominal_delta_bound95'][1]}].",
+             "The nominal point estimate is unavailable. Conditional estimates omit unavailable",
+             "observations; the bounds retain them. Whole collisions with two B slots are the",
+             "paired units, not individual candidates, pairwise labels or repeated views.", "",
+             "Charged/mixed support and depth safeguards", "~" * len("Charged/mixed support and depth safeguards"), "",
+             "There are 52/64 processed comparison views and 12 unavailable parent-state views.",
+             "These are repeated collision views, not 64 independent collisions. Paired charged",
+             "support is 16/16 collisions; mixed support is 10/16, with six unavailable per arm.",
+             "The nominal two-arm comparison contains 128 B slots. Missing observations are",
+             "unavailable, not measured zero successes.", "",
+             "Treatment-minus-control charged and mixed upper-depth differences are shown below.",
+             "Mixed H3/H4/H5 source F1 and H3/H4 soft-edge F1 breach the -0.02 point nonharm",
+             "margin. The broad conditional 95% intervals do not establish significant harm.", ""]
+    rows = []
+    for metric in ("H3:source_f1", "H4:source_f1", "H5:source_f1",
+                   "H3:soft_edge_f1", "H4:soft_edge_f1"):
+        for category in ("charged", "mixed"):
+            record = reviewed["depth_comparison"][metric][category]
+            interval = record["conditional_paired95"]
+            rows.append([metric, category, f"{record['conditional_paired_delta']:+.8f}",
+                         f"[{interval[0]:.8f}, {interval[1]:.8f}]"])
+    lines += _table(["Depth metric", "Category", "Conditional difference", "Conditional paired 95%"], rows)
+    parent = reviewed["parent_mixed_flag"]
+    lines += [f"The separate mixed comparison with the parent changes selected-B F1 by {parent['conditional_paired_delta']:+.8f},",
+              f"conditional 95% [{parent['conditional_paired95'][0]:.8f}, {parent['conditional_paired95'][1]:.8f}].",
+              "That comparison is distinct from treatment minus the matched BCE control.", "",
+              "Independent coverage and measured cost", "~" * len("Independent coverage and measured cost"), "",
+              "Independent coverage is 0/12000: 0/2000 in each of charged, mixed, ccbar, uubar,",
+              "ddbar and ssbar. All four current background acceptances are UNAVAILABLE.",
+              "The historical eight-per-flavour background panel below remains separately scoped.",
+              "Missing background evidence is not zero fake-B acceptance. Retained-source proxies",
+              "do not establish FEI-equivalent physical tagging efficiency.", "",
+              "Measured scientific compute: 2698 allocated CPU-seconds, 496.399 used CPU-seconds,",
+              "and 0.01 GPU-hours; elapsed scientific operation time 1241 seconds. Allocation",
+              "is not utilization. Other local scientific overhead was incompletely measured.",
+              "The completed matched BCE control was reused; no control rerun is counted.",
+              "Publication overhead is recorded separately; this update starts no scientific jobs.", "",
+              "Next scientific step: certified support expansion. Retain the reference, certify",
+              "additional TRAIN support, then independently review and admit any finite matched",
+              "BCE breadth treatment. The 32 completed support captures are capture progress,",
+              "not independent assessment; do not replay them. Support certification and separate",
+              "admission remain required. No same-support sweep or automatic successor is authorized.", "",
+              "Original default-width-four greedy/beam, later full-depth policy comparisons,",
+              "model-ranked top-1 and post-inference oracle@1/@4 pools remain distinct below.",
+              "All historical downloads remain unchanged. The new download retains the exact",
+              "primary bounds, all charged/mixed depth metrics, unavailable H6 support, endpoint",
+              "and background denominators, teacher-fit diagnostics, source hash and limitations.", "",
+              ":download:`Reviewed pairwise TRAIN aggregates, nominal bounds and limitations <generic-b-certified-pairwise-v1.json>`", ""]
+    return lines
 
 
 def _programme_closeout(source, output):
@@ -1234,4 +1340,4 @@ def _render_recovered_default_four(value):
 
 def render(value):
     lines = ['Earlier Generic-B campaign results', '----------------------------------', '', 'GB001: completed generic-sample static target-contract census (historical). The frozen pool', 'contained 20,000 B and 8,000 continuum collisions. Static accepted membership was 34,819/40,000', 'and recursive topology/PID compatibility was 6,378/40,000. This was not a learned-model evaluation', 'and these counts are not reconstruction efficiency. The needed provenance is unavailable in the census inputs;', 'original-mDST recovery was not assessed. Every learned metric in this census remains UNAVAILABLE.', '', 'GB002: local transfer complete; scientific authentication unresolved is a historical and now-superseded operational snapshot,', 'an as-of snapshot at the reviewed science-loop resumption boundary, not a live job monitor.', 'The transfer established opaque-byte identity only: 0 authenticated, 1 failed and 3,071 unreached.', 'The event-number and source-entry identities were conflated; replacement status was FAILED_REVIEW_REQUIRED.', 'The reviewed Astra/Sol science loop has since resumed; in that snapshot payload decoding and the native baseline remain pending.', 'The prospective two Generic B training sample sizes by two network widths do not constitute execution approval.', '', 'The historical heading Latest learned full reconstruction evaluation — CR054 refers to the earlier diagnostic,', 'not the current GB101 comparison displayed above. Channel coverage included 256 signed retained-channel groups.', 'Retained parton compatibility was 12/758; parton ancestry reconstruction is UNAVAILABLE.', 'The flat accepted 1/256 versus 0/256 comparison is not full reconstruction and did not support promotion.', '', 'Historical quality,source/checkpoint versions,uncertainty,cost,unavailable support and limitations remain', 'in the unchanged versioned downloads and historical study pages. No physical tagging-efficiency claim is implied.', '', ':download:`Reviewed v7 GB001, GB002, CR054 and GB101 aggregates with accumulated H2/H1 adaptations <generic-b-status-summary-v7.json>`.', '', ':download:`Historical v6 aggregate with the cap256 intervention retained with its original bytes <generic-b-status-summary-v6.json>`.', '', ':download:`Historical v5 aggregate with the saved-beam diagnosis retained with its original bytes <generic-b-status-summary-v5.json>`.', '', ':download:`Historical corrected v4 aggregate retained with its original bytes <generic-b-status-summary-v4.json>`.', '', ':download:`Historical v3 aggregate retained with its original bytes <generic-b-status-summary.json>`.', '']
-    return _render_programme_closeout(value) + _render_accumulated_findings(value) + _render_recovered_default_four(value) + _render_hybrid_teacher_gradient(value) + _render_hybrid_teacher_context(value) + _render_teacher_context_ablation(value) + _render_authenticated_teacher_tradeoff(value) + _render_type_isolation_tradeoff(value) + _render_partial_type_tradeoff(value) + _render_residual_support_refresh(value) + _render_h3_residual(value) + _render_head_gradient(value) + _render_targeted_h3(value) + _render_composite(value) + _render_within_update(value) + _render_state_mixture({}) + _render_query_refresh(value["h2_anchor"]["query-refresh-native"]) + _render_query_interaction(value["h2_anchor"]["query-interaction-native"]) + _render_dynamic(value["h2_anchor"]["dynamic-native"]) + _render_projection(value["h2_anchor"]["projection-native"]) + _render_expanded96(value["h2_anchor"]["expanded96-native"]) + _render_replay(value["h2_anchor"]["replay-native"]) + _render_balanced_refresh(value["h2_anchor"]["balanced-refresh-native"]) + _render_refresh_support(value["h2_anchor"]["refresh-native"]) + _render_joint_native(value["h2_anchor"]["joint-native"]) + _render_decoder_native(value["h2_anchor"]["decoder_native"]) + _render_relation_support(value["h2_anchor"]["relation_support"]) + _render_support_capture(value["h2_anchor"]["support_capture"]) + _render_source_supervision(value["h2_anchor"]["source_supervision"]) + _render_preservation(value["h2_anchor"]["preservation"]) + _render_retained_source(value["h2_anchor"]["retained_source"]) + _render_positive_object(value["h2_anchor"]["positive_object"]) + _render_h2_anchor(value["h2_anchor"]) + _render_supported_h3(value["supported_h3"]) + _render_neural_support(value["neural_support"]) + lines
+    return _render_certified_pairwise(value) + _render_programme_closeout(value) + _render_accumulated_findings(value) + _render_recovered_default_four(value) + _render_hybrid_teacher_gradient(value) + _render_hybrid_teacher_context(value) + _render_teacher_context_ablation(value) + _render_authenticated_teacher_tradeoff(value) + _render_type_isolation_tradeoff(value) + _render_partial_type_tradeoff(value) + _render_residual_support_refresh(value) + _render_h3_residual(value) + _render_head_gradient(value) + _render_targeted_h3(value) + _render_composite(value) + _render_within_update(value) + _render_state_mixture({}) + _render_query_refresh(value["h2_anchor"]["query-refresh-native"]) + _render_query_interaction(value["h2_anchor"]["query-interaction-native"]) + _render_dynamic(value["h2_anchor"]["dynamic-native"]) + _render_projection(value["h2_anchor"]["projection-native"]) + _render_expanded96(value["h2_anchor"]["expanded96-native"]) + _render_replay(value["h2_anchor"]["replay-native"]) + _render_balanced_refresh(value["h2_anchor"]["balanced-refresh-native"]) + _render_refresh_support(value["h2_anchor"]["refresh-native"]) + _render_joint_native(value["h2_anchor"]["joint-native"]) + _render_decoder_native(value["h2_anchor"]["decoder_native"]) + _render_relation_support(value["h2_anchor"]["relation_support"]) + _render_support_capture(value["h2_anchor"]["support_capture"]) + _render_source_supervision(value["h2_anchor"]["source_supervision"]) + _render_preservation(value["h2_anchor"]["preservation"]) + _render_retained_source(value["h2_anchor"]["retained_source"]) + _render_positive_object(value["h2_anchor"]["positive_object"]) + _render_h2_anchor(value["h2_anchor"]) + _render_supported_h3(value["supported_h3"]) + _render_neural_support(value["neural_support"]) + lines
