@@ -640,12 +640,35 @@ def test_phase42_incomplete_metrics_fail_closed(missing):
 
 
 
+def _expand_historical_records(manifest, output):
+    # Existing semantic assertions inspect the complete records through the
+    # new lossless delivery contract; the serialized index stays unchanged.
+    import copy
+    expanded = copy.deepcopy(manifest)
+    path = output / "phase41-61-status-records.json"
+    packed = path.read_bytes()
+    codec = status._phase74.sibling("wiki_phase72_compact")
+    raw = codec.decode(json.loads(packed), 5_000_000)
+    records = json.loads(raw)
+    for phase, record in records.items():
+        pointer = manifest["reconstruction"][phase]["full_record_download"]
+        assert pointer["sha256"] == hashlib.sha256(packed).hexdigest()
+        assert pointer["bytes"] == len(packed)
+        assert pointer["decoded_sha256"] == hashlib.sha256(raw).hexdigest()
+        assert pointer["decoded_bytes"] == len(raw)
+        assert pointer["decoded_key_path"] == [phase]
+        assert pointer["record_sha256"] == hashlib.sha256(codec.canonical(record)).hexdigest()
+        expanded["reconstruction"][phase] = record
+    return expanded
+
+
 def test_complete_metric_download_stays_within_publication_limit(tmp_path, copy_complete_documentation_status):
     output = tmp_path / 'complete-status'
     manifest = copy_complete_documentation_status(output)
     download = output / 'status.json'
     assert download.stat().st_size < 10 * 1024 * 1024
     assert json.loads(download.read_text()) == manifest
+    manifest = _expand_historical_records(manifest, output)
     binding = manifest['reconstruction']['phase41']['metric_download']
     assert binding['metric_count'] == 21467
     metric_bytes = (output/binding['filename']).read_bytes()
@@ -724,6 +747,7 @@ def test_phase44_retained_download_is_complete_and_separately_indexed(tmp_path, 
     assert projected['metric_rows'] == payload['metric_rows']
     output = tmp_path / 'retained-status'
     manifest = copy_complete_documentation_status(output)
+    manifest = _expand_historical_records(manifest, output)
     record = manifest['reconstruction']['phase44']['retained_tree_checks']
     binding = record['metric_download']
     data = (output / binding['filename']).read_bytes()
@@ -749,6 +773,7 @@ def test_phase44_retained_incomplete_metrics_cannot_publish(change):
 
 def test_phase45_full_metric_downloads_are_lossless(tmp_path, copy_complete_documentation_status):
     manifest = copy_complete_documentation_status(tmp_path / 'status')
+    manifest = _expand_historical_records(manifest, tmp_path / 'status')
     record = manifest['reconstruction']['phase45']
     assert record['source_boundary'] == 'PRE_SCIENTIFIC_AUDIT_FIXES'
     for source_key, projected in [('reconstruction_phase45',record),('reconstruction_phase45_retained',record['retained_tree_checks'])]:
@@ -783,6 +808,7 @@ def test_phase45_source_boundary_cannot_be_silently_relabelled():
 
 def test_phase46_full_metric_downloads_are_lossless(tmp_path, copy_complete_documentation_status):
     manifest = copy_complete_documentation_status(tmp_path / 'status')
+    manifest = _expand_historical_records(manifest, tmp_path / 'status')
     record = manifest['reconstruction']['phase46']
     assert record['source_boundary'] == 'CORRECTED_SCIENTIFIC_AUDIT_SOURCE'
     for source_key, projected in [('reconstruction_phase46',record),('reconstruction_phase46_retained',record['retained_tree_checks'])]:
@@ -817,6 +843,7 @@ def test_phase46_source_boundary_cannot_be_silently_relabelled():
 
 def test_phase47_full_metric_downloads_are_lossless(tmp_path, copy_complete_documentation_status):
     manifest = copy_complete_documentation_status(tmp_path / 'status')
+    manifest = _expand_historical_records(manifest, tmp_path / 'status')
     record = manifest['reconstruction']['phase47']
     assert record['source_boundary'] == 'CORRECTED_SCIENTIFIC_AUDIT_SOURCE'
     for source_key, projected in [('reconstruction_phase47',record),('reconstruction_phase47_retained',record['retained_tree_checks']),('reconstruction_phase47_aggregation',record['aggregation_supplement'])]:
@@ -851,6 +878,7 @@ def test_phase47_source_boundary_cannot_be_silently_relabelled():
 
 def test_phase48_all_tree_and_beam_publication(tmp_path, copy_complete_documentation_status):
     manifest = copy_complete_documentation_status(tmp_path/'phase48-status')
+    manifest = _expand_historical_records(manifest, tmp_path/'phase48-status')
     phase = manifest['reconstruction']['phase48']
     assert phase['status'] == 'COMPLETED'
     assert phase['metric_download']['metric_count'] == 15936
@@ -868,6 +896,7 @@ def test_phase48_all_tree_and_beam_publication(tmp_path, copy_complete_documenta
 
 def test_phase49_full_metric_downloads_are_lossless(tmp_path, copy_complete_documentation_status):
     manifest = copy_complete_documentation_status(tmp_path / 'status')
+    manifest = _expand_historical_records(manifest, tmp_path / 'status')
     record = manifest['reconstruction']['phase49']
     assert record['source_boundary'] == 'CORRECTED_SCIENTIFIC_AUDIT_SOURCE'
     for source_key, projected in [('reconstruction_phase49',record),('reconstruction_phase49_retained',record['retained_tree_checks']),('reconstruction_phase49_aggregation',record['aggregation_supplement'])]:
@@ -902,6 +931,7 @@ def test_phase49_source_boundary_cannot_be_silently_relabelled():
 
 def test_phase50_full_metric_downloads_are_lossless(tmp_path, copy_complete_documentation_status):
     manifest = copy_complete_documentation_status(tmp_path / 'status')
+    manifest = _expand_historical_records(manifest, tmp_path / 'status')
     record = manifest['reconstruction']['phase50']
     assert record['source_boundary'] == 'CORRECTED_SCIENTIFIC_AUDIT_SOURCE'
     for source_key, projected in [('reconstruction_phase50',record),('reconstruction_phase50_retained',record['retained_tree_checks']),('reconstruction_phase50_aggregation',record['aggregation_supplement'])]:
@@ -936,6 +966,7 @@ def test_phase50_source_boundary_cannot_be_silently_relabelled():
 
 def test_phase51_full_metric_downloads_are_lossless(tmp_path, copy_complete_documentation_status):
     manifest = copy_complete_documentation_status(tmp_path / 'status')
+    manifest = _expand_historical_records(manifest, tmp_path / 'status')
     record = manifest['reconstruction']['phase51']
     assert record['source_boundary'] == 'CORRECTED_SCIENTIFIC_AUDIT_SOURCE'
     for source_key, projected in [('reconstruction_phase51',record),('reconstruction_phase51_retained',record['retained_tree_checks']),('reconstruction_phase51_aggregation',record['aggregation_supplement'])]:
@@ -970,6 +1001,7 @@ def test_phase51_source_boundary_cannot_be_silently_relabelled():
 
 def test_phase52_full_metric_downloads_are_lossless(tmp_path, copy_complete_documentation_status):
     manifest = copy_complete_documentation_status(tmp_path / 'status')
+    manifest = _expand_historical_records(manifest, tmp_path / 'status')
     record = manifest['reconstruction']['phase52']
     assert record['source_boundary'] == 'CORRECTED_SCIENTIFIC_AUDIT_SOURCE'
     for source_key, projected in [('reconstruction_phase52',record),('reconstruction_phase52_retained',record['retained_tree_checks']),('reconstruction_phase52_aggregation',record['aggregation_supplement'])]:
@@ -1004,6 +1036,7 @@ def test_phase52_source_boundary_cannot_be_silently_relabelled():
 
 def test_phase53_full_metric_downloads_are_lossless(tmp_path, copy_complete_documentation_status):
     manifest = copy_complete_documentation_status(tmp_path / 'status')
+    manifest = _expand_historical_records(manifest, tmp_path / 'status')
     record = manifest['reconstruction']['phase53']
     assert record['source_boundary'] == 'CORRECTED_SCIENTIFIC_AUDIT_SOURCE'
     for source_key, projected in [('reconstruction_phase53',record),('reconstruction_phase53_retained',record['retained_tree_checks']),('reconstruction_phase53_aggregation',record['aggregation_supplement'])]:
@@ -1048,6 +1081,7 @@ def test_status_compact_numbers_preserve_values_and_negative_zero():
 
 def test_phase54_full_metric_downloads_are_lossless(tmp_path, copy_complete_documentation_status):
     manifest = copy_complete_documentation_status(tmp_path / 'status')
+    manifest = _expand_historical_records(manifest, tmp_path / 'status')
     record = manifest['reconstruction']['phase54']
     assert record['source_boundary'] == 'CORRECTED_SCIENTIFIC_AUDIT_SOURCE'
     for source_key, projected in [('reconstruction_phase54',record),('reconstruction_phase54_retained',record['retained_tree_checks']),('reconstruction_phase54_aggregation',record['aggregation_supplement'])]:
@@ -1083,6 +1117,7 @@ def test_phase54_source_boundary_cannot_be_silently_relabelled():
 
 def test_phase55_recovered_metrics_and_pretraining_downloads_are_lossless(tmp_path, copy_complete_documentation_status):
     manifest = copy_complete_documentation_status(tmp_path/'status')
+    manifest = _expand_historical_records(manifest, tmp_path/'status')
     record = manifest['reconstruction']['phase55']
     assert record['original_job_status'] == 'FAILED_POST_TRAINING_EVALUATION'
     assert manifest['reconstruction']['phase54']['next_study_status'] == 'COMPLETED'
@@ -1121,6 +1156,7 @@ def test_phase55_missing_pretraining_metric_cannot_publish():
 
 def test_phase56_available_metrics_are_lossless_and_missing_control_is_null(tmp_path, copy_complete_documentation_status):
     manifest=copy_complete_documentation_status(tmp_path/'phase56')
+    manifest = _expand_historical_records(manifest, tmp_path/'phase56')
     record=manifest['reconstruction']['phase56']
     assert record['status']=='INCOMPLETE_COMPARISON' and record['comparison_available'] is False
     assert record['arms']['late_adaptation_control']['endpoints'] is None
@@ -1143,6 +1179,7 @@ def test_phase56_rejects_false_comparison_or_incomplete_export(change):
 
 def test_phase57_lossless_downloads_preserve_diagnostic_classification(tmp_path, copy_complete_documentation_status):
     manifest=copy_complete_documentation_status(tmp_path/'phase57')
+    manifest = _expand_historical_records(manifest, tmp_path/'phase57')
     record=manifest['reconstruction']['phase57']
     assert record['status']=='DIAGNOSTIC_COMPLETE' and record['independent_validation'] is False
     assert record['strict_selection_overlap']==100
